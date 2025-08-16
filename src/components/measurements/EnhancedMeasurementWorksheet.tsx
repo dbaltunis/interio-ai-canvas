@@ -105,12 +105,26 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<any>(null);
   const [measurements, setMeasurements] = useState(() => {
-    const initialMeasurements = safeExistingMeasurement?.measurements ? { ...safeExistingMeasurement.measurements } : {};
-    // Also merge any existing treatment measurements
+    let initialMeasurements = {};
+    
+    // Priority 1: Use saved summary data if available
+    if (shouldUseSavedData && savedSummary) {
+      console.log("🔄 Loading measurements from saved summary:", savedSummary);
+      initialMeasurements = { ...savedSummary };
+    }
+    // Priority 2: Use existing measurement data
+    else if (safeExistingMeasurement?.measurements) {
+      console.log("🔄 Loading measurements from existing measurement:", safeExistingMeasurement.measurements);
+      initialMeasurements = { ...safeExistingMeasurement.measurements };
+    }
+    
+    // Priority 3: Merge any existing treatment measurements
     if (safeExistingTreatments?.[0]?.measurements) {
+      console.log("🔄 Merging treatment measurements:", safeExistingTreatments[0].measurements);
       Object.assign(initialMeasurements, safeExistingTreatments[0].measurements);
     }
-    console.log("Initial measurements:", initialMeasurements);
+    
+    console.log("✅ Final initial measurements loaded:", initialMeasurements);
     return initialMeasurements;
   });
   const [treatmentData, setTreatmentData] = useState<any>(() => 
@@ -144,7 +158,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
 
   // Effect to load saved summary data when available
   useEffect(() => {
-    if (existingMeasurement?.use_saved_summary && savedSummary) {
+    if (shouldUseSavedData && savedSummary) {
       console.log(`✅ Loading EXACT saved data for treatment ${surfaceId}`, savedSummary);
       
       // Update measurements with exact saved data
@@ -157,9 +171,12 @@ export const EnhancedMeasurementWorksheet = forwardRef<
         fabric_width: savedSummary.fabric_details?.fabric_width || savedSummary.fabric_details?.width_cm,
         price_per_meter: savedSummary.price_per_meter,
         surface_id: surfaceId,
-        surface_name: surfaceData?.name
+        surface_name: surfaceData?.name,
+        // Include any other saved measurements
+        ...savedSummary.measurements_details
       };
       
+      console.log("🔄 Setting measurements from saved summary:", savedMeasurements);
       setMeasurements(savedMeasurements);
       
       // Update treatment data
@@ -178,8 +195,10 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       setSelectedFabric(savedSummary.fabric_details?.fabric_id || "");
       setSelectedHeading(savedSummary.heading_details?.heading_name || "standard");
       setSelectedLining(savedSummary.lining_type || "none");
+      
+      console.log("✅ Data loaded from saved summary successfully");
     }
-  }, [savedSummary, existingMeasurement?.use_saved_summary, surfaceId]);
+  }, [shouldUseSavedData, savedSummary, surfaceId, surfaceData?.name]);
 
   const createMeasurement = useCreateClientMeasurement();
   const updateMeasurement = useUpdateClientMeasurement();
@@ -286,8 +305,9 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const handleInventorySelect = (item: any) => {
     setSelectedInventoryItem(item);
     // Calculate preliminary cost based on measurements and item pricing
-    const width = measurements.measurement_a || measurements.rail_width || (units.length === 'cm' ? 150 : 60);
-    const height = measurements.measurement_b || measurements.drop || (units.length === 'cm' ? 120 : 48);
+    const measurementsData = measurements as any;
+    const width = measurementsData.measurement_a || measurementsData.rail_width || (units.length === 'cm' ? 150 : 60);
+    const height = measurementsData.measurement_b || measurementsData.drop || (units.length === 'cm' ? 120 : 48);
     const area = units.length === 'cm' ? (width * height) / 10000 : (width * height) / 144; // sq m or sq ft
     const estimatedCost = area * (item.selling_price || item.unit_price || 0);
     setCalculatedCost(estimatedCost);
@@ -652,7 +672,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                 template={selectedCovering}
                 measurements={measurements}
                 selectedFabric={selectedFabric ? inventoryItems.find(item => item.id === selectedFabric) : 
-                              inventoryItems.find(item => item.id === measurements.selected_fabric)}
+                              inventoryItems.find(item => item.id === (measurements as any)?.selected_fabric)}
                 selectedHeading={selectedHeading}
                 selectedLining={selectedLining}
                 inventory={inventoryItems}
