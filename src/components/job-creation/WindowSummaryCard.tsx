@@ -62,6 +62,7 @@ export function WindowSummaryCard({
     isLoading,
     error: error?.message,
     hasSummary: !!summary,
+    fabricDetails: summary?.fabric_details,
     summary: summary ? {
       window_id: summary.window_id,
       total_cost: summary.total_cost,
@@ -210,11 +211,11 @@ export function WindowSummaryCard({
                       <span className="font-medium text-foreground">
                         {treatmentType || surface.treatment_type || 'Curtains'}
                       </span>
-                      {summary.fabric_details?.name && (
-                        <span className="text-muted-foreground">
-                          Fabric: {summary.fabric_details.name}
-                        </span>
-                      )}
+                       {summary.fabric_details?.name && (
+                         <span className="text-muted-foreground">
+                           Fabric: {summary.fabric_details.name}
+                         </span>
+                       )}
                     </div>
                     <div className="flex items-center gap-4 flex-wrap text-muted-foreground">
                       {(summary as any).rail_width && (
