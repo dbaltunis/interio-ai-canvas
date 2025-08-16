@@ -23,7 +23,7 @@ import { ProjectNotesCard } from "../ProjectNotesCard";
 import { JobNotesDialog } from "../JobNotesDialog";
 import { QuoteFullScreenView } from "@/components/jobs/quotation/QuoteFullScreenView";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
-import { CompactQuotesSection } from "../quotation/CompactQuotesSection";
+
 
 import { DetailedQuotationTable } from "../quotation/DetailedQuotationTable";
 
@@ -330,12 +330,6 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
         </div>
       </div>
 
-      {/* Compact Active Quotes */}
-      <CompactQuotesSection 
-        quotes={projectQuotes}
-        onSelectQuote={setSelectedQuote}
-        onOpenNotes={(quote) => { setSelectedQuote(quote); setNotesOpen(true); }}
-      />
 
 
       {/* Items Editor (optional) */}
