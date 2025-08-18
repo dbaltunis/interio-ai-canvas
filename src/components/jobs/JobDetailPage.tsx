@@ -218,5 +218,6 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
           </div>
         </Tabs>
       </div>
+    </div>
     );
   };
