@@ -1,10 +1,8 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useClients } from "@/hooks/useClients";
 import { useUpdateProject } from "@/hooks/useProjects";
@@ -24,9 +22,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   const [isEditing, setIsEditing] = useState(false);
   const [showClientSearch, setShowClientSearch] = useState(false);
   const [formData, setFormData] = useState({
-    description: project.description || "",
     status: project.status || "planning",
-    priority: project.priority || "medium",
     job_number: project.job_number || "",
     client_id: project.client_id || null,
     start_date: project.start_date || "",
@@ -46,9 +42,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
       
       const updateData = {
         id: project.id,
-        description: formData.description,
         status: formData.status,
-        priority: formData.priority,
         client_id: formData.client_id,
         start_date: formData.start_date || null,
         due_date: formData.due_date || null,
@@ -96,9 +90,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
 
   const handleCancel = () => {
     setFormData({
-      description: project.description || "",
       status: project.status || "planning",
-      priority: project.priority || "medium",
       job_number: project.job_number || "",
       client_id: project.client_id || null,
       start_date: project.start_date || "",
@@ -161,19 +153,6 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
     return 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "bg-red-100 text-red-800";
-      case "medium":
-        return "bg-yellow-100 text-yellow-800";
-      case "low":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
   const getClientDisplayName = (client: any) => {
     if (!client) return null;
     
@@ -185,252 +164,198 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   };
 
   return (
-    <div className="space-y-4">
-      {/* Main Project Details */}
-      <div className="bg-card rounded-lg border shadow-sm">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 border-b bg-muted/30">
-          <div className="flex items-center gap-3 mb-3 sm:mb-0">
-            <div className="bg-primary/10 p-2 rounded-lg">
-              <CalendarDays className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">Project Details</h2>
-              <p className="text-sm text-muted-foreground">
-                Job #{formData.job_number || 'Unassigned'}
-              </p>
-            </div>
+    <div className="space-y-3">
+      {/* Compact Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-muted/20 rounded-lg border">
+        <div className="flex items-center gap-3">
+          <div className="bg-primary/10 p-1.5 rounded">
+            <CalendarDays className="h-4 w-4 text-primary" />
           </div>
+          <div>
+            <h2 className="font-semibold text-foreground">Job #{formData.job_number || 'Unassigned'}</h2>
+            <p className="text-xs text-muted-foreground">Project Details</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Badge className={getStatusColor(formData.status)}>
+            {jobStatuses.find(s => s.name.toLowerCase() === formData.status.toLowerCase())?.name || 
+             formData.status.charAt(0).toUpperCase() + formData.status.slice(1).replace('_', ' ')}
+          </Badge>
           
-          <div className="flex items-center gap-2">
-            <Badge className={getStatusColor(formData.status)}>
-              {jobStatuses.find(s => s.name.toLowerCase() === formData.status.toLowerCase())?.name || 
-               formData.status.charAt(0).toUpperCase() + formData.status.slice(1).replace('_', ' ')}
-            </Badge>
-            
-            {!isEditing ? (
-              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
+          {!isEditing ? (
+            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+              <Edit className="h-3 w-3 mr-1" />
+              Edit
+            </Button>
+          ) : (
+            <div className="flex gap-1">
+              <Button variant="outline" size="sm" onClick={handleCancel}>
+                <X className="h-3 w-3 mr-1" />
+                Cancel
               </Button>
+              <Button 
+                size="sm" 
+                onClick={handleSave}
+                disabled={updateProject.isPending}
+              >
+                <Save className="h-3 w-3 mr-1" />
+                {updateProject.isPending ? "Saving..." : "Save"}
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Compact Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        {/* Timeline Section */}
+        <div className="space-y-3">
+          <div className="bg-card rounded-lg border p-3">
+            <div className="flex items-center gap-2 mb-3">
+              <CalendarDays className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-medium">Timeline</h3>
+            </div>
+            
+            {/* Status and Dates in single row when not editing */}
+            {!isEditing ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Status</span>
+                  <Badge variant="secondary" className={getStatusColor(formData.status)}>
+                    {jobStatuses.find(s => s.name.toLowerCase() === formData.status.toLowerCase())?.name || 
+                     formData.status.charAt(0).toUpperCase() + formData.status.slice(1).replace('_', ' ')}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Start</span>
+                  <span className="text-xs font-medium">
+                    {formData.start_date ? new Date(formData.start_date).toLocaleDateString() : "Not set"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Due</span>
+                  <span className="text-xs font-medium">
+                    {formData.due_date ? new Date(formData.due_date).toLocaleDateString() : "Not set"}
+                  </span>
+                </div>
+              </div>
             ) : (
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={handleCancel}>
-                  <X className="h-4 w-4 mr-1" />
-                  <span className="hidden sm:inline">Cancel</span>
-                </Button>
-                <Button 
-                  size="sm" 
-                  onClick={handleSave}
-                  disabled={updateProject.isPending}
-                >
-                  <Save className="h-4 w-4 mr-1" />
-                  <span className="hidden sm:inline">{updateProject.isPending ? "Saving..." : "Save"}</span>
-                </Button>
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Status</Label>
+                  <Select value={formData.status} onValueChange={(value) => updateFormData("status", value)}>
+                    <SelectTrigger className="h-8 mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {jobStatuses.map(status => (
+                        <SelectItem key={status.id} value={status.name.toLowerCase()}>
+                          <div className="flex items-center space-x-2">
+                            <div className={`w-2 h-2 rounded-full bg-${status.color}-500`} />
+                            <span>{status.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Start Date</Label>
+                    <Input
+                      type="date"
+                      value={formData.start_date}
+                      onChange={(e) => updateFormData("start_date", e.target.value)}
+                      className="h-8 mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Due Date</Label>
+                    <Input
+                      type="date"
+                      value={formData.due_date}
+                      onChange={(e) => updateFormData("due_date", e.target.value)}
+                      className="h-8 mt-1"
+                    />
+                  </div>
+                </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-4 sm:p-6 space-y-6">
-          {/* Essential Info Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Status & Dates */}
-            <div className="space-y-4">
-              <div className="bg-muted/30 rounded-lg p-4">
-                <h3 className="font-medium text-foreground mb-3 flex items-center gap-2">
-                  <CalendarDays className="h-4 w-4 text-primary" />
-                  Timeline
-                </h3>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</Label>
-                    <div className="mt-1">
-                      {isEditing ? (
-                        <Select value={formData.status} onValueChange={(value) => updateFormData("status", value)}>
-                          <SelectTrigger className="h-9">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {jobStatuses.map(status => (
-                              <SelectItem key={status.id} value={status.name.toLowerCase()}>
-                                <div className="flex items-center space-x-2">
-                                  <div className={`w-2 h-2 rounded-full bg-${status.color}-500`} />
-                                  <span>{status.name}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Badge variant="secondary" className={getStatusColor(formData.status)}>
-                          {jobStatuses.find(s => s.name.toLowerCase() === formData.status.toLowerCase())?.name || 
-                           formData.status.charAt(0).toUpperCase() + formData.status.slice(1).replace('_', ' ')}
-                        </Badge>
-                      )}
-                    </div>
+        {/* Client Section */}
+        <div className="space-y-3">
+          <div className="bg-card rounded-lg border p-3">
+            <div className="flex items-center gap-2 mb-3">
+              <User className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-medium">Client</h3>
+            </div>
+            
+            {selectedClient ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="bg-primary/10 p-1 rounded-full">
+                    <User className="h-3 w-3 text-primary" />
                   </div>
-                  
-                  <div>
-                    <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Priority</Label>
-                    <div className="mt-1">
-                      {isEditing ? (
-                        <Select value={formData.priority} onValueChange={(value) => updateFormData("priority", value)}>
-                          <SelectTrigger className="h-9">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="low">Low</SelectItem>
-                            <SelectItem value="medium">Medium</SelectItem>
-                            <SelectItem value="high">High</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Badge variant="outline" className={getPriorityColor(formData.priority)}>
-                          {formData.priority.charAt(0).toUpperCase() + formData.priority.slice(1)}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                  <div>
-                    <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Start Date</Label>
-                    {isEditing ? (
-                      <Input
-                        type="date"
-                        value={formData.start_date}
-                        onChange={(e) => updateFormData("start_date", e.target.value)}
-                        className="mt-1 h-9"
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm font-medium text-foreground">
-                        {formData.start_date ? new Date(formData.start_date).toLocaleDateString() : "Not set"}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Due Date</Label>
-                    {isEditing ? (
-                      <Input
-                        type="date"
-                        value={formData.due_date}
-                        onChange={(e) => updateFormData("due_date", e.target.value)}
-                        className="mt-1 h-9"
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm font-medium text-foreground">
-                        {formData.due_date ? new Date(formData.due_date).toLocaleDateString() : "Not set"}
-                      </p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">
+                      {getClientDisplayName(selectedClient)}
+                    </p>
+                    {selectedClient.email && (
+                      <p className="text-xs text-muted-foreground truncate">{selectedClient.email}</p>
                     )}
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Client Information */}
-            <div className="space-y-4">
-              <div className="bg-muted/30 rounded-lg p-4">
-                <h3 className="font-medium text-foreground mb-3 flex items-center gap-2">
-                  <User className="h-4 w-4 text-primary" />
-                  Client
-                </h3>
                 
-                {selectedClient ? (
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3 min-w-0 flex-1">
-                        <div className="bg-primary/10 p-2 rounded-full shrink-0">
-                          <User className="h-4 w-4 text-primary" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-foreground truncate">
-                            {getClientDisplayName(selectedClient)}
-                          </p>
-                          {selectedClient.email && (
-                            <p className="text-sm text-muted-foreground truncate">{selectedClient.email}</p>
-                          )}
-                          {selectedClient.client_type === 'B2B' && selectedClient.name && selectedClient.company_name && (
-                            <p className="text-xs text-muted-foreground">Contact: {selectedClient.name}</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => setShowClientSearch(true)}
-                        className="flex-1 sm:flex-none"
-                      >
-                        <Search className="h-3 w-3 mr-1" />
-                        Change
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => {
-                          updateFormData("client_id", null);
-                          updateProject.mutateAsync({
-                            id: project.id,
-                            client_id: null,
-                          }).then(() => {
-                            project.client_id = null;
-                            toast({
-                              title: "Success",
-                              description: "Client removed from project",
-                            });
-                          });
-                        }}
-                        className="flex-1 sm:flex-none"
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-4">
-                    <div className="bg-muted/50 p-3 rounded-full w-fit mx-auto mb-3">
-                      <User className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-3">No client assigned</p>
-                    <Button 
-                      onClick={() => setShowClientSearch(true)}
-                      size="sm"
-                      className="w-full sm:w-auto"
-                    >
-                      <Search className="h-4 w-4 mr-2" />
-                      Add Client
-                    </Button>
-                  </div>
-                )}
+                <div className="flex gap-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowClientSearch(true)}
+                    className="flex-1 h-7 text-xs"
+                  >
+                    <Search className="h-3 w-3 mr-1" />
+                    Change
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      updateFormData("client_id", null);
+                      updateProject.mutateAsync({
+                        id: project.id,
+                        client_id: null,
+                      }).then(() => {
+                        project.client_id = null;
+                        toast({
+                          title: "Success",
+                          description: "Client removed from project",
+                        });
+                      });
+                    }}
+                    className="flex-1 h-7 text-xs"
+                  >
+                    Remove
+                  </Button>
+                </div>
               </div>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="bg-muted/30 rounded-lg p-4">
-            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-3">
-              Project Description
-            </Label>
-            {isEditing ? (
-              <Textarea
-                value={formData.description}
-                onChange={(e) => updateFormData("description", e.target.value)}
-                placeholder="Add project description..."
-                className="min-h-[80px] resize-none"
-                rows={3}
-              />
             ) : (
-              <div className="text-sm text-foreground bg-background border rounded-md p-3 min-h-[80px] flex items-center">
-                {formData.description || (
-                  <span className="text-muted-foreground italic">No description added</span>
-                )}
+              <div className="text-center py-2">
+                <div className="bg-muted/50 p-2 rounded-full w-fit mx-auto mb-2">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">No client assigned</p>
+                <Button 
+                  onClick={() => setShowClientSearch(true)}
+                  size="sm"
+                  className="w-full h-7 text-xs"
+                >
+                  <Search className="h-3 w-3 mr-1" />
+                  Add Client
+                </Button>
               </div>
             )}
           </div>
