@@ -3532,6 +3532,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_user_effective_permissions: {
+        Args: { user_id_param: string }
+        Returns: string[]
+      }
       get_user_email: {
         Args: { user_id: string }
         Returns: string
