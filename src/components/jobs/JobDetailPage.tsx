@@ -81,26 +81,26 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   return (
     <div className="min-h-screen bg-background w-full">
       {/* Compact Header Bar */}
-      <div className="bg-card border-b shadow-sm">
-        <div className="px-4 py-3">
-          {/* Navigation & Main Info in Single Row */}
-          <div className="flex items-center justify-between">
+      <div className="bg-card border-b shadow-sm sticky top-0 z-10">
+        <div className="px-2 sm:px-4 py-2 sm:py-3">
+          {/* Navigation & Main Info */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 lg:gap-0">
             {/* Left: Navigation + Job Info */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onBack}
-                className="flex items-center space-x-1 hover:bg-muted text-muted-foreground"
+                className="flex items-center space-x-1 hover:bg-muted text-muted-foreground shrink-0"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span>Back</span>
+                <span className="hidden sm:inline">Back</span>
               </Button>
               
-              <Separator orientation="vertical" className="h-6" />
+              <Separator orientation="vertical" className="h-6 hidden sm:block" />
               
-              <div className="flex items-center space-x-3">
-                <h1 className="text-xl font-bold text-foreground">
+              <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">
                   {project.name}
                 </h1>
                 <JobStatusDropdown
@@ -111,40 +111,38 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                     // The status will be updated via the mutation, just for UI feedback
                   }}
                 />
-                <span className="font-mono bg-muted px-2 py-1 rounded text-xs text-muted-foreground">
+                <span className="font-mono bg-muted px-2 py-1 rounded text-xs text-muted-foreground hidden sm:inline">
                   {project.job_number}
                 </span>
               </div>
             </div>
 
             {/* Right: Client & Key Info */}
-            <div className="flex items-center space-x-6 text-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 text-sm">
               {/* Client Info */}
-              <div className="flex items-center space-x-2">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span className="text-foreground font-medium">
+              <div className="flex items-center space-x-2 min-w-0">
+                <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                <span className="text-foreground font-medium truncate">
                   {client ? client.name : 'No client'}
                 </span>
                 {client?.email && (
-                  <span className="text-muted-foreground">• {client.email}</span>
+                  <span className="text-muted-foreground hidden lg:inline">• {client.email}</span>
                 )}
               </div>
               
-              <Separator orientation="vertical" className="h-4" />
-              
               {/* Key Metrics */}
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3 sm:space-x-4 text-xs sm:text-sm">
                 <div className="flex items-center space-x-1">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Due:</span>
+                  <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground hidden sm:inline">Due:</span>
                   <span className="text-foreground font-medium">
                     {project.due_date ? new Date(project.due_date).toLocaleDateString() : 'Not set'}
                   </span>
                 </div>
                 
                 <div className="flex items-center space-x-1">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Created:</span>
+                  <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground hidden sm:inline">Created:</span>
                   <span className="text-foreground font-medium">
                     {new Date(project.created_at).toLocaleDateString()}
                   </span>
@@ -159,19 +157,20 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
       <div className="w-full">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Tab Navigation */}
-          <div className="bg-card border-b">
-            <div className="px-4">
-              <TabsList className="bg-transparent p-0 h-auto border-b-0">
+          <div className="bg-card border-b sticky top-[72px] lg:top-[64px] z-[9]">
+            <div className="px-2 sm:px-4">
+              <TabsList className="bg-transparent p-0 h-auto border-b-0 flex-wrap sm:flex-nowrap gap-1">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   return (
                     <TabsTrigger 
                       key={tab.id}
                       value={tab.id} 
-                      className="px-4 py-3 text-sm font-medium border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-primary/5 rounded-none flex items-center gap-2 hover:bg-muted/50"
+                      className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-primary/5 rounded-none flex items-center gap-1 sm:gap-2 hover:bg-muted/50 flex-1 sm:flex-none justify-center"
                     >
-                      <Icon className="h-4 w-4" />
-                      {tab.label}
+                      <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline">{tab.label}</span>
+                      <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
                     </TabsTrigger>
                   );
                 })}
@@ -180,51 +179,41 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
           </div>
 
           {/* Tab Content */}
-          <div className="bg-background min-h-[calc(100vh-160px)]">
-            <div className="p-4">
+          <div className="bg-background">
+            <div className="p-2 sm:p-4 space-y-4">
               <TabsContent value="details" className="mt-0">
-                <div className="bg-card rounded-lg shadow-sm border p-6">
+                <div className="bg-card rounded-lg shadow-sm border p-3 sm:p-6">
                   <ProjectDetailsTab project={project} onUpdate={handleUpdateProject} />
                 </div>
               </TabsContent>
 
               <TabsContent value="rooms" className="mt-0">
-                <div className="bg-card rounded-lg shadow-sm border">
-                  <div className="p-6">
-                    <RoomsTab projectId={jobId} />
-                  </div>
+                <div className="bg-card rounded-lg shadow-sm border p-3 sm:p-6">
+                  <RoomsTab projectId={jobId} />
                 </div>
               </TabsContent>
 
               <TabsContent value="quotation" className="mt-0">
-                <div className="bg-card rounded-lg shadow-sm border">
-                  <div className="p-6">
-                    <QuotationTab projectId={jobId} />
-                  </div>
+                <div className="bg-card rounded-lg shadow-sm border p-3 sm:p-6">
+                  <QuotationTab projectId={jobId} />
                 </div>
               </TabsContent>
 
               <TabsContent value="workroom" className="mt-0">
-                <div className="bg-card rounded-lg shadow-sm border">
-                  <div className="p-6">
-                    <WorkroomTab projectId={jobId} />
-                  </div>
+                <div className="bg-card rounded-lg shadow-sm border p-3 sm:p-6">
+                  <WorkroomTab projectId={jobId} />
                 </div>
               </TabsContent>
 
               <TabsContent value="emails" className="mt-0">
-                <div className="bg-card rounded-lg shadow-sm border">
-                  <div className="p-6">
-                    <EmailsTab projectId={jobId} />
-                  </div>
+                <div className="bg-card rounded-lg shadow-sm border p-3 sm:p-6">
+                  <EmailsTab projectId={jobId} />
                 </div>
               </TabsContent>
 
               <TabsContent value="calendar" className="mt-0">
-                <div className="bg-card rounded-lg shadow-sm border">
-                  <div className="p-6">
-                    <CalendarTab projectId={jobId} />
-                  </div>
+                <div className="bg-card rounded-lg shadow-sm border p-3 sm:p-6">
+                  <CalendarTab projectId={jobId} />
                 </div>
               </TabsContent>
             </div>
