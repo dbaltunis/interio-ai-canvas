@@ -103,52 +103,62 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                 <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">
                   {project.name}
                 </h1>
-                <JobStatusDropdown
-                  currentStatus={project.status}
-                  jobType="project"
-                  jobId={project.id}
-                  onStatusChange={(newStatus) => {
-                    // The status will be updated via the mutation, just for UI feedback
-                  }}
-                />
-                <span className="font-mono bg-muted px-2 py-1 rounded text-xs text-muted-foreground hidden sm:inline">
-                  {project.job_number}
-                </span>
               </div>
             </div>
 
-            {/* Right: Client & Key Info */}
-            <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 text-sm">
-              {/* Client Info */}
-              <div className="flex items-center space-x-2 min-w-0">
-                <User className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="text-foreground font-medium truncate">
-                  {client ? client.name : 'No client'}
-                </span>
-                {client?.email && (
-                  <span className="text-muted-foreground hidden lg:inline">• {client.email}</span>
-                )}
-              </div>
-              
-              {/* Key Metrics */}
-              <div className="flex items-center space-x-3 sm:space-x-4 text-xs sm:text-sm">
-                <div className="flex items-center space-x-1">
-                  <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground hidden sm:inline">Due:</span>
-                  <span className="text-foreground font-medium">
-                    {project.due_date ? new Date(project.due_date).toLocaleDateString() : 'Not set'}
-                  </span>
-                </div>
-                
-                <div className="flex items-center space-x-1">
-                  <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground hidden sm:inline">Created:</span>
-                  <span className="text-foreground font-medium">
-                    {new Date(project.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
+        {/* Right: Client & Key Info */}
+        <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 text-sm">
+          {/* Job Number under title */}
+          <div className="flex flex-col">
+            <span className="text-xs text-muted-foreground">Job #</span>
+            <span className="font-mono text-xs">
+              {project.job_number || 'Unassigned'}
+            </span>
+          </div>
+
+          {/* Status with label */}
+          <div className="flex items-center space-x-2">
+            <span className="text-xs text-muted-foreground">Status:</span>
+            <JobStatusDropdown
+              currentStatus={project.status}
+              jobType="project"
+              jobId={project.id}
+              onStatusChange={(newStatus) => {
+                // The status will be updated via the mutation, just for UI feedback
+              }}
+            />
+          </div>
+          
+          {/* Client Info */}
+          <div className="flex items-center space-x-2 min-w-0">
+            <User className="h-4 w-4 text-muted-foreground shrink-0" />
+            <span className="text-foreground font-medium truncate">
+              {client ? client.name : 'No client'}
+            </span>
+            {client?.email && (
+              <span className="text-muted-foreground hidden lg:inline">• {client.email}</span>
+            )}
+          </div>
+          
+          {/* Key Metrics */}
+          <div className="flex items-center space-x-3 sm:space-x-4 text-xs sm:text-sm">
+            <div className="flex items-center space-x-1">
+              <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+              <span className="text-muted-foreground hidden sm:inline">Due:</span>
+              <span className="text-foreground font-medium">
+                {project.due_date ? new Date(project.due_date).toLocaleDateString() : 'Not set'}
+              </span>
             </div>
+            
+            <div className="flex items-center space-x-1">
+              <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+              <span className="text-muted-foreground hidden sm:inline">Created:</span>
+              <span className="text-foreground font-medium">
+                {new Date(project.created_at).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+        </div>
           </div>
         </div>
       </div>

@@ -20,6 +20,16 @@ export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [selectedMentions, setSelectedMentions] = useState<string[]>([]);
+  const [showAllNotes, setShowAllNotes] = useState(false);
+
+  const displayedNotes = showAllNotes ? notes : notes.slice(0, 3);
+
+  const handleAssignTask = (note: any) => {
+    toast({
+      title: "Task Assignment",
+      description: "Task assignment feature coming soon",
+    });
+  };
 
   const handleAdd = async () => {
     if (!note.trim()) {
@@ -112,7 +122,19 @@ export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Previous notes</label>
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium">Recent notes</label>
+            {notes.length > 3 && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowAllNotes(!showAllNotes)}
+                className="text-xs"
+              >
+                {showAllNotes ? 'Show less' : `Show all ${notes.length} notes`}
+              </Button>
+            )}
+          </div>
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {loading && (
               <div className="text-sm text-muted-foreground">Loading notes...</div>
@@ -121,15 +143,32 @@ export const ProjectNotesCard = ({ projectId }: ProjectNotesCardProps) => {
             {!loading && notes.length === 0 && (
               <div className="text-sm text-muted-foreground">No notes yet.</div>
             )}
-            {notes.map(n => (
+            {displayedNotes.map(n => (
               <div key={n.id} className="flex items-start justify-between gap-2 border rounded p-2 bg-muted/40">
                 <div className="flex-1">
                   <div className="text-sm whitespace-pre-wrap">{n.content}</div>
-                  <div className="text-[10px] text-muted-foreground mt-1">{new Date(n.created_at).toLocaleString()}</div>
+                  <div className="text-[10px] text-muted-foreground mt-1">
+                    {new Date(n.created_at).toLocaleString()}
+                    {n.mentions && n.mentions.length > 0 && (
+                      <span className="ml-2">
+                        • Mentions: {n.mentions.map(m => teamMembers.find(tm => tm.id === (typeof m === 'string' ? m : m.mentioned_user_id))?.name).filter(Boolean).join(', ')}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(n.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleAssignTask(n)}
+                    className="h-7 px-2 text-xs"
+                  >
+                    Assign Task
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(n.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
