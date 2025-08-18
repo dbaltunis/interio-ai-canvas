@@ -179,9 +179,8 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
           </div>
 
           {/* Tab Content */}
-          <div className="bg-background">
-            <div className="p-2 sm:p-4 space-y-4">
-              <TabsContent value="details" className="mt-0">
+          <div className="bg-background p-2 sm:p-4 space-y-4">
+            <TabsContent value="details" className="mt-0">
                 <div className="bg-card rounded-lg shadow-sm border p-3 sm:p-6">
                   <ProjectDetailsTab project={project} onUpdate={handleUpdateProject} />
                 </div>
@@ -216,10 +215,8 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                   <CalendarTab projectId={jobId} />
                 </div>
               </TabsContent>
-            </div>
           </div>
         </Tabs>
       </div>
-    </div>
-  );
-};
+    );
+  };
