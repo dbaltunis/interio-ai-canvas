@@ -27,15 +27,23 @@ const ROLE_OPTIONS = [
 export const TeamAssignment = ({ project }: TeamAssignmentProps) => {
   const [selectedMember, setSelectedMember] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
-  const [isLocked, setIsLocked] = useState(JSON.parse(project.description || '{}').is_locked || false);
-  
   const { data: teamMembers = [] } = useTeamMembers();
   const updateProject = useUpdateProject();
   const { toast } = useToast();
 
-  // Parse team assignments from project description
-  const projectData = JSON.parse(project.description || '{}');
+  // Safely parse project data with fallback
+  const parseProjectData = (description: string | null) => {
+    try {
+      return JSON.parse(description || '{}');
+    } catch (error) {
+      console.warn('Failed to parse project description:', description, error);
+      return {};
+    }
+  };
+
+  const projectData = parseProjectData(project.description);
   const teamAssignments = projectData.team_assignments || {};
+  const [isLocked, setIsLocked] = useState(projectData.is_locked || false);
   
   const assignedMemberIds = Object.keys(teamAssignments);
   const assignedMembers = teamMembers.filter(member => 
@@ -63,9 +71,9 @@ export const TeamAssignment = ({ project }: TeamAssignmentProps) => {
         id: project.id,
         // For now, we'll store team assignments in the notes field as JSON
         description: JSON.stringify({
-          ...JSON.parse(project.description || '{}'),
+          ...projectData,
           team_assignments: {
-            ...(JSON.parse(project.description || '{}').team_assignments || {}),
+            ...teamAssignments,
             [selectedMember]: selectedRole
           }
         })
@@ -96,9 +104,9 @@ export const TeamAssignment = ({ project }: TeamAssignmentProps) => {
       await updateProject.mutateAsync({
         id: project.id,
         description: JSON.stringify({
-          ...JSON.parse(project.description || '{}'),
+          ...projectData,
           team_assignments: Object.fromEntries(
-            Object.entries(JSON.parse(project.description || '{}').team_assignments || {})
+            Object.entries(teamAssignments)
               .filter(([key]) => key !== memberId)
           )
         })
@@ -122,7 +130,7 @@ export const TeamAssignment = ({ project }: TeamAssignmentProps) => {
       await updateProject.mutateAsync({
         id: project.id,
         description: JSON.stringify({
-          ...JSON.parse(project.description || '{}'),
+          ...projectData,
           is_locked: !isLocked
         })
       });
