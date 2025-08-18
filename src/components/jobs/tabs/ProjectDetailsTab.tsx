@@ -185,203 +185,257 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <CalendarDays className="h-5 w-5" />
-            Project Details
-          </CardTitle>
-          {!isEditing ? (
-            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
-          ) : (
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleCancel}>
-                <X className="h-4 w-4 mr-2" />
-                Cancel
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={handleSave}
-                disabled={updateProject.isPending}
-              >
-                <Save className="h-4 w-4 mr-2" />
-                {updateProject.isPending ? "Saving..." : "Save"}
-              </Button>
+    <div className="space-y-4">
+      {/* Main Project Details */}
+      <div className="bg-card rounded-lg border shadow-sm">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 border-b bg-muted/30">
+          <div className="flex items-center gap-3 mb-3 sm:mb-0">
+            <div className="bg-primary/10 p-2 rounded-lg">
+              <CalendarDays className="h-5 w-5 text-primary" />
             </div>
-          )}
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Job Number and Status Row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label className="text-sm font-medium text-gray-700">Job Number</Label>
-              <div className="mt-1">
-                <span className="text-lg font-semibold text-brand-primary">
-                  #{formData.job_number}
-                </span>
+              <h2 className="text-lg font-semibold text-foreground">Project Details</h2>
+              <p className="text-sm text-muted-foreground">
+                Job #{formData.job_number || 'Unassigned'}
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Badge className={getStatusColor(formData.status)}>
+              {jobStatuses.find(s => s.name.toLowerCase() === formData.status.toLowerCase())?.name || 
+               formData.status.charAt(0).toUpperCase() + formData.status.slice(1).replace('_', ' ')}
+            </Badge>
+            
+            {!isEditing ? (
+              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleCancel}>
+                  <X className="h-4 w-4 mr-1" />
+                  <span className="hidden sm:inline">Cancel</span>
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={handleSave}
+                  disabled={updateProject.isPending}
+                >
+                  <Save className="h-4 w-4 mr-1" />
+                  <span className="hidden sm:inline">{updateProject.isPending ? "Saving..." : "Save"}</span>
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-4 sm:p-6 space-y-6">
+          {/* Essential Info Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Status & Dates */}
+            <div className="space-y-4">
+              <div className="bg-muted/30 rounded-lg p-4">
+                <h3 className="font-medium text-foreground mb-3 flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4 text-primary" />
+                  Timeline
+                </h3>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</Label>
+                    <div className="mt-1">
+                      {isEditing ? (
+                        <Select value={formData.status} onValueChange={(value) => updateFormData("status", value)}>
+                          <SelectTrigger className="h-9">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {jobStatuses.map(status => (
+                              <SelectItem key={status.id} value={status.name.toLowerCase()}>
+                                <div className="flex items-center space-x-2">
+                                  <div className={`w-2 h-2 rounded-full bg-${status.color}-500`} />
+                                  <span>{status.name}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge variant="secondary" className={getStatusColor(formData.status)}>
+                          {jobStatuses.find(s => s.name.toLowerCase() === formData.status.toLowerCase())?.name || 
+                           formData.status.charAt(0).toUpperCase() + formData.status.slice(1).replace('_', ' ')}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Priority</Label>
+                    <div className="mt-1">
+                      {isEditing ? (
+                        <Select value={formData.priority} onValueChange={(value) => updateFormData("priority", value)}>
+                          <SelectTrigger className="h-9">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge variant="outline" className={getPriorityColor(formData.priority)}>
+                          {formData.priority.charAt(0).toUpperCase() + formData.priority.slice(1)}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Start Date</Label>
+                    {isEditing ? (
+                      <Input
+                        type="date"
+                        value={formData.start_date}
+                        onChange={(e) => updateFormData("start_date", e.target.value)}
+                        className="mt-1 h-9"
+                      />
+                    ) : (
+                      <p className="mt-1 text-sm font-medium text-foreground">
+                        {formData.start_date ? new Date(formData.start_date).toLocaleDateString() : "Not set"}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Due Date</Label>
+                    {isEditing ? (
+                      <Input
+                        type="date"
+                        value={formData.due_date}
+                        onChange={(e) => updateFormData("due_date", e.target.value)}
+                        className="mt-1 h-9"
+                      />
+                    ) : (
+                      <p className="mt-1 text-sm font-medium text-foreground">
+                        {formData.due_date ? new Date(formData.due_date).toLocaleDateString() : "Not set"}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-            
-            <div>
-              <Label className="text-sm font-medium text-gray-700">Status</Label>
-              <div className="mt-2">
-                {isEditing ? (
-                  <Select value={formData.status} onValueChange={(value) => updateFormData("status", value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {jobStatuses
-                        .map(status => (
-                          <SelectItem key={status.id} value={status.name.toLowerCase()}>
-                            <div className="flex items-center space-x-2">
-                              <div className={`w-3 h-3 rounded-full bg-${status.color}-500`} />
-                              <span>{status.name}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+
+            {/* Client Information */}
+            <div className="space-y-4">
+              <div className="bg-muted/30 rounded-lg p-4">
+                <h3 className="font-medium text-foreground mb-3 flex items-center gap-2">
+                  <User className="h-4 w-4 text-primary" />
+                  Client
+                </h3>
+                
+                {selectedClient ? (
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-3 min-w-0 flex-1">
+                        <div className="bg-primary/10 p-2 rounded-full shrink-0">
+                          <User className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-foreground truncate">
+                            {getClientDisplayName(selectedClient)}
+                          </p>
+                          {selectedClient.email && (
+                            <p className="text-sm text-muted-foreground truncate">{selectedClient.email}</p>
+                          )}
+                          {selectedClient.client_type === 'B2B' && selectedClient.name && selectedClient.company_name && (
+                            <p className="text-xs text-muted-foreground">Contact: {selectedClient.name}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setShowClientSearch(true)}
+                        className="flex-1 sm:flex-none"
+                      >
+                        <Search className="h-3 w-3 mr-1" />
+                        Change
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => {
+                          updateFormData("client_id", null);
+                          updateProject.mutateAsync({
+                            id: project.id,
+                            client_id: null,
+                          }).then(() => {
+                            project.client_id = null;
+                            toast({
+                              title: "Success",
+                              description: "Client removed from project",
+                            });
+                          });
+                        }}
+                        className="flex-1 sm:flex-none"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
                 ) : (
-                  <Badge className={getStatusColor(formData.status)}>
-                    {jobStatuses.find(s => s.name.toLowerCase() === formData.status.toLowerCase())?.name || 
-                     formData.status.charAt(0).toUpperCase() + formData.status.slice(1).replace('_', ' ')}
-                  </Badge>
+                  <div className="text-center py-4">
+                    <div className="bg-muted/50 p-3 rounded-full w-fit mx-auto mb-3">
+                      <User className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">No client assigned</p>
+                    <Button 
+                      onClick={() => setShowClientSearch(true)}
+                      size="sm"
+                      className="w-full sm:w-auto"
+                    >
+                      <Search className="h-4 w-4 mr-2" />
+                      Add Client
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Client Section */}
-          <div>
-            <Label className="text-sm font-medium text-gray-700">Client</Label>
-            <div className="mt-2">
-              {selectedClient ? (
-                <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="bg-green-100 p-2 rounded-full">
-                      <User className="h-4 w-4 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-green-900">
-                        {getClientDisplayName(selectedClient)}
-                      </p>
-                      {selectedClient.email && (
-                        <p className="text-sm text-green-700">{selectedClient.email}</p>
-                      )}
-                      {selectedClient.client_type === 'B2B' && selectedClient.name && selectedClient.company_name && (
-                        <p className="text-sm text-green-600">Contact: {selectedClient.name}</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => setShowClientSearch(true)}
-                    >
-                      <Search className="h-4 w-4 mr-2" />
-                      Change
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => {
-                        updateFormData("client_id", null);
-                        // Immediately save the removal
-                        updateProject.mutateAsync({
-                          id: project.id,
-                          client_id: null,
-                        }).then(() => {
-                          project.client_id = null;
-                          toast({
-                            title: "Success",
-                            description: "Client removed from project",
-                          });
-                        });
-                      }}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-6 border-2 border-dashed border-gray-300 rounded-lg">
-                  <User className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500 mb-3">No client assigned</p>
-                  <Button 
-                    onClick={() => setShowClientSearch(true)}
-                    className="bg-brand-primary hover:bg-brand-accent text-white"
-                  >
-                    <Search className="h-4 w-4 mr-2" />
-                    Search or Create Client
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Dates Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="start_date" className="text-sm font-medium text-gray-700">Start Date</Label>
-              {isEditing ? (
-                <Input
-                  id="start_date"
-                  type="date"
-                  value={formData.start_date}
-                  onChange={(e) => updateFormData("start_date", e.target.value)}
-                  className="mt-1"
-                />
-              ) : (
-                <div className="mt-1 text-sm text-gray-900">
-                  {formData.start_date ? new Date(formData.start_date).toLocaleDateString() : "Not set"}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="due_date" className="text-sm font-medium text-gray-700">Due Date</Label>
-              {isEditing ? (
-                <Input
-                  id="due_date"
-                  type="date"
-                  value={formData.due_date}
-                  onChange={(e) => updateFormData("due_date", e.target.value)}
-                  className="mt-1"
-                />
-              ) : (
-                <div className="mt-1 text-sm text-gray-900">
-                  {formData.due_date ? new Date(formData.due_date).toLocaleDateString() : "Not set"}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Description Section */}
-          <div>
-            <Label htmlFor="description" className="text-sm font-medium text-gray-700">Description</Label>
+          {/* Description */}
+          <div className="bg-muted/30 rounded-lg p-4">
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-3">
+              Project Description
+            </Label>
             {isEditing ? (
               <Textarea
-                id="description"
                 value={formData.description}
                 onChange={(e) => updateFormData("description", e.target.value)}
                 placeholder="Add project description..."
-                className="mt-1"
+                className="min-h-[80px] resize-none"
                 rows={3}
               />
             ) : (
-              <div className="mt-1 text-sm text-gray-900 bg-gray-50 p-3 rounded-md min-h-[80px]">
-                {formData.description || "No description added"}
+              <div className="text-sm text-foreground bg-background border rounded-md p-3 min-h-[80px] flex items-center">
+                {formData.description || (
+                  <span className="text-muted-foreground italic">No description added</span>
+                )}
               </div>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Project Notes */}
       <ProjectNotesCard projectId={project.id} />
