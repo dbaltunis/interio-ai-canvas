@@ -6,7 +6,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, UserPlus, Lock, Unlock } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Users, UserPlus, Lock, Unlock, Settings } from "lucide-react";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useUpdateProject } from "@/hooks/useProjects";
 import { useToast } from "@/hooks/use-toast";
@@ -159,97 +160,146 @@ export const TeamAssignment = ({ project }: TeamAssignmentProps) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Assigned Team Members */}
-        <div className="space-y-3">
-          <Label className="text-sm font-medium">Assigned Team</Label>
-          {assignedMembers.length === 0 ? (
-            <div className="text-center py-4 text-muted-foreground text-sm">
-              No team members assigned
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {assignedMembers.map(member => (
-                <div key={member.id} className="flex items-center justify-between p-2 border rounded">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={member.avatar_url} />
-                      <AvatarFallback>
-                        {member.name.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium text-sm">{member.name}</p>
-                      <p className="text-xs text-muted-foreground">{member.email}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">
-                      {teamAssignments[member.id] || member.role}
-                    </Badge>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleRemoveMember(member.id)}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Add New Team Member */}
-        {availableMembers.length > 0 && (
-          <div className="space-y-3 border-t pt-4">
-            <Label className="text-sm font-medium">Add Team Member</Label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <Select value={selectedMember} onValueChange={setSelectedMember}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select member" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableMembers.map(member => (
-                    <SelectItem key={member.id} value={member.id}>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-5 w-5">
-                          <AvatarImage src={member.avatar_url} />
-                          <AvatarFallback className="text-xs">
-                            {member.name.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        {member.name}
+        {/* Compact Team Display */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Label className="text-sm font-medium">Team</Label>
+              {assignedMembers.length === 0 ? (
+                <span className="text-xs text-muted-foreground">None assigned</span>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <div className="flex -space-x-2">
+                    {assignedMembers.slice(0, 3).map(member => (
+                      <Avatar key={member.id} className="h-6 w-6 border-2 border-background">
+                        <AvatarImage src={member.avatar_url} />
+                        <AvatarFallback className="text-xs">
+                          {member.name.split(' ').map(n => n[0]).join('')}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                    {assignedMembers.length > 3 && (
+                      <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center">
+                        <span className="text-xs font-medium">+{assignedMembers.length - 3}</span>
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={selectedRole} onValueChange={setSelectedRole}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ROLE_OPTIONS.map(role => (
-                    <SelectItem key={role} value={role}>
-                      {role}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Button 
-                onClick={handleAssignMember}
-                disabled={!selectedMember || !selectedRole}
-                className="w-full"
-              >
-                <UserPlus className="h-4 w-4 mr-2" />
-                Assign
-              </Button>
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground ml-2">
+                    {assignedMembers.length} member{assignedMembers.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
-        )}
+          
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Settings className="h-3 w-3 mr-1" />
+                Manage
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Manage Team Assignment</DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-6 pt-4">
+                {/* Assigned Team Members */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Assigned Team</Label>
+                  {assignedMembers.length === 0 ? (
+                    <div className="text-center py-4 text-muted-foreground text-sm">
+                      No team members assigned
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {assignedMembers.map(member => (
+                        <div key={member.id} className="flex items-center justify-between p-3 border rounded">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={member.avatar_url} />
+                              <AvatarFallback>
+                                {member.name.split(' ').map(n => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-sm">{member.name}</p>
+                              <p className="text-xs text-muted-foreground">{member.email}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline">
+                              {teamAssignments[member.id] || member.role}
+                            </Badge>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleRemoveMember(member.id)}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Add New Team Member */}
+                {availableMembers.length > 0 && (
+                  <div className="space-y-3 border-t pt-4">
+                    <Label className="text-sm font-medium">Add Team Member</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <Select value={selectedMember} onValueChange={setSelectedMember}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select member" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableMembers.map(member => (
+                            <SelectItem key={member.id} value={member.id}>
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-5 w-5">
+                                  <AvatarImage src={member.avatar_url} />
+                                  <AvatarFallback className="text-xs">
+                                    {member.name.split(' ').map(n => n[0]).join('')}
+                                  </AvatarFallback>
+                                </Avatar>
+                                {member.name}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Select value={selectedRole} onValueChange={setSelectedRole}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ROLE_OPTIONS.map(role => (
+                            <SelectItem key={role} value={role}>
+                              {role}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Button 
+                        onClick={handleAssignMember}
+                        disabled={!selectedMember || !selectedRole}
+                        className="w-full"
+                      >
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Assign
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
 
         {/* Job Lock Toggle */}
         <div className="flex items-center justify-between border-t pt-4">
