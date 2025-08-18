@@ -150,13 +150,17 @@ Best regards`;
           <ProductOrderForm projectId={projectId} />
         </div>
         
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 pt-4">
-          <div className="flex items-center gap-2">
+        {/* Mobile-Optimized Filters */}
+        <div className="space-y-3 pt-4">
+          <div className="flex items-center gap-2 mb-2">
             <Filter className="h-4 w-4" />
+            <span className="text-sm font-medium">Filters</span>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-32">
-                <SelectValue />
+              <SelectTrigger className="w-full h-11 touch-target">
+                <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
@@ -166,21 +170,21 @@ Best regards`;
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
-          </div>
           
-          <Select value={vendorFilter} onValueChange={setVendorFilter}>
-            <SelectTrigger className="w-full sm:w-40">
-              <SelectValue placeholder="All Vendors" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Vendors</SelectItem>
-              {vendors.map((vendor) => (
-                <SelectItem key={vendor.id} value={vendor.id}>
-                  {vendor.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Select value={vendorFilter} onValueChange={setVendorFilter}>
+              <SelectTrigger className="w-full h-11 touch-target">
+                <SelectValue placeholder="All Vendors" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Vendors</SelectItem>
+                {vendors.map((vendor) => (
+                  <SelectItem key={vendor.id} value={vendor.id}>
+                    {vendor.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </CardHeader>
 

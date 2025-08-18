@@ -110,30 +110,30 @@ export const ClientSummary = ({ client, onChangeClient, onRemoveClient }: Client
           )}
         </div>
 
-        {/* Client Relationship Summary */}
-        <div className="grid grid-cols-3 gap-3 py-3 border-t border-border">
-          <div className="text-center">
+        {/* Mobile-Optimized Client Relationship Summary */}
+        <div className="grid grid-cols-3 gap-3 py-4 border-t border-border">
+          <div className="text-center p-2 bg-muted/30 rounded-lg">
             <div className="flex items-center justify-center gap-1 text-primary">
               <FileText className="h-4 w-4" />
               <span className="font-semibold">{clientProjects.length}</span>
             </div>
-            <p className="text-xs text-muted-foreground">Projects</p>
+            <p className="text-xs text-muted-foreground mt-1">Projects</p>
           </div>
           
-          <div className="text-center">
+          <div className="text-center p-2 bg-muted/30 rounded-lg">
             <div className="flex items-center justify-center gap-1 text-primary">
               <DollarSign className="h-4 w-4" />
               <span className="font-semibold">{clientQuotes.length}</span>
             </div>
-            <p className="text-xs text-muted-foreground">Quotes</p>
+            <p className="text-xs text-muted-foreground mt-1">Quotes</p>
           </div>
           
-          <div className="text-center">
+          <div className="text-center p-2 bg-muted/30 rounded-lg">
             <div className="flex items-center justify-center gap-1 text-primary">
               <Calendar className="h-4 w-4" />
               <span className="font-semibold">{clientEmails.length}</span>
             </div>
-            <p className="text-xs text-muted-foreground">Emails</p>
+            <p className="text-xs text-muted-foreground mt-1">Emails</p>
           </div>
         </div>
 
@@ -147,24 +147,24 @@ export const ClientSummary = ({ client, onChangeClient, onRemoveClient }: Client
           </div>
         )}
 
-        {/* Action Buttons */}
+        {/* Mobile-Optimized Action Buttons */}
         <div className="flex gap-2 pt-2">
           <Button 
             variant="outline" 
             size="sm" 
             onClick={onChangeClient}
-            className="flex-1"
+            className="flex-1 h-11 touch-target"
           >
-            <Search className="h-3 w-3 mr-1" />
-            Change
+            <Search className="h-4 w-4 mr-2" />
+            Change Client
           </Button>
           <Button 
             variant="outline" 
             size="sm" 
             onClick={onRemoveClient}
-            className="flex-1"
+            className="flex-1 h-11 touch-target"
           >
-            Remove
+            Remove Client
           </Button>
         </div>
       </CardContent>

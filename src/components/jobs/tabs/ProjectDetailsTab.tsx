@@ -166,7 +166,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 lg:space-y-6">
       {/* Team Assignment */}
       <TeamAssignment project={project} />
 
@@ -209,24 +209,31 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
         />
       </div>
 
-      {/* Client Search Modal */}
+      {/* Mobile-Optimized Client Search Modal */}
       {showClientSearch && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Search or Create Client</h2>
-              <Button variant="outline" onClick={() => setShowClientSearch(false)}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b shrink-0">
+              <h2 className="text-lg lg:text-xl font-semibold">Search or Create Client</h2>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowClientSearch(false)}
+                className="h-8 w-8 p-0"
+              >
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            <ClientSearchStep 
-              formData={{ client_id: formData.client_id }}
-              updateFormData={(field, value) => {
-                if (field === "client_id") {
-                  handleClientSelection(value);
-                }
-              }}
-            />
+            <div className="flex-1 overflow-y-auto p-4">
+              <ClientSearchStep 
+                formData={{ client_id: formData.client_id }}
+                updateFormData={(field, value) => {
+                  if (field === "client_id") {
+                    handleClientSelection(value);
+                  }
+                }}
+              />
+            </div>
           </div>
         </div>
       )}
