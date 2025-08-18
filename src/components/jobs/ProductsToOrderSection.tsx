@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useProductOrders, useDeleteProductOrder } from "@/hooks/useProductOrders";
+import { useProductOrders, useDeleteProductOrder, useUpdateProductOrder } from "@/hooks/useProductOrders";
 import { useVendors } from "@/hooks/useVendors";
 import { ProductOrderForm } from "./ProductOrderForm";
-import { ShoppingCart, Package, Plus, Mail, Download, Edit, Trash2, Filter } from "lucide-react";
+import { ShoppingCart, Package, Plus, Mail, Download, Edit, Trash2, Filter, CheckCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ProductsToOrderSectionProps {
@@ -24,6 +24,7 @@ export const ProductsToOrderSection = ({ projectId, jobNumber, clientName }: Pro
   const { data: productOrders = [] } = useProductOrders(projectId);
   const { data: vendors = [] } = useVendors();
   const deleteProductOrder = useDeleteProductOrder();
+  const updateProductOrder = useUpdateProductOrder();
   const { toast } = useToast();
 
   const filteredOrders = productOrders.filter(order => {
@@ -117,6 +118,16 @@ Best regards`;
     window.open(mailtoLink);
   };
 
+  const getOrderProgress = (order: any) => {
+    const steps = ['to_order', 'ordered', 'received'];
+    const currentIndex = steps.indexOf(order.order_status);
+    return {
+      current: currentIndex + 1,
+      total: steps.length,
+      percentage: ((currentIndex + 1) / steps.length) * 100
+    };
+  };
+
   const groupedByVendor = filteredOrders.reduce((acc, order) => {
     const vendorId = order.vendor_id || "unassigned";
     if (!acc[vendorId]) acc[vendorId] = [];
@@ -140,11 +151,11 @@ Best regards`;
         </div>
         
         {/* Filters */}
-        <div className="flex gap-4 pt-4">
+        <div className="flex flex-col sm:flex-row gap-3 pt-4">
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4" />
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-full sm:w-32">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -158,7 +169,7 @@ Best regards`;
           </div>
           
           <Select value={vendorFilter} onValueChange={setVendorFilter}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="All Vendors" />
             </SelectTrigger>
             <SelectContent>
@@ -176,8 +187,8 @@ Best regards`;
       <CardContent>
         {filteredOrders.length === 0 ? (
           <div className="text-center py-8">
-            <Package className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-            <p className="text-gray-500">No products need to be ordered</p>
+            <Package className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-muted-foreground">No products need to be ordered</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -188,14 +199,14 @@ Best regards`;
               );
 
               return (
-                <div key={vendorId} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
+                <div key={vendorId} className="border rounded-lg p-3 sm:p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
                     <div>
                       <h4 className="font-semibold text-lg">
                         {vendor ? vendor.name : "Unassigned Vendor"}
                       </h4>
                       {vendor && (
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
                           {vendor.email} • Lead time: {vendor.lead_time_days} days
                         </p>
                       )}
@@ -208,83 +219,136 @@ Best regards`;
                         <Button
                           onClick={() => handleSendOrderToVendor(vendorId)}
                           size="sm"
-                          className="bg-brand-primary hover:bg-brand-accent"
+                          className="bg-primary hover:bg-primary/90"
                         >
                           <Mail className="h-4 w-4 mr-2" />
-                          Send Order
+                          <span className="hidden sm:inline">Send Order</span>
+                          <span className="sm:hidden">Send</span>
                         </Button>
                       )}
                     </div>
                   </div>
 
                   <div className="space-y-3">
-                    {orders.map((order) => (
-                      <div
-                        key={order.id}
-                        className={`border rounded-lg p-3 ${isDelayed(order) ? 'border-red-300 bg-red-50' : 'hover:bg-gray-50'}`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
-                            <div className="bg-blue-100 p-2 rounded-full">
-                              <Package className="h-4 w-4 text-blue-600" />
-                            </div>
-                            <div>
-                              <h5 className="font-medium text-gray-900">{order.product_name}</h5>
-                              <p className="text-sm text-gray-500">
-                                {order.quantity} units @ ${Number(order.unit_price).toFixed(2)} each
-                              </p>
-                              {order.notes && (
-                                <p className="text-sm text-blue-600 mt-1">{order.notes}</p>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center space-x-4">
-                            <div className="text-right">
-                              <p className="font-medium text-gray-900">
-                                ${(Number(order.quantity) * Number(order.unit_price)).toFixed(2)}
-                              </p>
-                              {order.planned_order_date && (
-                                <p className="text-sm text-gray-500">
-                                  Plan: {new Date(order.planned_order_date).toLocaleDateString()}
+                     {orders.map((order) => {
+                       const progress = getOrderProgress(order);
+                       return (
+                       <div
+                         key={order.id}
+                          className={`border rounded-lg p-4 ${isDelayed(order) ? 'border-destructive bg-destructive/5' : 'hover:bg-muted/50'} transition-colors`}
+                       >
+                         {/* Progress Bar */}
+                          <div className="w-full bg-muted rounded-full h-2 mb-3">
+                            <div 
+                              className="bg-primary h-2 rounded-full transition-all duration-300" 
+                              style={{ width: `${progress.percentage}%` }}
+                            />
+                         </div>
+                         
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="flex items-start space-x-3 flex-1 min-w-0">
+                              <div className="bg-primary/10 p-2 rounded-full shrink-0">
+                                <Package className="h-4 w-4 text-primary" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h5 className="font-medium text-foreground">{order.product_name}</h5>
+                                <p className="text-sm text-muted-foreground">
+                                  {order.quantity} units @ ${Number(order.unit_price).toFixed(2)} each
                                 </p>
-                              )}
+                                 {order.notes && (
+                                   <p className="text-sm text-primary mt-1">{order.notes}</p>
+                                 )}
+                              </div>
                             </div>
-                            
-                            <div className="flex flex-col gap-1">
-                              <Badge className={getProductTypeColor(order.product_type)}>
-                                {order.product_type.toUpperCase()}
-                              </Badge>
-                              <Badge className={getStatusColor(order.order_status)}>
-                                {order.order_status.replace('_', ' ').toUpperCase()}
-                              </Badge>
-                              {isDelayed(order) && (
-                                <Badge className="bg-red-100 text-red-800">
-                                  DELAYED
-                                </Badge>
-                              )}
+                           
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <div className="flex items-center justify-between sm:justify-start space-x-4">
+                                <div className="text-right sm:text-left">
+                                  <p className="font-medium text-foreground">
+                                    ${(Number(order.quantity) * Number(order.unit_price)).toFixed(2)}
+                                  </p>
+                                  {order.planned_order_date && (
+                                    <p className="text-sm text-muted-foreground">
+                                      Plan: {new Date(order.planned_order_date).toLocaleDateString()}
+                                    </p>
+                                  )}
+                                  <p className="text-xs text-muted-foreground">
+                                    Step {progress.current} of {progress.total}
+                                  </p>
+                                </div>
+                                
+                                <div className="flex flex-wrap gap-1">
+                                  <Badge variant="secondary" className="text-xs">
+                                    {order.product_type.toUpperCase()}
+                                  </Badge>
+                                  <Badge 
+                                    className={`text-xs ${getStatusColor(order.order_status)}`}
+                                  >
+                                    {order.order_status.replace('_', ' ').toUpperCase()}
+                                  </Badge>
+                                  {isDelayed(order) && (
+                                    <Badge variant="destructive" className="text-xs">
+                                      <AlertCircle className="h-3 w-3 mr-1" />
+                                      <span className="hidden sm:inline">DELAYED</span>
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                             
+                             <div className="flex flex-wrap gap-1 justify-end sm:justify-start">
+                               {/* Status Update Buttons */}
+                               {order.order_status === 'to_order' && (
+                                 <Button
+                                   variant="outline"
+                                   size="sm"
+                                   onClick={() => updateProductOrder.mutateAsync({
+                                     id: order.id,
+                                     order_status: 'ordered'
+                                   })}
+                                    className="text-blue-600 border-blue-200 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-800 dark:hover:bg-blue-950"
+                                 >
+                                   <CheckCircle className="h-3 w-3 mr-1" />
+                                   <span className="hidden sm:inline">Mark Ordered</span>
+                                   <span className="sm:hidden">Order</span>
+                                 </Button>
+                               )}
+                               
+                               {order.order_status === 'ordered' && (
+                                 <Button
+                                   variant="outline"
+                                   size="sm"
+                                   onClick={() => updateProductOrder.mutateAsync({
+                                     id: order.id,
+                                     order_status: 'received'
+                                   })}
+                                    className="text-green-600 border-green-200 hover:bg-green-50 dark:text-green-400 dark:border-green-800 dark:hover:bg-green-950"
+                                 >
+                                   <CheckCircle className="h-3 w-3 mr-1" />
+                                   <span className="hidden sm:inline">Mark Received</span>
+                                   <span className="sm:hidden">Received</span>
+                                 </Button>
+                                )}
+
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setEditingOrder(order)}
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDelete(order.id)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                             </div>
                             </div>
-                            
-                            <div className="flex gap-1">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setEditingOrder(order)}
-                              >
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDelete(order.id)}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                           </div>
+                         </div>
+                        );
+                      })}
                   </div>
                 </div>
               );
@@ -299,8 +363,8 @@ Best regards`;
                   </Button>
                 </div>
                 <div className="text-right">
-                  <span className="text-lg font-medium text-gray-900">Total Estimated Cost:</span>
-                  <span className="text-xl font-bold text-green-600 ml-2">
+                  <span className="text-lg font-medium text-foreground">Total Estimated Cost:</span>
+                  <span className="text-xl font-bold text-green-600 dark:text-green-400 ml-2">
                     ${totalEstimatedCost.toFixed(2)}
                   </span>
                 </div>
