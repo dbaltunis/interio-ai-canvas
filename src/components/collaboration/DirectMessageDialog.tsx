@@ -51,7 +51,11 @@ useEffect(() => {
 // Ensure the correct conversation opens when dialog is triggered
 useEffect(() => {
   if (isOpen && selectedUserId && selectedUserId !== activeConversation) {
-    console.log('Dialog opened with selectedUserId:', selectedUserId);
+    console.log('🎯 Dialog triggered for user:', {
+      selectedUserId,
+      currentActiveConversation: activeConversation,
+      isOpen
+    });
     openConversation(selectedUserId);
   }
 }, [isOpen, selectedUserId]); // Removed openConversation from deps to prevent loop
@@ -237,6 +241,11 @@ useEffect(() => {
                        variant={isActive ? "secondary" : "ghost"}
                        className="w-full justify-start p-4 h-auto mb-2 rounded-lg hover:bg-accent/50 transition-all duration-200"
                        onClick={() => {
+                         console.log('🖱️ Conversation clicked:', {
+                           clickedUserId: conversation.user_id,
+                           currentActiveConversation: activeConversation,
+                           isActive
+                         });
                          openConversation(conversation.user_id);
                        }}
                      >
@@ -324,7 +333,22 @@ useEffect(() => {
 
                 {/* Messages */}
                 <ScrollArea className="flex-1 overflow-hidden">
-                  <div className="p-4 space-y-4">
+                   <div className="p-4 space-y-4">
+                     {(() => {
+                       console.log('🎨 Rendering messages:', {
+                         messagesCount: messages.length,
+                         activeConversation,
+                         currentUser: user?.id,
+                         messagesPreview: messages.slice(0, 3).map(m => ({ 
+                           id: m.id, 
+                           sender: m.sender_id, 
+                           recipient: m.recipient_id,
+                           content: m.content.substring(0, 30) + '...'
+                         }))
+                       });
+                       return null;
+                     })()}
+                     
                      {messages.length === 0 ? (
                        <div className="text-center py-12 text-muted-foreground">
                          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">

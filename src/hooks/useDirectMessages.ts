@@ -107,9 +107,16 @@ export const useDirectMessages = () => {
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
     queryKey: ['messages', activeConversation, user?.id],
     queryFn: async (): Promise<DirectMessage[]> => {
-      if (!user || !activeConversation) return [];
+      if (!user || !activeConversation) {
+        console.log('🚫 No user or activeConversation:', { user: user?.id, activeConversation });
+        return [];
+      }
 
-      console.log('Fetching messages for conversation:', activeConversation, 'user:', user.id);
+      console.log('🔍 Fetching messages for conversation:', {
+        activeConversation,
+        currentUser: user.id,
+        queryKey: ['messages', activeConversation, user.id]
+      });
       
       const { data, error } = await supabase
         .from('direct_messages')
@@ -118,11 +125,16 @@ export const useDirectMessages = () => {
         .order('created_at', { ascending: true });
 
       if (error) {
-        console.error('Error fetching messages:', error);
+        console.error('❌ Error fetching messages:', error);
         throw error;
       }
       
-      console.log('Fetched messages:', data?.length || 0, 'messages for conversation:', activeConversation);
+      console.log('✅ Fetched messages:', {
+        count: data?.length || 0,
+        conversation: activeConversation,
+        currentUser: user.id,
+        messages: data?.map(m => ({ id: m.id, sender: m.sender_id, recipient: m.recipient_id, content: m.content.substring(0, 50) + '...' }))
+      });
       return (data || []) as DirectMessage[];
     },
     enabled: !!user && !!activeConversation,
@@ -255,7 +267,12 @@ export const useDirectMessages = () => {
   };
 
   const openConversation = (userId: string) => {
-    console.log('Opening conversation with user:', userId);
+    console.log('📱 Opening conversation:', {
+      userId,
+      currentUser: user?.id,
+      previousActiveConversation: activeConversation
+    });
+    
     setActiveConversation(userId);
     
     // Force refresh messages for this conversation
