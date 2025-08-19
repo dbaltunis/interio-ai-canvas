@@ -194,11 +194,20 @@ export const useDirectMessages = () => {
     }
   });
 
-  // Realtime subscription for direct messages - stable channel
+  // Realtime subscription for direct messages - prevent multiple subscriptions
   useEffect(() => {
     if (!user) return;
 
-    const channelName = `direct-messages-${user.id}`;
+    const channelName = `direct-messages-user-${user.id}`;
+    
+    // Remove any existing channel first
+    const existingChannels = supabase.getChannels();
+    existingChannels.forEach(channel => {
+      if (channel.topic === channelName) {
+        supabase.removeChannel(channel);
+      }
+    });
+
     const channel = supabase
       .channel(channelName)
       .on(
@@ -206,17 +215,6 @@ export const useDirectMessages = () => {
         { event: 'INSERT', schema: 'public', table: 'direct_messages', filter: `recipient_id=eq.${user.id}` },
         (payload) => {
           const newMessage = payload.new as DirectMessage;
-          
-          // Immediately update messages if this is for the active conversation
-          if (activeConversation === newMessage.sender_id) {
-            queryClient.setQueryData(['messages', activeConversation, user.id], (oldMessages: DirectMessage[] = []) => {
-              // Prevent duplicates
-              if (oldMessages.some(msg => msg.id === newMessage.id)) {
-                return oldMessages;
-              }
-              return [...oldMessages, newMessage];
-            });
-          }
           
           // Update conversations list to show new message
           queryClient.setQueryData(['conversations', user.id], (oldConversations: Conversation[] = []) => {
@@ -227,8 +225,15 @@ export const useDirectMessages = () => {
             );
           });
 
-          // Only invalidate specific queries to prevent loops
-          queryClient.invalidateQueries({ queryKey: ['conversations', user.id] });
+          // Update active conversation messages if relevant
+          if (activeConversation === newMessage.sender_id) {
+            queryClient.setQueryData(['messages', activeConversation, user.id], (oldMessages: DirectMessage[] = []) => {
+              if (oldMessages.some(msg => msg.id === newMessage.id)) {
+                return oldMessages;
+              }
+              return [...oldMessages, newMessage];
+            });
+          }
         }
       )
       .on(
@@ -237,7 +242,10 @@ export const useDirectMessages = () => {
         (payload) => {
           const newMessage = payload.new as DirectMessage;
           
-          // Update active conversation if this message was sent to the active user
+          // Update conversations
+          queryClient.invalidateQueries({ queryKey: ['conversations', user.id] });
+          
+          // Update active conversation if relevant
           if (activeConversation === newMessage.recipient_id) {
             queryClient.setQueryData(['messages', activeConversation, user.id], (oldMessages: DirectMessage[] = []) => {
               if (oldMessages.some(msg => msg.id === newMessage.id)) {
@@ -246,15 +254,6 @@ export const useDirectMessages = () => {
               return [...oldMessages, newMessage];
             });
           }
-          
-          queryClient.invalidateQueries({ queryKey: ['conversations', user.id] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'direct_messages', filter: `recipient_id=eq.${user.id}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['conversations', user.id] });
         }
       )
       .subscribe();
@@ -262,7 +261,7 @@ export const useDirectMessages = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, queryClient]); // Removed activeConversation dependency to prevent re-subscriptions
+  }, [user?.id, queryClient]); // Simplified dependencies
 
   const sendMessage = (recipientId: string, content: string) => {
     sendMessageMutation.mutate({ recipientId, content });
