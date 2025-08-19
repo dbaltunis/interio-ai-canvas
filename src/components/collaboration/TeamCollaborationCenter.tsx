@@ -243,8 +243,10 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                     
                                      <div className="flex-1 min-w-0">
                                        <div className="flex items-center gap-2 mb-1">
-                                         <p className="font-semibold text-foreground text-sm leading-tight" title={currentUser.user_profile?.display_name}>
-                                           {currentUser.user_profile?.display_name}
+                                         <p className="font-semibold text-foreground text-sm leading-tight truncate" title={currentUser.user_profile?.display_name}>
+                                           {currentUser.user_profile?.display_name && currentUser.user_profile.display_name.length > 20 
+                                             ? `${currentUser.user_profile.display_name.substring(0, 17)}...`
+                                             : currentUser.user_profile?.display_name}
                                          </p>
                                            <Badge 
                                            variant="secondary" 
@@ -309,8 +311,10 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                        <div className="flex-1 min-w-0">
                                          <div className="flex items-start justify-between gap-2 mb-2">
                                            <div className="flex-1 min-w-0">
-                                             <p className="font-semibold text-foreground text-sm leading-tight break-words">
-                                               {user.user_profile?.display_name}
+                                             <p className="font-semibold text-foreground text-sm leading-tight truncate" title={user.user_profile?.display_name}>
+                                               {user.user_profile?.display_name && user.user_profile.display_name.length > 20 
+                                                 ? `${user.user_profile.display_name.substring(0, 17)}...`
+                                                 : user.user_profile?.display_name}
                                              </p>
                                            </div>
                                            <Badge 
@@ -322,9 +326,9 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                          </div>
                                          
                                          {user.current_activity && (
-                                           <p className="text-sm text-muted-foreground break-words mb-1 flex items-start gap-1">
+                                           <p className="text-sm text-muted-foreground truncate mb-1 flex items-center gap-1">
                                              <span className="text-yellow-400 shrink-0">🎯</span>
-                                             <span className="break-words">{user.current_activity}</span>
+                                             <span className="truncate">{user.current_activity}</span>
                                            </p>
                                          )}
                                          
