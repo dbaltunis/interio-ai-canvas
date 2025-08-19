@@ -51,9 +51,13 @@ useEffect(() => {
 // Ensure the correct conversation opens when dialog is triggered
 useEffect(() => {
   if (isOpen && selectedUserId && selectedUserId !== activeConversation) {
-    openConversation(selectedUserId);
+    console.log('Dialog: Opening conversation for selected user:', selectedUserId);
+    // Add a small delay to ensure context is ready
+    setTimeout(() => {
+      openConversation(selectedUserId);
+    }, 100);
   }
-}, [isOpen, selectedUserId, activeConversation, openConversation]);
+}, [isOpen, selectedUserId]);
 
   const handleSendMessage = () => {
     if (!messageInput.trim() || !activeConversation) return;

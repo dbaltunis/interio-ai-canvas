@@ -11,11 +11,21 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
+import { MessagingErrorBoundary } from './MessagingErrorBoundary';
 import { Users, MessageCircle, Circle } from 'lucide-react';
 
 export const ActiveUsersDropdown = () => {
   const { activeUsers = [], isLoading } = useUserPresence();
   const { openConversation, totalUnreadCount = 0 } = useDirectMessages();
+  
+  const handleOpenConversation = (userId: string) => {
+    console.log('ActiveUsersDropdown: Attempting to open conversation with:', userId);
+    try {
+      openConversation(userId);
+    } catch (error) {
+      console.error('Error opening conversation:', error);
+    }
+  };
 
   const onlineUsers = activeUsers.filter(u => u.status === 'online');
   const awayUsers = activeUsers.filter(u => u.status === 'away' || u.status === 'busy');
@@ -30,6 +40,7 @@ export const ActiveUsersDropdown = () => {
   };
 
   return (
+    <MessagingErrorBoundary>
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="relative">
@@ -67,7 +78,7 @@ export const ActiveUsersDropdown = () => {
                 <DropdownMenuItem
                   key={user.user_id}
                   className="flex items-center gap-3 cursor-pointer"
-                  onClick={() => openConversation(user.user_id)}
+                  onClick={() => handleOpenConversation(user.user_id)}
                 >
                   <div className="relative">
                     <Avatar className="h-8 w-8">
@@ -120,7 +131,7 @@ export const ActiveUsersDropdown = () => {
               <DropdownMenuItem
                 key={user.user_id}
                 className="flex items-center gap-3 cursor-pointer opacity-75"
-                onClick={() => openConversation(user.user_id)}
+                onClick={() => handleOpenConversation(user.user_id)}
               >
                 <div className="relative">
                   <Avatar className="h-8 w-8">
@@ -162,5 +173,6 @@ export const ActiveUsersDropdown = () => {
         )}
       </DropdownMenuContent>
     </DropdownMenu>
+    </MessagingErrorBoundary>
   );
 };

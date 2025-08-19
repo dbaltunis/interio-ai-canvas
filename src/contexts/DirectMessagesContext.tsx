@@ -46,7 +46,20 @@ const DirectMessagesContext = createContext<DirectMessagesContextType | undefine
 export const useDirectMessages = () => {
   const context = useContext(DirectMessagesContext);
   if (!context) {
-    throw new Error('useDirectMessages must be used within a DirectMessagesProvider');
+    console.warn('useDirectMessages called outside of DirectMessagesProvider, returning fallback');
+    // Return fallback values to prevent crashes
+    return {
+      conversations: [],
+      messages: [],
+      activeConversation: null,
+      conversationsLoading: false,
+      messagesLoading: false,
+      sendMessage: () => {},
+      openConversation: () => {},
+      closeConversation: () => {},
+      sendingMessage: false,
+      totalUnreadCount: 0
+    };
   }
   return context;
 };
@@ -60,6 +73,29 @@ export const DirectMessagesProvider: React.FC<DirectMessagesProviderProps> = ({ 
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
+
+  // Defensive check for user
+  if (!user) {
+    console.log('DirectMessagesProvider: No user available, rendering children with minimal context');
+    const fallbackValue: DirectMessagesContextType = {
+      conversations: [],
+      messages: [],
+      activeConversation: null,
+      conversationsLoading: false,
+      messagesLoading: false,
+      sendMessage: () => {},
+      openConversation: () => {},
+      closeConversation: () => {},
+      sendingMessage: false,
+      totalUnreadCount: 0
+    };
+    
+    return (
+      <DirectMessagesContext.Provider value={fallbackValue}>
+        {children}
+      </DirectMessagesContext.Provider>
+    );
+  }
 
   // Conversations: use presence view for consistent status
   const { data: conversations = [], isLoading: conversationsLoading } = useQuery({
@@ -307,10 +343,15 @@ export const DirectMessagesProvider: React.FC<DirectMessagesProviderProps> = ({ 
   }, [sendMessageMutation]);
 
   const openConversation = useCallback((userId: string) => {
+    console.log('Opening conversation with user:', userId);
+    if (!userId || userId === activeConversation) {
+      console.log('Skipping conversation open - invalid userId or already active');
+      return;
+    }
     setActiveConversation(userId);
     // mark unread as read
     markAsReadMutation.mutate(userId);
-  }, [markAsReadMutation]);
+  }, [activeConversation, markAsReadMutation]);
 
   const closeConversation = useCallback(() => {
     setActiveConversation(null);

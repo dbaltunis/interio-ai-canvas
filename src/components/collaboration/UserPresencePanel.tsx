@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
+import { MessagingErrorBoundary } from './MessagingErrorBoundary';
 import { Users, MessageCircle, ChevronRight, ChevronDown, Circle } from 'lucide-react';
 
 interface UserPresencePanelProps {
@@ -17,6 +18,16 @@ interface UserPresencePanelProps {
 export const UserPresencePanel = ({ isCollapsed = false, onToggleCollapse }: UserPresencePanelProps) => {
   const { activeUsers = [], isLoading } = useUserPresence();
   const { openConversation } = useDirectMessages();
+  
+  const handleOpenConversation = (userId: string) => {
+    console.log('UserPresencePanel: Attempting to open conversation with:', userId);
+    try {
+      openConversation(userId);
+    } catch (error) {
+      console.error('Error opening conversation:', error);
+    }
+  };
+  
   const [expandedSections, setExpandedSections] = useState({
     online: true,
     away: true,
@@ -160,7 +171,7 @@ export const UserPresencePanel = ({ isCollapsed = false, onToggleCollapse }: Use
                           variant="ghost"
                           size="sm"
                           className="opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => openConversation(user.user_id)}
+                           onClick={() => handleOpenConversation(user.user_id)}
                         >
                           <MessageCircle className="h-4 w-4" />
                         </Button>
@@ -222,7 +233,7 @@ export const UserPresencePanel = ({ isCollapsed = false, onToggleCollapse }: Use
                             variant="ghost"
                             size="sm"
                             className="opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => openConversation(user.user_id)}
+                             onClick={() => handleOpenConversation(user.user_id)}
                           >
                             <MessageCircle className="h-4 w-4" />
                           </Button>
@@ -281,7 +292,7 @@ export const UserPresencePanel = ({ isCollapsed = false, onToggleCollapse }: Use
                             variant="ghost"
                             size="sm"
                             className="opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => openConversation(user.user_id)}
+                            onClick={() => handleOpenConversation(user.user_id)}
                           >
                             <MessageCircle className="h-4 w-4" />
                           </Button>
