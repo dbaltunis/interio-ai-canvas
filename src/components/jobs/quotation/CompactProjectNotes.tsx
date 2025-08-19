@@ -63,7 +63,7 @@ export const CompactProjectNotes: React.FC<CompactProjectNotesProps> = ({ projec
     <Card className="mb-4">
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <CollapsibleTrigger asChild>
-          <CardHeader className="pb-3 cursor-pointer">
+          <CardHeader className="pb-3 cursor-pointer hover:bg-muted/50">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <MessageSquare className="h-4 w-4" />

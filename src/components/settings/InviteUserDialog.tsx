@@ -79,12 +79,18 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Convert permissions array to object format expected by backend
+    const permissionsObj = formData.customPermissions.reduce((acc, permission) => {
+      acc[permission] = true;
+      return acc;
+    }, {} as Record<string, boolean>);
 
     createInvitation.mutate({
       invited_email: formData.invited_email,
       invited_name: formData.invited_name,
       role: formData.role,
-      permissions: formData.customPermissions,
+      permissions: permissionsObj,
     }, {
       onSuccess: () => {
         onOpenChange(false);
@@ -160,11 +166,10 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
           <div className="space-y-2">
             <Label>Role</Label>
             <Select value={formData.role} onValueChange={handleRoleChange}>
-              <SelectTrigger className="bg-background border-border">
-                <SelectValue placeholder="Select a role" />
+              <SelectTrigger>
+                <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-background border-border shadow-lg z-50">
-                <SelectItem value="Owner">Owner</SelectItem>
+              <SelectContent>
                 <SelectItem value="Admin">Admin</SelectItem>
                 <SelectItem value="Manager">Manager</SelectItem>
                 <SelectItem value="Staff">Staff</SelectItem>

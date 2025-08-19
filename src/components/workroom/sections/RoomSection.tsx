@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Camera, Trash2 } from "lucide-react";
 import { WorkshopRoomSection } from "@/hooks/useWorkshopData";
 import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown";
-import { VisualSnapshot } from "@/components/workroom/VisualSnapshot";
+import { TreatmentVisualizer } from "@/components/measurements/TreatmentVisualizer";
 import { WorkItemPhotoGallery } from "@/components/workroom/components/WorkItemPhotoGallery";
+import { toTreatmentVisualizerData } from "@/components/workroom/utils/visual-adapter";
 
 interface RoomSectionProps {
   section: WorkshopRoomSection;
@@ -139,89 +140,42 @@ const Visual: React.FC<VisualProps> = ({ width, height, unit, itemId, treatment,
 export const RoomSection: React.FC<RoomSectionProps> = ({ section }) => {
   return (
     <Card className="break-inside-avoid">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">{section.roomName}</CardTitle>
-          <Badge variant="outline" className="text-sm">
-            {section.items.length} item{section.items.length !== 1 ? 's' : ''}
-          </Badge>
-        </div>
+      <CardHeader>
+        <CardTitle>{section.roomName}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-6">
+        <div className="space-y-4">
           {section.items.map((item) => (
-            <Card key={item.id} className="bg-muted/30 border-l-4 border-l-primary">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base font-medium">{item.name}</CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-xs">
-                      {item.treatmentType ?? "Unknown"}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      Qty: {item.quantity ?? 1}
-                    </Badge>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Integrated Treatment Information */}
-                <div className="grid gap-4 lg:grid-cols-2">
-                  {/* Left: Photos and Visual */}
-                  <div className="space-y-3">
-                    <div className="text-sm font-medium text-muted-foreground">Visual Reference</div>
-                    <WorkItemPhotoGallery itemId={item.id} />
-                  </div>
-
-                  {/* Right: Treatment Visual Details */}
-                  <div className="space-y-3">
-                    <div className="text-sm font-medium text-muted-foreground">Treatment Visualization</div>
-                    <div className="rounded-lg border bg-background p-4">
-                      <VisualSnapshot item={item} width={350} scale={1.5} />
-                      <div className="mt-3 pt-3 border-t text-center">
-                        <div className="text-xs text-muted-foreground">
-                          {item.measurements?.width && item.measurements?.height ? (
-                            <span>
-                              {item.measurements.width} × {item.measurements.height}{" "}
-                              {item.measurements.unit || "cm"}
-                            </span>
-                          ) : (
-                            <span>No measurements available</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+            <div key={item.id} className="rounded-md border p-3 bg-background">
+              <div className="grid gap-4 md:grid-cols-3">
+                {/* Left: Visual */}
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">{item.name}</div>
+                  <WorkItemPhotoGallery itemId={item.id} />
+                  <TreatmentVisualizer {...toTreatmentVisualizerData(item)} />
+                  <div className="text-xs text-muted-foreground">
+                    {item.treatmentType ?? "—"} • Qty: {item.quantity ?? 1}
                   </div>
                 </div>
 
-                {/* Calculations and Breakdown */}
-                <div className="pt-3 border-t">
-                  <div className="text-sm font-medium text-muted-foreground mb-3">Worksheet Details</div>
+                {/* Right: All measurements & breakdown */}
+                <div className="md:col-span-2">
                   {item.summary ? (
-                    <div className="rounded-lg border bg-background p-4">
-                      <CalculationBreakdown
-                        summary={item.summary}
-                        surface={item.surface}
-                        compact={false}
-                        costBreakdown={Array.isArray(item.summary?.cost_breakdown) ? item.summary.cost_breakdown : []}
-                        currency={item.summary?.currency}
-                        totalCost={item.summary?.total_cost}
-                        embedded
-                      />
-                    </div>
+                    <CalculationBreakdown
+                      summary={item.summary}
+                      surface={item.surface}
+                      compact
+                      costBreakdown={Array.isArray(item.summary?.cost_breakdown) ? item.summary.cost_breakdown : []}
+                      currency={item.summary?.currency}
+                      totalCost={item.summary?.total_cost}
+                      embedded
+                    />
                   ) : (
-                    <div className="rounded-lg border border-dashed bg-muted/20 p-6 text-center">
-                      <div className="text-sm text-muted-foreground">
-                        No worksheet data available yet.
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        Complete measurements to see calculations
-                      </div>
-                    </div>
+                    <div className="text-sm text-muted-foreground">No worksheet data saved yet.</div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
       </CardContent>

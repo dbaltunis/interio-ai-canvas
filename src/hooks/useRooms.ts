@@ -118,21 +118,15 @@ export const useDeleteRoom = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      console.log("useDeleteRoom mutation called with id:", id);
       const { error } = await supabase
         .from("rooms")
         .delete()
         .eq("id", id);
 
-      if (error) {
-        console.error("Supabase delete error:", error);
-        throw error;
-      }
-      console.log("Room deleted successfully from database");
+      if (error) throw error;
       return id;
     },
     onSuccess: () => {
-      console.log("Delete room mutation success, invalidating queries");
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
       toast({
         title: "Success",
@@ -140,7 +134,6 @@ export const useDeleteRoom = () => {
       });
     },
     onError: (error) => {
-      console.error("Delete room mutation error:", error);
       toast({
         title: "Error",
         description: error.message,

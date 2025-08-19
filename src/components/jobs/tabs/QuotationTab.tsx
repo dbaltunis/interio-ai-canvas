@@ -23,9 +23,9 @@ import { ProjectNotesCard } from "../ProjectNotesCard";
 import { JobNotesDialog } from "../JobNotesDialog";
 import { QuoteFullScreenView } from "@/components/jobs/quotation/QuoteFullScreenView";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
-
-
-
+import { CompactQuotesSection } from "../quotation/CompactQuotesSection";
+import { CompactProjectNotes } from "../quotation/CompactProjectNotes";
+import { DetailedQuotationTable } from "../quotation/DetailedQuotationTable";
 
 interface QuotationTabProps {
   projectId: string;
@@ -274,7 +274,7 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
         
         {/* Compact Action Bar */}
         <div className="flex items-center space-x-2">
-          {/* Template Selector - Compact */}
+           {/* Template Selector - Compact */}
           <Select
             value={selectedTemplateId}
             onValueChange={setSelectedTemplateId}
@@ -291,7 +291,7 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
             </SelectContent>
           </Select>
 
-          {/* New Quote Button */}
+          {/* Create New Quote Button */}
           <Button
             variant="outline"
             size="sm"
@@ -302,23 +302,43 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
             <span>New Quote</span>
           </Button>
 
-          {/* View Quote Button */}
+          {/* Template Settings Button */}
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setShowFullQuoteView(true)}
+            onClick={() => window.open('/settings?tab=documents', '_blank')}
             className="flex items-center space-x-2"
           >
-            <Eye className="h-4 w-4" />
-            <span>View Quote</span>
+            <Settings className="h-4 w-4" />
+            <span>Templates</span>
           </Button>
 
+          {/* Items Editor Toggle */}
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowItemsEditor(!showItemsEditor)}
+              className="flex items-center space-x-1"
+            >
+              {showItemsEditor ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              <span>{showItemsEditor ? 'Hide Items Editor' : 'Show Items Editor'}</span>
+            </Button>
+          </div>
           {/* Actions Menu */}
           <ThreeDotMenu items={actionMenuItems} />
         </div>
       </div>
 
+      {/* Compact Active Quotes */}
+      <CompactQuotesSection 
+        quotes={projectQuotes}
+        onSelectQuote={setSelectedQuote}
+        onOpenNotes={(quote) => { setSelectedQuote(quote); setNotesOpen(true); }}
+      />
 
+      {/* Compact Project Notes */}
+      <CompactProjectNotes projectId={projectId} />
 
       {/* Items Editor (optional) */}
       {showItemsEditor && (
@@ -337,10 +357,34 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
           </CardContent>
         </Card>
       )}
+      {/* Detailed Quotation Table */}
+      <DetailedQuotationTable 
+        quotationData={quotationData}
+        groupByRoom={true}
+        showDetailedView={true}
+        currency="GBP"
+      />
 
       {/* Quote Document Preview */}
       {selectedTemplate && (
         <section className="mt-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold">Quote Document Preview</h3>
+            <div className="flex items-center space-x-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFullQuoteView(true)}
+                className="flex items-center space-x-2"
+              >
+                <Eye className="h-4 w-4" />
+                <span>View Quote</span>
+              </Button>
+              <div className="text-sm text-muted-foreground">
+                Using: <strong>{selectedTemplate.name}</strong>
+              </div>
+            </div>
+          </div>
           <LivePreview
             blocks={templateBlocks}
             projectData={{

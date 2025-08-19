@@ -7,13 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useUpdateQuote } from "@/hooks/useQuotes";
-import { useQuoteItems, useCreateQuoteItem, useUpdateQuoteItem, useDeleteQuoteItem } from "@/hooks/useQuoteItems";
-import { useCopyQuote } from "@/hooks/useCopyQuote";
 import { useToast } from "@/hooks/use-toast";
-import { formatCurrency } from "@/utils/currency";
-import { Eye, Edit, Mail, Download, Save, X, Copy, User, MapPin, Calendar, FileText, Package, Plus, Trash2 } from "lucide-react";
+import { Eye, Edit, Mail, Download, Save, X } from "lucide-react";
 
 interface Quote {
   id: string;
@@ -27,18 +23,6 @@ interface Quote {
   notes?: string;
   created_at: string;
   updated_at: string;
-  clients?: {
-    id: string;
-    name: string;
-    email?: string;
-    phone?: string;
-    address?: string;
-  };
-  projects?: {
-    id: string;
-    name: string;
-    address?: string;
-  };
 }
 
 interface QuoteViewerProps {
@@ -58,19 +42,8 @@ export const QuoteViewer = ({ quote, isEditable = false, children }: QuoteViewer
     valid_until: quote.valid_until || '',
     notes: quote.notes || '',
   });
-  const [newItem, setNewItem] = useState({
-    name: "",
-    description: "",
-    quantity: 1,
-    unit_price: 0
-  });
 
   const updateQuote = useUpdateQuote();
-  const { data: quoteItems = [], isLoading: itemsLoading } = useQuoteItems(quote?.id);
-  const createQuoteItem = useCreateQuoteItem();
-  const updateQuoteItem = useUpdateQuoteItem();
-  const deleteQuoteItem = useDeleteQuoteItem();
-  const copyQuote = useCopyQuote();
   const { toast } = useToast();
 
   const getStatusColor = (status: string) => {
@@ -112,67 +85,19 @@ export const QuoteViewer = ({ quote, isEditable = false, children }: QuoteViewer
     setIsEditing(false);
   };
 
-  const handleCopyQuote = () => {
-    if (!quote) return;
-    copyQuote.mutate(quote.id);
-  };
-
   const handleEmailQuote = () => {
-    // TODO: Implement email quote logic with existing email system
     toast({
-      title: "Quote Emailed",
-      description: "Quote has been sent via email",
+      title: "Email Quote",
+      description: "Email functionality would be implemented here",
     });
   };
 
   const handleDownloadQuote = () => {
-    // TODO: Implement PDF generation for quote
     toast({
-      title: "Quote Downloaded",
-      description: "Quote has been downloaded as PDF",
+      title: "Download Quote",
+      description: "Download functionality would be implemented here",
     });
   };
-
-  const handleAddItem = () => {
-    if (!quote || !newItem.name) return;
-    
-    createQuoteItem.mutate({
-      quote_id: quote.id,
-      name: newItem.name,
-      description: newItem.description,
-      quantity: newItem.quantity,
-      unit_price: newItem.unit_price,
-      total_price: newItem.quantity * newItem.unit_price,
-      currency: "USD",
-      sort_order: quoteItems.length
-    });
-
-    setNewItem({ name: "", description: "", quantity: 1, unit_price: 0 });
-  };
-
-  const handleUpdateItem = (itemId: string, field: string, value: any) => {
-    const item = quoteItems.find(item => item.id === itemId);
-    if (!item) return;
-
-    const updates: any = { [field]: value };
-    
-    if (field === 'quantity' || field === 'unit_price') {
-      const newQuantity = field === 'quantity' ? value : item.quantity;
-      const newUnitPrice = field === 'unit_price' ? value : item.unit_price;
-      updates.total_price = newQuantity * newUnitPrice;
-    }
-
-    updateQuoteItem.mutate({ id: itemId, updates });
-  };
-
-  const handleDeleteItem = (itemId: string) => {
-    deleteQuoteItem.mutate(itemId);
-  };
-
-  // Calculate totals from quote items
-  const itemsSubtotal = quoteItems.reduce((sum, item) => sum + item.total_price, 0);
-  const currentTaxAmount = itemsSubtotal * (editData.tax_rate || 0);
-  const currentTotal = itemsSubtotal + currentTaxAmount;
 
   return (
     <Dialog>
@@ -184,12 +109,11 @@ export const QuoteViewer = ({ quote, isEditable = false, children }: QuoteViewer
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle className="text-xl flex items-center gap-2">
-                <FileText className="h-5 w-5" />
+              <DialogTitle className="text-xl">
                 Quote {quote.quote_number}
               </DialogTitle>
               <p className="text-sm text-muted-foreground mt-1">
@@ -215,66 +139,12 @@ export const QuoteViewer = ({ quote, isEditable = false, children }: QuoteViewer
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Client & Project Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Client Information */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Client Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div>
-                  <p className="font-medium">{quote.clients?.name || 'No client assigned'}</p>
-                  {quote.clients?.email && (
-                    <p className="text-sm text-muted-foreground">{quote.clients.email}</p>
-                  )}
-                  {quote.clients?.phone && (
-                    <p className="text-sm text-muted-foreground">{quote.clients.phone}</p>
-                  )}
-                </div>
-                {quote.clients?.address && (
-                  <div className="flex items-start gap-2 mt-2">
-                    <MapPin className="h-3 w-3 mt-1 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">{quote.clients.address}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Project Information */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Package className="h-4 w-4" />
-                  Project Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div>
-                  <p className="font-medium">{quote.projects?.name || 'No project assigned'}</p>
-                  {quote.projects?.address && (
-                    <div className="flex items-start gap-2 mt-2">
-                      <MapPin className="h-3 w-3 mt-1 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">{quote.projects.address}</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Quote Status & Validity */}
+          {/* Quote Details */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Quote Status & Validity
-              </CardTitle>
+            <CardHeader>
+              <CardTitle className="text-lg">Quote Details</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               {isEditing ? (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -302,9 +172,70 @@ export const QuoteViewer = ({ quote, isEditable = false, children }: QuoteViewer
                       onChange={(e) => setEditData({ ...editData, valid_until: e.target.value })}
                     />
                   </div>
+                  <div>
+                    <label className="text-sm font-medium">Subtotal ($)</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={editData.subtotal}
+                      onChange={(e) => setEditData({ ...editData, subtotal: parseFloat(e.target.value) || 0 })}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Tax Rate (%)</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={editData.tax_rate * 100}
+                      onChange={(e) => {
+                        const rate = parseFloat(e.target.value) / 100 || 0;
+                        const taxAmount = editData.subtotal * rate;
+                        setEditData({ 
+                          ...editData, 
+                          tax_rate: rate,
+                          tax_amount: taxAmount,
+                          total_amount: editData.subtotal + taxAmount
+                        });
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Tax Amount ($)</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={editData.tax_amount}
+                      disabled
+                      className="bg-muted"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Total Amount ($)</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={editData.total_amount}
+                      disabled
+                      className="bg-muted font-bold"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium">Notes</label>
+                    <Textarea
+                      value={editData.notes}
+                      onChange={(e) => setEditData({ ...editData, notes: e.target.value })}
+                      rows={3}
+                    />
+                  </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Valid Until</p>
+                    <p className="font-medium">
+                      {quote.valid_until ? new Date(quote.valid_until).toLocaleDateString() : 'Not set'}
+                    </p>
+                  </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Status</p>
                     <Badge className={getStatusColor(quote.status)}>
@@ -312,255 +243,33 @@ export const QuoteViewer = ({ quote, isEditable = false, children }: QuoteViewer
                     </Badge>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Valid Until</p>
-                    <p className="font-medium">
-                      {quote.valid_until ? new Date(quote.valid_until).toLocaleDateString() : 'Not set'}
-                    </p>
+                    <p className="text-sm text-muted-foreground">Subtotal</p>
+                    <p className="font-medium">${quote.subtotal?.toFixed(2) || '0.00'}</p>
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Quote Line Items */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="text-base">Quote Line Items</CardTitle>
-              {isEditing && (
-                <Button 
-                  onClick={handleAddItem} 
-                  size="sm"
-                  disabled={!newItem.name}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Item
-                </Button>
-              )}
-            </CardHeader>
-            <CardContent>
-              {isEditing && (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 border rounded-lg bg-muted/50">
-                  <Input
-                    placeholder="Item name"
-                    value={newItem.name}
-                    onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                  />
-                  <Input
-                    placeholder="Description"
-                    value={newItem.description}
-                    onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Quantity"
-                    value={newItem.quantity}
-                    onChange={(e) => setNewItem({ ...newItem, quantity: parseFloat(e.target.value) || 1 })}
-                  />
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="Unit Price"
-                    value={newItem.unit_price}
-                    onChange={(e) => setNewItem({ ...newItem, unit_price: parseFloat(e.target.value) || 0 })}
-                  />
-                </div>
-              )}
-
-              {itemsLoading ? (
-                <p className="text-muted-foreground">Loading quote items...</p>
-              ) : quoteItems.length === 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Quantity</TableHead>
-                      <TableHead>Unit Price</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                        No items in this quote yet.
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Item</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead className="text-right">Qty</TableHead>
-                      <TableHead className="text-right">Unit Price</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
-                      {isEditing && <TableHead className="text-right">Actions</TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {quoteItems.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">
-                          {isEditing ? (
-                            <Input
-                              value={item.name}
-                              onChange={(e) => handleUpdateItem(item.id, 'name', e.target.value)}
-                              className="min-w-0"
-                            />
-                          ) : (
-                            item.name
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {isEditing ? (
-                            <Input
-                              value={item.description || ""}
-                              onChange={(e) => handleUpdateItem(item.id, 'description', e.target.value)}
-                              className="min-w-0"
-                            />
-                          ) : (
-                            item.description || "-"
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {isEditing ? (
-                            <Input
-                              type="number"
-                              value={item.quantity}
-                              onChange={(e) => handleUpdateItem(item.id, 'quantity', parseFloat(e.target.value) || 1)}
-                              className="min-w-0 text-right"
-                            />
-                          ) : (
-                            item.quantity
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {isEditing ? (
-                            <Input
-                              type="number"
-                              step="0.01"
-                              value={item.unit_price}
-                              onChange={(e) => handleUpdateItem(item.id, 'unit_price', parseFloat(e.target.value) || 0)}
-                              className="min-w-0 text-right"
-                            />
-                          ) : (
-                            formatCurrency(item.unit_price)
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right font-semibold">
-                          {formatCurrency(item.total_price)}
-                        </TableCell>
-                        {isEditing && (
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteItem(item.id)}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Financial Summary */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Financial Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isEditing ? (
-                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium">Tax Rate (%)</label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={(editData.tax_rate || 0) * 100}
-                      onChange={(e) => {
-                        const rate = parseFloat(e.target.value) / 100 || 0;
-                        setEditData({ 
-                          ...editData, 
-                          tax_rate: rate,
-                        });
-                      }}
-                    />
+                    <p className="text-sm text-muted-foreground">Tax ({((quote.tax_rate || 0) * 100).toFixed(1)}%)</p>
+                    <p className="font-medium">${quote.tax_amount?.toFixed(2) || '0.00'}</p>
                   </div>
-                  <div></div>
-                  <div className="col-span-2 space-y-4 mt-4">
-                    <div className="flex justify-between">
-                      <span>Subtotal:</span>
-                      <span className="font-medium">{formatCurrency(itemsSubtotal)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Tax ({((editData.tax_rate || 0) * 100).toFixed(1)}%):</span>
-                      <span className="font-medium">{formatCurrency(currentTaxAmount)}</span>
-                    </div>
-                    <Separator />
-                    <div className="flex justify-between text-lg font-bold">
-                      <span>Total Amount:</span>
-                      <span className="text-primary">{formatCurrency(currentTotal)}</span>
-                    </div>
+                  <div className="col-span-2">
+                    <p className="text-sm text-muted-foreground">Total Amount</p>
+                    <p className="text-2xl font-bold text-primary">${quote.total_amount?.toFixed(2) || '0.00'}</p>
                   </div>
+                  {quote.notes && (
+                    <div className="col-span-2">
+                      <p className="text-sm text-muted-foreground">Notes</p>
+                      <p className="text-sm">{quote.notes}</p>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex justify-between">
-                    <span>Subtotal:</span>
-                    <span className="font-medium">{formatCurrency(itemsSubtotal || quote.subtotal || 0)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Tax ({((quote.tax_rate || 0) * 100).toFixed(1)}%):</span>
-                    <span className="font-medium">{formatCurrency(quote.tax_amount || 0)}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between text-lg font-bold">
-                    <span>Total Amount:</span>
-                    <span className="text-primary">{formatCurrency(quote.total_amount || 0)}</span>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Notes */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Notes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isEditing ? (
-                <Textarea
-                  value={editData.notes}
-                  onChange={(e) => setEditData({ ...editData, notes: e.target.value })}
-                  rows={3}
-                  placeholder="Add notes about this quote..."
-                />
-              ) : (
-                <p className="text-sm">
-                  {quote.notes || 'No notes added to this quote.'}
-                </p>
               )}
             </CardContent>
           </Card>
 
           {/* Actions */}
-          <div className="flex justify-between border-t pt-4">
+          <div className="flex justify-between">
             <div className="flex space-x-2">
               {!isEditing && (
                 <>
-                  <Button variant="outline" size="sm" onClick={handleCopyQuote} disabled={copyQuote.isPending}>
-                    <Copy className="h-4 w-4 mr-2" />
-                    {copyQuote.isPending ? 'Copying...' : 'Copy Quote'}
-                  </Button>
                   <Button variant="outline" size="sm" onClick={handleEmailQuote}>
                     <Mail className="h-4 w-4 mr-2" />
                     Email Quote

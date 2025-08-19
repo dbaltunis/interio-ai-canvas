@@ -74,12 +74,8 @@ export const RoomHeader = ({
             onEditName={onStartEditing}
             onCopyRoom={() => onCopyRoom(room)}
             onDeleteRoom={() => {
-              console.log("Delete room button clicked for room:", room.id);
               if (confirm("Delete this room and all its contents?")) {
-                console.log("User confirmed deletion, calling mutate with:", room.id);
                 onDeleteRoom.mutate(room.id);
-              } else {
-                console.log("User cancelled deletion");
               }
             }}
             onChangeRoomType={(type) => onChangeRoomType(room.id, type)}

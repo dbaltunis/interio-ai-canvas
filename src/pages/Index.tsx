@@ -22,9 +22,6 @@ const ClientManagement = lazy(() =>
 const EmailManagement = lazy(() => 
   import("@/components/jobs/EmailManagement").catch(() => ({ default: () => <div>Error loading Emails</div> }))
 );
-const QuotesPage = lazy(() => 
-  import("@/components/quotes/QuotesPage").then(module => ({ default: module.QuotesPage })).catch(() => ({ default: () => <div>Error loading Quotes</div> }))
-);
 const CalendarView = lazy(() => 
   import("@/components/calendar/CalendarView").catch(() => ({ default: () => <div>Error loading Calendar</div> }))
 );
@@ -99,7 +96,7 @@ const Index = () => {
         return (
           <Suspense fallback={<EmailManagementSkeleton />}>
             <ComponentWrapper>
-              <QuotesPage />
+              <EmailManagement />
             </ComponentWrapper>
           </Suspense>
         );

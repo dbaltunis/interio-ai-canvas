@@ -5,7 +5,6 @@ import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { formatCurrency } from "@/utils/currency";
-import { DetailedQuotationTable } from "@/components/jobs/quotation/DetailedQuotationTable";
 import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
 import { useWorkroomSync } from "@/hooks/useWorkroomSync";
@@ -104,14 +103,6 @@ const { data: projectSummaries } = useProjectWindowSummaries(projectId);
 
       {/* Enhanced Room Management - This handles all room display and management */}
       <EnhancedRoomView project={project} clientId={project.client_id} />
-      
-      {/* Detailed Quotation Table - moved from quotation page */}
-      <DetailedQuotationTable 
-        quotationData={quotationSync.buildQuotationItems()}
-        groupByRoom={true}
-        showDetailedView={true}
-        currency="GBP"
-      />
     </div>
   );
 };
