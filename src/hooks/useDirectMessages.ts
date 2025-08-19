@@ -194,29 +194,40 @@ export const useDirectMessages = () => {
     }
   });
 
-  // Realtime subscription for direct messages - prevent multiple subscriptions
+  // Improved realtime subscription with proper cleanup
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
 
-    const channelName = `direct-messages-user-${user.id}`;
+    console.log('Setting up direct messages subscription for user:', user.id);
+
+    const channelName = `direct-messages-${user.id}`;
     
-    // Remove any existing channel first
-    const existingChannels = supabase.getChannels();
-    existingChannels.forEach(channel => {
+    // Clean up any existing channels with the same name
+    supabase.getChannels().forEach(channel => {
       if (channel.topic === channelName) {
+        console.log('Removing existing channel:', channelName);
         supabase.removeChannel(channel);
       }
     });
 
-    const channel = supabase
-      .channel(channelName)
+    // Create new channel
+    const channel = supabase.channel(channelName);
+
+    // Set up subscription for incoming messages
+    channel
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'direct_messages', filter: `recipient_id=eq.${user.id}` },
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'direct_messages', 
+          filter: `recipient_id=eq.${user.id}` 
+        },
         (payload) => {
+          console.log('Received new message:', payload);
           const newMessage = payload.new as DirectMessage;
           
-          // Update conversations list to show new message
+          // Update conversations list
           queryClient.setQueryData(['conversations', user.id], (oldConversations: Conversation[] = []) => {
             return oldConversations.map(conv => 
               conv.user_id === newMessage.sender_id 
@@ -238,8 +249,14 @@ export const useDirectMessages = () => {
       )
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'direct_messages', filter: `sender_id=eq.${user.id}` },
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'direct_messages', 
+          filter: `sender_id=eq.${user.id}` 
+        },
         (payload) => {
+          console.log('Sent message confirmed:', payload);
           const newMessage = payload.new as DirectMessage;
           
           // Update conversations
@@ -256,12 +273,16 @@ export const useDirectMessages = () => {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+      });
 
+    // Cleanup function
     return () => {
+      console.log('Cleaning up direct messages subscription');
       supabase.removeChannel(channel);
     };
-  }, [user?.id, queryClient]); // Simplified dependencies
+  }, [user?.id, queryClient]); // Remove activeConversation from dependencies to prevent re-subscription
 
   const sendMessage = (recipientId: string, content: string) => {
     sendMessageMutation.mutate({ recipientId, content });

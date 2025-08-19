@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { BrandHeader } from './BrandHeader';
 import { UserProfile } from './UserProfile';
@@ -42,14 +41,11 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   const [notifications, setNotifications] = useState<any[]>([]);
   
   const { activeUsers, currentUser } = useUserPresence();
+  const { conversations, totalUnreadCount } = useDirectMessages();
   
-  // Temporarily disable direct messages to fix subscription error
-  const conversations: any[] = [];
-  const unreadCount = 0;
-  
-  // Check if there are other active users
+  // Check if there are other active users or unread messages
   const otherActiveUsers = activeUsers.filter(user => user.user_id !== currentUser?.user_id && user.status === 'online');
-  const hasActivity = otherActiveUsers.length > 0;
+  const hasActivity = otherActiveUsers.length > 0 || totalUnreadCount > 0;
 
   return (
     <>
@@ -104,17 +100,17 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                   onClick={() => setPresencePanelOpen(!presencePanelOpen)}
                   className="relative"
                 >
-                  {unreadCount > 0 ? (
+                  {totalUnreadCount > 0 ? (
                     <MessageCircle className="h-5 w-5" />
                   ) : (
                     <Users className="h-5 w-5" />
                   )}
-                  {unreadCount > 0 && (
+                  {totalUnreadCount > 0 && (
                     <div className="absolute -top-2 -right-2 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
-                      {unreadCount > 9 ? '9+' : unreadCount}
+                      {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
                     </div>
                   )}
-                  {hasActivity && unreadCount === 0 && (
+                  {hasActivity && totalUnreadCount === 0 && (
                     <div className="absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full animate-pulse" />
                   )}
                 </Button>
