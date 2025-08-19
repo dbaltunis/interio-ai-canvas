@@ -45,7 +45,7 @@ export const useUpdateUser = () => {
           const permissionsToInsert = defaultPerms.map((perm: string) => ({
             user_id: userId,
             permission_name: perm,
-            created_by: currentUser?.id
+            granted_by: currentUser?.id
           }));
 
           await supabase
