@@ -239,34 +239,36 @@ useEffect(() => {
                          openConversation(conversation.user_id);
                        }}
                      >
-                      <div className="flex items-center gap-3 w-full">
-                        <div className="relative">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={user.avatar_url} />
-                            <AvatarFallback>
-                              {user.display_name?.charAt(0) || 'U'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <Circle className={`absolute -bottom-1 -right-1 h-3 w-3 fill-current ${getStatusColor(user.status)}`} />
-                        </div>
-                        
-                        <div className="flex-1 min-w-0 text-left">
-                          <div className="flex items-center justify-between">
-                            <p className="font-medium truncate">{user.display_name}</p>
-                            {conversation.unread_count > 0 && (
-                              <Badge variant="destructive" className="text-xs">
-                                {conversation.unread_count}
-                              </Badge>
-                            )}
-                          </div>
-                          
-                          {conversation.last_message && (
-                            <p className="text-sm text-muted-foreground truncate">
-                              {conversation.last_message.content}
-                            </p>
-                          )}
-                        </div>
-                      </div>
+                        <div className="flex items-center gap-3 w-full">
+                         <div className="relative">
+                           <Avatar className="h-10 w-10">
+                             <AvatarImage src={user.avatar_url} />
+                             <AvatarFallback>
+                               {user.display_name?.charAt(0) || 'U'}
+                             </AvatarFallback>
+                           </Avatar>
+                           <Circle className={`absolute -bottom-1 -right-1 h-3 w-3 fill-current ${getStatusColor(user.status)}`} />
+                         </div>
+                         
+                         <div className="flex-1 min-w-0 text-left">
+                           <div className="flex items-center justify-between gap-2">
+                             <p className="font-medium text-sm leading-tight" title={user.display_name}>
+                               {user.display_name}
+                             </p>
+                             {conversation.unread_count > 0 && (
+                               <Badge variant="destructive" className="text-xs shrink-0">
+                                 {conversation.unread_count}
+                               </Badge>
+                             )}
+                           </div>
+                           
+                           {conversation.last_message && (
+                             <p className="text-xs text-muted-foreground truncate mt-1" title={conversation.last_message.content}>
+                               {conversation.last_message.content}
+                             </p>
+                           )}
+                         </div>
+                       </div>
                     </Button>
                   );
                 })}

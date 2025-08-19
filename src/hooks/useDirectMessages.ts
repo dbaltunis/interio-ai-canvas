@@ -109,13 +109,20 @@ export const useDirectMessages = () => {
     queryFn: async (): Promise<DirectMessage[]> => {
       if (!user || !activeConversation) return [];
 
+      console.log('Fetching messages for conversation:', activeConversation, 'user:', user.id);
+      
       const { data, error } = await supabase
         .from('direct_messages')
         .select('*')
         .or(`and(sender_id.eq.${user.id},recipient_id.eq.${activeConversation}),and(sender_id.eq.${activeConversation},recipient_id.eq.${user.id})`)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching messages:', error);
+        throw error;
+      }
+      
+      console.log('Fetched messages:', data?.length || 0, 'messages for conversation:', activeConversation);
       return (data || []) as DirectMessage[];
     },
     enabled: !!user && !!activeConversation,

@@ -241,18 +241,18 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                       />
                                     </div>
                                     
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <p className="font-semibold text-foreground truncate">
-                                          {currentUser.user_profile?.display_name}
-                                        </p>
-                                          <Badge 
-                                          variant="secondary" 
-                                          className="text-xs bg-accent/30 text-foreground border border-border"
-                                        >
-                                          {currentUser.user_profile?.role}
-                                        </Badge>
-                                      </div>
+                                     <div className="flex-1 min-w-0">
+                                       <div className="flex items-center gap-2 mb-1">
+                                         <p className="font-semibold text-foreground text-sm leading-tight" title={currentUser.user_profile?.display_name}>
+                                           {currentUser.user_profile?.display_name}
+                                         </p>
+                                           <Badge 
+                                           variant="secondary" 
+                                           className="text-xs bg-accent/30 text-foreground border border-border shrink-0"
+                                         >
+                                           {currentUser.user_profile?.role}
+                                         </Badge>
+                                       </div>
                                       
                                         {currentUser.current_activity && (
                                           <p className="text-sm text-muted-foreground truncate">
@@ -306,18 +306,18 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                         />
                                       </div>
                                       
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-2">
-                                          <p className="font-semibold text-foreground truncate text-lg">
-                                            {user.user_profile?.display_name}
-                                          </p>
-                                          <Badge 
-                                            variant="secondary" 
-                                            className="text-xs bg-accent/40 text-foreground border border-border/50 px-2 py-1"
-                                          >
-                                            {user.user_profile?.role}
-                                          </Badge>
-                                        </div>
+                                       <div className="flex-1 min-w-0">
+                                         <div className="flex items-center gap-2 mb-2">
+                                           <p className="font-semibold text-foreground text-sm leading-tight" title={user.user_profile?.display_name}>
+                                             {user.user_profile?.display_name}
+                                           </p>
+                                           <Badge 
+                                             variant="secondary" 
+                                             className="text-xs bg-accent/40 text-foreground border border-border/50 px-2 py-1 shrink-0"
+                                           >
+                                             {user.user_profile?.role}
+                                           </Badge>
+                                         </div>
                                         
                                         {user.current_activity && (
                                           <p className="text-sm text-muted-foreground truncate mb-1 flex items-center gap-1">
