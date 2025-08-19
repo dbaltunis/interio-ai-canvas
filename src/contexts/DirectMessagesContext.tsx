@@ -344,14 +344,14 @@ export const DirectMessagesProvider: React.FC<DirectMessagesProviderProps> = ({ 
 
   const openConversation = useCallback((userId: string) => {
     console.log('Opening conversation with user:', userId);
-    if (!userId || userId === activeConversation) {
-      console.log('Skipping conversation open - invalid userId or already active');
+    if (!userId) {
+      console.log('Skipping conversation open - invalid userId');
       return;
     }
     setActiveConversation(userId);
     // mark unread as read
     markAsReadMutation.mutate(userId);
-  }, [activeConversation, markAsReadMutation]);
+  }, [markAsReadMutation]);
 
   const closeConversation = useCallback(() => {
     setActiveConversation(null);
