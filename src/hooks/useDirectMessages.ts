@@ -108,8 +108,6 @@ export const useDirectMessages = () => {
     queryKey: ['messages', activeConversation, user?.id],
     queryFn: async (): Promise<DirectMessage[]> => {
       if (!user || !activeConversation) return [];
-
-      console.log('Fetching messages for conversation:', activeConversation, 'user:', user.id);
       
       const { data, error } = await supabase
         .from('direct_messages')
@@ -122,10 +120,11 @@ export const useDirectMessages = () => {
         throw error;
       }
       
-      console.log('Fetched messages:', data?.length || 0, 'messages for conversation:', activeConversation);
       return (data || []) as DirectMessage[];
     },
     enabled: !!user && !!activeConversation,
+    staleTime: 1000 * 60, // 1 minute
+    refetchOnWindowFocus: false,
   });
 
   // Send message using DB table
@@ -195,18 +194,17 @@ export const useDirectMessages = () => {
     }
   });
 
-  // Realtime subscription for direct messages with dependency on activeConversation
+  // Realtime subscription for direct messages - stable channel
   useEffect(() => {
     if (!user) return;
 
-    const channelName = `direct-messages-${user.id}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+    const channelName = `direct-messages-${user.id}`;
     const channel = supabase
       .channel(channelName)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'direct_messages', filter: `recipient_id=eq.${user.id}` },
         (payload) => {
-          console.log('New message received:', payload);
           const newMessage = payload.new as DirectMessage;
           
           // Immediately update messages if this is for the active conversation
@@ -229,25 +227,34 @@ export const useDirectMessages = () => {
             );
           });
 
-          queryClient.invalidateQueries({ queryKey: ['messages'] });
-          queryClient.invalidateQueries({ queryKey: ['conversations'] });
+          // Only invalidate specific queries to prevent loops
+          queryClient.invalidateQueries({ queryKey: ['conversations', user.id] });
         }
       )
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'direct_messages', filter: `sender_id=eq.${user.id}` },
         (payload) => {
-          console.log('Message sent confirmed:', payload);
-          queryClient.invalidateQueries({ queryKey: ['messages'] });
-          queryClient.invalidateQueries({ queryKey: ['conversations'] });
+          const newMessage = payload.new as DirectMessage;
+          
+          // Update active conversation if this message was sent to the active user
+          if (activeConversation === newMessage.recipient_id) {
+            queryClient.setQueryData(['messages', activeConversation, user.id], (oldMessages: DirectMessage[] = []) => {
+              if (oldMessages.some(msg => msg.id === newMessage.id)) {
+                return oldMessages;
+              }
+              return [...oldMessages, newMessage];
+            });
+          }
+          
+          queryClient.invalidateQueries({ queryKey: ['conversations', user.id] });
         }
       )
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'direct_messages', filter: `recipient_id=eq.${user.id}` },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['messages'] });
-          queryClient.invalidateQueries({ queryKey: ['conversations'] });
+          queryClient.invalidateQueries({ queryKey: ['conversations', user.id] });
         }
       )
       .subscribe();
@@ -255,7 +262,7 @@ export const useDirectMessages = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, queryClient, activeConversation]);
+  }, [user, queryClient]); // Removed activeConversation dependency to prevent re-subscriptions
 
   const sendMessage = (recipientId: string, content: string) => {
     sendMessageMutation.mutate({ recipientId, content });
