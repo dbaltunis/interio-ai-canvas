@@ -202,331 +202,340 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                       </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="team" className="flex-1 overflow-y-auto p-4 space-y-3 mt-0">
-                      {/* Current User */}
-                      {currentUser && (
-                        <div>
-                          <p className="text-muted-foreground text-sm mb-3 font-medium flex items-center gap-2">
-                            You <span className="text-xs bg-accent/30 text-foreground border border-border px-2 py-1 rounded-full">Currently Active</span>
-                          </p>
-                          <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="group relative"
-                          >
-                            <div className="glass-morphism rounded-xl p-4 border border-border">
-                              
-                              {/* Status indicator gradient line */}
-                              <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-green-400 to-emerald-500 rounded-l-xl" />
-                              
-                              <div className="flex items-center gap-4">
-                                <div className="relative">
-                                  <Avatar className="h-12 w-12 ring-2 ring-white/30">
-                                    <AvatarImage src={currentUser.user_profile?.avatar_url} />
-                                    <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white">
-                                      {currentUser.user_profile?.display_name?.charAt(0) || 'U'}
-                                    </AvatarFallback>
-                                  </Avatar>
+                    {/* Team Tab Content */}
+                    <TabsContent value="team" className="flex-1 mt-0 h-0">
+                      <ScrollArea className="h-full">
+                        <div className="p-4 space-y-3">
+                          {/* Current User */}
+                          {currentUser && (
+                            <div>
+                              <p className="text-muted-foreground text-sm mb-3 font-medium flex items-center gap-2">
+                                You <span className="text-xs bg-accent/30 text-foreground border border-border px-2 py-1 rounded-full">Currently Active</span>
+                              </p>
+                              <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="group relative"
+                              >
+                                <div className="glass-morphism rounded-xl p-4 border border-border">
                                   
-                                  {/* Animated status dot */}
-                                  <motion.div
-                                    animate={{ scale: [1, 1.2, 1] }}
-                                    transition={{ duration: 2, repeat: Infinity }}
-                                    className="absolute -bottom-1 -right-1 h-4 w-4 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full border-2 border-white/30"
-                                  />
-                                </div>
-                                
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <p className="font-semibold text-foreground truncate">
-                                      {currentUser.user_profile?.display_name}
-                                    </p>
-                                      <Badge 
-                                      variant="secondary" 
-                                      className="text-xs bg-accent/30 text-foreground border border-border"
-                                    >
-                                      {currentUser.user_profile?.role}
-                                    </Badge>
+                                  {/* Status indicator gradient line */}
+                                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-green-400 to-emerald-500 rounded-l-xl" />
+                                  
+                                  <div className="flex items-center gap-4">
+                                    <div className="relative">
+                                      <Avatar className="h-12 w-12 ring-2 ring-white/30">
+                                        <AvatarImage src={currentUser.user_profile?.avatar_url} />
+                                        <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white">
+                                          {currentUser.user_profile?.display_name?.charAt(0) || 'U'}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      
+                                      {/* Animated status dot */}
+                                      <motion.div
+                                        animate={{ scale: [1, 1.2, 1] }}
+                                        transition={{ duration: 2, repeat: Infinity }}
+                                        className="absolute -bottom-1 -right-1 h-4 w-4 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full border-2 border-white/30"
+                                      />
+                                    </div>
+                                    
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <p className="font-semibold text-foreground truncate">
+                                          {currentUser.user_profile?.display_name}
+                                        </p>
+                                          <Badge 
+                                          variant="secondary" 
+                                          className="text-xs bg-accent/30 text-foreground border border-border"
+                                        >
+                                          {currentUser.user_profile?.role}
+                                        </Badge>
+                                      </div>
+                                      
+                                        {currentUser.current_activity && (
+                                          <p className="text-sm text-muted-foreground truncate">
+                                          🎯 {currentUser.current_activity}
+                                        </p>
+                                      )}
+                                    </div>
                                   </div>
-                                  
-                                    {currentUser.current_activity && (
-                                      <p className="text-sm text-muted-foreground truncate">
-                                      🎯 {currentUser.current_activity}
-                                    </p>
-                                  )}
+                                </div>
+                              </motion.div>
+                            </div>
+                          )}
+
+                          {/* Online Users */}
+                          {onlineUsers.length > 0 && (
+                            <div>
+                              <p className="text-muted-foreground text-sm mb-3 font-medium">Online Now</p>
+                              {onlineUsers.map((user, index) => (
+                                <motion.div
+                                  key={user.user_id}
+                                  initial={{ opacity: 0, y: 20 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: index * 0.1 }}
+                                  className="group relative"
+                                >
+                                  <div className="glass-morphism rounded-xl p-4 hover:bg-accent/30 transition-all duration-300 cursor-pointer border border-border"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedUserId(user.user_id);
+                                          setActiveTab('messages');
+                                          setMessageDialogOpen(true);
+                                        }}>
+                                    
+                                    {/* Status indicator gradient line */}
+                                    <div className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${getStatusBgColor(user.status)} rounded-l-xl`} />
+                                    
+                                    <div className="flex items-center gap-4">
+                                      <div className="relative">
+                                        <Avatar className="h-12 w-12 ring-2 ring-white/20">
+                                          <AvatarImage src={user.user_profile?.avatar_url} />
+                                          <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white">
+                                            {user.user_profile?.display_name?.charAt(0) || 'U'}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        
+                                        {/* Animated status dot */}
+                                        <motion.div
+                                          animate={{ scale: [1, 1.2, 1] }}
+                                          transition={{ duration: 2, repeat: Infinity }}
+                                          className={`absolute -bottom-1 -right-1 h-4 w-4 bg-gradient-to-r ${getStatusBgColor(user.status)} rounded-full border-2 border-white/30`}
+                                        />
+                                      </div>
+                                      
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <p className="font-semibold text-foreground truncate">
+                                            {user.user_profile?.display_name}
+                                          </p>
+                                          <Badge 
+                                            variant="secondary" 
+                                            className="text-xs bg-accent/30 text-foreground border border-border"
+                                          >
+                                            {user.user_profile?.role}
+                                          </Badge>
+                                        </div>
+                                        
+                                        {user.current_activity && (
+                                          <p className="text-sm text-muted-foreground truncate">
+                                            🎯 {user.current_activity}
+                                          </p>
+                                        )}
+                                      </div>
+                                      
+                                      <motion.div
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.9 }}
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                      >
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="text-muted-foreground hover:text-foreground hover:bg-accent/30 rounded-full h-10 w-10 p-0"
+                                        >
+                                          <MessageCircle className="h-4 w-4" />
+                                        </Button>
+                                      </motion.div>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Offline/Away Users */}
+                          {offlineUsers.length > 0 && (
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: onlineUsers.length * 0.1 + 0.3 }}
+                            >
+                              <div className="pt-4 border-t border-border">
+                                <p className="text-muted-foreground text-sm mb-3 font-medium">Offline/Away</p>
+                                <div className="space-y-2">
+                                  {offlineUsers.map((user) => (
+                                      <div key={user.user_id} 
+                                           className="flex items-center gap-3 p-3 rounded-lg glass-morphism border border-border cursor-pointer hover:bg-accent/30 transition-colors"
+                                           onClick={(e) => {
+           e.stopPropagation();
+           setSelectedUserId(user.user_id);
+           setActiveTab('messages');
+           setMessageDialogOpen(true);
+         }}>
+
+                                      <Avatar className="h-10 w-10">
+                                        <AvatarImage src={user.user_profile?.avatar_url} />
+                                        <AvatarFallback className="bg-muted text-foreground text-sm">
+                                          {user.user_profile?.display_name?.charAt(0) || 'U'}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <p className="text-sm text-foreground truncate">
+                                            {user.user_profile?.display_name}
+                                          </p>
+                                          <Badge variant="outline" className="text-xs text-muted-foreground border-border">
+                                            {user.user_profile?.role}
+                                          </Badge>
+                                        </div>
+                                         <p className="text-xs text-muted-foreground capitalize">
+                                           {user.status === 'never_logged_in' ? 'Never signed up' : 
+                                            user.status === 'away' ? 'Away' : 'Offline'}
+                                           {user.last_seen && user.status !== 'never_logged_in' && (
+                                             <span className="ml-2">
+                                               • Last seen {new Date(user.last_seen).toLocaleDateString('en-US', { 
+                                                 day: 'numeric', 
+                                                 month: 'short', 
+                                                 year: 'numeric' 
+                                               })}
+                                             </span>
+                                           )}
+                                         </p>
+                                      </div>
+                                      <Circle className={`h-3 w-3 fill-current ${getStatusColor(user.status)} opacity-70`} />
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
-                            </div>
-                          </motion.div>
-                        </div>
-                      )}
+                            </motion.div>
+                          )}
 
-                      {/* Online Users */}
-                      {onlineUsers.length > 0 && (
-                        <div>
-                          <p className="text-muted-foreground text-sm mb-3 font-medium">Online Now</p>
-                          {onlineUsers.map((user, index) => (
-                            <motion.div
-                              key={user.user_id}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: index * 0.1 }}
-                              className="group relative"
-                            >
-<div className="glass-morphism rounded-xl p-4 hover:bg-accent/30 transition-all duration-300 cursor-pointer border border-border"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedUserId(user.user_id);
-                                      setActiveTab('messages');
-                                      setMessageDialogOpen(true);
-                                    }}>
-                                
-                                {/* Status indicator gradient line */}
-                                <div className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${getStatusBgColor(user.status)} rounded-l-xl`} />
-                                
-                                <div className="flex items-center gap-4">
-                                  <div className="relative">
-                                    <Avatar className="h-12 w-12 ring-2 ring-white/20">
-                                      <AvatarImage src={user.user_profile?.avatar_url} />
-                                      <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white">
-                                        {user.user_profile?.display_name?.charAt(0) || 'U'}
+                          {/* Account Users - manage status (collapsed by default) */}
+                          <div className="pt-4 border-t border-border">
+                            <div className="flex items-center justify-between mb-3">
+                              <p className="text-muted-foreground text-sm font-medium">Manage users</p>
+                              <Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:text-foreground" onClick={() => setShowAccountUsers((s) => !s)}>
+                                {showAccountUsers ? 'Hide' : 'Open'}
+                              </Button>
+                            </div>
+                            {showAccountUsers && (
+                              <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                                {teamMembers.map((m) => (
+                                  <div key={m.id} className="flex items-center justify-between p-3 rounded-lg glass-morphism border border-border">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                      <Avatar className="h-8 w-8">
+                                        <AvatarImage src={m.avatar_url} />
+                                        <AvatarFallback className="bg-muted text-foreground text-xs">
+                                          {m.name?.charAt(0) || 'U'}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="min-w-0">
+                                        <p className="text-sm font-medium text-foreground truncate">{m.name}</p>
+                                        <p className="text-xs text-muted-foreground truncate">{m.role}</p>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant={m.active ? 'default' : 'outline'} className="text-xs">
+                                        {m.active ? 'Active' : 'Inactive'}
+                                      </Badge>
+                                      <Switch
+                                        checked={!!m.active}
+                                        onCheckedChange={(checked) => toggleActive.mutate({ id: m.id, is_active: checked })}
+                                        aria-label={`Set ${m.name} ${m.active ? 'inactive' : 'active'}`}
+                                      />
+                                    </div>
+                                  </div>
+                                ))}
+                                {teamMembers.length === 0 && (
+                                  <p className="text-xs text-muted-foreground">No users found.</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </ScrollArea>
+                    </TabsContent>
+
+                    {/* Messages Tab Content */}
+                    <TabsContent value="messages" className="flex-1 mt-0 h-0">
+                      <ScrollArea className="h-full">
+                        <div className="p-4">
+                          {conversations.length > 0 ? (
+                            <div className="space-y-3">
+                              <p className="text-muted-foreground text-sm mb-3 font-medium">Active Conversations ({conversations.length})</p>
+                              {conversations.map((conversation, index) => (
+                                <motion.div
+                                  key={conversation.user_id || index}
+                                  initial={{ opacity: 0, y: 20 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: index * 0.1 }}
+                                  className="glass-morphism rounded-xl p-4 hover:bg-accent/30 transition-all duration-300 cursor-pointer border border-border"
+                                   onClick={() => {
+                                     openConversation(conversation.user_id);
+                                     setActiveTab('messages');
+                                     setMessageDialogOpen(true);
+                                   }}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <Avatar className="h-10 w-10">
+                                      <AvatarImage src={conversation.user_profile?.avatar_url} />
+                                      <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-sm">
+                                        {conversation.user_profile?.display_name?.charAt(0) || 'U'}
                                       </AvatarFallback>
                                     </Avatar>
                                     
-                                    {/* Animated status dot */}
-                                    <motion.div
-                                      animate={{ scale: [1, 1.2, 1] }}
-                                      transition={{ duration: 2, repeat: Infinity }}
-                                      className={`absolute -bottom-1 -right-1 h-4 w-4 bg-gradient-to-r ${getStatusBgColor(user.status)} rounded-full border-2 border-white/30`}
-                                    />
-                                  </div>
-                                  
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <p className="font-semibold text-foreground truncate">
-                                        {user.user_profile?.display_name}
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center justify-between mb-1">
+                                        <p className="font-medium text-foreground truncate">
+                                          {conversation.user_profile?.display_name || 'Unknown User'}
+                                        </p>
+                                        {conversation.unread_count > 0 && (
+                                          <Badge className="bg-red-500 text-white text-xs">
+                                            {conversation.unread_count}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <p className="text-sm text-muted-foreground truncate">
+                                        {conversation.last_message?.content || 'No messages yet'}
                                       </p>
-                                      <Badge 
-                                        variant="secondary" 
-                                        className="text-xs bg-accent/30 text-foreground border border-border"
-                                      >
-                                        {user.user_profile?.role}
-                                      </Badge>
+                                      {conversation.last_message?.created_at && (
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          {new Date(conversation.last_message.created_at).toLocaleDateString('en-US', { 
+                                            day: 'numeric', 
+                                            month: 'short',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                          })}
+                                        </p>
+                                      )}
                                     </div>
                                     
-                                    {user.current_activity && (
-                                      <p className="text-sm text-muted-foreground truncate">
-                                        🎯 {user.current_activity}
-                                      </p>
-                                    )}
+                                    <MessageCircle className="h-4 w-4 text-muted-foreground" />
                                   </div>
-                                  
-                                  <motion.div
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                  >
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="text-muted-foreground hover:text-foreground hover:bg-accent/30 rounded-full h-10 w-10 p-0"
-                                    >
-                                      <MessageCircle className="h-4 w-4" />
-                                    </Button>
-                                  </motion.div>
-                                </div>
-                              </div>
-                            </motion.div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Offline/Away Users */}
-                      {offlineUsers.length > 0 && (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: onlineUsers.length * 0.1 + 0.3 }}
-                        >
-                          <div className="pt-4 border-t border-border">
-                            <p className="text-muted-foreground text-sm mb-3 font-medium">Offline/Away</p>
-                            <div className="space-y-2">
-                              {offlineUsers.map((user) => (
-                                  <div key={user.user_id} 
-                                       className="flex items-center gap-3 p-3 rounded-lg glass-morphism border border-border cursor-pointer hover:bg-accent/30 transition-colors"
-                                       onClick={(e) => {
-       e.stopPropagation();
-       setSelectedUserId(user.user_id);
-       setActiveTab('messages');
-       setMessageDialogOpen(true);
-     }}>
-
-                                  <Avatar className="h-10 w-10">
-                                    <AvatarImage src={user.user_profile?.avatar_url} />
-                                    <AvatarFallback className="bg-muted text-foreground text-sm">
-                                      {user.user_profile?.display_name?.charAt(0) || 'U'}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <p className="text-sm text-foreground truncate">
-                                        {user.user_profile?.display_name}
-                                      </p>
-                                      <Badge variant="outline" className="text-xs text-muted-foreground border-border">
-                                        {user.user_profile?.role}
-                                      </Badge>
-                                    </div>
-                                     <p className="text-xs text-muted-foreground capitalize">
-                                       {user.status === 'never_logged_in' ? 'Never signed up' : 
-                                        user.status === 'away' ? 'Away' : 'Offline'}
-                                       {user.last_seen && user.status !== 'never_logged_in' && (
-                                         <span className="ml-2">
-                                           • Last seen {new Date(user.last_seen).toLocaleDateString('en-US', { 
-                                             day: 'numeric', 
-                                             month: 'short', 
-                                             year: 'numeric' 
-                                           })}
-                                         </span>
-                                       )}
-                                     </p>
-                                  </div>
-                                  <Circle className={`h-3 w-3 fill-current ${getStatusColor(user.status)} opacity-70`} />
-                                </div>
+                                </motion.div>
                               ))}
                             </div>
-                          </div>
-                        </motion.div>
-                      )}
-
-                      {/* Account Users - manage status (collapsed by default) */}
-                      <div className="pt-4 border-t border-border">
-                        <div className="flex items-center justify-between mb-3">
-                          <p className="text-muted-foreground text-sm font-medium">Manage users</p>
-                          <Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:text-foreground" onClick={() => setShowAccountUsers((s) => !s)}>
-                            {showAccountUsers ? 'Hide' : 'Open'}
-                          </Button>
-                        </div>
-                        {showAccountUsers && (
-                          <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                            {teamMembers.map((m) => (
-                              <div key={m.id} className="flex items-center justify-between p-3 rounded-lg glass-morphism border border-border">
-                                <div className="flex items-center gap-3 min-w-0">
-                                  <Avatar className="h-8 w-8">
-                                    <AvatarImage src={m.avatar_url} />
-                                    <AvatarFallback className="bg-muted text-foreground text-xs">
-                                      {m.name?.charAt(0) || 'U'}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div className="min-w-0">
-                                    <p className="text-sm font-medium text-foreground truncate">{m.name}</p>
-                                    <p className="text-xs text-muted-foreground truncate">{m.role}</p>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Badge variant={m.active ? 'default' : 'outline'} className="text-xs">
-                                    {m.active ? 'Active' : 'Inactive'}
-                                  </Badge>
-                                  <Switch
-                                    checked={!!m.active}
-                                    onCheckedChange={(checked) => toggleActive.mutate({ id: m.id, is_active: checked })}
-                                    aria-label={`Set ${m.name} ${m.active ? 'inactive' : 'active'}`}
-                                  />
-                                </div>
+                          ) : (
+                            <div className="text-center py-8 space-y-4">
+                                <MessageCircle className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                                <div className="space-y-2">
+                                  <h3 className="text-lg font-semibold text-foreground">No Conversations Yet</h3>
+                                  <p className="text-muted-foreground text-sm max-w-xs mx-auto leading-relaxed">
+                                  You haven't started any conversations yet. 
+                                </p>
                               </div>
-                            ))}
-                            {teamMembers.length === 0 && (
-                              <p className="text-xs text-muted-foreground">No users found.</p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                    </TabsContent>
-
-                    <TabsContent value="messages" className="flex-1 overflow-y-auto p-4 mt-0">
-                      {conversations.length > 0 ? (
-                        <div className="space-y-3">
-                          <p className="text-muted-foreground text-sm mb-3 font-medium">Active Conversations ({conversations.length})</p>
-                          {conversations.map((conversation, index) => (
-                            <motion.div
-                              key={conversation.user_id || index}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: index * 0.1 }}
-                              className="glass-morphism rounded-xl p-4 hover:bg-accent/30 transition-all duration-300 cursor-pointer border border-border"
-                               onClick={() => {
-                                 openConversation(conversation.user_id);
-                                 setActiveTab('messages');
-                                 setMessageDialogOpen(true);
-                               }}
-                            >
-                              <div className="flex items-center gap-3">
-                                <Avatar className="h-10 w-10">
-                                  <AvatarImage src={conversation.user_profile?.avatar_url} />
-                                  <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-sm">
-                                    {conversation.user_profile?.display_name?.charAt(0) || 'U'}
-                                  </AvatarFallback>
-                                </Avatar>
-                                
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center justify-between mb-1">
-                                    <p className="font-medium text-foreground truncate">
-                                      {conversation.user_profile?.display_name || 'Unknown User'}
-                                    </p>
-                                    {conversation.unread_count > 0 && (
-                                      <Badge className="bg-red-500 text-white text-xs">
-                                        {conversation.unread_count}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <p className="text-sm text-muted-foreground truncate">
-                                    {conversation.last_message?.content || 'No messages yet'}
-                                  </p>
-                                  {conversation.last_message?.created_at && (
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                      {new Date(conversation.last_message.created_at).toLocaleDateString('en-US', { 
-                                        day: 'numeric', 
-                                        month: 'short',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                      })}
-                                    </p>
-                                  )}
-                                </div>
-                                
-                                <MessageCircle className="h-4 w-4 text-muted-foreground" />
+                              
+                              <div className="glass-morphism rounded-lg p-4 border border-border max-w-sm mx-auto">
+                                <p className="text-foreground text-sm mb-3 font-medium">💡 How to start a conversation:</p>
+                                <p className="text-muted-foreground text-xs text-left">
+                                  1. Go to the <strong>Team</strong> tab above<br/>
+                                  2. Click on any team member's profile<br/>
+                                  3. Start messaging them directly
+                                </p>
                               </div>
-                            </motion.div>
-                          ))}
+                              
+                              <Button 
+                                onClick={() => setMessageDialogOpen(true)}
+                                className="bg-accent/30 hover:bg-accent/50 text-foreground border border-border"
+                              >
+                                <Send className="h-4 w-4 mr-2" />
+                                Open Message Center
+                              </Button>
+                            </div>
+                          )}
                         </div>
-                      ) : (
-                        <div className="text-center py-8 space-y-4">
-                            <MessageCircle className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                            <div className="space-y-2">
-                              <h3 className="text-lg font-semibold text-foreground">No Conversations Yet</h3>
-                              <p className="text-muted-foreground text-sm max-w-xs mx-auto leading-relaxed">
-                              You haven't started any conversations yet. 
-                            </p>
-                          </div>
-                          
-                          <div className="glass-morphism rounded-lg p-4 border border-border max-w-sm mx-auto">
-                            <p className="text-foreground text-sm mb-3 font-medium">💡 How to start a conversation:</p>
-                            <p className="text-muted-foreground text-xs text-left">
-                              1. Go to the <strong>Team</strong> tab above<br/>
-                              2. Click on any team member's profile<br/>
-                              3. Start messaging them directly
-                            </p>
-                          </div>
-                          
-                          <Button 
-                            onClick={() => setMessageDialogOpen(true)}
-                            className="bg-accent/30 hover:bg-accent/50 text-foreground border border-border"
-                          >
-                            <Send className="h-4 w-4 mr-2" />
-                            Open Message Center
-                          </Button>
-                        </div>
-                      )}
+                      </ScrollArea>
                     </TabsContent>
                   </Tabs>
                 </div>
