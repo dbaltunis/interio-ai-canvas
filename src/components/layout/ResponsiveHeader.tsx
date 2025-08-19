@@ -42,12 +42,14 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   const [notifications, setNotifications] = useState<any[]>([]);
   
   const { activeUsers, currentUser } = useUserPresence();
-  const { conversations } = useDirectMessages();
   
-  // Check if there are other active users or unread messages
+  // Temporarily disable direct messages to fix subscription error
+  const conversations: any[] = [];
+  const unreadCount = 0;
+  
+  // Check if there are other active users
   const otherActiveUsers = activeUsers.filter(user => user.user_id !== currentUser?.user_id && user.status === 'online');
-  const unreadCount = conversations.reduce((total, conv) => total + conv.unread_count, 0);
-  const hasActivity = otherActiveUsers.length > 0 || unreadCount > 0;
+  const hasActivity = otherActiveUsers.length > 0;
 
   return (
     <>
