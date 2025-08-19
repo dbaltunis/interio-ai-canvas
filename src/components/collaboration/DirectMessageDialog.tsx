@@ -50,10 +50,11 @@ useEffect(() => {
 
 // Ensure the correct conversation opens when dialog is triggered
 useEffect(() => {
-  if (isOpen && selectedUserId) {
+  if (isOpen && selectedUserId && selectedUserId !== activeConversation) {
+    console.log('Dialog opened with selectedUserId:', selectedUserId);
     openConversation(selectedUserId);
   }
-}, [isOpen, selectedUserId, openConversation]);
+}, [isOpen, selectedUserId]); // Removed openConversation from deps to prevent loop
 
   const handleSendMessage = () => {
     if (!messageInput.trim() || !activeConversation) return;

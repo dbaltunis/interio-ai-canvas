@@ -195,11 +195,13 @@ export const useDirectMessages = () => {
     }
   });
 
-  // Realtime subscription for direct messages with dependency on activeConversation
+  // Realtime subscription for direct messages - removed activeConversation dependency to prevent loop
   useEffect(() => {
     if (!user) return;
 
-    const channelName = `direct-messages-${user.id}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+    console.log('Setting up realtime subscription for user:', user.id);
+    
+    const channelName = `direct-messages-${user.id}`;
     const channel = supabase
       .channel(channelName)
       .on(
@@ -208,17 +210,6 @@ export const useDirectMessages = () => {
         (payload) => {
           console.log('New message received:', payload);
           const newMessage = payload.new as DirectMessage;
-          
-          // Immediately update messages if this is for the active conversation
-          if (activeConversation === newMessage.sender_id) {
-            queryClient.setQueryData(['messages', activeConversation, user.id], (oldMessages: DirectMessage[] = []) => {
-              // Prevent duplicates
-              if (oldMessages.some(msg => msg.id === newMessage.id)) {
-                return oldMessages;
-              }
-              return [...oldMessages, newMessage];
-            });
-          }
           
           // Update conversations list to show new message
           queryClient.setQueryData(['conversations', user.id], (oldConversations: Conversation[] = []) => {
@@ -229,6 +220,7 @@ export const useDirectMessages = () => {
             );
           });
 
+          // Invalidate queries to refresh data
           queryClient.invalidateQueries({ queryKey: ['messages'] });
           queryClient.invalidateQueries({ queryKey: ['conversations'] });
         }
@@ -253,16 +245,22 @@ export const useDirectMessages = () => {
       .subscribe();
 
     return () => {
+      console.log('Cleaning up realtime subscription for user:', user.id);
       supabase.removeChannel(channel);
     };
-  }, [user, queryClient, activeConversation]);
+  }, [user, queryClient]); // Removed activeConversation dependency
 
   const sendMessage = (recipientId: string, content: string) => {
     sendMessageMutation.mutate({ recipientId, content });
   };
 
   const openConversation = (userId: string) => {
+    console.log('Opening conversation with user:', userId);
     setActiveConversation(userId);
+    
+    // Force refresh messages for this conversation
+    queryClient.invalidateQueries({ queryKey: ['messages', userId, user?.id] });
+    
     // mark unread as read
     markAsReadMutation.mutate(userId);
   };
