@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
-import { DirectMessagesProvider } from "./contexts/DirectMessagesContext";
 import { AuthPage } from "./components/auth/AuthPage";
 import { ErrorBoundary } from "./components/performance/ErrorBoundary";
 import { EmailRealtimeProvider } from "./contexts/EmailRealtimeContext";
@@ -64,8 +63,7 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
             <AuthProvider>
-              <DirectMessagesProvider>
-                <Routes>
+              <Routes>
                 {/* Public booking routes */}
                 <Route path="/book/:slug" element={
                   <ErrorBoundary>
@@ -115,8 +113,7 @@ const App = () => (
                 
                 {/* Catch all other routes */}
                 <Route path="*" element={<NotFound />} />
-                </Routes>
-              </DirectMessagesProvider>
+              </Routes>
             </AuthProvider>
           </BrowserRouter>
           </ThemeProvider>
