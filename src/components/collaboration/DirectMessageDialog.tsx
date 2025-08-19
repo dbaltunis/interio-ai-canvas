@@ -204,8 +204,8 @@ useEffect(() => {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
-      <DialogContent className="z-[200] max-w-5xl h-[700px] p-0 overflow-hidden">
-        <div className="flex h-full bg-background">
+      <DialogContent className="z-[200] max-w-5xl max-h-[90vh] p-0 overflow-hidden">
+        <div className="flex h-[80vh] bg-background">
           {/* Hidden file input */}
           <input
             ref={fileInputRef}
@@ -215,12 +215,12 @@ useEffect(() => {
             accept="*/*"
           />
           {/* Conversations List */}
-          <div className="w-80 border-r border-border bg-muted/30">
-            <DialogHeader className="p-4 border-b bg-background/50">
+          <div className="w-80 border-r border-border bg-muted/30 flex flex-col">
+            <DialogHeader className="flex-none p-4 border-b bg-background/50">
               <DialogTitle className="text-lg font-semibold">Messages</DialogTitle>
             </DialogHeader>
             
-            <ScrollArea className="h-[calc(700px-73px)]">
+            <ScrollArea className="flex-1 overflow-hidden">
               <div className="p-3">
                 {conversations.map((conversation) => {
                   const user = conversation.user_profile;
@@ -282,7 +282,7 @@ useEffect(() => {
             {activeConversation && (activeUserPresence || activeConversationData) ? (
               <>
                 {/* Chat Header */}
-                <div className="p-4 border-b flex items-center justify-between">
+                <div className="flex-none p-4 border-b flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="relative">
                       <Avatar className="h-10 w-10">
@@ -315,9 +315,9 @@ useEffect(() => {
                   </div>
                 </div>
 
-                 {/* Messages */}
-                 <ScrollArea className="flex-1 p-4 bg-background">
-                   <div className="space-y-4">
+                {/* Messages */}
+                <ScrollArea className="flex-1 overflow-hidden">
+                  <div className="p-4 space-y-4">
                      {messages.length === 0 ? (
                        <div className="text-center py-12 text-muted-foreground">
                          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
@@ -366,12 +366,12 @@ useEffect(() => {
                          </div>
                        ))
                      )}
-                     <div ref={messagesEndRef} />
-                   </div>
-                 </ScrollArea>
+                    <div ref={messagesEndRef} />
+                  </div>
+                </ScrollArea>
 
-                 {/* Enhanced Message Input */}
-                 <div className="p-4 border-t bg-background/50">
+                {/* Enhanced Message Input */}
+                <div className="flex-none p-4 border-t bg-background/50">
                    <div className="flex items-end gap-3">
                      <Button
                        variant="outline"

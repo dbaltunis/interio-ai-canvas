@@ -203,9 +203,10 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                     </TabsList>
 
                     {/* Team Tab Content */}
-                    <TabsContent value="team" className="flex-1 mt-0 h-0">
-                      <ScrollArea className="h-full">
-                        <div className="p-4 space-y-3">
+                    <TabsContent value="team" className="flex-1 mt-0 overflow-hidden">
+                      <div className="flex flex-col h-full">
+                        <ScrollArea className="flex-1">
+                          <div className="p-4 space-y-3">
                           {/* Current User */}
                           {currentUser && (
                             <div>
@@ -443,14 +444,16 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                               </div>
                             )}
                           </div>
-                        </div>
-                      </ScrollArea>
+                          </div>
+                        </ScrollArea>
+                      </div>
                     </TabsContent>
 
                     {/* Messages Tab Content */}
-                    <TabsContent value="messages" className="flex-1 mt-0 h-0">
-                      <ScrollArea className="h-full">
-                        <div className="p-4">
+                    <TabsContent value="messages" className="flex-1 mt-0 overflow-hidden">
+                      <div className="flex flex-col h-full">
+                        <ScrollArea className="flex-1">
+                          <div className="p-4">
                           {conversations.length > 0 ? (
                             <div className="space-y-3">
                               <p className="text-muted-foreground text-sm mb-3 font-medium">Active Conversations ({conversations.length})</p>
@@ -534,8 +537,9 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                               </Button>
                             </div>
                           )}
-                        </div>
-                      </ScrollArea>
+                          </div>
+                        </ScrollArea>
+                      </div>
                     </TabsContent>
                   </Tabs>
                 </div>
