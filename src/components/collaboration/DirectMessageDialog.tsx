@@ -13,6 +13,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 
 interface DirectMessageDialogProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export const DirectMessageDialog = ({ isOpen, onClose, selectedUserId }: DirectM
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+  const { typingUsers, sendTypingIndicator } = useTypingIndicator(activeConversation);
 
   const activeUserPresence = activeConversation ? 
     activeUsers.find(u => u.user_id === activeConversation) : null;
@@ -58,6 +60,7 @@ useEffect(() => {
     
     sendMessage(activeConversation, messageInput.trim());
     setMessageInput('');
+    sendTypingIndicator(false); // Stop typing indicator when sending
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,6 +128,7 @@ useEffect(() => {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
+      sendTypingIndicator(false); // Stop typing indicator when sending
       handleSendMessage();
     }
   };
@@ -364,9 +368,24 @@ useEffect(() => {
                              </div>
                            </div>
                          </div>
-                       ))
-                     )}
-                    <div ref={messagesEndRef} />
+                        ))
+                      )}
+                      
+                      {/* Typing indicator */}
+                      {typingUsers.length > 0 && (
+                        <div className="flex items-center gap-2 text-muted-foreground text-sm animate-fade-in">
+                          <div className="flex space-x-1">
+                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
+                          </div>
+                          <span>
+                            {activeConversationData?.user_profile?.display_name || 'Someone'} is typing...
+                          </span>
+                        </div>
+                      )}
+                      
+                      <div ref={messagesEndRef} />
                   </div>
                 </ScrollArea>
 
@@ -388,14 +407,17 @@ useEffect(() => {
                      </Button>
                      
                      <div className="flex-1 min-w-0">
-                       <Input
-                         placeholder="Type a message..."
-                         value={messageInput}
-                         onChange={(e) => setMessageInput(e.target.value)}
-                         onKeyPress={handleKeyPress}
-                         disabled={sendingMessage || uploading}
-                         className="resize-none border-2 focus:border-primary/50 rounded-xl"
-                       />
+                        <Input
+                          placeholder="Type a message..."
+                          value={messageInput}
+                          onChange={(e) => {
+                            setMessageInput(e.target.value);
+                            sendTypingIndicator(e.target.value.length > 0);
+                          }}
+                          onKeyPress={handleKeyPress}
+                          disabled={sendingMessage || uploading}
+                          className="resize-none border-2 focus:border-primary/50 rounded-xl"
+                        />
                      </div>
                      
                      <Button

@@ -140,7 +140,22 @@ export const useDirectMessages = () => {
       if (error) throw error;
       return data as DirectMessage;
     },
-    onSuccess: () => {
+    onSuccess: (newMessage) => {
+      // Optimistically update messages for instant UI feedback
+      queryClient.setQueryData(['messages', activeConversation, user?.id], (oldMessages: DirectMessage[] = []) => {
+        return [...oldMessages, newMessage];
+      });
+      
+      // Update conversations list optimistically
+      queryClient.setQueryData(['conversations', user?.id], (oldConversations: Conversation[] = []) => {
+        return oldConversations.map(conv => 
+          conv.user_id === newMessage.recipient_id 
+            ? { ...conv, last_message: newMessage }
+            : conv
+        );
+      });
+
+      // Still invalidate for server sync
       queryClient.invalidateQueries({ queryKey: ['messages'] });
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
@@ -173,7 +188,7 @@ export const useDirectMessages = () => {
     }
   });
 
-  // Realtime subscription for direct messages
+  // Realtime subscription for direct messages with dependency on activeConversation
   useEffect(() => {
     if (!user) return;
 
@@ -183,7 +198,30 @@ export const useDirectMessages = () => {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'direct_messages', filter: `recipient_id=eq.${user.id}` },
-        () => {
+        (payload) => {
+          console.log('New message received:', payload);
+          const newMessage = payload.new as DirectMessage;
+          
+          // Immediately update messages if this is for the active conversation
+          if (activeConversation === newMessage.sender_id) {
+            queryClient.setQueryData(['messages', activeConversation, user.id], (oldMessages: DirectMessage[] = []) => {
+              // Prevent duplicates
+              if (oldMessages.some(msg => msg.id === newMessage.id)) {
+                return oldMessages;
+              }
+              return [...oldMessages, newMessage];
+            });
+          }
+          
+          // Update conversations list to show new message
+          queryClient.setQueryData(['conversations', user.id], (oldConversations: Conversation[] = []) => {
+            return oldConversations.map(conv => 
+              conv.user_id === newMessage.sender_id 
+                ? { ...conv, last_message: newMessage, unread_count: conv.unread_count + 1 }
+                : conv
+            );
+          });
+
           queryClient.invalidateQueries({ queryKey: ['messages'] });
           queryClient.invalidateQueries({ queryKey: ['conversations'] });
         }
@@ -191,7 +229,8 @@ export const useDirectMessages = () => {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'direct_messages', filter: `sender_id=eq.${user.id}` },
-        () => {
+        (payload) => {
+          console.log('Message sent confirmed:', payload);
           queryClient.invalidateQueries({ queryKey: ['messages'] });
           queryClient.invalidateQueries({ queryKey: ['conversations'] });
         }
@@ -209,7 +248,7 @@ export const useDirectMessages = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, queryClient]);
+  }, [user, queryClient, activeConversation]);
 
   const sendMessage = (recipientId: string, content: string) => {
     sendMessageMutation.mutate({ recipientId, content });
