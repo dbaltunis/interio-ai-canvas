@@ -307,10 +307,12 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                       </div>
                                       
                                        <div className="flex-1 min-w-0">
-                                         <div className="flex items-center gap-2 mb-2">
-                                           <p className="font-semibold text-foreground text-sm leading-tight" title={user.user_profile?.display_name}>
-                                             {user.user_profile?.display_name}
-                                           </p>
+                                         <div className="flex items-start justify-between gap-2 mb-2">
+                                           <div className="flex-1 min-w-0">
+                                             <p className="font-semibold text-foreground text-sm leading-tight break-words">
+                                               {user.user_profile?.display_name}
+                                             </p>
+                                           </div>
                                            <Badge 
                                              variant="secondary" 
                                              className="text-xs bg-accent/40 text-foreground border border-border/50 px-2 py-1 shrink-0"
@@ -318,19 +320,19 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                              {user.user_profile?.role}
                                            </Badge>
                                          </div>
-                                        
-                                        {user.current_activity && (
-                                          <p className="text-sm text-muted-foreground truncate mb-1 flex items-center gap-1">
-                                            <span className="text-yellow-400">🎯</span>
-                                            {user.current_activity}
-                                          </p>
-                                        )}
-                                        
-                                        <p className="text-xs text-muted-foreground capitalize flex items-center gap-1">
-                                          <Circle className={`h-2 w-2 fill-current ${getStatusColor(user.status)}`} />
-                                          {user.status}
-                                        </p>
-                                      </div>
+                                         
+                                         {user.current_activity && (
+                                           <p className="text-sm text-muted-foreground break-words mb-1 flex items-start gap-1">
+                                             <span className="text-yellow-400 shrink-0">🎯</span>
+                                             <span className="break-words">{user.current_activity}</span>
+                                           </p>
+                                         )}
+                                         
+                                         <p className="text-xs text-muted-foreground capitalize flex items-center gap-1">
+                                           <Circle className={`h-2 w-2 fill-current ${getStatusColor(user.status)} shrink-0`} />
+                                           {user.status}
+                                         </p>
+                                       </div>
                                       
                                       <motion.div
                                         whileHover={{ scale: 1.1 }}
