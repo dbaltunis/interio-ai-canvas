@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -302,19 +302,19 @@ export const DirectMessagesProvider: React.FC<DirectMessagesProviderProps> = ({ 
     };
   }, [user?.id, queryClient, activeConversation]);
 
-  const sendMessage = (recipientId: string, content: string) => {
+  const sendMessage = useCallback((recipientId: string, content: string) => {
     sendMessageMutation.mutate({ recipientId, content });
-  };
+  }, [sendMessageMutation]);
 
-  const openConversation = (userId: string) => {
+  const openConversation = useCallback((userId: string) => {
     setActiveConversation(userId);
     // mark unread as read
     markAsReadMutation.mutate(userId);
-  };
+  }, [markAsReadMutation]);
 
-  const closeConversation = () => {
+  const closeConversation = useCallback(() => {
     setActiveConversation(null);
-  };
+  }, []);
 
   const totalUnreadCount = useMemo(() => {
     return conversations.reduce((total, conv) => total + (conv.unread_count || 0), 0);

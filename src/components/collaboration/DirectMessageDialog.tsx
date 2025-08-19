@@ -50,10 +50,10 @@ useEffect(() => {
 
 // Ensure the correct conversation opens when dialog is triggered
 useEffect(() => {
-  if (isOpen && selectedUserId) {
+  if (isOpen && selectedUserId && selectedUserId !== activeConversation) {
     openConversation(selectedUserId);
   }
-}, [isOpen, selectedUserId, openConversation]);
+}, [isOpen, selectedUserId, activeConversation, openConversation]);
 
   const handleSendMessage = () => {
     if (!messageInput.trim() || !activeConversation) return;
