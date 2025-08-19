@@ -53,7 +53,7 @@ useEffect(() => {
   if (isOpen && selectedUserId) {
     openConversation(selectedUserId);
   }
-}, [isOpen, selectedUserId]);
+}, [isOpen, selectedUserId, openConversation]);
 
   const handleSendMessage = () => {
     if (!messageInput.trim() || !activeConversation) return;

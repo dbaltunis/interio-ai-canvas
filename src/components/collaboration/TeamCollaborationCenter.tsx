@@ -17,6 +17,7 @@ import { useTeamMembers } from '@/hooks/useTeamMembers';
 import { Switch } from '@/components/ui/switch';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { formatDistanceToNow } from 'date-fns';
 
 interface TeamCollaborationCenterProps {
   isOpen: boolean;
@@ -275,9 +276,9 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                   initial={{ opacity: 0, y: 20 }}
                                   animate={{ opacity: 1, y: 0 }}
                                   transition={{ delay: index * 0.1 }}
-                                  className="group relative"
+                                  className="group relative mb-3"
                                 >
-                                  <div className="glass-morphism rounded-xl p-4 hover:bg-accent/30 transition-all duration-300 cursor-pointer border border-border"
+                                  <div className="glass-morphism rounded-xl p-4 hover:bg-accent/30 transition-all duration-300 cursor-pointer border border-border shadow-sm hover:shadow-md"
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           setSelectedUserId(user.user_id);
@@ -285,44 +286,50 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                           setMessageDialogOpen(true);
                                         }}>
                                     
-                                    {/* Status indicator gradient line */}
-                                    <div className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${getStatusBgColor(user.status)} rounded-l-xl`} />
+                                    {/* Enhanced status indicator with glow effect */}
+                                    <div className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${getStatusBgColor(user.status)} rounded-l-xl shadow-lg`} />
                                     
                                     <div className="flex items-center gap-4">
                                       <div className="relative">
-                                        <Avatar className="h-12 w-12 ring-2 ring-white/20">
+                                        <Avatar className="h-14 w-14 ring-2 ring-white/20 shadow-lg">
                                           <AvatarImage src={user.user_profile?.avatar_url} />
-                                          <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white">
+                                          <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white font-semibold text-lg">
                                             {user.user_profile?.display_name?.charAt(0) || 'U'}
                                           </AvatarFallback>
                                         </Avatar>
                                         
-                                        {/* Animated status dot */}
+                                        {/* Enhanced animated status dot with glow */}
                                         <motion.div
                                           animate={{ scale: [1, 1.2, 1] }}
                                           transition={{ duration: 2, repeat: Infinity }}
-                                          className={`absolute -bottom-1 -right-1 h-4 w-4 bg-gradient-to-r ${getStatusBgColor(user.status)} rounded-full border-2 border-white/30`}
+                                          className={`absolute -bottom-1 -right-1 h-5 w-5 bg-gradient-to-r ${getStatusBgColor(user.status)} rounded-full border-2 border-white/30 shadow-lg`}
                                         />
                                       </div>
                                       
                                       <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                          <p className="font-semibold text-foreground truncate">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <p className="font-semibold text-foreground truncate text-lg">
                                             {user.user_profile?.display_name}
                                           </p>
                                           <Badge 
                                             variant="secondary" 
-                                            className="text-xs bg-accent/30 text-foreground border border-border"
+                                            className="text-xs bg-accent/40 text-foreground border border-border/50 px-2 py-1"
                                           >
                                             {user.user_profile?.role}
                                           </Badge>
                                         </div>
                                         
                                         {user.current_activity && (
-                                          <p className="text-sm text-muted-foreground truncate">
-                                            🎯 {user.current_activity}
+                                          <p className="text-sm text-muted-foreground truncate mb-1 flex items-center gap-1">
+                                            <span className="text-yellow-400">🎯</span>
+                                            {user.current_activity}
                                           </p>
                                         )}
+                                        
+                                        <p className="text-xs text-muted-foreground capitalize flex items-center gap-1">
+                                          <Circle className={`h-2 w-2 fill-current ${getStatusColor(user.status)}`} />
+                                          {user.status}
+                                        </p>
                                       </div>
                                       
                                       <motion.div
@@ -333,9 +340,9 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                         <Button
                                           size="sm"
                                           variant="ghost"
-                                          className="text-muted-foreground hover:text-foreground hover:bg-accent/30 rounded-full h-10 w-10 p-0"
+                                          className="text-muted-foreground hover:text-foreground hover:bg-accent/40 rounded-full h-12 w-12 p-0 shadow-md"
                                         >
-                                          <MessageCircle className="h-4 w-4" />
+                                          <MessageCircle className="h-5 w-5" />
                                         </Button>
                                       </motion.div>
                                     </div>
@@ -454,60 +461,81 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                       <div className="flex flex-col h-full">
                         <ScrollArea className="flex-1">
                           <div className="p-4">
-                          {conversations.length > 0 ? (
-                            <div className="space-y-3">
-                              <p className="text-muted-foreground text-sm mb-3 font-medium">Active Conversations ({conversations.length})</p>
-                              {conversations.map((conversation, index) => (
-                                <motion.div
-                                  key={conversation.user_id || index}
-                                  initial={{ opacity: 0, y: 20 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  transition={{ delay: index * 0.1 }}
-                                  className="glass-morphism rounded-xl p-4 hover:bg-accent/30 transition-all duration-300 cursor-pointer border border-border"
-                                   onClick={() => {
-                                     openConversation(conversation.user_id);
-                                     setActiveTab('messages');
-                                     setMessageDialogOpen(true);
-                                   }}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <Avatar className="h-10 w-10">
-                                      <AvatarImage src={conversation.user_profile?.avatar_url} />
-                                      <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-sm">
-                                        {conversation.user_profile?.display_name?.charAt(0) || 'U'}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center justify-between mb-1">
-                                        <p className="font-medium text-foreground truncate">
-                                          {conversation.user_profile?.display_name || 'Unknown User'}
-                                        </p>
+                            {conversations.length > 0 ? (
+                              <div className="space-y-3">
+                                <p className="text-muted-foreground text-sm mb-4 font-medium flex items-center gap-2">
+                                  <MessageCircle className="h-4 w-4" />
+                                  Recent Conversations ({conversations.length})
+                                </p>
+                                {conversations.map((conversation, index) => (
+                                  <motion.div
+                                    key={conversation.user_id || index}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.1 }}
+                                    className="glass-morphism rounded-xl p-4 hover:bg-accent/30 transition-all duration-300 cursor-pointer border border-border shadow-sm hover:shadow-md"
+                                     onClick={() => {
+                                       setSelectedUserId(conversation.user_id);
+                                       setMessageDialogOpen(true);
+                                     }}
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <div className="relative">
+                                        <Avatar className="h-12 w-12 ring-2 ring-white/20 shadow-md">
+                                          <AvatarImage src={conversation.user_profile?.avatar_url} />
+                                          <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white font-semibold">
+                                            {conversation.user_profile?.display_name?.charAt(0) || 'U'}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        
+                                        {/* Status indicator */}
+                                        <Circle className={`absolute -bottom-1 -right-1 h-4 w-4 fill-current ${getStatusColor(conversation.user_profile?.status || 'offline')} border-2 border-white/30 rounded-full`} />
+                                        
+                                        {/* Enhanced unread count badge */}
                                         {conversation.unread_count > 0 && (
-                                          <Badge className="bg-red-500 text-white text-xs">
-                                            {conversation.unread_count}
-                                          </Badge>
+                                          <motion.div
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center shadow-lg border-2 border-white"
+                                            style={{
+                                              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                                            }}
+                                          >
+                                            {conversation.unread_count > 9 ? '9+' : conversation.unread_count}
+                                          </motion.div>
                                         )}
                                       </div>
-                                      <p className="text-sm text-muted-foreground truncate">
-                                        {conversation.last_message?.content || 'No messages yet'}
-                                      </p>
-                                      {conversation.last_message?.created_at && (
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                          {new Date(conversation.last_message.created_at).toLocaleDateString('en-US', { 
-                                            day: 'numeric', 
-                                            month: 'short',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                          })}
-                                        </p>
-                                      )}
+                                      
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between mb-1">
+                                          <p className="font-semibold text-foreground truncate">
+                                            {conversation.user_profile?.display_name}
+                                          </p>
+                                          <Badge 
+                                            variant="secondary" 
+                                            className="text-xs bg-accent/40 text-foreground border border-border/50 px-2 py-1"
+                                          >
+                                            {conversation.user_profile?.status || 'offline'}
+                                          </Badge>
+                                        </div>
+                                        
+                                        {conversation.last_message && (
+                                          <div className="flex items-center justify-between">
+                                            <p className="text-sm text-muted-foreground truncate flex-1">
+                                              {conversation.last_message.content.length > 40 
+                                                ? `${conversation.last_message.content.substring(0, 40)}...` 
+                                                : conversation.last_message.content
+                                              }
+                                            </p>
+                                            <span className="text-xs text-muted-foreground ml-2 whitespace-nowrap">
+                                              {formatDistanceToNow(new Date(conversation.last_message.created_at), { addSuffix: true })}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
-                                    
-                                    <MessageCircle className="h-4 w-4 text-muted-foreground" />
-                                  </div>
-                                </motion.div>
-                              ))}
+                                  </motion.div>
+                                ))}
                             </div>
                           ) : (
                             <div className="text-center py-8 space-y-4">
