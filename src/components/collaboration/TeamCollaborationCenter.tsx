@@ -264,7 +264,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                       {/* Online Users */}
                       {onlineUsers.length > 0 && (
                         <div>
-                          <p className="text-white/80 text-sm mb-3 font-medium">Online Now</p>
+                          <p className="text-muted-foreground text-sm mb-3 font-medium">Online Now</p>
                           {onlineUsers.map((user, index) => (
                             <motion.div
                               key={user.user_id}
@@ -303,7 +303,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                   
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
-                                      <p className="font-semibold text-white truncate">
+                                      <p className="font-semibold text-foreground truncate">
                                         {user.user_profile?.display_name}
                                       </p>
                                       <Badge 
@@ -446,7 +446,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                     <TabsContent value="messages" className="flex-1 overflow-y-auto p-4 mt-0">
                       {conversations.length > 0 ? (
                         <div className="space-y-3">
-                          <p className="text-white/80 text-sm mb-3 font-medium">Active Conversations ({conversations.length})</p>
+                          <p className="text-muted-foreground text-sm mb-3 font-medium">Active Conversations ({conversations.length})</p>
                           {conversations.map((conversation, index) => (
                             <motion.div
                               key={conversation.user_id || index}

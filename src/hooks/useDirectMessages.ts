@@ -87,7 +87,18 @@ export const useDirectMessages = () => {
         });
       }
 
-      return results;
+      // Sort conversations by activity: users with messages first, then by last message time
+      return results.sort((a, b) => {
+        // Users with messages come first
+        if (a.unread_count > 0 && b.unread_count === 0) return -1;
+        if (b.unread_count > 0 && a.unread_count === 0) return 1;
+        
+        // If both have messages or both don't, sort by last message time
+        const aTime = a.last_message?.created_at ? new Date(a.last_message.created_at).getTime() : 0;
+        const bTime = b.last_message?.created_at ? new Date(b.last_message.created_at).getTime() : 0;
+        
+        return bTime - aTime; // Most recent first
+      });
     },
     enabled: !!user,
   });
