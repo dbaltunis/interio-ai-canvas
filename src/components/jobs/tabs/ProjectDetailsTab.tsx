@@ -14,6 +14,8 @@ import { CalendarDays, User, Edit, Save, X, Search, Mail, MapPin } from "lucide-
 import { ClientSearchStep } from "@/components/job-creation/steps/ClientSearchStep";
 import { ProductsToOrderSection } from "@/components/jobs/ProductsToOrderSection";
 import { ProjectNotesCard } from "../ProjectNotesCard";
+import { CompactQuotesSection } from "../quotation/CompactQuotesSection";
+import { useQuotes } from "@/hooks/useQuotes";
 
 interface ProjectDetailsTabProps {
   project: any;
@@ -23,6 +25,8 @@ interface ProjectDetailsTabProps {
 export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [showClientSearch, setShowClientSearch] = useState(false);
+  const [selectedQuote, setSelectedQuote] = useState<any | null>(null);
+  const [notesOpen, setNotesOpen] = useState(false);
   const [formData, setFormData] = useState({
     priority: project.priority || "medium",
     client_id: project.client_id || null,
@@ -32,6 +36,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
 
   const { data: clients, refetch: refetchClients } = useClients();
   const { data: jobStatuses = [] } = useJobStatuses();
+  const { data: quotes = [] } = useQuotes(project.id);
   const updateProject = useUpdateProject();
   const { toast } = useToast();
   
@@ -361,6 +366,13 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
           )}
         </CardContent>
       </Card>
+
+      {/* Active Quotes */}
+      <CompactQuotesSection 
+        quotes={quotes}
+        onSelectQuote={setSelectedQuote}
+        onOpenNotes={(quote) => { setSelectedQuote(quote); setNotesOpen(true); }}
+      />
 
       {/* Project Notes */}
       <ProjectNotesCard projectId={project.id} />

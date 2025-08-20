@@ -330,15 +330,6 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
         </div>
       </div>
 
-      {/* Compact Active Quotes */}
-      <CompactQuotesSection 
-        quotes={projectQuotes}
-        onSelectQuote={setSelectedQuote}
-        onOpenNotes={(quote) => { setSelectedQuote(quote); setNotesOpen(true); }}
-      />
-
-      {/* Compact Project Notes */}
-      <CompactProjectNotes projectId={projectId} />
 
       {/* Items Editor (optional) */}
       {showItemsEditor && (
