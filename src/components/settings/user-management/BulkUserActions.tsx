@@ -33,8 +33,10 @@ export const BulkUserActions = ({
   
   // Permission checks
   const canExport = useHasPermission('export_data');
-  const canDelete = useHasPermission('delete_users');
   const canManageUsers = useHasPermission('manage_users');
+  
+  // For now, allow delete if user can manage users - we'll add proper delete permission later
+  const canDelete = canManageUsers;
   
   // Get current user ID to prevent self-actions
   const getCurrentUserId = async () => {
@@ -90,7 +92,14 @@ export const BulkUserActions = ({
     try {
       switch (bulkAction) {
         case 'activate':
-          if (!canManageUsers) break;
+          if (!canManageUsers) {
+            toast({
+              title: "Permission denied",
+              description: "You don't have permission to manage users.",
+              variant: "destructive",
+            });
+            break;
+          }
           await Promise.all(
             targetUsers.map(userId => 
               updateUser.mutateAsync({ userId, is_active: true })
@@ -103,7 +112,14 @@ export const BulkUserActions = ({
           break;
 
         case 'deactivate':
-          if (!canManageUsers) break;
+          if (!canManageUsers) {
+            toast({
+              title: "Permission denied",
+              description: "You don't have permission to manage users.",
+              variant: "destructive",
+            });
+            break;
+          }
           await Promise.all(
             targetUsers.map(userId => 
               updateUser.mutateAsync({ userId, is_active: false })
@@ -116,7 +132,14 @@ export const BulkUserActions = ({
           break;
 
         case 'set_role_admin':
-          if (!canManageUsers) break;
+          if (!canManageUsers) {
+            toast({
+              title: "Permission denied",
+              description: "You don't have permission to manage users.",
+              variant: "destructive",
+            });
+            break;
+          }
           await Promise.all(
             targetUsers.map(userId => 
               updateUser.mutateAsync({ userId, role: 'Admin' })
@@ -129,7 +152,14 @@ export const BulkUserActions = ({
           break;
 
         case 'set_role_staff':
-          if (!canManageUsers) break;
+          if (!canManageUsers) {
+            toast({
+              title: "Permission denied",
+              description: "You don't have permission to manage users.",
+              variant: "destructive",
+            });
+            break;
+          }
           await Promise.all(
             targetUsers.map(userId => 
               updateUser.mutateAsync({ userId, role: 'Staff' })
@@ -142,7 +172,14 @@ export const BulkUserActions = ({
           break;
 
         case 'delete':
-          if (!canDelete) break;
+          if (!canDelete) {
+            toast({
+              title: "Permission denied",
+              description: "You don't have permission to delete users.",
+              variant: "destructive",
+            });
+            break;
+          }
           if (confirm(`Are you sure you want to delete ${targetUsers.length} users? This action cannot be undone.`)) {
             await Promise.all(
               targetUsers.map(userId => deleteUser.mutateAsync(userId))
