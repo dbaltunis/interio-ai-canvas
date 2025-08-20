@@ -10,7 +10,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { Users, MessageCircle, Zap, Circle, Send, X } from 'lucide-react';
+import { useCurrentUserProfile, useUpdateUserProfile } from '@/hooks/useUserProfile';
+import { Users, MessageCircle, Zap, Circle, Send, X, Edit, Check } from 'lucide-react';
 import { DirectMessageDialog } from './DirectMessageDialog';
 import { cn } from '@/lib/utils';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
@@ -35,6 +36,10 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
   const [messageInput, setMessageInput] = useState('');
   const [showAccountUsers, setShowAccountUsers] = useState(false);
   const { data: teamMembers = [] } = useTeamMembers();
+  const { data: currentUserProfile } = useCurrentUserProfile();
+  const updateUserProfile = useUpdateUserProfile();
+  const [isEditingStatus, setIsEditingStatus] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
   const queryClient = useQueryClient();
   const toggleActive = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
@@ -79,6 +84,22 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
   const onlineUsers = otherUsers.filter(u => u.status === 'online');
   const offlineUsers = otherUsers.filter(u => u.status !== 'online');
   const totalUsers = activeUsers.length;
+
+  // Initialize status message from user profile
+  useEffect(() => {
+    if (currentUserProfile?.status_message) {
+      setStatusMessage(currentUserProfile.status_message);
+    }
+  }, [currentUserProfile?.status_message]);
+
+  const handleStatusMessageSave = async () => {
+    try {
+      await updateUserProfile.mutateAsync({ status_message: statusMessage.trim() || null });
+      setIsEditingStatus(false);
+    } catch (error) {
+      console.error('Failed to update status message:', error);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -183,6 +204,72 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                       </Button>
                     )}
                   </div>
+
+                  {/* Current User Section */}
+                  {currentUserProfile && (
+                    <div className="mt-4 flex flex-col items-center">
+                      <div className="relative">
+                        <Avatar className="h-16 w-16 ring-2 ring-white/30">
+                          <AvatarImage src={currentUserProfile.avatar_url} />
+                          <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-lg">
+                            {getInitials(currentUserProfile.display_name || '')}
+                          </AvatarFallback>
+                        </Avatar>
+                        
+                        {/* Online indicator */}
+                        <motion.div
+                          animate={{ scale: [1, 1.2, 1] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                          className="absolute -bottom-1 -right-1 h-5 w-5 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full border-2 border-white/30"
+                        />
+                      </div>
+                      
+                      <div className="mt-2 text-center">
+                        <p className="text-sm text-muted-foreground">
+                          {currentUserProfile.display_name}
+                        </p>
+                        
+                        {/* Editable Status Message */}
+                        <div className="mt-1 flex items-center justify-center gap-2">
+                          {isEditingStatus ? (
+                            <div className="flex items-center gap-2">
+                              <Input
+                                value={statusMessage}
+                                onChange={(e) => setStatusMessage(e.target.value)}
+                                placeholder="How are you feeling?"
+                                className="h-7 text-xs max-w-32"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    handleStatusMessageSave();
+                                  } else if (e.key === 'Escape') {
+                                    setIsEditingStatus(false);
+                                    setStatusMessage(currentUserProfile?.status_message || '');
+                                  }
+                                }}
+                                autoFocus
+                              />
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={handleStatusMessageSave}
+                                className="h-7 w-7 p-0"
+                              >
+                                <Check className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setIsEditingStatus(true)}
+                              className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 max-w-40 truncate"
+                            >
+                              {currentUserProfile.status_message || 'Add status...'}
+                              <Edit className="h-3 w-3 shrink-0" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Tabs for Team & Messages */}
@@ -208,64 +295,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                     <TabsContent value="team" className="flex-1 mt-0 overflow-hidden">
                       <div className="flex flex-col h-full">
                         <ScrollArea className="flex-1">
-                          <div className="p-4 space-y-3">
-                          {/* Current User */}
-                          {currentUser && (
-                            <div>
-                              <p className="text-muted-foreground text-sm mb-3 font-medium flex items-center gap-2">
-                                You <span className="text-xs bg-accent/30 text-foreground border border-border px-2 py-1 rounded-full">Currently Active</span>
-                              </p>
-                              <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="group relative"
-                              >
-                                <div className="glass-morphism rounded-xl p-4 border border-border">
-                                  
-                                  {/* Status indicator gradient line */}
-                                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-green-400 to-emerald-500 rounded-l-xl" />
-                                  
-                                  <div className="flex items-center gap-4">
-                                    <div className="relative">
-                                      <Avatar className="h-12 w-12 ring-2 ring-white/30">
-                                        <AvatarImage src={currentUser.user_profile?.avatar_url} />
-                                        <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white">
-                                          {getInitials(currentUser.user_profile?.display_name || '')}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      
-                                      {/* Animated status dot */}
-                                      <motion.div
-                                        animate={{ scale: [1, 1.2, 1] }}
-                                        transition={{ duration: 2, repeat: Infinity }}
-                                        className="absolute -bottom-1 -right-1 h-4 w-4 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full border-2 border-white/30"
-                                      />
-                                    </div>
-                                    
-                                     <div className="flex-1 min-w-0">
-                                       <div className="flex items-center gap-2 mb-1">
-                                         <p className="font-semibold text-foreground text-sm leading-tight truncate" title={currentUser.user_profile?.display_name}>
-                                           {formatDisplayName(currentUser.user_profile?.display_name || '')}
-                                         </p>
-                                           <Badge 
-                                           variant="secondary" 
-                                           className="text-xs bg-accent/30 text-foreground border border-border shrink-0"
-                                         >
-                                           {currentUser.user_profile?.role}
-                                         </Badge>
-                                       </div>
-                                      
-                                        {currentUser.current_activity && (
-                                          <p className="text-sm text-muted-foreground truncate">
-                                          🎯 {currentUser.current_activity}
-                                        </p>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              </motion.div>
-                            </div>
-                          )}
+                      <div className="p-4 space-y-3">
 
                           {/* Online Users */}
                           {onlineUsers.length > 0 && (
@@ -389,16 +419,23 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                           <Badge variant="outline" className="text-xs text-muted-foreground border-border">
                                             {user.user_profile?.role}
                                           </Badge>
-                                        </div>
-                                         <p className="text-xs text-muted-foreground capitalize">
-                                           {user.status === 'never_logged_in' ? 'Never signed up' : 
-                                            user.status === 'away' ? 'Away' : 'Offline'}
-                                           {user.last_seen && user.status !== 'never_logged_in' && (
-                                             <span className="ml-2">
-                                               • {formatLastSeen(user.last_seen)}
-                                             </span>
-                                           )}
-                                         </p>
+                                         </div>
+
+                                          {user.user_profile?.status_message && (
+                                            <p className="text-xs text-muted-foreground truncate mb-1">
+                                              {user.user_profile.status_message}
+                                            </p>
+                                          )}
+
+                                          <p className="text-xs text-muted-foreground capitalize">
+                                            {user.status === 'never_logged_in' ? 'Never signed up' : 
+                                             user.status === 'away' ? 'Away' : 'Offline'}
+                                            {user.last_seen && user.status !== 'never_logged_in' && (
+                                              <span className="ml-2">
+                                                • {formatLastSeen(user.last_seen)}
+                                              </span>
+                                            )}
+                                          </p>
                                       </div>
                                       <Circle className={`h-3 w-3 fill-current ${getStatusColor(user.status)} opacity-70`} />
                                     </div>

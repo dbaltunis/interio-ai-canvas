@@ -14,6 +14,7 @@ export interface UserPresence {
     display_name: string;
     avatar_url?: string;
     role: string;
+    status_message?: string;
   };
 }
 
@@ -38,7 +39,8 @@ export const useUserPresence = () => {
         user_profile: {
           display_name: profile.display_name || 'Unknown User',
           avatar_url: undefined,
-          role: profile.role
+          role: profile.role,
+          status_message: profile.status_message
         },
         current_activity: undefined
       }));
