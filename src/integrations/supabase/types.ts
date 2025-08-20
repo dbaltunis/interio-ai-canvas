@@ -3529,6 +3529,7 @@ export type Database = {
           last_seen: string
           role: string
           status: string
+          status_message: string
           user_id: string
         }[]
       }
