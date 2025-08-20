@@ -11,7 +11,9 @@ import { useUserPresence } from '@/hooks/useUserPresence';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useCurrentUserProfile, useUpdateUserProfile } from '@/hooks/useUserProfile';
-import { Users, MessageCircle, Zap, Circle, Send, X, Edit, Check } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { useCompactMode } from '@/hooks/useCompactMode';
+import { Users, MessageCircle, Zap, Circle, Send, X, Edit, Check, Settings, LogOut, Sun, Moon, Palette } from 'lucide-react';
 import { DirectMessageDialog } from './DirectMessageDialog';
 import { cn } from '@/lib/utils';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
@@ -38,6 +40,8 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
   const { data: teamMembers = [] } = useTeamMembers();
   const { data: currentUserProfile } = useCurrentUserProfile();
   const updateUserProfile = useUpdateUserProfile();
+  const { theme, setTheme } = useTheme();
+  const { compact, toggleCompact } = useCompactMode();
   const [isEditingStatus, setIsEditingStatus] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const queryClient = useQueryClient();
@@ -606,6 +610,72 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                       </div>
                     </TabsContent>
                   </Tabs>
+                </div>
+
+                {/* Bottom Controls Section */}
+                <div className="border-t border-border bg-background/50 backdrop-blur-sm">
+                  <div className="p-4 space-y-3">
+                    {/* Theme Controls */}
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2 font-medium">Theme</p>
+                      <div className="flex gap-2">
+                        <Button
+                          variant={theme === 'light' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setTheme('light')}
+                          className="flex-1 h-8"
+                        >
+                          <Sun className="h-3 w-3 mr-1" />
+                          Light
+                        </Button>
+                        <Button
+                          variant={theme === 'dark' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setTheme('dark')}
+                          className="flex-1 h-8"
+                        >
+                          <Moon className="h-3 w-3 mr-1" />
+                          Dark
+                        </Button>
+                        <Button
+                          variant={theme === 'apple-graphite' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setTheme('apple-graphite')}
+                          className="flex-1 h-8"
+                        >
+                          <Palette className="h-3 w-3 mr-1" />
+                          Graphite
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="space-y-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.location.href = '/settings'}
+                        className="w-full justify-start h-8"
+                      >
+                        <Settings className="h-3 w-3 mr-2" />
+                        Settings
+                      </Button>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          const { supabase } = await import('@/integrations/supabase/client');
+                          await supabase.auth.signOut();
+                          window.location.href = '/auth';
+                        }}
+                        className="w-full justify-start h-8 text-red-500 hover:text-red-600 border-red-200 hover:border-red-300"
+                      >
+                        <LogOut className="h-3 w-3 mr-2" />
+                        Sign Out
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>

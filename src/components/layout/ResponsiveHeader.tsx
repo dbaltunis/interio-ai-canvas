@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { BrandHeader } from './BrandHeader';
 import { UserProfile } from './UserProfile';
-import { NotificationDropdown } from '../notifications/NotificationDropdown';
+// Removed NotificationDropdown - simplified UI
 import { TeamCollaborationCenter } from '../collaboration/TeamCollaborationCenter';
 import { AINotificationToast } from '../collaboration/AINotificationToast';
 import { Button } from '@/components/ui/button';
@@ -118,12 +118,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                 </Button>
               </div>
               
-              {/* Notification Bell */}
-              <div className="hidden md:block">
-                <NotificationDropdown />
-              </div>
-              
-              {/* User Profile */}
+              {/* User Profile - Simplified */}
               <UserProfile />
               
               {/* Mobile menu button */}
