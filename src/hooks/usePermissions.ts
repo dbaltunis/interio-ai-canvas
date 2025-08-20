@@ -7,37 +7,55 @@ export const useUserPermissions = () => {
     queryKey: ["user-permissions"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      if (!user) {
+        console.log('[useUserPermissions] No user found');
+        return [];
+      }
 
-      // First try to get custom permissions from user_permissions table
+      console.log('[useUserPermissions] Fetching permissions for user:', user.id);
+
+      // Always prioritize custom permissions from user_permissions table
       const { data: customPermissions, error: customError } = await supabase
         .from('user_permissions')
         .select('permission_name')
         .eq('user_id', user.id);
 
       if (customError && customError.code !== 'PGRST116') {
-        console.error('Error fetching custom permissions:', customError);
+        console.error('[useUserPermissions] Error fetching custom permissions:', customError);
       }
 
       // If user has custom permissions, use those
       if (customPermissions && customPermissions.length > 0) {
-        console.log('Using custom permissions:', customPermissions);
+        console.log('[useUserPermissions] Using custom permissions:', customPermissions.map(p => p.permission_name));
         return customPermissions.map(p => ({ permission_name: p.permission_name }));
       }
+
+      console.log('[useUserPermissions] No custom permissions found, checking user profile for role-based permissions');
 
       // Otherwise, fall back to role-based permissions
       const { data: profile, error: profileError } = await supabase
         .from('user_profiles')
-        .select('role')
+        .select('role, parent_account_id')
         .eq('user_id', user.id)
         .single();
 
       if (profileError) {
-        console.error('Error fetching user profile:', profileError);
+        console.error('[useUserPermissions] Error fetching user profile:', profileError);
+        // If no profile exists, try to create basic one
+        if (profileError.code === 'PGRST116') {
+          console.log('[useUserPermissions] No profile found, user needs to complete invitation process');
+        }
         return [];
       }
 
-      // Define role-based permissions
+      if (!profile) {
+        console.log('[useUserPermissions] No profile data found');
+        return [];
+      }
+
+      console.log('[useUserPermissions] Profile found:', { role: profile.role, parent_account_id: profile.parent_account_id });
+
+      // Define role-based permissions matching the database function
       const rolePermissions = {
         Owner: [
           'view_jobs', 'create_jobs', 'delete_jobs',
@@ -72,13 +90,16 @@ export const useUserPermissions = () => {
           'view_calendar',
           'view_inventory',
           'view_profile'
+        ],
+        User: [
+          'view_profile'
         ]
       };
 
-      const userRole = profile?.role || 'Staff';
-      const permissions = rolePermissions[userRole as keyof typeof rolePermissions] || [];
+      const userRole = profile?.role || 'User';
+      const permissions = rolePermissions[userRole as keyof typeof rolePermissions] || ['view_profile'];
       
-      console.log(`Using role-based permissions for ${userRole}:`, permissions);
+      console.log(`[useUserPermissions] Using role-based permissions for ${userRole}:`, permissions);
       return permissions.map(permission => ({ permission_name: permission }));
     },
     staleTime: 30 * 1000, // 30 seconds - shorter for more frequent updates

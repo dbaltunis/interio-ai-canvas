@@ -33,6 +33,13 @@ export const UserProfile = ({ onOpenTeamHub }: UserProfileProps = {}) => {
     );
   }
 
+  // Show loading if profile is loading
+  if (userProfile === undefined) {
+    return (
+      <div className="h-9 w-9 rounded-full bg-muted animate-pulse"></div>
+    );
+  }
+
   // If user is authenticated, show clickable avatar
   const userInitials = user.email
     ? user.email.slice(0, 2).toUpperCase()

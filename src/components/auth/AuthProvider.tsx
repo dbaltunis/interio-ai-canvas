@@ -100,30 +100,45 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 if (email) {
                   (async () => {
                     try {
+                      console.log('[AuthProvider] Checking for pending invitations for:', email);
                       const { data: invites, error: invErr } = await supabase
                         .from('user_invitations')
-                        .select('invitation_token, invited_email, status, expires_at')
+                        .select('invitation_token, invited_email, status, expires_at, role')
                         .eq('invited_email', email)
                         .eq('status', 'pending')
                         .gt('expires_at', new Date().toISOString())
                         .limit(1);
 
-                      if (!invErr && invites && invites.length > 0) {
+                      if (invErr) {
+                        console.warn('[AuthProvider] Error checking invitations:', invErr);
+                        return;
+                      }
+
+                      if (invites && invites.length > 0) {
                         const token = invites[0].invitation_token;
+                        console.log('[AuthProvider] Found pending invitation, accepting token:', token);
                         if (token) {
-                          const { error: acceptError } = await supabase.rpc('accept_user_invitation', {
+                          const { data: acceptResult, error: acceptError } = await supabase.rpc('accept_user_invitation', {
                             invitation_token_param: token,
                             user_id_param: userId,
                           });
                           if (acceptError) {
-                            console.warn('[AuthProvider] Auto-accept invitation failed:', acceptError);
+                            console.error('[AuthProvider] Auto-accept invitation failed:', acceptError);
                           } else {
-                            console.log('[AuthProvider] Auto-accepted pending invitation for', email);
+                            console.log('[AuthProvider] Auto-accepted invitation:', acceptResult);
+                            // Force refresh permission queries after successful acceptance
+                            setTimeout(() => {
+                              queryClient.invalidateQueries({ queryKey: ['user-permissions'] });
+                              queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+                              queryClient.invalidateQueries({ queryKey: ['team-presence'] });
+                            }, 100);
                           }
                         }
+                      } else {
+                        console.log('[AuthProvider] No pending invitations found for:', email);
                       }
                     } catch (e) {
-                      console.warn('[AuthProvider] Invitation auto-accept check error:', e);
+                      console.error('[AuthProvider] Invitation auto-accept error:', e);
                     }
                   })();
                 }

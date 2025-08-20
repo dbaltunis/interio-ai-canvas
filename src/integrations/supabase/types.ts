@@ -3496,6 +3496,10 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: undefined
       }
+      fix_pending_invitations: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_account_owner: {
         Args: { user_id_param: string }
         Returns: string
