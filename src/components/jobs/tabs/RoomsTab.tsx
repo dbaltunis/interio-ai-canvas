@@ -93,11 +93,6 @@ const { data: projectSummaries } = useProjectWindowSummaries(projectId);
             Base Project Cost
             {quotationSync.isLoading && ' • Syncing...'}
           </p>
-          {(quotationSync.error || workroomSync) && (
-            <p className="text-xs text-yellow-600">
-              Auto-sync active for quotations & workroom
-            </p>
-          )}
         </div>
       </div>
 
