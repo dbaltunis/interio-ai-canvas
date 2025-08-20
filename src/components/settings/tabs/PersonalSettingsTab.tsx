@@ -161,43 +161,74 @@ export const PersonalSettingsTab = () => {
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
+    console.log('Starting file upload process...', { 
+      fileName: file.name, 
+      fileSize: file.size, 
+      fileType: file.type 
+    });
+
     try {
       let fileToUpload = file;
       
       // Check if image needs compression
       if (needsCompression(file)) {
+        console.log('Image needs compression, starting compression...');
         toast({
           title: "Optimizing image...",
           description: `Compressing large image (${formatFileSize(file.size)}) for better performance`,
         });
         
-        // Compress the image
-        fileToUpload = await compressImage(file, {
-          maxWidth: 800,
-          maxHeight: 800,
-          quality: 0.85,
-          format: 'jpeg'
-        });
-        
-        toast({
-          title: "Image optimized",
-          description: `Size reduced from ${formatFileSize(file.size)} to ${formatFileSize(fileToUpload.size)}`,
-        });
+        try {
+          // Compress the image
+          fileToUpload = await compressImage(file, {
+            maxWidth: 800,
+            maxHeight: 800,
+            quality: 0.85,
+            format: 'jpeg'
+          });
+          
+          console.log('Image compression successful', { 
+            originalSize: file.size, 
+            compressedSize: fileToUpload.size 
+          });
+          
+          toast({
+            title: "Image optimized",
+            description: `Size reduced from ${formatFileSize(file.size)} to ${formatFileSize(fileToUpload.size)}`,
+          });
+        } catch (compressionError) {
+          console.error('Image compression failed:', compressionError);
+          // Fall back to original file if compression fails
+          fileToUpload = file;
+          toast({
+            title: "Using original image",
+            description: "Compression failed, uploading original image",
+          });
+        }
       }
 
       const fileExt = fileToUpload.name.split('.').pop();
       const fileName = `avatar-${user.id}-${Date.now()}.${fileExt}`;
       
+      console.log('Uploading to storage...', { fileName, fileSize: fileToUpload.size });
+      
       const { error: uploadError } = await supabase.storage
         .from('project-images')
         .upload(fileName, fileToUpload);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw uploadError;
+      }
 
+      console.log('Storage upload successful, getting public URL...');
+      
       const { data } = supabase.storage
         .from('project-images')
         .getPublicUrl(fileName);
 
+      console.log('Public URL obtained:', data.publicUrl);
+      
       handleInputChange("avatar_url", data.publicUrl);
       
       toast({
@@ -205,9 +236,10 @@ export const PersonalSettingsTab = () => {
         description: "Profile picture uploaded successfully",
       });
     } catch (error) {
+      console.error("Complete error in handleFileUpload:", error);
       toast({
         title: "Error",
-        description: "Failed to upload profile picture",
+        description: `Failed to upload profile picture: ${error.message}`,
         variant: "destructive",
       });
     }
