@@ -64,20 +64,31 @@ export const FormSection = ({
             </Button>
           )}
         </div>
-      </CardHeader>
-
-      <CardContent className="space-y-6">
-        {children}
         
+        {/* Action bar for editing mode - more prominent at the top */}
         {isEditing && (
           <>
-            <Separator />
-            <div className="flex gap-3 pt-2">
+            <Separator className="mt-4" />
+            <div className="flex gap-3 pt-4 bg-muted/30 -mx-6 px-6 py-4 rounded-lg border border-dashed border-primary/20">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mr-auto">
+                <Edit className="h-4 w-4" />
+                <span className="font-medium">Editing mode</span>
+              </div>
+              <Button 
+                variant="outline"
+                onClick={onCancel}
+                disabled={isSaving}
+                className="px-6"
+                size="sm"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
               <Button 
                 onClick={onSave}
                 disabled={isSaving}
-                className="flex-1 h-11"
-                size="lg"
+                className="px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+                size="sm"
               >
                 {isSaving ? (
                   <div className="flex items-center">
@@ -91,16 +102,49 @@ export const FormSection = ({
                   </>
                 )}
               </Button>
-              <Button 
-                variant="outline"
-                onClick={onCancel}
-                disabled={isSaving}
-                className="px-6 h-11"
-                size="lg"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Cancel
-              </Button>
+            </div>
+          </>
+        )}
+      </CardHeader>
+
+      <CardContent className="space-y-6">
+        {children}
+        
+        {/* Additional sticky action bar at bottom for longer forms */}
+        {isEditing && (
+          <>
+            <Separator />
+            <div className="sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t border-border p-4 -mx-6 -mb-6">
+              <div className="flex gap-3 justify-end max-w-full">
+                <Button 
+                  variant="outline"
+                  onClick={onCancel}
+                  disabled={isSaving}
+                  className="px-6"
+                  size="sm"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={onSave}
+                  disabled={isSaving}
+                  className="px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+                  size="sm"
+                >
+                  {isSaving ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                      Saving...
+                    </div>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Changes
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </>
         )}
