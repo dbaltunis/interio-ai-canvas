@@ -312,11 +312,11 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                           
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setTheme('graphite')}
-                                className={cn("h-8 w-8 p-0", theme === 'graphite' && "bg-accent")}
+                               <Button
+                                 variant="ghost"
+                                 size="sm"
+                                 onClick={() => setTheme('graphite')}
+                                 className={cn("h-8 w-8 p-0", theme === 'graphite' && "bg-muted")}
                               >
                                 <Palette className="h-4 w-4" />
                               </Button>
