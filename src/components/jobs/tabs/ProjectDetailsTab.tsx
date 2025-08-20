@@ -24,10 +24,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   const [isEditing, setIsEditing] = useState(false);
   const [showClientSearch, setShowClientSearch] = useState(false);
   const [formData, setFormData] = useState({
-    description: project.description || "",
-    status: project.status || "planning",
     priority: project.priority || "medium",
-    job_number: project.job_number || "",
     client_id: project.client_id || null,
     start_date: project.start_date || "",
     due_date: project.due_date || "",
@@ -46,8 +43,6 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
       
       const updateData = {
         id: project.id,
-        description: formData.description,
-        status: formData.status,
         priority: formData.priority,
         client_id: formData.client_id,
         start_date: formData.start_date || null,
@@ -96,10 +91,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
 
   const handleCancel = () => {
     setFormData({
-      description: project.description || "",
-      status: project.status || "planning",
       priority: project.priority || "medium",
-      job_number: project.job_number || "",
       client_id: project.client_id || null,
       start_date: project.start_date || "",
       due_date: project.due_date || "",
@@ -164,13 +156,13 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "high":
-        return "bg-red-100 text-red-800";
+        return "bg-destructive/10 text-destructive border-destructive/20";
       case "medium":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800";
       case "low":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-muted text-muted-foreground border-border";
     }
   };
 
@@ -185,21 +177,19 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   };
 
   return (
-    <div className="space-y-4">
-      {/* Compact Job Timeline Card */}
-      <Card className="bg-card">
+    <div className="space-y-6">
+      {/* Compact Project Timeline Card */}
+      <Card>
         <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-foreground">Project Timeline</span>
-              </div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Project Timeline</span>
             </div>
             {!isEditing ? (
               <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
                 <Edit className="h-4 w-4 mr-2" />
-                Edit
+                Edit Timeline
               </Button>
             ) : (
               <div className="flex gap-2">
@@ -219,37 +209,37 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
             )}
           </div>
           
-          {/* Dates Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          {/* Compact Dates Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
             <div>
-              <Label htmlFor="start_date" className="text-sm font-medium text-muted-foreground">Start Date</Label>
+              <Label htmlFor="start_date" className="text-xs text-muted-foreground">Start Date</Label>
               {isEditing ? (
                 <Input
                   id="start_date"
                   type="date"
                   value={formData.start_date}
                   onChange={(e) => updateFormData("start_date", e.target.value)}
-                  className="mt-1"
+                  className="mt-1 h-8"
                 />
               ) : (
-                <div className="mt-1 text-sm font-medium text-foreground">
+                <div className="mt-1 text-sm font-medium">
                   {formData.start_date ? new Date(formData.start_date).toLocaleDateString() : "Not set"}
                 </div>
               )}
             </div>
 
             <div>
-              <Label htmlFor="due_date" className="text-sm font-medium text-muted-foreground">Due Date</Label>
+              <Label htmlFor="due_date" className="text-xs text-muted-foreground">Due Date</Label>
               {isEditing ? (
                 <Input
                   id="due_date"
                   type="date"
                   value={formData.due_date}
                   onChange={(e) => updateFormData("due_date", e.target.value)}
-                  className="mt-1"
+                  className="mt-1 h-8"
                 />
               ) : (
-                <div className="mt-1 text-sm font-medium text-foreground">
+                <div className="mt-1 text-sm font-medium">
                   {formData.due_date ? new Date(formData.due_date).toLocaleDateString() : "Not set"}
                 </div>
               )}
@@ -259,78 +249,77 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
       </Card>
 
       {/* Enhanced Client Information Card */}
-      <Card className="bg-card">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-medium flex items-center gap-2">
-            <User className="h-5 w-5" />
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-medium flex items-center gap-2">
+            <User className="h-4 w-4" />
             Client Information
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
           {selectedClient ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Main Client Info */}
-              <div className="flex items-start justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div className="flex items-start gap-3 flex-1 min-w-0">
-                  <div className="bg-primary/10 p-2.5 rounded-full shrink-0">
+                  <div className="bg-primary/10 p-2 rounded-full shrink-0">
                     <User className="h-4 w-4 text-primary" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground text-lg mb-1">
-                      {getClientDisplayName(selectedClient)}
-                    </h3>
-                    {selectedClient.client_type === 'B2B' && selectedClient.name && selectedClient.company_name && (
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Contact: {selectedClient.name}
-                      </p>
-                    )}
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <div>
+                      <h3 className="font-semibold text-base">
+                        {getClientDisplayName(selectedClient)}
+                      </h3>
+                      {selectedClient.client_type === 'B2B' && selectedClient.name && selectedClient.company_name && (
+                        <p className="text-sm text-muted-foreground">
+                          Contact: {selectedClient.name}
+                        </p>
+                      )}
+                    </div>
                     
-                    {/* Contact Details Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                    {/* Contact Details - Compact Grid */}
+                    <div className="space-y-1">
                       {selectedClient.email && (
                         <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-foreground">{selectedClient.email}</span>
+                          <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-sm">{selectedClient.email}</span>
                         </div>
                       )}
                       {selectedClient.phone && (
                         <div className="flex items-center gap-2">
-                          <svg className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="h-3.5 w-3.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                           </svg>
-                          <span className="text-sm text-foreground">{selectedClient.phone}</span>
+                          <span className="text-sm">{selectedClient.phone}</span>
+                        </div>
+                      )}
+                      {(selectedClient.address || selectedClient.city || selectedClient.state) && (
+                        <div className="flex items-start gap-2">
+                          <MapPin className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                          <div className="text-sm">
+                            {selectedClient.address && <div>{selectedClient.address}</div>}
+                            {(selectedClient.city || selectedClient.state) && (
+                              <div>{selectedClient.city}{selectedClient.city && selectedClient.state && ', '}{selectedClient.state}</div>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
                     
-                    {/* Address */}
-                    {(selectedClient.address || selectedClient.city || selectedClient.state) && (
-                      <div className="flex items-start gap-2 mt-3">
-                        <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                        <div className="text-sm text-foreground">
-                          <div>{selectedClient.address}</div>
-                          {(selectedClient.city || selectedClient.state) && (
-                            <div>{selectedClient.city}{selectedClient.city && selectedClient.state && ', '}{selectedClient.state}</div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    
                     {/* Client Type Badge */}
-                    <div className="mt-3">
-                      <Badge variant="outline" className="text-xs">
-                        {selectedClient.client_type || 'B2C'}
-                      </Badge>
-                    </div>
+                    <Badge variant="outline" className="text-xs w-fit">
+                      {selectedClient.client_type || 'B2C'}
+                    </Badge>
                   </div>
                 </div>
                 
                 {/* Action Buttons */}
-                <div className="flex gap-2 shrink-0">
+                <div className="flex flex-row sm:flex-col gap-2 shrink-0">
                   <Button 
                     variant="outline" 
                     size="sm" 
                     onClick={() => setShowClientSearch(true)}
+                    className="flex-1 sm:flex-none"
                   >
                     <Search className="h-4 w-4 mr-2" />
                     Change
@@ -351,6 +340,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
                         });
                       });
                     }}
+                    className="flex-1 sm:flex-none"
                   >
                     Remove
                   </Button>
@@ -358,12 +348,11 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
               </div>
             </div>
           ) : (
-            <div className="text-center py-8 border-2 border-dashed border-border rounded-lg">
+            <div className="text-center py-6 border-2 border-dashed border-border rounded-lg">
               <User className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
               <p className="text-muted-foreground mb-4">No client assigned to this project</p>
               <Button 
                 onClick={() => setShowClientSearch(true)}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 <Search className="h-4 w-4 mr-2" />
                 Search or Create Client
@@ -379,14 +368,14 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
       {/* Products to Order Section */}
       <ProductsToOrderSection 
         projectId={project.id}
-        jobNumber={formData.job_number}
+        jobNumber={project.job_number}
         clientName={getClientDisplayName(selectedClient)}
       />
 
       {/* Client Search Modal */}
       {showClientSearch && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Search or Create Client</h2>
               <Button variant="outline" onClick={() => setShowClientSearch(false)}>
