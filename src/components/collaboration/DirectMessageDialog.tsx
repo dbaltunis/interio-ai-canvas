@@ -332,22 +332,8 @@ useEffect(() => {
                 </div>
 
                 {/* Messages */}
-                <ScrollArea className="flex-1 overflow-hidden">
+                 <ScrollArea className="flex-1 overflow-hidden">
                    <div className="p-4 space-y-4">
-                     {(() => {
-                       console.log('🎨 Rendering messages:', {
-                         messagesCount: messages.length,
-                         activeConversation,
-                         currentUser: user?.id,
-                         messagesPreview: messages.slice(0, 3).map(m => ({ 
-                           id: m.id, 
-                           sender: m.sender_id, 
-                           recipient: m.recipient_id,
-                           content: m.content.substring(0, 30) + '...'
-                         }))
-                       });
-                       return null;
-                     })()}
                      
                      {messages.length === 0 ? (
                        <div className="text-center py-12 text-muted-foreground">
