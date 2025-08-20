@@ -344,12 +344,6 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
       {/* Quote Document Preview */}
       {selectedTemplate && (
         <section className="mt-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold">Quote Document Preview</h3>
-            <div className="text-sm text-muted-foreground">
-              Using: <strong>{selectedTemplate.name}</strong>
-            </div>
-          </div>
           <LivePreview
             blocks={templateBlocks}
             projectData={{
