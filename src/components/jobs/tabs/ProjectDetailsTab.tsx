@@ -10,12 +10,15 @@ import { useClients } from "@/hooks/useClients";
 import { useUpdateProject } from "@/hooks/useProjects";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarDays, User, Edit, Save, X, Search, Mail, MapPin } from "lucide-react";
+import { CalendarDays, User, Edit, Save, X, Search, Mail, MapPin, Package, FileText, DollarSign } from "lucide-react";
 import { ClientSearchStep } from "@/components/job-creation/steps/ClientSearchStep";
 import { ProductsToOrderSection } from "@/components/jobs/ProductsToOrderSection";
 import { ProjectNotesCard } from "../ProjectNotesCard";
 import { CompactQuotesSection } from "../quotation/CompactQuotesSection";
 import { useQuotes } from "@/hooks/useQuotes";
+import { useRooms } from "@/hooks/useRooms";
+import { useSurfaces } from "@/hooks/useSurfaces";
+import { formatCurrency } from "@/utils/currency";
 
 interface ProjectDetailsTabProps {
   project: any;
@@ -37,6 +40,8 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   const { data: clients, refetch: refetchClients } = useClients();
   const { data: jobStatuses = [] } = useJobStatuses();
   const { data: quotes = [] } = useQuotes(project.id);
+  const { data: rooms = [] } = useRooms(project.id);
+  const { data: surfaces = [] } = useSurfaces(project.id);
   const updateProject = useUpdateProject();
   const { toast } = useToast();
   
@@ -181,8 +186,84 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
     return client.name;
   };
 
+  // Calculate project totals
+  const totalQuoteValue = quotes.reduce((sum, quote) => sum + (quote.total_amount || 0), 0);
+  
   return (
     <div className="space-y-6">
+      {/* Project Blueprint */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Project Blueprint
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Rooms */}
+            <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{rooms.length}</span>
+                  <p className="text-sm text-blue-700 dark:text-blue-300">Rooms</p>
+                </div>
+                <Package className="h-8 w-8 text-blue-500" />
+              </div>
+            </div>
+            
+            {/* Surfaces */}
+            <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-2xl font-bold text-green-600 dark:text-green-400">{surfaces.length}</span>
+                  <p className="text-sm text-green-700 dark:text-green-300">Surfaces</p>
+                </div>
+                <FileText className="h-8 w-8 text-green-500" />
+              </div>
+            </div>
+            
+            {/* Total Value */}
+            <div className="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                    {formatCurrency(totalQuoteValue)}
+                  </span>
+                  <p className="text-sm text-purple-700 dark:text-purple-300">Quote Total</p>
+                </div>
+                <DollarSign className="h-8 w-8 text-purple-500" />
+              </div>
+            </div>
+          </div>
+          
+          {/* Room Overview */}
+          {rooms.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <h4 className="text-sm font-medium text-muted-foreground">Room Overview</h4>
+              <div className="space-y-2">
+                {rooms.slice(0, 3).map((room) => {
+                  const roomSurfaces = surfaces.filter(s => s.room_id === room.id);
+                  return (
+                    <div key={room.id} className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                      <span className="text-sm font-medium">{room.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {roomSurfaces.length} surface{roomSurfaces.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  );
+                })}
+                {rooms.length > 3 && (
+                  <div className="text-xs text-muted-foreground text-center py-1">
+                    +{rooms.length - 3} more rooms
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Compact Project Timeline Card */}
       <Card>
         <CardContent className="p-4">
