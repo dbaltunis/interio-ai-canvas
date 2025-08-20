@@ -18,6 +18,7 @@ import { Switch } from '@/components/ui/switch';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
+import { formatDisplayName, formatLastSeen, getInitials } from '@/utils/userDisplay';
 
 interface TeamCollaborationCenterProps {
   isOpen: boolean;
@@ -229,7 +230,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                       <Avatar className="h-12 w-12 ring-2 ring-white/30">
                                         <AvatarImage src={currentUser.user_profile?.avatar_url} />
                                         <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white">
-                                          {currentUser.user_profile?.display_name?.charAt(0) || 'U'}
+                                          {getInitials(currentUser.user_profile?.display_name || '')}
                                         </AvatarFallback>
                                       </Avatar>
                                       
@@ -244,9 +245,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                      <div className="flex-1 min-w-0">
                                        <div className="flex items-center gap-2 mb-1">
                                          <p className="font-semibold text-foreground text-sm leading-tight truncate" title={currentUser.user_profile?.display_name}>
-                                           {currentUser.user_profile?.display_name && currentUser.user_profile.display_name.length > 20 
-                                             ? `${currentUser.user_profile.display_name.substring(0, 17)}...`
-                                             : currentUser.user_profile?.display_name}
+                                           {formatDisplayName(currentUser.user_profile?.display_name || '')}
                                          </p>
                                            <Badge 
                                            variant="secondary" 
@@ -296,7 +295,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                         <Avatar className="h-14 w-14 ring-2 ring-white/20 shadow-lg">
                                           <AvatarImage src={user.user_profile?.avatar_url} />
                                           <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white font-semibold text-lg">
-                                            {user.user_profile?.display_name?.charAt(0) || 'U'}
+                                            {getInitials(user.user_profile?.display_name || '')}
                                           </AvatarFallback>
                                         </Avatar>
                                         
@@ -312,9 +311,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                          <div className="flex items-start justify-between gap-2 mb-2">
                                            <div className="flex-1 min-w-0">
                                              <p className="font-semibold text-foreground text-sm leading-tight truncate" title={user.user_profile?.display_name}>
-                                               {user.user_profile?.display_name && user.user_profile.display_name.length > 20 
-                                                 ? `${user.user_profile.display_name.substring(0, 17)}...`
-                                                 : user.user_profile?.display_name}
+                                               {formatDisplayName(user.user_profile?.display_name || '')}
                                              </p>
                                            </div>
                                            <Badge 
@@ -381,13 +378,13 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                       <Avatar className="h-10 w-10">
                                         <AvatarImage src={user.user_profile?.avatar_url} />
                                         <AvatarFallback className="bg-muted text-foreground text-sm">
-                                          {user.user_profile?.display_name?.charAt(0) || 'U'}
+                                          {getInitials(user.user_profile?.display_name || '')}
                                         </AvatarFallback>
                                       </Avatar>
                                       <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
                                           <p className="text-sm text-foreground truncate">
-                                            {user.user_profile?.display_name}
+                                            {formatDisplayName(user.user_profile?.display_name || '')}
                                           </p>
                                           <Badge variant="outline" className="text-xs text-muted-foreground border-border">
                                             {user.user_profile?.role}
@@ -398,11 +395,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                             user.status === 'away' ? 'Away' : 'Offline'}
                                            {user.last_seen && user.status !== 'never_logged_in' && (
                                              <span className="ml-2">
-                                               • Last seen {new Date(user.last_seen).toLocaleDateString('en-US', { 
-                                                 day: 'numeric', 
-                                                 month: 'short', 
-                                                 year: 'numeric' 
-                                               })}
+                                               • {formatLastSeen(user.last_seen)}
                                              </span>
                                            )}
                                          </p>
@@ -490,7 +483,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                         <Avatar className="h-12 w-12 ring-2 ring-white/20 shadow-md">
                                           <AvatarImage src={conversation.user_profile?.avatar_url} />
                                           <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white font-semibold">
-                                            {conversation.user_profile?.display_name?.charAt(0) || 'U'}
+                                            {getInitials(conversation.user_profile?.display_name || '')}
                                           </AvatarFallback>
                                         </Avatar>
                                         
@@ -515,7 +508,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                       <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between mb-1">
                                           <p className="font-semibold text-foreground truncate">
-                                            {conversation.user_profile?.display_name}
+                                            {formatDisplayName(conversation.user_profile?.display_name || '')}
                                           </p>
                                           <Badge 
                                             variant="secondary" 
