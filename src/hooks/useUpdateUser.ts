@@ -51,7 +51,7 @@ export const useDeleteUser = () => {
   return useMutation({
     mutationFn: async (userId: string) => {
       const { error } = await supabase.rpc('delete_user_cascade', {
-        target_user_id: userId
+        user_id_param: userId
       });
 
       if (error) throw error;

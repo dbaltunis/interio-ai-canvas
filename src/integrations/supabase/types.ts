@@ -3493,7 +3493,7 @@ export type Database = {
         Returns: boolean
       }
       delete_user_cascade: {
-        Args: { target_user_id: string }
+        Args: { user_id_param: string }
         Returns: undefined
       }
       get_account_owner: {
