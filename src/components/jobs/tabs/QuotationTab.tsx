@@ -274,22 +274,6 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
         
         {/* Compact Action Bar */}
         <div className="flex items-center space-x-2">
-           {/* Template Selector - Compact */}
-          <Select
-            value={selectedTemplateId}
-            onValueChange={setSelectedTemplateId}
-          >
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Select template" />
-            </SelectTrigger>
-            <SelectContent className="z-50 bg-background">
-              {activeTemplates.map((template) => (
-                <SelectItem key={template.id} value={template.id.toString()}>
-                  {template.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
 
           {/* Create New Quote Button */}
           <Button
@@ -325,7 +309,32 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
           </Button>
           {/* Actions Menu */}
           <ThreeDotMenu items={actionMenuItems} />
+      </div>
+
+      {/* Detailed Options Section */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          {/* Template Selector */}
+          <div className="flex items-center space-x-2">
+            <span className="text-sm font-medium text-muted-foreground">Template:</span>
+            <Select
+              value={selectedTemplateId}
+              onValueChange={setSelectedTemplateId}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Select template" />
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-background">
+                {activeTemplates.map((template) => (
+                  <SelectItem key={template.id} value={template.id.toString()}>
+                    {template.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
+      </div>
       </div>
 
 
