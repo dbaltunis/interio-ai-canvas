@@ -3484,6 +3484,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      cleanup_duplicate_invitations: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       current_user_has_permission: {
         Args: { permission_name: string }
         Returns: boolean
