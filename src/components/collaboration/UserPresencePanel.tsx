@@ -5,9 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { Users, MessageCircle, ChevronRight, ChevronDown, Circle } from 'lucide-react';
+import { formatDisplayName, formatLastSeen, getInitials } from '@/utils/userDisplay';
 
 interface UserPresencePanelProps {
   isCollapsed?: boolean;
@@ -15,6 +18,7 @@ interface UserPresencePanelProps {
 }
 
 export const UserPresencePanel = ({ isCollapsed = false, onToggleCollapse }: UserPresencePanelProps) => {
+  const { user } = useAuth();
   const { activeUsers = [], isLoading } = useUserPresence();
   const { openConversation } = useDirectMessages();
   const [expandedSections, setExpandedSections] = useState({
@@ -22,6 +26,10 @@ export const UserPresencePanel = ({ isCollapsed = false, onToggleCollapse }: Use
     away: true,
     offline: false
   });
+
+  // Filter out current user from main lists
+  const otherUsers = activeUsers.filter(u => u.user_id !== user?.id);
+  const currentUser = activeUsers.find(u => u.user_id === user?.id);
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
@@ -46,10 +54,10 @@ export const UserPresencePanel = ({ isCollapsed = false, onToggleCollapse }: Use
   };
 
   const groupedUsers = {
-    online: activeUsers.filter(u => u.status === 'online'),
-    away: activeUsers.filter(u => u.status === 'away'),
-    busy: activeUsers.filter(u => u.status === 'busy'),
-    offline: activeUsers.filter(u => u.status === 'offline')
+    online: otherUsers.filter(u => u.status === 'online'),
+    away: otherUsers.filter(u => u.status === 'away'),
+    busy: otherUsers.filter(u => u.status === 'busy'),
+    offline: otherUsers.filter(u => u.status === 'offline')
   };
 
   if (isCollapsed) {
@@ -65,20 +73,32 @@ export const UserPresencePanel = ({ isCollapsed = false, onToggleCollapse }: Use
             <Users className="h-5 w-5" />
           </Button>
           <div className="mt-2 space-y-1">
+            {/* Show current user first */}
+            {currentUser && (
+              <div className="relative mb-2">
+                <Avatar className="h-8 w-8 ring-2 ring-primary">
+                  <AvatarImage src={currentUser.user_profile?.avatar_url} />
+                  <AvatarFallback className="text-xs">
+                    {getInitials(currentUser.user_profile?.display_name || '')}
+                  </AvatarFallback>
+                </Avatar>
+                <Circle className="absolute -bottom-1 -right-1 h-3 w-3 fill-primary text-primary" />
+              </div>
+            )}
             {groupedUsers.online.slice(0, 3).map((user) => (
               <div key={user.user_id} className="relative">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={user.user_profile?.avatar_url} />
                   <AvatarFallback className="text-xs">
-                    {user.user_profile?.display_name?.charAt(0) || 'U'}
+                    {getInitials(user.user_profile?.display_name || '')}
                   </AvatarFallback>
                 </Avatar>
                 <Circle className={`absolute -bottom-1 -right-1 h-3 w-3 fill-current ${getStatusColor(user.status)}`} />
               </div>
             ))}
-            {activeUsers.length > 3 && (
+            {otherUsers.length > 3 && (
               <div className="text-xs text-muted-foreground text-center">
-                +{activeUsers.length - 3}
+                +{otherUsers.length - 3}
               </div>
             )}
           </div>
@@ -88,26 +108,55 @@ export const UserPresencePanel = ({ isCollapsed = false, onToggleCollapse }: Use
   }
 
   return (
-    <Card className="w-80 h-fit max-h-[600px]">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Team ({activeUsers.length})
-          </CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggleCollapse}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardHeader>
+    <TooltipProvider>
+      <Card className="w-70 h-fit max-h-[600px]">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Team ({otherUsers.length})
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleCollapse}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardHeader>
 
-      <CardContent className="p-0">
-        <ScrollArea className="h-[500px]">
-          <div className="px-4 pb-4 space-y-4">
+        <CardContent className="p-0">
+          <ScrollArea className="h-[500px]">
+            <div className="px-4 pb-4 space-y-4">
+              {/* Current User Section - "You" */}
+              {currentUser && (
+                <div className="bg-primary/5 rounded-lg p-3 border border-primary/20">
+                  <div className="flex flex-col items-center text-center space-y-2">
+                    <Avatar className="h-12 w-12 ring-2 ring-primary">
+                      <AvatarImage src={currentUser.user_profile?.avatar_url} />
+                      <AvatarFallback className="text-sm font-medium">
+                        {getInitials(currentUser.user_profile?.display_name || '')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-semibold text-primary">You</p>
+                      <p className="text-xs text-muted-foreground">
+                        {currentUser.user_profile?.display_name}
+                      </p>
+                      <Badge variant="outline" className="text-xs mt-1">
+                        {currentUser.user_profile?.role}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Circle className="h-2 w-2 fill-primary text-primary" />
+                      <span className="text-xs text-primary font-medium">Online</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {(currentUser && otherUsers.length > 0) && <Separator />}
             {/* Online Users */}
             {groupedUsers.online.length > 0 && (
               <div>
@@ -127,28 +176,35 @@ export const UserPresencePanel = ({ isCollapsed = false, onToggleCollapse }: Use
                 </Button>
 
                 {expandedSections.online && (
-                  <div className="space-y-2 mt-2">
+                  <div className="space-y-1 mt-2">
                     {groupedUsers.online.map((user) => (
-                      <div key={user.user_id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 cursor-pointer group">
+                      <div key={user.user_id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent/50 cursor-pointer group" onClick={() => openConversation(user.user_id)}>
                         <div className="relative">
                           <Avatar className="h-8 w-8">
                             <AvatarImage src={user.user_profile?.avatar_url} />
                             <AvatarFallback className="text-xs">
-                              {user.user_profile?.display_name?.charAt(0) || 'U'}
+                              {getInitials(user.user_profile?.display_name || '')}
                             </AvatarFallback>
                           </Avatar>
                           <Circle className={`absolute -bottom-1 -right-1 h-3 w-3 fill-current ${getStatusColor(user.status)}`} />
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium truncate">
-                              {user.user_profile?.display_name}
-                            </p>
-                            <Badge variant="outline" className="text-xs">
-                              {user.user_profile?.role}
-                            </Badge>
-                          </div>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-1">
+                                <p className="text-sm font-medium truncate">
+                                  {formatDisplayName(user.user_profile?.display_name || '')}
+                                </p>
+                                <Badge variant="outline" className="text-xs h-4 px-1">
+                                  {user.user_profile?.role}
+                                </Badge>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-sm">{user.user_profile?.display_name}</p>
+                            </TooltipContent>
+                          </Tooltip>
                           {user.current_activity && (
                             <p className="text-xs text-muted-foreground truncate">
                               {user.current_activity}
@@ -156,14 +212,7 @@ export const UserPresencePanel = ({ isCollapsed = false, onToggleCollapse }: Use
                           )}
                         </div>
 
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => openConversation(user.user_id)}
-                        >
-                          <MessageCircle className="h-4 w-4" />
-                        </Button>
+                        <MessageCircle className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
                     ))}
                   </div>
@@ -194,38 +243,38 @@ export const UserPresencePanel = ({ isCollapsed = false, onToggleCollapse }: Use
                   </Button>
 
                   {expandedSections.away && (
-                    <div className="space-y-2 mt-2">
+                    <div className="space-y-1 mt-2">
                       {[...groupedUsers.away, ...groupedUsers.busy].map((user) => (
-                        <div key={user.user_id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 cursor-pointer group opacity-75">
+                        <div key={user.user_id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent/50 cursor-pointer group opacity-75" onClick={() => openConversation(user.user_id)}>
                           <div className="relative">
                             <Avatar className="h-8 w-8">
                               <AvatarImage src={user.user_profile?.avatar_url} />
                               <AvatarFallback className="text-xs">
-                                {user.user_profile?.display_name?.charAt(0) || 'U'}
+                                {getInitials(user.user_profile?.display_name || '')}
                               </AvatarFallback>
                             </Avatar>
                             <Circle className={`absolute -bottom-1 -right-1 h-3 w-3 fill-current ${getStatusColor(user.status)}`} />
                           </div>
                           
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-medium truncate">
-                                {user.user_profile?.display_name}
-                              </p>
-                              <Badge variant={getStatusBadgeVariant(user.status)} className="text-xs">
-                                {user.status}
-                              </Badge>
-                            </div>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center gap-1">
+                                  <p className="text-sm font-medium truncate">
+                                    {formatDisplayName(user.user_profile?.display_name || '')}
+                                  </p>
+                                  <Badge variant={getStatusBadgeVariant(user.status)} className="text-xs h-4 px-1">
+                                    {user.status}
+                                  </Badge>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="text-sm">{user.user_profile?.display_name}</p>
+                              </TooltipContent>
+                            </Tooltip>
                           </div>
 
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => openConversation(user.user_id)}
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                          </Button>
+                          <MessageCircle className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
                       ))}
                     </div>
@@ -255,36 +304,36 @@ export const UserPresencePanel = ({ isCollapsed = false, onToggleCollapse }: Use
                   </Button>
 
                   {expandedSections.offline && (
-                    <div className="space-y-2 mt-2">
+                    <div className="space-y-1 mt-2">
                       {groupedUsers.offline.map((user) => (
-                        <div key={user.user_id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 cursor-pointer group opacity-50">
+                        <div key={user.user_id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent/50 cursor-pointer group opacity-50" onClick={() => openConversation(user.user_id)}>
                           <div className="relative">
                             <Avatar className="h-8 w-8">
                               <AvatarImage src={user.user_profile?.avatar_url} />
                               <AvatarFallback className="text-xs">
-                                {user.user_profile?.display_name?.charAt(0) || 'U'}
+                                {getInitials(user.user_profile?.display_name || '')}
                               </AvatarFallback>
                             </Avatar>
-                            <Circle className="absolute -bottom-1 -right-1 h-3 w-3 fill-gray-400 text-gray-400" />
+                            <Circle className="absolute -bottom-1 -right-1 h-3 w-3 fill-muted-foreground text-muted-foreground" />
                           </div>
                           
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">
-                              {user.user_profile?.display_name}
-                            </p>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <p className="text-sm font-medium truncate">
+                                  {formatDisplayName(user.user_profile?.display_name || '')}
+                                </p>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="text-sm">{user.user_profile?.display_name}</p>
+                              </TooltipContent>
+                            </Tooltip>
                             <p className="text-xs text-muted-foreground">
-                              Last seen: {new Date(user.last_seen).toLocaleTimeString()}
+                              {formatLastSeen(user.last_seen)}
                             </p>
                           </div>
 
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => openConversation(user.user_id)}
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                          </Button>
+                          <MessageCircle className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
                       ))}
                     </div>
@@ -292,9 +341,10 @@ export const UserPresencePanel = ({ isCollapsed = false, onToggleCollapse }: Use
                 </div>
               </>
             )}
-          </div>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    </TooltipProvider>
   );
 };

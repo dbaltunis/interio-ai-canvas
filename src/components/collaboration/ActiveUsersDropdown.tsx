@@ -11,14 +11,19 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { Users, MessageCircle, Circle } from 'lucide-react';
+import { formatDisplayName, getInitials } from '@/utils/userDisplay';
 
 export const ActiveUsersDropdown = () => {
+  const { user } = useAuth();
   const { activeUsers = [], isLoading } = useUserPresence();
   const { openConversation, totalUnreadCount = 0 } = useDirectMessages();
 
-  const onlineUsers = activeUsers.filter(u => u.status === 'online');
-  const awayUsers = activeUsers.filter(u => u.status === 'away' || u.status === 'busy');
+  // Filter out current user
+  const otherUsers = activeUsers.filter(u => u.user_id !== user?.id);
+  const onlineUsers = otherUsers.filter(u => u.status === 'online');
+  const awayUsers = otherUsers.filter(u => u.status === 'away' || u.status === 'busy');
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -45,9 +50,9 @@ export const ActiveUsersDropdown = () => {
         </Button>
       </DropdownMenuTrigger>
       
-      <DropdownMenuContent align="end" className="w-80">
+      <DropdownMenuContent align="end" className="w-72">
         <DropdownMenuLabel className="flex items-center justify-between">
-          <span>Team Members ({activeUsers.length})</span>
+          <span>Team Members ({otherUsers.length})</span>
           <div className="flex items-center gap-1">
             <Circle className="h-2 w-2 fill-green-500 text-green-500" />
             <span className="text-xs text-muted-foreground">{onlineUsers.length} online</span>
@@ -66,25 +71,25 @@ export const ActiveUsersDropdown = () => {
               {onlineUsers.slice(0, 5).map((user) => (
                 <DropdownMenuItem
                   key={user.user_id}
-                  className="flex items-center gap-3 cursor-pointer"
+                  className="flex items-center gap-2 cursor-pointer"
                   onClick={() => openConversation(user.user_id)}
                 >
                   <div className="relative">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={user.user_profile?.avatar_url} />
                       <AvatarFallback className="text-xs">
-                        {user.user_profile?.display_name?.charAt(0) || 'U'}
+                        {getInitials(user.user_profile?.display_name || '')}
                       </AvatarFallback>
                     </Avatar>
                     <Circle className={`absolute -bottom-1 -right-1 h-3 w-3 fill-current ${getStatusColor(user.status)}`} />
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       <p className="text-sm font-medium truncate">
-                        {user.user_profile?.display_name}
+                        {formatDisplayName(user.user_profile?.display_name || '')}
                       </p>
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-xs h-4 px-1">
                         {user.user_profile?.role}
                       </Badge>
                     </div>
@@ -119,25 +124,25 @@ export const ActiveUsersDropdown = () => {
             {awayUsers.slice(0, 3).map((user) => (
               <DropdownMenuItem
                 key={user.user_id}
-                className="flex items-center gap-3 cursor-pointer opacity-75"
+                className="flex items-center gap-2 cursor-pointer opacity-75"
                 onClick={() => openConversation(user.user_id)}
               >
                 <div className="relative">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user.user_profile?.avatar_url} />
                     <AvatarFallback className="text-xs">
-                      {user.user_profile?.display_name?.charAt(0) || 'U'}
+                      {getInitials(user.user_profile?.display_name || '')}
                     </AvatarFallback>
                   </Avatar>
                   <Circle className={`absolute -bottom-1 -right-1 h-3 w-3 fill-current ${getStatusColor(user.status)}`} />
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
                     <p className="text-sm font-medium truncate">
-                      {user.user_profile?.display_name}
+                      {formatDisplayName(user.user_profile?.display_name || '')}
                     </p>
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="text-xs h-4 px-1">
                       {user.status}
                     </Badge>
                   </div>
@@ -149,9 +154,9 @@ export const ActiveUsersDropdown = () => {
           </div>
         )}
 
-        {activeUsers.length === 0 && !isLoading && (
+        {otherUsers.length === 0 && !isLoading && (
           <div className="px-2 py-4 text-center text-sm text-muted-foreground">
-            No team members online
+            No other team members
           </div>
         )}
 
