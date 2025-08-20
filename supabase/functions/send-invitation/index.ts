@@ -28,8 +28,8 @@ serve(async (req) => {
       throw new Error('Not authenticated')
     }
 
-    // Create invitation link
-    const siteUrl = Deno.env.get('SITE_URL') || 'http://localhost:5173'
+    // Create invitation link with secure domain
+    const siteUrl = Deno.env.get('SITE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co'
     const invitationLink = `${siteUrl}/auth?invitation=${invitationToken}`
 
     // Brand settings (customize via Function secrets)
