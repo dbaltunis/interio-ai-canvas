@@ -117,7 +117,6 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
           <BulkUserActions
             users={filteredUsers}
             selectedUsers={selectedUsers}
-            onSelectUser={selectUser}
             onSelectAll={selectAll}
             onClearSelection={clearSelection}
           />

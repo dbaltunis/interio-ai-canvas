@@ -50,25 +50,26 @@ export const useDeleteUser = () => {
 
   return useMutation({
     mutationFn: async (userId: string) => {
-      const { error } = await supabase
-        .from('user_profiles')
-        .delete()
-        .eq('user_id', userId);
+      const { error } = await supabase.rpc('delete_user_cascade', {
+        target_user_id: userId
+      });
 
       if (error) throw error;
       return userId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["user-invitations"] });
       toast({
         title: "User removed",
         description: "User has been removed from the system.",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      const errorMessage = error.message || "Failed to remove user. Please try again.";
       toast({
         title: "Error", 
-        description: "Failed to remove user. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
       console.error("Error deleting user:", error);

@@ -3488,6 +3488,10 @@ export type Database = {
         Args: { permission_name: string }
         Returns: boolean
       }
+      delete_user_cascade: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
       get_account_owner: {
         Args: { user_id_param: string }
         Returns: string
