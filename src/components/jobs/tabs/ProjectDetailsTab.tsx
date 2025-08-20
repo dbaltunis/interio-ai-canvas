@@ -186,8 +186,15 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
     return client.name;
   };
 
-  // Calculate project totals
-  const totalQuoteValue = quotes.reduce((sum, quote) => sum + (quote.total_amount || 0), 0);
+  // Calculate project quote range
+  const getQuoteRangeDisplay = () => {
+    const amounts = quotes.map(q => q.total_amount || 0).filter(amount => amount > 0);
+    if (amounts.length === 0) return "No quotes";
+    if (amounts.length === 1) return formatCurrency(amounts[0]);
+    const min = Math.min(...amounts);
+    const max = Math.max(...amounts);
+    return `${formatCurrency(min)} - ${formatCurrency(max)}`;
+  };
   
   return (
     <div className="space-y-6">
@@ -228,9 +235,9 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
               <div className="flex items-center justify-between">
                 <div>
                   <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                    {formatCurrency(totalQuoteValue)}
+                    {getQuoteRangeDisplay()}
                   </span>
-                  <p className="text-sm text-purple-700 dark:text-purple-300">Quote Total</p>
+                  <p className="text-sm text-purple-700 dark:text-purple-300">Quote Range</p>
                 </div>
                 <DollarSign className="h-8 w-8 text-purple-500" />
               </div>
