@@ -66,13 +66,20 @@ export const BulkUserActions = ({
   };
 
   const executeBulkAction = async () => {
-    if (!bulkAction || selectedUsers.length === 0) return;
+    console.log('Executing bulk action:', bulkAction, 'on users:', selectedUsers);
+    if (!bulkAction || selectedUsers.length === 0) {
+      console.log('No action or no users selected');
+      return;
+    }
 
     // Prevent self-targeting actions
     const currentUserId = await getCurrentUserId();
+    console.log('Current user ID:', currentUserId);
     const targetUsers = selectedUsers.filter(userId => userId !== currentUserId);
+    console.log('Target users after filtering self:', targetUsers);
     
     if (targetUsers.length === 0) {
+      console.log('No target users after filtering self');
       toast({
         title: "Cannot perform action",
         description: "You cannot perform this action on yourself.",
@@ -82,6 +89,7 @@ export const BulkUserActions = ({
     }
 
     if (targetUsers.length !== selectedUsers.length) {
+      console.log('Self was excluded from action');
       toast({
         title: "Self-action prevented",
         description: "Your own account was excluded from this action for security.",
@@ -172,7 +180,9 @@ export const BulkUserActions = ({
           break;
 
         case 'delete':
+          console.log('Delete action triggered. Can delete:', canDelete);
           if (!canDelete) {
+            console.log('Permission denied for delete');
             toast({
               title: "Permission denied",
               description: "You don't have permission to delete users.",
@@ -180,14 +190,27 @@ export const BulkUserActions = ({
             });
             break;
           }
+          console.log('Asking for confirmation to delete users:', targetUsers);
           if (confirm(`Are you sure you want to delete ${targetUsers.length} users? This action cannot be undone.`)) {
-            await Promise.all(
-              targetUsers.map(userId => deleteUser.mutateAsync(userId))
-            );
-            toast({
-              title: "Users deleted",
-              description: `${targetUsers.length} users have been removed.`,
-            });
+            console.log('User confirmed deletion, proceeding...');
+            try {
+              await Promise.all(
+                targetUsers.map(async (userId) => {
+                  console.log('Deleting user:', userId);
+                  return deleteUser.mutateAsync(userId);
+                })
+              );
+              console.log('All users deleted successfully');
+              toast({
+                title: "Users deleted",
+                description: `${targetUsers.length} users have been removed.`,
+              });
+            } catch (error) {
+              console.error('Error during deletion:', error);
+              throw error;
+            }
+          } else {
+            console.log('User cancelled deletion');
           }
           break;
       }
