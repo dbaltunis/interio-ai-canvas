@@ -18,6 +18,9 @@ export default {
 			}
 		},
 		extend: {
+			width: {
+				'70': '17.5rem', // 280px
+			},
 			colors: {
 				// Company brand colors with AI design system
 				company: {
