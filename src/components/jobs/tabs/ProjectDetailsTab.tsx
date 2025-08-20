@@ -10,7 +10,7 @@ import { useClients } from "@/hooks/useClients";
 import { useUpdateProject } from "@/hooks/useProjects";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarDays, User, Edit, Save, X, Search } from "lucide-react";
+import { CalendarDays, User, Edit, Save, X, Search, Mail, MapPin } from "lucide-react";
 import { ClientSearchStep } from "@/components/job-creation/steps/ClientSearchStep";
 import { ProductsToOrderSection } from "@/components/jobs/ProductsToOrderSection";
 import { ProjectNotesCard } from "../ProjectNotesCard";
@@ -185,150 +185,44 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <CalendarDays className="h-5 w-5" />
-            Project Details
-          </CardTitle>
-          {!isEditing ? (
-            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
-          ) : (
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleCancel}>
-                <X className="h-4 w-4 mr-2" />
-                Cancel
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={handleSave}
-                disabled={updateProject.isPending}
-              >
-                <Save className="h-4 w-4 mr-2" />
-                {updateProject.isPending ? "Saving..." : "Save"}
-              </Button>
-            </div>
-          )}
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Job Number and Status Row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label className="text-sm font-medium text-gray-700">Job Number</Label>
-              <div className="mt-1">
-                <span className="text-lg font-semibold text-brand-primary">
-                  #{formData.job_number}
-                </span>
+    <div className="space-y-4">
+      {/* Compact Job Timeline Card */}
+      <Card className="bg-card">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">Project Timeline</span>
               </div>
             </div>
-            
-            <div>
-              <Label className="text-sm font-medium text-gray-700">Status</Label>
-              <div className="mt-2">
-                {isEditing ? (
-                  <Select value={formData.status} onValueChange={(value) => updateFormData("status", value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {jobStatuses
-                        .map(status => (
-                          <SelectItem key={status.id} value={status.name.toLowerCase()}>
-                            <div className="flex items-center space-x-2">
-                              <div className={`w-3 h-3 rounded-full bg-${status.color}-500`} />
-                              <span>{status.name}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Badge className={getStatusColor(formData.status)}>
-                    {jobStatuses.find(s => s.name.toLowerCase() === formData.status.toLowerCase())?.name || 
-                     formData.status.charAt(0).toUpperCase() + formData.status.slice(1).replace('_', ' ')}
-                  </Badge>
-                )}
+            {!isEditing ? (
+              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleCancel}>
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={handleSave}
+                  disabled={updateProject.isPending}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {updateProject.isPending ? "Saving..." : "Save"}
+                </Button>
               </div>
-            </div>
+            )}
           </div>
-
-          {/* Client Section */}
-          <div>
-            <Label className="text-sm font-medium text-gray-700">Client</Label>
-            <div className="mt-2">
-              {selectedClient ? (
-                <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="bg-green-100 p-2 rounded-full">
-                      <User className="h-4 w-4 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-green-900">
-                        {getClientDisplayName(selectedClient)}
-                      </p>
-                      {selectedClient.email && (
-                        <p className="text-sm text-green-700">{selectedClient.email}</p>
-                      )}
-                      {selectedClient.client_type === 'B2B' && selectedClient.name && selectedClient.company_name && (
-                        <p className="text-sm text-green-600">Contact: {selectedClient.name}</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => setShowClientSearch(true)}
-                    >
-                      <Search className="h-4 w-4 mr-2" />
-                      Change
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => {
-                        updateFormData("client_id", null);
-                        // Immediately save the removal
-                        updateProject.mutateAsync({
-                          id: project.id,
-                          client_id: null,
-                        }).then(() => {
-                          project.client_id = null;
-                          toast({
-                            title: "Success",
-                            description: "Client removed from project",
-                          });
-                        });
-                      }}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-6 border-2 border-dashed border-gray-300 rounded-lg">
-                  <User className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500 mb-3">No client assigned</p>
-                  <Button 
-                    onClick={() => setShowClientSearch(true)}
-                    className="bg-brand-primary hover:bg-brand-accent text-white"
-                  >
-                    <Search className="h-4 w-4 mr-2" />
-                    Search or Create Client
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-
+          
           {/* Dates Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             <div>
-              <Label htmlFor="start_date" className="text-sm font-medium text-gray-700">Start Date</Label>
+              <Label htmlFor="start_date" className="text-sm font-medium text-muted-foreground">Start Date</Label>
               {isEditing ? (
                 <Input
                   id="start_date"
@@ -338,14 +232,14 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
                   className="mt-1"
                 />
               ) : (
-                <div className="mt-1 text-sm text-gray-900">
+                <div className="mt-1 text-sm font-medium text-foreground">
                   {formData.start_date ? new Date(formData.start_date).toLocaleDateString() : "Not set"}
                 </div>
               )}
             </div>
 
             <div>
-              <Label htmlFor="due_date" className="text-sm font-medium text-gray-700">Due Date</Label>
+              <Label htmlFor="due_date" className="text-sm font-medium text-muted-foreground">Due Date</Label>
               {isEditing ? (
                 <Input
                   id="due_date"
@@ -355,31 +249,127 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
                   className="mt-1"
                 />
               ) : (
-                <div className="mt-1 text-sm text-gray-900">
+                <div className="mt-1 text-sm font-medium text-foreground">
                   {formData.due_date ? new Date(formData.due_date).toLocaleDateString() : "Not set"}
                 </div>
               )}
             </div>
           </div>
+        </CardContent>
+      </Card>
 
-          {/* Description Section */}
-          <div>
-            <Label htmlFor="description" className="text-sm font-medium text-gray-700">Description</Label>
-            {isEditing ? (
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => updateFormData("description", e.target.value)}
-                placeholder="Add project description..."
-                className="mt-1"
-                rows={3}
-              />
-            ) : (
-              <div className="mt-1 text-sm text-gray-900 bg-gray-50 p-3 rounded-md min-h-[80px]">
-                {formData.description || "No description added"}
+      {/* Enhanced Client Information Card */}
+      <Card className="bg-card">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg font-medium flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Client Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          {selectedClient ? (
+            <div className="space-y-4">
+              {/* Main Client Info */}
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <div className="bg-primary/10 p-2.5 rounded-full shrink-0">
+                    <User className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground text-lg mb-1">
+                      {getClientDisplayName(selectedClient)}
+                    </h3>
+                    {selectedClient.client_type === 'B2B' && selectedClient.name && selectedClient.company_name && (
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Contact: {selectedClient.name}
+                      </p>
+                    )}
+                    
+                    {/* Contact Details Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                      {selectedClient.email && (
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm text-foreground">{selectedClient.email}</span>
+                        </div>
+                      )}
+                      {selectedClient.phone && (
+                        <div className="flex items-center gap-2">
+                          <svg className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          </svg>
+                          <span className="text-sm text-foreground">{selectedClient.phone}</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Address */}
+                    {(selectedClient.address || selectedClient.city || selectedClient.state) && (
+                      <div className="flex items-start gap-2 mt-3">
+                        <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                        <div className="text-sm text-foreground">
+                          <div>{selectedClient.address}</div>
+                          {(selectedClient.city || selectedClient.state) && (
+                            <div>{selectedClient.city}{selectedClient.city && selectedClient.state && ', '}{selectedClient.state}</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Client Type Badge */}
+                    <div className="mt-3">
+                      <Badge variant="outline" className="text-xs">
+                        {selectedClient.client_type || 'B2C'}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex gap-2 shrink-0">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowClientSearch(true)}
+                  >
+                    <Search className="h-4 w-4 mr-2" />
+                    Change
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      updateFormData("client_id", null);
+                      updateProject.mutateAsync({
+                        id: project.id,
+                        client_id: null,
+                      }).then(() => {
+                        project.client_id = null;
+                        toast({
+                          title: "Success",
+                          description: "Client removed from project",
+                        });
+                      });
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </div>
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="text-center py-8 border-2 border-dashed border-border rounded-lg">
+              <User className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground mb-4">No client assigned to this project</p>
+              <Button 
+                onClick={() => setShowClientSearch(true)}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                <Search className="h-4 w-4 mr-2" />
+                Search or Create Client
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

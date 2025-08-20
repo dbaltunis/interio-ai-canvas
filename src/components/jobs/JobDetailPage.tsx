@@ -83,66 +83,72 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
       {/* Compact Header Bar */}
       <div className="bg-card border-b shadow-sm">
         <div className="px-4 py-3">
-          {/* Navigation & Main Info in Single Row */}
-          <div className="flex items-center justify-between">
-            {/* Left: Navigation + Job Info */}
-            <div className="flex items-center space-x-4">
+          {/* Mobile-First Responsive Layout */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            {/* Top Row: Navigation + Job Info + Status */}
+            <div className="flex items-center gap-3 flex-wrap">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onBack}
-                className="flex items-center space-x-1 hover:bg-muted text-muted-foreground"
+                className="flex items-center gap-1 hover:bg-muted text-muted-foreground shrink-0"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span>Back</span>
+                <span className="hidden sm:inline">Back</span>
               </Button>
               
-              <Separator orientation="vertical" className="h-6" />
+              <Separator orientation="vertical" className="h-6 hidden sm:block" />
               
-              <div className="flex items-center space-x-3">
-                <h1 className="text-xl font-bold text-foreground">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">
                   {project.name}
                 </h1>
-                <JobStatusDropdown
-                  currentStatus={project.status}
-                  jobType="project"
-                  jobId={project.id}
-                  onStatusChange={(newStatus) => {
-                    // The status will be updated via the mutation, just for UI feedback
-                  }}
-                />
-                <span className="font-mono bg-muted px-2 py-1 rounded text-xs text-muted-foreground">
-                  {project.job_number}
-                </span>
+                <div className="flex items-center gap-2">
+                  <JobStatusDropdown
+                    currentStatus={project.status}
+                    jobType="project"
+                    jobId={project.id}
+                    onStatusChange={(newStatus) => {
+                      // The status will be updated via the mutation
+                    }}
+                  />
+                  <Badge variant="outline" className="font-mono text-xs shrink-0">
+                    #{project.job_number}
+                  </Badge>
+                </div>
               </div>
             </div>
 
-            {/* Right: Client & Key Info */}
-            <div className="flex items-center space-x-6 text-sm">
+            {/* Bottom Row: Client + Dates (responsive) */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-sm">
               {/* Client Info */}
-              <div className="flex items-center space-x-2">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span className="text-foreground font-medium">
-                  {client ? client.name : 'No client'}
-                </span>
-                {client?.email && (
-                  <span className="text-muted-foreground">• {client.email}</span>
-                )}
+              <div className="flex items-center gap-2 min-w-0">
+                <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-foreground font-medium truncate block">
+                    {client ? client.name : 'No client'}
+                  </span>
+                  {client?.email && (
+                    <span className="text-muted-foreground text-xs truncate block">
+                      {client.email}
+                    </span>
+                  )}
+                </div>
               </div>
               
-              <Separator orientation="vertical" className="h-4" />
+              <Separator orientation="vertical" className="h-4 hidden sm:block" />
               
-              {/* Key Metrics */}
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-1">
+              {/* Key Dates */}
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1">
                   <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Due:</span>
+                  <span className="text-muted-foreground hidden sm:inline">Due:</span>
                   <span className="text-foreground font-medium">
                     {project.due_date ? new Date(project.due_date).toLocaleDateString() : 'Not set'}
                   </span>
                 </div>
                 
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center gap-1 hidden md:flex">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="text-muted-foreground">Created:</span>
                   <span className="text-foreground font-medium">
@@ -158,20 +164,23 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
       {/* Main Content Area */}
       <div className="w-full">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          {/* Tab Navigation */}
+          {/* Clean Tab Navigation */}
           <div className="bg-card border-b">
             <div className="px-4">
-              <TabsList className="bg-transparent p-0 h-auto border-b-0">
+              <TabsList className="bg-transparent p-0 h-auto border-b-0 w-full justify-start">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   return (
                     <TabsTrigger 
                       key={tab.id}
                       value={tab.id} 
-                      className="px-4 py-3 text-sm font-medium border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-primary/5 rounded-none flex items-center gap-2 hover:bg-muted/50"
+                      className="px-3 py-2.5 text-sm font-medium border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-primary/5 rounded-none flex items-center gap-2 hover:bg-muted/50 transition-colors"
                     >
                       <Icon className="h-4 w-4" />
-                      {tab.label}
+                      <span className="hidden sm:inline">{tab.label}</span>
+                      <span className="sm:hidden">
+                        {tab.label.split(' ')[0]}
+                      </span>
                     </TabsTrigger>
                   );
                 })}
