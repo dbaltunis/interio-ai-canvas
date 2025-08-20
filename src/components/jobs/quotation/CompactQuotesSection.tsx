@@ -34,7 +34,14 @@ export const CompactQuotesSection: React.FC<CompactQuotesSectionProps> = ({
               </div>
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-muted-foreground">
-                  Total: {formatCurrency(quotes.reduce((sum, q) => sum + (q.total_amount || 0), 0))}
+                  {(() => {
+                    const amounts = quotes.map(q => q.total_amount || 0).filter(amount => amount > 0);
+                    if (amounts.length === 0) return "Range: No quotes";
+                    if (amounts.length === 1) return `Quote: ${formatCurrency(amounts[0])}`;
+                    const min = Math.min(...amounts);
+                    const max = Math.max(...amounts);
+                    return `Range: ${formatCurrency(min)} - ${formatCurrency(max)}`;
+                  })()}
                 </span>
                 {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </div>
