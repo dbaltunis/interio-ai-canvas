@@ -50,15 +50,10 @@ useEffect(() => {
 
 // Ensure the correct conversation opens when dialog is triggered
 useEffect(() => {
-  if (isOpen && selectedUserId && selectedUserId !== activeConversation) {
-    console.log('🎯 Dialog triggered for user:', {
-      selectedUserId,
-      currentActiveConversation: activeConversation,
-      isOpen
-    });
+  if (isOpen && selectedUserId) {
     openConversation(selectedUserId);
   }
-}, [isOpen, selectedUserId]); // Removed openConversation from deps to prevent loop
+}, [isOpen, selectedUserId, openConversation]);
 
   const handleSendMessage = () => {
     if (!messageInput.trim() || !activeConversation) return;
@@ -241,11 +236,6 @@ useEffect(() => {
                        variant={isActive ? "secondary" : "ghost"}
                        className="w-full justify-start p-4 h-auto mb-2 rounded-lg hover:bg-accent/50 transition-all duration-200"
                        onClick={() => {
-                         console.log('🖱️ Conversation clicked:', {
-                           clickedUserId: conversation.user_id,
-                           currentActiveConversation: activeConversation,
-                           isActive
-                         });
                          openConversation(conversation.user_id);
                        }}
                      >
@@ -332,9 +322,8 @@ useEffect(() => {
                 </div>
 
                 {/* Messages */}
-                 <ScrollArea className="flex-1 overflow-hidden">
-                   <div className="p-4 space-y-4">
-                     
+                <ScrollArea className="flex-1 overflow-hidden">
+                  <div className="p-4 space-y-4">
                      {messages.length === 0 ? (
                        <div className="text-center py-12 text-muted-foreground">
                          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">

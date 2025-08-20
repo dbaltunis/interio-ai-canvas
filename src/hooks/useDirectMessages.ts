@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -34,8 +34,6 @@ export const useDirectMessages = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
-  const channelRef = useRef<any>(null);
-  const isSubscribedRef = useRef(false);
 
   // Conversations: use presence view for consistent status
   const { data: conversations = [], isLoading: conversationsLoading } = useQuery({
@@ -109,16 +107,9 @@ export const useDirectMessages = () => {
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
     queryKey: ['messages', activeConversation, user?.id],
     queryFn: async (): Promise<DirectMessage[]> => {
-      if (!user || !activeConversation) {
-        console.log('🚫 No user or activeConversation:', { user: user?.id, activeConversation });
-        return [];
-      }
+      if (!user || !activeConversation) return [];
 
-      console.log('🔍 Fetching messages for conversation:', {
-        activeConversation,
-        currentUser: user.id,
-        queryKey: ['messages', activeConversation, user.id]
-      });
+      console.log('Fetching messages for conversation:', activeConversation, 'user:', user.id);
       
       const { data, error } = await supabase
         .from('direct_messages')
@@ -127,16 +118,11 @@ export const useDirectMessages = () => {
         .order('created_at', { ascending: true });
 
       if (error) {
-        console.error('❌ Error fetching messages:', error);
+        console.error('Error fetching messages:', error);
         throw error;
       }
       
-      console.log('✅ Fetched messages:', {
-        count: data?.length || 0,
-        conversation: activeConversation,
-        currentUser: user.id,
-        messages: data?.map(m => ({ id: m.id, sender: m.sender_id, recipient: m.recipient_id, content: m.content.substring(0, 50) + '...' }))
-      });
+      console.log('Fetched messages:', data?.length || 0, 'messages for conversation:', activeConversation);
       return (data || []) as DirectMessage[];
     },
     enabled: !!user && !!activeConversation,
@@ -209,21 +195,11 @@ export const useDirectMessages = () => {
     }
   });
 
-  // Realtime subscription with proper cleanup using refs
+  // Realtime subscription for direct messages with dependency on activeConversation
   useEffect(() => {
-    if (!user || isSubscribedRef.current) return;
+    if (!user) return;
 
-    console.log('Setting up realtime subscription for user:', user.id);
-    
-    const channelName = `direct-messages-${user.id}`;
-    
-    // Clean up any existing channel first
-    if (channelRef.current) {
-      console.log('Cleaning up existing channel');
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
-    
+    const channelName = `direct-messages-${user.id}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
     const channel = supabase
       .channel(channelName)
       .on(
@@ -232,6 +208,17 @@ export const useDirectMessages = () => {
         (payload) => {
           console.log('New message received:', payload);
           const newMessage = payload.new as DirectMessage;
+          
+          // Immediately update messages if this is for the active conversation
+          if (activeConversation === newMessage.sender_id) {
+            queryClient.setQueryData(['messages', activeConversation, user.id], (oldMessages: DirectMessage[] = []) => {
+              // Prevent duplicates
+              if (oldMessages.some(msg => msg.id === newMessage.id)) {
+                return oldMessages;
+              }
+              return [...oldMessages, newMessage];
+            });
+          }
           
           // Update conversations list to show new message
           queryClient.setQueryData(['conversations', user.id], (oldConversations: Conversation[] = []) => {
@@ -242,7 +229,6 @@ export const useDirectMessages = () => {
             );
           });
 
-          // Invalidate queries to refresh data
           queryClient.invalidateQueries({ queryKey: ['messages'] });
           queryClient.invalidateQueries({ queryKey: ['conversations'] });
         }
@@ -264,39 +250,19 @@ export const useDirectMessages = () => {
           queryClient.invalidateQueries({ queryKey: ['conversations'] });
         }
       )
-      .subscribe(() => {
-        console.log('Channel subscribed successfully');
-        isSubscribedRef.current = true;
-      });
-
-    channelRef.current = channel;
+      .subscribe();
 
     return () => {
-      console.log('Cleaning up realtime subscription for user:', user.id);
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-      isSubscribedRef.current = false;
+      supabase.removeChannel(channel);
     };
-  }, [user?.id, queryClient]);
+  }, [user, queryClient, activeConversation]);
 
   const sendMessage = (recipientId: string, content: string) => {
     sendMessageMutation.mutate({ recipientId, content });
   };
 
   const openConversation = (userId: string) => {
-    console.log('📱 Opening conversation:', {
-      userId,
-      currentUser: user?.id,
-      previousActiveConversation: activeConversation
-    });
-    
     setActiveConversation(userId);
-    
-    // Force refresh messages for this conversation
-    queryClient.invalidateQueries({ queryKey: ['messages', userId, user?.id] });
-    
     // mark unread as read
     markAsReadMutation.mutate(userId);
   };

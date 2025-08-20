@@ -141,14 +141,14 @@ export const UserPresencePanel = ({ isCollapsed = false, onToggleCollapse }: Use
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                             <p className="text-sm font-medium truncate" title={user.user_profile?.display_name}>
-                               {user.user_profile?.display_name}
-                             </p>
-                             <Badge variant="outline" className="text-xs shrink-0">
-                               {user.user_profile?.role}
-                             </Badge>
-                           </div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium truncate">
+                              {user.user_profile?.display_name}
+                            </p>
+                            <Badge variant="outline" className="text-xs">
+                              {user.user_profile?.role}
+                            </Badge>
+                          </div>
                           {user.current_activity && (
                             <p className="text-xs text-muted-foreground truncate">
                               {user.current_activity}
@@ -208,14 +208,14 @@ export const UserPresencePanel = ({ isCollapsed = false, onToggleCollapse }: Use
                           </div>
                           
                           <div className="flex-1 min-w-0">
-                             <div className="flex items-center gap-2">
-                               <p className="text-sm font-medium truncate" title={user.user_profile?.display_name}>
-                                 {user.user_profile?.display_name}
-                               </p>
-                               <Badge variant={getStatusBadgeVariant(user.status)} className="text-xs shrink-0">
-                                 {user.status}
-                               </Badge>
-                             </div>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium truncate">
+                                {user.user_profile?.display_name}
+                              </p>
+                              <Badge variant={getStatusBadgeVariant(user.status)} className="text-xs">
+                                {user.status}
+                              </Badge>
+                            </div>
                           </div>
 
                           <Button
@@ -268,14 +268,14 @@ export const UserPresencePanel = ({ isCollapsed = false, onToggleCollapse }: Use
                             <Circle className="absolute -bottom-1 -right-1 h-3 w-3 fill-gray-400 text-gray-400" />
                           </div>
                           
-                           <div className="flex-1 min-w-0">
-                             <p className="text-sm font-medium truncate" title={user.user_profile?.display_name}>
-                               {user.user_profile?.display_name}
-                             </p>
-                             <p className="text-xs text-muted-foreground truncate">
-                               Last seen: {new Date(user.last_seen).toLocaleTimeString()}
-                             </p>
-                           </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {user.user_profile?.display_name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Last seen: {new Date(user.last_seen).toLocaleTimeString()}
+                            </p>
+                          </div>
 
                           <Button
                             variant="ghost"
