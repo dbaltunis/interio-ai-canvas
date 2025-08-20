@@ -166,10 +166,10 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
           <div className="space-y-2">
             <Label>Role</Label>
             <Select value={formData.role} onValueChange={handleRoleChange}>
-              <SelectTrigger>
-                <SelectValue />
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a role..." />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-50">
                 <SelectItem value="Admin">Admin</SelectItem>
                 <SelectItem value="Manager">Manager</SelectItem>
                 <SelectItem value="Staff">Staff</SelectItem>
