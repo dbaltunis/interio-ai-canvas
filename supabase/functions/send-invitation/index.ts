@@ -34,12 +34,12 @@ serve(async (req) => {
 
     // Brand settings (customize via Function secrets)
     const brandName = Deno.env.get('BRAND_NAME') || 'InterioApp';
-    const primaryColor = Deno.env.get('BRAND_PRIMARY_COLOR') || '#0ea5e9'; // sky-500
-    const secondaryColor = Deno.env.get('BRAND_SECONDARY_COLOR') || '#22c55e'; // green-500
-    const logoUrl = Deno.env.get('BRAND_LOGO_URL') || `${siteUrl}/favicon.ico`;
-    const gradient = `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`;
+    const primaryColor = Deno.env.get('BRAND_PRIMARY_COLOR') || '#415e6b'; // InterioApp primary
+    const secondaryColor = Deno.env.get('BRAND_SECONDARY_COLOR') || '#9bb6bc'; // InterioApp secondary
+    const accentColor = Deno.env.get('BRAND_ACCENT_COLOR') || '#733341'; // InterioApp accent
+    const logoUrl = Deno.env.get('BRAND_LOGO_URL') || `${siteUrl}/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png`;
 
-    // Email content
+    // Email content with InterioApp branding
     const emailContent = `
       <!DOCTYPE html>
       <html>
@@ -48,52 +48,89 @@ serve(async (req) => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${brandName} – Team Invitation</title>
         <meta name="color-scheme" content="light only">
+        <style>
+          @media only screen and (max-width: 600px) {
+            .container { width: 100% !important; margin: 0 !important; }
+            .header-padding { padding: 20px 16px !important; }
+            .content-padding { padding: 24px 16px !important; }
+            .logo { height: 32px !important; }
+            .title { font-size: 24px !important; }
+            .button { padding: 12px 18px !important; font-size: 14px !important; }
+          }
+        </style>
       </head>
-      <body style="margin:0; padding:0; background:#f6f7f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; color:#111827;">
+      <body style="margin:0; padding:0; background:#f8f9fa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color:#2c3e50; line-height:1.6;">
         <div style="display:none; max-height:0; overflow:hidden;">
-          You're invited to join ${brandName}. Accept to get started.
+          You're invited to join ${brandName} – The future of window décor is online and bespoke
         </div>
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f6f7f9; padding:24px 0;">
+        
+        <!-- Email Container -->
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8f9fa; padding:20px 0;">
           <tr>
             <td align="center">
-              <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px; width:100%; background:#ffffff; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,0.06); overflow:hidden;">
+              <table role="presentation" class="container" width="600" cellspacing="0" cellpadding="0" style="max-width:600px; width:100%; background:#ffffff; border-radius:16px; box-shadow:0 8px 32px rgba(65,94,107,0.12); overflow:hidden; margin:0 auto;">
+                
+                <!-- Header with Logo and Slogan -->
                 <tr>
-                  <td style="padding:28px 24px; background:${gradient};">
-                    <table width="100%" role="presentation">
-                      <tr>
-                        <td align="left" style="vertical-align:middle;">
-                          <img src="${logoUrl}" alt="${brandName} logo" style="height:40px; width:auto; display:block; border:0; outline:none; text-decoration:none;" />
-                        </td>
-                        <td align="right" style="vertical-align:middle;">
-                          <span style="color:#ffffff; font-weight:600; font-size:14px; letter-spacing:0.4px; text-transform:uppercase;">Invitation</span>
-                        </td>
-                      </tr>
-                    </table>
-                    <h1 style="margin:20px 0 0; color:#ffffff; font-size:28px; line-height:1.2;">You're invited to ${brandName}</h1>
+                  <td class="header-padding" style="padding:32px 28px; background:linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%); text-align:center;">
+                    <img src="${logoUrl}" alt="${brandName}" class="logo" style="height:48px; width:auto; display:block; margin:0 auto 16px; border:0; outline:none;" />
+                    <p style="margin:0 0 8px; color:#ffffff; font-size:14px; font-weight:500; letter-spacing:0.5px; opacity:0.95;">The future of window décor is online and bespoke</p>
+                    <h1 class="title" style="margin:16px 0 0; color:#ffffff; font-size:28px; font-weight:700; line-height:1.3;">You're Invited!</h1>
                   </td>
                 </tr>
+                
+                <!-- Main Content -->
                 <tr>
-                  <td style="padding:28px 24px;">
-                    <p style="margin:0 0 12px; font-size:16px; color:#374151;">Hi ${invitedName || invitedEmail},</p>
-                    <p style="margin:0 0 12px; font-size:16px; color:#374151;">
-                      <strong>${inviterName}</strong> (${inviterEmail}) has invited you to join their team as a <strong>${role}</strong>.
+                  <td class="content-padding" style="padding:32px 28px;">
+                    <div style="text-align:center; margin-bottom:24px;">
+                      <h2 style="margin:0 0 8px; color:${primaryColor}; font-size:20px; font-weight:600;">Join ${brandName}</h2>
+                      <p style="margin:0; color:#6c757d; font-size:14px;">Professional window treatment solutions</p>
+                    </div>
+                    
+                    <p style="margin:0 0 16px; font-size:16px; color:#495057;">Hi ${invitedName || invitedEmail},</p>
+                    <p style="margin:0 0 24px; font-size:16px; color:#495057;">
+                      <strong style="color:${primaryColor};">${inviterName}</strong> has invited you to join their ${brandName} team as a <strong style="color:${accentColor};">${role}</strong>. 
+                      Start collaborating on beautiful window décor projects today!
                     </p>
-                    <div style="text-align:center; margin:28px 0;">
-                      <a href="${invitationLink}"
-                         style="background:${primaryColor}; color:#ffffff; padding:14px 22px; border-radius:10px; text-decoration:none; font-weight:600; display:inline-block; box-shadow:0 10px 20px rgba(14,165,233,0.24);">
-                        Accept invitation
+                    
+                    <!-- Call to Action Button -->
+                    <div style="text-align:center; margin:32px 0;">
+                      <a href="${invitationLink}" class="button"
+                         style="background:${accentColor}; color:#ffffff; padding:16px 32px; border-radius:12px; text-decoration:none; font-weight:600; font-size:16px; display:inline-block; box-shadow:0 4px 16px rgba(115,51,65,0.3); transition:all 0.3s ease;">
+                        Accept Invitation
                       </a>
                     </div>
-                    <p style="margin:0 0 8px; font-size:14px; color:#6b7280;">Or copy and paste this URL into your browser:</p>
-                    <p style="margin:0; font-size:13px; color:#6b7280; background:#f3f4f6; padding:10px; border-radius:8px; word-break:break-all;">${invitationLink}</p>
-                    <p style="margin:16px 0 0; font-size:12px; color:#9ca3af;">This invitation expires in 7 days. If you have questions, contact ${inviterEmail}.</p>
+                    
+                    <!-- Alternative Link -->
+                    <div style="background:#f8f9fa; border-radius:8px; padding:16px; margin:24px 0;">
+                      <p style="margin:0 0 8px; font-size:13px; color:#6c757d; text-align:center;">Can't click the button? Copy this link:</p>
+                      <p style="margin:0; font-size:12px; color:#6c757d; word-break:break-all; text-align:center; font-family:monospace;">${invitationLink}</p>
+                    </div>
+                    
+                    <!-- Contact Info -->
+                    <div style="border-top:1px solid #e9ecef; padding-top:20px; margin-top:24px;">
+                      <p style="margin:0; font-size:13px; color:#6c757d; text-align:center;">
+                        Questions? Contact <a href="mailto:${inviterEmail}" style="color:${primaryColor}; text-decoration:none;">${inviterEmail}</a>
+                      </p>
+                      <p style="margin:8px 0 0; font-size:12px; color:#adb5bd; text-align:center;">
+                        This invitation expires in 7 days
+                      </p>
+                    </div>
                   </td>
                 </tr>
+                
+                <!-- Footer -->
                 <tr>
-                  <td style="background:#f9fafb; padding:20px 24px; text-align:center; font-size:12px; color:#6b7280;">
-                    © ${new Date().getFullYear()} ${brandName}. All rights reserved.
+                  <td style="background:#f8f9fa; padding:20px 28px; text-align:center; border-top:1px solid #e9ecef;">
+                    <p style="margin:0; font-size:12px; color:#6c757d;">
+                      © ${new Date().getFullYear()} ${brandName}. All rights reserved.
+                    </p>
+                    <p style="margin:4px 0 0; font-size:11px; color:#adb5bd;">
+                      Professional window treatments and décor solutions
+                    </p>
                   </td>
                 </tr>
+                
               </table>
             </td>
           </tr>
