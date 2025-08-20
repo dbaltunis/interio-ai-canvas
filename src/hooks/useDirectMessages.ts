@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -34,6 +34,8 @@ export const useDirectMessages = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
+  const channelRef = useRef<any>(null);
+  const isSubscribedRef = useRef(false);
 
   // Conversations: use presence view for consistent status
   const { data: conversations = [], isLoading: conversationsLoading } = useQuery({
@@ -207,19 +209,19 @@ export const useDirectMessages = () => {
     }
   });
 
-  // Realtime subscription for direct messages with proper channel management
+  // Realtime subscription with proper cleanup using refs
   useEffect(() => {
-    if (!user) return;
+    if (!user || isSubscribedRef.current) return;
 
     console.log('Setting up realtime subscription for user:', user.id);
     
     const channelName = `direct-messages-${user.id}`;
     
-    // Check if channel already exists and unsubscribe first
-    const existingChannel = supabase.getChannels().find(ch => ch.topic === channelName);
-    if (existingChannel) {
-      console.log('Removing existing channel:', channelName);
-      supabase.removeChannel(existingChannel);
+    // Clean up any existing channel first
+    if (channelRef.current) {
+      console.log('Cleaning up existing channel');
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
     }
     
     const channel = supabase
@@ -262,11 +264,20 @@ export const useDirectMessages = () => {
           queryClient.invalidateQueries({ queryKey: ['conversations'] });
         }
       )
-      .subscribe();
+      .subscribe(() => {
+        console.log('Channel subscribed successfully');
+        isSubscribedRef.current = true;
+      });
+
+    channelRef.current = channel;
 
     return () => {
       console.log('Cleaning up realtime subscription for user:', user.id);
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      isSubscribedRef.current = false;
     };
   }, [user?.id, queryClient]);
 
