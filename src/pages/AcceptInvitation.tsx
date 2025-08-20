@@ -65,8 +65,35 @@ const AcceptInvitation = () => {
     checkInvitation();
   }, [token]);
 
-  const handleAcceptInvitation = () => {
-    // Redirect to signup/login with the invitation token
+  const handleAcceptInvitation = async () => {
+    try {
+      console.log('[AcceptInvitation] Accepting invitation manually with token:', token);
+      // Try manual acceptance first for already authenticated users
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        console.log('[AcceptInvitation] User already authenticated, accepting directly');
+        const { data: result, error } = await supabase.rpc('accept_user_invitation', {
+          invitation_token_param: token,
+          user_id_param: user.id,
+        });
+        
+        if (error) {
+          console.error('[AcceptInvitation] Direct acceptance failed:', error);
+          navigate(`/auth?invitation=${token}`);
+        } else {
+          console.log('[AcceptInvitation] Direct acceptance successful:', result);
+          setStatus('success');
+          setMessage('Invitation accepted! Redirecting to dashboard...');
+          setTimeout(() => navigate('/'), 2000);
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('[AcceptInvitation] Error in direct acceptance:', error);
+    }
+    
+    // Fallback: redirect to signup/login with the invitation token
+    console.log('[AcceptInvitation] Redirecting to auth page with token:', token);
     navigate(`/auth?invitation=${token}`);
   };
 

@@ -111,19 +111,46 @@ export const AuthPage = () => {
           return;
         }
 
+        console.log('[AuthPage] Attempting signup for invitation user:', email);
         const { data: signUpData, error } = await signUp(email, password);
 
         if (error) {
+          console.error('[AuthPage] Signup error:', error);
           toast({
             title: "Error",
             description: error.message,
             variant: "destructive"
           });
         } else if (signUpData?.user) {
-          toast({
-            title: "Almost there",
-            description: "Please check your email to confirm your account and complete the invitation. After confirming, you'll be redirected automatically.",
-          });
+          console.log('[AuthPage] Signup successful, user ID:', signUpData.user.id);
+          
+          // Try to accept the invitation immediately after signup
+          try {
+            const { data: acceptResult, error: acceptError } = await supabase.rpc('accept_user_invitation', {
+              invitation_token_param: invitationToken,
+              user_id_param: signUpData.user.id,
+            });
+            
+            if (acceptError) {
+              console.error('[AuthPage] Immediate invitation acceptance failed:', acceptError);
+              toast({
+                title: "Almost there",
+                description: "Please check your email to confirm your account. After confirming, your invitation will be processed automatically.",
+              });
+            } else {
+              console.log('[AuthPage] Immediate invitation acceptance successful:', acceptResult);
+              toast({
+                title: "Success!",
+                description: "Your account has been created and invitation accepted. Please check your email to confirm your account.",
+              });
+            }
+          } catch (acceptErr) {
+            console.error('[AuthPage] Error accepting invitation immediately:', acceptErr);
+            toast({
+              title: "Almost there",
+              description: "Please check your email to confirm your account. After confirming, your invitation will be processed automatically.",
+            });
+          }
         }
         } else {
           // Handle regular login/signup
