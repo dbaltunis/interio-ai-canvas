@@ -38,7 +38,7 @@ export const useUserPresence = () => {
         last_seen: profile.last_seen,
         user_profile: {
           display_name: profile.display_name || 'Unknown User',
-          avatar_url: undefined,
+          avatar_url: profile.avatar_url,
           role: profile.role,
           status_message: profile.status_message
         },

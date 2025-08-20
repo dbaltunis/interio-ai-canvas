@@ -3524,6 +3524,7 @@ export type Database = {
       get_team_presence: {
         Args: { search_param?: string }
         Returns: {
+          avatar_url: string
           display_name: string
           is_online: boolean
           last_seen: string
