@@ -302,18 +302,7 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
             <span>New Quote</span>
           </Button>
 
-          {/* Template Settings Button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.open('/settings?tab=documents', '_blank')}
-            className="flex items-center space-x-2"
-          >
-            <Settings className="h-4 w-4" />
-            <span>Templates</span>
-          </Button>
-
-          {/* Quotation Items Button */}
+          {/* View Items Button */}
           <Button
             variant="outline"
             size="sm"
@@ -324,41 +313,21 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
             <span>View Items</span>
           </Button>
 
-          {/* Items Editor Toggle */}
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowItemsEditor(!showItemsEditor)}
-              className="flex items-center space-x-1"
-            >
-              {showItemsEditor ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              <span>{showItemsEditor ? 'Hide Items Editor' : 'Show Items Editor'}</span>
-            </Button>
-          </div>
+          {/* View Quote Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowFullQuoteView(true)}
+            className="flex items-center space-x-2"
+          >
+            <Eye className="h-4 w-4" />
+            <span>View Quote</span>
+          </Button>
           {/* Actions Menu */}
           <ThreeDotMenu items={actionMenuItems} />
         </div>
       </div>
 
-
-      {/* Items Editor (optional) */}
-      {showItemsEditor && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Selected Treatments</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <TreatmentLineItems
-              treatments={sourceTreatments}
-              rooms={rooms || []}
-              surfaces={surfaces || []}
-              markupPercentage={markupPercentage}
-              onMarkupChange={setMarkupPercentage}
-            />
-          </CardContent>
-        </Card>
-      )}
 
       {/* Quotation Items Modal */}
       <QuotationItemsModal
@@ -366,6 +335,10 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
         onClose={() => setShowQuotationItems(false)}
         quotationData={quotationData}
         currency="GBP"
+        treatments={sourceTreatments}
+        rooms={rooms || []}
+        surfaces={surfaces || []}
+        markupPercentage={markupPercentage}
       />
 
       {/* Quote Document Preview */}
@@ -373,19 +346,8 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
         <section className="mt-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-semibold">Quote Document Preview</h3>
-            <div className="flex items-center space-x-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFullQuoteView(true)}
-                className="flex items-center space-x-2"
-              >
-                <Eye className="h-4 w-4" />
-                <span>View Quote</span>
-              </Button>
-              <div className="text-sm text-muted-foreground">
-                Using: <strong>{selectedTemplate.name}</strong>
-              </div>
+            <div className="text-sm text-muted-foreground">
+              Using: <strong>{selectedTemplate.name}</strong>
             </div>
           </div>
           <LivePreview
