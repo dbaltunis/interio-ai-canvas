@@ -118,8 +118,30 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                 </Button>
               </div>
               
-              {/* User Profile - Simplified */}
-              <UserProfile />
+              {/* User Profile - Clickable to open Team Hub */}
+              <UserProfile onOpenTeamHub={() => setPresencePanelOpen(!presencePanelOpen)} />
+              
+              {/* Team Hub button for mobile */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="md:hidden"
+                onClick={() => setPresencePanelOpen(!presencePanelOpen)}
+              >
+                {unreadCount > 0 ? (
+                  <MessageCircle className="h-4 w-4" />
+                ) : (
+                  <Users className="h-4 w-4" />
+                )}
+                {unreadCount > 0 && (
+                  <div className="absolute -top-2 -right-2 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </div>
+                )}
+                {hasActivity && unreadCount === 0 && (
+                  <div className="absolute -top-1 -right-1 h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                )}
+              </Button>
               
               {/* Mobile menu button */}
               <Button

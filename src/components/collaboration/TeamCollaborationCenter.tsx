@@ -14,6 +14,8 @@ import { useCurrentUserProfile, useUpdateUserProfile } from '@/hooks/useUserProf
 import { useTheme } from 'next-themes';
 import { useCompactMode } from '@/hooks/useCompactMode';
 import { Users, MessageCircle, Zap, Circle, Send, X, Edit, Check, Settings, LogOut, Sun, Moon, Palette } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useNavigate } from 'react-router-dom';
 import { DirectMessageDialog } from './DirectMessageDialog';
 import { cn } from '@/lib/utils';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
@@ -44,6 +46,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
   const { compact, toggleCompact } = useCompactMode();
   const [isEditingStatus, setIsEditingStatus] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toggleActive = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
@@ -181,7 +184,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className={cn("!fixed inset-y-0 right-0 w-96 z-[101] liquid-glass shadow-2xl overflow-hidden border-l border-border", messageDialogOpen ? "pointer-events-none" : "pointer-events-auto")}
+              className={cn("!fixed inset-y-0 right-0 w-full sm:w-96 z-[101] liquid-glass shadow-2xl overflow-hidden border-l border-border", messageDialogOpen ? "pointer-events-none" : "pointer-events-auto")}
             >
               {/* Content */}
               <div className="relative z-10 h-full flex flex-col">
@@ -209,68 +212,153 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                     )}
                   </div>
 
-                  {/* Current User Section */}
+                  {/* Current User Section with Compact Controls */}
                   {currentUserProfile && (
-                    <div className="mt-4 flex flex-col items-center">
-                      <div className="relative">
-                        <Avatar className="h-16 w-16 ring-2 ring-white/30">
-                          <AvatarImage src={currentUserProfile.avatar_url} />
-                          <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-lg">
-                            {getInitials(currentUserProfile.display_name || '')}
-                          </AvatarFallback>
-                        </Avatar>
+                    <div className="mt-4">
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <Avatar className="h-12 w-12 ring-2 ring-white/30">
+                            <AvatarImage src={currentUserProfile.avatar_url} />
+                            <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white">
+                              {getInitials(currentUserProfile.display_name || '')}
+                            </AvatarFallback>
+                          </Avatar>
+                          
+                          {/* Online indicator */}
+                          <motion.div
+                            animate={{ scale: [1, 1.2, 1] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                            className="absolute -bottom-1 -right-1 h-4 w-4 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full border-2 border-white/30"
+                          />
+                        </div>
                         
-                        {/* Online indicator */}
-                        <motion.div
-                          animate={{ scale: [1, 1.2, 1] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                          className="absolute -bottom-1 -right-1 h-5 w-5 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full border-2 border-white/30"
-                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">
+                            {currentUserProfile.display_name}
+                          </p>
+                          
+                          {/* Editable Status Message */}
+                          <div className="mt-0.5">
+                            {isEditingStatus ? (
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  value={statusMessage}
+                                  onChange={(e) => setStatusMessage(e.target.value)}
+                                  placeholder="How are you feeling?"
+                                  className="h-6 text-xs flex-1"
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      handleStatusMessageSave();
+                                    } else if (e.key === 'Escape') {
+                                      setIsEditingStatus(false);
+                                      setStatusMessage(currentUserProfile?.status_message || '');
+                                    }
+                                  }}
+                                  autoFocus
+                                />
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={handleStatusMessageSave}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <Check className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setIsEditingStatus(true)}
+                                className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 truncate"
+                              >
+                                {currentUserProfile.status_message || 'Add status...'}
+                                <Edit className="h-3 w-3 shrink-0" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       </div>
                       
-                      <div className="mt-2 text-center">
-                        <p className="text-sm text-muted-foreground">
-                          {currentUserProfile.display_name}
-                        </p>
-                        
-                        {/* Editable Status Message */}
-                        <div className="mt-1 flex items-center justify-center gap-2">
-                          {isEditingStatus ? (
-                            <div className="flex items-center gap-2">
-                              <Input
-                                value={statusMessage}
-                                onChange={(e) => setStatusMessage(e.target.value)}
-                                placeholder="How are you feeling?"
-                                className="h-7 text-xs max-w-32"
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    handleStatusMessageSave();
-                                  } else if (e.key === 'Escape') {
-                                    setIsEditingStatus(false);
-                                    setStatusMessage(currentUserProfile?.status_message || '');
-                                  }
-                                }}
-                                autoFocus
-                              />
+                      {/* Compact Control Row */}
+                      <div className="mt-3 flex items-center justify-center gap-1">
+                        <TooltipProvider>
+                          {/* Theme Controls */}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
                               <Button
-                                size="sm"
                                 variant="ghost"
-                                onClick={handleStatusMessageSave}
-                                className="h-7 w-7 p-0"
+                                size="sm"
+                                onClick={() => setTheme('light')}
+                                className={cn("h-8 w-8 p-0", theme === 'light' && "bg-accent")}
                               >
-                                <Check className="h-3 w-3" />
+                                <Sun className="h-4 w-4" />
                               </Button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => setIsEditingStatus(true)}
-                              className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 max-w-40 truncate"
-                            >
-                              {currentUserProfile.status_message || 'Add status...'}
-                              <Edit className="h-3 w-3 shrink-0" />
-                            </button>
-                          )}
-                        </div>
+                            </TooltipTrigger>
+                            <TooltipContent>Light Mode</TooltipContent>
+                          </Tooltip>
+                          
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setTheme('dark')}
+                                className={cn("h-8 w-8 p-0", theme === 'dark' && "bg-accent")}
+                              >
+                                <Moon className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Dark Mode</TooltipContent>
+                          </Tooltip>
+                          
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setTheme('graphite')}
+                                className={cn("h-8 w-8 p-0", theme === 'graphite' && "bg-accent")}
+                              >
+                                <Palette className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Graphite Mode</TooltipContent>
+                          </Tooltip>
+                          
+                          <div className="h-4 w-px bg-border mx-1" />
+                          
+                          {/* Settings */}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => navigate('/settings')}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Settings className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Settings</TooltipContent>
+                          </Tooltip>
+                          
+                          {/* Sign Out */}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={async () => {
+                                  await supabase.auth.signOut();
+                                  navigate('/auth');
+                                }}
+                                className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
+                              >
+                                <LogOut className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Sign Out</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     </div>
                   )}
@@ -612,71 +700,6 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                   </Tabs>
                 </div>
 
-                {/* Bottom Controls Section */}
-                <div className="border-t border-border bg-background/50 backdrop-blur-sm">
-                  <div className="p-4 space-y-3">
-                    {/* Theme Controls */}
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-2 font-medium">Theme</p>
-                      <div className="flex gap-2">
-                        <Button
-                          variant={theme === 'light' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setTheme('light')}
-                          className="flex-1 h-8"
-                        >
-                          <Sun className="h-3 w-3 mr-1" />
-                          Light
-                        </Button>
-                        <Button
-                          variant={theme === 'dark' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setTheme('dark')}
-                          className="flex-1 h-8"
-                        >
-                          <Moon className="h-3 w-3 mr-1" />
-                          Dark
-                        </Button>
-                        <Button
-                          variant={theme === 'apple-graphite' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setTheme('apple-graphite')}
-                          className="flex-1 h-8"
-                        >
-                          <Palette className="h-3 w-3 mr-1" />
-                          Graphite
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="space-y-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.location.href = '/settings'}
-                        className="w-full justify-start h-8"
-                      >
-                        <Settings className="h-3 w-3 mr-2" />
-                        Settings
-                      </Button>
-                      
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={async () => {
-                          const { supabase } = await import('@/integrations/supabase/client');
-                          await supabase.auth.signOut();
-                          window.location.href = '/auth';
-                        }}
-                        className="w-full justify-start h-8 text-red-500 hover:text-red-600 border-red-200 hover:border-red-300"
-                      >
-                        <LogOut className="h-3 w-3 mr-2" />
-                        Sign Out
-                      </Button>
-                    </div>
-                  </div>
-                </div>
               </div>
             </motion.div>
           </>
