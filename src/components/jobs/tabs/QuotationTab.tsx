@@ -14,7 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useQuotes, useCreateQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
 import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
-import { Percent, FileText, Mail, Eye, EyeOff, Settings, Plus, StickyNote } from "lucide-react";
+import { Percent, FileText, Mail, Eye, EyeOff, Settings, Plus, StickyNote, List } from "lucide-react";
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
 import { QuoteViewer } from "../QuoteViewer";
 import { TreatmentLineItems } from "@/components/jobs/quotation/TreatmentLineItems";
@@ -23,8 +23,7 @@ import { ProjectNotesCard } from "../ProjectNotesCard";
 import { JobNotesDialog } from "../JobNotesDialog";
 import { QuoteFullScreenView } from "@/components/jobs/quotation/QuoteFullScreenView";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
-import { CompactQuotesSection } from "../quotation/CompactQuotesSection";
-import { CompactProjectNotes } from "../quotation/CompactProjectNotes";
+import { QuotationItemsModal } from "../quotation/QuotationItemsModal";
 import { DetailedQuotationTable } from "../quotation/DetailedQuotationTable";
 
 interface QuotationTabProps {
@@ -88,6 +87,7 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const [notesOpen, setNotesOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<any | null>(null);
   const [showFullQuoteView, setShowFullQuoteView] = useState(false);
+  const [showQuotationItems, setShowQuotationItems] = useState(false);
 
   const { buildQuotationItems } = useQuotationSync({
     projectId: projectId,
@@ -313,6 +313,17 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
             <span>Templates</span>
           </Button>
 
+          {/* Quotation Items Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowQuotationItems(true)}
+            className="flex items-center space-x-2"
+          >
+            <List className="h-4 w-4" />
+            <span>View Items</span>
+          </Button>
+
           {/* Items Editor Toggle */}
           <div className="flex items-center space-x-2">
             <Button
@@ -348,11 +359,12 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
           </CardContent>
         </Card>
       )}
-      {/* Detailed Quotation Table */}
-      <DetailedQuotationTable 
+
+      {/* Quotation Items Modal */}
+      <QuotationItemsModal
+        isOpen={showQuotationItems}
+        onClose={() => setShowQuotationItems(false)}
         quotationData={quotationData}
-        groupByRoom={true}
-        showDetailedView={true}
         currency="GBP"
       />
 
