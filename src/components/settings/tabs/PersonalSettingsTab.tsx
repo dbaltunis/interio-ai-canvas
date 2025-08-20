@@ -15,6 +15,7 @@ import { Upload, User, Bell, Globe, Shield } from "lucide-react";
 import { LoadingFallback } from "@/components/ui/loading-fallback";
 import { FormSection } from "@/components/ui/form-section";
 import { FormFieldGroup } from "@/components/ui/form-field-group";
+import { compressImage, needsCompression, formatFileSize } from "@/utils/imageUtils";
 
 export const PersonalSettingsTab = () => {
   const { data: userProfile, isLoading } = useCurrentUserProfile();
@@ -161,12 +162,35 @@ export const PersonalSettingsTab = () => {
     if (!file || !user) return;
 
     try {
-      const fileExt = file.name.split('.').pop();
+      let fileToUpload = file;
+      
+      // Check if image needs compression
+      if (needsCompression(file)) {
+        toast({
+          title: "Optimizing image...",
+          description: `Compressing large image (${formatFileSize(file.size)}) for better performance`,
+        });
+        
+        // Compress the image
+        fileToUpload = await compressImage(file, {
+          maxWidth: 800,
+          maxHeight: 800,
+          quality: 0.85,
+          format: 'jpeg'
+        });
+        
+        toast({
+          title: "Image optimized",
+          description: `Size reduced from ${formatFileSize(file.size)} to ${formatFileSize(fileToUpload.size)}`,
+        });
+      }
+
+      const fileExt = fileToUpload.name.split('.').pop();
       const fileName = `avatar-${user.id}-${Date.now()}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from('project-images')
-        .upload(fileName, file);
+        .upload(fileName, fileToUpload);
 
       if (uploadError) throw uploadError;
 
@@ -223,7 +247,7 @@ export const PersonalSettingsTab = () => {
             <div>
               <h4 className="font-medium text-sm">Profile Picture</h4>
               <p className="text-xs text-muted-foreground">
-                JPG, PNG or GIF. Max size 2MB.
+                JPG, PNG or GIF. Large images will be automatically optimized.
               </p>
             </div>
             <input
