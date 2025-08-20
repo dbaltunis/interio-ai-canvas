@@ -35,30 +35,30 @@ export const ProductsToOrderSection = ({ projectId, jobNumber, clientName }: Pro
   const getStatusColor = (status: string) => {
     switch (status) {
       case "received":
-        return "bg-green-100 text-green-800";
+        return "bg-success/10 text-success border-success/20";
       case "ordered":
-        return "bg-blue-100 text-blue-800";
+        return "bg-info/10 text-info border-info/20";
       case "cancelled":
-        return "bg-red-100 text-red-800";
+        return "bg-destructive/10 text-destructive border-destructive/20";
       default:
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-warning/10 text-warning border-warning/20";
     }
   };
 
   const getProductTypeColor = (type: string) => {
     switch (type) {
       case "fabric":
-        return "bg-primary/10 text-primary";
+        return "bg-primary/10 text-primary border-primary/20";
       case "hardware":
-        return "bg-gray-100 text-gray-800";
+        return "bg-muted/50 text-muted-foreground border-muted/50";
       case "track":
-        return "bg-blue-100 text-blue-800";
+        return "bg-info/10 text-info border-info/20";
       case "accessory":
-        return "bg-green-100 text-green-800";
+        return "bg-success/10 text-success border-success/20";
       case "lining":
-        return "bg-orange-100 text-orange-800";
+        return "bg-warning/10 text-warning border-warning/20";
       default:
-        return "bg-secondary/20 text-secondary-foreground";
+        return "bg-secondary/10 text-secondary-foreground border-secondary/20";
     }
   };
 
@@ -130,21 +130,21 @@ Best regards`;
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5" />
+      <CardHeader className="pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <CardTitle className="text-base font-medium flex items-center gap-2">
+            <ShoppingCart className="h-4 w-4" />
             Products to Order from Suppliers
           </CardTitle>
           <ProductOrderForm projectId={projectId} />
         </div>
         
-        {/* Filters */}
-        <div className="flex gap-4 pt-4">
+        {/* Compact Filters */}
+        <div className="flex flex-col sm:flex-row gap-3 pt-3">
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
+            <Filter className="h-4 w-4 text-muted-foreground" />
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-32 h-8">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -158,7 +158,7 @@ Best regards`;
           </div>
           
           <Select value={vendorFilter} onValueChange={setVendorFilter}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-40 h-8">
               <SelectValue placeholder="All Vendors" />
             </SelectTrigger>
             <SelectContent>
@@ -173,11 +173,11 @@ Best regards`;
         </div>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="pt-0">
         {filteredOrders.length === 0 ? (
-          <div className="text-center py-8">
-            <Package className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-            <p className="text-gray-500">No products need to be ordered</p>
+          <div className="text-center py-6">
+            <Package className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">No products need to be ordered</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -188,27 +188,26 @@ Best regards`;
               );
 
               return (
-                <div key={vendorId} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h4 className="font-semibold text-lg">
+                <div key={vendorId} className="border border-border rounded-lg p-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                    <div className="min-w-0">
+                      <h4 className="font-medium text-base">
                         {vendor ? vendor.name : "Unassigned Vendor"}
                       </h4>
                       {vendor && (
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
                           {vendor.email} • Lead time: {vendor.lead_time_days} days
                         </p>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-semibold">
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-base font-semibold">
                         ${vendorTotal.toFixed(2)}
                       </span>
                       {vendor && (
                         <Button
                           onClick={() => handleSendOrderToVendor(vendorId)}
                           size="sm"
-                          className="bg-brand-primary hover:bg-brand-accent"
                         >
                           <Mail className="h-4 w-4 mr-2" />
                           Send Order
@@ -217,49 +216,53 @@ Best regards`;
                     </div>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {orders.map((order) => (
                       <div
                         key={order.id}
-                        className={`border rounded-lg p-3 ${isDelayed(order) ? 'border-red-300 bg-red-50' : 'hover:bg-gray-50'}`}
+                        className={`border border-border rounded-lg p-3 transition-colors ${
+                          isDelayed(order) 
+                            ? 'border-destructive/50 bg-destructive/5' 
+                            : 'hover:bg-muted/20'
+                        }`}
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
-                            <div className="bg-blue-100 p-2 rounded-full">
-                              <Package className="h-4 w-4 text-blue-600" />
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                          <div className="flex items-start gap-3 flex-1 min-w-0">
+                            <div className="bg-primary/10 p-2 rounded-full shrink-0">
+                              <Package className="h-4 w-4 text-primary" />
                             </div>
-                            <div>
-                              <h5 className="font-medium text-gray-900">{order.product_name}</h5>
-                              <p className="text-sm text-gray-500">
+                            <div className="flex-1 min-w-0">
+                              <h5 className="font-medium text-foreground">{order.product_name}</h5>
+                              <p className="text-sm text-muted-foreground">
                                 {order.quantity} units @ ${Number(order.unit_price).toFixed(2)} each
                               </p>
                               {order.notes && (
-                                <p className="text-sm text-blue-600 mt-1">{order.notes}</p>
+                                <p className="text-sm text-primary mt-1">{order.notes}</p>
                               )}
                             </div>
                           </div>
                           
-                          <div className="flex items-center space-x-4">
-                            <div className="text-right">
-                              <p className="font-medium text-gray-900">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-3 shrink-0">
+                            <div className="text-left sm:text-right">
+                              <p className="font-medium text-foreground">
                                 ${(Number(order.quantity) * Number(order.unit_price)).toFixed(2)}
                               </p>
                               {order.planned_order_date && (
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm text-muted-foreground">
                                   Plan: {new Date(order.planned_order_date).toLocaleDateString()}
                                 </p>
                               )}
                             </div>
                             
-                            <div className="flex flex-col gap-1">
-                              <Badge className={getProductTypeColor(order.product_type)}>
+                            <div className="flex flex-wrap gap-1">
+                              <Badge variant="outline" className={getProductTypeColor(order.product_type)}>
                                 {order.product_type.toUpperCase()}
                               </Badge>
-                              <Badge className={getStatusColor(order.order_status)}>
+                              <Badge variant="outline" className={getStatusColor(order.order_status)}>
                                 {order.order_status.replace('_', ' ').toUpperCase()}
                               </Badge>
                               {isDelayed(order) && (
-                                <Badge className="bg-red-100 text-red-800">
+                                <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
                                   DELAYED
                                 </Badge>
                               )}
@@ -290,17 +293,17 @@ Best regards`;
               );
             })}
             
-            <div className="border-t pt-4">
-              <div className="flex justify-between items-center">
+            <div className="border-t border-border pt-3 mt-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex gap-2">
-                  <Button variant="outline">
+                  <Button variant="outline" size="sm">
                     <Download className="h-4 w-4 mr-2" />
                     Download PDF
                   </Button>
                 </div>
-                <div className="text-right">
-                  <span className="text-lg font-medium text-gray-900">Total Estimated Cost:</span>
-                  <span className="text-xl font-bold text-green-600 ml-2">
+                <div className="text-left sm:text-right">
+                  <span className="text-sm font-medium text-foreground">Total Estimated Cost:</span>
+                  <span className="text-lg font-bold text-success ml-2">
                     ${totalEstimatedCost.toFixed(2)}
                   </span>
                 </div>
