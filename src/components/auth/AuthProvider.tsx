@@ -48,7 +48,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
         if (event === 'SIGNED_IN') {
           try {
-            if (!localStorage.getItem('theme')) {
+            // Load theme from user profile or use saved theme
+            if (session?.user?.id) {
+              (async () => {
+                try {
+                  const { data: profile } = await supabase
+                    .from('user_profiles')
+                    .select('theme_preference')
+                    .eq('user_id', session.user.id)
+                    .single();
+                  
+                  if (profile?.theme_preference) {
+                    setTheme(profile.theme_preference);
+                  } else if (!localStorage.getItem('theme')) {
+                    setTheme('light');
+                  }
+                } catch (e) {
+                  console.warn('Failed to load theme preference:', e);
+                  if (!localStorage.getItem('theme')) {
+                    setTheme('light');
+                  }
+                }
+              })();
+            } else if (!localStorage.getItem('theme')) {
               setTheme('light');
             }
           } catch {}

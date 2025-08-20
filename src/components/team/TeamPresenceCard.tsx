@@ -34,6 +34,11 @@ export const TeamPresenceCard: React.FC = () => {
                   />
                   <span className="text-sm font-medium">{m.display_name}</span>
                   <span className="text-xs text-muted-foreground">({m.role})</span>
+                  {m.theme_preference && (
+                    <span className="text-xs text-muted-foreground px-1 py-0.5 bg-muted rounded ml-1">
+                      {m.theme_preference === 'apple-graphite' ? 'G' : m.theme_preference.charAt(0).toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <span className="text-xs text-muted-foreground">{m.status.replace('_', ' ')}</span>
               </li>

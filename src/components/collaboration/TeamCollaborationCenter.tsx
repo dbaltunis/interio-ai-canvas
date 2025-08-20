@@ -48,6 +48,15 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
   const [statusMessage, setStatusMessage] = useState('');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  const handleThemeChange = async (newTheme: string) => {
+    setTheme(newTheme);
+    try {
+      await updateUserProfile.mutateAsync({ theme_preference: newTheme });
+    } catch (error) {
+      console.error('Failed to save theme preference:', error);
+    }
+  };
   const toggleActive = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
       const { error } = await supabase
@@ -284,28 +293,28 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                           {/* Theme Controls */}
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setTheme('light')}
-                                className={cn("h-8 w-8 p-0", theme === 'light' && "bg-accent")}
-                              >
-                                <Sun className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Light Mode</TooltipContent>
-                          </Tooltip>
-                          
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setTheme('dark')}
-                                className={cn("h-8 w-8 p-0", theme === 'dark' && "bg-accent")}
-                              >
-                                <Moon className="h-4 w-4" />
-                              </Button>
+                               <Button
+                                 variant="ghost"
+                                 size="sm"
+                                 onClick={() => handleThemeChange('light')}
+                                 className={cn("h-8 w-8 p-0", theme === 'light' && "bg-accent")}
+                               >
+                                 <Sun className="h-4 w-4" />
+                               </Button>
+                             </TooltipTrigger>
+                             <TooltipContent>Light Mode</TooltipContent>
+                           </Tooltip>
+                           
+                           <Tooltip>
+                             <TooltipTrigger asChild>
+                               <Button
+                                 variant="ghost"
+                                 size="sm"
+                                 onClick={() => handleThemeChange('dark')}
+                                 className={cn("h-8 w-8 p-0", theme === 'dark' && "bg-accent")}
+                               >
+                                 <Moon className="h-4 w-4" />
+                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>Dark Mode</TooltipContent>
                           </Tooltip>
@@ -315,8 +324,8 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                <Button
                                  variant="ghost"
                                  size="sm"
-                                 onClick={() => setTheme('graphite')}
-                                 className={cn("h-8 w-8 p-0", theme === 'graphite' && "bg-muted")}
+                                 onClick={() => handleThemeChange('apple-graphite')}
+                                 className={cn("h-8 w-8 p-0", theme === 'apple-graphite' && "bg-muted")}
                               >
                                 <Palette className="h-4 w-4" />
                               </Button>

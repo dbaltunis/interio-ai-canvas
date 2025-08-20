@@ -53,6 +53,7 @@ export const useUpdateUserProfile = () => {
       default_notification_minutes: number;
       avatar_url: string;
       status_message: string;
+      theme_preference: string;
     }>) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");

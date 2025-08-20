@@ -3019,6 +3019,7 @@ export type Database = {
           sms_notifications: boolean | null
           status: string | null
           status_message: string | null
+          theme_preference: string | null
           updated_at: string | null
           user_id: string
         }
@@ -3042,6 +3043,7 @@ export type Database = {
           sms_notifications?: boolean | null
           status?: string | null
           status_message?: string | null
+          theme_preference?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -3065,6 +3067,7 @@ export type Database = {
           sms_notifications?: boolean | null
           status?: string | null
           status_message?: string | null
+          theme_preference?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -3531,6 +3534,7 @@ export type Database = {
           role: string
           status: string
           status_message: string
+          theme_preference: string
           user_id: string
         }[]
       }

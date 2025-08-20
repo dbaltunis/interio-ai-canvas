@@ -9,6 +9,7 @@ export interface TeamMemberPresence {
   last_seen: string | null;
   is_online: boolean;
   status: 'online' | 'offline' | 'away' | 'never_logged_in';
+  theme_preference: string;
 }
 
 export const useTeamPresence = (search?: string) => {
