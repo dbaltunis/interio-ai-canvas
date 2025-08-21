@@ -15,10 +15,10 @@ export const useEmails = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
+      // Let RLS policies handle the filtering - this allows account-level access
       const { data, error } = await supabase
         .from("emails")
         .select("*")
-        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -43,10 +43,10 @@ export const useEmailKPIs = () => {
         avgTimeSpent: "0m 0s"
       };
 
+      // Let RLS policies handle the filtering for account-level access
       const { data: emails, error } = await supabase
         .from("emails")
-        .select("*")
-        .eq("user_id", user.id);
+        .select("*");
 
       if (error) throw error;
 
