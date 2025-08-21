@@ -1,5 +1,6 @@
 import { useHasPermission, useHasAnyPermission, useHasAllPermissions } from "@/hooks/usePermissions";
 import { ReactNode } from "react";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 interface PermissionGuardProps {
   permission?: string;
@@ -16,6 +17,18 @@ export const PermissionGuard = ({
   children, 
   requireAll = false 
 }: PermissionGuardProps) => {
+  const { user, loading: authLoading } = useAuth();
+  
+  // If authentication is still loading, don't render anything
+  if (authLoading) {
+    return null;
+  }
+  
+  // If user is not authenticated, don't show protected content
+  if (!user) {
+    return (fallback || null) as JSX.Element;
+  }
+
   let hasPermission: boolean | undefined = false;
 
   if (permission) {
@@ -34,7 +47,7 @@ export const PermissionGuard = ({
   }
 
   if (!hasPermission) {
-    return fallback || null;
+    return (fallback || null) as JSX.Element;
   }
 
   return <>{children}</>;

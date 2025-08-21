@@ -146,8 +146,15 @@ serve(async (req) => {
     if (!sgApiKey) {
       console.log('SENDGRID_API_KEY not set. Email preview only.');
       console.log('Invitation email content:', { to: invitedEmail, subject: `Invitation to join ${inviterName}'s team`, html: emailContent });
+      
+      // Return a more informative message about email configuration
       return new Response(
-        JSON.stringify({ success: true, message: 'Email preview only (SENDGRID_API_KEY not set)' }),
+        JSON.stringify({ 
+          success: true, 
+          message: 'Invitation created successfully! Email sending is not configured - please set up SendGrid API key to send emails automatically.',
+          preview_only: true,
+          invitation_link: invitationLink
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
     }
