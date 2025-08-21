@@ -81,7 +81,7 @@ export const useUserPermissions = () => {
           'view_calendar', 'create_appointments',
           'view_inventory', 'manage_inventory',
           'view_window_treatments', 'manage_window_treatments',
-          'view_analytics',
+          'view_analytics', 'view_settings',
           'view_profile'
         ],
         Staff: [
