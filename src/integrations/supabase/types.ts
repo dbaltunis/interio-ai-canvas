@@ -3500,6 +3500,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      fix_user_permissions_for_role: {
+        Args: { target_user_id: string }
+        Returns: Json
+      }
       get_account_owner: {
         Args: { user_id_param: string }
         Returns: string
