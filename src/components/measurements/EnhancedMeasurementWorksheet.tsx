@@ -345,7 +345,13 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       if (stringFields.includes(field)) {
         newMeasurements[field] = value;
       } else {
-        newMeasurements[field] = parseFloat(String(value)) || 0;
+        // Allow empty strings and partial numbers while typing
+        if (value === "" || value === null || value === undefined) {
+          newMeasurements[field] = "";
+        } else {
+          // Store the raw value to allow partial numbers (e.g., "12.", "0.5")
+          newMeasurements[field] = String(value);
+        }
       }
       
       console.log("Updated measurements:", newMeasurements);

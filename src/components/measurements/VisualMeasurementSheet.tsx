@@ -795,9 +795,10 @@ export const VisualMeasurementSheet = ({
                     </Label>
                   </div>
                   <div className="relative">
-                     <Input
+                      <Input
                        id="rail_width"
                        type="number"
+                       inputMode="decimal"
                        step="0.25"
                        value={measurements.rail_width || ""}
                        onChange={(e) => {
@@ -826,9 +827,10 @@ export const VisualMeasurementSheet = ({
                     </Label>
                   </div>
                   <div className="relative">
-                     <Input
+                      <Input
                        id="drop"
                        type="number"
+                       inputMode="decimal"
                        step="0.25"
                        value={measurements.drop || ""}
                        onChange={(e) => {
