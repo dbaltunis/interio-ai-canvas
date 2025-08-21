@@ -40,8 +40,11 @@ import {
   User,
   MoreHorizontal,
   Edit,
-  Trash2
+  Trash2,
+  Briefcase,
+  DollarSign
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useUpdateClientStage, useDeleteClient } from "@/hooks/useClients";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
@@ -62,13 +65,15 @@ interface ClientListViewProps {
   searchTerm: string;
   onSearchChange: (term: string) => void;
   onClientClick: (client: any) => void;
+  isLoading?: boolean;
 }
 
 export const ClientListView = ({ 
   clients, 
   searchTerm, 
   onSearchChange, 
-  onClientClick 
+  onClientClick,
+  isLoading = false
 }: ClientListViewProps) => {
   const [sortField, setSortField] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -185,10 +190,59 @@ export const ClientListView = ({
     }
   };
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const getActivityBadges = (client: any) => {
+    const badges = [];
+    
+    if (client.projectCount > 0) {
+      badges.push({
+        text: `${client.projectCount} Project${client.projectCount > 1 ? 's' : ''}`,
+        variant: 'default' as const,
+        icon: <Briefcase className="h-3 w-3" />
+      });
+    }
+    
+    if (client.quotesData?.total > 0) {
+      const quotes = client.quotesData;
+      if (quotes.draft > 0) {
+        badges.push({
+          text: `${quotes.draft} Draft Quote${quotes.draft > 1 ? 's' : ''}`,
+          variant: 'secondary' as const,
+          icon: <FileText className="h-3 w-3" />
+        });
+      }
+      if (quotes.sent > 0) {
+        badges.push({
+          text: `${quotes.sent} Sent Quote${quotes.sent > 1 ? 's' : ''}`,
+          variant: 'outline' as const,
+          icon: <Mail className="h-3 w-3" />
+        });
+      }
+      if (quotes.accepted > 0) {
+        badges.push({
+          text: `${quotes.accepted} Accepted Quote${quotes.accepted > 1 ? 's' : ''}`,
+          variant: 'default' as const,
+          icon: <CheckCircle className="h-3 w-3" />
+        });
+      }
+    }
+    
+    return badges;
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="liquid-glass rounded-xl border overflow-hidden">
-        <Table>
+    <TooltipProvider>
+      <div className="space-y-4">
+        <div className="liquid-glass rounded-xl border overflow-hidden">
+          <Table>
           <TableHeader>
             <TableRow className="bg-muted/30 hover:bg-muted/30">
               <TableHead 
@@ -205,6 +259,7 @@ export const ClientListView = ({
                 </div>
               </TableHead>
               <TableHead>Contact</TableHead>
+              <TableHead>Activity</TableHead>
               <TableHead 
                 className="cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => handleSort('funnel_stage')}
@@ -291,6 +346,44 @@ export const ClientListView = ({
                   </TableCell>
 
                   <TableCell>
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-1">
+                        {getActivityBadges(client).slice(0, 2).map((badge, index) => (
+                          <Badge key={index} variant={badge.variant} className="text-xs flex items-center gap-1">
+                            {badge.icon}
+                            {badge.text}
+                          </Badge>
+                        ))}
+                        {getActivityBadges(client).length > 2 && (
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Badge variant="outline" className="text-xs">
+                                +{getActivityBadges(client).length - 2} more
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <div className="space-y-1">
+                                {getActivityBadges(client).slice(2).map((badge, index) => (
+                                  <div key={index} className="flex items-center gap-2 text-sm">
+                                    {badge.icon}
+                                    {badge.text}
+                                  </div>
+                                ))}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
+                      {client.totalValue > 0 && (
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <DollarSign className="h-3 w-3" />
+                          {formatCurrency(client.totalValue)}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+
+                  <TableCell>
                     <Select
                       value={client.funnel_stage || 'lead'}
                       onValueChange={(value) => handleStatusChange(client.id, value)}
@@ -351,6 +444,7 @@ export const ClientListView = ({
             </p>
           </div>
         )}
+        </div>
       </div>
 
       {/* Delete Confirmation Dialog */}
@@ -375,6 +469,6 @@ export const ClientListView = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </TooltipProvider>
   );
 };

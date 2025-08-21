@@ -35,7 +35,16 @@ export const useClientStats = () => {
       // Calculate stats for each client
       const clientStats = clients?.map(client => {
         const projectCount = client.projects?.length || 0;
-        const totalValue = client.quotes?.reduce((sum, quote) => {
+        const quotes = client.quotes || [];
+        
+        const quotesData = {
+          draft: quotes.filter(q => q.status === 'draft').length,
+          sent: quotes.filter(q => q.status === 'sent').length,
+          accepted: quotes.filter(q => q.status === 'accepted').length,
+          total: quotes.length
+        };
+        
+        const totalValue = quotes.reduce((sum, quote) => {
           return sum + (parseFloat(quote.total_amount?.toString() || '0'));
         }, 0) || 0;
 
@@ -45,7 +54,8 @@ export const useClientStats = () => {
           companyName: client.company_name,
           funnelStage: client.funnel_stage,
           projectCount,
-          totalValue
+          totalValue,
+          quotesData
         };
       }) || [];
 

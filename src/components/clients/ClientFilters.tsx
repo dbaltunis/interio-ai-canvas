@@ -19,6 +19,8 @@ interface ClientFiltersProps {
   setSelectedProjects: (projects: string[]) => void;
   clientType: string;
   setClientType: (type: string) => void;
+  activityFilter: string;
+  setActivityFilter: (filter: string) => void;
   onClearFilters: () => void;
 }
 
@@ -31,6 +33,8 @@ export const ClientFilters = ({
   setSelectedProjects,
   clientType,
   setClientType,
+  activityFilter,
+  setActivityFilter,
   onClearFilters
 }: ClientFiltersProps) => {
   const [filterOpen, setFilterOpen] = useState(false);
@@ -62,7 +66,7 @@ export const ClientFilters = ({
     }
   };
 
-  const activeFiltersCount = selectedStatuses.length + selectedProjects.length + (clientType !== 'all' ? 1 : 0);
+  const activeFiltersCount = selectedStatuses.length + selectedProjects.length + (clientType !== 'all' ? 1 : 0) + (activityFilter !== 'all' ? 1 : 0);
   const hasActiveFilters = searchTerm || activeFiltersCount > 0;
 
   const clearFilters = () => {
@@ -91,6 +95,19 @@ export const ClientFilters = ({
             <SelectItem value="all">All Types</SelectItem>
             <SelectItem value="B2B">B2B Clients</SelectItem>
             <SelectItem value="B2C">B2C Clients</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={activityFilter} onValueChange={setActivityFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Activity Level" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Activity</SelectItem>
+            <SelectItem value="active_projects">Active Projects</SelectItem>
+            <SelectItem value="pending_quotes">Pending Quotes</SelectItem>
+            <SelectItem value="high_value">High Value (&gt;$5K)</SelectItem>
+            <SelectItem value="inactive">No Activity</SelectItem>
           </SelectContent>
         </Select>
 
@@ -191,6 +208,15 @@ export const ClientFilters = ({
               <X
                 className="h-3 w-3 cursor-pointer"
                 onClick={() => setClientType('all')}
+              />
+            </Badge>
+          )}
+          {activityFilter !== 'all' && (
+            <Badge variant="secondary" className="flex items-center gap-1">
+              Activity: {activityFilter.replace('_', ' ')}
+              <X
+                className="h-3 w-3 cursor-pointer"
+                onClick={() => setActivityFilter('all')}
               />
             </Badge>
           )}

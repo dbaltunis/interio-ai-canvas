@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Filter, Download } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
+import { useClientStats } from "@/hooks/useClientJobs";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ClientCreateForm } from "./ClientCreateForm";
@@ -24,6 +25,7 @@ export const ClientManagementPage = () => {
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [clientType, setClientType] = useState("all");
+  const [activityFilter, setActivityFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
@@ -33,6 +35,7 @@ export const ClientManagementPage = () => {
   const canDeleteClients = useHasPermission('delete_clients');
 
   const { data: clients, isLoading } = useClients();
+  const { data: clientStats, isLoading: isLoadingStats } = useClientStats();
 
   // If user doesn't have permission to view clients, show access denied
   if (!canViewClients) {
@@ -46,15 +49,45 @@ export const ClientManagementPage = () => {
     );
   }
 
-  const filteredClients = clients?.filter(client => {
+  // Merge clients with their stats
+  const clientsWithStats = clients?.map(client => {
+    const stats = clientStats?.find(stat => stat.clientId === client.id);
+    return {
+      ...client,
+      projectCount: stats?.projectCount || 0,
+      totalValue: stats?.totalValue || 0,
+      quotesData: stats?.quotesData || { draft: 0, sent: 0, accepted: 0, total: 0 }
+    };
+  }) || [];
+
+  const filteredClients = clientsWithStats.filter(client => {
     const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.company_name?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesType = clientType === 'all' || client.client_type === clientType;
     
-    return matchesSearch && matchesType;
-  }) || [];
+    // Activity filter logic
+    let matchesActivity = true;
+    if (activityFilter !== 'all') {
+      switch (activityFilter) {
+        case 'active_projects':
+          matchesActivity = client.projectCount > 0;
+          break;
+        case 'pending_quotes':
+          matchesActivity = (client.quotesData?.draft || 0) + (client.quotesData?.sent || 0) > 0;
+          break;
+        case 'high_value':
+          matchesActivity = client.totalValue > 5000;
+          break;
+        case 'inactive':
+          matchesActivity = client.projectCount === 0 && (client.quotesData?.total || 0) === 0;
+          break;
+      }
+    }
+    
+    return matchesSearch && matchesType && matchesActivity;
+  });
 
   // Pagination logic
   const totalItems = filteredClients.length;
@@ -72,6 +105,7 @@ export const ClientManagementPage = () => {
     setSelectedStatuses([]);
     setSelectedProjects([]);
     setClientType("all");
+    setActivityFilter("all");
     setCurrentPage(1);
   };
 
@@ -110,7 +144,7 @@ export const ClientManagementPage = () => {
     );
   }
 
-  if (isLoading) {
+  if (isLoading || isLoadingStats) {
     return <LoadingFallback title="Loading clients..." />;
   }
 
@@ -168,6 +202,8 @@ export const ClientManagementPage = () => {
             setSelectedProjects={setSelectedProjects}
             clientType={clientType}
             setClientType={setClientType}
+            activityFilter={activityFilter}
+            setActivityFilter={setActivityFilter}
             onClearFilters={clearFilters}
           />
         </div>
@@ -179,6 +215,7 @@ export const ClientManagementPage = () => {
         searchTerm={searchTerm}
         onSearchChange={handleSearchChange}
         onClientClick={handleClientClick}
+        isLoading={isLoading || isLoadingStats}
       />
 
       {/* Pagination */}
