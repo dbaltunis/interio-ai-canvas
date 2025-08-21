@@ -10,6 +10,7 @@ import { MeasurementWorksheet } from "../measurements/MeasurementWorksheet";
 interface WindowsCanvasInterfaceProps {
   rooms: any[];
   surfaces: any[];
+  clientId?: string;
   onCreateSurface?: (roomId: string, surfaceType: string) => void;
   onBack: () => void;
 }
@@ -17,6 +18,7 @@ interface WindowsCanvasInterfaceProps {
 export const WindowsCanvasInterface = ({ 
   rooms, 
   surfaces, 
+  clientId,
   onCreateSurface, 
   onBack 
 }: WindowsCanvasInterfaceProps) => {
@@ -126,7 +128,7 @@ export const WindowsCanvasInterface = ({
           </DialogHeader>
           {selectedSurface && selectedRoom && (
             <MeasurementWorksheet
-              clientId="" // We'll use project context instead
+              clientId={clientId || ""}
               projectId={selectedRoom.project_id}
               existingMeasurement={selectedSurface.measurements ? {
                 measurements: selectedSurface.measurements,

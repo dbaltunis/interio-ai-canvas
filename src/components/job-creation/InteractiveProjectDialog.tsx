@@ -194,6 +194,7 @@ export const InteractiveProjectDialog = ({
             <WindowsCanvasInterface
               rooms={rooms}
               surfaces={surfaces}
+              clientId={project?.client_id}
               onCreateSurface={onCreateSurface}
               onBack={() => setShowWindowsCanvas(false)}
             />

@@ -128,7 +128,7 @@ export const WindowManagementDialog = ({
           <div className="flex-1 overflow-y-auto">
             <EnhancedMeasurementWorksheet
               ref={worksheetRef}
-              clientId={clientId}
+              clientId={clientId || ""}
               projectId={projectId}
               surfaceId={surface?.id} // Pass unique surface ID to isolate state
               surfaceData={surface} // Pass surface data to extract room_id
