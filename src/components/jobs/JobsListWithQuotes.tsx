@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { QuoteVersionDropdown } from "./QuoteVersionDropdown";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -121,8 +122,10 @@ export const JobsListWithQuotes = ({
     }
   };
 
-  const getQuoteVersion = (quotes: any[], index: number) => {
-    return `Q-${(index + 1).toString().padStart(2, '0')}`;
+  
+  const getQuoteVersion = (quote: any) => {
+    const version = quote.version || 1;
+    return `v${version}`;
   };
 
   const sendSelectedQuotes = async () => {
@@ -285,9 +288,9 @@ export const JobsListWithQuotes = ({
                               
                               <div>
                                 <div className="flex items-center space-x-2">
-                                  <span className="font-mono text-sm font-medium">
-                                    {getQuoteVersion(projectQuotes, index)}
-                                  </span>
+                                   <span className="text-sm font-medium">
+                                     Quote {quote.quote_number} {getQuoteVersion(quote)}
+                                   </span>
                                   <Badge 
                                     variant={getStatusBadgeVariant(quote.status)}
                                     className="text-xs"
@@ -306,31 +309,10 @@ export const JobsListWithQuotes = ({
                                 {formatCurrency(quote.total_amount || 0, userCurrency)}
                               </span>
                               
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                    <MoreHorizontal className="h-3 w-3" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem>
-                                    <Eye className="mr-2 h-4 w-4" />
-                                    Preview Quote
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem>
-                                    <Send className="mr-2 h-4 w-4" />
-                                    Send Quote
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem>
-                                    <Copy className="mr-2 h-4 w-4" />
-                                    Duplicate Quote
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem className="text-destructive">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete Quote
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                               <QuoteVersionDropdown 
+                                 projectId={project.id}
+                                 quote={quote}
+                               />
                             </div>
                           </div>
                         ))}

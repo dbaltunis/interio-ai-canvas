@@ -2316,6 +2316,7 @@ export type Database = {
           updated_at: string
           user_id: string
           valid_until: string | null
+          version: number
         }
         Insert: {
           client_id?: string | null
@@ -2332,6 +2333,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           valid_until?: string | null
+          version?: number
         }
         Update: {
           client_id?: string | null
@@ -2348,6 +2350,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           valid_until?: string | null
+          version?: number
         }
         Relationships: [
           {
