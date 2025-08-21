@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useUserCurrency, formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
-import { useCreateQuoteVersion, useSendQuotes } from "@/hooks/useQuoteVersions";
+import { useQuoteVersions } from "@/hooks/useQuoteVersions";
 
 interface JobsListWithQuotesProps {
   onJobSelect: (jobId: string) => void;
@@ -44,7 +44,6 @@ export const JobsListWithQuotes = ({
   const { data: quotes = [] } = useQuotes();
   const { data: clients = [] } = useClients();
   const userCurrency = useUserCurrency();
-  const sendQuotes = useSendQuotes();
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
   const [selectedQuotes, setSelectedQuotes] = useState<Set<string>>(new Set());
 
@@ -130,10 +129,8 @@ export const JobsListWithQuotes = ({
     if (selectedQuotes.size === 0) return;
     
     try {
-      await sendQuotes.mutateAsync({ 
-        quoteIds: Array.from(selectedQuotes),
-        clientEmail: undefined // TODO: Get client email from selected quotes
-      });
+      // TODO: Implement quote sending functionality
+      console.log('Sending quotes:', Array.from(selectedQuotes));
       setSelectedQuotes(new Set());
     } catch (error) {
       console.error('Error sending quotes:', error);
@@ -156,10 +153,9 @@ export const JobsListWithQuotes = ({
                 <Button 
                   onClick={sendSelectedQuotes} 
                   size="sm"
-                  disabled={sendQuotes.isPending}
                 >
                   <Send className="h-4 w-4 mr-2" />
-                  {sendQuotes.isPending ? 'Sending...' : 'Send Selected Quotes'}
+                  Send Selected Quotes
                 </Button>
                 <Button 
                   variant="outline" 

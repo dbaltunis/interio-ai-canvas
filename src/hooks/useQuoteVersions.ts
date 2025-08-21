@@ -27,7 +27,7 @@ export const useQuoteVersions = (projectId: string) => {
     mutationFn: async (currentQuote: any) => {
       // Get the highest version number
       const maxVersion = quoteVersions?.reduce((max, quote) => 
-        Math.max(max, quote.version || 1), 0) || 0;
+        Math.max(max, (quote as any).version || 1), 0) || 0;
       
       const newVersion = maxVersion + 1;
       
@@ -46,7 +46,7 @@ export const useQuoteVersions = (projectId: string) => {
           status: 'draft',
           created_at: undefined,
           updated_at: undefined,
-          notes: `${currentQuote.notes || ''}\n\nDuplicated from version ${currentQuote.version || 1}`.trim()
+          notes: `${currentQuote.notes || ''}\n\nDuplicated from version ${(currentQuote as any).version || 1}`.trim()
         })
         .select()
         .single();
@@ -59,7 +59,7 @@ export const useQuoteVersions = (projectId: string) => {
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
       toast({
         title: "Quote Duplicated",
-        description: `Created version ${newQuote.version} of this quote.`,
+        description: `Created version ${(newQuote as any).version} of this quote.`,
       });
     },
     onError: (error: any) => {
