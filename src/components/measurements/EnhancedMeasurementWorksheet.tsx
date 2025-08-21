@@ -716,7 +716,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
             }}
             onMeasurementChange={handleMeasurementChange}
             readOnly={readOnly}
-            key={`measurements-${measurements.rail_width || 0}-${measurements.drop || 0}-${Date.now()}`} // Force re-render when measurements change
+            key={`measurements-${stateKey}`} // Use stable key based on surface ID
             windowType={windowType}
             selectedTemplate={selectedCovering}
             selectedFabric={selectedFabric}
