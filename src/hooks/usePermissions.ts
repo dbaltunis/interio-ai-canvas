@@ -76,8 +76,8 @@ export const useUserPermissions = () => {
           'view_profile'
         ],
         Manager: [
-          'view_jobs', 'create_jobs',
-          'view_clients', 'create_clients',
+          'view_jobs', 'create_jobs', 'view_all_jobs',
+          'view_clients', 'create_clients', 'view_all_clients',
           'view_calendar', 'create_appointments',
           'view_inventory', 'manage_inventory',
           'view_window_treatments', 'manage_window_treatments',

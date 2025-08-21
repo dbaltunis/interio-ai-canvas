@@ -689,8 +689,8 @@ export const VisualMeasurementSheet = ({
             </div>
           </div>
 
-          {/* Measurement Inputs - Scrollable on large screens */}
-          <div className="lg:w-1/2 lg:flex-shrink-0 lg:overflow-y-auto lg:h-[calc(100vh-120px)] lg:pr-2 space-y-4">
+          {/* Measurement Inputs - Fixed scroll behavior */}
+          <div className="lg:w-1/2 lg:flex-shrink-0 lg:max-h-[calc(100vh-120px)] lg:overflow-y-auto lg:pr-2 space-y-4 scroll-smooth">
             {/* Hardware Type */}
             <div className="bg-muted/20 border border-border rounded-lg p-4">
               <h4 className="font-medium mb-3 text-foreground">Hardware Type</h4>
@@ -795,19 +795,22 @@ export const VisualMeasurementSheet = ({
                     </Label>
                   </div>
                   <div className="relative">
-                    <Input
-                      id="rail_width"
-                      type="number"
-                      step="0.25"
-                      value={measurements.rail_width || ""}
-                      onChange={(e) => {
-                        console.log("🔧 Rail width input change:", e.target.value, "Current measurements:", measurements);
-                        handleInputChange("rail_width", e.target.value);
-                      }}
-                      placeholder="0.00"
-                      readOnly={readOnly}
-                      className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground"
-                    />
+                     <Input
+                       id="rail_width"
+                       type="number"
+                       step="0.25"
+                       value={measurements.rail_width || ""}
+                       onChange={(e) => {
+                         console.log("🔧 Rail width input change:", e.target.value, "Current measurements:", measurements);
+                         handleInputChange("rail_width", e.target.value);
+                       }}
+                       onFocus={(e) => {
+                         e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                       }}
+                       placeholder="0.00"
+                       readOnly={readOnly}
+                       className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground"
+                     />
                     <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-sm bg-muted px-2 py-1 rounded">
                        {units.length}
                     </span>
@@ -823,19 +826,22 @@ export const VisualMeasurementSheet = ({
                     </Label>
                   </div>
                   <div className="relative">
-                    <Input
-                      id="drop"
-                      type="number"
-                      step="0.25"
-                      value={measurements.drop || ""}
-                      onChange={(e) => {
-                        console.log("🔧 Drop input change:", e.target.value, "Current measurements:", measurements);
-                        handleInputChange("drop", e.target.value);
-                      }}
-                      placeholder="0.00"
-                      readOnly={readOnly}
-                      className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground"
-                    />
+                     <Input
+                       id="drop"
+                       type="number"
+                       step="0.25"
+                       value={measurements.drop || ""}
+                       onChange={(e) => {
+                         console.log("🔧 Drop input change:", e.target.value, "Current measurements:", measurements);
+                         handleInputChange("drop", e.target.value);
+                       }}
+                       onFocus={(e) => {
+                         e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                       }}
+                       placeholder="0.00"
+                       readOnly={readOnly}
+                       className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground"
+                     />
                     <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-sm bg-muted px-2 py-1 rounded">
                       {units.length}
                     </span>

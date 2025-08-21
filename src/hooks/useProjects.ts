@@ -9,29 +9,24 @@ type ProjectInsert = TablesInsert<"projects">;
 type ProjectUpdate = TablesUpdate<"projects">;
 
 export const useProjects = () => {
-  const canViewAllProjects = useHasPermission('view_all_projects');
+  const canViewAllJobs = useHasPermission('view_all_jobs');
   
   return useQuery({
-    queryKey: ["projects", canViewAllProjects],
+    queryKey: ["projects", canViewAllJobs],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
-      let query = supabase
+      // Simply select all projects - RLS policies will handle filtering
+      const { data, error } = await supabase
         .from("projects")
-        .select("*, clients(name)");
-      
-      // If user doesn't have view_all_projects permission, filter by user_id
-      if (!canViewAllProjects) {
-        query = query.eq("user_id", user.id);
-      }
-      
-      const { data, error } = await query.order("created_at", { ascending: false });
+        .select("*, clients(name)")
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data || [];
     },
-    enabled: canViewAllProjects !== undefined, // Wait for permission to load
+    enabled: canViewAllJobs !== undefined, // Wait for permission to load
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,

@@ -3,7 +3,7 @@ import { LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useCurrentUserProfile } from "@/hooks/useUserProfile";
+import { useUserDisplay } from "@/hooks/useUserDisplay";
 import { useNavigate } from "react-router-dom";
 
 interface UserProfileProps {
@@ -12,7 +12,7 @@ interface UserProfileProps {
 
 export const UserProfile = ({ onOpenTeamHub }: UserProfileProps = {}) => {
   const { user } = useAuth();
-  const { data: userProfile } = useCurrentUserProfile();
+  const { userProfile, isLoading, initials, displayName, avatarUrl } = useUserDisplay();
   const navigate = useNavigate();
 
   const handleAuth = () => {
@@ -34,16 +34,11 @@ export const UserProfile = ({ onOpenTeamHub }: UserProfileProps = {}) => {
   }
 
   // Show loading if profile is loading
-  if (userProfile === undefined) {
+  if (isLoading) {
     return (
       <div className="h-9 w-9 rounded-full bg-muted animate-pulse"></div>
     );
   }
-
-  // If user is authenticated, show clickable avatar
-  const userInitials = user.email
-    ? user.email.slice(0, 2).toUpperCase()
-    : "U";
 
   return (
     <button
@@ -52,14 +47,14 @@ export const UserProfile = ({ onOpenTeamHub }: UserProfileProps = {}) => {
       title="Open Team Hub"
     >
       <Avatar className="h-9 w-9 ring-2 ring-transparent hover:ring-primary/20 transition-all">
-        {userProfile?.avatar_url && (
+        {avatarUrl && (
           <AvatarImage 
-            src={userProfile.avatar_url} 
-            alt={userProfile.display_name || user.email || "User avatar"} 
+            src={avatarUrl} 
+            alt={displayName} 
           />
         )}
         <AvatarFallback className="bg-brand-secondary text-brand-primary">
-          {userInitials}
+          {initials}
         </AvatarFallback>
       </Avatar>
     </button>

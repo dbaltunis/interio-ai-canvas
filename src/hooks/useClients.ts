@@ -18,16 +18,11 @@ export const useClients = (enabled: boolean = true) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
-      let query = supabase
+      // Simply select all clients - RLS policies will handle filtering
+      const { data, error } = await supabase
         .from("clients")
-        .select("*");
-      
-      // If user doesn't have view_all_clients permission, filter by user_id
-      if (!canViewAllClients) {
-        query = query.eq("user_id", user.id);
-      }
-      
-      const { data, error } = await query.order("created_at", { ascending: false });
+        .select("*")
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data || [];
