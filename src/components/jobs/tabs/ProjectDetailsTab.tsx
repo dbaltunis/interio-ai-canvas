@@ -15,6 +15,7 @@ import { ClientSearchStep } from "@/components/job-creation/steps/ClientSearchSt
 import { ProductsToOrderSection } from "@/components/jobs/ProductsToOrderSection";
 import { ProjectNotesCard } from "../ProjectNotesCard";
 import { CompactQuotesSection } from "../quotation/CompactQuotesSection";
+import { NewQuoteButton } from "../NewQuoteButton";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
@@ -455,12 +456,28 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
         </CardContent>
       </Card>
 
-      {/* Active Quotes */}
-      <CompactQuotesSection 
-        quotes={quotes}
-        onSelectQuote={setSelectedQuote}
-        onOpenNotes={(quote) => { setSelectedQuote(quote); setNotesOpen(true); }}
-      />
+      {/* Enhanced Quotes Section with New Quote Button */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Project Quotes
+            </CardTitle>
+            <NewQuoteButton projectId={project.id} />
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            Create and manage quotes for this project. Each quote can have different versions and pricing options for your client's consideration.
+          </p>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <CompactQuotesSection 
+            quotes={quotes}
+            onSelectQuote={setSelectedQuote}
+            onOpenNotes={(quote) => { setSelectedQuote(quote); setNotesOpen(true); }}
+          />
+        </CardContent>
+      </Card>
 
       {/* Project Notes */}
       <ProjectNotesCard projectId={project.id} />
