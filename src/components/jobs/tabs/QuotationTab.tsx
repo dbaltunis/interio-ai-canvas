@@ -275,17 +275,6 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
         {/* Compact Action Bar */}
         <div className="flex items-center space-x-2">
 
-          {/* Create New Quote Button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleCreateNewQuote}
-            className="flex items-center space-x-2"
-          >
-            <Plus className="h-4 w-4" />
-            <span>New Quote</span>
-          </Button>
-
           {/* View Items Button */}
           <Button
             variant="outline"
