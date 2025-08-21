@@ -3574,6 +3574,10 @@ export type Database = {
         Args: { child_user_id: string; parent_user_id?: string }
         Returns: Json
       }
+      maintain_user_management_system: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       mark_user_offline: {
         Args: { user_id: string }
         Returns: undefined
