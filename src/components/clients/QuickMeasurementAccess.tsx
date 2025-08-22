@@ -3,10 +3,10 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Ruler, Plus, Eye, Calendar, MapPin } from "lucide-react";
+import { Ruler, Calendar, User, Eye, Plus, FileText } from "lucide-react";
 import { useClientMeasurements } from "@/hooks/useClientMeasurements";
 import { useClientJobs } from "@/hooks/useClientJobs";
+import { formatDistanceToNow } from "date-fns";
 
 interface QuickMeasurementAccessProps {
   clientId: string;
@@ -14,18 +14,51 @@ interface QuickMeasurementAccessProps {
 }
 
 export const QuickMeasurementAccess = ({ clientId, clientName }: QuickMeasurementAccessProps) => {
-  const { data: measurements, isLoading: measurementsLoading } = useClientMeasurements(clientId);
+  const { data: measurements } = useClientMeasurements(clientId);
   const { data: projects } = useClientJobs(clientId);
-  const [showMeasurements, setShowMeasurements] = useState(false);
+  const [selectedMeasurement, setSelectedMeasurement] = useState<any>(null);
 
-  // Get measurements from both direct client measurements and project-linked measurements
-  const allMeasurements = measurements || [];
-  const projectMeasurements = projects?.flatMap(project => 
-    allMeasurements.filter(m => m.project_id === project.id)
+  // Get measurements from projects as well
+  const projectMeasurements = projects?.filter(project => 
+    project.measurements && Object.keys(project.measurements).length > 0
   ) || [];
 
-  const totalMeasurements = allMeasurements.length;
-  const recentMeasurements = allMeasurements.slice(0, 3);
+  const totalMeasurements = (measurements?.length || 0) + projectMeasurements.length;
+
+  const handleViewMeasurement = (measurement: any) => {
+    setSelectedMeasurement(measurement);
+  };
+
+  const getMeasurementSummary = (measurementData: any) => {
+    if (!measurementData) return "No measurements";
+    
+    try {
+      const data = typeof measurementData === 'string' ? JSON.parse(measurementData) : measurementData;
+      const entries = Object.entries(data);
+      if (entries.length === 0) return "No measurements";
+      
+      return `${entries.length} measurement${entries.length !== 1 ? 's' : ''}`;
+    } catch {
+      return "Invalid measurement data";
+    }
+  };
+
+  const getPhotoCount = (photos: any) => {
+    if (!photos) return 0;
+    
+    try {
+      if (Array.isArray(photos)) {
+        return photos.length;
+      }
+      if (typeof photos === 'string') {
+        const parsed = JSON.parse(photos);
+        return Array.isArray(parsed) ? parsed.length : 0;
+      }
+      return 0;
+    } catch {
+      return 0;
+    }
+  };
 
   return (
     <>
@@ -33,145 +66,162 @@ export const QuickMeasurementAccess = ({ clientId, clientName }: QuickMeasuremen
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Ruler className="h-5 w-5" />
-            Measurements
+            Measurements ({totalMeasurements})
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-2xl font-bold text-brand-primary">{totalMeasurements}</p>
-              <p className="text-sm text-muted-foreground">Total measurements</p>
+        <CardContent>
+          {totalMeasurements === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Ruler className="mx-auto h-12 w-12 mb-4 opacity-50" />
+              <p>No measurements recorded yet</p>
+              <Button className="mt-2" variant="outline" size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Take Measurements
+              </Button>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowMeasurements(true)}
-              disabled={measurementsLoading}
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              View All
-            </Button>
-          </div>
-
-          {recentMeasurements.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Recent:</p>
-              {recentMeasurements.map((measurement) => (
-                <div key={measurement.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30">
-                  <div>
-                    <p className="text-sm font-medium">{measurement.measurement_type.replace('_', ' ')}</p>
-                    {measurement.measured_at && (
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(measurement.measured_at).toLocaleDateString()}
-                      </p>
-                    )}
+          ) : (
+            <div className="space-y-3">
+              {/* Direct client measurements */}
+              {measurements?.slice(0, 3).map((measurement) => (
+                <div key={measurement.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                  <div className="flex-grow">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant="secondary" className="text-xs">
+                        {measurement.measurement_type.replace('_', ' ')}
+                      </Badge>
+                      {measurement.measured_by && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <User className="h-3 w-3" />
+                          {measurement.measured_by}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-sm font-medium">
+                      {getMeasurementSummary(measurement.measurements)}
+                    </p>
+                    <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {formatDistanceToNow(new Date(measurement.measured_at), { addSuffix: true })}
+                      </div>
+                      {getPhotoCount(measurement.photos) > 0 && (
+                        <div className="flex items-center gap-1">
+                          <FileText className="h-3 w-3" />
+                          {getPhotoCount(measurement.photos)} photo{getPhotoCount(measurement.photos) !== 1 ? 's' : ''}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <Badge variant="secondary" className="text-xs">
-                    {measurement.project_id ? 'Project' : 'Client'}
-                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleViewMeasurement(measurement)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
                 </div>
               ))}
-            </div>
-          )}
 
-          {totalMeasurements === 0 && (
-            <div className="text-center py-4 text-muted-foreground">
-              <Ruler className="mx-auto h-8 w-8 mb-2 opacity-50" />
-              <p className="text-sm">No measurements yet</p>
+              {/* Project measurements */}
+              {projectMeasurements.slice(0, Math.max(0, 3 - (measurements?.length || 0))).map((project) => (
+                <div key={`project-${project.id}`} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                  <div className="flex-grow">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant="outline" className="text-xs">
+                        Project: {project.name}
+                      </Badge>
+                    </div>
+                    <p className="text-sm font-medium">
+                      {getMeasurementSummary(project.measurements)}
+                    </p>
+                    <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {formatDistanceToNow(new Date(project.created_at), { addSuffix: true })}
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleViewMeasurement({
+                      id: project.id,
+                      measurements: project.measurements,
+                      type: 'project',
+                      project_name: project.name
+                    })}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+
+              {totalMeasurements > 3 && (
+                <Button variant="outline" size="sm" className="w-full">
+                  View All {totalMeasurements} Measurements
+                </Button>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Measurements Detail Dialog */}
-      <Dialog open={showMeasurements} onOpenChange={setShowMeasurements}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
-          <DialogHeader>
-            <DialogTitle>All Measurements for {clientName}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {allMeasurements.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Ruler className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                <p>No measurements found for this client</p>
+      {/* Measurement Details Modal */}
+      {selectedMeasurement && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <Card className="max-w-2xl w-full max-h-[80vh] overflow-auto">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>
+                  {selectedMeasurement.type === 'project' 
+                    ? `Project: ${selectedMeasurement.project_name}` 
+                    : `${selectedMeasurement.measurement_type?.replace('_', ' ') || 'Measurement'}`
+                  }
+                </span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setSelectedMeasurement(null)}
+                >
+                  ✕
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {selectedMeasurement.measured_by && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Measured by</p>
+                    <p className="font-medium">{selectedMeasurement.measured_by}</p>
+                  </div>
+                )}
+                
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">Measurements</p>
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <pre className="text-sm whitespace-pre-wrap">
+                      {JSON.stringify(
+                        typeof selectedMeasurement.measurements === 'string' 
+                          ? JSON.parse(selectedMeasurement.measurements)
+                          : selectedMeasurement.measurements, 
+                        null, 
+                        2
+                      )}
+                    </pre>
+                  </div>
+                </div>
+
+                {selectedMeasurement.notes && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Notes</p>
+                    <p>{selectedMeasurement.notes}</p>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="grid gap-4">
-                {allMeasurements.map((measurement) => {
-                  const relatedProject = projects?.find(p => p.id === measurement.project_id);
-                  
-                  return (
-                    <Card key={measurement.id}>
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <h4 className="font-medium">
-                              {measurement.measurement_type.replace('_', ' ').toUpperCase()}
-                            </h4>
-                            {relatedProject && (
-                              <p className="text-sm text-muted-foreground">
-                                Project: {relatedProject.name}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant={measurement.project_id ? "default" : "secondary"}>
-                              {measurement.project_id ? 'Project Linked' : 'Client Direct'}
-                            </Badge>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                          <div className="space-y-2">
-                            <h5 className="text-sm font-medium">Measurements:</h5>
-                            <div className="bg-muted/30 p-3 rounded text-sm">
-                              {Object.entries(measurement.measurements || {}).map(([key, value]) => (
-                                <div key={key} className="flex justify-between">
-                                  <span className="capitalize">{key.replace('_', ' ')}:</span>
-                                  <span className="font-medium">{value}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Calendar className="h-4 w-4" />
-                              <span>
-                                {measurement.measured_at 
-                                  ? new Date(measurement.measured_at).toLocaleDateString()
-                                  : 'Date not recorded'
-                                }
-                              </span>
-                            </div>
-                            {measurement.measured_by && (
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <span>Measured by: {measurement.measured_by}</span>
-                              </div>
-                            )}
-                            {measurement.photos && measurement.photos.length > 0 && (
-                              <div className="text-sm text-muted-foreground">
-                                📷 {measurement.photos.length} photo(s) attached
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {measurement.notes && (
-                          <div className="mt-3 pt-3 border-t">
-                            <p className="text-sm text-muted-foreground mb-1">Notes:</p>
-                            <p className="text-sm">{measurement.notes}</p>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </>
   );
 };

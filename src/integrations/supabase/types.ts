@@ -700,6 +700,59 @@ export type Database = {
           },
         ]
       }
+      client_activity_log: {
+        Row: {
+          activity_type: string
+          client_id: string | null
+          created_at: string | null
+          description: string | null
+          follow_up_date: string | null
+          id: string
+          metadata: Json | null
+          team_member: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+          value_amount: number | null
+        }
+        Insert: {
+          activity_type: string
+          client_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          follow_up_date?: string | null
+          id?: string
+          metadata?: Json | null
+          team_member?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+          value_amount?: number | null
+        }
+        Update: {
+          activity_type?: string
+          client_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          follow_up_date?: string | null
+          id?: string
+          metadata?: Json | null
+          team_member?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+          value_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_activity_log_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_measurements: {
         Row: {
           client_id: string | null

@@ -9,7 +9,6 @@ import { useClient } from "@/hooks/useClients";
 import { useClientJobs } from "@/hooks/useClientJobs";
 import { ClientEmailHistory } from "./ClientEmailHistory";
 import { ClientProjectsList } from "./ClientProjectsList";
-import { QuickMeasurementAccess } from "./QuickMeasurementAccess";
 import { ClientActivityLog } from "./ClientActivityLog";
 import { EmailComposer } from "../jobs/email/EmailComposer";
 
@@ -59,10 +58,10 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
 
   const clientDisplayName = client.client_type === 'B2B' ? client.company_name : client.name;
 
-  // Calculate total project value (completed projects only)
+  // Calculate total project value from completed projects - using estimated_value instead of total_cost
   const totalProjectValue = projects?.reduce((sum, project) => {
-    if (project.status === 'completed' && project.total_cost) {
-      return sum + (parseFloat(project.total_cost.toString()) || 0);
+    if (project.status === 'completed' && project.estimated_value) {
+      return sum + (parseFloat(project.estimated_value.toString()) || 0);
     }
     return sum;
   }, 0) || 0;
@@ -120,7 +119,7 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Revenue Generated</p>
+                <p className="text-sm text-muted-foreground">Project Value</p>
                 <p className="text-2xl font-bold text-accent">
                   ${totalProjectValue.toLocaleString()}
                 </p>
@@ -162,76 +161,63 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
         </Card>
       </div>
 
-      {/* Client Details and Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Client Information */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Client Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Email</p>
-                      <p className="font-medium">{client.email || 'Not provided'}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <Phone className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Phone</p>
-                      <p className="font-medium">{client.phone || 'Not provided'}</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <MapPin className="h-5 w-5 text-muted-foreground mt-1" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Address</p>
-                      <div className="font-medium">
-                        {client.address && (
-                          <p>{client.address}</p>
-                        )}
-                        {(client.city || client.state) && (
-                          <p>{client.city && client.state ? `${client.city}, ${client.state}` : client.city || client.state}</p>
-                        )}
-                        {client.zip_code && (
-                          <p>{client.zip_code}</p>
-                        )}
-                        {!client.address && !client.city && !client.state && !client.zip_code && (
-                          <p>Not provided</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+      {/* Client Details */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Client Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Mail className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="font-medium">{client.email || 'Not provided'}</p>
                 </div>
               </div>
               
-              {client.notes && (
-                <div className="mt-6 pt-6 border-t">
-                  <p className="text-sm text-muted-foreground mb-2">Notes</p>
-                  <p className="text-foreground">{client.notes}</p>
+              <div className="flex items-center gap-3">
+                <Phone className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Phone</p>
+                  <p className="font-medium">{client.phone || 'Not provided'}</p>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Measurement Access */}
-        <div>
-          <QuickMeasurementAccess 
-            clientId={clientId} 
-            clientName={clientDisplayName || 'Unknown Client'} 
-          />
-        </div>
-      </div>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <MapPin className="h-5 w-5 text-muted-foreground mt-1" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Address</p>
+                  <div className="font-medium">
+                    {client.address && (
+                      <p>{client.address}</p>
+                    )}
+                    {(client.city || client.state) && (
+                      <p>{client.city && client.state ? `${client.city}, ${client.state}` : client.city || client.state}</p>
+                    )}
+                    {client.zip_code && (
+                      <p>{client.zip_code}</p>
+                    )}
+                    {!client.address && !client.city && !client.state && !client.zip_code && (
+                      <p>Not provided</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {client.notes && (
+            <div className="mt-6 pt-6 border-t">
+              <p className="text-sm text-muted-foreground mb-2">Notes</p>
+              <p className="text-foreground">{client.notes}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="projects" className="space-y-4">
