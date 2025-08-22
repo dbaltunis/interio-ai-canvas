@@ -21,17 +21,23 @@ export interface ClientActivity {
 export const useClientActivityLog = (clientId: string) => {
   return useQuery({
     queryKey: ["client-activity-log", clientId],
-    queryFn: async () => {
+    queryFn: async (): Promise<ClientActivity[]> => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
+      // First, check if the client_activity_log table exists and has data
       const { data, error } = await supabase
         .from("client_activity_log")
         .select("*")
         .eq("client_id", clientId)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching client activity log:", error);
+        // If table doesn't exist or has an error, return empty array for now
+        return [];
+      }
+
       return data || [];
     },
     enabled: !!clientId,
