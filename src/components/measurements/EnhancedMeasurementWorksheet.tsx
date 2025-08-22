@@ -22,11 +22,11 @@ import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
 import { LiningOptionsSection } from "./dynamic-options/LiningOptionsSection";
 import { FabricSelectionSection } from "./dynamic-options/FabricSelectionSection";
 import { WindowCoveringSelector } from "./WindowCoveringSelector";
-
 import { CostCalculationSummary } from "./dynamic-options/CostCalculationSummary";
 import { useSaveWindowSummary, useWindowSummary } from "@/hooks/useWindowSummary";
 import { calculateTreatmentPricing } from "@/utils/pricing/calculateTreatmentPricing";
 import { useTreatments } from "@/hooks/useTreatments";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface EnhancedMeasurementWorksheetProps {
   clientId?: string; // Optional - measurements can exist without being assigned to a client
@@ -109,15 +109,21 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const [measurements, setMeasurements] = useState(() => {
     let initialMeasurements: any = {};
     
+    console.log("🔍 INITIAL SETUP: Loading measurements with priority system");
+    console.log("- shouldUseSavedData:", shouldUseSavedData);
+    console.log("- savedSummary:", !!savedSummary);
+    console.log("- existingMeasurement:", !!safeExistingMeasurement?.measurements);
+    console.log("- existingTreatments:", safeExistingTreatments.length);
+    
     // Priority 1: Use saved summary measurement details if available
     if (shouldUseSavedData && savedSummary?.measurements_details) {
-      console.log("🔄 INITIAL: Loading measurements from saved summary:", savedSummary.measurements_details);
+      console.log("📊 PRIORITY 1: Loading from saved summary");
       initialMeasurements = {
-        rail_width: savedSummary.measurements_details.rail_width_cm || savedSummary.measurements_details.rail_width || 0,
-        drop: savedSummary.measurements_details.drop_cm || savedSummary.measurements_details.drop || 0,
-        window_width: savedSummary.measurements_details.window_width || 0,
-        window_height: savedSummary.measurements_details.window_height || 0,
-        pooling_amount: savedSummary.measurements_details.pooling_amount_cm || 0,
+        rail_width: savedSummary.measurements_details.rail_width_cm || savedSummary.measurements_details.rail_width || "",
+        drop: savedSummary.measurements_details.drop_cm || savedSummary.measurements_details.drop || "",
+        window_width: savedSummary.measurements_details.window_width || "",
+        window_height: savedSummary.measurements_details.window_height || "",
+        pooling_amount: savedSummary.measurements_details.pooling_amount_cm || "",
         selected_fabric: savedSummary.fabric_details?.fabric_id || savedSummary.measurements_details.selected_fabric,
         fabric_width: savedSummary.fabric_details?.fabric_width || savedSummary.fabric_details?.width_cm || 140,
         price_per_meter: savedSummary.price_per_meter || 0,
@@ -129,20 +135,39 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     }
     // Priority 2: Use existing measurement data
     else if (safeExistingMeasurement?.measurements) {
-      console.log("🔄 INITIAL: Loading measurements from existing measurement:", safeExistingMeasurement.measurements);
-      initialMeasurements = { ...safeExistingMeasurement.measurements };
+      console.log("📊 PRIORITY 2: Loading from existing measurement");
+      initialMeasurements = { 
+        ...safeExistingMeasurement.measurements,
+        rail_width: safeExistingMeasurement.measurements.rail_width || safeExistingMeasurement.measurements.measurement_a || "",
+        drop: safeExistingMeasurement.measurements.drop || safeExistingMeasurement.measurements.measurement_b || ""
+      };
     }
     
     // Priority 3: Merge any existing treatment measurements
     if (safeExistingTreatments?.[0]?.measurements) {
-      console.log("🔄 INITIAL: Merging treatment measurements:", safeExistingTreatments[0].measurements);
-      Object.assign(initialMeasurements, safeExistingTreatments[0].measurements);
+      console.log("📊 PRIORITY 3: Merging treatment measurements");
+      try {
+        const treatmentMeasurements = typeof safeExistingTreatments[0].measurements === 'string' 
+          ? JSON.parse(safeExistingTreatments[0].measurements)
+          : safeExistingTreatments[0].measurements;
+        
+        initialMeasurements = {
+          ...initialMeasurements,
+          ...treatmentMeasurements,
+          // Ensure key fields are preserved
+          rail_width: treatmentMeasurements.rail_width || initialMeasurements.rail_width || "",
+          drop: treatmentMeasurements.drop || initialMeasurements.drop || ""
+        };
+      } catch (e) {
+        console.warn("Failed to parse treatment measurements:", e);
+      }
     }
     
-    console.log("✅ INITIAL: Final measurements loaded with values:", {
+    console.log("✅ FINAL MEASUREMENTS LOADED:", {
       rail_width: initialMeasurements.rail_width,
       drop: initialMeasurements.drop,
-      total_keys: Object.keys(initialMeasurements).length
+      total_keys: Object.keys(initialMeasurements).length,
+      allKeys: Object.keys(initialMeasurements)
     });
     return initialMeasurements;
   });
@@ -267,6 +292,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
 
   const createMeasurement = useCreateClientMeasurement();
   const updateMeasurement = useUpdateClientMeasurement();
+  const queryClient = useQueryClient();
   const { data: rooms = [] } = useRooms(projectId);
   const { data: curtainTemplates = [] } = useCurtainTemplates();
   const { data: inventoryItems = [] } = useInventory();
@@ -280,44 +306,90 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   // Reset state when surface changes to ensure each window has independent state
   useEffect(() => {
     if (surfaceId) {
-      console.log("EnhancedMeasurementWorksheet: Setting room selection", {
-        existingMeasurementRoomId: existingMeasurement?.room_id,
-        surfaceRoomId: surfaceData?.room_id,
-        currentRoomId,
-        finalSelection: existingMeasurement?.room_id || surfaceData?.room_id || currentRoomId || "no_room"
-      });
+      console.log("🔄 LOADING: Surface changed, loading data for surface:", surfaceId);
+      console.log("Existing measurement:", existingMeasurement);
+      console.log("Existing treatments:", existingTreatments);
+      console.log("Surface data:", surfaceData);
+      
+      // Reset basic fields
       setWindowType(existingMeasurement?.measurement_type || "standard");
       setSelectedRoom(existingMeasurement?.room_id || surfaceData?.room_id || currentRoomId || "no_room");
       setSelectedWindowCovering(existingMeasurement?.window_covering_id || "no_covering");
-      setSelectedInventoryItem(null);
-      setMeasurements(existingMeasurement?.measurements ? { ...existingMeasurement.measurements } : {});
-      setTreatmentData(existingTreatments?.[0] ? { ...existingTreatments[0] } : {});
       setNotes(existingMeasurement?.notes || "");
       setMeasuredBy(existingMeasurement?.measured_by || "");
       setPhotos(existingMeasurement?.photos || []);
       
-      // Load fabric selections from saved data
-      setSelectedHeading(
-        existingTreatments?.[0]?.treatment_details?.selected_heading || 
-        existingTreatments?.[0]?.selected_heading || 
-        existingMeasurement?.measurements?.selected_heading || 
-        "standard"
-      );
-      setSelectedLining(
-        existingTreatments?.[0]?.treatment_details?.selected_lining || 
-        existingTreatments?.[0]?.selected_lining || 
-        existingMeasurement?.measurements?.selected_lining || 
-        "none"
-      );
-      setSelectedFabric(
-        existingTreatments?.[0]?.treatment_details?.selected_fabric || 
-        existingTreatments?.[0]?.fabric_details?.fabric_id || 
-        existingMeasurement?.measurements?.selected_fabric || 
-        ""
-      );
+      // Load measurements from multiple sources with priority
+      let loadedMeasurements = {};
+      
+      // Priority 1: Existing measurements
+      if (existingMeasurement?.measurements) {
+        console.log("📊 LOADING: Using existing measurement data");
+        loadedMeasurements = { ...existingMeasurement.measurements };
+      }
+      
+      // Priority 2: Treatment measurements (merge, don't replace)
+      if (existingTreatments?.[0]?.measurements) {
+        console.log("📊 LOADING: Merging treatment measurement data");
+        try {
+          const treatmentMeasurements = typeof existingTreatments[0].measurements === 'string' 
+            ? JSON.parse(existingTreatments[0].measurements)
+            : existingTreatments[0].measurements;
+          loadedMeasurements = { ...loadedMeasurements, ...treatmentMeasurements };
+        } catch (e) {
+          console.warn("Failed to parse treatment measurements:", e);
+        }
+      }
+      
+      // Priority 3: Saved summary (merge, don't replace)  
+      if (shouldUseSavedData && savedSummary?.measurements_details) {
+        console.log("📊 LOADING: Merging saved summary data");
+        loadedMeasurements = { 
+          ...loadedMeasurements, 
+          ...savedSummary.measurements_details,
+          rail_width: savedSummary.measurements_details.rail_width || savedSummary.measurements_details.rail_width_cm,
+          drop: savedSummary.measurements_details.drop || savedSummary.measurements_details.drop_cm
+        };
+      }
+      
+      console.log("✅ LOADING: Final loaded measurements:", loadedMeasurements);
+      setMeasurements(loadedMeasurements);
+      
+      // Load treatment-specific data
+      const treatmentData = existingTreatments?.[0] ? { ...existingTreatments[0] } : {};
+      setTreatmentData(treatmentData);
+      
+      // Load fabric selections with better error handling
+      try {
+        setSelectedHeading(
+          treatmentData?.treatment_details?.selected_heading || 
+          treatmentData?.selected_heading || 
+          (loadedMeasurements as any)?.selected_heading || 
+          "standard"
+        );
+        setSelectedLining(
+          treatmentData?.treatment_details?.selected_lining || 
+          treatmentData?.selected_lining || 
+          (loadedMeasurements as any)?.selected_lining || 
+          "none"
+        );
+        setSelectedFabric(
+          treatmentData?.treatment_details?.selected_fabric || 
+          treatmentData?.fabric_details?.fabric_id || 
+          (loadedMeasurements as any)?.selected_fabric || 
+          ""
+        );
+      } catch (e) {
+        console.warn("Error loading fabric selections:", e);
+        setSelectedHeading("standard");
+        setSelectedLining("none");
+        setSelectedFabric("");
+      }
+      
       setCalculatedCost(0);
+      console.log("🎯 LOADING: Worksheet data loaded successfully");
     }
-  }, [surfaceId, currentRoomId]); // Reset when surfaceId or currentRoomId changes
+  }, [surfaceId, currentRoomId, existingMeasurement, existingTreatments, shouldUseSavedData, savedSummary]); // Add dependencies
 
   // Get selected curtain template details
   const selectedCovering = curtainTemplates.find(c => c.id === selectedWindowCovering);
@@ -562,18 +634,23 @@ export const EnhancedMeasurementWorksheet = forwardRef<
           t.window_id === surfaceId
         );
         
+        let savedTreatment;
         if (existingTreatment) {
           console.log("Updating existing treatment:", existingTreatment.id);
-          const result = await updateTreatment.mutateAsync({
+          savedTreatment = await updateTreatment.mutateAsync({
             id: existingTreatment.id,
             ...treatmentPayload
           });
-          console.log("Treatment updated successfully:", result);
+          console.log("Treatment updated successfully:", savedTreatment);
         } else {
           console.log("Creating new treatment");
-          const result = await createTreatment.mutateAsync(treatmentPayload);
-          console.log("Treatment created successfully:", result);
+          savedTreatment = await createTreatment.mutateAsync(treatmentPayload);
+          console.log("Treatment created successfully:", savedTreatment);
         }
+        
+        // Force refresh treatments data to ensure worksheet picks up saved values
+        queryClient.invalidateQueries({ queryKey: ["treatments", projectId] });
+        await queryClient.refetchQueries({ queryKey: ["treatments", projectId] });
         
         console.log("Treatment saved successfully to database");
       } catch (error) {
