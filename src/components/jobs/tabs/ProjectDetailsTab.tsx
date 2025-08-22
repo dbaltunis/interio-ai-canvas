@@ -20,6 +20,8 @@ import { useQuotes } from "@/hooks/useQuotes";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useTreatments } from "@/hooks/useTreatments";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/utils/currency";
 
 interface ProjectDetailsTabProps {
@@ -45,6 +47,35 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   const { data: rooms = [] } = useRooms(project.id);
   const { data: surfaces = [] } = useSurfaces(project.id);
   const { data: treatments = [] } = useTreatments(project.id);
+  
+  // Fetch quote items for the latest quote
+  const { data: quoteItems = [] } = useQuery({
+    queryKey: ["quote-items", project.id],
+    queryFn: async () => {
+      if (quotes.length === 0) return [];
+      
+      const latestQuote = quotes.reduce((latest, quote) => {
+        if (!latest) return quote;
+        return new Date(quote.created_at) > new Date(latest.created_at) ? quote : latest;
+      }, null);
+      
+      if (!latestQuote) return [];
+      
+      const { data, error } = await supabase
+        .from("quote_items")
+        .select("*")
+        .eq("quote_id", latestQuote.id)
+        .order("sort_order", { ascending: true });
+      
+      if (error) {
+        console.error("Error fetching quote items:", error);
+        return [];
+      }
+      
+      return data || [];
+    },
+    enabled: quotes.length > 0,
+  });
   const updateProject = useUpdateProject();
   const { toast } = useToast();
   
@@ -205,11 +236,38 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
 
   // Get products/services for a room
   const getRoomProducts = (roomId: string) => {
+    // First try to get from quote items grouped by room
+    const roomQuoteItems = quoteItems.filter(item => {
+      // Check if the item has room information in product_details
+      const productDetails = typeof item.product_details === 'object' && item.product_details !== null 
+        ? item.product_details as any 
+        : null;
+      return productDetails?.room_id === roomId;
+    });
+    
+    if (roomQuoteItems.length > 0) {
+      return roomQuoteItems.map(item => ({
+        name: item.name,
+        price: item.total_price || 0,
+        quantity: item.quantity || 1,
+        source: 'quote'
+      }));
+    }
+    
+    // Fall back to treatments
     const roomTreatments = treatments.filter(t => t.room_id === roomId);
     return roomTreatments.map(t => ({
       name: t.treatment_type || 'Treatment',
-      price: t.total_price || 0
+      price: t.total_price || 0,
+      quantity: 1,
+      source: 'treatment'
     }));
+  };
+
+  // Get total count of products/services
+  const getTotalProductsCount = () => {
+    if (quoteItems.length > 0) return quoteItems.length;
+    return treatments.length;
   };
   
   return (
@@ -239,7 +297,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
             <div className="bg-accent/20 dark:bg-accent/10 p-4 rounded-lg border border-accent/30 dark:border-accent/20">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-2xl font-bold text-accent-foreground">{treatments.length}</span>
+                  <span className="text-2xl font-bold text-accent-foreground">{getTotalProductsCount()}</span>
                   <p className="text-sm text-accent-foreground/80">Products & Services</p>
                 </div>
                 <FileText className="h-8 w-8 text-accent-foreground/60" />
@@ -265,35 +323,72 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
             <div className="mt-4 space-y-2">
               <h4 className="text-sm font-medium text-muted-foreground">Room Breakdown</h4>
               <div className="space-y-2">
-                {rooms.slice(0, 3).map((room) => {
-                  const roomProducts = getRoomProducts(room.id);
-                  const roomTotal = roomProducts.reduce((sum, p) => sum + p.price, 0);
-                  return (
-                    <div key={room.id} className="p-3 bg-muted/30 dark:bg-muted/20 rounded border border-muted/50">
+                {rooms.length > 0 ? (
+                  rooms.slice(0, 3).map((room) => {
+                    const roomProducts = getRoomProducts(room.id);
+                    const roomTotal = roomProducts.reduce((sum, p) => sum + p.price, 0);
+                    return (
+                      <div key={room.id} className="p-3 bg-muted/30 dark:bg-muted/20 rounded border border-muted/50">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">{room.name}</span>
+                          <span className="text-sm font-semibold text-green-600 dark:text-green-400">
+                            {roomTotal > 0 ? formatCurrency(roomTotal) : "No pricing"}
+                          </span>
+                        </div>
+                        {roomProducts.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {roomProducts.map((product, idx) => (
+                              <Badge key={idx} variant="secondary" className="text-xs">
+                                {product.name}
+                                {product.quantity > 1 && ` (${product.quantity})`}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">No products/services added</p>
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  // Show quote items even if no rooms (fallback case)
+                  quoteItems.length > 0 && (
+                    <div className="p-3 bg-muted/30 dark:bg-muted/20 rounded border border-muted/50">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">{room.name}</span>
+                        <span className="text-sm font-medium">Quote Items</span>
                         <span className="text-sm font-semibold text-green-600 dark:text-green-400">
-                          {roomTotal > 0 ? formatCurrency(roomTotal) : "No pricing"}
+                          {getCurrentQuoteDisplay()}
                         </span>
                       </div>
-                      {roomProducts.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {roomProducts.map((product, idx) => (
-                            <Badge key={idx} variant="secondary" className="text-xs">
-                              {product.name}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                      {roomProducts.length === 0 && (
-                        <p className="text-xs text-muted-foreground">No products/services added</p>
-                      )}
+                      <div className="flex flex-wrap gap-1">
+                        {quoteItems.slice(0, 5).map((item, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-xs">
+                            {item.name}
+                            {item.quantity > 1 && ` (${item.quantity})`}
+                          </Badge>
+                        ))}
+                        {quoteItems.length > 5 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{quoteItems.length - 5} more
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                  );
-                })}
+                  )
+                )}
                 {rooms.length > 3 && (
                   <div className="text-xs text-muted-foreground text-center py-1">
                     +{rooms.length - 3} more rooms
+                  </div>
+                )}
+                
+                {/* Show helpful message if quote total exists but no items */}
+                {getCurrentQuoteDisplay() !== "No quotes" && getTotalProductsCount() === 0 && (
+                  <div className="p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded border border-yellow-200 dark:border-yellow-800">
+                    <p className="text-xs text-yellow-800 dark:text-yellow-300">
+                      <strong>Note:</strong> Quote total exists ({getCurrentQuoteDisplay()}) but no individual line items are configured. 
+                      Consider adding specific products/services to provide detailed breakdowns for clients.
+                    </p>
                   </div>
                 )}
               </div>
