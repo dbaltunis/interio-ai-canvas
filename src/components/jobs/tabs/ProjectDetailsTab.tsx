@@ -19,6 +19,7 @@ import { NewQuoteButton } from "../NewQuoteButton";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
+import { useTreatments } from "@/hooks/useTreatments";
 import { formatCurrency } from "@/utils/currency";
 
 interface ProjectDetailsTabProps {
@@ -43,6 +44,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   const { data: quotes = [] } = useQuotes(project.id);
   const { data: rooms = [] } = useRooms(project.id);
   const { data: surfaces = [] } = useSurfaces(project.id);
+  const { data: treatments = [] } = useTreatments(project.id);
   const updateProject = useUpdateProject();
   const { toast } = useToast();
   
@@ -187,77 +189,105 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
     return client.name;
   };
 
-  // Calculate project quote range
-  const getQuoteRangeDisplay = () => {
-    const amounts = quotes.map(q => q.total_amount || 0).filter(amount => amount > 0);
-    if (amounts.length === 0) return "No quotes";
-    if (amounts.length === 1) return formatCurrency(amounts[0]);
-    const min = Math.min(...amounts);
-    const max = Math.max(...amounts);
-    return `${formatCurrency(min)} - ${formatCurrency(max)}`;
+  // Get current active quote value or latest quote
+  const getCurrentQuoteDisplay = () => {
+    if (quotes.length === 0) return "No quotes";
+    
+    // Find the most recent quote or active quote
+    const latestQuote = quotes.reduce((latest, quote) => {
+      if (!latest) return quote;
+      return new Date(quote.created_at) > new Date(latest.created_at) ? quote : latest;
+    }, null);
+    
+    if (!latestQuote || !latestQuote.total_amount) return "No quote value";
+    return formatCurrency(latestQuote.total_amount);
+  };
+
+  // Get products/services for a room
+  const getRoomProducts = (roomId: string) => {
+    const roomTreatments = treatments.filter(t => t.room_id === roomId);
+    return roomTreatments.map(t => ({
+      name: t.treatment_type || 'Treatment',
+      price: t.total_price || 0
+    }));
   };
   
   return (
     <div className="space-y-6">
-      {/* Project Blueprint */}
+      {/* Project Details */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-medium flex items-center gap-2">
             <Package className="h-4 w-4" />
-            Project Blueprint
+            Project Details
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Rooms */}
-            <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="bg-primary/5 dark:bg-primary/10 p-4 rounded-lg border border-primary/20 dark:border-primary/30">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{rooms.length}</span>
-                  <p className="text-sm text-blue-700 dark:text-blue-300">Rooms</p>
+                  <span className="text-2xl font-bold text-primary">{rooms.length}</span>
+                  <p className="text-sm text-primary/80">Rooms</p>
                 </div>
-                <Package className="h-8 w-8 text-blue-500" />
+                <Package className="h-8 w-8 text-primary/60" />
               </div>
             </div>
             
-            {/* Surfaces */}
+            {/* Products & Services */}
+            <div className="bg-accent/20 dark:bg-accent/10 p-4 rounded-lg border border-accent/30 dark:border-accent/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-2xl font-bold text-accent-foreground">{treatments.length}</span>
+                  <p className="text-sm text-accent-foreground/80">Products & Services</p>
+                </div>
+                <FileText className="h-8 w-8 text-accent-foreground/60" />
+              </div>
+            </div>
+            
+            {/* Current Quote Value */}
             <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-2xl font-bold text-green-600 dark:text-green-400">{surfaces.length}</span>
-                  <p className="text-sm text-green-700 dark:text-green-300">Surfaces</p>
-                </div>
-                <FileText className="h-8 w-8 text-green-500" />
-              </div>
-            </div>
-            
-            {/* Total Value */}
-            <div className="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                    {getQuoteRangeDisplay()}
+                  <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {getCurrentQuoteDisplay()}
                   </span>
-                  <p className="text-sm text-purple-700 dark:text-purple-300">Quote Range</p>
+                  <p className="text-sm text-green-700 dark:text-green-300">Current Quote</p>
                 </div>
-                <DollarSign className="h-8 w-8 text-purple-500" />
+                <DollarSign className="h-8 w-8 text-green-500" />
               </div>
             </div>
           </div>
           
-          {/* Room Overview */}
+          {/* Room Breakdown with Products */}
           {rooms.length > 0 && (
             <div className="mt-4 space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">Room Overview</h4>
+              <h4 className="text-sm font-medium text-muted-foreground">Room Breakdown</h4>
               <div className="space-y-2">
                 {rooms.slice(0, 3).map((room) => {
-                  const roomSurfaces = surfaces.filter(s => s.room_id === room.id);
+                  const roomProducts = getRoomProducts(room.id);
+                  const roomTotal = roomProducts.reduce((sum, p) => sum + p.price, 0);
                   return (
-                    <div key={room.id} className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                      <span className="text-sm font-medium">{room.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {roomSurfaces.length} surface{roomSurfaces.length !== 1 ? 's' : ''}
-                      </span>
+                    <div key={room.id} className="p-3 bg-muted/30 dark:bg-muted/20 rounded border border-muted/50">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">{room.name}</span>
+                        <span className="text-sm font-semibold text-green-600 dark:text-green-400">
+                          {roomTotal > 0 ? formatCurrency(roomTotal) : "No pricing"}
+                        </span>
+                      </div>
+                      {roomProducts.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {roomProducts.map((product, idx) => (
+                            <Badge key={idx} variant="secondary" className="text-xs">
+                              {product.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      {roomProducts.length === 0 && (
+                        <p className="text-xs text-muted-foreground">No products/services added</p>
+                      )}
                     </div>
                   );
                 })}
