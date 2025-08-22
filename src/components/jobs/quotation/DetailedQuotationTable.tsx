@@ -167,7 +167,7 @@ const QuotationItemRow: React.FC<{
 
   return (
     <div className="border rounded-lg overflow-hidden">
-      <div className="flex items-center justify-between p-3 bg-background">
+      <div className="flex items-center justify-between p-3 bg-card text-card-foreground">
         <div className="flex items-center space-x-2 flex-1">
           {hasBreakdown && showDetailedView && (
             <Button
@@ -180,7 +180,7 @@ const QuotationItemRow: React.FC<{
             </Button>
           )}
           <div className="flex-1">
-            <div className="font-medium text-sm">{item.name}</div>
+            <div className="font-medium text-sm text-foreground">{item.name}</div>
             <div className="text-xs text-muted-foreground">{item.description}</div>
             {item.quantity && item.unit_price && (
               <div className="text-xs text-muted-foreground">
@@ -190,7 +190,7 @@ const QuotationItemRow: React.FC<{
           </div>
         </div>
         <div className="text-right">
-          <div className="font-medium">{formatCurrency(item.total || 0, currency)}</div>
+          <div className="font-medium text-foreground">{formatCurrency(item.total || 0, currency)}</div>
           {item.quantity && item.unit_price && (
             <div className="text-xs text-muted-foreground">
               {formatCurrency(item.unit_price, currency)} per unit
@@ -199,12 +199,12 @@ const QuotationItemRow: React.FC<{
         </div>
       </div>
       
+      {/* Breakdown Details */}
       {hasBreakdown && showDetailedView && isExpanded && (
-        <div className="border-t bg-muted/30 p-3">
+        <div className="border-t bg-muted/20 p-3">
           <QuoteItemBreakdown 
             breakdown={item.breakdown} 
             currency={currency}
-            formatCurrencyFn={(amount) => formatCurrency(amount, currency)}
           />
         </div>
       )}
@@ -212,30 +212,19 @@ const QuotationItemRow: React.FC<{
   );
 };
 
-const FinancialSummary: React.FC<{
-  quotationData: any;
-  currency: string;
-}> = ({ quotationData, currency }) => {
+const FinancialSummary: React.FC<{ quotationData: any; currency: string }> = ({ quotationData, currency }) => {
   return (
     <div className="space-y-2">
-      <div className="flex justify-between text-sm">
-        <span className="text-muted-foreground">Items Subtotal:</span>
-        <span>{formatCurrency(quotationData.baseSubtotal || 0, currency)}</span>
-      </div>
-      <div className="flex justify-between text-sm">
-        <span className="text-muted-foreground">Markup (25%):</span>
-        <span>{formatCurrency((quotationData.subtotal || 0) - (quotationData.baseSubtotal || 0), currency)}</span>
-      </div>
-      <div className="flex justify-between text-sm">
-        <span className="text-muted-foreground">Subtotal:</span>
+      <div className="flex justify-between text-foreground">
+        <span>Subtotal (excluding GST):</span>
         <span className="font-medium">{formatCurrency(quotationData.subtotal || 0, currency)}</span>
       </div>
-      <div className="flex justify-between text-sm">
-        <span className="text-muted-foreground">Tax (8%):</span>
-        <span>{formatCurrency(quotationData.taxAmount || 0, currency)}</span>
+      <div className="flex justify-between text-foreground">
+        <span>GST (10%):</span>
+        <span className="font-medium">{formatCurrency(quotationData.taxAmount || 0, currency)}</span>
       </div>
-      <div className="flex justify-between text-base font-semibold border-t pt-2">
-        <span>Total:</span>
+      <div className="border-t pt-2 flex justify-between text-lg font-bold text-foreground">
+        <span>Total (including GST):</span>
         <span>{formatCurrency(quotationData.total || 0, currency)}</span>
       </div>
     </div>

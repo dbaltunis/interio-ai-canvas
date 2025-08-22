@@ -38,9 +38,9 @@ export const QuotePreview = ({
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-GB', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'GBP',
     }).format(amount);
   };
 
@@ -98,20 +98,37 @@ export const QuotePreview = ({
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
-                          <h4 className="font-medium">{getRoomName(treatment.room_id)}</h4>
+                          <h4 className="font-medium text-foreground">{getRoomName(treatment.room_id)}</h4>
                           <Badge variant="secondary" className="capitalize">
                             {treatment.treatment_type}
                           </Badge>
                         </div>
-                        <p className="text-sm text-gray-600 mb-1">
+                        <p className="text-sm text-muted-foreground mb-1">
                           Surface: {getSurfaceName(treatment.window_id)}
                         </p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-muted-foreground">
                           Product: {treatment.product_name || treatment.treatment_type}
                         </p>
+                        
+                        {/* Detailed Breakdown */}
+                        {treatment.breakdown && Array.isArray(treatment.breakdown) && treatment.breakdown.length > 0 && (
+                          <div className="mt-3 p-3 bg-muted/20 rounded text-sm">
+                            <h5 className="font-medium text-foreground mb-2">Cost Breakdown:</h5>
+                            {treatment.breakdown.map((item: any, idx: number) => (
+                              <div key={idx} className="flex justify-between py-1">
+                                <span className="text-muted-foreground">
+                                  {item.name} {item.description && `(${item.description})`}
+                                  {item.quantity && item.unit && ` - ${item.quantity}${item.unit}`}
+                                </span>
+                                <span className="font-medium text-foreground">{formatCurrency(item.total_cost || 0)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <div className="text-right">
-                        <div className="font-bold text-lg">{formatCurrency(lineTotal)}</div>
+                        <div className="font-bold text-lg text-foreground">{formatCurrency(lineTotal)}</div>
+                        <div className="text-xs text-muted-foreground">Including markup</div>
                       </div>
                     </div>
 
@@ -138,16 +155,16 @@ export const QuotePreview = ({
           {/* Totals */}
           <div className="flex justify-end">
             <div className="w-80 space-y-2">
-              <div className="flex justify-between">
+              <div className="flex justify-between text-foreground">
                 <span>Subtotal (excluding {(taxRate * 100).toFixed(1)}% GST):</span>
                 <span className="font-medium">{formatCurrency(subtotal)}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between text-foreground">
                 <span>GST ({(taxRate * 100).toFixed(1)}%):</span>
                 <span className="font-medium">{formatCurrency(taxAmount)}</span>
               </div>
               <Separator />
-              <div className="flex justify-between text-xl font-bold">
+              <div className="flex justify-between text-xl font-bold text-foreground">
                 <span>Total (including GST):</span>
                 <span className="text-brand-primary">{formatCurrency(total)}</span>
               </div>
@@ -155,9 +172,9 @@ export const QuotePreview = ({
           </div>
 
           {/* Terms */}
-          <div className="mt-8 p-4 bg-gray-50 rounded">
-            <h4 className="font-semibold mb-2">Terms & Conditions:</h4>
-            <ul className="text-sm text-gray-600 space-y-1">
+          <div className="mt-8 p-4 bg-muted/20 rounded text-foreground">
+            <h4 className="font-semibold mb-2 text-foreground">Terms & Conditions:</h4>
+            <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Quote valid for 30 days from date issued</li>
               <li>• 50% deposit required to commence work</li>
               <li>• Installation included in pricing</li>
