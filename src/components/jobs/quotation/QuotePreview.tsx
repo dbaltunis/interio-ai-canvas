@@ -139,16 +139,16 @@ export const QuotePreview = ({
           <div className="flex justify-end">
             <div className="w-80 space-y-2">
               <div className="flex justify-between">
-                <span>Subtotal:</span>
+                <span>Subtotal (excluding {(taxRate * 100).toFixed(1)}% GST):</span>
                 <span className="font-medium">{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Tax ({(taxRate * 100).toFixed(1)}%):</span>
+                <span>GST ({(taxRate * 100).toFixed(1)}%):</span>
                 <span className="font-medium">{formatCurrency(taxAmount)}</span>
               </div>
               <Separator />
               <div className="flex justify-between text-xl font-bold">
-                <span>Total:</span>
+                <span>Total (including GST):</span>
                 <span className="text-brand-primary">{formatCurrency(total)}</span>
               </div>
             </div>

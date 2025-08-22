@@ -58,7 +58,7 @@ export const QuotationSummary = ({
 
         {/* Subtotal */}
         <div className="flex justify-between font-medium">
-          <span>Subtotal:</span>
+          <span>Subtotal (excluding GST):</span>
           <span>{formatCurrency(subtotal)}</span>
         </div>
 
@@ -81,7 +81,7 @@ export const QuotationSummary = ({
             </div>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Tax Amount:</span>
+            <span className="text-gray-600">GST Amount:</span>
             <span>{formatCurrency(taxAmount)}</span>
           </div>
         </div>
@@ -90,7 +90,7 @@ export const QuotationSummary = ({
 
         {/* Total */}
         <div className="flex justify-between text-xl font-bold">
-          <span>Total:</span>
+          <span>Total (including GST):</span>
           <span className="text-brand-primary">{formatCurrency(total)}</span>
         </div>
 

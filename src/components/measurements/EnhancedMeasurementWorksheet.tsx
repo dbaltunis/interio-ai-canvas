@@ -218,6 +218,49 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     let liningValue = "none";
     let treatmentTypeValue = "";
     
+    // Load from saved treatment first (highest priority)
+    const savedTreatment = allProjectTreatments.find(t => t.window_id === surfaceId);
+    if (savedTreatment) {
+      console.log("📦 Found saved treatment for surface:", surfaceId, savedTreatment);
+      
+      // Parse fabric details
+      try {
+        const fabricDetails = savedTreatment.fabric_details ? 
+          (typeof savedTreatment.fabric_details === 'string' ? 
+           JSON.parse(savedTreatment.fabric_details) : savedTreatment.fabric_details) : {};
+        
+        fabricId = fabricDetails.fabric_id || "";
+        // Extract heading and lining from treatment details or fabric details
+        const treatmentDetails = savedTreatment.treatment_details ? 
+          (typeof savedTreatment.treatment_details === 'string' ? 
+           JSON.parse(savedTreatment.treatment_details) : savedTreatment.treatment_details) : {};
+        
+        headingValue = treatmentDetails.selected_heading || fabricDetails.selected_heading || "standard";
+        liningValue = treatmentDetails.selected_lining || fabricDetails.selected_lining || "none";
+        windowCoveringId = treatmentDetails.window_covering?.id || savedTreatment.treatment_type || "no_covering";
+        treatmentTypeValue = savedTreatment.treatment_type || "";
+        
+        console.log("📦 Loaded from saved treatment:", {
+          fabricId, headingValue, liningValue, windowCoveringId, treatmentTypeValue
+        });
+      } catch (e) {
+        console.warn("Failed to parse saved treatment data:", e);
+      }
+    }
+    
+    // Load from measurements if no treatment data found
+    if (!savedTreatment && safeExistingMeasurement) {
+      const measurementData = safeExistingMeasurement.measurements || {};
+      fabricId = measurementData.selected_fabric || "";
+      headingValue = measurementData.selected_heading || "standard";
+      liningValue = measurementData.selected_lining || "none";
+      windowCoveringId = measurementData.window_covering_id || "no_covering";
+      
+      console.log("📋 Loaded from measurements:", {
+        fabricId, headingValue, liningValue, windowCoveringId
+      });
+    }
+    
     // Priority 1: Existing saved summary (highest priority for persistence)
     if (shouldUseSavedData && savedSummary?.measurements_details) {
       console.log("✅ PRIORITY 1: Loading from saved summary");
@@ -734,53 +777,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
         <CardContent className="space-y-6 p-6 bg-card">
           {/* Basic Setup */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <Label htmlFor="windowType">Window Type</Label>
-              <Select 
-                value={windowType} 
-                onValueChange={setWindowType} 
-                disabled={readOnly}
-              >
-                <SelectTrigger className={readOnly ? "cursor-not-allowed opacity-50" : "cursor-pointer"}>
-                  <SelectValue placeholder="Select window type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {WINDOW_TYPES.map((type) => (
-                    <SelectItem 
-                      key={type.value} 
-                      value={type.value}
-                      disabled={type.value !== "standard"}
-                    >
-                      {type.value === "standard" ? type.label : `${type.label} - Coming Soon`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {/* Remove the old treatment select - using WindowCoveringSelector instead */}
-
-            {projectId ? (
-              <div>
-                <Label htmlFor="room">Room</Label>
-                <Select 
-                  value={selectedRoom} 
-                  onValueChange={setSelectedRoom} 
-                  disabled={readOnly}
-                >
-                  <SelectTrigger className={readOnly ? "cursor-not-allowed opacity-50" : "cursor-pointer"}>
-                    <SelectValue placeholder="Select room" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="no_room">No Room Selected</SelectItem>
-                    {rooms.map((room) => (
-                      <SelectItem key={room.id} value={room.id}>
-                        {room.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ) : null}
+            {/* Window type and room dropdowns removed as requested */}
 
             {/* Window Covering Selector */}
             <div>

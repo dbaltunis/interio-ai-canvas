@@ -30,7 +30,7 @@ export const TreatmentPricingDisplay = ({
   return (
     <div className="bg-gray-50 p-4 rounded-lg">
       <div className="flex justify-between items-center">
-        <span className="text-lg font-medium">Total Price:</span>
+        <span className="text-lg font-medium">Total Price (excluding GST):</span>
         <span className="text-2xl font-bold text-green-600">{formatCurrency(totalPrice)}</span>
       </div>
       <div className="text-sm text-gray-600 mt-1">
