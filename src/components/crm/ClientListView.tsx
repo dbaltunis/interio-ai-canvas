@@ -348,36 +348,50 @@ export const ClientListView = ({
                   <TableCell>
                     <div className="space-y-2">
                       <div className="flex flex-wrap gap-1">
-                        {getActivityBadges(client).slice(0, 2).map((badge, index) => (
-                          <Badge key={index} variant={badge.variant} className="text-xs flex items-center gap-1">
-                            {badge.icon}
-                            {badge.text}
-                          </Badge>
-                        ))}
-                        {getActivityBadges(client).length > 2 && (
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Badge variant="outline" className="text-xs">
-                                +{getActivityBadges(client).length - 2} more
+                        {getActivityBadges(client).length > 0 ? (
+                          <>
+                            {getActivityBadges(client).slice(0, 2).map((badge, index) => (
+                              <Badge key={index} variant={badge.variant} className="text-xs flex items-center gap-1">
+                                {badge.icon}
+                                {badge.text}
                               </Badge>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <div className="space-y-1">
-                                {getActivityBadges(client).slice(2).map((badge, index) => (
-                                  <div key={index} className="flex items-center gap-2 text-sm">
-                                    {badge.icon}
-                                    {badge.text}
+                            ))}
+                            {getActivityBadges(client).length > 2 && (
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Badge variant="outline" className="text-xs">
+                                    +{getActivityBadges(client).length - 2} more
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <div className="space-y-1">
+                                    {getActivityBadges(client).slice(2).map((badge, index) => (
+                                      <div key={index} className="flex items-center gap-2 text-sm">
+                                        {badge.icon}
+                                        {badge.text}
+                                      </div>
+                                    ))}
                                   </div>
-                                ))}
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                          </>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs flex items-center gap-1 text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            No activity yet
+                          </Badge>
                         )}
                       </div>
-                      {client.totalValue > 0 && (
+                      {client.totalValue > 0 ? (
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <DollarSign className="h-3 w-3" />
                           {formatCurrency(client.totalValue)}
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <DollarSign className="h-3 w-3" />
+                          $0
                         </div>
                       )}
                     </div>
