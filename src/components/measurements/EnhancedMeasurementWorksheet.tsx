@@ -68,6 +68,9 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   onSaveTreatment,
   readOnly = false
 }, ref) => {
+  // Debug readOnly state
+  console.log("🔍 EnhancedMeasurementWorksheet readOnly state:", readOnly);
+  console.log("🔍 Props received:", { clientId, projectId, surfaceId, readOnly });
   // Create state keys that include surfaceId to isolate state per window
   const stateKey = surfaceId || 'default';
   
@@ -299,6 +302,9 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const createTreatment = useCreateTreatment();
   const updateTreatment = useUpdateTreatment();
   const { data: allProjectTreatments = [] } = useTreatments(projectId);
+
+  // Now log rooms data after it's declared
+  console.log("🏠 Project ID:", projectId, "Rooms count:", rooms?.length || 0, "ReadOnly:", readOnly);
 
   // Remove duplicate loading effect - handled by main effect above
 
@@ -730,8 +736,12 @@ export const EnhancedMeasurementWorksheet = forwardRef<
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <Label htmlFor="windowType">Window Type</Label>
-              <Select value={windowType} onValueChange={setWindowType} disabled={readOnly}>
-                <SelectTrigger>
+              <Select 
+                value={windowType} 
+                onValueChange={setWindowType} 
+                disabled={readOnly}
+              >
+                <SelectTrigger className={readOnly ? "cursor-not-allowed opacity-50" : "cursor-pointer"}>
                   <SelectValue placeholder="Select window type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -749,11 +759,15 @@ export const EnhancedMeasurementWorksheet = forwardRef<
             </div>
             {/* Remove the old treatment select - using WindowCoveringSelector instead */}
 
-            {projectId && (
+            {projectId ? (
               <div>
                 <Label htmlFor="room">Room</Label>
-                <Select value={selectedRoom} onValueChange={setSelectedRoom} disabled={readOnly}>
-                  <SelectTrigger>
+                <Select 
+                  value={selectedRoom} 
+                  onValueChange={setSelectedRoom} 
+                  disabled={readOnly}
+                >
+                  <SelectTrigger className={readOnly ? "cursor-not-allowed opacity-50" : "cursor-pointer"}>
                     <SelectValue placeholder="Select room" />
                   </SelectTrigger>
                   <SelectContent>
@@ -766,7 +780,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                   </SelectContent>
                 </Select>
               </div>
-            )}
+            ) : null}
 
             {/* Window Covering Selector */}
             <div>
