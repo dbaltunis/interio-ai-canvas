@@ -254,14 +254,34 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
       }));
     }
     
-    // Fall back to treatments
+    // Priority 2: Use treatments (ensure consistent data structure and avoid duplicates)
     const roomTreatments = treatments.filter(t => t.room_id === roomId);
-    return roomTreatments.map(t => ({
-      name: t.treatment_type || 'Treatment',
-      price: t.total_price || 0,
-      quantity: 1,
-      source: 'treatment'
-    }));
+    console.log("Using treatments for room:", roomId, roomTreatments);
+    
+    // Group by window_id to avoid duplicates and use the latest treatment per window
+    const treatmentsByWindow = roomTreatments.reduce((acc, t) => {
+      if (!acc[t.window_id] || new Date(t.created_at) > new Date(acc[t.window_id].created_at)) {
+        acc[t.window_id] = t;
+      }
+      return acc;
+    }, {} as Record<string, any>);
+    
+    return Object.values(treatmentsByWindow).map(t => {
+      // Parse pricing from different possible sources
+      let price = 0;
+      if (t.total_price) {
+        price = Number(t.total_price);
+      } else if (t.unit_price && t.quantity) {
+        price = Number(t.unit_price) * Number(t.quantity);
+      }
+      
+      return {
+        name: t.product_name || t.treatment_type || 'Treatment',
+        price,
+        quantity: Number(t.quantity || 1),
+        source: 'treatment'
+      };
+    });
   };
 
   // Get total count of products/services

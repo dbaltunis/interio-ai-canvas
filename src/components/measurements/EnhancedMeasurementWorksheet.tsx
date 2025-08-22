@@ -27,6 +27,7 @@ import { useSaveWindowSummary, useWindowSummary } from "@/hooks/useWindowSummary
 import { calculateTreatmentPricing } from "@/utils/pricing/calculateTreatmentPricing";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EnhancedMeasurementWorksheetProps {
   clientId?: string; // Optional - measurements can exist without being assigned to a client
@@ -637,6 +638,21 @@ export const EnhancedMeasurementWorksheet = forwardRef<
         let savedTreatment;
         if (existingTreatment) {
           console.log("Updating existing treatment:", existingTreatment.id);
+          
+          // Delete any duplicate treatments for this window first
+          const duplicateTreatments = allProjectTreatments.filter(t => 
+            t.window_id === surfaceId && t.id !== existingTreatment.id
+          );
+          
+          for (const duplicate of duplicateTreatments) {
+            console.log("Deleting duplicate treatment:", duplicate.id);
+            try {
+              await supabase.from("treatments").delete().eq("id", duplicate.id);
+            } catch (error) {
+              console.warn("Failed to delete duplicate treatment:", error);
+            }
+          }
+          
           savedTreatment = await updateTreatment.mutateAsync({
             id: existingTreatment.id,
             ...treatmentPayload
