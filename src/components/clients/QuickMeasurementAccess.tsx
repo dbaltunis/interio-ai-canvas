@@ -18,10 +18,8 @@ export const QuickMeasurementAccess = ({ clientId, clientName }: QuickMeasuremen
   const { data: projects } = useClientJobs(clientId);
   const [selectedMeasurement, setSelectedMeasurement] = useState<any>(null);
 
-  // Get measurements from projects as well
-  const projectMeasurements = projects?.filter(project => 
-    project.measurements && Object.keys(project.measurements).length > 0
-  ) || [];
+  // Get measurements from projects as well - temporarily disabled until proper project measurements integration
+  const projectMeasurements: any[] = []; // Will implement proper project measurements later
 
   const totalMeasurements = (measurements?.length || 0) + projectMeasurements.length;
 
@@ -122,39 +120,7 @@ export const QuickMeasurementAccess = ({ clientId, clientName }: QuickMeasuremen
                 </div>
               ))}
 
-              {/* Project measurements */}
-              {projectMeasurements.slice(0, Math.max(0, 3 - (measurements?.length || 0))).map((project) => (
-                <div key={`project-${project.id}`} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
-                  <div className="flex-grow">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge variant="outline" className="text-xs">
-                        Project: {project.name}
-                      </Badge>
-                    </div>
-                    <p className="text-sm font-medium">
-                      {getMeasurementSummary(project.measurements)}
-                    </p>
-                    <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {formatDistanceToNow(new Date(project.created_at), { addSuffix: true })}
-                      </div>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleViewMeasurement({
-                      id: project.id,
-                      measurements: project.measurements,
-                      type: 'project',
-                      project_name: project.name
-                    })}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+              {/* Project measurements - temporarily disabled */}
 
               {totalMeasurements > 3 && (
                 <Button variant="outline" size="sm" className="w-full">

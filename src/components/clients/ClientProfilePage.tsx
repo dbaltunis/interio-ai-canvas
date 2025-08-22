@@ -4,12 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Mail, Phone, MapPin, Building2, User, Edit, Calendar, FileText, Activity, DollarSign, Users } from "lucide-react";
+import { ArrowLeft, Mail, Phone, MapPin, Building2, User, Edit, Calendar, FileText, DollarSign, Ruler } from "lucide-react";
 import { useClient } from "@/hooks/useClients";
 import { useClientJobs } from "@/hooks/useClientJobs";
 import { ClientEmailHistory } from "./ClientEmailHistory";
 import { ClientProjectsList } from "./ClientProjectsList";
-import { ClientActivityLog } from "./ClientActivityLog";
+import { MeasurementsList } from "../measurements/MeasurementsList";
 import { EmailComposer } from "../jobs/email/EmailComposer";
 
 interface ClientProfilePageProps {
@@ -58,13 +58,8 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
 
   const clientDisplayName = client.client_type === 'B2B' ? client.company_name : client.name;
 
-  // Calculate total project value from completed projects - using estimated_value instead of total_cost
-  const totalProjectValue = projects?.reduce((sum, project) => {
-    if (project.status === 'completed' && project.estimated_value) {
-      return sum + (parseFloat(project.estimated_value.toString()) || 0);
-    }
-    return sum;
-  }, 0) || 0;
+  // Calculate total project value from completed projects - temporarily disable until proper cost tracking
+  const totalProjectValue = 0; // Will implement proper project cost tracking later
 
   return (
     <div className="liquid-glass rounded-xl p-6 space-y-6">
@@ -220,12 +215,20 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
       </Card>
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="projects" className="space-y-4">
+      <Tabs defaultValue="measurements" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="measurements">Measurements</TabsTrigger>
           <TabsTrigger value="projects">Projects & Jobs</TabsTrigger>
           <TabsTrigger value="emails">Email History</TabsTrigger>
-          <TabsTrigger value="activity">Activity Log</TabsTrigger>
         </TabsList>
+        
+        <TabsContent value="measurements" className="space-y-4">
+          <MeasurementsList 
+            clientId={clientId}
+            onViewMeasurement={(measurement) => console.log('View measurement:', measurement)}
+            onEditMeasurement={(measurement) => console.log('Edit measurement:', measurement)}
+          />
+        </TabsContent>
         
         <TabsContent value="projects" className="space-y-4">
           <ClientProjectsList clientId={clientId} />
@@ -237,10 +240,6 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
             clientEmail={client.email}
             onComposeEmail={() => setShowEmailComposer(true)}
           />
-        </TabsContent>
-        
-        <TabsContent value="activity" className="space-y-4">
-          <ClientActivityLog clientId={clientId} />
         </TabsContent>
       </Tabs>
 
