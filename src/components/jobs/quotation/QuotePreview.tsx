@@ -46,6 +46,12 @@ export const QuotePreview = ({
 
   const today = new Date().toLocaleDateString();
   const validUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString();
+  
+  console.log('📄 QuotePreview Debug:', {
+    treatmentCount: treatments.length,
+    hasBreakdowns: treatments.some(t => t.breakdown),
+    timestamp: new Date().toISOString()
+  });
 
   return (
     <Card>

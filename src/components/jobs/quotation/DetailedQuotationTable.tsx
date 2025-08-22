@@ -34,7 +34,14 @@ export const DetailedQuotationTable: React.FC<DetailedQuotationTableProps> = ({
     baseSubtotal: quotationData.baseSubtotal,
     subtotal: quotationData.subtotal,
     taxAmount: quotationData.taxAmount,
-    total: quotationData.total
+    total: quotationData.total,
+    timestamp: new Date().toISOString()
+  });
+  
+  console.log('🎨 UI Debug - Text colors applied:', {
+    foreground: 'text-foreground',
+    mutedForeground: 'text-muted-foreground', 
+    cardBackground: 'bg-card'
   });
 
   const toggleRoom = (roomId: string) => {
