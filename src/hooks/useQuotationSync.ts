@@ -106,7 +106,7 @@ export const useQuotationSync = ({
         }
       });
     } else if (hasTreatments) {
-      // Fallback to treatments table
+      // Use treatments table - FIXED: No duplicate manufacturing cost
       treatments.forEach((treatment) => {
         const roomId = treatment.room_id || 'no-room';
         
@@ -121,6 +121,20 @@ export const useQuotationSync = ({
           };
         }
 
+        // Parse calculation details to get accurate breakdown
+        let breakdown = {};
+        try {
+          if (treatment.calculation_details) {
+            const calcDetails = typeof treatment.calculation_details === 'string' 
+              ? JSON.parse(treatment.calculation_details) 
+              : treatment.calculation_details;
+            breakdown = calcDetails.breakdown || {};
+          }
+        } catch (e) {
+          console.warn("Failed to parse calculation details:", e);
+        }
+
+        // SINGLE ITEM - the complete treatment cost (no separate manufacturing line)
         roomGroups[roomId].items.push({
           id: treatment.id,
           name: treatment.product_name || treatment.treatment_type || 'Treatment',
@@ -128,6 +142,7 @@ export const useQuotationSync = ({
           quantity: 1,
           unit_price: treatment.total_price || 0,
           total: treatment.total_price || 0,
+          breakdown, // Include breakdown for detailed view if needed
           currency: 'GBP',
           room_name: roomName,
           room_id: roomId,

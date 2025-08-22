@@ -466,20 +466,7 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
                           }
  
                           // Fallback: if no cost breakdown, create basic manufacturing entry
-                          if (!ws?.cost_breakdown || ws.cost_breakdown.length === 0) {
-                            const manufacturingCost = treatment.total_price || ws?.total_cost || 0;
-                            if (manufacturingCost > 0) {
-                              items.push({
-                                number: '',
-                                productService: 'Manufacturing price',
-                                description: '-',
-                                quantity: treatment.quantity || 1,
-                                priceRate: manufacturingCost / (treatment.quantity || 1),
-                                total: manufacturingCost,
-                                isMain: false
-                              });
-                            }
-                          }
+                          // The treatment.total_price already includes all costs - no need for separate manufacturing line
 
                           return items.map((item, itemIndex) => (
                             <tr key={`${treatmentIndex}-${itemIndex}`} className={`${item.isMain ? 'bg-white' : 'bg-gray-50'} border-t`}>
