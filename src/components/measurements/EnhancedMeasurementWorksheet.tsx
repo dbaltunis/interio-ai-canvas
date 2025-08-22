@@ -14,6 +14,7 @@ import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { useInventory } from "@/hooks/useInventory";
 import { useWindowCoverings, type WindowCovering } from "@/hooks/useWindowCoverings";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { useCreateTreatment, useUpdateTreatment } from "@/hooks/useTreatments";
 import { VisualMeasurementSheet } from "./VisualMeasurementSheet";
 import { TreatmentSpecificFields } from "./TreatmentSpecificFields";
 import { TreatmentVisualizer } from "./TreatmentVisualizer";
@@ -271,6 +272,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const { data: windowCoverings = [] } = useWindowCoverings();
   const { units } = useMeasurementUnits();
   const saveWindowSummary = useSaveWindowSummary();
+  const createTreatment = useCreateTreatment();
+  const updateTreatment = useUpdateTreatment();
 
   // Reset state when surface changes to ensure each window has independent state
   useEffect(() => {
@@ -510,8 +513,66 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       status: "planned"
     };
 
-    // Create/update treatment only when a real fabric is selected
-    if ((fabricItem as any)?.id) {
+    // Create/update treatment in database - only require projectId and surfaceId
+    if ((fabricItem as any)?.id && projectId && surfaceId) {
+      try {
+        const treatmentPayload = {
+          project_id: projectId,
+          room_id: (selectedRoom && selectedRoom !== "no_room") ? selectedRoom : surfaceData?.room_id || null,
+          window_id: surfaceId, // This links to the surface/window
+          treatment_type: selectedCovering.name.toLowerCase(),
+          product_name: selectedCovering.name,
+          measurements: JSON.stringify({
+            ...measurements,
+            ...treatmentData.measurements
+          }),
+          fabric_details: JSON.stringify({
+            fabric_id: fabricItem.id,
+            name: fabricItem.name,
+            price_per_meter: pricePerMeter,
+            selected_heading: selectedHeading,
+            selected_lining: selectedLining,
+            fabric_item: fabricItem,
+            ...treatmentData.fabric_details
+          }),
+          treatment_details: JSON.stringify({
+            ...treatmentData,
+            selected_fabric: fabricItem.id,
+            selected_heading: selectedHeading,
+            selected_lining: selectedLining,
+            window_covering: selectedCovering
+          }),
+          calculation_details: JSON.stringify(calculation_details),
+          material_cost: fabricCost + liningCost,
+          labor_cost: manufacturingCost,
+          total_price: totalCost,
+          unit_price: totalCost,
+          quantity: 1,
+          status: "planned",
+          notes: treatmentData.notes || ""
+        };
+
+        console.log("Creating/updating treatment with payload:", treatmentPayload);
+        
+        // Check if we have an existing treatment to update
+        if (existingTreatments.length > 0) {
+          const existingTreatment = existingTreatments[0];
+          console.log("Updating existing treatment:", existingTreatment.id);
+          await updateTreatment.mutateAsync({
+            id: existingTreatment.id,
+            ...treatmentPayload
+          });
+        } else {
+          console.log("Creating new treatment");
+          await createTreatment.mutateAsync(treatmentPayload);
+        }
+        
+        console.log("Treatment saved successfully to database");
+      } catch (error) {
+        console.error("Error saving treatment to database:", error);
+      }
+      
+      // Also call the callback if provided
       onSaveTreatment?.(treatmentConfigData);
     }
 
