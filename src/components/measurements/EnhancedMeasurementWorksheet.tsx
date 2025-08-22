@@ -26,6 +26,7 @@ import { WindowCoveringSelector } from "./WindowCoveringSelector";
 import { CostCalculationSummary } from "./dynamic-options/CostCalculationSummary";
 import { useSaveWindowSummary, useWindowSummary } from "@/hooks/useWindowSummary";
 import { calculateTreatmentPricing } from "@/utils/pricing/calculateTreatmentPricing";
+import { useTreatments } from "@/hooks/useTreatments";
 
 interface EnhancedMeasurementWorksheetProps {
   clientId?: string; // Optional - measurements can exist without being assigned to a client
@@ -274,6 +275,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const saveWindowSummary = useSaveWindowSummary();
   const createTreatment = useCreateTreatment();
   const updateTreatment = useUpdateTreatment();
+  const { data: allProjectTreatments = [] } = useTreatments(projectId);
 
   // Reset state when surface changes to ensure each window has independent state
   useEffect(() => {
@@ -554,9 +556,13 @@ export const EnhancedMeasurementWorksheet = forwardRef<
 
         console.log("Creating/updating treatment with payload:", treatmentPayload);
         
-        // Check if we have an existing treatment to update
-        if (existingTreatments.length > 0) {
-          const existingTreatment = existingTreatments[0];
+        // Find existing treatment for this specific window/surface
+        const existingTreatment = allProjectTreatments.find(t => 
+          t.window_id === surfaceId || 
+          existingTreatments.find(et => et.id === t.id)
+        );
+        
+        if (existingTreatment) {
           console.log("Updating existing treatment:", existingTreatment.id);
           await updateTreatment.mutateAsync({
             id: existingTreatment.id,

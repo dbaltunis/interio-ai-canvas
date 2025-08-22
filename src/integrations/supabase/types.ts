@@ -2761,7 +2761,7 @@ export type Database = {
           product_name: string | null
           project_id: string
           quantity: number | null
-          room_id: string
+          room_id: string | null
           status: string | null
           total_price: number | null
           treatment_details: Json | null
@@ -2788,7 +2788,7 @@ export type Database = {
           product_name?: string | null
           project_id: string
           quantity?: number | null
-          room_id: string
+          room_id?: string | null
           status?: string | null
           total_price?: number | null
           treatment_details?: Json | null
@@ -2815,7 +2815,7 @@ export type Database = {
           product_name?: string | null
           project_id?: string
           quantity?: number | null
-          room_id?: string
+          room_id?: string | null
           status?: string | null
           total_price?: number | null
           treatment_details?: Json | null
