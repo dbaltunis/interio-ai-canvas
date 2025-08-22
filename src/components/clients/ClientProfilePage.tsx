@@ -4,15 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Mail, Phone, MapPin, Building2, User, Edit, Calendar, FileText, FolderOpen, Activity } from "lucide-react";
+import { ArrowLeft, Mail, Phone, MapPin, Building2, User, Edit, Calendar, FileText, Activity, DollarSign, Users } from "lucide-react";
 import { useClient } from "@/hooks/useClients";
 import { useClientJobs } from "@/hooks/useClientJobs";
 import { ClientEmailHistory } from "./ClientEmailHistory";
-import { ClientActivityTimeline } from "./ClientActivityTimeline";
 import { ClientProjectsList } from "./ClientProjectsList";
-import { ClientQuotesList } from "./ClientQuotesList";
 import { QuickMeasurementAccess } from "./QuickMeasurementAccess";
-import { ClientQuickActions } from "./ClientQuickActions";
+import { ClientActivityLog } from "./ClientActivityLog";
 import { EmailComposer } from "../jobs/email/EmailComposer";
 
 interface ClientProfilePageProps {
@@ -61,6 +59,14 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
 
   const clientDisplayName = client.client_type === 'B2B' ? client.company_name : client.name;
 
+  // Calculate total project value (completed projects only)
+  const totalProjectValue = projects?.reduce((sum, project) => {
+    if (project.status === 'completed' && project.total_cost) {
+      return sum + (parseFloat(project.total_cost.toString()) || 0);
+    }
+    return sum;
+  }, 0) || 0;
+
   return (
     <div className="liquid-glass rounded-xl p-6 space-y-6">
       {/* Header */}
@@ -102,10 +108,10 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Active Projects</p>
+                <p className="text-sm text-muted-foreground">Total Projects</p>
                 <p className="text-2xl font-bold text-brand-primary">{projects?.length || 0}</p>
               </div>
-              <FolderOpen className="h-8 w-8 text-brand-primary opacity-75" />
+              <FileText className="h-8 w-8 text-brand-primary opacity-75" />
             </div>
           </CardContent>
         </Card>
@@ -114,10 +120,12 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Value</p>
-                <p className="text-2xl font-bold text-accent">$0</p>
+                <p className="text-sm text-muted-foreground">Revenue Generated</p>
+                <p className="text-2xl font-bold text-accent">
+                  ${totalProjectValue.toLocaleString()}
+                </p>
               </div>
-              <FileText className="h-8 w-8 text-accent opacity-75" />
+              <DollarSign className="h-8 w-8 text-accent opacity-75" />
             </div>
           </CardContent>
         </Card>
@@ -127,7 +135,12 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Last Contact</p>
-                <p className="text-2xl font-bold text-primary">--</p>
+                <p className="text-2xl font-bold text-primary">
+                  {client.last_contact_date 
+                    ? new Date(client.last_contact_date).toLocaleDateString()
+                    : '--'
+                  }
+                </p>
               </div>
               <Mail className="h-8 w-8 text-primary opacity-75" />
             </div>
@@ -138,24 +151,16 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Status</p>
-                <p className="text-2xl font-bold text-secondary">Active</p>
+                <p className="text-sm text-muted-foreground">Client Since</p>
+                <p className="text-2xl font-bold text-secondary">
+                  {new Date(client.created_at).toLocaleDateString()}
+                </p>
               </div>
-              <Activity className="h-8 w-8 text-secondary opacity-75" />
+              <Calendar className="h-8 w-8 text-secondary opacity-75" />
             </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Quick Actions */}
-      <ClientQuickActions 
-        client={{
-          id: client.id,
-          name: clientDisplayName || '',
-          email: client.email,
-          phone: client.phone,
-        }}
-      />
 
       {/* Client Details and Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -229,17 +234,12 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
       </div>
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="activity" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="activity">Activity Timeline</TabsTrigger>
-          <TabsTrigger value="projects">Projects</TabsTrigger>
+      <Tabs defaultValue="projects" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="projects">Projects & Jobs</TabsTrigger>
           <TabsTrigger value="emails">Email History</TabsTrigger>
-          <TabsTrigger value="quotes">Quotes</TabsTrigger>
+          <TabsTrigger value="activity">Activity Log</TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="activity" className="space-y-4">
-          <ClientActivityTimeline clientId={clientId} />
-        </TabsContent>
         
         <TabsContent value="projects" className="space-y-4">
           <ClientProjectsList clientId={clientId} />
@@ -253,8 +253,8 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePag
           />
         </TabsContent>
         
-        <TabsContent value="quotes" className="space-y-4">
-          <ClientQuotesList clientId={clientId} />
+        <TabsContent value="activity" className="space-y-4">
+          <ClientActivityLog clientId={clientId} />
         </TabsContent>
       </Tabs>
 
