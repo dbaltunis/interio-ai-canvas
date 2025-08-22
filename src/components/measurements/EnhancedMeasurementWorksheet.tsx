@@ -515,9 +515,10 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       status: "planned"
     };
 
-    // Create/update treatment in database - only require projectId and surfaceId
-    if ((fabricItem as any)?.id && projectId && surfaceId) {
+    // Create/update treatment in database - require projectId and surfaceId
+    if (projectId && surfaceId) {
       try {
+        // Ensure we have required data - fabric can be optional for some treatments
         const treatmentPayload = {
           project_id: projectId,
           room_id: (selectedRoom && selectedRoom !== "no_room") ? selectedRoom : surfaceData?.room_id || null,
@@ -529,8 +530,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
             ...treatmentData.measurements
           }),
           fabric_details: JSON.stringify({
-            fabric_id: fabricItem.id,
-            name: fabricItem.name,
+            fabric_id: fabricItem?.id || null,
+            name: fabricItem?.name || 'No fabric selected',
             price_per_meter: pricePerMeter,
             selected_heading: selectedHeading,
             selected_lining: selectedLining,
@@ -539,7 +540,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
           }),
           treatment_details: JSON.stringify({
             ...treatmentData,
-            selected_fabric: fabricItem.id,
+            selected_fabric: fabricItem?.id || null,
             selected_heading: selectedHeading,
             selected_lining: selectedLining,
             window_covering: selectedCovering
@@ -558,28 +559,36 @@ export const EnhancedMeasurementWorksheet = forwardRef<
         
         // Find existing treatment for this specific window/surface
         const existingTreatment = allProjectTreatments.find(t => 
-          t.window_id === surfaceId || 
-          existingTreatments.find(et => et.id === t.id)
+          t.window_id === surfaceId
         );
         
         if (existingTreatment) {
           console.log("Updating existing treatment:", existingTreatment.id);
-          await updateTreatment.mutateAsync({
+          const result = await updateTreatment.mutateAsync({
             id: existingTreatment.id,
             ...treatmentPayload
           });
+          console.log("Treatment updated successfully:", result);
         } else {
           console.log("Creating new treatment");
-          await createTreatment.mutateAsync(treatmentPayload);
+          const result = await createTreatment.mutateAsync(treatmentPayload);
+          console.log("Treatment created successfully:", result);
         }
         
         console.log("Treatment saved successfully to database");
       } catch (error) {
         console.error("Error saving treatment to database:", error);
+        throw error; // Re-throw to be caught by save button handler
       }
       
       // Also call the callback if provided
       onSaveTreatment?.(treatmentConfigData);
+    } else {
+      console.warn("Cannot save treatment - missing required data:", {
+        projectId: !!projectId,
+        surfaceId: !!surfaceId
+      });
+      throw new Error("Missing project ID or surface ID for treatment save");
     }
 
     // Upsert window summary for card/quotation views
@@ -847,17 +856,48 @@ export const EnhancedMeasurementWorksheet = forwardRef<
               <div className="flex gap-3">
                 <Button 
                   onClick={async () => {
-                    await handleSaveMeasurements();
-                    if (selectedCovering) {
-                      await handleSaveTreatmentConfig();
+                    const { toast } = await import("@/hooks/use-toast");
+                    try {
+                      console.log("Starting save process...");
+                      
+                      // Save measurements first
+                      await handleSaveMeasurements();
+                      console.log("Measurements saved successfully");
+                      
+                      // Save treatment if window covering is selected
+                      if (selectedCovering && projectId && surfaceId) {
+                        console.log("Saving treatment configuration...");
+                        await handleSaveTreatmentConfig();
+                        console.log("Treatment saved successfully");
+                      } else {
+                        console.log("Skipping treatment save - missing requirements:", {
+                          selectedCovering: !!selectedCovering,
+                          projectId: !!projectId,
+                          surfaceId: !!surfaceId
+                        });
+                      }
+                      
+                      toast({
+                        title: "Success",
+                        description: "Window measurements and treatment saved successfully",
+                      });
+                      
+                      // Close worksheet
+                      onClose?.();
+                    } catch (error) {
+                      console.error("Save failed:", error);
+                      toast({
+                        title: "Save Failed",
+                        description: `Failed to save worksheet data: ${error.message}`,
+                        variant: "destructive"
+                      });
                     }
-                    onClose?.();
                   }}
-                  disabled={createMeasurement.isPending || updateMeasurement.isPending}
+                  disabled={createMeasurement.isPending || updateMeasurement.isPending || createTreatment.isPending || updateTreatment.isPending}
                   className="flex items-center gap-2"
                 >
                   <Save className="h-4 w-4" />
-                  Save
+                  {(createMeasurement.isPending || updateMeasurement.isPending || createTreatment.isPending || updateTreatment.isPending) ? "Saving..." : "Save"}
                 </Button>
               </div>
             </div>
