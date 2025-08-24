@@ -439,12 +439,28 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48 bg-popover text-popover-foreground border shadow-lg z-50">
-                            <DropdownMenuItem onClick={() => onJobSelect({ id: project.id, projects: project })}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Job
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
+                           <DropdownMenuContent align="end" className="w-48 bg-popover text-popover-foreground border shadow-lg z-50">
+                             <DropdownMenuItem onClick={() => onJobSelect({ id: project.id, projects: project })}>
+                               <Eye className="mr-2 h-4 w-4" />
+                               View Job
+                             </DropdownMenuItem>
+                             <DropdownMenuItem onClick={() => handleNotesClick({ id: project.id, projects: project })}>
+                               <StickyNote className="mr-2 h-4 w-4" />
+                               Write Note
+                             </DropdownMenuItem>
+                             <DropdownMenuItem onClick={() => onJobSelect({ id: project.id, projects: project })}>
+                               <Copy className="mr-2 h-4 w-4" />
+                               New Quote
+                             </DropdownMenuItem>
+                             <DropdownMenuSeparator />
+                             <DropdownMenuItem onClick={() => {
+                               setQuoteToDelete({ id: project.id, projects: project });
+                               setDeleteDialogOpen(true);
+                             }}>
+                               <Trash2 className="mr-2 h-4 w-4" />
+                               Delete Job
+                             </DropdownMenuItem>
+                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
                     </TableCell>
