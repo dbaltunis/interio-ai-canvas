@@ -444,10 +444,10 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                                <Eye className="mr-2 h-4 w-4" />
                                View Job
                              </DropdownMenuItem>
-                             <DropdownMenuItem onClick={() => handleNotesClick({ id: project.id, projects: project })}>
-                               <StickyNote className="mr-2 h-4 w-4" />
-                               Write Note
-                             </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleNotesClick({ id: project.id, project: project })}>
+                                <StickyNote className="mr-2 h-4 w-4" />
+                                Write Note
+                              </DropdownMenuItem>
                              <DropdownMenuItem onClick={() => onJobSelect({ id: project.id, projects: project })}>
                                <Copy className="mr-2 h-4 w-4" />
                                New Quote
@@ -602,7 +602,8 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
       <JobNotesDialog
         open={notesDialogOpen}
         onOpenChange={setNotesDialogOpen}
-        quote={selectedQuoteForNotes}
+        quote={selectedQuoteForNotes?.id ? selectedQuoteForNotes : null}
+        project={selectedQuoteForNotes?.project ? selectedQuoteForNotes.project : selectedQuoteForNotes}
       />
     </>
   );
