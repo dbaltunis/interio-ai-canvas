@@ -262,19 +262,24 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
                 className="w-64 h-9"
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-wrap">
               <Button
                 variant={useWYSIWYG ? "default" : "outline"}
                 onClick={() => setUseWYSIWYG(!useWYSIWYG)}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-xs sm:text-sm"
+                size="sm"
+                title={useWYSIWYG ? "Switch to Legacy Editor mode" : "Switch to True WYSIWYG Editor mode for better visual editing"}
               >
                 <FileText className="h-4 w-4" />
-                {useWYSIWYG ? 'True WYSIWYG' : 'Legacy Editor'}
+                <span className="hidden sm:inline">{useWYSIWYG ? 'True WYSIWYG' : 'Legacy Editor'}</span>
+                <span className="sm:hidden">{useWYSIWYG ? 'WYSIWYG' : 'Legacy'}</span>
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setShowPreview(!showPreview)}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-xs sm:text-sm"
+                size="sm"
+                title={showPreview ? "Switch to Edit mode" : "Switch to Preview mode to see how your template will look"}
               >
                 {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 {showPreview ? 'Edit' : 'Preview'}
@@ -282,7 +287,9 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
               <Button 
                 onClick={handleSave} 
                 disabled={isSaving}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-xs sm:text-sm bg-brand-primary hover:bg-brand-accent text-white"
+                size="sm"
+                title="Save the current template configuration"
               >
                 <Save className="h-4 w-4" />
                 {isSaving ? 'Saving...' : 'Save Template'}
