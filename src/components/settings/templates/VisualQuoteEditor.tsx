@@ -162,11 +162,11 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
     ));
   }, []);
 
-  const addNewBlock = useCallback((type: string) => {
+  const addNewBlock = useCallback((type: string, customContent?: any) => {
     const newBlock = {
       id: `block-${Date.now()}`,
       type,
-      content: getDefaultContentForType(type),
+      content: { ...getDefaultContentForType(type), ...customContent },
       editable: true
     };
     setBlocks(prev => [...prev, newBlock]);
@@ -301,16 +301,99 @@ export const VisualQuoteEditor = ({ isOpen, onClose, template, onSave }: VisualQ
         {/* Canva-style Toolbar */}
         {!showPreview && (
           <CanvaToolbar
-            onToggleGrid={() => setShowGrid(!showGrid)}
             showGrid={showGrid}
+            onToggleGrid={() => setShowGrid(!showGrid)}
             zoomLevel={zoomLevel}
+            onZoomIn={() => setZoomLevel(Math.min(200, zoomLevel + 10))}
+            onZoomOut={() => setZoomLevel(Math.max(50, zoomLevel - 10))}
+            onReset={() => setZoomLevel(100)}
             selectedTool={selectedTool}
             onToolChange={setSelectedTool}
             hasSelection={!!selectedBlockId}
-            onZoomIn={() => setZoomLevel(Math.min(200, zoomLevel + 25))}
-            onZoomOut={() => setZoomLevel(Math.max(25, zoomLevel - 25))}
-            onReset={() => setZoomLevel(100)}
+            selectedBlock={selectedBlock}
+            onUpdateBlock={(updates) => selectedBlockId && updateBlockContent(selectedBlockId, updates)}
+            onSave={handleSave}
+            onCopy={() => selectedBlock && navigator.clipboard.writeText(JSON.stringify(selectedBlock))}
             onDelete={() => selectedBlockId && removeBlock(selectedBlockId)}
+            onAlignLeft={() => selectedBlockId && updateBlockContent(selectedBlockId, { 
+              style: { ...selectedBlock?.content?.style, textAlign: 'left' } 
+            })}
+            onAlignCenter={() => selectedBlockId && updateBlockContent(selectedBlockId, { 
+              style: { ...selectedBlock?.content?.style, textAlign: 'center' } 
+            })}
+            onAlignRight={() => selectedBlockId && updateBlockContent(selectedBlockId, { 
+              style: { ...selectedBlock?.content?.style, textAlign: 'right' } 
+            })}
+            onInsertImage={() => {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = 'image/*';
+              input.onchange = (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (event) => {
+                    addNewBlock('image', { src: event.target?.result, alt: file.name });
+                  };
+                  reader.readAsDataURL(file);
+                }
+              };
+              input.click();
+            }}
+            onInsertTable={() => addNewBlock('table')}
+            onInsertShape={(shape) => addNewBlock('shape', { shapeType: shape })}
+            onApplyHeading={(level) => {
+              if (!selectedBlockId) return;
+              const fontSize = level === 1 ? '32px' : level === 2 ? '24px' : level === 3 ? '20px' : '16px';
+              const fontWeight = level > 0 ? 'bold' : 'normal';
+              updateBlockContent(selectedBlockId, {
+                style: { 
+                  ...selectedBlock?.content?.style, 
+                  fontSize, 
+                  fontWeight 
+                }
+              });
+            }}
+            onToggleBold={() => {
+              if (!selectedBlockId) return;
+              const currentWeight = selectedBlock?.content?.style?.fontWeight;
+              updateBlockContent(selectedBlockId, {
+                style: { 
+                  ...selectedBlock?.content?.style, 
+                  fontWeight: currentWeight === 'bold' ? 'normal' : 'bold' 
+                }
+              });
+            }}
+            onToggleItalic={() => {
+              if (!selectedBlockId) return;
+              const currentStyle = selectedBlock?.content?.style?.fontStyle;
+              updateBlockContent(selectedBlockId, {
+                style: { 
+                  ...selectedBlock?.content?.style, 
+                  fontStyle: currentStyle === 'italic' ? 'normal' : 'italic' 
+                }
+              });
+            }}
+            onToggleUnderline={() => {
+              if (!selectedBlockId) return;
+              const currentDecoration = selectedBlock?.content?.style?.textDecoration;
+              updateBlockContent(selectedBlockId, {
+                style: { 
+                  ...selectedBlock?.content?.style, 
+                  textDecoration: currentDecoration === 'underline' ? 'none' : 'underline' 
+                }
+              });
+            }}
+            onToggleStrikethrough={() => {
+              if (!selectedBlockId) return;
+              const currentDecoration = selectedBlock?.content?.style?.textDecoration;
+              updateBlockContent(selectedBlockId, {
+                style: { 
+                  ...selectedBlock?.content?.style, 
+                  textDecoration: currentDecoration === 'line-through' ? 'none' : 'line-through' 
+                }
+              });
+            }}
           />
         )}
 
@@ -476,6 +559,25 @@ function getDefaultContentForType(type: string) {
       return { text: 'Enter your text here...', style: 'normal' };
     case 'image':
       return { src: '', alt: '', width: '100%', alignment: 'center' };
+    case 'table':
+      return { 
+        rows: 3, 
+        cols: 3, 
+        headers: ['Column 1', 'Column 2', 'Column 3'],
+        data: [
+          ['Row 1, Col 1', 'Row 1, Col 2', 'Row 1, Col 3'],
+          ['Row 2, Col 1', 'Row 2, Col 2', 'Row 2, Col 3']
+        ]
+      };
+    case 'shape':
+      return { 
+        shapeType: 'rectangle', 
+        width: '100px', 
+        height: '100px', 
+        fillColor: '#e2e8f0', 
+        borderColor: '#64748b',
+        borderWidth: '1px'
+      };
     case 'products':
       return {
         layout: 'detailed',
