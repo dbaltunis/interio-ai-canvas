@@ -80,80 +80,98 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
 
   return (
     <div className="min-h-screen bg-background w-full">
-      {/* Compact Header Bar */}
-      <div className="bg-card border-b shadow-sm">
-        <div className="px-4 py-3">
+      {/* Enhanced Header Section */}
+      <div className="bg-gradient-to-r from-card/95 to-card border-b border-border/50 shadow-sm backdrop-blur-sm">
+        <div className="px-3 sm:px-6 py-4">
           {/* Mobile-First Responsive Layout */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            {/* Top Row: Navigation + Job Info + Status */}
-            <div className="flex items-center gap-3 flex-wrap">
+          <div className="space-y-4">
+            {/* Top Row: Navigation + Job Title + Status */}
+            <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onBack}
-                className="flex items-center gap-1 hover:bg-muted text-muted-foreground shrink-0"
+                className="flex items-center gap-2 hover:bg-muted/80 text-muted-foreground 
+                  shrink-0 px-3 py-2 rounded-lg transition-all duration-200
+                  hover:text-foreground hover:shadow-sm"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">Back</span>
+                <span className="hidden sm:inline font-medium">Back to Jobs</span>
+                <span className="sm:hidden font-medium">Back</span>
               </Button>
               
-              <Separator orientation="vertical" className="h-6 hidden sm:block" />
+              <Separator orientation="vertical" className="h-6 bg-border/60" />
               
               <div className="flex items-center gap-3 min-w-0 flex-1">
-                <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">
-                  {project.name}
-                </h1>
-                <div className="flex items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate leading-tight">
+                    {project.name}
+                  </h1>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="outline" className="font-mono text-xs px-2 py-1 bg-muted/50">
+                      #{project.job_number}
+                    </Badge>
+                  </div>
+                </div>
+                
+                <div className="shrink-0">
                   <JobStatusDropdown
                     currentStatus={project.status}
                     jobType="project"
                     jobId={project.id}
                     onStatusChange={(newStatus) => {
-                      // The status will be updated via the mutation
+                      // Status updated via mutation
                     }}
                   />
-                  <Badge variant="outline" className="font-mono text-xs shrink-0">
-                    #{project.job_number}
-                  </Badge>
                 </div>
               </div>
             </div>
 
-            {/* Bottom Row: Client + Dates (responsive) */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-sm">
-              {/* Client Info */}
-              <div className="flex items-center gap-2 min-w-0">
-                <User className="h-4 w-4 text-muted-foreground shrink-0" />
-                <div className="min-w-0">
-                  <span className="text-foreground font-medium truncate block">
-                    {client ? client.name : 'No client'}
-                  </span>
+            {/* Bottom Section: Client & Dates */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 
+              pt-3 border-t border-border/30">
+              {/* Client Information */}
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <User className="h-4 w-4 text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm text-muted-foreground font-medium">Client</div>
+                  <div className="font-semibold text-foreground truncate">
+                    {client ? client.name : 'No client assigned'}
+                  </div>
                   {client?.email && (
-                    <span className="text-muted-foreground text-xs truncate block">
+                    <div className="text-xs text-muted-foreground truncate">
                       {client.email}
-                    </span>
+                    </div>
                   )}
                 </div>
               </div>
               
-              <Separator orientation="vertical" className="h-4 hidden sm:block" />
-              
               {/* Key Dates */}
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground hidden sm:inline">Due:</span>
-                  <span className="text-foreground font-medium">
-                    {project.due_date ? new Date(project.due_date).toLocaleDateString() : 'Not set'}
-                  </span>
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-orange-100 dark:bg-orange-900/30 rounded-md">
+                    <Clock className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground font-medium">Due Date</div>
+                    <div className="text-sm font-semibold text-foreground">
+                      {project.due_date ? new Date(project.due_date).toLocaleDateString() : 'Not set'}
+                    </div>
+                  </div>
                 </div>
                 
-                <div className="flex items-center gap-1 hidden md:flex">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Created:</span>
-                  <span className="text-foreground font-medium">
-                    {new Date(project.created_at).toLocaleDateString()}
-                  </span>
+                <div className="flex items-center gap-2 hidden md:flex">
+                  <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-md">
+                    <Calendar className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground font-medium">Created</div>
+                    <div className="text-sm font-semibold text-foreground">
+                      {new Date(project.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
