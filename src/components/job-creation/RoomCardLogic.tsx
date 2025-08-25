@@ -37,83 +37,93 @@ export const useRoomCardLogic = (room: any, projectId: string, clientId?: string
     
     let total = 0;
 
-    // First priority: Sum all window summaries for this room
-    const summaryRoomTotal = (projectSummaries?.windows || [])
-      .filter((w) => w.room_id === room.id)
+    // First priority: Sum all window summaries for this room (most accurate)
+    const windowSummariesForRoom = (projectSummaries?.windows || [])
+      .filter((w) => w.room_id === room.id);
+    
+    const summaryRoomTotal = windowSummariesForRoom
       .reduce((sum, w) => sum + Number(w.summary?.total_cost || 0), 0);
 
     if (summaryRoomTotal > 0) {
-      console.log(`Found ${(projectSummaries?.windows || []).filter((w) => w.room_id === room.id).length} window summaries`);
+      console.log(`Found ${windowSummariesForRoom.length} window summaries with costs`);
       console.log(`Window summaries total: £${summaryRoomTotal.toFixed(2)}`);
-      total += summaryRoomTotal;
-    }
+      total = summaryRoomTotal;
+    } else {
+      // Second priority: Sum all treatment totals for this room if no window summaries
+      const treatmentTotal = roomTreatments.reduce((sum, t) => {
+        const treatmentCost = Number(t.total_price || 0);
+        console.log(`Treatment ${t.id}: £${treatmentCost.toFixed(2)}`);
+        return sum + treatmentCost;
+      }, 0);
+      
+      if (treatmentTotal > 0) {
+        console.log(`Found ${roomTreatments.length} treatments`);
+        console.log(`Treatment total: £${treatmentTotal.toFixed(2)}`);
+        total = treatmentTotal;
+      } else {
+        // Third priority: Use legacy measurement calculations as fallback
+        if (clientMeasurements) {
+          const roomMeasurements = clientMeasurements.filter(
+            (measurement) => measurement.project_id === projectId && measurement.room_id === room.id
+          );
 
-    // Second priority: Add all treatment totals for this room
-    const treatmentTotal = roomTreatments.reduce((sum, t) => sum + (t.total_price || 0), 0);
-    if (treatmentTotal > 0) {
-      console.log(`Found ${roomTreatments.length} treatments`);
-      console.log(`Treatment total: £${treatmentTotal.toFixed(2)}`);
-      total += treatmentTotal;
-    }
+          console.log(`Found ${roomMeasurements.length} measurements for room ${room.name}`);
 
-    // Third priority: If no summaries or treatments, use legacy measurement calculations
-    if (total === 0 && clientMeasurements) {
-      const roomMeasurements = clientMeasurements.filter(
-        (measurement) => measurement.project_id === projectId && measurement.room_id === room.id
-      );
+          roomMeasurements.forEach((measurement) => {
+            if (measurement.measurements) {
+              const measurements = measurement.measurements as Record<string, any>;
 
-      console.log(`Found ${roomMeasurements.length} measurements for room ${room.name}`);
+              const railWidth = Number(measurements.rail_width || 0);
+              const drop = Number(measurements.drop || 0);
 
-      roomMeasurements.forEach((measurement) => {
-        if (measurement.measurements) {
-          const measurements = measurement.measurements as Record<string, any>;
+              console.log(`Processing measurement ${measurement.id}: ${railWidth}" × ${drop}"`);
 
-          const railWidth = Number(measurements.rail_width || 0);
-          const drop = Number(measurements.drop || 0);
+              if (railWidth > 0 && drop > 0) {
+                // Use proper fabric calculation (kept for compatibility)
+                const formData = {
+                  rail_width: measurements.rail_width,
+                  drop: measurements.drop,
+                  heading_fullness: 2.5,
+                  fabric_width: 140,
+                  quantity: 1,
+                  fabric_type: 'plain',
+                };
 
-          console.log(`Processing measurement ${measurement.id}: ${railWidth}" × ${drop}"`);
+                const calculation = calculateFabricUsage(formData, []);
 
-          if (railWidth > 0 && drop > 0) {
-            // Use proper fabric calculation (kept for compatibility)
-            const formData = {
-              rail_width: measurements.rail_width,
-              drop: measurements.drop,
-              heading_fullness: 2.5,
-              fabric_width: 140,
-              quantity: 1,
-              fabric_type: 'plain',
-            };
+                // Legacy rough costs
+                const fabricMetres = 2 * (drop / 100); // 2 widths × drop in metres
+                const fabricTotal = fabricMetres * 45;
 
-            const calculation = calculateFabricUsage(formData, []);
+                const liningType = measurements.selected_lining || measurements.lining_type;
+                const liningCostPerMetre = liningType === 'Interlining' ? 26.63 : 15;
+                const liningCost =
+                  liningType && liningType !== 'none' && liningType !== 'None' ? fabricMetres * liningCostPerMetre : 0;
 
-            // Legacy rough costs
-            const fabricMetres = 2 * (drop / 100); // 2 widths × drop in metres
-            const fabricTotal = fabricMetres * 45;
+                const areaSqM = (railWidth * drop) / 10000;
+                const manufacturingCost = areaSqM * 20;
 
-            const liningType = measurements.selected_lining || measurements.lining_type;
-            const liningCostPerMetre = liningType === 'Interlining' ? 26.63 : 15;
-            const liningCost =
-              liningType && liningType !== 'none' && liningType !== 'None' ? fabricMetres * liningCostPerMetre : 0;
+                const measurementTotal = fabricTotal + liningCost + manufacturingCost;
+                total += measurementTotal;
 
-            const areaSqM = (railWidth * drop) / 10000;
-            const manufacturingCost = areaSqM * 20;
-
-            const measurementTotal = fabricTotal + liningCost + manufacturingCost;
-            total += measurementTotal;
-
-            console.log(`ROOM CALC using exact worksheet total:`);
-            console.log(`  Measurement ID: ${measurement.id}`);
-            console.log(`  Dimensions: ${railWidth}" × ${drop}"`);
-            console.log(`  Window Total: £${measurementTotal.toFixed(2)} (from worksheet)`);
-            console.log(`  Running Room Total: £${total.toFixed(2)}`);
-          } else {
-            console.log(
-              `Skipping measurement ${measurement.id} - missing dimensions: rail_width=${railWidth}, drop=${drop}`
-            );
-          }
+                console.log(`ROOM CALC using exact worksheet total:`);
+                console.log(`  Measurement ID: ${measurement.id}`);
+                console.log(`  Dimensions: ${railWidth}" × ${drop}"`);
+                console.log(`  Window Total: £${measurementTotal.toFixed(2)} (from worksheet)`);
+                console.log(`  Running Room Total: £${total.toFixed(2)}`);
+              } else {
+                console.log(
+                  `Skipping measurement ${measurement.id} - missing dimensions: rail_width=${railWidth}, drop=${drop}`
+                );
+              }
+            }
+          });
         }
-      });
+      }
     }
+
+    // Add any additional services or extra costs for this room
+    // TODO: Add logic for additional services, extras, etc. when that data structure is available
 
     console.log(`=== FINAL ROOM TOTAL FOR ${room.name}: £${total.toFixed(2)} ===`);
     return total;
