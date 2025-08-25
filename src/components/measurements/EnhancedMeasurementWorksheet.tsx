@@ -204,6 +204,9 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     ""
   );
 
+  // Get treatments data early so it can be used in the effect
+  const { data: allProjectTreatments = [] } = useTreatments(projectId);
+
   // Centralized data loading effect - SINGLE SOURCE OF TRUTH
   useEffect(() => {
     if (!surfaceId) return;
@@ -330,12 +333,27 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       windowCoveringId = existingMeasurement.window_covering_id || windowCoveringId;
     }
     
-    // Apply all loaded data
-    console.log("🎯 APPLYING: Final measurements:", measurements);
+    // Apply all loaded data with explicit logging
+    console.log("🎯 APPLYING: Final data before setting state:", {
+      measurements,
+      windowCoveringId,
+      fabricId,
+      headingValue,
+      liningValue,
+      treatmentTypeValue
+    });
+    
     setMeasurements(measurements);
     setSelectedWindowCovering(windowCoveringId);
+    
+    // Set fabric and lining with explicit logging
+    console.log("🎯 Setting selectedFabric to:", fabricId);
     setSelectedFabric(fabricId);
+    
+    console.log("🎯 Setting selectedHeading to:", headingValue);  
     setSelectedHeading(headingValue);
+    
+    console.log("🎯 Setting selectedLining to:", liningValue);
     setSelectedLining(liningValue);
     
     // Set other form fields
@@ -354,7 +372,17 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     });
     
     console.log("✅ LOADING: Complete data load finished for surface:", surfaceId);
-  }, [surfaceId, shouldUseSavedData, savedSummary, existingMeasurement, existingTreatments, currentRoomId, surfaceData]);
+    
+    // Add a small delay to ensure UI updates
+    setTimeout(() => {
+      console.log("🔍 VERIFICATION: Current state after load:", {
+        selectedFabric,
+        selectedLining,
+        selectedHeading,
+        selectedWindowCovering
+      });
+    }, 100);
+  }, [surfaceId, shouldUseSavedData, savedSummary, existingMeasurement, existingTreatments, currentRoomId, surfaceData, allProjectTreatments]);
 
   const createMeasurement = useCreateClientMeasurement();
   const updateMeasurement = useUpdateClientMeasurement();
@@ -367,7 +395,6 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const saveWindowSummary = useSaveWindowSummary();
   const createTreatment = useCreateTreatment();
   const updateTreatment = useUpdateTreatment();
-  const { data: allProjectTreatments = [] } = useTreatments(projectId);
 
   // Now log rooms data after it's declared
   console.log("🏠 Project ID:", projectId, "Rooms count:", rooms?.length || 0, "ReadOnly:", readOnly);
