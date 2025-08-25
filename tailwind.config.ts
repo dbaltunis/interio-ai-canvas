@@ -168,6 +168,10 @@ export default {
 					'0%, 97%, 100%': { opacity: '0', transform: 'scale(0.85)' },
 					'98%': { opacity: '0.9', transform: 'scale(1.1)' },
 					'99%': { opacity: '0.35', transform: 'scale(0.95)' }
+				},
+				'shimmer-pass': {
+					'0%': { transform: 'translateX(-100%) skewX(-12deg)' },
+					'100%': { transform: 'translateX(200%) skewX(-12deg)' }
 				}
 			},
 			animation: {
@@ -184,7 +188,8 @@ export default {
 				'underline-flash': 'underline-flash 0.7s ease-out both',
 				'stars-travel': 'stars-travel 3s ease-in-out both',
 				'button-blink': 'button-blink 0.6s ease-out both',
-				'i-blink-10s': 'i-blink-10s 10s ease-in-out infinite'
+				'i-blink-10s': 'i-blink-10s 10s ease-in-out infinite',
+				'shimmer-pass': 'shimmer-pass 2s ease-out'
 			}
 		}
 	},

@@ -42,8 +42,8 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
       {showTagline && showTypedSlogan && (
         <>
           <div className="mx-2 sm:mx-3 h-4 sm:h-5 md:h-6 w-px bg-brand-secondary/40 hidden lg:block" />
-          <div className="hidden lg:block">
-            <AITypedSlogan 
+          <div className="hidden lg:block relative">
+            <AITypedSlogan
               className="py-1"
               onComplete={() => {
                 // Keep visible for the full duration, component handles its own hiding
