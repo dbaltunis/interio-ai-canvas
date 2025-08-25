@@ -1,40 +1,40 @@
 
-import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { PriceDisplay } from "@/components/ui/PriceDisplay";
 
 interface TreatmentPricingDisplayProps {
   materialCost: number;
   laborCost: number;
   quantity: number;
+  category?: string;
 }
 
 export const TreatmentPricingDisplay = ({ 
   materialCost, 
   laborCost, 
-  quantity 
+  quantity,
+  category = "curtains"
 }: TreatmentPricingDisplayProps) => {
-  const { units } = useMeasurementUnits();
-  const totalPrice = (materialCost + laborCost) * quantity;
-
-  const formatCurrency = (amount: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    return `${currencySymbols[units.currency] || units.currency}${amount.toFixed(2)}`;
-  };
+  const baseCost = materialCost + laborCost;
+  const totalPrice = baseCost * quantity;
 
   return (
     <div className="bg-gray-50 p-4 rounded-lg">
       <div className="flex justify-between items-center">
         <span className="text-lg font-medium">Total Price (excluding GST):</span>
-        <span className="text-2xl font-bold text-green-600">{formatCurrency(totalPrice)}</span>
+        <PriceDisplay 
+          baseCost={totalPrice} 
+          category={category}
+          size="lg"
+          variant="prominent"
+        />
       </div>
       <div className="text-sm text-gray-600 mt-1">
-        ({formatCurrency(materialCost + laborCost)} × {quantity} {quantity === 1 ? 'unit' : 'units'})
+        <PriceDisplay 
+          baseCost={baseCost} 
+          category={category}
+          size="sm"
+          variant="subtle"
+        /> × {quantity} {quantity === 1 ? 'unit' : 'units'}
       </div>
     </div>
   );

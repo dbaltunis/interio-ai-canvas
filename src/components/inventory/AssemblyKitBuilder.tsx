@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Minus, Package, Wrench, Settings, Save, Trash2 } from "lucide-react";
+import { useMarkupSettings, calculateWithMarkup } from "@/hooks/useMarkupSettings";
 
 interface AssemblyComponent {
   id: string;
@@ -18,6 +19,7 @@ interface AssemblyComponent {
 }
 
 export const AssemblyKitBuilder = () => {
+  const { data: markupSettings } = useMarkupSettings();
   const [selectedComponents, setSelectedComponents] = useState<AssemblyComponent[]>([]);
   const [assemblyName, setAssemblyName] = useState("");
   const [assemblyDescription, setAssemblyDescription] = useState("");
@@ -57,7 +59,7 @@ export const AssemblyKitBuilder = () => {
     sum + (component.unit_price * component.quantity), 0
   );
 
-  const suggestedPrice = totalCost * 1.3; // 30% markup
+  const suggestedPrice = calculateWithMarkup(totalCost, "hardware", markupSettings);
 
   return (
     <div className="space-y-6">
@@ -210,7 +212,7 @@ export const AssemblyKitBuilder = () => {
                     <span className="font-medium">${totalCost.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span>Suggested Price (30% markup):</span>
+                    <span>Suggested Price (markup applied):</span>
                     <span className="font-medium text-green-600">${suggestedPrice.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
