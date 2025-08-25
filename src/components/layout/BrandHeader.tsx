@@ -1,57 +1,40 @@
-
-import React, { useState } from 'react';
-import { AITypedSlogan } from './AITypedSlogan';
-
-
+import React from 'react';
 interface BrandHeaderProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   showTagline?: boolean;
 }
-
-export const BrandHeader = ({ className = "", size = "md", showTagline = true }: BrandHeaderProps) => {
-  const [showTypedSlogan, setShowTypedSlogan] = useState(true);
+export const BrandHeader = ({
+  className = "",
+  size = "md",
+  showTagline = true
+}: BrandHeaderProps) => {
   const sizeClasses = {
-    sm: "h-8 sm:h-10 md:h-12", 
-    md: "h-12 sm:h-14 md:h-16",  
+    sm: "h-8 sm:h-10 md:h-12",
+    md: "h-12 sm:h-14 md:h-16",
     lg: "h-16 sm:h-18 md:h-20",
-    xl: "h-20 sm:h-22 md:h-24"  
+    xl: "h-20 sm:h-22 md:h-24"
   };
-
   const sloganSizeClasses = {
-    sm: "text-[8px] sm:text-[10px]", // Made smaller
-    md: "text-[10px] sm:text-xs", // Made smaller  
-    lg: "text-xs sm:text-sm", // Made smaller
+    sm: "text-[8px] sm:text-[10px]",
+    // Made smaller
+    md: "text-[10px] sm:text-xs",
+    // Made smaller  
+    lg: "text-xs sm:text-sm",
+    // Made smaller
     xl: "text-[10px] sm:text-xs" // Made even smaller for xl
   };
-
-  return (
-    <div className={`relative flex items-center ${className}`}>
+  return <div className={`relative flex items-center ${className}`}>
       <div className="relative inline-flex items-center">
-        <img 
-          src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
-          alt="InterioApp Logo" 
-          className={`logo-white ${sizeClasses[size]} w-auto object-contain transition-all brightness-110 drop-shadow-md md:drop-shadow-lg`}
-        />
+        <img src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" alt="InterioApp Logo" className={`logo-white ${sizeClasses[size]} w-auto object-contain transition-all brightness-110 drop-shadow-md md:drop-shadow-lg`} />
         {/* Tiny blink near the "i" of Interio every 10s */}
-        <span 
-          className="pointer-events-none absolute top-1/2 left-[13%] -translate-y-1/2 h-2 w-2 rounded-full bg-primary/80 dark:bg-primary/90 shadow-[0_0_10px_hsl(var(--primary)/0.7)] opacity-0 animate-i-blink-10s" 
-          aria-hidden="true"
-        />
+        <span className="pointer-events-none absolute top-1/2 left-[13%] -translate-y-1/2 h-2 w-2 rounded-full bg-primary/80 dark:bg-primary/90 shadow-[0_0_10px_hsl(var(--primary)/0.7)] opacity-0 animate-i-blink-10s" aria-hidden="true" />
       </div>
-      {showTagline && showTypedSlogan && (
-        <>
+      {showTagline && <>
           <div className="mx-2 sm:mx-3 h-4 sm:h-5 md:h-6 w-px bg-brand-secondary/40 hidden lg:block" />
-          <div className="hidden lg:block relative">
-            <AITypedSlogan
-              className="py-1"
-              onComplete={() => {
-                // Keep visible for the full duration, component handles its own hiding
-              }}
-            />
+          <div className="hidden lg:block">
+            
           </div>
-        </>
-      )}
-    </div>
-  );
+        </>}
+    </div>;
 };
