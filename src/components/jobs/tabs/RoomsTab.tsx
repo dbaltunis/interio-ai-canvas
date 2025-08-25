@@ -76,27 +76,7 @@ const { data: projectSummaries } = useProjectWindowSummaries(projectId);
   console.log('RoomsTab: Price source:', summariesTotal > 0 ? 'windows_summary table' : 'treatments table');
 
   return (
-    <div className="space-y-4">
-      {/* Compact Header - Reduced spacing and size */}
-      <div className="flex items-center justify-between py-3 px-4 bg-card rounded-lg border">
-        <div>
-          <h2 className="text-lg font-semibold">Rooms & Worksheets</h2>
-          <p className="text-sm text-muted-foreground">
-            {roomCount} room{roomCount !== 1 ? 's' : ''}, {treatmentCount} treatment{treatmentCount !== 1 ? 's' : ''}
-          </p>
-        </div>
-        <div className="text-right">
-          <div className="text-xl font-bold text-primary">
-            {formatCurrency(displayTotal)}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Base Project Cost
-            {quotationSync.isLoading && ' • Syncing...'}
-          </p>
-        </div>
-      </div>
-
-      {/* Enhanced Room Management - This handles all room display and management */}
+    <div className="space-y-6">
       <EnhancedRoomView project={project} clientId={project.client_id} />
     </div>
   );
