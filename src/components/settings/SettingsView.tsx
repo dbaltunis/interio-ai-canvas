@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Package, Ruler, Zap, Layers, Play, Users, FileText, Globe, Shield, Bell, User, Building2, CreditCard } from "lucide-react";
+import { Settings, Package, Ruler, Zap, Layers, Play, Users, FileText, Globe, Shield, Bell, User, Building2, CreditCard, Calculator } from "lucide-react";
 import { PersonalSettingsTab } from "./tabs/PersonalSettingsTab";
 import { BusinessSettingsTab } from "./tabs/BusinessSettingsTab";
 import { BillingTab } from "./tabs/BillingTab";
@@ -11,6 +11,7 @@ import { IntegrationsTab } from "./tabs/IntegrationsTab";
 import { UserManagementTab } from "./tabs/UserManagementTab";
 import { DocumentTemplatesTab } from "./tabs/DocumentTemplatesTab";
 import { SystemSettingsTab } from "./tabs/SystemSettingsTab";
+import { PricingRulesTab } from "./tabs/PricingRulesTab";
 import { AccountManagementTab } from "./tabs/AccountManagementTab";
 import { TutorialOverlay } from "./TutorialOverlay";
 import { InteractiveOnboarding } from "./InteractiveOnboarding";
@@ -29,6 +30,7 @@ export const SettingsView = () => {
   const canManageSettings = useHasPermission('manage_settings');
   const canManageUsers = useHasPermission('manage_users');
   const canViewWindowTreatments = useHasPermission('view_window_treatments');
+  const canManageMarkup = useHasPermission('manage_settings'); // Only owners/admins can manage pricing
 
   return (
     <div className="space-y-6">
@@ -58,7 +60,7 @@ export const SettingsView = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-11 text-xs">
+        <TabsList className="grid w-full grid-cols-12 text-xs">
           <TabsTrigger value="personal" className="flex items-center gap-1">
             <User className="h-3 w-3" />
             <span className="hidden sm:inline">Personal</span>
@@ -94,6 +96,13 @@ export const SettingsView = () => {
             <TabsTrigger value="window-coverings" className="flex items-center gap-1">
               <Package className="h-3 w-3" />
               <span className="hidden sm:inline">Products</span>
+            </TabsTrigger>
+          )}
+          
+          {canManageMarkup && (
+            <TabsTrigger value="pricing" className="flex items-center gap-1">
+              <Calculator className="h-3 w-3" />
+              <span className="hidden sm:inline">Pricing</span>
             </TabsTrigger>
           )}
           
@@ -160,6 +169,12 @@ export const SettingsView = () => {
         {canViewWindowTreatments && (
           <TabsContent value="window-coverings">
             <WindowCoveringsTab />
+          </TabsContent>
+        )}
+
+        {canManageMarkup && (
+          <TabsContent value="pricing">
+            <PricingRulesTab />
           </TabsContent>
         )}
 
