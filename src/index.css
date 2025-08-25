@@ -7,15 +7,15 @@
 
 @layer base {
   :root {
-    /* Company Color Palette - Proper HSL space values */
+  /* Company Color Palette - Proper HSL space values */
     --company-primary: 200 25% 34%; /* #415e6b */
     --company-secondary: 189 20% 60%; /* #9bb6bc */
     
     /* AI Design System */
     --primary: var(--company-primary);
-    --primary-foreground: var(--company-secondary);
+    --primary-foreground: 0 0% 100%; /* White text for better visibility */
     --secondary: var(--company-secondary);
-    --secondary-foreground: var(--company-primary);
+    --secondary-foreground: 0 0% 100%; /* White text for better visibility */
     --accent: var(--company-secondary);
     --accent-foreground: var(--company-primary);
     
@@ -288,6 +288,16 @@
 .dark .text-gray-600, .apple-graphite .text-gray-600,
 .dark .text-slate-500, .apple-graphite .text-slate-500 {
   color: hsl(var(--foreground) / 0.85) !important;
+}
+
+/* Remove shadows from all interactive elements for cleaner design */
+button, .btn, [role="button"], input, textarea, select {
+  box-shadow: none !important;
+}
+
+/* Auth/Login specific shadow removal */
+[data-auth], [data-login], .auth-form, .login-form {
+  box-shadow: none !important;
 }
 
 /* Container hierarchy with clear contrast levels */
