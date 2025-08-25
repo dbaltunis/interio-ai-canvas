@@ -76,7 +76,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                       className={cn(
                         "px-3 py-2 text-sm font-medium rounded-lg transition-colors",
                         isActive
-                          ? "bg-white text-primary border border-primary/20 shadow-sm"
+                          ? "bg-primary text-primary-foreground"
                           : "text-muted-foreground hover:text-foreground hover:bg-accent"
                       )}
                     >
@@ -160,6 +160,22 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
           </div>
         </div>
 
+        {/* AI sweep overlay across header after 1s */}
+        <div className="pointer-events-none absolute inset-0 z-[5] overflow-hidden">
+          {/* Bold, glossy AI sweep across header after 1s (no stars) */}
+          <div
+            className="absolute -inset-y-10 -left-1/2 h-[240%] w-2/3 rotate-12 bg-gradient-to-r from-transparent via-primary/75 to-transparent dark:via-primary/60 opacity-90 blur-[6px] backdrop-blur-[1.5px] mix-blend-overlay shadow-[0_0_40px_hsl(var(--primary)/0.25)] animate-[ai-sweep_4.5s_cubic-bezier(0.22,0.61,0.36,1)_1_both]"
+            style={{ animationDelay: '1s' }}
+          />
+          <div
+            className="absolute -inset-y-12 -left-2/3 h-[260%] w-1/3 rotate-12 bg-gradient-to-r from-transparent via-primary/60 to-transparent dark:via-primary/50 opacity-80 blur-[4px] backdrop-blur-[1px] mix-blend-overlay animate-[ai-sweep_5s_cubic-bezier(0.22,0.61,0.36,1)_1_both]"
+            style={{ animationDelay: '1.25s' }}
+          />
+          <div
+            className="absolute -inset-y-8 -left-1/3 h-[220%] w-1/6 rotate-12 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-70 blur-[2px] animate-[ai-sweep_5.2s_cubic-bezier(0.22,0.61,0.36,1)_1_both]"
+            style={{ animationDelay: '1.8s' }}
+          />
+        </div>
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
@@ -180,7 +196,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                     className={cn(
                       "w-full justify-start px-3 py-2 text-sm font-medium rounded-lg transition-colors",
                       isActive
-                        ? "bg-white text-primary border border-primary/20 shadow-sm"
+                        ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground hover:text-foreground hover:bg-accent"
                     )}
                   >
