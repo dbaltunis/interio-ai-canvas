@@ -131,108 +131,136 @@ export const ModernInventoryDashboard = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2">
-              <InventoryStats />
-            </div>
-            <div>
-              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("vendors")}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Package className="h-5 w-5 text-orange-500" />
-                    Vendor Management
-                  </CardTitle>
-                  <CardDescription>
-                    Manage suppliers and weekly ordering
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
+        <TabsContent value="overview" className="space-y-8">
+          {/* Key Metrics */}
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold text-foreground">Key Metrics</h2>
+            <p className="text-sm text-muted-foreground">Overview of your inventory performance</p>
+          </div>
+          <InventoryStats />
+          {/* Quick Access */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-foreground">Quick Access</h2>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20" onClick={() => setActiveTab("fabrics")}>
+                <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
-                    <Badge variant="secondary">{vendors?.length || 0} Vendors</Badge>
-                    <Button variant="ghost" size="sm">Manage</Button>
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-blue-500/10">
+                        <Home className="h-5 w-5 text-blue-500" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base">Fabric Library</CardTitle>
+                        <CardDescription className="text-xs">
+                          Fabrics & materials
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary" className="text-xs">
+                      {inventory?.filter(i => i.category === 'fabric' || i.category === 'curtain_fabric' || i.category === 'blind_fabric').length || 0} Items
+                    </Badge>
+                    <Button variant="ghost" size="sm" className="text-xs group-hover:text-primary">
+                      View →
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20" onClick={() => setActiveTab("hardware")}>
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-green-500/10">
+                        <Minus className="h-5 w-5 text-green-500" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base">Hardware</CardTitle>
+                        <CardDescription className="text-xs">
+                          Tracks & accessories
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary" className="text-xs">
+                      {inventory?.filter(i => i.category === 'track' || i.category === 'rod' || i.category === 'bracket' || i.category === 'motor' || i.category === 'accessory').length || 0} Items
+                    </Badge>
+                    <Button variant="ghost" size="sm" className="text-xs group-hover:text-primary">
+                      View →
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20" onClick={() => setActiveTab("vendors")}>
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-orange-500/10">
+                        <Package className="h-5 w-5 text-orange-500" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base">Vendors</CardTitle>
+                        <CardDescription className="text-xs">
+                          Supplier management
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary" className="text-xs">
+                      {vendors?.length || 0} Vendors
+                    </Badge>
+                    <Button variant="ghost" size="sm" className="text-xs group-hover:text-primary">
+                      Manage →
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20" onClick={() => setActiveTab("assemblies")}>
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <Package className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base">Assembly Kits</CardTitle>
+                        <CardDescription className="text-xs">
+                          Pre-configured kits
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary" className="text-xs">
+                      23 Kits
+                    </Badge>
+                    <Button variant="ghost" size="sm" className="text-xs group-hover:text-primary">
+                      Build →
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
             </div>
           </div>
-          {/* Quick Actions */}
-          <div className="grid gap-4 md:grid-cols-4">
-            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("fabrics")}>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Home className="h-5 w-5 text-blue-500" />
-                  Fabric Library
-                </CardTitle>
-                <CardDescription>
-                  Manage curtain fabrics, blind materials, and wallcoverings
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <Badge variant="secondary">{inventory?.filter(i => i.category === 'fabric' || i.category === 'curtain_fabric' || i.category === 'blind_fabric').length || 0} Items</Badge>
-                  <Button variant="ghost" size="sm">View All</Button>
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("hardware")}>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Minus className="h-5 w-5 text-green-500" />
-                  Hardware
-                </CardTitle>
-                <CardDescription>
-                  Tracks, rods, brackets, motors, and accessories
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <Badge variant="secondary">{inventory?.filter(i => i.category === 'track' || i.category === 'rod' || i.category === 'bracket' || i.category === 'motor' || i.category === 'accessory').length || 0} Items</Badge>
-                  <Button variant="ghost" size="sm">View All</Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("vendors")}>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Package className="h-5 w-5 text-orange-500" />
-                  Vendors
-                </CardTitle>
-                <CardDescription>
-                  Manage suppliers and track orders
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <Badge variant="secondary">{vendors?.length || 0} Vendors</Badge>
-                  <Button variant="ghost" size="sm">Manage</Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("assemblies")}>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Package className="h-5 w-5 text-primary" />
-                  Assembly Kits
-                </CardTitle>
-                <CardDescription>
-                  Pre-configured hardware and component kits
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <Badge variant="secondary">23 Kits</Badge>
-                  <Button variant="ghost" size="sm">Build Kit</Button>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Alerts & Notifications */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-foreground">Alerts & Notifications</h2>
+            <ReorderNotificationSystem />
           </div>
-
-          {/* Reorder Notifications */}
-          <ReorderNotificationSystem />
         </TabsContent>
 
         <TabsContent value="fabrics" className="space-y-6">
