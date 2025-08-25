@@ -223,25 +223,48 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     if (savedTreatment) {
       console.log("📦 Found saved treatment for surface:", surfaceId, savedTreatment);
       
-      // Parse fabric details
+      // Parse fabric details and treatment details
       try {
         const fabricDetails = savedTreatment.fabric_details ? 
           (typeof savedTreatment.fabric_details === 'string' ? 
            JSON.parse(savedTreatment.fabric_details) : savedTreatment.fabric_details) : {};
         
-        fabricId = fabricDetails.fabric_id || "";
-        // Extract heading and lining from treatment details or fabric details
         const treatmentDetails = savedTreatment.treatment_details ? 
           (typeof savedTreatment.treatment_details === 'string' ? 
            JSON.parse(savedTreatment.treatment_details) : savedTreatment.treatment_details) : {};
+
+        const treatmentMeasurements = savedTreatment.measurements ? 
+          (typeof savedTreatment.measurements === 'string' ? 
+           JSON.parse(savedTreatment.measurements) : savedTreatment.measurements) : {};
         
-        headingValue = treatmentDetails.selected_heading || fabricDetails.selected_heading || "standard";
-        liningValue = treatmentDetails.selected_lining || fabricDetails.selected_lining || "none";
+        // Priority order for fabric ID: fabric_details.fabric_id > treatment_details.selected_fabric > measurements.fabric_id
+        fabricId = fabricDetails.fabric_id || 
+                   treatmentDetails.selected_fabric || 
+                   treatmentMeasurements.fabric_id || 
+                   treatmentMeasurements.selected_fabric || "";
+        
+        // Priority order for heading: treatment_details > fabric_details > measurements
+        headingValue = treatmentDetails.selected_heading || 
+                       fabricDetails.selected_heading || 
+                       treatmentMeasurements.selected_heading || 
+                       treatmentMeasurements.heading_type || "standard";
+        
+        // Priority order for lining: treatment_details > fabric_details > measurements  
+        liningValue = treatmentDetails.selected_lining || 
+                      fabricDetails.selected_lining || 
+                      treatmentMeasurements.selected_lining || 
+                      treatmentMeasurements.lining_type || "none";
+        
         windowCoveringId = treatmentDetails.window_covering?.id || savedTreatment.treatment_type || "no_covering";
         treatmentTypeValue = savedTreatment.treatment_type || "";
         
         console.log("📦 Loaded from saved treatment:", {
-          fabricId, headingValue, liningValue, windowCoveringId, treatmentTypeValue
+          fabricId, headingValue, liningValue, windowCoveringId, treatmentTypeValue,
+          sources: {
+            fabricDetails: Object.keys(fabricDetails),
+            treatmentDetails: Object.keys(treatmentDetails),
+            measurements: Object.keys(treatmentMeasurements)
+          }
         });
       } catch (e) {
         console.warn("Failed to parse saved treatment data:", e);
