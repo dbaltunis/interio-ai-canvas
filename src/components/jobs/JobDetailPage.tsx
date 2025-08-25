@@ -83,10 +83,10 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
       {/* Enhanced Header Section */}
       <div className="bg-gradient-to-r from-card/95 to-card border-b border-border/50 shadow-sm backdrop-blur-sm">
         <div className="px-3 sm:px-6 py-4">
-          {/* Mobile-First Responsive Layout */}
-          <div className="space-y-4">
-            {/* Top Row: Navigation + Job Title + Status */}
-            <div className="flex items-center gap-3">
+          {/* Single Row Layout */}
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            {/* Left Side: Navigation + Job Info */}
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               <Button
                 variant="ghost"
                 size="sm"
@@ -96,86 +96,48 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                   hover:text-foreground hover:shadow-sm"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span className="hidden sm:inline font-medium">Back to Jobs</span>
-                <span className="sm:hidden font-medium">Back</span>
+                <span className="hidden lg:inline font-medium">Back</span>
               </Button>
               
-              <Separator orientation="vertical" className="h-6 bg-border/60" />
+              <Separator orientation="vertical" className="h-6 bg-border/60 hidden sm:block" />
               
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate leading-tight">
-                    {project.name}
-                  </h1>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="outline" className="font-mono text-xs px-2 py-1 bg-muted/50">
-                      #{project.job_number}
-                    </Badge>
-                  </div>
-                </div>
-                
-                <div className="shrink-0">
-                  <JobStatusDropdown
-                    currentStatus={project.status}
-                    jobType="project"
-                    jobId={project.id}
-                    onStatusChange={(newStatus) => {
-                      // Status updated via mutation
-                    }}
-                  />
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg sm:text-xl font-bold text-foreground truncate leading-tight">
+                  {project.name}
+                </h1>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <Badge variant="outline" className="font-mono text-xs px-2 py-0.5 bg-muted/50">
+                    #{project.job_number}
+                  </Badge>
+                  {client && (
+                    <span className="text-xs text-muted-foreground truncate hidden sm:inline">
+                      {client.name}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Bottom Section: Client & Dates */}
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 
-              pt-3 border-t border-border/30">
-              {/* Client Information */}
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <User className="h-4 w-4 text-primary" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm text-muted-foreground font-medium">Client</div>
-                  <div className="font-semibold text-foreground truncate">
-                    {client ? client.name : 'No client assigned'}
-                  </div>
-                  {client?.email && (
-                    <div className="text-xs text-muted-foreground truncate">
-                      {client.email}
-                    </div>
-                  )}
-                </div>
+            {/* Right Side: Status + Dates */}
+            <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground hidden md:flex">
+                <Clock className="h-3.5 w-3.5" />
+                <span className="font-medium">
+                  {project.due_date ? new Date(project.due_date).toLocaleDateString() : 'No due date'}
+                </span>
               </div>
               
-              {/* Key Dates */}
-              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-orange-100 dark:bg-orange-900/30 rounded-md">
-                    <Clock className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground font-medium">Due Date</div>
-                    <div className="text-sm font-semibold text-foreground">
-                      {project.due_date ? new Date(project.due_date).toLocaleDateString() : 'Not set'}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2 hidden md:flex">
-                  <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-md">
-                    <Calendar className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground font-medium">Created</div>
-                    <div className="text-sm font-semibold text-foreground">
-                      {new Date(project.created_at).toLocaleDateString()}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <JobStatusDropdown
+                currentStatus={project.status}
+                jobType="project"
+                jobId={project.id}
+                onStatusChange={(newStatus) => {
+                  // Status updated via mutation
+                }}
+              />
             </div>
           </div>
+
         </div>
       </div>
 
