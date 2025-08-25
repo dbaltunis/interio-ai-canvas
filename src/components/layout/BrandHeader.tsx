@@ -1,5 +1,6 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { AITypedSlogan } from './AITypedSlogan';
 
 
 interface BrandHeaderProps {
@@ -9,6 +10,7 @@ interface BrandHeaderProps {
 }
 
 export const BrandHeader = ({ className = "", size = "md", showTagline = true }: BrandHeaderProps) => {
+  const [showTypedSlogan, setShowTypedSlogan] = useState(true);
   const sizeClasses = {
     sm: "h-8 sm:h-10 md:h-12", 
     md: "h-12 sm:h-14 md:h-16",  
@@ -37,18 +39,16 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
           aria-hidden="true"
         />
       </div>
-      {showTagline && (
+      {showTagline && showTypedSlogan && (
         <>
           <div className="mx-2 sm:mx-3 h-4 sm:h-5 md:h-6 w-px bg-brand-secondary/40 hidden lg:block" />
           <div className="hidden lg:block">
-            <div className="flex flex-col">
-              <p className={`text-foreground ${sloganSizeClasses[size]} leading-tight`}>
-                The future of window décor
-              </p>
-              <p className={`text-foreground ${sloganSizeClasses[size]} leading-tight`}>
-                is online and bespoke
-              </p>
-            </div>
+            <AITypedSlogan 
+              className="py-1"
+              onComplete={() => {
+                // Keep visible for the full duration, component handles its own hiding
+              }}
+            />
           </div>
         </>
       )}
