@@ -287,9 +287,9 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       });
     }
     
-    // Priority 1: Existing saved summary (highest priority for persistence)
-    if (shouldUseSavedData && savedSummary?.measurements_details) {
-      console.log("✅ PRIORITY 1: Loading from saved summary");
+    // Priority 1: Existing saved summary (only if no saved treatment exists)
+    if (shouldUseSavedData && savedSummary?.measurements_details && !savedTreatment) {
+      console.log("✅ PRIORITY 1: Loading from saved summary (no treatment found)");
       measurements = {
         ...savedSummary.measurements_details,
         rail_width: savedSummary.measurements_details.rail_width_cm || savedSummary.measurements_details.rail_width || 0,
@@ -298,10 +298,23 @@ export const EnhancedMeasurementWorksheet = forwardRef<
         surface_name: surfaceData?.name
       };
       windowCoveringId = savedSummary.template_id || "no_covering";
-      fabricId = savedSummary.fabric_details?.fabric_id || "";
-      headingValue = savedSummary.heading_details?.heading_name || savedSummary.heading_details?.id || "standard";
-      liningValue = savedSummary.lining_type || "none";
+      // Only use saved summary fabric/lining if no treatment data exists
+      if (!fabricId) fabricId = savedSummary.fabric_details?.fabric_id || "";
+      if (headingValue === "standard") headingValue = savedSummary.heading_details?.heading_name || savedSummary.heading_details?.id || "standard";
+      if (liningValue === "none") liningValue = savedSummary.lining_type || "none";
       treatmentTypeValue = savedSummary.template_details?.curtain_type || "";
+    } else if (shouldUseSavedData && savedSummary?.measurements_details && savedTreatment) {
+      console.log("✅ PRIORITY 1: Loading measurements from saved summary but keeping treatment fabric/lining");
+      // Use measurements from summary but preserve treatment fabric/lining selections
+      measurements = {
+        ...savedSummary.measurements_details,
+        rail_width: savedSummary.measurements_details.rail_width_cm || savedSummary.measurements_details.rail_width || 0,
+        drop: savedSummary.measurements_details.drop_cm || savedSummary.measurements_details.drop || 0,
+        surface_id: surfaceId,
+        surface_name: surfaceData?.name
+      };
+      windowCoveringId = savedSummary.template_id || "no_covering";
+      // Keep the treatment fabric/lining data that was loaded earlier
     }
     
     // Priority 2: Existing treatments
