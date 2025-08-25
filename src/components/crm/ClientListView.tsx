@@ -191,6 +191,7 @@ export const ClientListView = ({
   };
 
   const formatCurrency = (amount: number) => {
+    if (amount === 0) return null; // Return null for zero values to hide them
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -346,7 +347,7 @@ export const ClientListView = ({
                   </TableCell>
 
                   <TableCell>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <div className="flex flex-wrap gap-1">
                         {getActivityBadges(client).length > 0 ? (
                           <>
@@ -377,21 +378,18 @@ export const ClientListView = ({
                             )}
                           </>
                         ) : (
-                          <Badge variant="secondary" className="text-xs flex items-center gap-1 text-muted-foreground">
-                            <Clock className="h-3 w-3" />
-                            No activity yet
-                          </Badge>
+                          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 border-dashed border text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                              <div className="h-2 w-2 rounded-full bg-orange-500/60 animate-pulse"></div>
+                              <span className="text-xs font-medium">New lead</span>
+                            </div>
+                          </div>
                         )}
                       </div>
-                      {client.totalValue > 0 ? (
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <DollarSign className="h-3 w-3" />
-                          {formatCurrency(client.totalValue)}
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <DollarSign className="h-3 w-3" />
-                          $0
+                      {client.totalValue > 0 && (
+                        <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400">
+                          <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                          <span className="text-sm font-medium">{formatCurrency(client.totalValue)}</span>
                         </div>
                       )}
                     </div>
