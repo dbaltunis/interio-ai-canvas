@@ -118,23 +118,8 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               </div>
             </div>
 
-            {/* Right Side: Project Info + Status */}
+            {/* Right Side: Status + Dates */}
             <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-              {/* Project Summary - Only show on Rooms tab */}
-              {activeTab === "rooms" && (
-                <div className="flex items-center gap-4 text-xs text-muted-foreground hidden lg:flex">
-                  <div className="flex items-center gap-1">
-                    <Package className="h-3.5 w-3.5" />
-                    <span className="font-medium">Rooms & Treatments</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <DollarSign className="h-3.5 w-3.5" />
-                    <span className="font-bold text-primary">£0</span>
-                    <span className="text-xs">(exc. VAT)</span>
-                  </div>
-                </div>
-              )}
-
               <div className="flex items-center gap-2 text-xs text-muted-foreground hidden md:flex">
                 <Clock className="h-3.5 w-3.5" />
                 <span className="font-medium">
