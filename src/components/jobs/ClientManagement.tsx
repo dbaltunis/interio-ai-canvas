@@ -1,7 +1,11 @@
 import { ClientManagementPage } from "../clients/ClientManagementPage";
 
-export const ClientManagement = () => {
-  return <ClientManagementPage />;
+interface ClientManagementProps {
+  onTabChange?: (tab: string) => void;
+}
+
+export const ClientManagement = ({ onTabChange }: ClientManagementProps = {}) => {
+  return <ClientManagementPage onTabChange={onTabChange} />;
 };
 
 export default ClientManagement;
