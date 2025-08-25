@@ -164,21 +164,30 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
       {/* Main Content Area */}
       <div className="w-full">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          {/* Clean Tab Navigation */}
-          <div className="bg-card border-b">
-            <div className="px-4">
-              <TabsList className="bg-transparent p-0 h-auto border-b-0 w-full justify-start">
+          {/* Enhanced Tab Navigation */}
+          <div className="bg-card/80 backdrop-blur-sm border-b border-border/50">
+            <div className="px-2 sm:px-4">
+              <TabsList className="bg-transparent p-1 h-auto border-b-0 w-full justify-start gap-1 overflow-x-auto scrollbar-hide">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   return (
                     <TabsTrigger 
                       key={tab.id}
                       value={tab.id} 
-                      className="px-3 py-2.5 text-sm font-medium border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-primary/5 rounded-none flex items-center gap-2 hover:bg-muted/50 transition-colors"
+                      className="px-3 py-3 sm:px-4 sm:py-3 text-sm font-medium 
+                        border-b-2 border-transparent rounded-lg rounded-b-none
+                        data-[state=active]:border-primary data-[state=active]:text-primary 
+                        data-[state=active]:bg-primary/10 data-[state=active]:shadow-sm
+                        hover:bg-muted/70 hover:text-foreground
+                        transition-all duration-200 ease-in-out
+                        flex items-center gap-2 whitespace-nowrap min-w-fit
+                        text-muted-foreground
+                        dark:data-[state=active]:bg-primary/20
+                        dark:hover:bg-muted/50"
                     >
-                      <Icon className="h-4 w-4" />
-                      <span className="hidden sm:inline">{tab.label}</span>
-                      <span className="sm:hidden">
+                      <Icon className="h-4 w-4 flex-shrink-0" />
+                      <span className="hidden sm:inline font-medium">{tab.label}</span>
+                      <span className="sm:hidden font-medium">
                         {tab.label.split(' ')[0]}
                       </span>
                     </TabsTrigger>
