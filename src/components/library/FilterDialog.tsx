@@ -296,7 +296,7 @@ export const FilterDialog = ({ open, onOpenChange, onApplyFilters }: FilterDialo
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleApplyFilters} className="bg-slate-600 hover:bg-slate-700">
+              <Button onClick={handleApplyFilters} variant="brand">
                 Apply Filters
               </Button>
             </div>

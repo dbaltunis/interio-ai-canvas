@@ -292,7 +292,7 @@ export const HardwareForm = ({ onClose }: HardwareFormProps) => {
         <Button type="button" variant="outline" onClick={onClose}>
           Cancel
         </Button>
-        <Button type="submit" className="bg-slate-600 hover:bg-slate-700">
+        <Button type="submit" variant="default">
           Save Hardware
         </Button>
       </div>

@@ -13,11 +13,11 @@ interface QuickActionsProps {
 
 export const QuickActions = ({ onNewJob, onNewClient, onCalculator, onCalendar, onInventory }: QuickActionsProps) => {
   const actions = [
-    { label: "New Project", icon: Plus, onClick: onNewJob, color: "bg-blue-600 hover:bg-blue-700" },
-    { label: "Add Client", icon: Users, onClick: onNewClient, color: "bg-green-600 hover:bg-green-700" },
-    { label: "Calculator", icon: Calculator, onClick: onCalculator, color: "bg-primary hover:bg-primary/90" },
-    { label: "Calendar", icon: Calendar, onClick: onCalendar, color: "bg-orange-600 hover:bg-orange-700" },
-    { label: "Inventory", icon: Package, onClick: onInventory, color: "bg-indigo-600 hover:bg-indigo-700" },
+    { label: "New Project", icon: Plus, onClick: onNewJob, variant: "brand" as const },
+    { label: "Add Client", icon: Users, onClick: onNewClient, variant: "success" as const },
+    { label: "Calculator", icon: Calculator, onClick: onCalculator, variant: "default" as const },
+    { label: "Calendar", icon: Calendar, onClick: onCalendar, variant: "warning" as const },
+    { label: "Inventory", icon: Package, onClick: onInventory, variant: "secondary" as const },
   ];
 
   return (
@@ -33,7 +33,9 @@ export const QuickActions = ({ onNewJob, onNewClient, onCalculator, onCalendar, 
               <Button
                 key={action.label}
                 onClick={action.onClick}
-                className={`${action.color} text-white flex items-center gap-2 py-3 transition-all duration-200 hover:scale-105 hover:shadow-lg`}
+                variant={action.variant}
+                size="default"
+                className="flex items-center gap-2 py-3 h-auto"
               >
                 <Icon className="h-4 w-4" />
                 <span className="font-medium">{action.label}</span>
