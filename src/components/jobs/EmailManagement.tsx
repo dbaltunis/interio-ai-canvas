@@ -26,6 +26,8 @@ export const EmailManagement = () => {
     setActiveTab("settings");
   };
 
+  console.log('EmailManagement: Rendering with activeTab =', activeTab);
+
   // Show loading while checking integration status
   if (integrationLoading) {
     return (
@@ -50,11 +52,11 @@ export const EmailManagement = () => {
             <Mail className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Email Management</h1>
-            <p className="text-muted-foreground">Manage your email communications and campaigns</p>
+            <h1 className="text-4xl font-bold text-purple-600 bg-yellow-300 px-4 py-2 rounded-lg">📧 EMAIL MANAGEMENT REDESIGNED!</h1>
+            <p className="text-xl text-green-600 bg-blue-100 px-3 py-1 rounded">✨ New consistent design system applied ✨</p>
           </div>
-          <div className="status-indicator status-info">
-            {emails?.length || 0} emails
+          <div className="bg-gradient-to-r from-pink-200 to-yellow-200 px-4 py-2 rounded-lg border-2 border-purple-400">
+            <span className="text-lg font-bold text-purple-800">{emails?.length || 0} emails</span>
           </div>
         </div>
         <div className="flex items-center space-x-3">
@@ -196,8 +198,12 @@ export const EmailManagement = () => {
   };
 
   return (
-    <div className="w-full bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="w-full bg-gradient-to-br from-red-50 via-blue-50 to-green-50 min-h-screen">
       <div className="w-full px-6 py-6 space-y-8">
+        <div className="bg-yellow-200 p-8 rounded-lg border-4 border-red-500">
+          <h1 className="text-4xl font-bold text-red-600 mb-4">🎉 DESIGN SYSTEM UPDATED! 🎉</h1>
+          <p className="text-xl text-blue-600">This is the new EmailManagement component with updated styling!</p>
+        </div>
         {renderHeader()}
         {renderContent()}
       </div>
