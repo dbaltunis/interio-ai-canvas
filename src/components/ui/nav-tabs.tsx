@@ -33,7 +33,7 @@ export const NavTabs = ({
     lg: 'px-6 py-3 text-base'
   };
 
-  const variantClasses = {
+const variantClasses = {
     default: {
       container: 'border-b border-border',
       tab: 'relative transition-all duration-200 border-b-2 border-transparent hover:border-primary/50',
@@ -41,9 +41,9 @@ export const NavTabs = ({
       inactiveTab: 'text-muted-foreground hover:text-foreground'
     },
     pills: {
-      container: 'bg-muted rounded-lg p-1',
+      container: 'bg-muted/50 rounded-lg p-1',
       tab: 'rounded-md transition-all duration-200 hover:bg-background/50',
-      activeTab: 'bg-background text-foreground shadow-sm font-medium',
+      activeTab: 'bg-background text-foreground font-medium',
       inactiveTab: 'text-muted-foreground hover:text-foreground'
     },
     underline: {
@@ -53,9 +53,9 @@ export const NavTabs = ({
       inactiveTab: 'text-muted-foreground hover:text-foreground'
     },
     cards: {
-      container: 'space-x-2',
+      container: 'flex gap-2',
       tab: 'rounded-lg border border-border transition-all duration-200 hover:border-primary/30',
-      activeTab: 'bg-primary text-primary-foreground border-primary shadow-sm',
+      activeTab: 'bg-primary text-primary-foreground border-primary',
       inactiveTab: 'bg-background text-muted-foreground hover:text-foreground hover:bg-accent/50'
     }
   };

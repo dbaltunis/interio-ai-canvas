@@ -144,32 +144,24 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
       {/* Main Content Area */}
       <div className="w-full">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          {/* Enhanced Tab Navigation */}
-          <div className="bg-card/80 backdrop-blur-sm border-b border-border/50">
-            <div className="px-2 sm:px-4">
-              <TabsList className="bg-transparent p-1 h-auto border-b-0 w-full justify-start gap-1 overflow-x-auto scrollbar-hide">
+          {/* Standardized Tab Navigation */}
+          <div className="bg-card/50 backdrop-blur-sm border-b border-border/50">
+            <div className="px-4">
+              <TabsList className="bg-muted/50 p-1 h-auto w-auto gap-1 rounded-lg">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   return (
                     <TabsTrigger 
                       key={tab.id}
                       value={tab.id} 
-                      className="px-3 py-3 sm:px-4 sm:py-3 text-sm font-medium 
-                        border-b-2 border-transparent rounded-lg rounded-b-none
-                        data-[state=active]:border-primary data-[state=active]:text-primary 
-                        data-[state=active]:bg-primary/10 data-[state=active]:shadow-sm
-                        hover:bg-muted/70 hover:text-foreground
-                        transition-all duration-200 ease-in-out
-                        flex items-center gap-2 whitespace-nowrap min-w-fit
-                        text-muted-foreground
-                        dark:data-[state=active]:bg-primary/20
-                        dark:hover:bg-muted/50"
+                      className="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200
+                        data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:font-medium
+                        text-muted-foreground hover:text-foreground hover:bg-background/50
+                        flex items-center gap-2 whitespace-nowrap"
                     >
-                      <Icon className="h-4 w-4 flex-shrink-0" />
-                      <span className="hidden sm:inline font-medium">{tab.label}</span>
-                      <span className="sm:hidden font-medium">
-                        {tab.label.split(' ')[0]}
-                      </span>
+                      <Icon className="h-4 w-4" />
+                      <span className="hidden sm:inline">{tab.label}</span>
+                      <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
                     </TabsTrigger>
                   );
                 })}
@@ -181,13 +173,13 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
           <div className="bg-background min-h-[calc(100vh-160px)]">
             <div className="p-4">
               <TabsContent value="details" className="mt-0">
-                <div className="bg-card rounded-lg shadow-sm border p-6">
+                <div className="modern-card p-6">
                   <ProjectDetailsTab project={project} onUpdate={handleUpdateProject} />
                 </div>
               </TabsContent>
 
               <TabsContent value="rooms" className="mt-0">
-                <div className="bg-card rounded-lg shadow-sm border">
+                <div className="modern-card">
                   <div className="p-6">
                     <RoomsTab projectId={jobId} />
                   </div>
@@ -195,7 +187,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               </TabsContent>
 
               <TabsContent value="quotation" className="mt-0">
-                <div className="bg-card rounded-lg shadow-sm border">
+                <div className="modern-card">
                   <div className="p-6">
                     <QuotationTab projectId={jobId} />
                   </div>
@@ -203,7 +195,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               </TabsContent>
 
               <TabsContent value="workroom" className="mt-0">
-                <div className="bg-card rounded-lg shadow-sm border">
+                <div className="modern-card">
                   <div className="p-6">
                     <WorkroomTab projectId={jobId} />
                   </div>
@@ -211,7 +203,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               </TabsContent>
 
               <TabsContent value="emails" className="mt-0">
-                <div className="bg-card rounded-lg shadow-sm border">
+                <div className="modern-card">
                   <div className="p-6">
                     <EmailsTab projectId={jobId} />
                   </div>
@@ -219,7 +211,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               </TabsContent>
 
               <TabsContent value="calendar" className="mt-0">
-                <div className="bg-card rounded-lg shadow-sm border">
+                <div className="modern-card">
                   <div className="p-6">
                     <CalendarTab projectId={jobId} />
                   </div>
