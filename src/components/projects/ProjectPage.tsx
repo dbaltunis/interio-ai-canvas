@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus, Trash2, Copy, Edit, ChevronDown, Calendar } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
@@ -101,9 +102,9 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
   ];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       {/* Header Section */}
-      <div className="border-b border-gray-200 bg-white">
+      <div className="border-b border-border bg-card/50 backdrop-blur-sm">
         <div className="px-6 py-4">
           {/* Top Header with Client Info */}
           <div className="flex items-center justify-between mb-6">
@@ -127,24 +128,24 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
             
             <div className="flex items-center space-x-3">
               <Select defaultValue="payment">
-                <SelectTrigger className="w-32 bg-white border-gray-300 text-sm">
+                <SelectTrigger className="w-32 text-sm">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-white">
+                <SelectContent>
                   <SelectItem value="payment">Payment</SelectItem>
                   <SelectItem value="deposit">Deposit</SelectItem>
                 </SelectContent>
               </Select>
               <Select defaultValue="quote">
-                <SelectTrigger className="w-32 bg-white border-gray-300 text-sm">
+                <SelectTrigger className="w-32 text-sm">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-white">
+                <SelectContent>
                   <SelectItem value="quote">Quote</SelectItem>
                   <SelectItem value="order">Order</SelectItem>
                 </SelectContent>
               </Select>
-              <Button size="sm" variant="outline" className="bg-white border-gray-300">
+              <Button size="sm" variant="outline">
                 <Calendar className="h-4 w-4" />
               </Button>
             </div>
@@ -155,14 +156,15 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
             {navItems.map((item) => (
               <Button
                 key={item.id}
-                variant="ghost"
+                variant={activeTab === item.id ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setActiveTab(item.id)}
-                className={`px-4 py-2 rounded-none border-b-2 text-sm ${
+                className={cn(
+                  "px-4 py-2 rounded-lg border-b-2 text-sm transition-all duration-200",
                   activeTab === item.id
-                    ? "border-blue-500 text-blue-600 bg-blue-50"
-                    : "border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                }`}
+                    ? "border-primary shadow-sm"
+                    : "border-transparent hover:border-primary/30"
+                )}
               >
                 {item.label}
               </Button>
@@ -180,7 +182,7 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
               Total: {formatCurrency(project.total_amount || 0)} (before GST)
             </h2>
           </div>
-          <Button className="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 text-sm">
+          <Button variant="default" size="sm">
             <Plus className="h-4 w-4 mr-2" />
             Add room
           </Button>
@@ -315,10 +317,10 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
               {/* Add Product Button */}
               <div className="flex justify-center">
                 <Select>
-                  <SelectTrigger className="w-64 bg-gray-50 border-gray-300 text-gray-600">
+                  <SelectTrigger className="w-64">
                     <SelectValue placeholder="Select product" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white">
+                  <SelectContent>
                     <SelectItem value="curtains">Curtains</SelectItem>
                     <SelectItem value="blinds">Blinds</SelectItem>
                     <SelectItem value="shutters">Shutters</SelectItem>
