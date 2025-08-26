@@ -61,7 +61,7 @@ export const ModernInventoryDashboard = () => {
           </Button>
           <AddInventoryDialog 
             trigger={
-              <Button size="sm">
+              <Button variant="brand" size="sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Item
               </Button>
@@ -104,7 +104,7 @@ export const ModernInventoryDashboard = () => {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="modern-card p-1 h-auto bg-muted/30 backdrop-blur-sm flex w-auto gap-1">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
             Overview
