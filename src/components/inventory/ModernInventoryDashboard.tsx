@@ -27,23 +27,30 @@ export const ModernInventoryDashboard = () => {
   const { data: vendors } = useVendors();
 
   return (
-    <div className="flex-1 space-y-6 p-6">
+    <div className="flex-1 space-y-6 p-6 bg-gradient-to-br from-purple-100 via-pink-100 to-yellow-100 min-h-screen">
+      {/* GIANT OBVIOUS HEADER */}
+      <div className="bg-gradient-to-r from-red-500 to-blue-500 text-white p-8 rounded-xl border-4 border-yellow-400 shadow-2xl">
+        <h1 className="text-6xl font-extrabold mb-4">🎯 INVENTORY REDESIGNED! 🎯</h1>
+        <p className="text-2xl">✨ This is your updated inventory dashboard with new design system! ✨</p>
+      </div>
+      
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between bg-green-200 p-4 rounded-lg border-2 border-orange-400">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Inventory Management</h1>
-          <p className="text-muted-foreground">
-            Manage fabrics, hardware, and assemblies for your window treatment business
+          <h2 className="text-4xl font-bold tracking-tight text-purple-600">📦 Inventory Management 📦</h2>
+          <p className="text-xl text-blue-600">
+            🚀 Manage fabrics, hardware, and assemblies with the NEW design system! 🚀
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 bg-blue-300 p-3 rounded-lg border-2 border-red-300">
           <Button 
             variant="outline" 
             size="sm"
             onClick={() => setShowSearch(!showSearch)}
+            className="bg-yellow-300 text-purple-600 border-2 border-green-400 hover:bg-pink-300"
           >
             <Filter className="h-4 w-4 mr-2" />
-            Filters
+            🔍 FILTERS
           </Button>
           <Button 
             variant="outline" 
@@ -56,14 +63,16 @@ export const ModernInventoryDashboard = () => {
               }, 100);
             }}
             title="Import/Export Inventory"
+            className="bg-orange-300 text-blue-600 border-2 border-purple-400"
           >
             <ArrowRightLeft className="h-4 w-4" />
+            📊 IMPORT/EXPORT
           </Button>
           <AddInventoryDialog 
             trigger={
-              <Button variant="brand" size="sm">
+              <Button variant="default" size="sm" className="bg-pink-500 text-white border-2 border-yellow-400 hover:bg-green-500">
                 <Plus className="h-4 w-4 mr-2" />
-                Add Item
+                ➕ ADD ITEM
               </Button>
             }
             onSuccess={() => refetch()}
