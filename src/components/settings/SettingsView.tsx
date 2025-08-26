@@ -16,6 +16,9 @@ import { AccountManagementTab } from "./tabs/AccountManagementTab";
 import { TutorialOverlay } from "./TutorialOverlay";
 import { InteractiveOnboarding } from "./InteractiveOnboarding";
 import { EnhancedNotificationSettings } from "./EnhancedNotificationSettings";
+import { EnhancedPersonalizationTab } from "./tabs/EnhancedPersonalizationTab";
+import { SecurityPrivacyTab } from "./tabs/SecurityPrivacyTab";
+import { SettingsOverviewTab } from "./tabs/SettingsOverviewTab";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useHasPermission } from "@/hooks/usePermissions";
@@ -23,7 +26,7 @@ import { useHasPermission } from "@/hooks/usePermissions";
 export const SettingsView = () => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [showInteractiveDemo, setShowInteractiveDemo] = useState(false);
-  const [activeTab, setActiveTab] = useState("personal");
+  const [activeTab, setActiveTab] = useState("overview");
 
   // Permission checks
   const canViewSettings = useHasPermission('view_settings');
@@ -68,6 +71,11 @@ export const SettingsView = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
         <TabsList className="modern-card p-1 h-auto bg-muted/30 backdrop-blur-sm grid grid-cols-12 gap-1">
+          <TabsTrigger value="overview" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline font-medium">Overview</span>
+          </TabsTrigger>
+          
           <TabsTrigger value="personal" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <User className="h-4 w-4" />
             <span className="hidden sm:inline font-medium">Personal</span>
@@ -146,6 +154,14 @@ export const SettingsView = () => {
             </TabsTrigger>
           )}
         </TabsList>
+
+        <TabsContent value="overview" className="animate-fade-in">
+          <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <SettingsOverviewTab />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="personal" className="animate-fade-in">
           <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
@@ -246,7 +262,21 @@ export const SettingsView = () => {
         <TabsContent value="notifications" className="animate-fade-in">
           <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
             <CardContent className="p-6">
-              <EnhancedNotificationSettings />
+              <div className="space-y-8">
+                <EnhancedNotificationSettings />
+                <div className="border-t border-border/50 pt-8">
+                  <h3 className="text-lg font-semibold mb-4">Advanced Personalization</h3>
+                  <EnhancedPersonalizationTab />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="security" className="animate-fade-in">
+          <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <SecurityPrivacyTab />
             </CardContent>
           </Card>
         </TabsContent>
