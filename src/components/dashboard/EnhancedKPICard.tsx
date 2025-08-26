@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { StatusIndicator } from "@/components/ui/status-indicator";
+import { ModernProgress } from "@/components/ui/modern-progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { LucideIcon, RefreshCw, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
 import { KPIConfig } from '@/hooks/useKPIConfig';
 import { cn } from '@/lib/utils';
@@ -74,18 +77,18 @@ export const EnhancedKPICard = ({
 
   if (loading || refreshing) {
     return (
-      <Card className={cn("hover:shadow-md transition-shadow", getCardSize())}>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+      <Card variant="modern" className={cn("transition-all duration-200", getCardSize())}>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
             <Icon className="h-4 w-4" />
             {displayTitle}
             <RefreshCw className="h-3 w-3 animate-spin ml-auto" />
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-20 mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-32"></div>
+          <div className="space-y-3">
+            <Skeleton className="h-8 w-20" />
+            <Skeleton className="h-4 w-32" />
           </div>
         </CardContent>
       </Card>
@@ -94,20 +97,20 @@ export const EnhancedKPICard = ({
 
   if (config.displayFormat === 'compact') {
     return (
-      <Card className={cn("hover:shadow-md transition-shadow", getCardSize())}>
+      <Card variant="modern" className={cn("group", getCardSize())}>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <Icon 
-                className="h-4 w-4" 
-                style={{ color: config.color || 'hsl(var(--brand-primary))' }}
+                className="h-5 w-5" 
+                style={{ color: config.color || 'hsl(var(--primary))' }}
               />
-              <span className="text-sm font-medium">{displayTitle}</span>
+              <span className="text-sm font-medium text-foreground">{displayTitle}</span>
             </div>
             <div className="text-right">
               <div 
                 className="text-lg font-bold"
-                style={{ color: config.color || 'hsl(var(--brand-primary))' }}
+                style={{ color: config.color || 'hsl(var(--primary))' }}
               >
                 {getDisplayValue()}
               </div>
@@ -134,42 +137,42 @@ export const EnhancedKPICard = ({
     const gaugeValue = typeof value === 'number' ? Math.min(value, 100) : 0;
     
     return (
-      <Card className={cn("hover:shadow-md transition-shadow", getCardSize())}>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+      <Card variant="modern" className={cn("group", getCardSize())}>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
             <Icon 
               className="h-4 w-4" 
-              style={{ color: config.color || 'hsl(var(--brand-primary))' }}
+              style={{ color: config.color || 'hsl(var(--primary))' }}
             />
             {displayTitle}
             {alertStatus && (
-              <AlertTriangle 
-                className={cn("h-4 w-4 ml-auto", {
-                  "text-yellow-500": alertStatus === 'warning',
-                  "text-red-500": alertStatus === 'critical'
-                })}
-              />
+              <StatusIndicator 
+                status={alertStatus === 'critical' ? 'error' : 'warning'}
+                size="sm"
+                variant="minimal"
+                icon={AlertTriangle}
+              >
+                {alertStatus}
+              </StatusIndicator>
             )}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
+          <div className="space-y-4">
             <div className="text-center">
               <span 
-                className="text-2xl font-bold"
-                style={{ color: config.color || 'hsl(var(--brand-primary))' }}
+                className="text-3xl font-bold"
+                style={{ color: config.color || 'hsl(var(--primary))' }}
               >
                 {getDisplayValue()}
               </span>
             </div>
-            <Progress 
+            <ModernProgress 
               value={gaugeValue} 
-              className="h-2"
-              style={{ 
-                '--progress-background': config.color || 'hsl(var(--brand-primary))'
-              } as any}
+              size="md"
+              variant={alertStatus === 'critical' ? 'error' : alertStatus === 'warning' ? 'warning' : 'default'}
             />
-            <p className="text-xs text-gray-500 text-center">{subtitle}</p>
+            <p className="text-sm text-muted-foreground text-center">{subtitle}</p>
           </div>
         </CardContent>
       </Card>
@@ -179,48 +182,65 @@ export const EnhancedKPICard = ({
   // Default card format
   return (
     <Card 
-      className={cn("hover:shadow-md transition-shadow", getCardSize())}
-      style={config.color ? { borderLeftColor: config.color, borderLeftWidth: '4px' } : {}}
+      variant="modern"
+      className={cn("group", getCardSize())}
+      style={config.color ? { borderLeftColor: config.color, borderLeftWidth: '3px' } : {}}
     >
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
           <Icon 
             className="h-4 w-4" 
-            style={{ color: config.color || 'hsl(var(--brand-primary))' }}
+            style={{ color: config.color || 'hsl(var(--primary))' }}
           />
           {displayTitle}
           {alertStatus && (
-            <AlertTriangle 
-              className={cn("h-4 w-4 ml-auto", {
-                "text-yellow-500": alertStatus === 'warning',
-                "text-red-500": alertStatus === 'critical'
-              })}
-            />
+            <StatusIndicator 
+              status={alertStatus === 'critical' ? 'error' : 'warning'}
+              size="sm"
+              variant="minimal"
+              icon={AlertTriangle}
+            >
+              {alertStatus}
+            </StatusIndicator>
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div 
-          className="text-2xl font-bold"
-          style={{ color: config.color || 'hsl(var(--brand-primary))' }}
-        >
-          {getDisplayValue()}
-        </div>
-        {subtitle && (
-          <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
-        )}
-        {config.showTrend && trend && (
-          <div className="mt-2">
-            <Badge 
-              variant={trend.isPositive ? "default" : "destructive"}
-              className="text-xs"
-            >
-              {trend.isPositive ? "+" : ""}{trend.value}%
-            </Badge>
+      <CardContent className="space-y-3">
+        <div className="flex items-baseline justify-between">
+          <div 
+            className="text-2xl font-bold"
+            style={{ color: config.color || 'hsl(var(--primary))' }}
+          >
+            {getDisplayValue()}
           </div>
+          {config.showTrend && trend && (
+            <div className="flex items-center gap-1 text-sm">
+              {trend.isPositive ? (
+                <TrendingUp className="h-4 w-4 text-green-500" />
+              ) : (
+                <TrendingDown className="h-4 w-4 text-red-500" />
+              )}
+              <span className={trend.isPositive ? "text-green-600" : "text-red-600"}>
+                {trend.isPositive ? "+" : ""}{trend.value}%
+              </span>
+            </div>
+          )}
+        </div>
+        
+        {subtitle && (
+          <p className="text-sm text-muted-foreground">{subtitle}</p>
         )}
-        <div className="text-xs text-gray-400 mt-2">
-          Updated: {lastRefresh.toLocaleTimeString()}
+        
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>Updated: {lastRefresh.toLocaleTimeString()}</span>
+          {typeof value === 'number' && value <= 100 && (
+            <ModernProgress 
+              value={value} 
+              size="sm" 
+              className="w-16"
+              variant={alertStatus === 'critical' ? 'error' : alertStatus === 'warning' ? 'warning' : 'default'}
+            />
+          )}
         </div>
       </CardContent>
     </Card>

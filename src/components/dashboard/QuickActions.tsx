@@ -21,9 +21,9 @@ export const QuickActions = ({ onNewJob, onNewClient, onCalculator, onCalendar, 
   ];
 
   return (
-    <Card>
+    <Card variant="modern">
       <CardHeader>
-        <CardTitle>Quick Actions</CardTitle>
+        <CardTitle className="text-lg font-semibold text-foreground">Quick Actions</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 gap-3">
@@ -33,10 +33,10 @@ export const QuickActions = ({ onNewJob, onNewClient, onCalculator, onCalendar, 
               <Button
                 key={action.label}
                 onClick={action.onClick}
-                className={`${action.color} text-white flex items-center gap-2 py-3`}
+                className={`${action.color} text-white flex items-center gap-2 py-3 transition-all duration-200 hover:scale-105 hover:shadow-lg`}
               >
                 <Icon className="h-4 w-4" />
-                {action.label}
+                <span className="font-medium">{action.label}</span>
               </Button>
             );
           })}

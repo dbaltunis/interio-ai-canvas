@@ -148,12 +148,90 @@
 }
 
 
-/* Subtle AI-Style Design System with Company Colors */
+/* Enhanced Modern Design System */
 .ai-gradient-bg {
   background: linear-gradient(135deg, 
     hsl(var(--company-primary) / 0.02) 0%,
     hsl(var(--company-secondary) / 0.02) 100%
   );
+}
+
+/* Modern Card System */
+.modern-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.5);
+  border-radius: calc(var(--radius) + 4px);
+  box-shadow: 
+    0 1px 3px hsl(var(--foreground) / 0.05),
+    0 1px 2px hsl(var(--foreground) / 0.1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modern-card:hover {
+  box-shadow: 
+    0 4px 12px hsl(var(--foreground) / 0.08),
+    0 2px 4px hsl(var(--foreground) / 0.12);
+  transform: translateY(-1px);
+}
+
+.modern-card-elevated {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.3);
+  border-radius: calc(var(--radius) + 6px);
+  box-shadow: 
+    0 4px 16px hsl(var(--foreground) / 0.08),
+    0 2px 8px hsl(var(--foreground) / 0.12);
+}
+
+/* Status Indicators */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: calc(var(--radius) + 2px);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-success {
+  background: hsl(142 76% 36% / 0.1);
+  color: hsl(142 76% 36%);
+  border: 1px solid hsl(142 76% 36% / 0.2);
+}
+
+.status-warning {
+  background: hsl(38 92% 50% / 0.1);
+  color: hsl(38 92% 50%);
+  border: 1px solid hsl(38 92% 50% / 0.2);
+}
+
+.status-error {
+  background: hsl(0 84% 60% / 0.1);
+  color: hsl(0 84% 60%);
+  border: 1px solid hsl(0 84% 60% / 0.2);
+}
+
+.status-info {
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  border: 1px solid hsl(var(--primary) / 0.2);
+}
+
+/* Progress Bars */
+.modern-progress {
+  background: hsl(var(--muted));
+  border-radius: calc(var(--radius));
+  overflow: hidden;
+}
+
+.modern-progress-fill {
+  background: linear-gradient(90deg, 
+    hsl(var(--primary)) 0%, 
+    hsl(var(--primary) / 0.8) 100%
+  );
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-morphism {
@@ -237,6 +315,29 @@
   background:
     radial-gradient(120% 60% at 10% -10%, hsl(var(--company-secondary) / 0.20), transparent 40%),
     radial-gradient(100% 40% at 100% 0%, hsl(var(--company-primary) / 0.12), transparent 45%);
+}
+
+/* Dark Mode Modern Cards */
+.dark .modern-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.6);
+  box-shadow: 
+    0 2px 8px hsl(0 0% 0% / 0.15),
+    0 1px 4px hsl(0 0% 0% / 0.2);
+}
+
+.dark .modern-card:hover {
+  box-shadow: 
+    0 8px 24px hsl(0 0% 0% / 0.2),
+    0 4px 12px hsl(0 0% 0% / 0.25);
+}
+
+.dark .modern-card-elevated {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.4);
+  box-shadow: 
+    0 8px 32px hsl(0 0% 0% / 0.25),
+    0 4px 16px hsl(0 0% 0% / 0.3);
 }
 
 .company-gradient {

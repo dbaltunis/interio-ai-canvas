@@ -59,16 +59,16 @@ export const InventorySkeleton = () => {
           {/* Stats cards skeleton */}
           <div className="grid gap-4 md:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Card key={i}>
+              <Card key={i} variant="modern">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-4 w-4 rounded" />
+                    <Skeleton className="h-4 w-20" animation="shimmer" />
+                    <Skeleton className="h-4 w-4 rounded" animation="shimmer" />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <Skeleton className="h-8 w-16 mb-2" />
-                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-8 w-16 mb-2" animation="shimmer" />
+                  <Skeleton className="h-3 w-24" animation="shimmer" />
                 </CardContent>
               </Card>
             ))}
@@ -77,21 +77,21 @@ export const InventorySkeleton = () => {
           {/* Quick Actions skeleton */}
           <div className="grid gap-4 md:grid-cols-3">
             {Array.from({ length: 3 }).map((_, i) => (
-              <Card key={i} className="cursor-pointer hover:shadow-md transition-shadow">
+              <Card key={i} variant="modern" className="cursor-pointer transition-all duration-200">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <Skeleton className="h-5 w-5 rounded" />
-                    <Skeleton className="h-5 w-24" />
+                    <Skeleton className="h-5 w-5 rounded" animation="shimmer" />
+                    <Skeleton className="h-5 w-24" animation="shimmer" />
                   </CardTitle>
                   <CardDescription>
-                    <Skeleton className="h-4 w-full mb-1" />
-                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-full mb-1" animation="shimmer" />
+                    <Skeleton className="h-4 w-3/4" animation="shimmer" />
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between">
-                    <Skeleton className="h-5 w-16 rounded-full" />
-                    <Skeleton className="h-8 w-16 rounded-md" />
+                    <Skeleton className="h-5 w-16 rounded-full" animation="shimmer" />
+                    <Skeleton className="h-8 w-16 rounded-md" animation="shimmer" />
                   </div>
                 </CardContent>
               </Card>
@@ -99,26 +99,26 @@ export const InventorySkeleton = () => {
           </div>
 
           {/* Recent activity skeleton */}
-          <Card>
+          <Card variant="modern">
             <CardHeader>
               <CardTitle>
-                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-6 w-32" animation="shimmer" />
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div key={i} className="flex items-center justify-between p-3 border border-border/50 rounded-lg bg-muted/20">
                     <div className="flex items-center space-x-3">
-                      <Skeleton className="h-8 w-8 rounded" />
+                      <Skeleton className="h-8 w-8 rounded" animation="shimmer" />
                       <div className="space-y-1">
-                        <Skeleton className="h-4 w-40" />
-                        <Skeleton className="h-3 w-24" />
+                        <Skeleton className="h-4 w-40" animation="shimmer" />
+                        <Skeleton className="h-3 w-24" animation="shimmer" />
                       </div>
                     </div>
                     <div className="text-right space-y-1">
-                      <Skeleton className="h-4 w-16" />
-                      <Skeleton className="h-3 w-20" />
+                      <Skeleton className="h-4 w-16" animation="shimmer" />
+                      <Skeleton className="h-3 w-20" animation="shimmer" />
                     </div>
                   </div>
                 ))}
