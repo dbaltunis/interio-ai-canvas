@@ -52,18 +52,18 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   return (
     <>
       {/* Desktop Header */}
-      <header className="bg-background border-b border-border sticky top-0 z-40 relative overflow-hidden">
+      <header className="modern-card-elevated sticky top-0 z-40 relative overflow-hidden backdrop-blur-lg bg-background/95 border-b border-border/50">
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
-            {/* Left side - Logo (made twice bigger) */}
+            {/* Left side - Logo */}
             <div className="flex items-center">
               <BrandHeader size="xl" showTagline={true} />
             </div>
             
             {/* Right side - Navigation, User Profile, and Mobile Menu */}
-            <div className="flex items-center space-x-3">
-              {/* Navigation (hidden on mobile, made 3px bigger) */}
-              <nav className="hidden md:flex items-center space-x-1">
+            <div className="flex items-center space-x-4">
+              {/* Navigation */}
+              <nav className="hidden md:flex items-center space-x-2">
                 {navItems.map((item, idx) => {
                   const Icon = item.icon;
                   const isActive = activeTab === item.id;
@@ -74,17 +74,23 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                       size="sm"
                       onClick={() => onTabChange(item.id)}
                       className={cn(
-                        "px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                        "px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group relative",
                         isActive
-                          ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                          ? "bg-primary text-primary-foreground shadow-md scale-105"
+                          : "text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:scale-102"
                       )}
                     >
-                      <Icon className="h-5 w-5 mr-2" />
+                      <Icon className={cn(
+                        "h-5 w-5 mr-2 transition-all duration-200",
+                        isActive ? "scale-110" : "group-hover:scale-105"
+                      )} />
                       <span className="relative inline-flex items-center">
                         {item.label}
+                        {isActive && (
+                          <span className="absolute -bottom-[3px] left-0 right-0 h-[2px] bg-primary-foreground rounded-full animate-scale-in" />
+                        )}
                         <span
-                          className="pointer-events-none absolute -bottom-[3px] left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/95 to-transparent dark:via-primary/80 opacity-0 animate-[underline-flash_1.2s_ease-out_both]"
+                          className="pointer-events-none absolute -bottom-[3px] left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/80 to-transparent opacity-0 animate-[underline-flash_1.2s_ease-out_both]"
                           style={{ animationDelay: `${1.3 + idx * 0.25}s` }}
                           aria-hidden="true"
                         />
@@ -121,8 +127,8 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-background border-t border-border">
-            <div className="px-4 py-3 space-y-1">
+          <div className="md:hidden bg-background/95 backdrop-blur-lg border-t border-border/50 animate-scale-in">
+            <div className="px-4 py-4 space-y-2">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
@@ -136,14 +142,17 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                       setMobileMenuOpen(false);
                     }}
                     className={cn(
-                      "w-full justify-start px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                      "w-full justify-start px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200",
                       isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                     )}
                   >
-                    <Icon className="h-4 w-4 mr-3" />
+                    <Icon className="h-5 w-5 mr-3" />
                     {item.label}
+                    {isActive && (
+                      <div className="ml-auto h-2 w-2 rounded-full bg-primary-foreground" />
+                    )}
                   </Button>
                 );
               })}
