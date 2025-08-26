@@ -24,10 +24,11 @@ export const JobsPageActions = ({
   setShowEmailFilters
 }: JobsPageActionsProps) => {
   return (
-    <div className="flex items-center space-x-3">
+    <div className="flex items-center gap-3">
       {activeTab === "clients" && (
         <Button 
-          className="bg-brand-primary hover:bg-brand-accent text-white px-6 font-medium"
+          variant="brand"
+          size="default"
           onClick={onNewClient}
         >
           New Client
@@ -37,15 +38,16 @@ export const JobsPageActions = ({
       {activeTab === "emails" && (
         <>
           <Button 
-            variant="outline" 
-            className="border-gray-300 px-4"
+            variant="outline"
+            size="default"
             onClick={() => setShowEmailFilters?.(!showEmailFilters)}
           >
             <Filter className="w-4 h-4 mr-2" />
             Filters
           </Button>
           <Button 
-            className="bg-brand-primary hover:bg-brand-accent text-white px-6 font-medium"
+            variant="brand"
+            size="default"
             onClick={onNewEmail}
           >
             New Email
@@ -55,8 +57,8 @@ export const JobsPageActions = ({
       
       {activeTab === "jobs" && (
         <Button 
-          variant="outline" 
-          className="border-gray-300 px-4"
+          variant="outline"
+          size="default"
           onClick={() => setShowFilters(!showFilters)}
         >
           <Filter className="w-4 h-4 mr-2" />

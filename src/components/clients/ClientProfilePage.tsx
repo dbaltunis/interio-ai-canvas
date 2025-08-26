@@ -91,7 +91,7 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit, onTabChange }: Cli
           </div>
         </div>
         
-        <Button onClick={onEdit} className="bg-brand-primary hover:bg-brand-accent text-white">
+        <Button onClick={onEdit} variant="brand">
           <Edit className="h-4 w-4 mr-2" />
           Edit Client
         </Button>

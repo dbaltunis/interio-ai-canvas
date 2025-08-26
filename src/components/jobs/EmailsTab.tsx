@@ -76,7 +76,7 @@ export const EmailsTab = () => {
           <h1 className="text-3xl font-bold text-brand-primary">Email Management</h1>
           <p className="text-gray-600 mt-1">Manage your email campaigns and communications</p>
         </div>
-        <Button className="bg-brand-primary hover:bg-brand-accent text-white px-6 font-medium">
+        <Button variant="brand" size="default">
           <Plus className="w-4 h-4 mr-2" />
           Compose Email
         </Button>

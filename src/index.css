@@ -299,6 +299,17 @@
   transform: scale(0.98);
 }
 
+@keyframes interactive-bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+@keyframes underline-flash {
+  0% { opacity: 0; transform: scaleX(0); }
+  50% { opacity: 1; transform: scaleX(1); }
+  100% { opacity: 0; transform: scaleX(0); }
+}
+
 /* Status Indicators - Updated with better colors */
 .status-indicator {
   display: inline-flex;

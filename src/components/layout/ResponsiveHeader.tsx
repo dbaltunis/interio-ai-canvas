@@ -68,18 +68,16 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                   const Icon = item.icon;
                   const isActive = activeTab === item.id;
                   return (
-                    <Button
-                      key={item.id}
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onTabChange(item.id)}
-                      className={cn(
-                        "px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group relative",
-                        isActive
-                          ? "bg-primary text-primary-foreground shadow-md scale-105"
-                          : "text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:scale-102"
-                      )}
-                    >
+                  <Button
+                    key={item.id}
+                    variant={isActive ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => onTabChange(item.id)}
+                    className={cn(
+                      "px-4 py-2.5 text-sm font-medium transition-all duration-200 group relative",
+                      isActive && "shadow-sm scale-105"
+                    )}
+                  >
                       <Icon className={cn(
                         "h-5 w-5 mr-2 transition-all duration-200",
                         isActive ? "scale-110" : "group-hover:scale-105"
@@ -135,17 +133,15 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                 return (
                   <Button
                     key={item.id}
-                    variant="ghost"
+                    variant={isActive ? "default" : "ghost"}
                     size="sm"
                     onClick={() => {
                       onTabChange(item.id);
                       setMobileMenuOpen(false);
                     }}
                     className={cn(
-                      "w-full justify-start px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200",
-                      isActive
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                      "w-full justify-start px-4 py-3 text-sm font-medium transition-all duration-200",
+                      isActive && "shadow-sm"
                     )}
                   >
                     <Icon className="h-5 w-5 mr-3" />
