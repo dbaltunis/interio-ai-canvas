@@ -29,10 +29,13 @@ export const EmailManagement = () => {
   // Show loading while checking integration status
   if (integrationLoading) {
     return (
-      <div className="w-full">
+      <div className="w-full animate-fade-in">
         <div className="w-full px-6 py-6">
           <div className="flex items-center justify-center h-64">
-            <div className="text-lg text-muted-foreground">Loading email management...</div>
+            <div className="flex items-center gap-3">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <div className="text-lg text-muted-foreground">Loading email management...</div>
+            </div>
           </div>
         </div>
       </div>
@@ -40,11 +43,17 @@ export const EmailManagement = () => {
   }
 
   const renderHeader = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h1 className="text-3xl font-bold text-foreground">Email Management</h1>
-          <div className="bg-muted text-muted-foreground px-3 py-1 rounded-full text-sm font-medium">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-primary/10 rounded-xl">
+            <Mail className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Email Management</h1>
+            <p className="text-muted-foreground">Manage your email communications and campaigns</p>
+          </div>
+          <div className="status-indicator status-info">
             {emails?.length || 0} emails
           </div>
         </div>
@@ -53,7 +62,7 @@ export const EmailManagement = () => {
             <Button 
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
-              className="bg-muted/30 hover:bg-muted/50 border-border"
+              className="hover-lift interactive-bounce"
             >
               <Filter className="w-4 h-4 mr-2" />
               Filters
@@ -63,7 +72,7 @@ export const EmailManagement = () => {
           <Button 
             onClick={() => setActiveTab("composer")}
             variant="default"
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
+            className="hover-lift interactive-bounce shadow-lg"
             disabled={!hasSendGridIntegration || !emailSettings}
           >
             <Send className="h-4 w-4 mr-2" />
@@ -72,48 +81,48 @@ export const EmailManagement = () => {
         </div>
       </div>
       
-      {/* Navigation Tabs */}
+      {/* Enhanced Navigation Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="modern-card p-1 h-auto bg-muted/30 backdrop-blur-sm">
           <TabsTrigger 
             value="dashboard" 
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
-            <Home className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="hidden sm:inline">Dashboard</span>
-            <span className="sm:hidden">Home</span>
+            <Home className="w-4 h-4" />
+            <span className="hidden sm:inline font-medium">Dashboard</span>
+            <span className="sm:hidden font-medium">Home</span>
           </TabsTrigger>
           <TabsTrigger 
             value="composer" 
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
-            <Mail className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="hidden sm:inline">Compose</span>
-            <span className="sm:hidden">Write</span>
+            <Mail className="w-4 h-4" />
+            <span className="hidden sm:inline font-medium">Compose</span>
+            <span className="sm:hidden font-medium">Write</span>
           </TabsTrigger>
           <TabsTrigger 
             value="campaigns" 
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
-            <BarChart3 className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="hidden sm:inline">Campaigns</span>
-            <span className="sm:hidden">Camps</span>
+            <BarChart3 className="w-4 h-4" />
+            <span className="hidden sm:inline font-medium">Campaigns</span>
+            <span className="sm:hidden font-medium">Camps</span>
           </TabsTrigger>
           <TabsTrigger 
             value="analytics" 
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
-            <BarChart3 className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="hidden sm:inline">Analytics</span>
-            <span className="sm:hidden">Stats</span>
+            <BarChart3 className="w-4 h-4" />
+            <span className="hidden sm:inline font-medium">Analytics</span>
+            <span className="sm:hidden font-medium">Stats</span>
           </TabsTrigger>
           <TabsTrigger 
             value="settings" 
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
-            <Settings className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="hidden sm:inline">Settings</span>
-            <span className="sm:hidden">Config</span>
+            <Settings className="w-4 h-4" />
+            <span className="hidden sm:inline font-medium">Settings</span>
+            <span className="sm:hidden font-medium">Config</span>
           </TabsTrigger>
         </TabsList>
       </Tabs>
@@ -124,31 +133,39 @@ export const EmailManagement = () => {
     switch (activeTab) {
       case "composer":
         return (
-          <div className="liquid-glass rounded-xl border p-6">
-            <EmailComposer onClose={() => setActiveTab("dashboard")} />
-          </div>
+          <Card variant="modern" className="animate-fade-in">
+            <CardContent className="p-6">
+              <EmailComposer onClose={() => setActiveTab("dashboard")} />
+            </CardContent>
+          </Card>
         );
       case "campaigns":
         return (
-          <div className="liquid-glass rounded-xl border p-6">
-            <EmailCampaigns />
-          </div>
+          <Card variant="modern" className="animate-fade-in">
+            <CardContent className="p-6">
+              <EmailCampaigns />
+            </CardContent>
+          </Card>
         );
       case "analytics":
         return (
-          <div className="liquid-glass rounded-xl border p-6">
-            <EmailAnalytics />
-          </div>
+          <Card variant="modern" className="animate-fade-in">
+            <CardContent className="p-6">
+              <EmailAnalytics />
+            </CardContent>
+          </Card>
         );
       case "settings":
         return (
-          <div className="liquid-glass rounded-xl border p-6">
-            <EmailSettings />
-          </div>
+          <Card variant="modern" className="animate-fade-in">
+            <CardContent className="p-6">
+              <EmailSettings />
+            </CardContent>
+          </Card>
         );
       default:
         return (
-          <>
+          <div className="space-y-6 animate-fade-in">
             {/* Integration Status Banners */}
             <EmailIntegrationBanners
               hasSendGridIntegration={hasSendGridIntegration}
@@ -158,14 +175,14 @@ export const EmailManagement = () => {
             
             {/* Dashboard Content */}
             <EmailDashboard showFilters={showFilters} setShowFilters={setShowFilters} />
-          </>
+          </div>
         );
     }
   };
 
   return (
-    <div className="w-full">
-      <div className="w-full px-6 py-6 space-y-6">
+    <div className="w-full bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="w-full px-6 py-6 space-y-8">
         {renderHeader()}
         {renderContent()}
       </div>
