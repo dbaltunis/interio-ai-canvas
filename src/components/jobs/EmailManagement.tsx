@@ -50,7 +50,7 @@ export const EmailManagement = () => {
             <Mail className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Email Management</h1>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">Email Management</h1>
             <p className="text-muted-foreground">Manage your email communications and campaigns</p>
           </div>
           <div className="status-indicator status-info">
@@ -72,7 +72,7 @@ export const EmailManagement = () => {
           <Button 
             onClick={() => setActiveTab("composer")}
             variant="default"
-            className="hover-lift interactive-bounce shadow-lg"
+            className="hover-lift interactive-bounce"
             disabled={!hasSendGridIntegration || !emailSettings}
           >
             <Send className="h-4 w-4 mr-2" />
@@ -81,48 +81,63 @@ export const EmailManagement = () => {
         </div>
       </div>
       
-      {/* Enhanced Navigation Tabs */}
+      {/* Standardized Navigation Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="modern-card p-1 h-auto bg-muted/30 backdrop-blur-sm">
+        <TabsList className="bg-muted/50 p-1 h-auto w-auto gap-1 rounded-lg">
           <TabsTrigger 
             value="dashboard" 
-            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200
+              data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:font-medium
+              text-muted-foreground hover:text-foreground hover:bg-background/50
+              flex items-center gap-2"
           >
             <Home className="w-4 h-4" />
-            <span className="hidden sm:inline font-medium">Dashboard</span>
-            <span className="sm:hidden font-medium">Home</span>
+            <span className="hidden sm:inline">Dashboard</span>
+            <span className="sm:hidden">Home</span>
           </TabsTrigger>
           <TabsTrigger 
             value="composer" 
-            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200
+              data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:font-medium
+              text-muted-foreground hover:text-foreground hover:bg-background/50
+              flex items-center gap-2"
           >
             <Mail className="w-4 h-4" />
-            <span className="hidden sm:inline font-medium">Compose</span>
-            <span className="sm:hidden font-medium">Write</span>
+            <span className="hidden sm:inline">Compose</span>
+            <span className="sm:hidden">Write</span>
           </TabsTrigger>
           <TabsTrigger 
             value="campaigns" 
-            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200
+              data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:font-medium
+              text-muted-foreground hover:text-foreground hover:bg-background/50
+              flex items-center gap-2"
           >
             <BarChart3 className="w-4 h-4" />
-            <span className="hidden sm:inline font-medium">Campaigns</span>
-            <span className="sm:hidden font-medium">Camps</span>
+            <span className="hidden sm:inline">Campaigns</span>
+            <span className="sm:hidden">Camps</span>
           </TabsTrigger>
           <TabsTrigger 
             value="analytics" 
-            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200
+              data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:font-medium
+              text-muted-foreground hover:text-foreground hover:bg-background/50
+              flex items-center gap-2"
           >
             <BarChart3 className="w-4 h-4" />
-            <span className="hidden sm:inline font-medium">Analytics</span>
-            <span className="sm:hidden font-medium">Stats</span>
+            <span className="hidden sm:inline">Analytics</span>
+            <span className="sm:hidden">Stats</span>
           </TabsTrigger>
           <TabsTrigger 
             value="settings" 
-            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200
+              data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:font-medium
+              text-muted-foreground hover:text-foreground hover:bg-background/50
+              flex items-center gap-2"
           >
             <Settings className="w-4 h-4" />
-            <span className="hidden sm:inline font-medium">Settings</span>
-            <span className="sm:hidden font-medium">Config</span>
+            <span className="hidden sm:inline">Settings</span>
+            <span className="sm:hidden">Config</span>
           </TabsTrigger>
         </TabsList>
       </Tabs>
@@ -133,35 +148,35 @@ export const EmailManagement = () => {
     switch (activeTab) {
       case "composer":
         return (
-          <Card variant="modern" className="animate-fade-in">
+          <div className="modern-card animate-fade-in">
             <CardContent className="p-6">
               <EmailComposer onClose={() => setActiveTab("dashboard")} />
             </CardContent>
-          </Card>
+          </div>
         );
       case "campaigns":
         return (
-          <Card variant="modern" className="animate-fade-in">
+          <div className="modern-card animate-fade-in">
             <CardContent className="p-6">
               <EmailCampaigns />
             </CardContent>
-          </Card>
+          </div>
         );
       case "analytics":
         return (
-          <Card variant="modern" className="animate-fade-in">
+          <div className="modern-card animate-fade-in">
             <CardContent className="p-6">
               <EmailAnalytics />
             </CardContent>
-          </Card>
+          </div>
         );
       case "settings":
         return (
-          <Card variant="modern" className="animate-fade-in">
+          <div className="modern-card animate-fade-in">
             <CardContent className="p-6">
               <EmailSettings />
             </CardContent>
-          </Card>
+          </div>
         );
       default:
         return (
