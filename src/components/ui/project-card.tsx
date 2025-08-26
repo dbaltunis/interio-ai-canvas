@@ -46,9 +46,8 @@ export const ProjectCard = ({ project, onClick, className }: ProjectCardProps) =
 
   return (
     <Card 
-      variant="modern" 
       className={cn(
-        "cursor-pointer hover-lift group transition-all duration-300",
+        "modern-card cursor-pointer group transition-all duration-300 hover-lift",
         className
       )}
       onClick={onClick}
@@ -67,9 +66,12 @@ export const ProjectCard = ({ project, onClick, className }: ProjectCardProps) =
           </div>
           <div className="flex items-center gap-2">
             {priority && (
-              <Badge variant="outline" className={cn("text-xs", priority.color)}>
+              <span className={cn(
+                "text-xs px-2 py-1 rounded-full font-medium",
+                priority.color
+              )}>
                 {priority.label}
-              </Badge>
+              </span>
             )}
             <StatusIndicator status={status.status} size="sm">
               {status.label}

@@ -26,6 +26,16 @@ export default {
 				company: {
 					primary: 'hsl(var(--company-primary))',
 					secondary: 'hsl(var(--company-secondary))',
+					tertiary: 'hsl(var(--company-tertiary))',
+					warning: 'hsl(var(--company-warning))',
+					error: 'hsl(var(--company-error))',
+				},
+				// Risk assessment colors
+				risk: {
+					high: 'hsl(var(--risk-high))',
+					medium: 'hsl(var(--risk-medium))',
+					low: 'hsl(var(--risk-low))',
+					none: 'hsl(var(--risk-none))',
 				},
 				// InterioApp Brand Colors (legacy support)
 				brand: {
@@ -122,6 +132,19 @@ export default {
 					'0%': { opacity: '0', transform: 'scale(0.95)' },
 					'100%': { opacity: '1', transform: 'scale(1)' }
 				},
+				'slide-up': {
+					'0%': { opacity: '0', transform: 'translateY(20px)' },
+					'100%': { opacity: '1', transform: 'translateY(0)' }
+				},
+				'hover-lift': {
+					'0%': { transform: 'translateY(0)' },
+					'100%': { transform: 'translateY(-2px)' }
+				},
+				'interactive-bounce': {
+					'0%': { transform: 'scale(1)' },
+					'50%': { transform: 'scale(1.02)' },
+					'100%': { transform: 'scale(1)' }
+				},
 				'sparkle-minute': {
 					'0%, 96%, 100%': { opacity: '0', transform: 'scale(0.85)' },
 					'97%': { opacity: '0.35', transform: 'scale(0.95)' },
@@ -177,6 +200,9 @@ export default {
 				'wave': 'wave 2s ease-in-out infinite',
 				'fade-in': 'fade-in 0.3s ease-out',
 				'scale-in': 'scale-in 0.2s ease-out',
+				'slide-up': 'slide-up 0.4s ease-out',
+				'hover-lift': 'hover-lift 0.2s ease-out',
+				'interactive-bounce': 'interactive-bounce 0.15s ease-in-out',
 				'sparkle-minute': 'sparkle-minute 60s ease-in-out infinite',
 				'logo-sweep': 'logo-sweep 3s ease-in-out both',
 				'header-sweep': 'header-sweep 3s ease-in-out both',
