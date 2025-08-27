@@ -44,6 +44,11 @@
   --radius-lg: 12px;
   --radius-pill: 9999px;
   
+  /* ========== Focus Ring System ========== */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  --focus-ring-color: hsl(var(--primary) / 0.2);
+  
   /* ========== Spacing System (8-point) ========== */
   --space-1: 4px;
   --space-2: 8px;
@@ -114,6 +119,11 @@
   
   --destructive: 0 84% 60%; /* #EF4444 converted to HSL */
   --destructive-foreground: 0 0% 100%;
+  
+  --success: 142 76% 36%; /* #10B981 converted to HSL */
+  --warning: 38 92% 50%; /* #F59E0B converted to HSL */
+  --info: 217 91% 60%; /* #3B82F6 converted to HSL */
+  --error: 0 84% 60%; /* #EF4444 converted to HSL */
   
   --radius: var(--radius-md);
 }
