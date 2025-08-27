@@ -25,19 +25,19 @@ export const JobsPageTabs = ({
   ];
 
   return (
-    <div className="flex space-x-1 border-b border-border">
+    <div className="flex border-b border-border/50">
       {tabs.map((tab) => (
         <Button
           key={tab.id}
           variant="ghost"
-          className={`flex items-center space-x-2 px-4 py-2 border-b-2 rounded-none transition-colors ${
+          className={`flex items-center space-x-2 px-4 py-2 border-b-2 rounded-none transition-all duration-200 ${
             activeTab === tab.id
-              ? "border-primary text-primary bg-primary/5"
-              : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+              ? "border-primary text-foreground bg-primary/5 font-semibold"
+              : "border-transparent text-muted-foreground hover:text-foreground hover:border-border/50"
           }`}
           onClick={() => setActiveTab(tab.id)}
         >
-          <span className="font-medium">{tab.label}</span>
+          <span className="text-sm">{tab.label}</span>
           {tab.count > 0 && (
             <Badge 
               variant="secondary" 
