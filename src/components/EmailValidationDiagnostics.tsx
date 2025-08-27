@@ -236,7 +236,7 @@ export const EmailValidationDiagnostics = () => {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="font-medium">Detailed Results</h4>
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-muted-foreground">
                 Run at {new Date(diagnosticsResults.timestamp).toLocaleString()}
               </span>
             </div>
@@ -249,7 +249,7 @@ export const EmailValidationDiagnostics = () => {
                     <span className="font-medium">{check.name}</span>
                     {getStatusBadge(check.status)}
                   </div>
-                  <p className="text-sm text-gray-600 mt-1">{check.message}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{check.message}</p>
                 </div>
               </div>
             ))}

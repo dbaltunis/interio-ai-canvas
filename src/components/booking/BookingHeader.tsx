@@ -20,11 +20,11 @@ export const BookingHeader = ({ scheduler }: BookingHeaderProps) => {
           className="w-20 h-20 rounded-full mx-auto mb-4 object-cover"
         />
       )}
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">{scheduler.name}</h1>
+      <h1 className="text-3xl font-bold text-foreground mb-2">{scheduler.name}</h1>
       {scheduler.description && (
-        <p className="text-gray-600 max-w-2xl mx-auto">{scheduler.description}</p>
+        <p className="text-muted-foreground max-w-2xl mx-auto">{scheduler.description}</p>
       )}
-      <div className="flex items-center justify-center gap-4 mt-4 text-sm text-gray-500">
+      <div className="flex items-center justify-center gap-4 mt-4 text-sm text-muted-foreground">
         <div className="flex items-center gap-1">
           <Clock className="h-4 w-4" />
           {scheduler.duration} minutes

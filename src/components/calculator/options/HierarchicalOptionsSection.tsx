@@ -27,7 +27,7 @@ export const HierarchicalOptionsSection = ({
 
           {category.subcategories?.map((subcategory) => (
             <div key={subcategory.id} className="ml-4 space-y-3">
-              <h5 className="font-medium text-gray-800">{subcategory.name}</h5>
+              <h5 className="font-medium text-foreground">{subcategory.name}</h5>
               
               {subcategory.sub_subcategories?.map((subSub) => (
                 <div key={subSub.id} className="ml-4 space-y-2">

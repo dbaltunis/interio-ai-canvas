@@ -39,7 +39,7 @@ export const PublicBookingForm = ({ slug }: PublicBookingFormProps) => {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading booking form...</p>
+          <p className="text-muted-foreground">Loading booking form...</p>
         </div>
       </div>
     );
@@ -48,8 +48,8 @@ export const PublicBookingForm = ({ slug }: PublicBookingFormProps) => {
   if (!scheduler) {
     return (
       <div className="text-center p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Not Found</h2>
-        <p className="text-gray-600">The booking link you're looking for doesn't exist or has been disabled.</p>
+        <h2 className="text-2xl font-bold text-foreground mb-2">Booking Not Found</h2>
+        <p className="text-muted-foreground">The booking link you're looking for doesn't exist or has been disabled.</p>
       </div>
     );
   }

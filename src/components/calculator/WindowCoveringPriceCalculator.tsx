@@ -354,7 +354,7 @@ export const WindowCoveringPriceCalculator = ({
         </Button>
 
         {calculation && (
-          <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+          <div className="space-y-4 p-4 bg-muted rounded-lg">
             <h4 className="font-semibold">Calculation Results</h4>
             
             {windowCovering.fabrication_pricing_method === 'per-panel' && (

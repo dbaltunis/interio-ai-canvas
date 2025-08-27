@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ChevronRight, User } from "lucide-react";
 
 const FUNNEL_STAGES = [
-  { value: "lead", label: "Lead", color: "bg-gray-100 text-gray-800" },
+  { value: "lead", label: "Lead", color: "bg-muted text-muted-foreground" },
   { value: "contacted", label: "Contacted", color: "bg-blue-100 text-blue-800" },
   { value: "measuring_scheduled", label: "Measuring Scheduled", color: "bg-yellow-100 text-yellow-800" },
   { value: "quoted", label: "Quoted", color: "bg-secondary text-secondary-foreground" },
@@ -55,7 +55,7 @@ export const ClientStatusChanger = ({ clientId, currentStatus, clientName }: Cli
     <Card className="p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <User className="h-4 w-4 text-gray-500" />
+          <User className="h-4 w-4 text-muted-foreground" />
           <div>
             <h4 className="font-medium">{clientName}</h4>
             <Badge className={`${currentStage.color} border-0`} variant="secondary">

@@ -17,7 +17,7 @@ interface HierarchicalOptionCardProps {
 
 export const HierarchicalOptionCard = ({ option, isSelected, onToggle }: HierarchicalOptionCardProps) => {
   return (
-    <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+    <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
       <input
         type="checkbox"
         id={option.id}

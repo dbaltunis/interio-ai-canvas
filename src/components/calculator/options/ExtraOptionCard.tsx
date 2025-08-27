@@ -18,7 +18,7 @@ interface ExtraOptionCardProps {
 
 export const ExtraOptionCard = ({ extra, isSelected, onToggle }: ExtraOptionCardProps) => {
   return (
-    <div className="ml-6 flex items-center space-x-3 p-2 border rounded-lg bg-gray-50">
+    <div className="ml-6 flex items-center space-x-3 p-2 border rounded-lg bg-muted">
       <input
         type="checkbox"
         id={extra.id}

@@ -119,7 +119,7 @@ export const BookingManagement = () => {
       case "confirmed": return "bg-green-100 text-green-800 border-green-200";
       case "cancelled": return "bg-red-100 text-red-800 border-red-200";
       case "completed": return "bg-blue-100 text-blue-800 border-blue-200";
-      case "no-show": return "bg-gray-100 text-gray-800 border-gray-200";
+      case "no-show": return "bg-muted text-muted-foreground border-muted";
       default: return "bg-yellow-100 text-yellow-800 border-yellow-200";
     }
   };
@@ -410,7 +410,7 @@ export const BookingManagement = () => {
               {(selectedBooking.notes || selectedBooking.booking_message) && (
                 <div>
                   <Label className="text-sm font-medium">Notes</Label>
-                  <div className="mt-1 p-2 bg-gray-50 rounded border">
+                  <div className="mt-1 p-2 bg-muted rounded border">
                     {selectedBooking.notes || selectedBooking.booking_message}
                   </div>
                 </div>

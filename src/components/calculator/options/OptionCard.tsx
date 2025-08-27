@@ -11,7 +11,7 @@ interface OptionCardProps {
 
 export const OptionCard = ({ option, isSelected, onToggle }: OptionCardProps) => {
   return (
-    <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+    <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
       <input
         type="checkbox"
         id={option.id}
