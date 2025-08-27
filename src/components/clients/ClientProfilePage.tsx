@@ -216,11 +216,11 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit, onTabChange }: Cli
       </Card>
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="measurements" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="measurements">Measurements</TabsTrigger>
-          <TabsTrigger value="projects">Projects & Jobs</TabsTrigger>
-          <TabsTrigger value="emails">Email History</TabsTrigger>
+      <Tabs defaultValue="measurements" className="space-y-6">
+        <TabsList className="bg-background border-b border-border/50 rounded-none p-0 h-auto flex w-full justify-start gap-0">
+          <TabsTrigger value="measurements" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">Measurements</TabsTrigger>
+          <TabsTrigger value="projects" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">Projects & Jobs</TabsTrigger>
+          <TabsTrigger value="emails" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">Email History</TabsTrigger>
         </TabsList>
         
         <TabsContent value="measurements" className="space-y-4">
