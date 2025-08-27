@@ -48,7 +48,6 @@ export const ModernInventoryDashboard = () => {
         <div className="flex items-center gap-3">
           <Button 
             variant="outline" 
-            className="bg-surface border-default text-default hover:bg-muted rounded-md"
             onClick={() => setShowSearch(!showSearch)}
           >
             <Filter className="h-4 w-4 mr-2" />
@@ -56,7 +55,6 @@ export const ModernInventoryDashboard = () => {
           </Button>
           <Button 
             variant="outline" 
-            className="bg-surface border-default text-default hover:bg-muted rounded-md"
             onClick={() => {
               setActiveTab("analytics");
               setTimeout(() => {
@@ -70,7 +68,7 @@ export const ModernInventoryDashboard = () => {
           </Button>
           <AddInventoryDialog 
             trigger={
-              <Button className="bg-primary text-white hover:bg-primary-600 rounded-md">
+              <Button variant="default">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Item
               </Button>

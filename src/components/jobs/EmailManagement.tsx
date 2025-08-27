@@ -66,7 +66,6 @@ export const EmailManagement = () => {
             <Button 
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
-              className="bg-surface border-default text-default hover:bg-muted rounded-md"
             >
               <Filter className="w-4 h-4 mr-2" />
               Filters
@@ -75,7 +74,7 @@ export const EmailManagement = () => {
           
           <Button 
             onClick={() => setActiveTab("composer")}
-            className="bg-primary text-white hover:bg-primary-600 rounded-md"
+            variant="default"
             disabled={!hasSendGridIntegration || !emailSettings}
           >
             <Send className="h-4 w-4 mr-2" />
