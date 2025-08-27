@@ -28,18 +28,26 @@ export const ModernInventoryDashboard = () => {
 
   return (
     <div className="flex-1 space-y-6 p-6">
-      {/* Header */}
+      {/* Header with Design System */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Inventory Management</h1>
-          <p className="text-muted-foreground">
-            Manage fabrics, hardware, and assemblies for your window treatment business
-          </p>
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-primary-light rounded-lg">
+            <Package className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-h1 text-default">Inventory Management</h1>
+            <p className="text-small text-muted">
+              Manage fabrics, hardware, and assemblies for your window treatment business
+            </p>
+          </div>
+          <Badge className="bg-accent-light text-accent border-accent">
+            {inventory?.length || 0} items
+          </Badge>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button 
             variant="outline" 
-            size="sm"
+            className="bg-surface border-default text-default hover:bg-muted rounded-md"
             onClick={() => setShowSearch(!showSearch)}
           >
             <Filter className="h-4 w-4 mr-2" />
@@ -47,7 +55,7 @@ export const ModernInventoryDashboard = () => {
           </Button>
           <Button 
             variant="outline" 
-            size="sm" 
+            className="bg-surface border-default text-default hover:bg-muted rounded-md"
             onClick={() => {
               setActiveTab("analytics");
               setTimeout(() => {
@@ -61,7 +69,7 @@ export const ModernInventoryDashboard = () => {
           </Button>
           <AddInventoryDialog 
             trigger={
-              <Button variant="brand" size="sm">
+              <Button className="bg-primary text-white hover:bg-primary-600 rounded-md">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Item
               </Button>
@@ -104,30 +112,30 @@ export const ModernInventoryDashboard = () => {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="modern-card p-1 h-auto bg-muted/30 backdrop-blur-sm flex w-auto gap-1">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
+        <TabsList className="bg-surface border-default rounded-lg p-1 h-auto flex w-auto gap-1">
+          <TabsTrigger value="overview" className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-white rounded-md">
             <Package className="h-4 w-4" />
-            Overview
+            <span className="font-medium">Overview</span>
           </TabsTrigger>
-          <TabsTrigger value="fabrics" className="flex items-center gap-2">
+          <TabsTrigger value="fabrics" className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-white rounded-md">
             <Home className="h-4 w-4" />
-            Fabrics
+            <span className="font-medium">Fabrics</span>
           </TabsTrigger>
-          <TabsTrigger value="hardware" className="flex items-center gap-2">
+          <TabsTrigger value="hardware" className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-white rounded-md">
             <Minus className="h-4 w-4" />
-            Hardware
+            <span className="font-medium">Hardware</span>
           </TabsTrigger>
-          <TabsTrigger value="vendors" className="flex items-center gap-2">
+          <TabsTrigger value="vendors" className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-white rounded-md">
             <Package className="h-4 w-4" />
-            Vendors
+            <span className="font-medium">Vendors</span>
           </TabsTrigger>
-          <TabsTrigger value="assemblies" className="flex items-center gap-2">
+          <TabsTrigger value="assemblies" className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-white rounded-md">
             <Package className="h-4 w-4" />
-            Assemblies
+            <span className="font-medium">Assemblies</span>
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
+          <TabsTrigger value="analytics" className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-white rounded-md">
             <Palette className="h-4 w-4" />
-            Analytics
+            <span className="font-medium">Analytics</span>
           </TabsTrigger>
         </TabsList>
 

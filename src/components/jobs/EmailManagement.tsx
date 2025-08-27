@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Mail, Plus, Settings, BarChart3, Filter, ChevronDown, Home, Send } from "lucide-react";
@@ -46,23 +47,23 @@ export const EmailManagement = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-primary/10 rounded-xl">
+          <div className="p-3 bg-primary-light rounded-lg">
             <Mail className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Email Management</h1>
-            <p className="text-muted-foreground">Manage your email communications and campaigns</p>
+            <h1 className="text-h1 text-default">Email Management</h1>
+            <p className="text-small text-muted">Manage your email communications and campaigns</p>
           </div>
-          <div className="status-indicator status-info">
+          <Badge className="bg-accent-light text-accent border-accent">
             {emails?.length || 0} emails
-          </div>
+          </Badge>
         </div>
         <div className="flex items-center space-x-3">
           {activeTab === "dashboard" && (
             <Button 
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
-              className="hover-lift interactive-bounce"
+              className="bg-surface border-default text-default hover:bg-muted rounded-md"
             >
               <Filter className="w-4 h-4 mr-2" />
               Filters
@@ -71,8 +72,7 @@ export const EmailManagement = () => {
           
           <Button 
             onClick={() => setActiveTab("composer")}
-            variant="default"
-            className="hover-lift interactive-bounce shadow-lg"
+            className="bg-primary text-white hover:bg-primary-600 rounded-md"
             disabled={!hasSendGridIntegration || !emailSettings}
           >
             <Send className="h-4 w-4 mr-2" />
@@ -83,10 +83,10 @@ export const EmailManagement = () => {
       
       {/* Enhanced Navigation Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="modern-card p-1 h-auto bg-muted/30 backdrop-blur-sm">
+        <TabsList className="bg-surface border-default rounded-lg p-1 h-auto flex w-auto gap-1">
           <TabsTrigger 
             value="dashboard" 
-            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-white rounded-md"
           >
             <Home className="w-4 h-4" />
             <span className="hidden sm:inline font-medium">Dashboard</span>
@@ -94,7 +94,7 @@ export const EmailManagement = () => {
           </TabsTrigger>
           <TabsTrigger 
             value="composer" 
-            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-white rounded-md"
           >
             <Mail className="w-4 h-4" />
             <span className="hidden sm:inline font-medium">Compose</span>
@@ -102,7 +102,7 @@ export const EmailManagement = () => {
           </TabsTrigger>
           <TabsTrigger 
             value="campaigns" 
-            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-white rounded-md"
           >
             <BarChart3 className="w-4 h-4" />
             <span className="hidden sm:inline font-medium">Campaigns</span>
@@ -110,7 +110,7 @@ export const EmailManagement = () => {
           </TabsTrigger>
           <TabsTrigger 
             value="analytics" 
-            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-white rounded-md"
           >
             <BarChart3 className="w-4 h-4" />
             <span className="hidden sm:inline font-medium">Analytics</span>
@@ -118,7 +118,7 @@ export const EmailManagement = () => {
           </TabsTrigger>
           <TabsTrigger 
             value="settings" 
-            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-white rounded-md"
           >
             <Settings className="w-4 h-4" />
             <span className="hidden sm:inline font-medium">Settings</span>
@@ -133,7 +133,7 @@ export const EmailManagement = () => {
     switch (activeTab) {
       case "composer":
         return (
-          <Card variant="modern" className="animate-fade-in">
+          <Card className="bg-surface border-default rounded-lg shadow-sm animate-fade-in">
             <CardContent className="p-6">
               <EmailComposer onClose={() => setActiveTab("dashboard")} />
             </CardContent>
@@ -141,7 +141,7 @@ export const EmailManagement = () => {
         );
       case "campaigns":
         return (
-          <Card variant="modern" className="animate-fade-in">
+          <Card className="bg-surface border-default rounded-lg shadow-sm animate-fade-in">
             <CardContent className="p-6">
               <EmailCampaigns />
             </CardContent>
@@ -149,7 +149,7 @@ export const EmailManagement = () => {
         );
       case "analytics":
         return (
-          <Card variant="modern" className="animate-fade-in">
+          <Card className="bg-surface border-default rounded-lg shadow-sm animate-fade-in">
             <CardContent className="p-6">
               <EmailAnalytics />
             </CardContent>
@@ -157,7 +157,7 @@ export const EmailManagement = () => {
         );
       case "settings":
         return (
-          <Card variant="modern" className="animate-fade-in">
+          <Card className="bg-surface border-default rounded-lg shadow-sm animate-fade-in">
             <CardContent className="p-6">
               <EmailSettings />
             </CardContent>

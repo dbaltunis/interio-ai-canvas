@@ -1,4 +1,6 @@
-/* Import custom theme first */
+/* Import design system tokens first */
+@import './styles/tokens.css';
+/* Import custom theme */
 @import './styles/theme.css';
 
 @tailwind base;

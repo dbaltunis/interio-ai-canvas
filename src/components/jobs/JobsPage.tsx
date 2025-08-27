@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Shield, FolderOpen } from "lucide-react";
 import { useQuotes, useCreateQuote, useUpdateQuote } from "@/hooks/useQuotes";
@@ -175,20 +176,20 @@ const JobsPage = () => {
 
   return (
     <div className="bg-gradient-to-br from-background via-background to-muted/20 min-h-screen animate-fade-in">
-      <div className="space-y-8 p-6">
-        {/* Enhanced Header */}
+      <div className="space-y-6 p-6">
+        {/* Enhanced Header with Design System */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary/10 rounded-xl">
+            <div className="p-3 bg-primary-light rounded-lg">
               <FolderOpen className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Projects</h1>
-              <p className="text-muted-foreground">Manage your jobs and projects</p>
+              <h1 className="text-h1 text-default">Projects</h1>
+              <p className="text-small text-muted">Manage your jobs and projects</p>
             </div>
-            <div className="status-indicator status-info">
+            <Badge className="bg-accent-light text-accent border-accent">
               {quotes.length} projects
-            </div>
+            </Badge>
           </div>
           
           <div className="flex items-center gap-3">
@@ -203,7 +204,7 @@ const JobsPage = () => {
               <Button 
                 onClick={handleNewJob}
                 disabled={createProject.isPending || createQuote.isPending}
-                className="hover-lift interactive-bounce shadow-lg"
+                className="bg-primary text-white hover:bg-primary-600 rounded-md"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 {(createProject.isPending || createQuote.isPending) ? "Creating..." : "New Project"}
@@ -213,7 +214,7 @@ const JobsPage = () => {
         </div>
 
         {/* Enhanced Jobs List */}
-        <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+        <Card className="bg-surface border-default rounded-lg shadow-sm">
           <CardContent className="p-6">
             <JobsTableView 
               onJobSelect={handleJobSelect} 
