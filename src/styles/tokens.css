@@ -3,7 +3,7 @@
    ============================================================================ */
 
 :root {
-  /* ========== Color System ========== */
+  /* ========== Light Mode Color System ========== */
   
   /* Primary Colors */
   --primary-50: #f2f5f6;
@@ -16,12 +16,12 @@
   --accent-500: #9bb6bc;
   --accent-600: #87a2a8;
   
-  /* Background & Surface */
+  /* Background & Surface - Light Mode */
   --bg: #F9FAFB;
   --surface: #FFFFFF;
   --border: #E5E7EB;
   
-  /* Text Colors */
+  /* Text Colors - Light Mode */
   --text: #111827;
   --text-muted: #6B7280;
   --muted: #F3F4F6;
@@ -126,6 +126,35 @@
   --error: 0 84% 60%; /* #EF4444 converted to HSL */
   
   --radius: var(--radius-md);
+}
+
+/* ============================================================================
+   Dark Mode Theme Overrides
+   ============================================================================ */
+
+.dark {
+  /* Background & Surface - Dark Mode */
+  --bg: #111827;
+  --surface: #1F2937;
+  --border: #374151;
+  
+  /* Text Colors - Dark Mode */
+  --text: #F9FAFB;
+  --text-muted: #9CA3AF;
+  --muted: #374151;
+  --icon: #6B7280;
+  
+  /* Ensure shadcn compatibility */
+  --background: 220 26% 14%; /* #111827 */
+  --foreground: 210 20% 98%; /* #F9FAFB */
+  --card: 215 28% 17%; /* #1F2937 */
+  --card-foreground: 210 20% 98%;
+  --popover: 215 28% 17%;
+  --popover-foreground: 210 20% 98%;
+  --muted: 215 25% 27%; /* #374151 */
+  --muted-foreground: 220 9% 64%; /* #9CA3AF */
+  --border: 215 25% 27%;
+  --input: 215 25% 27%;
 }
 
 /* ============================================================================

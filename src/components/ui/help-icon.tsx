@@ -22,7 +22,7 @@ export const HelpIcon = ({ onClick, className, size = 'md' }: HelpIconProps) => 
       size="icon-sm"
       onClick={onClick}
       className={cn(
-        "text-muted hover:text-primary transition-colors p-1",
+        "text-secondary hover:text-primary transition-colors p-1",
         className
       )}
       title="Get help"

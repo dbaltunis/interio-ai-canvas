@@ -41,18 +41,18 @@ export const HelpDrawer = ({ isOpen, onClose, title, sections }: HelpDrawerProps
       
       {/* Drawer */}
       <div className={cn(
-        "fixed top-0 right-0 h-full w-96 bg-surface border-l border-default shadow-lg z-50 transform transition-transform duration-300 ease-out",
+        "fixed top-0 right-0 h-full w-96 bg-card border-l border-border shadow-lg z-50 transform transition-transform duration-300 ease-out",
         isOpen ? "translate-x-0" : "translate-x-full"
       )}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-default">
-            <h3 className="text-h2 text-default">{title} Help</h3>
+          <div className="flex items-center justify-between p-6 border-b border-border">
+            <h3 className="text-h2 text-foreground">{title} Help</h3>
             <Button
               variant="ghost"
               size="icon-sm"
               onClick={onClose}
-              className="text-muted hover:text-default"
+              className="text-muted-foreground hover:text-foreground"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -65,9 +65,9 @@ export const HelpDrawer = ({ isOpen, onClose, title, sections }: HelpDrawerProps
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Target className="h-4 w-4 text-primary" />
-                  <h4 className="text-small font-medium text-default">{sections.purpose.title}</h4>
+                  <h4 className="text-small font-medium text-foreground">{sections.purpose.title}</h4>
                 </div>
-                <p className="text-small text-muted leading-relaxed">
+                <p className="text-small text-muted-foreground leading-relaxed">
                   {sections.purpose.content}
                 </p>
                 {sections.purpose.links && (
@@ -92,9 +92,9 @@ export const HelpDrawer = ({ isOpen, onClose, title, sections }: HelpDrawerProps
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Lightbulb className="h-4 w-4 text-accent" />
-                  <h4 className="text-small font-medium text-default">{sections.actions.title}</h4>
+                  <h4 className="text-small font-medium text-foreground">{sections.actions.title}</h4>
                 </div>
-                <p className="text-small text-muted leading-relaxed">
+                <p className="text-small text-muted-foreground leading-relaxed">
                   {sections.actions.content}
                 </p>
                 {sections.actions.links && (
@@ -119,9 +119,9 @@ export const HelpDrawer = ({ isOpen, onClose, title, sections }: HelpDrawerProps
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Lightbulb className="h-4 w-4 text-success" />
-                  <h4 className="text-small font-medium text-default">{sections.tips.title}</h4>
+                  <h4 className="text-small font-medium text-foreground">{sections.tips.title}</h4>
                 </div>
-                <p className="text-small text-muted leading-relaxed">
+                <p className="text-small text-muted-foreground leading-relaxed">
                   {sections.tips.content}
                 </p>
               </div>
@@ -132,13 +132,13 @@ export const HelpDrawer = ({ isOpen, onClose, title, sections }: HelpDrawerProps
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Keyboard className="h-4 w-4 text-warning" />
-                  <h4 className="text-small font-medium text-default">Keyboard Shortcuts</h4>
+                  <h4 className="text-small font-medium text-foreground">Keyboard Shortcuts</h4>
                 </div>
                 <div className="space-y-2">
                   {sections.shortcuts.map((shortcut, index) => (
                     <div key={index} className="flex items-center justify-between">
-                      <span className="text-small text-muted">{shortcut.description}</span>
-                      <kbd className="px-2 py-1 text-caption bg-muted border border-default rounded">
+                      <span className="text-small text-muted-foreground">{shortcut.description}</span>
+                      <kbd className="px-2 py-1 text-caption bg-muted border border-border rounded">
                         {shortcut.key}
                       </kbd>
                     </div>

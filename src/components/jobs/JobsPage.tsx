@@ -178,19 +178,19 @@ const JobsPage = () => {
   }
 
   return (
-    <div className="bg-gradient-to-br from-background via-background to-muted/20 min-h-screen animate-fade-in">
+    <div className="bg-background min-h-screen animate-fade-in">
       <div className="space-y-6 p-6">
         {/* Enhanced Header with Design System */}
         <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-primary-light rounded-lg">
+          <div className="flex items-center gap-4">
+          <div className="p-3 bg-primary/10 rounded-lg">
             <FolderOpen className="h-6 w-6 text-primary" />
           </div>
           <div className="flex items-center gap-3">
-            <h1 className="text-h1 text-default">Projects</h1>
+            <h1 className="text-h1 text-foreground">Projects</h1>
             <HelpIcon onClick={() => setShowHelp(true)} />
           </div>
-          <Badge className="bg-accent-light text-accent border-accent">
+          <Badge className="bg-secondary/10 text-secondary border-secondary/20">
             {quotes.length} projects
           </Badge>
         </div>
@@ -207,7 +207,7 @@ const JobsPage = () => {
               <Button 
                 onClick={handleNewJob}
                 disabled={createProject.isPending || createQuote.isPending}
-                className="bg-primary text-white hover:bg-primary-600 rounded-md"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 {(createProject.isPending || createQuote.isPending) ? "Creating..." : "New Project"}
@@ -217,7 +217,7 @@ const JobsPage = () => {
         </div>
 
         {/* Enhanced Jobs List */}
-        <Card className="bg-surface border-default rounded-lg shadow-sm">
+        <Card className="rounded-lg shadow-sm">
           <JobsTableView 
             onJobSelect={handleJobSelect} 
             searchTerm={searchTerm}
