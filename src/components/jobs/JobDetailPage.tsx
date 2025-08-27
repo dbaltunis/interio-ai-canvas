@@ -145,27 +145,30 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
       <div className="w-full">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Standardized Tab Navigation */}
-          <div className="bg-card/50 backdrop-blur-sm border-b border-border/50">
+          <div className="bg-background border-b border-border/50">
             <div className="px-4">
-              <TabsList className="bg-muted/50 p-1 h-auto w-auto gap-1 rounded-lg">
+              <div className="flex w-full justify-start gap-0">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
                   return (
-                    <TabsTrigger 
+                    <Button
                       key={tab.id}
-                      value={tab.id} 
-                      className="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200
-                        data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:font-medium
-                        text-muted-foreground hover:text-foreground hover:bg-background/50
-                        flex items-center gap-2 whitespace-nowrap"
+                      variant="ghost"
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 rounded-none ${
+                        isActive
+                          ? "border-primary text-foreground bg-primary/5 font-semibold"
+                          : "border-transparent text-muted-foreground hover:text-foreground hover:border-border/50"
+                      }`}
                     >
                       <Icon className="h-4 w-4" />
                       <span className="hidden sm:inline">{tab.label}</span>
                       <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
-                    </TabsTrigger>
+                    </Button>
                   );
                 })}
-              </TabsList>
+              </div>
             </div>
           </div>
 

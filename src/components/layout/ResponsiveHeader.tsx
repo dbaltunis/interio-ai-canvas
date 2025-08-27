@@ -63,36 +63,23 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
             {/* Right side - Navigation, User Profile, and Mobile Menu */}
             <div className="flex items-center space-x-4">
               {/* Navigation */}
-              <nav className="hidden md:flex items-center space-x-2">
+              <nav className="hidden md:flex items-center border-b border-border/50 rounded-none">
                 {navItems.map((item, idx) => {
                   const Icon = item.icon;
                   const isActive = activeTab === item.id;
                   return (
                   <Button
                     key={item.id}
-                    variant={isActive ? "default" : "ghost"}
-                    size="sm"
+                    variant="ghost"
                     onClick={() => onTabChange(item.id)}
-                    className={cn(
-                      "px-4 py-2.5 text-sm font-medium transition-all duration-200 group relative",
-                      isActive && "shadow-sm scale-105"
-                    )}
+                    className={`flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 rounded-none ${
+                      isActive
+                        ? "border-primary text-foreground bg-primary/5 font-semibold"
+                        : "border-transparent text-muted-foreground hover:text-foreground hover:border-border/50"
+                    }`}
                   >
-                      <Icon className={cn(
-                        "h-5 w-5 mr-2 transition-all duration-200",
-                        isActive ? "scale-110" : "group-hover:scale-105"
-                      )} />
-                      <span className="relative inline-flex items-center">
-                        {item.label}
-                        {isActive && (
-                          <span className="absolute -bottom-[3px] left-0 right-0 h-[2px] bg-primary-foreground rounded-full animate-scale-in" />
-                        )}
-                        <span
-                          className="pointer-events-none absolute -bottom-[3px] left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/80 to-transparent opacity-0 animate-[underline-flash_1.2s_ease-out_both]"
-                          style={{ animationDelay: `${1.3 + idx * 0.25}s` }}
-                          aria-hidden="true"
-                        />
-                      </span>
+                      <Icon className="h-4 w-4" />
+                      <span>{item.label}</span>
                     </Button>
                   );
                 })}
