@@ -113,30 +113,30 @@ export const ModernInventoryDashboard = () => {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-surface border-default rounded-lg p-1 h-auto flex w-auto gap-1">
-          <TabsTrigger value="overview" className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-white rounded-md">
+        <TabsList className="bg-background border-b border-border/50 rounded-none p-0 h-auto flex w-full justify-start gap-0">
+          <TabsTrigger value="overview" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">
             <Package className="h-4 w-4" />
-            <span className="font-medium">Overview</span>
+            <span>Overview</span>
           </TabsTrigger>
-          <TabsTrigger value="fabrics" className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-white rounded-md">
+          <TabsTrigger value="fabrics" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">
             <Home className="h-4 w-4" />
-            <span className="font-medium">Fabrics</span>
+            <span>Fabrics</span>
           </TabsTrigger>
-          <TabsTrigger value="hardware" className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-white rounded-md">
+          <TabsTrigger value="hardware" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">
             <Minus className="h-4 w-4" />
-            <span className="font-medium">Hardware</span>
+            <span>Hardware</span>
           </TabsTrigger>
-          <TabsTrigger value="vendors" className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-white rounded-md">
+          <TabsTrigger value="vendors" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">
             <Package className="h-4 w-4" />
-            <span className="font-medium">Vendors</span>
+            <span>Vendors</span>
           </TabsTrigger>
-          <TabsTrigger value="assemblies" className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-white rounded-md">
+          <TabsTrigger value="assemblies" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">
             <Package className="h-4 w-4" />
-            <span className="font-medium">Assemblies</span>
+            <span>Assemblies</span>
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-white rounded-md">
+          <TabsTrigger value="analytics" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">
             <Palette className="h-4 w-4" />
-            <span className="font-medium">Analytics</span>
+            <span>Analytics</span>
           </TabsTrigger>
         </TabsList>
 
