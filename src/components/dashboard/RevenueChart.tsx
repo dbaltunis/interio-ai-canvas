@@ -12,7 +12,7 @@ interface RevenueChartProps {
 
 export const RevenueChart = ({ data }: RevenueChartProps) => {
   return (
-    <Card variant="modern">
+    <Card>
       <CardHeader>
         <CardTitle className="text-lg font-semibold text-foreground">Revenue Trend</CardTitle>
       </CardHeader>

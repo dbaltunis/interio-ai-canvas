@@ -27,7 +27,7 @@ const Dashboard = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[...Array(4)].map((_, i) => (
-            <Card key={i} variant="modern" className="animate-pulse">
+            <Card key={i} className="animate-pulse">
               <CardHeader className="space-y-2 pb-3">
                 <div className="h-4 bg-muted rounded w-1/2" />
                 <div className="h-4 bg-muted rounded-full w-4 ml-auto" />
@@ -81,7 +81,7 @@ const Dashboard = () => {
       {/* Enhanced Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <PermissionGuard permission="view_clients">
-          <Card variant="modern" className="group hover:shadow-lg transition-all duration-300">
+          <Card className="group hover:shadow-md transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Clients</CardTitle>
               <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
@@ -96,7 +96,7 @@ const Dashboard = () => {
         </PermissionGuard>
 
         <PermissionGuard permission="view_jobs">
-          <Card variant="modern" className="group hover:shadow-lg transition-all duration-300">
+          <Card className="group hover:shadow-md transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Pending Quotes</CardTitle>
               <div className="p-2 bg-yellow-500/10 rounded-lg group-hover:bg-yellow-500/20 transition-colors">
@@ -111,7 +111,7 @@ const Dashboard = () => {
         </PermissionGuard>
 
         <PermissionGuard permission="view_inventory">
-          <Card variant="modern" className="group hover:shadow-lg transition-all duration-300">
+          <Card className="group hover:shadow-md transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Low Stock Items</CardTitle>
               <div className="p-2 bg-red-500/10 rounded-lg group-hover:bg-red-500/20 transition-colors">
@@ -126,7 +126,7 @@ const Dashboard = () => {
         </PermissionGuard>
 
         <ProtectedAnalytics>
-          <Card variant="modern" className="group hover:shadow-lg transition-all duration-300">
+          <Card className="group hover:shadow-md transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
               <div className="p-2 bg-green-500/10 rounded-lg group-hover:bg-green-500/20 transition-colors">
@@ -144,7 +144,7 @@ const Dashboard = () => {
       {/* Enhanced Quick Actions Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <PermissionGuard permission="view_calendar">
-          <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+          <Card className="hover:shadow-md transition-all duration-300">
             <CardHeader>
               <CardTitle className="flex items-center text-lg font-semibold">
                 <div className="p-2 bg-blue-500/10 rounded-lg mr-3">
@@ -167,7 +167,7 @@ const Dashboard = () => {
         <TeamPresenceCard />
 
         <ProtectedAnalytics>
-          <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+          <Card className="hover:shadow-md transition-all duration-300">
             <CardHeader>
               <CardTitle className="flex items-center text-lg font-semibold">
                 <div className="p-2 bg-green-500/10 rounded-lg mr-3">

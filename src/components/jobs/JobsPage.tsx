@@ -43,7 +43,7 @@ const JobsPage = () => {
   if (!canViewJobs) {
     return (
       <div className="min-h-screen flex items-center justify-center animate-fade-in">
-        <Card variant="modern" className="max-w-md">
+        <Card className="max-w-md">
           <CardContent className="text-center p-8">
             <div className="p-4 bg-red-500/10 rounded-lg inline-block mb-4">
               <Shield className="h-8 w-8 text-red-600" />

@@ -39,7 +39,7 @@ export const SettingsCard = ({
   status 
 }: SettingsCardProps) => {
   return (
-    <Card variant="modern" className={cn("hover-lift transition-all duration-300", className)}>
+    <Card className={cn("hover-lift transition-all duration-300", className)}>
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">

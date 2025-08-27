@@ -59,7 +59,7 @@ export const InventorySkeleton = () => {
           {/* Stats cards skeleton */}
           <div className="grid gap-4 md:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Card key={i} variant="modern">
+              <Card key={i}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <Skeleton className="h-4 w-20" animation="shimmer" />
@@ -77,7 +77,7 @@ export const InventorySkeleton = () => {
           {/* Quick Actions skeleton */}
           <div className="grid gap-4 md:grid-cols-3">
             {Array.from({ length: 3 }).map((_, i) => (
-              <Card key={i} variant="modern" className="cursor-pointer transition-all duration-200">
+              <Card key={i} className="cursor-pointer transition-all duration-200">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Skeleton className="h-5 w-5 rounded" animation="shimmer" />
@@ -99,7 +99,7 @@ export const InventorySkeleton = () => {
           </div>
 
           {/* Recent activity skeleton */}
-          <Card variant="modern">
+          <Card>
             <CardHeader>
               <CardTitle>
                 <Skeleton className="h-6 w-32" animation="shimmer" />

@@ -69,7 +69,6 @@ export const ClientCard = ({
 
   return (
     <Card 
-      variant="modern" 
       className={cn(
         "cursor-pointer hover-lift group transition-all duration-300",
         className

@@ -21,7 +21,7 @@ export const QuickActions = ({ onNewJob, onNewClient, onCalculator, onCalendar, 
   ];
 
   return (
-    <Card variant="modern">
+    <Card>
       <CardHeader>
         <CardTitle className="text-lg font-semibold text-foreground">Quick Actions</CardTitle>
       </CardHeader>

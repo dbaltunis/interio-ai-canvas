@@ -47,7 +47,6 @@ const NotificationItem = ({ notification, onDismiss, onAction, onClick }: Notifi
 
   return (
     <Card 
-      variant="modern" 
       className={cn(
         "group hover-lift cursor-pointer transition-all duration-200",
         !notification.isRead && "border-l-4 border-l-primary"
@@ -148,7 +147,7 @@ export const NotificationCenter = ({
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   return (
-    <Card variant="modern" className={cn("w-full max-w-md", className)}>
+    <Card className={cn("w-full max-w-md", className)}>
       <div className="p-4 border-b border-border/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

@@ -77,7 +77,7 @@ export const EnhancedKPICard = ({
 
   if (loading || refreshing) {
     return (
-      <Card variant="modern" className={cn("transition-all duration-200", getCardSize())}>
+      <Card className={cn("transition-all duration-200", getCardSize())}>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
             <Icon className="h-4 w-4" />
@@ -97,7 +97,7 @@ export const EnhancedKPICard = ({
 
   if (config.displayFormat === 'compact') {
     return (
-      <Card variant="modern" className={cn("group", getCardSize())}>
+      <Card className={cn("group", getCardSize())}>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -137,7 +137,7 @@ export const EnhancedKPICard = ({
     const gaugeValue = typeof value === 'number' ? Math.min(value, 100) : 0;
     
     return (
-      <Card variant="modern" className={cn("group", getCardSize())}>
+      <Card className={cn("group", getCardSize())}>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
             <Icon 
@@ -182,7 +182,6 @@ export const EnhancedKPICard = ({
   // Default card format
   return (
     <Card 
-      variant="modern"
       className={cn("group", getCardSize())}
       style={config.color ? { borderLeftColor: config.color, borderLeftWidth: '3px' } : {}}
     >

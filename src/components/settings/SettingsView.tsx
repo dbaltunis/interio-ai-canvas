@@ -156,7 +156,7 @@ export const SettingsView = () => {
         </TabsList>
 
         <TabsContent value="overview" className="animate-fade-in">
-          <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+          <Card className="hover:shadow-md transition-all duration-300">
             <CardContent className="p-6">
               <SettingsOverviewTab />
             </CardContent>
@@ -164,7 +164,7 @@ export const SettingsView = () => {
         </TabsContent>
 
         <TabsContent value="personal" className="animate-fade-in">
-          <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+          <Card className="hover:shadow-md transition-all duration-300">
             <CardContent className="p-6">
               <PersonalSettingsTab />
             </CardContent>
@@ -172,7 +172,7 @@ export const SettingsView = () => {
         </TabsContent>
 
         <TabsContent value="billing" className="animate-fade-in">
-          <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+          <Card className="hover:shadow-md transition-all duration-300">
             <CardContent className="p-6">
               <BillingTab />
             </CardContent>
@@ -181,7 +181,7 @@ export const SettingsView = () => {
 
         {canViewSettings && (
           <TabsContent value="business" className="animate-fade-in">
-            <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+            <Card className="hover:shadow-md transition-all duration-300">
               <CardContent className="p-6">
                 <BusinessSettingsTab />
               </CardContent>
@@ -191,7 +191,7 @@ export const SettingsView = () => {
 
         {canManageUsers && (
           <TabsContent value="account" className="animate-fade-in">
-            <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+            <Card className="hover:shadow-md transition-all duration-300">
               <CardContent className="p-6">
                 <AccountManagementTab />
               </CardContent>
@@ -201,7 +201,7 @@ export const SettingsView = () => {
 
         {canViewSettings && (
           <TabsContent value="units" className="animate-fade-in">
-            <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+            <Card className="hover:shadow-md transition-all duration-300">
               <CardContent className="p-6">
                 <MeasurementUnitsTab />
               </CardContent>
@@ -211,7 +211,7 @@ export const SettingsView = () => {
 
         {canViewWindowTreatments && (
           <TabsContent value="window-coverings" className="animate-fade-in">
-            <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+            <Card className="hover:shadow-md transition-all duration-300">
               <CardContent className="p-6">
                 <WindowCoveringsTab />
               </CardContent>
@@ -221,7 +221,7 @@ export const SettingsView = () => {
 
         {canManageMarkup && (
           <TabsContent value="pricing" className="animate-fade-in">
-            <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+            <Card className="hover:shadow-md transition-all duration-300">
               <CardContent className="p-6">
                 <PricingRulesTab />
               </CardContent>
@@ -231,7 +231,7 @@ export const SettingsView = () => {
 
         {canManageUsers && (
           <TabsContent value="users" className="animate-fade-in">
-            <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+            <Card className="hover:shadow-md transition-all duration-300">
               <CardContent className="p-6">
                 <UserManagementTab />
               </CardContent>
@@ -241,7 +241,7 @@ export const SettingsView = () => {
 
         {canViewSettings && (
           <TabsContent value="documents" className="animate-fade-in">
-            <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+            <Card className="hover:shadow-md transition-all duration-300">
               <CardContent className="p-6">
                 <DocumentTemplatesTab />
               </CardContent>
@@ -251,7 +251,7 @@ export const SettingsView = () => {
 
         {canViewSettings && (
           <TabsContent value="system" className="animate-fade-in">
-            <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+            <Card className="hover:shadow-md transition-all duration-300">
               <CardContent className="p-6">
                 <SystemSettingsTab />
               </CardContent>
@@ -260,7 +260,7 @@ export const SettingsView = () => {
         )}
 
         <TabsContent value="notifications" className="animate-fade-in">
-          <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+          <Card className="hover:shadow-md transition-all duration-300">
             <CardContent className="p-6">
               <div className="space-y-8">
                 <EnhancedNotificationSettings />
@@ -274,7 +274,7 @@ export const SettingsView = () => {
         </TabsContent>
 
         <TabsContent value="security" className="animate-fade-in">
-          <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+          <Card className="hover:shadow-md transition-all duration-300">
             <CardContent className="p-6">
               <SecurityPrivacyTab />
             </CardContent>
@@ -283,7 +283,7 @@ export const SettingsView = () => {
 
         {canViewSettings && (
           <TabsContent value="integrations" className="animate-fade-in">
-            <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+            <Card className="hover:shadow-md transition-all duration-300">
               <CardContent className="p-6">
                 <IntegrationsTab />
               </CardContent>

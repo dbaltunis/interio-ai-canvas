@@ -21,7 +21,7 @@ interface KPICardProps {
 export const KPICard = ({ title, value, subtitle, icon: Icon, trend, loading }: KPICardProps) => {
   if (loading) {
     return (
-      <Card variant="modern">
+      <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
             <Icon className="h-4 w-4" />
@@ -39,7 +39,7 @@ export const KPICard = ({ title, value, subtitle, icon: Icon, trend, loading }: 
   }
 
   return (
-    <Card variant="modern" className="group">
+    <Card className="group">
       <CardHeader className="pb-3">
         <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
           <Icon className="h-4 w-4 text-primary" />

@@ -17,7 +17,7 @@ interface PipelineOverviewProps {
 
 export const PipelineOverview = ({ data, totalValue }: PipelineOverviewProps) => {
   return (
-    <Card variant="modern">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-lg">
           <span className="text-foreground">Sales Pipeline</span>
