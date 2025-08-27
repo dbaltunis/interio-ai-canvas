@@ -17,12 +17,15 @@ import { InventoryImportExport } from "./InventoryImportExport";
 import { VendorDashboard } from "../vendors/VendorDashboard";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useVendors } from "@/hooks/useVendors";
+import { HelpDrawer } from "@/components/ui/help-drawer";
+import { HelpIcon } from "@/components/ui/help-icon";
 
 export const ModernInventoryDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [activeTab, setActiveTab] = useState("overview");
   const [showSearch, setShowSearch] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const { data: inventory, refetch } = useEnhancedInventory();
   const { data: vendors } = useVendors();
 
@@ -34,11 +37,9 @@ export const ModernInventoryDashboard = () => {
           <div className="p-3 bg-primary-light rounded-lg">
             <Package className="h-6 w-6 text-primary" />
           </div>
-          <div>
+          <div className="flex items-center gap-3">
             <h1 className="text-h1 text-default">Inventory Management</h1>
-            <p className="text-small text-muted">
-              Manage fabrics, hardware, and assemblies for your window treatment business
-            </p>
+            <HelpIcon onClick={() => setShowHelp(true)} />
           </div>
           <Badge className="bg-accent-light text-accent border-accent">
             {inventory?.length || 0} items
@@ -296,6 +297,31 @@ export const ModernInventoryDashboard = () => {
           </div>
         </TabsContent>
       </Tabs>
+      
+      <HelpDrawer
+        isOpen={showHelp}
+        onClose={() => setShowHelp(false)}
+        title="Inventory Management"
+        sections={{
+          purpose: {
+            title: "What this page is for",
+            content: "Track and manage all your window treatment materials including fabrics, hardware, tracks, and pre-configured assembly kits. Monitor stock levels and vendor relationships."
+          },
+          actions: {
+            title: "Common actions",
+            content: "Add new inventory items, track stock levels, create assembly kits, manage vendor relationships, import/export inventory data, and set reorder alerts."
+          },
+          tips: {
+            title: "Tips & best practices",
+            content: "Set reorder points for critical items. Use categories consistently. Keep vendor information updated. Regular stock audits help maintain accuracy."
+          },
+          shortcuts: [
+            { key: "Ctrl + A", description: "Add new item" },
+            { key: "Ctrl + F", description: "Toggle search" },
+            { key: "Tab", description: "Switch between tabs" }
+          ]
+        }}
+      />
     </div>
   );
 };

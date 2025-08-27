@@ -15,10 +15,13 @@ import { EmailIntegrationBanners } from "./email-components/EmailIntegrationBann
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
 import { useEmailSettings } from "@/hooks/useEmailSettings";
 import { useEmails } from "@/hooks/useEmails";
+import { HelpDrawer } from "@/components/ui/help-drawer";
+import { HelpIcon } from "@/components/ui/help-icon";
 
 export const EmailManagement = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showFilters, setShowFilters] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const { hasSendGridIntegration, isLoading: integrationLoading } = useIntegrationStatus();
   const { data: emailSettings } = useEmailSettings();
   const { data: emails = [] } = useEmails();
@@ -50,9 +53,9 @@ export const EmailManagement = () => {
           <div className="p-3 bg-primary-light rounded-lg">
             <Mail className="h-6 w-6 text-primary" />
           </div>
-          <div>
+          <div className="flex items-center gap-3">
             <h1 className="text-h1 text-default">Email Management</h1>
-            <p className="text-small text-muted">Manage your email communications and campaigns</p>
+            <HelpIcon onClick={() => setShowHelp(true)} />
           </div>
           <Badge className="bg-accent-light text-accent border-accent">
             {emails?.length || 0} emails
@@ -186,6 +189,31 @@ export const EmailManagement = () => {
         {renderHeader()}
         {renderContent()}
       </div>
+      
+      <HelpDrawer
+        isOpen={showHelp}
+        onClose={() => setShowHelp(false)}
+        title="Email Management"
+        sections={{
+          purpose: {
+            title: "What this page is for",
+            content: "Create, send, and track email communications with clients. Manage email campaigns, analyze performance metrics, and configure email settings."
+          },
+          actions: {
+            title: "Common actions",
+            content: "Compose emails, create campaigns, view analytics, manage email templates, configure SendGrid settings, and track email performance."
+          },
+          tips: {
+            title: "Tips & best practices",
+            content: "Use personalized subject lines. Keep emails concise and professional. Monitor open and click rates. Set up email templates for common communications."
+          },
+          shortcuts: [
+            { key: "Ctrl + M", description: "Compose new email" },
+            { key: "Ctrl + S", description: "Save draft" },
+            { key: "Tab", description: "Switch between sections" }
+          ]
+        }}
+      />
     </div>
   );
 };

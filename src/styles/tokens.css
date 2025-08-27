@@ -156,10 +156,15 @@
    Utility Classes
    ============================================================================ */
 
-/* Shadow utilities */
+/* Shadow utilities - LIMITED TO SPECIFIED USE CASES */
 .shadow-sm { box-shadow: var(--shadow-sm); }
 .shadow-md { box-shadow: var(--shadow-md); }
 .shadow-lg { box-shadow: var(--shadow-lg); }
+
+/* Apply shadows ONLY to cards, dropdowns, and modals */
+.card-shadow { box-shadow: var(--shadow-sm); }
+.dropdown-shadow { box-shadow: var(--shadow-md); }
+.modal-shadow { box-shadow: var(--shadow-lg); }
 
 /* Border radius utilities */
 .rounded-sm { border-radius: var(--radius-sm); }
@@ -167,7 +172,7 @@
 .rounded-lg { border-radius: var(--radius-lg); }
 .rounded-pill { border-radius: var(--radius-pill); }
 
-/* Spacing utilities */
+/* Consistent 8-point spacing utilities */
 .gap-1 { gap: var(--space-1); }
 .gap-2 { gap: var(--space-2); }
 .gap-3 { gap: var(--space-3); }

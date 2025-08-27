@@ -11,11 +11,14 @@ import { useHasPermission } from "@/hooks/usePermissions";
 import { JobsTableView } from "./JobsTableView";
 import { JobDetailPage } from "./JobDetailPage";
 import { JobsFilter } from "./JobsFilter";
+import { HelpDrawer } from "@/components/ui/help-drawer";
+import { HelpIcon } from "@/components/ui/help-icon";
 
 const JobsPage = () => {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [showHelp, setShowHelp] = useState(false);
   
   // Permission checks
   const canViewJobs = useHasPermission('view_jobs');
@@ -179,18 +182,18 @@ const JobsPage = () => {
       <div className="space-y-6 p-6">
         {/* Enhanced Header with Design System */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary-light rounded-lg">
-              <FolderOpen className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-h1 text-default">Projects</h1>
-              <p className="text-small text-muted">Manage your jobs and projects</p>
-            </div>
-            <Badge className="bg-accent-light text-accent border-accent">
-              {quotes.length} projects
-            </Badge>
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-primary-light rounded-lg">
+            <FolderOpen className="h-6 w-6 text-primary" />
           </div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-h1 text-default">Projects</h1>
+            <HelpIcon onClick={() => setShowHelp(true)} />
+          </div>
+          <Badge className="bg-accent-light text-accent border-accent">
+            {quotes.length} projects
+          </Badge>
+        </div>
           
           <div className="flex items-center gap-3">
             <JobsFilter
@@ -224,6 +227,31 @@ const JobsPage = () => {
           </CardContent>
         </Card>
       </div>
+      
+      <HelpDrawer
+        isOpen={showHelp}
+        onClose={() => setShowHelp(false)}
+        title="Projects"
+        sections={{
+          purpose: {
+            title: "What this page is for",
+            content: "Manage all your window treatment projects from initial quotes to completed installations. Track progress, manage timelines, and organize project details."
+          },
+          actions: {
+            title: "Common actions",
+            content: "Create new projects, view project details, filter by status, search projects, and track progress through different stages."
+          },
+          tips: {
+            title: "Tips & best practices",
+            content: "Use consistent naming conventions for projects. Keep project statuses updated. Archive completed projects to reduce clutter."
+          },
+          shortcuts: [
+            { key: "Ctrl + N", description: "Create new project" },
+            { key: "Ctrl + F", description: "Focus search" },
+            { key: "Esc", description: "Clear filters" }
+          ]
+        }}
+      />
     </div>
   );
 };
