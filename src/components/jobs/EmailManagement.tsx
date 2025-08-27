@@ -86,46 +86,46 @@ export const EmailManagement = () => {
       
       {/* Enhanced Navigation Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-surface border-default rounded-lg p-1 h-auto flex w-auto gap-1">
+        <TabsList className="bg-background border-b border-border/50 rounded-none p-0 h-auto flex w-full justify-start gap-0">
           <TabsTrigger 
             value="dashboard" 
-            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-white rounded-md"
+            className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50"
           >
             <Home className="w-4 h-4" />
-            <span className="hidden sm:inline font-medium">Dashboard</span>
-            <span className="sm:hidden font-medium">Home</span>
+            <span className="hidden sm:inline">Dashboard</span>
+            <span className="sm:hidden">Home</span>
           </TabsTrigger>
           <TabsTrigger 
             value="composer" 
-            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-white rounded-md"
+            className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50"
           >
             <Mail className="w-4 h-4" />
-            <span className="hidden sm:inline font-medium">Compose</span>
-            <span className="sm:hidden font-medium">Write</span>
+            <span className="hidden sm:inline">Compose</span>
+            <span className="sm:hidden">Write</span>
           </TabsTrigger>
           <TabsTrigger 
             value="campaigns" 
-            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-white rounded-md"
+            className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50"
           >
             <BarChart3 className="w-4 h-4" />
-            <span className="hidden sm:inline font-medium">Campaigns</span>
-            <span className="sm:hidden font-medium">Camps</span>
+            <span className="hidden sm:inline">Campaigns</span>
+            <span className="sm:hidden">Camps</span>
           </TabsTrigger>
           <TabsTrigger 
             value="analytics" 
-            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-white rounded-md"
+            className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50"
           >
             <BarChart3 className="w-4 h-4" />
-            <span className="hidden sm:inline font-medium">Analytics</span>
-            <span className="sm:hidden font-medium">Stats</span>
+            <span className="hidden sm:inline">Analytics</span>
+            <span className="sm:hidden">Stats</span>
           </TabsTrigger>
           <TabsTrigger 
             value="settings" 
-            className="flex items-center gap-2 px-4 py-2.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-white rounded-md"
+            className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50"
           >
             <Settings className="w-4 h-4" />
-            <span className="hidden sm:inline font-medium">Settings</span>
-            <span className="sm:hidden font-medium">Config</span>
+            <span className="hidden sm:inline">Settings</span>
+            <span className="sm:hidden">Config</span>
           </TabsTrigger>
         </TabsList>
       </Tabs>
