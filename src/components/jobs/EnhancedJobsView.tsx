@@ -62,7 +62,7 @@ export const EnhancedJobsView = ({ job, onEdit, onViewDetails }: EnhancedJobsVie
 
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="modern-card p-1 h-auto bg-muted/30 backdrop-blur-sm flex w-auto">
             <TabsTrigger value="overview" className="flex items-center gap-1">
               <Eye className="h-3 w-3" />
               Overview

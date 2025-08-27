@@ -1,4 +1,6 @@
-/* Import custom theme first */
+/* Import design system tokens first */
+@import './styles/tokens.css';
+/* Import custom theme */
 @import './styles/theme.css';
 
 @tailwind base;
@@ -7,32 +9,41 @@
 
 @layer base {
   :root {
-    /* Company Color Palette - Proper HSL space values */
-    --company-primary: 200 25% 34%; /* #415e6b */
-    --company-secondary: 189 20% 60%; /* #9bb6bc */
+    /* Modern Color System - Beautiful, Clean Design */
+    --company-primary: 218 25% 15%; /* Deep navy-blue */
+    --company-secondary: 189 40% 65%; /* Modern cyan-blue */
+    --company-tertiary: 142 76% 36%; /* Success green */
+    --company-warning: 38 92% 50%; /* Vibrant orange */
+    --company-error: 0 84% 60%; /* Clean red */
+    
+    /* Risk Assessment Colors (from reference) */
+    --risk-high: 0 75% 58%; /* Red gradient start */
+    --risk-medium: 25 85% 55%; /* Orange gradient */
+    --risk-low: 45 85% 60%; /* Yellow gradient */
+    --risk-none: 142 76% 55%; /* Green gradient */
     
     /* AI Design System */
     --primary: var(--company-primary);
-    --primary-foreground: var(--company-secondary);
+    --primary-foreground: 0 0% 100%;
     --secondary: var(--company-secondary);
-    --secondary-foreground: var(--company-primary);
+    --secondary-foreground: 0 0% 100%;
     --accent: var(--company-secondary);
     --accent-foreground: var(--company-primary);
     
     --background: 0 0% 100%;
-    --foreground: var(--company-primary);
+    --foreground: 220 15% 15%; /* Dark text for clarity */
     --muted: 210 40% 98%;
-    --muted-foreground: var(--company-primary);
+    --muted-foreground: 220 15% 45%;
     --popover: 0 0% 100%;
     --popover-foreground: var(--company-primary);
     --card: 0 0% 100%;
-    --card-foreground: var(--company-primary);
-    --border: var(--company-secondary);
-    --input: var(--company-secondary);
+    --card-foreground: 220 15% 15%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
     --ring: var(--company-primary);
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --radius: 0.75rem;
+    --destructive: var(--company-error);
+    --destructive-foreground: 0 0% 100%;
+    --radius: 0.875rem;
     
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
@@ -148,7 +159,7 @@
 }
 
 
-/* Subtle AI-Style Design System with Company Colors */
+/* Enhanced Modern Design System */
 .ai-gradient-bg {
   background: linear-gradient(135deg, 
     hsl(var(--company-primary) / 0.02) 0%,
@@ -156,6 +167,203 @@
   );
 }
 
+/* Beautiful Risk Assessment System */
+.risk-gradient {
+  background: linear-gradient(90deg,
+    hsl(var(--risk-high)) 0%,
+    hsl(var(--risk-medium)) 25%,
+    hsl(var(--risk-low)) 65%,
+    hsl(var(--risk-none)) 100%
+  );
+  height: 8px;
+  border-radius: 4px;
+}
+
+.risk-indicator-high {
+  background: linear-gradient(135deg, hsl(var(--risk-high)) 0%, hsl(var(--risk-high) / 0.8) 100%);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.risk-indicator-medium {
+  background: linear-gradient(135deg, hsl(var(--risk-medium)) 0%, hsl(var(--risk-medium) / 0.8) 100%);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.risk-indicator-low {
+  background: linear-gradient(135deg, hsl(var(--risk-low)) 0%, hsl(var(--risk-low) / 0.8) 100%);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.risk-indicator-none {
+  background: linear-gradient(135deg, hsl(var(--risk-none)) 0%, hsl(var(--risk-none) / 0.8) 100%);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Modern Card System - Clean & Beautiful */
+.modern-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.8);
+  border-radius: calc(var(--radius) + 2px);
+  box-shadow: 
+    0 1px 3px hsl(220 15% 15% / 0.06),
+    0 1px 2px hsl(220 15% 15% / 0.08);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modern-card:hover {
+  box-shadow: 
+    0 8px 25px hsl(220 15% 15% / 0.08),
+    0 4px 10px hsl(220 15% 15% / 0.1);
+  transform: translateY(-2px);
+  border-color: hsl(var(--company-secondary) / 0.3);
+}
+
+.modern-card-elevated {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.6);
+  border-radius: calc(var(--radius) + 4px);
+  box-shadow: 
+    0 4px 16px hsl(220 15% 15% / 0.08),
+    0 2px 8px hsl(220 15% 15% / 0.1);
+}
+
+.interactive-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) + 2px);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.interactive-card:hover {
+  border-color: hsl(var(--company-secondary) / 0.5);
+  box-shadow: 
+    0 8px 25px hsl(220 15% 15% / 0.1),
+    0 4px 10px hsl(220 15% 15% / 0.12);
+  transform: translateY(-1px);
+}
+
+.team-card {
+  background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--muted) / 0.3) 100%);
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) + 2px);
+  overflow: hidden;
+  position: relative;
+}
+
+.team-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg,
+    hsl(var(--company-secondary)) 0%,
+    hsl(var(--company-primary)) 100%
+  );
+}
+
+/* Interactive Elements */
+.hover-lift {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+.interactive-bounce {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.interactive-bounce:hover {
+  animation: interactive-bounce 0.15s ease-in-out;
+}
+
+.interactive-bounce:active {
+  transform: scale(0.98);
+}
+
+@keyframes interactive-bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+@keyframes underline-flash {
+  0% { opacity: 0; transform: scaleX(0); }
+  50% { opacity: 1; transform: scaleX(1); }
+  100% { opacity: 0; transform: scaleX(0); }
+}
+
+/* Status Indicators - Updated with better colors */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: calc(var(--radius) + 2px);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-success {
+  background: hsl(var(--company-tertiary) / 0.1);
+  color: hsl(var(--company-tertiary));
+  border: 1px solid hsl(var(--company-tertiary) / 0.2);
+}
+
+.status-warning {
+  background: hsl(var(--company-warning) / 0.1);
+  color: hsl(var(--company-warning));
+  border: 1px solid hsl(var(--company-warning) / 0.2);
+}
+
+.status-error {
+  background: hsl(var(--company-error) / 0.1);
+  color: hsl(var(--company-error));
+  border: 1px solid hsl(var(--company-error) / 0.2);
+}
+
+.status-info {
+  background: hsl(var(--company-secondary) / 0.1);
+  color: hsl(var(--company-secondary));
+  border: 1px solid hsl(var(--company-secondary) / 0.2);
+}
+
+/* Progress Bars */
+.modern-progress {
+  background: hsl(var(--muted));
+  border-radius: calc(var(--radius));
+  overflow: hidden;
+}
+
+.modern-progress-fill {
+  background: linear-gradient(90deg, 
+    hsl(var(--primary)) 0%, 
+    hsl(var(--primary) / 0.8) 100%
+  );
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Glassmorphism Effects */
 .glass-morphism {
   background: linear-gradient(180deg,
     hsl(var(--background) / 0.60) 0%,
@@ -239,6 +447,30 @@
     radial-gradient(100% 40% at 100% 0%, hsl(var(--company-primary) / 0.12), transparent 45%);
 }
 
+/* Dark Mode Modern Cards */
+.dark .modern-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.6);
+  box-shadow: 
+    0 2px 8px hsl(0 0% 0% / 0.15),
+    0 1px 4px hsl(0 0% 0% / 0.2);
+}
+
+.dark .modern-card:hover {
+  box-shadow: 
+    0 8px 24px hsl(0 0% 0% / 0.2),
+    0 4px 12px hsl(0 0% 0% / 0.25);
+}
+
+.dark .modern-card-elevated {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.4);
+  box-shadow: 
+    0 8px 32px hsl(0 0% 0% / 0.25),
+    0 4px 16px hsl(0 0% 0% / 0.3);
+}
+
+/* Beautiful Gradients */
 .company-gradient {
   background: linear-gradient(135deg, hsl(var(--company-primary)) 0%, hsl(var(--company-secondary)) 100%);
 }
@@ -288,6 +520,16 @@
 .dark .text-gray-600, .apple-graphite .text-gray-600,
 .dark .text-slate-500, .apple-graphite .text-slate-500 {
   color: hsl(var(--foreground) / 0.85) !important;
+}
+
+/* Remove shadows from all interactive elements for cleaner design */
+button, .btn, [role="button"], input, textarea, select {
+  box-shadow: none !important;
+}
+
+/* Auth/Login specific shadow removal */
+[data-auth], [data-login], .auth-form, .login-form {
+  box-shadow: none !important;
 }
 
 /* Container hierarchy with clear contrast levels */
@@ -369,53 +611,23 @@
     -webkit-print-color-adjust: exact;
   }
   
-  .print\\:border-none {
+  .print\:border-none {
     border: none !important;
   }
   
-  .print\\:p-0 {
+  .print\:p-0 {
     padding: 0 !important;
   }
   
-  .print\\:shadow-none {
+  .print\:shadow-none {
     box-shadow: none !important;
   }
   
-  .print\\:text-black {
+  .print\:text-black {
     color: black !important;
   }
   
   @page {
     margin: 1in;
-    size: letter;
   }
-  
-  table {
-    page-break-inside: auto;
-  }
-  
-  tr {
-    page-break-inside: avoid;
-    page-break-after: auto;
-  }
-  
-  thead {
-    display: table-header-group;
-  }
-  
-  tfoot {
-    display: table-footer-group;
-  }
-}
-
-/* Professional styling for the window covering industry */
-.bg-interio-gradient {
-  background: linear-gradient(135deg, #415e6b 0%, #9bb6bc 100%);
-}
-
-.text-gradient {
-  background: linear-gradient(135deg, #415e6b 0%, #9bb6bc 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }

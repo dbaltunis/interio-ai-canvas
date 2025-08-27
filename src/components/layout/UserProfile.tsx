@@ -1,5 +1,5 @@
 
-import { LogIn } from "lucide-react";
+import { LogIn, MessageCircle, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -8,9 +8,11 @@ import { useNavigate } from "react-router-dom";
 
 interface UserProfileProps {
   onOpenTeamHub?: () => void;
+  showCollaborationIndicator?: boolean;
+  unreadCount?: number;
 }
 
-export const UserProfile = ({ onOpenTeamHub }: UserProfileProps = {}) => {
+export const UserProfile = ({ onOpenTeamHub, showCollaborationIndicator = false, unreadCount = 0 }: UserProfileProps = {}) => {
   const { user } = useAuth();
   const { userProfile, isLoading, initials, displayName, avatarUrl } = useUserDisplay();
   const navigate = useNavigate();
@@ -41,22 +43,45 @@ export const UserProfile = ({ onOpenTeamHub }: UserProfileProps = {}) => {
   }
 
   return (
-    <button
-      onClick={onOpenTeamHub}
-      className="flex items-center hover:opacity-80 transition-opacity cursor-pointer"
-      title="Open Team Hub"
-    >
-      <Avatar className="h-9 w-9 ring-2 ring-transparent hover:ring-primary/20 transition-all">
-        {avatarUrl && (
-          <AvatarImage 
-            src={avatarUrl} 
-            alt={displayName} 
-          />
+    <div className="relative">
+      <button
+        onClick={onOpenTeamHub}
+        className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer relative group"
+        title={unreadCount > 0 ? `${unreadCount} unread messages` : "Open Team Hub"}
+      >
+        <Avatar className="h-9 w-9 ring-2 ring-transparent hover:ring-primary/20 transition-all">
+          {avatarUrl && (
+            <AvatarImage 
+              src={avatarUrl} 
+              alt={displayName} 
+            />
+          )}
+          <AvatarFallback className="bg-brand-secondary text-brand-primary">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+        
+        {/* Show collaboration icon when there's activity */}
+        {(showCollaborationIndicator || unreadCount > 0) && (
+          <div className="hidden md:flex items-center">
+            {unreadCount > 0 ? (
+              <MessageCircle className="h-4 w-4 text-primary" />
+            ) : (
+              <Users className="h-4 w-4 text-primary" />
+            )}
+          </div>
         )}
-        <AvatarFallback className="bg-brand-secondary text-brand-primary">
-          {initials}
-        </AvatarFallback>
-      </Avatar>
-    </button>
+      </button>
+      
+      {/* Notification badges */}
+      {unreadCount > 0 && (
+        <div className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium z-10">
+          {unreadCount > 9 ? '9+' : unreadCount}
+        </div>
+      )}
+      {showCollaborationIndicator && unreadCount === 0 && (
+        <div className="absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full animate-pulse z-10" />
+      )}
+    </div>
   );
 };

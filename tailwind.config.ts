@@ -22,10 +22,42 @@ export default {
 				'70': '17.5rem', // 280px
 			},
 			colors: {
+				// Design System Tokens
+				primary: {
+					50:  '#f2f5f6',
+					500: '#415e6b',
+					600: '#3a5360',
+					700: '#2e4652',
+				},
+				accent: {
+					50:  '#f3f7f8',
+					500: '#9bb6bc',
+					600: '#87a2a8',
+				},
+				bg:      '#F9FAFB',
+				surface: '#FFFFFF',
+				border:  '#E5E7EB',
+				text:    '#111827',
+				muted:   '#6B7280',
+				success: '#10B981',
+				warning: '#F59E0B',
+				error:   '#EF4444',
+				info:    '#3B82F6',
+				
 				// Company brand colors with AI design system
 				company: {
 					primary: 'hsl(var(--company-primary))',
 					secondary: 'hsl(var(--company-secondary))',
+					tertiary: 'hsl(var(--company-tertiary))',
+					warning: 'hsl(var(--company-warning))',
+					error: 'hsl(var(--company-error))',
+				},
+				// Risk assessment colors
+				risk: {
+					high: 'hsl(var(--risk-high))',
+					medium: 'hsl(var(--risk-medium))',
+					low: 'hsl(var(--risk-low))',
+					none: 'hsl(var(--risk-none))',
 				},
 				// InterioApp Brand Colors (legacy support)
 				brand: {
@@ -85,9 +117,19 @@ export default {
 				}
 			},
 			borderRadius: {
-				lg: 'var(--radius)',
-				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)'
+				sm: '6px',
+				md: '8px',
+				lg: '12px',
+				pill: '9999px',
+				// Keep existing shadcn radius for compatibility
+				'radius-lg': 'var(--radius)',
+				'radius-md': 'calc(var(--radius) - 2px)',
+				'radius-sm': 'calc(var(--radius) - 4px)'
+			},
+			boxShadow: {
+				sm: '0 1px 3px rgba(0,0,0,0.10)',
+				md: '0 4px 6px rgba(0,0,0,0.10)',
+				lg: '0 10px 15px rgba(0,0,0,0.15)',
 			},
 			keyframes: {
 				'accordion-down': {
@@ -121,6 +163,19 @@ export default {
 				'scale-in': {
 					'0%': { opacity: '0', transform: 'scale(0.95)' },
 					'100%': { opacity: '1', transform: 'scale(1)' }
+				},
+				'slide-up': {
+					'0%': { opacity: '0', transform: 'translateY(20px)' },
+					'100%': { opacity: '1', transform: 'translateY(0)' }
+				},
+				'hover-lift': {
+					'0%': { transform: 'translateY(0)' },
+					'100%': { transform: 'translateY(-2px)' }
+				},
+				'interactive-bounce': {
+					'0%': { transform: 'scale(1)' },
+					'50%': { transform: 'scale(1.02)' },
+					'100%': { transform: 'scale(1)' }
 				},
 				'sparkle-minute': {
 					'0%, 96%, 100%': { opacity: '0', transform: 'scale(0.85)' },
@@ -177,6 +232,9 @@ export default {
 				'wave': 'wave 2s ease-in-out infinite',
 				'fade-in': 'fade-in 0.3s ease-out',
 				'scale-in': 'scale-in 0.2s ease-out',
+				'slide-up': 'slide-up 0.4s ease-out',
+				'hover-lift': 'hover-lift 0.2s ease-out',
+				'interactive-bounce': 'interactive-bounce 0.15s ease-in-out',
 				'sparkle-minute': 'sparkle-minute 60s ease-in-out infinite',
 				'logo-sweep': 'logo-sweep 3s ease-in-out both',
 				'header-sweep': 'header-sweep 3s ease-in-out both',

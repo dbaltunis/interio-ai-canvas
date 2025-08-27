@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCreateEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { useVendors } from "@/hooks/useVendors";
 import { supabase } from "@/integrations/supabase/client";
+import { FieldHelp } from "@/components/ui/field-help";
 
 interface AddInventoryDialogProps {
   trigger?: React.ReactNode;
@@ -199,7 +200,10 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
                   </CardHeader>
                   <CardContent className="grid gap-4 md:grid-cols-2">
                     <div>
-                      <Label htmlFor="name">Product Name</Label>
+                      <div className="flex items-center">
+                        <Label htmlFor="name">Product Name</Label>
+                        <FieldHelp content="A descriptive name that clearly identifies the product for quick recognition in inventory lists." />
+                      </div>
                       <Input
                         id="name"
                         value={formData.name}
@@ -210,7 +214,10 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
                     </div>
                     
                     <div>
-                      <Label htmlFor="sku">SKU</Label>
+                      <div className="flex items-center">
+                        <Label htmlFor="sku">SKU</Label>
+                        <FieldHelp content="Stock Keeping Unit - a unique identifier for this product. Use a consistent naming convention like brand-product-variant." />
+                      </div>
                       <Input
                         id="sku"
                         value={formData.sku}
@@ -456,7 +463,10 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
                         </div>
 
                         <div>
-                          <Label htmlFor="reorder_point">Reorder Point</Label>
+                          <div className="flex items-center">
+                            <Label htmlFor="reorder_point">Reorder Point</Label>
+                            <FieldHelp content="The minimum quantity level that triggers a reorder notification. Set this based on lead times and usage patterns." />
+                          </div>
                           <Input
                             id="reorder_point"
                             type="number"

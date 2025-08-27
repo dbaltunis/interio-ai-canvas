@@ -231,7 +231,7 @@ export const VendorForm = ({ onClose }: VendorFormProps) => {
         <Button type="button" variant="outline" onClick={onClose}>
           Cancel
         </Button>
-        <Button type="submit" className="bg-slate-600 hover:bg-slate-700">
+        <Button type="submit" variant="default">
           Save Vendor
         </Button>
       </div>

@@ -233,6 +233,23 @@ export const useJobHandlers = (project: any) => {
     }
   };
 
+  const handleDeleteRoom = async (roomId: string) => {
+    try {
+      await deleteRoom.mutateAsync(roomId);
+      toast({
+        title: "Success",
+        description: "Room deleted successfully",
+      });
+    } catch (error) {
+      console.error("Failed to delete room:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete room. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleCreateTreatment = async (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => {
     try {
       const payload: any = {
@@ -279,6 +296,7 @@ export const useJobHandlers = (project: any) => {
     handleCreateRoom,
     handleRenameRoom,
     handleChangeRoomType,
+    handleDeleteRoom,
     handleCreateSurface,
     handleUpdateSurface,
     handleDeleteSurface,

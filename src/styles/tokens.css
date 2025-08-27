@@ -1,0 +1,229 @@
+/* ============================================================================
+   InterioApp Design System Tokens
+   ============================================================================ */
+
+:root {
+  /* ========== Color System ========== */
+  
+  /* Primary Colors */
+  --primary-50: #f2f5f6;
+  --primary-500: #415e6b;
+  --primary-600: #3a5360;
+  --primary-700: #2e4652;
+  
+  /* Accent Colors */
+  --accent-50: #f3f7f8;
+  --accent-500: #9bb6bc;
+  --accent-600: #87a2a8;
+  
+  /* Background & Surface */
+  --bg: #F9FAFB;
+  --surface: #FFFFFF;
+  --border: #E5E7EB;
+  
+  /* Text Colors */
+  --text: #111827;
+  --text-muted: #6B7280;
+  --muted: #F3F4F6;
+  --icon: #9CA3AF;
+  
+  /* Status Colors */
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error: #EF4444;
+  --info: #3B82F6;
+  
+  /* ========== Shadow System ========== */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.10);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.10);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.15);
+  
+  /* ========== Border Radius System ========== */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 9999px;
+  
+  /* ========== Focus Ring System ========== */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  --focus-ring-color: hsl(var(--primary) / 0.2);
+  
+  /* ========== Spacing System (8-point) ========== */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  
+  /* ========== Typography System ========== */
+  /* H1: 24px/1.4, 700 */
+  --text-h1-size: 24px;
+  --text-h1-height: 1.4;
+  --text-h1-weight: 700;
+  
+  /* H2: 20px/1.4, 600 */
+  --text-h2-size: 20px;
+  --text-h2-height: 1.4;
+  --text-h2-weight: 600;
+  
+  /* Body: 16px/1.5, 400 */
+  --text-body-size: 16px;
+  --text-body-height: 1.5;
+  --text-body-weight: 400;
+  
+  /* Small: 14px/1.5, 500 */
+  --text-small-size: 14px;
+  --text-small-height: 1.5;
+  --text-small-weight: 500;
+  
+  /* Caption: 12px/1.4, 500 */
+  --text-caption-size: 12px;
+  --text-caption-height: 1.4;
+  --text-caption-weight: 500;
+}
+
+/* ============================================================================
+   Component Token Mapping for shadcn/ui compatibility
+   ============================================================================ */
+
+:root {
+  /* Map to shadcn color variables using HSL format */
+  --primary: 202 29% 34%; /* #415e6b converted to HSL */
+  --primary-foreground: 0 0% 100%;
+  
+  --secondary: 188 24% 67%; /* #9bb6bc converted to HSL */
+  --secondary-foreground: 202 29% 34%;
+  
+  --accent: 188 24% 67%;
+  --accent-foreground: 202 29% 34%;
+  
+  --background: 210 20% 98%; /* #F9FAFB converted to HSL */
+  --foreground: 220 26% 14%; /* #111827 converted to HSL */
+  
+  --card: 0 0% 100%; /* #FFFFFF */
+  --card-foreground: 220 26% 14%;
+  
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 26% 14%;
+  
+  --muted: 210 17% 95%; /* #F3F4F6 converted to HSL */
+  --muted-foreground: 215 16% 47%; /* #6B7280 converted to HSL */
+  
+  --border: 220 13% 91%; /* #E5E7EB converted to HSL */
+  --input: 220 13% 91%;
+  
+  --ring: 202 29% 34%;
+  
+  --destructive: 0 84% 60%; /* #EF4444 converted to HSL */
+  --destructive-foreground: 0 0% 100%;
+  
+  --success: 142 76% 36%; /* #10B981 converted to HSL */
+  --warning: 38 92% 50%; /* #F59E0B converted to HSL */
+  --info: 217 91% 60%; /* #3B82F6 converted to HSL */
+  --error: 0 84% 60%; /* #EF4444 converted to HSL */
+  
+  --radius: var(--radius-md);
+}
+
+/* ============================================================================
+   Typography Classes
+   ============================================================================ */
+
+.text-h1 {
+  font-size: var(--text-h1-size);
+  line-height: var(--text-h1-height);
+  font-weight: var(--text-h1-weight);
+}
+
+.text-h2 {
+  font-size: var(--text-h2-size);
+  line-height: var(--text-h2-height);
+  font-weight: var(--text-h2-weight);
+}
+
+.text-body {
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-height);
+  font-weight: var(--text-body-weight);
+}
+
+.text-small {
+  font-size: var(--text-small-size);
+  line-height: var(--text-small-height);
+  font-weight: var(--text-small-weight);
+}
+
+.text-caption {
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-height);
+  font-weight: var(--text-caption-weight);
+}
+
+/* ============================================================================
+   Utility Classes
+   ============================================================================ */
+
+/* Shadow utilities - LIMITED TO SPECIFIED USE CASES */
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+
+/* Apply shadows ONLY to cards, dropdowns, and modals */
+.card-shadow { box-shadow: var(--shadow-sm); }
+.dropdown-shadow { box-shadow: var(--shadow-md); }
+.modal-shadow { box-shadow: var(--shadow-lg); }
+
+/* Border radius utilities */
+.rounded-sm { border-radius: var(--radius-sm); }
+.rounded-md { border-radius: var(--radius-md); }
+.rounded-lg { border-radius: var(--radius-lg); }
+.rounded-pill { border-radius: var(--radius-pill); }
+
+/* Consistent 8-point spacing utilities */
+.gap-1 { gap: var(--space-1); }
+.gap-2 { gap: var(--space-2); }
+.gap-3 { gap: var(--space-3); }
+.gap-4 { gap: var(--space-4); }
+.gap-5 { gap: var(--space-5); }
+.gap-6 { gap: var(--space-6); }
+.gap-8 { gap: var(--space-8); }
+
+.p-1 { padding: var(--space-1); }
+.p-2 { padding: var(--space-2); }
+.p-3 { padding: var(--space-3); }
+.p-4 { padding: var(--space-4); }
+.p-5 { padding: var(--space-5); }
+.p-6 { padding: var(--space-6); }
+.p-8 { padding: var(--space-8); }
+
+.m-1 { margin: var(--space-1); }
+.m-2 { margin: var(--space-2); }
+.m-3 { margin: var(--space-3); }
+.m-4 { margin: var(--space-4); }
+.m-5 { margin: var(--space-5); }
+.m-6 { margin: var(--space-6); }
+.m-8 { margin: var(--space-8); }
+
+/* Color utilities using design tokens */
+.bg-primary { background-color: var(--primary-500); }
+.bg-primary-light { background-color: var(--primary-50); }
+.bg-accent { background-color: var(--accent-500); }
+.bg-accent-light { background-color: var(--accent-50); }
+.bg-surface { background-color: var(--surface); }
+.bg-muted { background-color: var(--muted); }
+
+.text-primary { color: var(--primary-500); }
+.text-accent { color: var(--accent-500); }
+.text-default { color: var(--text); }
+.text-muted { color: var(--text-muted); }
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.text-error { color: var(--error); }
+.text-info { color: var(--info); }
+
+.border-primary { border-color: var(--primary-500); }
+.border-accent { border-color: var(--accent-500); }
+.border-default { border-color: var(--border); }

@@ -3,15 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Calendar, DollarSign, AlertCircle, CheckCircle, Clock } from "lucide-react";
+import { Plus, Calendar, DollarSign, AlertCircle, CheckCircle, Clock, ExternalLink } from "lucide-react";
 import { useClientJobs } from "@/hooks/useClientJobs";
+import { useSearchParams } from "react-router-dom";
 
 interface ClientProjectsListProps {
   clientId: string;
+  onTabChange?: (tab: string) => void;
 }
 
-export const ClientProjectsList = ({ clientId }: ClientProjectsListProps) => {
+export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsListProps) => {
   const { data: projects, isLoading } = useClientJobs(clientId);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -54,6 +57,32 @@ export const ClientProjectsList = ({ clientId }: ClientProjectsListProps) => {
     }
   };
 
+  const handleViewProject = (projectId: string) => {
+    // Set URL params to navigate to projects tab with the specific project
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('tab', 'projects');
+    newParams.set('project', projectId);
+    setSearchParams(newParams);
+    
+    // If onTabChange is provided, use it to navigate
+    if (onTabChange) {
+      onTabChange('projects');
+    }
+  };
+
+  const handleCreateProject = () => {
+    // Navigate to projects tab for creating a new project
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('tab', 'projects');
+    newParams.set('client', clientId);
+    newParams.set('action', 'create');
+    setSearchParams(newParams);
+    
+    if (onTabChange) {
+      onTabChange('projects');
+    }
+  };
+
   if (isLoading) {
     return <div className="text-center py-4">Loading projects...</div>;
   }
@@ -66,7 +95,7 @@ export const ClientProjectsList = ({ clientId }: ClientProjectsListProps) => {
             <Calendar className="h-5 w-5" />
             Client Projects
           </CardTitle>
-          <Button size="sm">
+          <Button size="sm" onClick={handleCreateProject}>
             <Plus className="h-4 w-4 mr-2" />
             New Project
           </Button>
@@ -77,7 +106,7 @@ export const ClientProjectsList = ({ clientId }: ClientProjectsListProps) => {
           <div className="text-center py-8 text-muted-foreground">
             <Calendar className="mx-auto h-12 w-12 mb-4 opacity-50" />
             <p>No projects found for this client</p>
-            <Button className="mt-2" variant="outline">
+            <Button className="mt-2" variant="outline" onClick={handleCreateProject}>
               <Plus className="h-4 w-4 mr-2" />
               Create First Project
             </Button>
@@ -136,8 +165,14 @@ export const ClientProjectsList = ({ clientId }: ClientProjectsListProps) => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="sm">
-                      View Details
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleViewProject(project.id)}
+                      className="hover:bg-primary hover:text-white"
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      View Project
                     </Button>
                   </TableCell>
                 </TableRow>

@@ -15,7 +15,11 @@ import { JobsPagination } from "../jobs/JobsPagination";
 import { ErrorFallback } from "@/components/ui/error-fallback";
 import { LoadingFallback } from "@/components/ui/loading-fallback";
 
-export const ClientManagementPage = () => {
+interface ClientManagementPageProps {
+  onTabChange?: (tab: string) => void;
+}
+
+export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps = {}) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showClientProfile, setShowClientProfile] = useState(false);
@@ -140,6 +144,7 @@ export const ClientManagementPage = () => {
         onEdit={() => {
           console.log("Edit client:", selectedClient);
         }}
+        onTabChange={onTabChange}
       />
     );
   }
