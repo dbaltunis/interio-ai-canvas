@@ -41,7 +41,6 @@ export const InsightCard = ({
 }: InsightCardProps) => {
   return (
     <Card 
-      variant="modern" 
       className={cn(
         "group hover-lift cursor-pointer",
         variant === 'compact' && "p-4",

@@ -20,7 +20,7 @@ const Settings = () => {
   if (hasViewSettings === undefined || hasViewProfile === undefined) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center animate-fade-in">
-        <Card variant="modern" className="max-w-md">
+        <Card className="max-w-md">
           <CardContent className="p-8 text-center">
             <div className="flex items-center justify-center gap-3 mb-4">
               <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -36,7 +36,7 @@ const Settings = () => {
   if (!canAccessSettings) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center animate-fade-in">
-        <Card variant="modern" className="max-w-md">
+        <Card className="max-w-md">
           <CardContent className="p-8 text-center">
             <div className="p-4 bg-red-500/10 rounded-lg inline-block mb-4">
               <SettingsIcon className="h-8 w-8 text-red-600" />
@@ -84,7 +84,7 @@ const Settings = () => {
 
       {/* Enhanced Settings Content */}
       <main className="px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
-        <Card variant="modern" className="min-h-[calc(100vh-10rem)] hover:shadow-lg transition-all duration-300">
+        <Card className="min-h-[calc(100vh-10rem)] hover:shadow-md transition-all duration-300">
           <CardContent className="p-8">
             <SettingsView />
           </CardContent>

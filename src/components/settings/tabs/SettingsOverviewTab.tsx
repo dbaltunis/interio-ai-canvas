@@ -163,7 +163,7 @@ export const SettingsOverviewTab = () => {
       </div>
 
       {/* Quick Search */}
-      <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+      <Card className="hover:shadow-md transition-all duration-300">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Search className="h-5 w-5" />
@@ -204,7 +204,7 @@ export const SettingsOverviewTab = () => {
       </Card>
 
       {/* Quick Actions */}
-      <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+      <Card className="hover:shadow-md transition-all duration-300">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5" />
@@ -235,7 +235,7 @@ export const SettingsOverviewTab = () => {
 
       {/* Recent Activity & Tips */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+        <Card className="hover:shadow-md transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
@@ -257,7 +257,7 @@ export const SettingsOverviewTab = () => {
           </CardContent>
         </Card>
 
-        <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+        <Card className="hover:shadow-md transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Lightbulb className="h-5 w-5" />
@@ -283,7 +283,7 @@ export const SettingsOverviewTab = () => {
       </div>
 
       {/* Settings Notifications */}
-      <Card variant="modern" className="hover:shadow-lg transition-all duration-300">
+      <Card className="hover:shadow-md transition-all duration-300">
         <CardHeader>
           <CardTitle>Settings Notifications</CardTitle>
         </CardHeader>
