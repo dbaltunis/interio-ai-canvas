@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Filter, Download } from "lucide-react";
+import { Plus, Filter, Download, Users } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 import { useClientStats } from "@/hooks/useClientJobs";
 import { useHasPermission } from "@/hooks/usePermissions";
@@ -14,6 +14,9 @@ import { ClientImportExport } from "./ClientImportExport";
 import { JobsPagination } from "../jobs/JobsPagination";
 import { ErrorFallback } from "@/components/ui/error-fallback";
 import { LoadingFallback } from "@/components/ui/loading-fallback";
+import { HelpDrawer } from "@/components/ui/help-drawer";
+import { HelpIcon } from "@/components/ui/help-icon";
+import { Badge } from "@/components/ui/badge";
 
 interface ClientManagementPageProps {
   onTabChange?: (tab: string) => void;
@@ -31,6 +34,7 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
   const [clientType, setClientType] = useState("all");
   const [activityFilter, setActivityFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [showHelp, setShowHelp] = useState(false);
   const itemsPerPage = 20;
 
   // Permission checks
@@ -154,15 +158,22 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
   }
 
   return (
-    <div className="liquid-glass rounded-xl space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold text-brand-primary">Clients</h1>
-          <div className="bg-brand-primary/10 text-brand-primary px-3 py-1 rounded-full text-sm font-medium">
-            {totalItems} clients
+    <div className="bg-background min-h-screen animate-fade-in">
+      <div className="space-y-6 p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-primary/10 rounded-lg">
+              <Users className="h-6 w-6 text-primary" />
+            </div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-h1 text-foreground">Clients</h1>
+              <HelpIcon onClick={() => setShowHelp(true)} />
+            </div>
+            <Badge className="bg-secondary/10 text-secondary border-secondary/20">
+              {totalItems} clients
+            </Badge>
           </div>
-        </div>
         
         <div className="flex items-center gap-3">
           <Button
@@ -186,7 +197,7 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
           {canCreateClients && (
             <Button 
               onClick={() => setShowCreateForm(true)}
-              className="bg-brand-primary hover:bg-brand-accent text-white"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Plus className="w-4 h-4 mr-2" />
               New Client
@@ -197,7 +208,7 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
 
       {/* Filters */}
       {showFilters && (
-        <div className="liquid-glass p-4 rounded-xl border">
+        <div className="bg-card p-4 rounded-lg border border-border">
           <ClientFilters
             searchTerm={searchTerm}
             setSearchTerm={handleSearchChange}
@@ -240,6 +251,32 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
           <ClientCreateForm onBack={() => setShowCreateForm(false)} />
         </DialogContent>
       </Dialog>
+      
+      <HelpDrawer
+        isOpen={showHelp}
+        onClose={() => setShowHelp(false)}
+        title="Clients"
+        sections={{
+          purpose: {
+            title: "What this page is for",
+            content: "Manage your client database, track client relationships, and access client project history. View client contact information, project timelines, and communication records."
+          },
+          actions: {
+            title: "Common actions",
+            content: "Create new clients, edit client information, filter by status or activity, import/export client data, and view client project history."
+          },
+          tips: {
+            title: "Tips & best practices",
+            content: "Keep client information up to date. Use consistent naming conventions. Regular communication logs help track relationship progress."
+          },
+          shortcuts: [
+            { key: "Ctrl + N", description: "Create new client" },
+            { key: "Ctrl + F", description: "Focus search" },
+            { key: "Esc", description: "Clear filters" }
+          ]
+        }}
+      />
+      </div>
     </div>
   );
 };

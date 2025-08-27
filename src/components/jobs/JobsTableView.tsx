@@ -200,12 +200,12 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
 
   const getClientAvatarColor = (clientName: string) => {
     const colors = [
-      'bg-blue-500',
-      'bg-green-500', 
+      'bg-info',
+      'bg-success', 
       'bg-primary',
-      'bg-orange-500',
+      'bg-warning',
       'bg-secondary',
-      'bg-indigo-500'
+      'bg-accent'
     ];
     const index = clientName.length % colors.length;
     return colors[index];
@@ -217,7 +217,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
 
   const getOwnerInfo = (quote: any) => {
     if (!quote.user_id || users.length === 0) {
-      return { firstName: 'Unknown', initials: 'UN', color: 'bg-gray-500' };
+      return { firstName: 'Unknown', initials: 'UN', color: 'bg-muted' };
     }
     
     const owner = users.find(user => user.id === quote.user_id);
@@ -232,16 +232,16 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
       
       // Generate color based on user ID for consistency
       const colors = [
-        'bg-blue-500',
-        'bg-green-500', 
+        'bg-info',
+        'bg-success', 
         'bg-primary',
-        'bg-orange-500',
+        'bg-warning',
         'bg-secondary',
-        'bg-indigo-500',
-        'bg-red-500',
-        'bg-yellow-500',
-        'bg-teal-500',
-        'bg-cyan-500'
+        'bg-accent',
+        'bg-destructive',
+        'bg-info',
+        'bg-success',
+        'bg-primary'
       ];
       const colorIndex = quote.user_id.charCodeAt(0) % colors.length;
       const color = colors[colorIndex];
@@ -249,7 +249,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
       return { firstName, initials, color };
     }
     
-    return { firstName: 'Unknown', initials: 'UN', color: 'bg-gray-500' };
+    return { firstName: 'Unknown', initials: 'UN', color: 'bg-muted' };
   };
 
   const handleDeleteJob = async (quote: any) => {
@@ -328,7 +328,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
 
   return (
     <>
-      <div className="liquid-glass rounded-xl border overflow-hidden">
+      <div className="rounded-lg border border-border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/30 hover:bg-muted/30">
@@ -373,7 +373,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <Avatar className="h-8 w-8">
-                          <AvatarFallback className={`${getClientAvatarColor(clientName)} text-white text-xs font-medium`}>
+                          <AvatarFallback className={`${getClientAvatarColor(clientName)} text-primary-foreground text-xs font-medium`}>
                             {getClientInitials(clientName)}
                           </AvatarFallback>
                         </Avatar>
@@ -417,7 +417,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                                 className="h-6 w-6 rounded-full object-cover"
                               />
                             ) : (
-                              <AvatarFallback className={`${ownerInfo.color} text-white text-xs font-medium`}>
+                              <AvatarFallback className={`${ownerInfo.color} text-primary-foreground text-xs font-medium`}>
                                 {ownerInfo.initials}
                               </AvatarFallback>
                             );
