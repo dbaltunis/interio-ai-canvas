@@ -169,6 +169,7 @@ export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsList
                       variant="ghost" 
                       size="sm"
                       onClick={() => handleViewProject(project.id)}
+                      className="hover:bg-primary hover:text-white"
                     >
                       <ExternalLink className="h-4 w-4 mr-2" />
                       View Project
