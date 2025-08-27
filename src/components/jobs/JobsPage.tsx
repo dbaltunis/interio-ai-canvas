@@ -218,13 +218,11 @@ const JobsPage = () => {
 
         {/* Enhanced Jobs List */}
         <Card className="bg-surface border-default rounded-lg shadow-sm">
-          <CardContent className="p-6">
-            <JobsTableView 
-              onJobSelect={handleJobSelect} 
-              searchTerm={searchTerm}
-              statusFilter={statusFilter}
-            />
-          </CardContent>
+          <JobsTableView 
+            onJobSelect={handleJobSelect} 
+            searchTerm={searchTerm}
+            statusFilter={statusFilter}
+          />
         </Card>
       </div>
       
