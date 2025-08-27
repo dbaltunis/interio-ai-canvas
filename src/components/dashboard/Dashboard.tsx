@@ -99,8 +99,8 @@ const Dashboard = () => {
           <Card className="group hover:shadow-md transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Pending Quotes</CardTitle>
-              <div className="p-2 bg-yellow-500/10 rounded-lg group-hover:bg-yellow-500/20 transition-colors">
-                <FileText className="h-4 w-4 text-yellow-600" />
+              <div className="p-2 bg-warning/10 rounded-lg group-hover:bg-warning/20 transition-colors">
+                <FileText className="h-4 w-4 text-warning" />
               </div>
             </CardHeader>
             <CardContent>
@@ -114,8 +114,8 @@ const Dashboard = () => {
           <Card className="group hover:shadow-md transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Low Stock Items</CardTitle>
-              <div className="p-2 bg-red-500/10 rounded-lg group-hover:bg-red-500/20 transition-colors">
-                <Package className="h-4 w-4 text-red-600" />
+              <div className="p-2 bg-destructive/10 rounded-lg group-hover:bg-destructive/20 transition-colors">
+                <Package className="h-4 w-4 text-destructive" />
               </div>
             </CardHeader>
             <CardContent>
@@ -129,8 +129,8 @@ const Dashboard = () => {
           <Card className="group hover:shadow-md transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
-              <div className="p-2 bg-green-500/10 rounded-lg group-hover:bg-green-500/20 transition-colors">
-                <DollarSign className="h-4 w-4 text-green-600" />
+              <div className="p-2 bg-success/10 rounded-lg group-hover:bg-success/20 transition-colors">
+                <DollarSign className="h-4 w-4 text-success" />
               </div>
             </CardHeader>
             <CardContent>
@@ -147,8 +147,8 @@ const Dashboard = () => {
           <Card className="hover:shadow-md transition-all duration-300">
             <CardHeader>
               <CardTitle className="flex items-center text-lg font-semibold">
-                <div className="p-2 bg-blue-500/10 rounded-lg mr-3">
-                  <Calendar className="h-5 w-5 text-blue-600" />
+                <div className="p-2 bg-info/10 rounded-lg mr-3">
+                  <Calendar className="h-5 w-5 text-info" />
                 </div>
                 Recent Activity
               </CardTitle>
@@ -170,8 +170,8 @@ const Dashboard = () => {
           <Card className="hover:shadow-md transition-all duration-300">
             <CardHeader>
               <CardTitle className="flex items-center text-lg font-semibold">
-                <div className="p-2 bg-green-500/10 rounded-lg mr-3">
-                  <TrendingUp className="h-5 w-5 text-green-600" />
+                <div className="p-2 bg-success/10 rounded-lg mr-3">
+                  <TrendingUp className="h-5 w-5 text-success" />
                 </div>
                 Quick Stats
               </CardTitle>

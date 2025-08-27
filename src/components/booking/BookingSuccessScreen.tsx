@@ -63,7 +63,7 @@ export const BookingSuccessScreen = ({
           </div>
 
           {scheduler.google_meet_link && (
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <div className="bg-info/5 p-4 rounded-lg border border-info/20">
               <h4 className="font-semibold text-blue-800 mb-2">Meeting Link</h4>
               <a 
                 href={scheduler.google_meet_link}

@@ -66,9 +66,9 @@ export const EmailTemplateWithBusiness = ({
   const signature = getEmailSignature();
 
   return (
-    <div className="email-template bg-white border rounded-lg shadow-sm">
+    <div className="email-template bg-card border rounded-lg shadow-sm">
       {/* Email Header */}
-      <div className="border-b p-4 bg-gray-50">
+      <div className="border-b p-4 bg-muted/30">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {businessSettings?.company_logo_url && (
@@ -80,7 +80,7 @@ export const EmailTemplateWithBusiness = ({
             )}
             <div>
               <p className="font-medium">{getFromName()}</p>
-              <p className="text-sm text-gray-600">From: {businessSettings?.business_email}</p>
+              <p className="text-sm text-muted-foreground">From: {businessSettings?.business_email}</p>
             </div>
           </div>
         </div>
@@ -99,7 +99,7 @@ export const EmailTemplateWithBusiness = ({
         {/* Email Signature */}
         <div className="mt-6 pt-4 border-t">
           <SafeHTML 
-            className="text-gray-600 whitespace-pre-line"
+            className="text-muted-foreground whitespace-pre-line"
             html={signature.replace(/\n/g, '<br/>')}
           />
         </div>
@@ -107,7 +107,7 @@ export const EmailTemplateWithBusiness = ({
 
       {/* Business Footer */}
       {businessSettings && (
-        <div className="border-t p-4 bg-gray-50 text-center text-sm text-gray-600">
+        <div className="border-t p-4 bg-muted/30 text-center text-sm text-muted-foreground">
           {businessSettings.company_name && (
             <p className="font-medium">{businessSettings.company_name}</p>
           )}

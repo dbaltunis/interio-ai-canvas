@@ -168,7 +168,7 @@ export const EmailValidationDiagnostics = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pass':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Pass</Badge>;
+        return <Badge variant="default" className="bg-success/10 text-success border-success/20">Pass</Badge>;
       case 'fail':
         return <Badge variant="destructive">Fail</Badge>;
       default:
