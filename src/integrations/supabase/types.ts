@@ -483,7 +483,6 @@ export type Database = {
           created_at: string
           id: string
           measurement_units: string | null
-          pricing_settings: Json | null
           state: string | null
           updated_at: string
           user_id: string
@@ -502,7 +501,6 @@ export type Database = {
           created_at?: string
           id?: string
           measurement_units?: string | null
-          pricing_settings?: Json | null
           state?: string | null
           updated_at?: string
           user_id: string
@@ -521,7 +519,6 @@ export type Database = {
           created_at?: string
           id?: string
           measurement_units?: string | null
-          pricing_settings?: Json | null
           state?: string | null
           updated_at?: string
           user_id?: string

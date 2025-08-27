@@ -1,9 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Shield, FolderOpen } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useQuotes, useCreateQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useCreateProject } from "@/hooks/useProjects";
 import { useToast } from "@/hooks/use-toast";
@@ -11,14 +9,11 @@ import { useHasPermission } from "@/hooks/usePermissions";
 import { JobsTableView } from "./JobsTableView";
 import { JobDetailPage } from "./JobDetailPage";
 import { JobsFilter } from "./JobsFilter";
-import { HelpDrawer } from "@/components/ui/help-drawer";
-import { HelpIcon } from "@/components/ui/help-icon";
 
 const JobsPage = () => {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [showHelp, setShowHelp] = useState(false);
   
   // Permission checks
   const canViewJobs = useHasPermission('view_jobs');
@@ -33,11 +28,8 @@ const JobsPage = () => {
   // Show loading while permissions are being checked
   if (canViewJobs === undefined) {
     return (
-      <div className="min-h-screen flex items-center justify-center animate-fade-in">
-        <div className="flex items-center gap-3">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <div className="text-lg text-muted-foreground">Loading projects...</div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
       </div>
     );
   }
@@ -45,16 +37,11 @@ const JobsPage = () => {
   // If user doesn't have permission to view jobs, show access denied
   if (!canViewJobs) {
     return (
-      <div className="min-h-screen flex items-center justify-center animate-fade-in">
-        <Card className="max-w-md">
-          <CardContent className="text-center p-8">
-            <div className="p-4 bg-red-500/10 rounded-lg inline-block mb-4">
-              <Shield className="h-8 w-8 text-red-600" />
-            </div>
-            <h2 className="text-2xl font-semibold text-foreground mb-2">Access Denied</h2>
-            <p className="text-muted-foreground">You don't have permission to view projects.</p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Access Denied</h2>
+          <p className="text-gray-600">You don't have permission to view jobs.</p>
+        </div>
       </div>
     );
   }
@@ -178,77 +165,42 @@ const JobsPage = () => {
   }
 
   return (
-    <div className="bg-gradient-to-br from-background via-background to-muted/20 min-h-screen animate-fade-in">
-      <div className="space-y-6 p-6">
-        {/* Enhanced Header with Design System */}
-        <div className="flex items-center justify-between">
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-primary-light rounded-lg">
-            <FolderOpen className="h-6 w-6 text-primary" />
-          </div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-h1 text-default">Projects</h1>
-            <HelpIcon onClick={() => setShowHelp(true)} />
-          </div>
-          <Badge className="bg-accent-light text-accent border-accent">
-            {quotes.length} projects
-          </Badge>
-        </div>
-          
-          <div className="flex items-center gap-3">
-            <JobsFilter
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              statusFilter={statusFilter}
-              onStatusChange={setStatusFilter}
-              onClearFilters={handleClearFilters}
-            />
-            {canCreateJobs && (
-              <Button 
-                onClick={handleNewJob}
-                disabled={createProject.isPending || createQuote.isPending}
-                className="bg-primary text-white hover:bg-primary-600 rounded-md"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                {(createProject.isPending || createQuote.isPending) ? "Creating..." : "New Project"}
-              </Button>
-            )}
+          <h1 className="text-3xl font-bold text-foreground">Jobs</h1>
+          <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
+            {quotes.length} jobs
           </div>
         </div>
-
-        {/* Enhanced Jobs List */}
-        <Card className="bg-surface border-default rounded-lg shadow-sm">
-          <JobsTableView 
-            onJobSelect={handleJobSelect} 
+        
+        <div className="flex items-center gap-3">
+          <JobsFilter
             searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
             statusFilter={statusFilter}
+            onStatusChange={setStatusFilter}
+            onClearFilters={handleClearFilters}
           />
-        </Card>
+          {canCreateJobs && (
+            <Button 
+              onClick={handleNewJob}
+              disabled={createProject.isPending || createQuote.isPending}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {(createProject.isPending || createQuote.isPending) ? "Creating..." : "New Job"}
+            </Button>
+          )}
+        </div>
       </div>
-      
-      <HelpDrawer
-        isOpen={showHelp}
-        onClose={() => setShowHelp(false)}
-        title="Projects"
-        sections={{
-          purpose: {
-            title: "What this page is for",
-            content: "Manage all your window treatment projects from initial quotes to completed installations. Track progress, manage timelines, and organize project details."
-          },
-          actions: {
-            title: "Common actions",
-            content: "Create new projects, view project details, filter by status, search projects, and track progress through different stages."
-          },
-          tips: {
-            title: "Tips & best practices",
-            content: "Use consistent naming conventions for projects. Keep project statuses updated. Archive completed projects to reduce clutter."
-          },
-          shortcuts: [
-            { key: "Ctrl + N", description: "Create new project" },
-            { key: "Ctrl + F", description: "Focus search" },
-            { key: "Esc", description: "Clear filters" }
-          ]
-        }}
+
+      {/* Jobs List */}
+      <JobsTableView 
+        onJobSelect={handleJobSelect} 
+        searchTerm={searchTerm}
+        statusFilter={statusFilter}
       />
     </div>
   );

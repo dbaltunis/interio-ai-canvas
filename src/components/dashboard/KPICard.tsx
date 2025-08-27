@@ -1,10 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { StatusIndicator } from "@/components/ui/status-indicator";
-import { ModernProgress } from "@/components/ui/modern-progress";
-import { LucideIcon, TrendingUp, TrendingDown } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LucideIcon } from "lucide-react";
 
 interface KPICardProps {
   title: string;
@@ -22,16 +19,16 @@ export const KPICard = ({ title, value, subtitle, icon: Icon, trend, loading }: 
   if (loading) {
     return (
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
             <Icon className="h-4 w-4" />
             {title}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            <Skeleton className="h-8 w-20" />
-            <Skeleton className="h-4 w-32" />
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-20 mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-32"></div>
           </div>
         </CardContent>
       </Card>
@@ -39,40 +36,27 @@ export const KPICard = ({ title, value, subtitle, icon: Icon, trend, loading }: 
   }
 
   return (
-    <Card className="group">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-          <Icon className="h-4 w-4 text-primary" />
+    <Card className="hover:shadow-md transition-shadow">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+          <Icon className="h-4 w-4 text-brand-primary" />
           {title}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex items-baseline justify-between">
-          <div className="text-2xl font-bold text-foreground">{value}</div>
-          {trend && (
-            <div className="flex items-center gap-1 text-sm">
-              {trend.isPositive ? (
-                <TrendingUp className="h-4 w-4 text-green-500" />
-              ) : (
-                <TrendingDown className="h-4 w-4 text-red-500" />
-              )}
-              <span className={trend.isPositive ? "text-green-600" : "text-red-600"}>
-                {trend.isPositive ? "+" : ""}{trend.value}%
-              </span>
-            </div>
-          )}
-        </div>
-        
+      <CardContent>
+        <div className="text-2xl font-bold text-brand-primary">{value}</div>
         {subtitle && (
-          <p className="text-sm text-muted-foreground">{subtitle}</p>
+          <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
         )}
-        
-        {typeof value === 'number' && value <= 100 && (
-          <ModernProgress 
-            value={value} 
-            size="sm" 
-            variant={trend?.isPositive ? 'success' : 'default'}
-          />
+        {trend && (
+          <div className="mt-2">
+            <Badge 
+              variant={trend.isPositive ? "default" : "destructive"}
+              className="text-xs"
+            >
+              {trend.isPositive ? "+" : ""}{trend.value}%
+            </Badge>
+          </div>
         )}
       </CardContent>
     </Card>

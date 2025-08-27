@@ -21,7 +21,6 @@ export const EnhancedRoomView = ({ project, clientId }: EnhancedRoomViewProps) =
     handleCreateRoom,
     handleRenameRoom,
     handleChangeRoomType,
-    handleDeleteRoom,
     handleCreateSurface,
     handleUpdateSurface,
     handleDeleteSurface,
@@ -75,7 +74,7 @@ export const EnhancedRoomView = ({ project, clientId }: EnhancedRoomViewProps) =
       projectId={project.project_id || project.id}
       clientId={clientId || project.client_id}
       onUpdateRoom={() => {}}
-      onDeleteRoom={handleDeleteRoom}
+      onDeleteRoom={() => {}}
       onCreateTreatment={handleCreateTreatment}
       onCreateSurface={handleCreateSurface}
       onUpdateSurface={handleUpdateSurface}

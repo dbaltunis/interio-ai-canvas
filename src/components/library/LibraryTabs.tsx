@@ -14,7 +14,7 @@ export const LibraryTabs = ({ activeTab, onTabChange, viewMode, onViewModeChange
   return (
     <div className="flex items-center justify-between">
       <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
-        <TabsList className="modern-card p-1 h-auto bg-muted/30 backdrop-blur-sm flex w-auto">
+        <TabsList className="grid w-fit grid-cols-5">
           <TabsTrigger value="categories">
             <FolderTree className="h-4 w-4 mr-2" />
             Categories

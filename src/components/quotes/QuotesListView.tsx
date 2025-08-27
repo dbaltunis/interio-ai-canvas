@@ -96,7 +96,7 @@ export const QuotesListView = ({ onNewQuote, onQuoteSelect, onQuoteEdit }: Quote
           <h2 className="text-2xl font-bold text-gray-900">Quotes</h2>
           <p className="text-gray-600">Manage your project quotes and estimates</p>
         </div>
-        <Button onClick={onNewQuote} variant="brand">
+        <Button onClick={onNewQuote} className="bg-brand-primary hover:bg-brand-accent text-white">
           <Plus className="h-4 w-4 mr-2" />
           New Quote
         </Button>

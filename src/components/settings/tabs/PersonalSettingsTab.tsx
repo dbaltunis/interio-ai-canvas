@@ -254,8 +254,8 @@ export const PersonalSettingsTab = () => {
   }
 
   return (
-    <div className="space-y-8 max-w-4xl animate-fade-in">
-      {/* Enhanced Profile Information */}
+    <div className="space-y-6 max-w-4xl">
+      {/* Profile Information */}
       <FormSection
         title="Profile Information"
         description="Update your personal information and profile picture"
@@ -267,26 +267,19 @@ export const PersonalSettingsTab = () => {
         isSaving={updateProfile.isPending}
         savedSuccessfully={savedSuccessfully}
       >
-        {/* Enhanced Avatar Section */}
-        <div className="flex items-start space-x-6 p-6 bg-gradient-to-r from-muted/30 to-muted/10 rounded-xl border border-border/50">
-          <div className="relative group">
-            <Avatar className="h-24 w-24 ring-4 ring-background shadow-lg group-hover:scale-105 transition-transform duration-200">
-              <AvatarImage src={profileData.avatar_url} alt="Profile" />
-              <AvatarFallback className="bg-primary text-primary-foreground text-xl font-semibold">
-                {getInitials(profileData.display_name || user?.email || 'U')}
-              </AvatarFallback>
-            </Avatar>
-            {isEditing && (
-              <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <Upload className="h-6 w-6 text-white" />
-              </div>
-            )}
-          </div>
-          <div className="space-y-4 flex-1">
+        {/* Avatar Section */}
+        <div className="flex items-start space-x-6 p-4 bg-muted/30 rounded-lg">
+          <Avatar className="h-20 w-20 ring-2 ring-border">
+            <AvatarImage src={profileData.avatar_url} alt="Profile" />
+            <AvatarFallback className="bg-primary text-primary-foreground text-lg font-medium">
+              {getInitials(profileData.display_name || user?.email || 'U')}
+            </AvatarFallback>
+          </Avatar>
+          <div className="space-y-3">
             <div>
-              <h4 className="font-semibold text-base text-foreground">Profile Picture</h4>
-              <p className="text-sm text-muted-foreground">
-                JPG, PNG or GIF. Large images will be automatically optimized for better performance.
+              <h4 className="font-medium text-sm">Profile Picture</h4>
+              <p className="text-xs text-muted-foreground">
+                JPG, PNG or GIF. Large images will be automatically optimized.
               </p>
             </div>
             <input
@@ -301,10 +294,10 @@ export const PersonalSettingsTab = () => {
               size="sm"
               disabled={!isEditing}
               onClick={() => document.getElementById('avatar-upload')?.click()}
-              className="hover-lift interactive-bounce"
+              className="w-full"
             >
               <Upload className="h-4 w-4 mr-2" />
-              {profileData.avatar_url ? 'Change Photo' : 'Upload Photo'}
+              Upload Photo
             </Button>
           </div>
         </div>

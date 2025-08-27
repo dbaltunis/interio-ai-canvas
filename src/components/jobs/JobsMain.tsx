@@ -81,7 +81,7 @@ export const JobsMain = ({ onCreateJob }: JobsMainProps) => {
           </div>
           <Button 
             onClick={onCreateJob}
-            variant="brand"
+            className="flex items-center space-x-2 bg-brand-primary hover:bg-brand-accent text-white"
           >
             <Plus className="h-4 w-4" />
             <span>Create New Job</span>
@@ -90,7 +90,7 @@ export const JobsMain = ({ onCreateJob }: JobsMainProps) => {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="modern-card p-1 h-auto bg-muted/30 backdrop-blur-sm flex w-auto">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="dashboard" className="flex items-center space-x-2">
               <BarChart3 className="h-4 w-4" />
               <span>Dashboard</span>

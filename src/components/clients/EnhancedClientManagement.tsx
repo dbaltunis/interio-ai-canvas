@@ -59,18 +59,19 @@ export const EnhancedClientManagement = () => {
             Filters
           </Button>
           
-          <Button variant="outline">
+          <Button variant="outline" className="border-gray-300 text-gray-600 hover:bg-gray-50">
             <Upload className="h-4 w-4 mr-2" />
             Import
           </Button>
           
-          <Button variant="outline">
+          <Button variant="outline" className="border-gray-300 text-gray-600 hover:bg-gray-50">
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
           
           <Button 
-            variant="brand"
+            onClick={() => setShowCreateForm(true)}
+            className="bg-brand-primary hover:bg-brand-accent text-white px-6 py-2 font-medium"
           >
             <Plus className="w-4 h-4 mr-2" />
             New Client
@@ -86,7 +87,7 @@ export const EnhancedClientManagement = () => {
               <User className="mx-auto h-12 w-12 mb-4 text-gray-400" />
               <h3 className="text-lg font-medium mb-2">No clients found</h3>
               <p className="text-gray-500 mb-4">Get started by adding your first client.</p>
-              <Button onClick={() => setShowCreateForm(true)} variant="brand">
+              <Button onClick={() => setShowCreateForm(true)} className="bg-brand-primary hover:bg-brand-accent text-white">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Client
               </Button>

@@ -1,7 +1,6 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Blinds, Layers, Square } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface TreatmentTypeIndicatorProps {
   treatmentType: string;
@@ -58,11 +57,7 @@ export const TreatmentTypeIndicator = ({
   return (
     <Badge 
       variant="outline" 
-      className={cn(
-        treatment.color, 
-        sizeClasses[size], 
-        "flex items-center gap-1.5 font-medium transition-all duration-200 hover:shadow-sm hover:scale-105"
-      )}
+      className={`${treatment.color} ${sizeClasses[size]} flex items-center gap-1 font-medium`}
     >
       {showIcon && <Icon className="h-3 w-3" />}
       {treatment.label}

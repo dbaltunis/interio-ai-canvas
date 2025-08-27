@@ -278,7 +278,7 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
                 <Button variant="outline">
                   Select Existing Client
                 </Button>
-                <Button variant="brand">
+                <Button className="bg-blue-600 hover:bg-blue-700">
                   Create New Client
                 </Button>
               </div>

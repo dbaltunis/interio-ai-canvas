@@ -75,7 +75,7 @@ export const RoomHeader = ({
             onCopyRoom={() => onCopyRoom(room)}
             onDeleteRoom={() => {
               if (confirm("Delete this room and all its contents?")) {
-                onDeleteRoom(room.id);
+                onDeleteRoom.mutate(room.id);
               }
             }}
             onChangeRoomType={(type) => onChangeRoomType(room.id, type)}

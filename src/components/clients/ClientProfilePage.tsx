@@ -16,10 +16,9 @@ interface ClientProfilePageProps {
   clientId: string;
   onBack: () => void;
   onEdit: () => void;
-  onTabChange?: (tab: string) => void;
 }
 
-export const ClientProfilePage = ({ clientId, onBack, onEdit, onTabChange }: ClientProfilePageProps) => {
+export const ClientProfilePage = ({ clientId, onBack, onEdit }: ClientProfilePageProps) => {
   const { data: client, isLoading: clientLoading } = useClient(clientId);
   const { data: projects } = useClientJobs(clientId);
   const [showEmailComposer, setShowEmailComposer] = useState(false);
@@ -91,7 +90,7 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit, onTabChange }: Cli
           </div>
         </div>
         
-        <Button onClick={onEdit} variant="brand">
+        <Button onClick={onEdit} className="bg-brand-primary hover:bg-brand-accent text-white">
           <Edit className="h-4 w-4 mr-2" />
           Edit Client
         </Button>
@@ -232,7 +231,7 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit, onTabChange }: Cli
         </TabsContent>
         
         <TabsContent value="projects" className="space-y-4">
-          <ClientProjectsList clientId={clientId} onTabChange={onTabChange} />
+          <ClientProjectsList clientId={clientId} />
         </TabsContent>
         
         <TabsContent value="emails" className="space-y-4">

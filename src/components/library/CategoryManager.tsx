@@ -87,7 +87,7 @@ export const CategoryManager = () => {
         <div className="flex space-x-2">
           <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
             <DialogTrigger asChild>
-              <Button variant="brand">
+              <Button className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="h-4 w-4 mr-2" />
                 New Category
               </Button>
@@ -111,7 +111,7 @@ export const CategoryManager = () => {
 
           <Dialog open={showCollectionDialog} onOpenChange={setShowCollectionDialog}>
             <DialogTrigger asChild>
-              <Button variant="success">
+              <Button className="bg-green-600 hover:bg-green-700">
                 <Plus className="h-4 w-4 mr-2" />
                 New Collection
               </Button>

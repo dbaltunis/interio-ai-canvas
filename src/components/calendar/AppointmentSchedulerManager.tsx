@@ -125,7 +125,7 @@ export const AppointmentSchedulerManager = () => {
         
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogTrigger asChild>
-            <Button variant="brand">
+            <Button className="bg-brand-primary hover:bg-brand-accent text-white">
               <Plus className="h-4 w-4 mr-2" />
               New Scheduler
             </Button>

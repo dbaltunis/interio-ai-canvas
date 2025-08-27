@@ -89,10 +89,10 @@ const Sidebar = () => {
             <NavLink
               key={item.path}
               to={item.path}
-              className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover-lift interactive-bounce ${
+              className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  ? "bg-brand-secondary text-brand-primary"
+                  : "text-gray-700 hover:bg-gray-50 hover:text-brand-primary"
               }`}
             >
               <Icon className="h-5 w-5" />

@@ -48,22 +48,22 @@ export const LibraryHeader = ({
   return (
     <div className="space-y-6">
       {/* Main Header */}
-      <div className="modern-card-elevated company-gradient text-primary-foreground p-6">
+      <div className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white rounded-lg p-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">Inventory Management</h1>
-            <p className="text-primary-foreground/90 text-lg">Manage your products, sync with Shopify, and track inventory</p>
+            <p className="text-brand-light/90 text-lg">Manage your products, sync with Shopify, and track inventory</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
               <div className="text-2xl font-bold">247</div>
-              <div className="text-sm text-primary-foreground/80">Total Products</div>
+              <div className="text-sm text-brand-light/80">Total Products</div>
             </div>
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={toggleSetupSection}
-              className="text-primary-foreground hover:bg-primary-foreground/10"
+              className="text-white hover:bg-white/10"
             >
               {hideSetupSection ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
             </Button>
@@ -76,7 +76,7 @@ export const LibraryHeader = ({
           {/* Quick Actions Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Shopify Integration Card */}
-            <Card className="modern-card hover:border-primary/30 transition-colors cursor-pointer" onClick={onShowShopify}>
+            <Card className="border-2 border-dashed border-brand-secondary/30 hover:border-brand-secondary transition-colors cursor-pointer" onClick={onShowShopify}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
@@ -84,11 +84,11 @@ export const LibraryHeader = ({
                       <ShoppingBag className="h-5 w-5 text-emerald-600" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg text-foreground">Shopify Store</CardTitle>
+                      <CardTitle className="text-lg text-brand-primary">Shopify Store</CardTitle>
                       <CardDescription>Connect & sync products</CardDescription>
                     </div>
                   </div>
-                  <Badge variant="outline" className="text-warning">Not Connected</Badge>
+                  <Badge variant="outline" className="text-orange-600 border-orange-200">Not Connected</Badge>
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
@@ -104,14 +104,14 @@ export const LibraryHeader = ({
             </Card>
 
             {/* Categories Management Card */}
-            <Card className="modern-card hover:border-primary/30 transition-colors cursor-pointer" onClick={onShowCategories}>
+            <Card className="border-brand-primary/20 hover:border-brand-primary/40 transition-colors cursor-pointer" onClick={onShowCategories}>
               <CardHeader className="pb-3">
                 <div className="flex items-center space-x-2">
                   <div className="p-2 bg-brand-primary/10 rounded-lg">
                     <FolderTree className="h-5 w-5 text-brand-primary" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg text-foreground">Categories</CardTitle>
+                    <CardTitle className="text-lg text-brand-primary">Categories</CardTitle>
                     <CardDescription>Organize product types</CardDescription>
                   </div>
                 </div>
@@ -129,14 +129,14 @@ export const LibraryHeader = ({
             </Card>
 
             {/* Quick Add Card */}
-            <Card className="modern-card hover:border-accent/30 transition-colors">
+            <Card className="border-brand-accent/20 hover:border-brand-accent/40 transition-colors">
               <CardHeader className="pb-3">
                 <div className="flex items-center space-x-2">
                   <div className="p-2 bg-brand-accent/10 rounded-lg">
                     <Plus className="h-5 w-5 text-brand-accent" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg text-foreground">Quick Add</CardTitle>
+                    <CardTitle className="text-lg text-brand-primary">Quick Add</CardTitle>
                     <CardDescription>Add new inventory items</CardDescription>
                   </div>
                 </div>
@@ -223,15 +223,15 @@ export const LibraryHeader = ({
       )}
 
       {/* Search and Actions Bar */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between modern-card p-4">
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-white rounded-lg border p-4">
         <div className="flex-1 max-w-md">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               placeholder="Search products, vendors, collections..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-10 focus:border-primary"
+              className="pl-10 border-brand-primary/20 focus:border-brand-primary"
             />
           </div>
         </div>
@@ -244,12 +244,12 @@ export const LibraryHeader = ({
           
           <Separator orientation="vertical" className="h-6" />
           
-          <Button variant="brand-outline" size="sm" onClick={onImport}>
+          <Button variant="outline" size="sm" onClick={onImport} className="text-brand-primary border-brand-primary/30 hover:bg-brand-primary hover:text-white">
             <Upload className="h-4 w-4 mr-2" />
             Import
           </Button>
           
-          <Button variant="brand-outline" size="sm" onClick={onExport}>
+          <Button variant="outline" size="sm" onClick={onExport} className="text-brand-primary border-brand-primary/30 hover:bg-brand-primary hover:text-white">
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>

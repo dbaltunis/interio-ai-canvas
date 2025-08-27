@@ -47,7 +47,7 @@ export const InventoryManagement = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Inventory Management</h1>
+          <h2 className="text-3xl font-bold tracking-tight">Inventory Management</h2>
           <p className="text-muted-foreground">
             Smart inventory tracking with real-time stock levels
           </p>
@@ -55,7 +55,7 @@ export const InventoryManagement = () => {
         {canManageInventory && (
           <div className="flex items-center gap-2">
             <InventoryImportDialog />
-            <Button variant="default">
+            <Button>
               <Plus className="mr-2 h-4 w-4" />
               Add Item
             </Button>
@@ -65,7 +65,7 @@ export const InventoryManagement = () => {
 
       {/* Inventory Overview */}
       <div className="grid gap-4 md:grid-cols-4">
-        <div className="modern-card">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Items</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
@@ -76,22 +76,22 @@ export const InventoryManagement = () => {
               Across all categories
             </p>
           </CardContent>
-        </div>
+        </Card>
 
-        <div className="modern-card">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Low Stock Alerts</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-company-warning" />
+            <AlertTriangle className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-company-warning">{lowStockItems?.length || 0}</div>
+            <div className="text-2xl font-bold text-orange-600">{lowStockItems?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
               Items need restocking
             </p>
           </CardContent>
-        </div>
+        </Card>
 
-        <div className="modern-card">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Inventory Value</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -102,27 +102,27 @@ export const InventoryManagement = () => {
               Current stock value
             </p>
           </CardContent>
-        </div>
+        </Card>
 
-        <div className="modern-card">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Categories</CardTitle>
-            <TrendingUp className="h-4 w-4 text-company-tertiary" />
+            <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-company-tertiary">
+            <div className="text-2xl font-bold text-green-600">
               {new Set(inventory?.map(item => item.category)).size || 0}
             </div>
             <p className="text-xs text-muted-foreground">
               Different categories
             </p>
           </CardContent>
-        </div>
+        </Card>
       </div>
 
       {/* AI Recommendations */}
       {lowStockItems && lowStockItems.length > 0 && (
-        <div className="modern-card">
+        <Card>
           <CardHeader>
             <CardTitle>Stock Alerts</CardTitle>
             <CardDescription>Items requiring attention</CardDescription>
@@ -130,23 +130,23 @@ export const InventoryManagement = () => {
           <CardContent>
             <div className="grid gap-3 md:grid-cols-3">
               {lowStockItems.slice(0, 3).map((item) => (
-                <div key={item.id} className="p-3 bg-company-warning/10 rounded-lg border border-company-warning/20">
+                <div key={item.id} className="p-3 bg-orange-50 rounded-lg border border-orange-200">
                   <div className="flex items-center space-x-2">
-                    <AlertTriangle className="h-4 w-4 text-company-warning" />
-                    <span className="font-medium text-company-warning">Low Stock</span>
+                    <AlertTriangle className="h-4 w-4 text-orange-600" />
+                    <span className="font-medium text-orange-900">Low Stock</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-sm text-orange-700 mt-1">
                     {item.name} - Only {item.quantity} {item.unit} remaining
                   </p>
                 </div>
               ))}
             </div>
           </CardContent>
-        </div>
+        </Card>
       )}
 
       {/* Inventory Table */}
-      <div className="modern-card">
+      <Card>
         <CardHeader>
           <CardTitle>Current Inventory</CardTitle>
         </CardHeader>
@@ -195,12 +195,12 @@ export const InventoryManagement = () => {
                       <TableCell>{item.supplier || "N/A"}</TableCell>
                       <TableCell>
                         {isLowStock ? (
-                          <Badge variant="outline" className="bg-company-warning/10 text-company-warning border-company-warning/20">
+                          <Badge className="bg-orange-100 text-orange-800">
                             <AlertTriangle className="w-3 h-3 mr-1" />
                             Low Stock
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="bg-company-tertiary/10 text-company-tertiary border-company-tertiary/20">
+                          <Badge className="bg-green-100 text-green-800">
                             In Stock
                           </Badge>
                         )}
@@ -224,7 +224,7 @@ export const InventoryManagement = () => {
             </Table>
           )}
         </CardContent>
-      </div>
+      </Card>
     </div>
   );
 };

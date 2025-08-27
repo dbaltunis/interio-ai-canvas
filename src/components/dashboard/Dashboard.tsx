@@ -20,21 +20,16 @@ const Dashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-6 animate-fade-in">
-        <div className="space-y-2">
-          <div className="h-8 bg-muted rounded-lg w-48 animate-shimmer" />
-          <div className="h-4 bg-muted rounded w-96 animate-shimmer" />
-        </div>
+      <div className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[...Array(4)].map((_, i) => (
             <Card key={i} className="animate-pulse">
-              <CardHeader className="space-y-2 pb-3">
-                <div className="h-4 bg-muted rounded w-1/2" />
-                <div className="h-4 bg-muted rounded-full w-4 ml-auto" />
+              <CardHeader className="space-y-0 pb-2">
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
               </CardHeader>
               <CardContent>
-                <div className="h-8 bg-muted rounded w-1/3 mb-2" />
-                <div className="h-3 bg-muted rounded w-2/3" />
+                <div className="h-8 bg-gray-200 rounded w-1/3 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-2/3"></div>
               </CardContent>
             </Card>
           ))}
@@ -71,95 +66,81 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="p-6 space-y-8 animate-fade-in">
-      {/* Modern Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground text-lg">Welcome back! Here's what's happening with your business.</p>
+    <div className="p-6 space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <p className="text-gray-600">Welcome back! Here's what's happening with your business.</p>
       </div>
 
-      {/* Enhanced Key Metrics */}
+      {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <PermissionGuard permission="view_clients">
-          <Card className="group hover:shadow-md transition-all duration-300">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Clients</CardTitle>
-              <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
-                <Users className="h-4 w-4 text-primary" />
-              </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground mb-1">{stats?.totalClients || 0}</div>
-              <p className="text-sm text-muted-foreground">Active clients</p>
+              <div className="text-2xl font-bold">{stats?.totalClients || 0}</div>
+              <p className="text-xs text-muted-foreground">Active clients</p>
             </CardContent>
           </Card>
         </PermissionGuard>
 
         <PermissionGuard permission="view_jobs">
-          <Card className="group hover:shadow-md transition-all duration-300">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Pending Quotes</CardTitle>
-              <div className="p-2 bg-yellow-500/10 rounded-lg group-hover:bg-yellow-500/20 transition-colors">
-                <FileText className="h-4 w-4 text-yellow-600" />
-              </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending Quotes</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground mb-1">{stats?.pendingQuotes || 0}</div>
-              <p className="text-sm text-muted-foreground">Awaiting response</p>
+              <div className="text-2xl font-bold">{stats?.pendingQuotes || 0}</div>
+              <p className="text-xs text-muted-foreground">Awaiting response</p>
             </CardContent>
           </Card>
         </PermissionGuard>
 
         <PermissionGuard permission="view_inventory">
-          <Card className="group hover:shadow-md transition-all duration-300">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Low Stock Items</CardTitle>
-              <div className="p-2 bg-red-500/10 rounded-lg group-hover:bg-red-500/20 transition-colors">
-                <Package className="h-4 w-4 text-red-600" />
-              </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Low Stock Items</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground mb-1">{stats?.lowStockItems || 0}</div>
-              <p className="text-sm text-muted-foreground">Need reordering</p>
+              <div className="text-2xl font-bold">{stats?.lowStockItems || 0}</div>
+              <p className="text-xs text-muted-foreground">Need reordering</p>
             </CardContent>
           </Card>
         </PermissionGuard>
 
         <ProtectedAnalytics>
-          <Card className="group hover:shadow-md transition-all duration-300">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
-              <div className="p-2 bg-green-500/10 rounded-lg group-hover:bg-green-500/20 transition-colors">
-                <DollarSign className="h-4 w-4 text-green-600" />
-              </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground mb-1">{formatCurrency(stats?.totalRevenue || 0, userCurrency)}</div>
-              <p className="text-sm text-muted-foreground">This month</p>
+              <div className="text-2xl font-bold">{formatCurrency(stats?.totalRevenue || 0, userCurrency)}</div>
+              <p className="text-xs text-muted-foreground">This month</p>
             </CardContent>
           </Card>
         </ProtectedAnalytics>
       </div>
 
-      {/* Enhanced Quick Actions Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <PermissionGuard permission="view_calendar">
-          <Card className="hover:shadow-md transition-all duration-300">
+          <Card>
             <CardHeader>
-              <CardTitle className="flex items-center text-lg font-semibold">
-                <div className="p-2 bg-blue-500/10 rounded-lg mr-3">
-                  <Calendar className="h-5 w-5 text-blue-600" />
-                </div>
+              <CardTitle className="flex items-center">
+                <Calendar className="h-5 w-5 mr-2" />
                 Recent Activity
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 space-y-3">
-                <div className="p-4 bg-muted/30 rounded-lg inline-block">
-                  <Calendar className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <p className="text-muted-foreground">No recent activity to display</p>
-              </div>
+              <p className="text-center text-gray-500 py-8">
+                No recent activity to display
+              </p>
             </CardContent>
           </Card>
         </PermissionGuard>
@@ -167,28 +148,26 @@ const Dashboard = () => {
         <TeamPresenceCard />
 
         <ProtectedAnalytics>
-          <Card className="hover:shadow-md transition-all duration-300">
+          <Card>
             <CardHeader>
-              <CardTitle className="flex items-center text-lg font-semibold">
-                <div className="p-2 bg-green-500/10 rounded-lg mr-3">
-                  <TrendingUp className="h-5 w-5 text-green-600" />
-                </div>
+              <CardTitle className="flex items-center">
+                <TrendingUp className="h-5 w-5 mr-2" />
                 Quick Stats
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 bg-muted/20 rounded-lg">
-                  <span className="text-sm text-muted-foreground">Conversion Rate</span>
-                  <span className="font-semibold text-foreground">--</span>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Conversion Rate</span>
+                  <span className="font-medium">--</span>
                 </div>
-                <div className="flex justify-between items-center p-3 bg-muted/20 rounded-lg">
-                  <span className="text-sm text-muted-foreground">Average Order Value</span>
-                  <span className="font-semibold text-foreground">--</span>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Average Order Value</span>
+                  <span className="font-medium">--</span>
                 </div>
-                <div className="flex justify-between items-center p-3 bg-muted/20 rounded-lg">
-                  <span className="text-sm text-muted-foreground">Customer Satisfaction</span>
-                  <span className="font-semibold text-foreground">--</span>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Customer Satisfaction</span>
+                  <span className="font-medium">--</span>
                 </div>
               </div>
             </CardContent>

@@ -225,7 +225,7 @@ export const EmailDesignEditor = ({
               <Button variant="outline" onClick={() => onOpenChange(false)} className="border-gray-300">
                 Cancel
               </Button>
-              <Button onClick={handleSave} variant="brand">
+              <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700">
                 <Save className="h-4 w-4 mr-2" />
                 Save Design
               </Button>

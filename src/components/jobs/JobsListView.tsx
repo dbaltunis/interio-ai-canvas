@@ -225,7 +225,7 @@ export const JobsListView = ({
                 'Get started by creating your first job.'
               }
             </p>
-            <Button onClick={onNewJob} variant="brand">
+            <Button onClick={onNewJob} className="bg-brand-primary hover:bg-brand-accent text-white">
               <Plus className="h-4 w-4 mr-2" />
               Create New Job
             </Button>

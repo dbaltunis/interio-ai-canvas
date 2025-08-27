@@ -17,9 +17,7 @@ const LibraryPage = lazy(() =>
   import("@/components/library/LibraryPage").catch(() => ({ default: () => <div>Error loading Library</div> }))
 );
 const ClientManagement = lazy(() => 
-  import("@/components/jobs/ClientManagement").then(module => ({
-    default: (props: any) => <module.default {...props} />
-  })).catch(() => ({ default: () => <div>Error loading Clients</div> }))
+  import("@/components/jobs/ClientManagement").catch(() => ({ default: () => <div>Error loading Clients</div> }))
 );
 const EmailManagement = lazy(() => 
   import("@/components/jobs/EmailManagement").catch(() => ({ default: () => <div>Error loading Emails</div> }))
@@ -90,7 +88,7 @@ const Index = () => {
         return (
           <Suspense fallback={<ClientManagementSkeleton />}>
             <ComponentWrapper>
-              <ClientManagement onTabChange={handleTabChange} />
+              <ClientManagement />
             </ComponentWrapper>
           </Suspense>
         );
