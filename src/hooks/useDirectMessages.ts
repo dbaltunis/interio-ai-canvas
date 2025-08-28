@@ -147,24 +147,10 @@ export const useDirectMessages = () => {
       if (error) throw error;
       return data as DirectMessage;
     },
-    onSuccess: (newMessage) => {
-      // Optimistically update messages for instant UI feedback
-      queryClient.setQueryData(['messages', activeConversation, user?.id], (oldMessages: DirectMessage[] = []) => {
-        return [...oldMessages, newMessage];
-      });
-      
-      // Update conversations list optimistically
-      queryClient.setQueryData(['conversations', user?.id], (oldConversations: Conversation[] = []) => {
-        return oldConversations.map(conv => 
-          conv.user_id === newMessage.recipient_id 
-            ? { ...conv, last_message: newMessage }
-            : conv
-        );
-      });
-
-      // Still invalidate for server sync
-      queryClient.invalidateQueries({ queryKey: ['messages'] });
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    onSuccess: () => {
+      // Simple invalidation without complex optimistic updates
+      queryClient.invalidateQueries({ queryKey: ['messages', activeConversation, user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['conversations', user?.id] });
     },
     onError: (error) => {
       toast({

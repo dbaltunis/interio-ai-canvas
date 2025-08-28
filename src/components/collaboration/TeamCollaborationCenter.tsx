@@ -376,12 +376,12 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                 {/* Tabs for Team & Messages */}
                 <div className="flex-1 overflow-hidden">
                   <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'team' | 'messages')} className="h-full flex flex-col">
-                    <TabsList className="mx-4 mt-4 glass-morphism rounded-lg border p-1 grid grid-cols-2">
-                      <TabsTrigger value="team" className="rounded-md text-foreground data-[state=active]:bg-accent data-[state=active]:text-foreground">
+                    <TabsList className="mx-4 mt-4 h-10 glass-morphism rounded-lg border p-1 grid grid-cols-2">
+                      <TabsTrigger value="team" className="h-8 rounded-md text-foreground data-[state=active]:bg-accent data-[state=active]:text-foreground">
                         <Users className="h-4 w-4 mr-2" />
                         Team ({totalUsers})
                       </TabsTrigger>
-                      <TabsTrigger value="messages" className="rounded-md text-foreground data-[state=active]:bg-accent data-[state=active]:text-foreground">
+                      <TabsTrigger value="messages" className="h-8 rounded-md text-foreground data-[state=active]:bg-accent data-[state=active]:text-foreground">
                         <MessageCircle className="h-4 w-4 mr-2" />
                         Messages
                         {totalUnreadCount > 0 && (
