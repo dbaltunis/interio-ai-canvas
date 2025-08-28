@@ -179,11 +179,21 @@ export const useDirectMessages = () => {
     }
   });
 
-  // Realtime subscription for direct messages - simplified to prevent infinite loops
+  // Realtime subscription for direct messages - fixed to prevent multiple subscriptions
   useEffect(() => {
     if (!user) return;
 
-    const channelName = `direct-messages-${user.id}`;
+    // Create unique channel name to prevent conflicts
+    const channelName = `direct-messages-user-${user.id}`;
+    
+    // Remove any existing channel first
+    const existingChannels = supabase.getChannels();
+    existingChannels.forEach(channel => {
+      if (channel.topic === channelName) {
+        supabase.removeChannel(channel);
+      }
+    });
+
     const channel = supabase
       .channel(channelName)
       .on(
@@ -207,9 +217,12 @@ export const useDirectMessages = () => {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      // Properly cleanup the subscription
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
-  }, [user?.id, queryClient]); // Removed activeConversation dependency to prevent loops
+  }, [user?.id, queryClient]); // Minimal dependencies to prevent re-subscription
 
   const sendMessage = (recipientId: string, content: string) => {
     sendMessageMutation.mutate({ recipientId, content });
