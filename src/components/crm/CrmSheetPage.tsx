@@ -18,7 +18,7 @@ export const CrmSheetPage = () => {
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   
-  const { data: accounts = [], isLoading } = useCrmV2Accounts();
+  const { data: accounts = [], isLoading, error } = useCrmV2Accounts();
   const createAccount = useCreateCrmV2Account();
   const updateAccount = useUpdateCrmV2Account();
   const pushToSheet = usePushToSheet();
@@ -219,6 +219,23 @@ export const CrmSheetPage = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p>Loading CRM data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center text-destructive">
+          <p>Error loading data: {error.message}</p>
+          <Button 
+            onClick={() => window.location.reload()} 
+            variant="outline" 
+            className="mt-4"
+          >
+            Retry
+          </Button>
         </div>
       </div>
     );

@@ -71,10 +71,25 @@ Deno.serve(async (req) => {
         });
       }
       
+      // Ensure required fields are present
+      if (!body.name || body.name.trim() === '') {
+        body.name = 'New Account';
+      }
+      
       const { data: account, error } = await supabase
         .from('crm_accounts_v2')
         .insert({
-          ...body,
+          name: body.name,
+          status: body.status || 'lead',
+          owner: body.owner || null,
+          plugin_payments_eur: body.plugin_payments_eur || 0,
+          invoice_payments_eur: body.invoice_payments_eur || 0,
+          stripe_subs_eur: body.stripe_subs_eur || 0,
+          mrr_eur: body.mrr_eur || 0,
+          next_action: body.next_action || null,
+          next_action_date: body.next_action_date || null,
+          notes: body.notes || null,
+          legacy_account_id: body.legacy_account_id || null,
           updated_source: 'app',
           updated_at: new Date().toISOString()
         })
