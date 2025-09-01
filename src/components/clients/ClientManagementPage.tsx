@@ -8,7 +8,7 @@ import { useHasPermission } from "@/hooks/usePermissions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ClientCreateForm } from "./ClientCreateForm";
 import { ClientProfilePage } from "./ClientProfilePage";
-import { ClientListView } from "../crm/ClientListView";
+import { ClientListView } from "./ClientListView";
 import { ClientFilters } from "./ClientFilters";
 import { ClientImportExport } from "./ClientImportExport";
 import { JobsPagination } from "../jobs/JobsPagination";

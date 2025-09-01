@@ -982,114 +982,6 @@ export type Database = {
         }
         Relationships: []
       }
-      crm_accounts_v2: {
-        Row: {
-          invoice_payments_eur: number | null
-          legacy_account_id: string | null
-          mrr_eur: number | null
-          name: string
-          next_action: string | null
-          next_action_date: string | null
-          notes: string | null
-          owner: string | null
-          plugin_payments_eur: number | null
-          row_id: string
-          status: string | null
-          stripe_subs_eur: number | null
-          updated_at: string | null
-          updated_source: string | null
-        }
-        Insert: {
-          invoice_payments_eur?: number | null
-          legacy_account_id?: string | null
-          mrr_eur?: number | null
-          name: string
-          next_action?: string | null
-          next_action_date?: string | null
-          notes?: string | null
-          owner?: string | null
-          plugin_payments_eur?: number | null
-          row_id?: string
-          status?: string | null
-          stripe_subs_eur?: number | null
-          updated_at?: string | null
-          updated_source?: string | null
-        }
-        Update: {
-          invoice_payments_eur?: number | null
-          legacy_account_id?: string | null
-          mrr_eur?: number | null
-          name?: string
-          next_action?: string | null
-          next_action_date?: string | null
-          notes?: string | null
-          owner?: string | null
-          plugin_payments_eur?: number | null
-          row_id?: string
-          status?: string | null
-          stripe_subs_eur?: number | null
-          updated_at?: string | null
-          updated_source?: string | null
-        }
-        Relationships: []
-      }
-      crm_push_queue: {
-        Row: {
-          attempt: number | null
-          created_at: string | null
-          error_message: string | null
-          id: string
-          next_run_at: string | null
-          row_id: string
-          status: string | null
-        }
-        Insert: {
-          attempt?: number | null
-          created_at?: string | null
-          error_message?: string | null
-          id?: string
-          next_run_at?: string | null
-          row_id: string
-          status?: string | null
-        }
-        Update: {
-          attempt?: number | null
-          created_at?: string | null
-          error_message?: string | null
-          id?: string
-          next_run_at?: string | null
-          row_id?: string
-          status?: string | null
-        }
-        Relationships: []
-      }
-      crm_sheet_links: {
-        Row: {
-          column_map: Json
-          created_at: string | null
-          id: string
-          is_two_way: boolean | null
-          sheet_url: string
-          tab_name: string
-        }
-        Insert: {
-          column_map?: Json
-          created_at?: string | null
-          id?: string
-          is_two_way?: boolean | null
-          sheet_url: string
-          tab_name: string
-        }
-        Update: {
-          column_map?: Json
-          created_at?: string | null
-          id?: string
-          is_two_way?: boolean | null
-          sheet_url?: string
-          tab_name?: string
-        }
-        Relationships: []
-      }
       curtain_templates: {
         Row: {
           active: boolean
@@ -3771,10 +3663,6 @@ export type Database = {
       }
       mark_user_offline: {
         Args: { user_id: string }
-        Returns: undefined
-      }
-      mirror_crm_v2_to_legacy: {
-        Args: { legacy_id: string }
         Returns: undefined
       }
       sanitize_text_input: {

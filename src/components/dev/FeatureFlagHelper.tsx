@@ -41,30 +41,8 @@ export const FeatureFlagHelper = () => {
           <div className="bg-background border rounded-lg p-4 shadow-lg min-w-64">
             <h3 className="font-semibold mb-3 text-sm">Feature Flags</h3>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs">CRM Sheet View</span>
-                <Button
-                  variant={flags['crm_sheet_view_enabled'] ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => toggleFlag('crm_sheet_view_enabled', !flags['crm_sheet_view_enabled'])}
-                  disabled={updateFlag.isPending}
-                >
-                  {flags['crm_sheet_view_enabled'] ? 'ON' : 'OFF'}
-                </Button>
-              </div>
+              <p className="text-xs text-muted-foreground">No feature flags available</p>
             </div>
-            {flags['crm_sheet_view_enabled'] && (
-              <div className="mt-3 pt-3 border-t">
-                <a
-                  href="/crm/sheet"
-                  className="text-xs text-blue-600 hover:underline"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  → Open CRM Sheet
-                </a>
-              </div>
-            )}
           </div>
         </CollapsibleContent>
       </Collapsible>
