@@ -57,7 +57,19 @@ Deno.serve(async (req) => {
 
     // POST /crm-v2-api - Create new account
     if (method === 'POST' && (pathParts.length === 1 || (pathParts.length === 2 && pathParts[1] === 'crm-v2-api'))) {
-      const body = await req.json()
+      let body = {};
+      try {
+        const text = await req.text();
+        if (text) {
+          body = JSON.parse(text);
+        }
+      } catch (error) {
+        console.error('Error parsing JSON:', error);
+        return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
       
       const { data: account, error } = await supabase
         .from('crm_accounts_v2')
@@ -95,7 +107,19 @@ Deno.serve(async (req) => {
     // PATCH /crm-v2-api/:row_id - Update account
     if (method === 'PATCH' && pathParts.length >= 2) {
       const rowId = pathParts[pathParts.length - 1] // Get the last part as row_id
-      const body = await req.json()
+      let body = {};
+      try {
+        const text = await req.text();
+        if (text) {
+          body = JSON.parse(text);
+        }
+      } catch (error) {
+        console.error('Error parsing JSON:', error);
+        return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
       
       const { data: account, error } = await supabase
         .from('crm_accounts_v2')
