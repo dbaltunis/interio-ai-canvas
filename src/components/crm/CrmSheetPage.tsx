@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AgGridReact } from "ag-grid-react";
-import { ColDef, GridApi, GridReadyEvent } from "ag-grid-community";
+import { ColDef, GridApi, GridReadyEvent, ModuleRegistry, AllCommunityModule } from "ag-grid-community";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,9 @@ import { useCrmV2Accounts, useCreateCrmV2Account, useUpdateCrmV2Account, CrmAcco
 import { GoogleSheetsIntegration } from "./GoogleSheetsIntegration";
 import { usePushToSheet } from "@/hooks/usePushToSheet";
 import { toast } from "sonner";
+
+// Register AG Grid modules
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 export const CrmSheetPage = () => {
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
