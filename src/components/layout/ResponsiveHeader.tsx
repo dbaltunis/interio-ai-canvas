@@ -3,9 +3,8 @@ import React, { useState } from 'react';
 import { BrandHeader } from './BrandHeader';
 import { UserProfile } from './UserProfile';
 // Removed NotificationDropdown - simplified UI
-
+import { TeamCollaborationCenter } from '../collaboration/TeamCollaborationCenter';
 import { AINotificationToast } from '../collaboration/AINotificationToast';
-import { ModernUserPresence } from '../collaboration/ModernUserPresence';
 import { Button } from '@/components/ui/button';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
@@ -145,6 +144,11 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
         )}
       </header>
 
+      {/* Modern AI-style Team Collaboration */}
+      <TeamCollaborationCenter 
+        isOpen={presencePanelOpen}
+        onToggle={() => setPresencePanelOpen(!presencePanelOpen)}
+      />
 
       <AINotificationToast
         notifications={notifications}
@@ -154,11 +158,6 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
           setMessageDialogOpen(true);
           setNotifications(prev => prev.filter(n => n.id !== id));
         }}
-      />
-      
-      <ModernUserPresence 
-        isOpen={presencePanelOpen}
-        onToggle={() => setPresencePanelOpen(!presencePanelOpen)}
       />
     </>
   );

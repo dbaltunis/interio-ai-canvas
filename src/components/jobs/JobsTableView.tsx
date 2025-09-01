@@ -351,11 +351,11 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
               
               return (
                 <React.Fragment key={project.id}>
-                    {/* Main Job Row */}
-                    <TableRow 
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => onJobSelect({ id: project.id, projects: project })}
-                    >
+                  {/* Main Job Row */}
+                  <TableRow 
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => onJobSelect({ id: project.id, projects: project })}
+                  >
                     <TableCell className="font-medium">
                       <span 
                         title={project.job_number}
