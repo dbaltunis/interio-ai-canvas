@@ -28,7 +28,7 @@ export const DirectMessageDialog = ({ open, onOpenChange }: DirectMessageDialogP
     sendMessage, 
     sendingMessage,
     openConversation,
-    isLoading: messagesLoading 
+    messagesLoading 
   } = useDirectMessages();
   
   const [messageInput, setMessageInput] = useState('');
@@ -250,9 +250,9 @@ export const DirectMessageDialog = ({ open, onOpenChange }: DirectMessageDialogP
                         {formatDisplayName(activeUserData.user_profile?.display_name || '')}
                       </h3>
                       <div className="flex items-center gap-2">
-                        <Circle className={`h-2 w-2 fill-current ${getStatusColor(activeUserData.status || 'offline')}`} />
+                        <Circle className={`h-2 w-2 fill-current ${getStatusColor(('status' in activeUserData ? activeUserData.status : null) || 'offline')}`} />
                         <p className="text-sm text-muted-foreground capitalize">
-                          {activeUserData.status || 'offline'}
+                          {('status' in activeUserData ? activeUserData.status : null) || 'offline'}
                         </p>
                       </div>
                     </div>

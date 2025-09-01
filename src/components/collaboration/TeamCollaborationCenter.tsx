@@ -717,9 +717,8 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
 
       {/* Message Dialog */}
       <DirectMessageDialog 
-        isOpen={messageDialogOpen}
-        onClose={() => setMessageDialogOpen(false)}
-        selectedUserId={selectedUserId}
+        open={messageDialogOpen}
+        onOpenChange={setMessageDialogOpen}
       />
     </>
   , document.body);
