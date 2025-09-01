@@ -71,3 +71,68 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## CRM Sheet View – Staging & Rollback
+
+### Overview
+The CRM Sheet View feature is currently in staging with a feature flag system. This allows safe testing without affecting the legacy CRM system.
+
+### Feature Flag Control
+- **Feature Flag**: `crm_sheet_view_enabled` (stored in `app_user_flags` table)
+- **Default State**: Disabled for all users
+- **Per-User Control**: Each user can have the flag enabled/disabled independently
+
+### Quick Feature Flag Management
+
+**Enable for a specific user:**
+```sql
+INSERT INTO app_user_flags (user_id, flag, enabled) 
+VALUES ('[USER_ID]', 'crm_sheet_view_enabled', true)
+ON CONFLICT (user_id, flag) DO UPDATE SET enabled = true, updated_at = now();
+```
+
+**Disable for a specific user:**
+```sql
+UPDATE app_user_flags 
+SET enabled = false, updated_at = now() 
+WHERE user_id = '[USER_ID]' AND flag = 'crm_sheet_view_enabled';
+```
+
+**Disable for all users (emergency rollback):**
+```sql
+UPDATE app_user_flags 
+SET enabled = false, updated_at = now() 
+WHERE flag = 'crm_sheet_view_enabled';
+```
+
+### New Tables Created
+- `app_user_flags` - Feature flag management per user
+- `crm_accounts_v2` - New CRM accounts with EUR revenue tracking
+- `crm_sheet_links` - Google Sheets integration configuration
+
+### Rollback Instructions
+
+**EMERGENCY: Disable feature for all users immediately:**
+```sql
+UPDATE app_user_flags SET enabled = false WHERE flag = 'crm_sheet_view_enabled';
+```
+
+**FULL ROLLBACK: Remove all CRM v2 tables and data:**
+```sql
+-- WARNING: This will permanently delete all CRM v2 data!
+DROP TABLE IF EXISTS public.crm_sheet_links;
+DROP TABLE IF EXISTS public.crm_accounts_v2;
+DROP FUNCTION IF EXISTS public.mirror_crm_v2_to_legacy(uuid);
+
+-- Remove feature flag data (optional)
+DELETE FROM public.app_user_flags WHERE flag = 'crm_sheet_view_enabled';
+-- Or drop the entire flags table:
+-- DROP TABLE IF EXISTS public.app_user_flags;
+```
+
+### Safety Notes
+- Legacy CRM (`clients` table) remains completely unchanged
+- Jobs system remains completely unchanged  
+- All new tables have RLS enabled for security
+- Feature flag system allows gradual rollout and instant disable
+- The `mirror_crm_v2_to_legacy()` function is a stub and safe to call
