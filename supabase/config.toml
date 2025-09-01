@@ -18,3 +18,6 @@ verify_jwt = true
 
 [functions.google-oauth-callback]
 verify_jwt = false
+
+[functions.crm-v2-api]
+verify_jwt = true

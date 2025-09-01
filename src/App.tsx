@@ -21,6 +21,7 @@ import "@/styles/theme.css";
 import AcceptInvitation from "./pages/AcceptInvitation";
 import ResetPassword from "./pages/ResetPassword";
 import { PublicBookingPage } from "./components/calendar/PublicBookingPage";
+import CrmSheet from "./pages/CrmSheet";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -97,6 +98,15 @@ const App = () => (
                   <ProtectedRoute>
                     <ErrorBoundary>
                       <Settings />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+                
+                {/* CRM Sheet page - feature flag protected */}
+                <Route path="/crm/sheet" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary>
+                      <CrmSheet />
                     </ErrorBoundary>
                   </ProtectedRoute>
                 } />
