@@ -191,6 +191,7 @@
   font-size: var(--text-caption-size);
   line-height: var(--text-caption-height);
   font-weight: var(--text-caption-weight);
+  color: hsl(var(--muted-foreground));
 }
 
 /* ============================================================================

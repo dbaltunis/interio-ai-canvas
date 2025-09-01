@@ -54,7 +54,7 @@ export const EmailManagement = () => {
             <Mail className="h-6 w-6 text-primary" />
           </div>
           <div className="flex items-center gap-3">
-            <h1 className="text-h1 text-default">Email Management</h1>
+            <h1 className="text-2xl font-bold text-foreground">Email Management</h1>
             <HelpIcon onClick={() => setShowHelp(true)} />
           </div>
           <Badge className="bg-accent-light text-accent border-accent">
@@ -66,7 +66,7 @@ export const EmailManagement = () => {
             <Button 
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
-              className="bg-surface border-default text-default hover:bg-muted rounded-md"
+              className="bg-background border-input text-foreground hover:bg-accent hover:text-accent-foreground rounded-md"
             >
               <Filter className="w-4 h-4 mr-2" />
               Filters
@@ -136,7 +136,7 @@ export const EmailManagement = () => {
     switch (activeTab) {
       case "composer":
         return (
-          <Card className="bg-surface border-default rounded-lg shadow-sm animate-fade-in">
+          <Card className="bg-card border-border rounded-lg shadow-sm animate-fade-in">
             <CardContent className="p-6">
               <EmailComposer onClose={() => setActiveTab("dashboard")} />
             </CardContent>
@@ -144,7 +144,7 @@ export const EmailManagement = () => {
         );
       case "campaigns":
         return (
-          <Card className="bg-surface border-default rounded-lg shadow-sm animate-fade-in">
+          <Card className="bg-card border-border rounded-lg shadow-sm animate-fade-in">
             <CardContent className="p-6">
               <EmailCampaigns />
             </CardContent>
@@ -152,7 +152,7 @@ export const EmailManagement = () => {
         );
       case "analytics":
         return (
-          <Card className="bg-surface border-default rounded-lg shadow-sm animate-fade-in">
+          <Card className="bg-card border-border rounded-lg shadow-sm animate-fade-in">
             <CardContent className="p-6">
               <EmailAnalytics />
             </CardContent>
@@ -160,7 +160,7 @@ export const EmailManagement = () => {
         );
       case "settings":
         return (
-          <Card className="bg-surface border-default rounded-lg shadow-sm animate-fade-in">
+          <Card className="bg-card border-border rounded-lg shadow-sm animate-fade-in">
             <CardContent className="p-6">
               <EmailSettings />
             </CardContent>

@@ -38,7 +38,7 @@ export const ModernInventoryDashboard = () => {
             <Package className="h-6 w-6 text-primary" />
           </div>
           <div className="flex items-center gap-3">
-            <h1 className="text-h1 text-default">Inventory Management</h1>
+            <h1 className="text-2xl font-bold text-foreground">Inventory Management</h1>
             <HelpIcon onClick={() => setShowHelp(true)} />
           </div>
           <Badge className="bg-accent-light text-accent border-accent">
@@ -48,7 +48,7 @@ export const ModernInventoryDashboard = () => {
         <div className="flex items-center gap-3">
           <Button 
             variant="outline" 
-            className="bg-surface border-default text-default hover:bg-muted rounded-md"
+            className="bg-background border-input text-foreground hover:bg-accent hover:text-accent-foreground rounded-md"
             onClick={() => setShowSearch(!showSearch)}
           >
             <Filter className="h-4 w-4 mr-2" />
@@ -56,7 +56,7 @@ export const ModernInventoryDashboard = () => {
           </Button>
           <Button 
             variant="outline" 
-            className="bg-surface border-default text-default hover:bg-muted rounded-md"
+            className="bg-background border-input text-foreground hover:bg-accent hover:text-accent-foreground rounded-md"
             onClick={() => {
               setActiveTab("analytics");
               setTimeout(() => {

@@ -30,7 +30,7 @@ export const FieldHelp = ({ content, className, side = 'top' }: FieldHelpProps) 
           </button>
         </TooltipTrigger>
         <TooltipContent side={side} className="max-w-64">
-          <p className="text-caption leading-relaxed">{content}</p>
+          <p className="text-xs leading-relaxed text-muted-foreground">{content}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
