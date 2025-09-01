@@ -25,7 +25,15 @@ export const useCrmV2Accounts = () => {
       const { data, error } = await supabase.functions.invoke("crm-v2-api");
       
       if (error) throw error;
-      return data as CrmAccountV2[];
+      
+      // Ensure we always return an array
+      if (Array.isArray(data)) {
+        return data as CrmAccountV2[];
+      } else if (data) {
+        return [data] as CrmAccountV2[];
+      } else {
+        return [] as CrmAccountV2[];
+      }
     },
   });
 };
