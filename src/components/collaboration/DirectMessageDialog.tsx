@@ -39,6 +39,7 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
   const otherUsers = activeUsers.filter(u => u.user_id !== user?.id);
   const onlineUsers = otherUsers.filter(u => u.status === 'online');
   const awayUsers = otherUsers.filter(u => u.status === 'away' || u.status === 'busy');
+  const offlineUsers = otherUsers.filter(u => u.status === 'offline' || u.status === 'never_logged_in');
 
   // Handle user selection and conversation opening
   const handleUserSelect = (userId: string) => {
@@ -225,6 +226,68 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
               {presenceLoading && (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">Loading team members...</p>
+                </div>
+              )}
+
+              {/* Offline Users */}
+              {offlineUsers.length > 0 && (
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Circle className="h-2 w-2 fill-gray-400 text-gray-400" />
+                    <h3 className="text-sm font-medium text-muted-foreground">
+                      Offline ({offlineUsers.length})
+                    </h3>
+                  </div>
+                  
+                  {offlineUsers.map((user) => {
+                    const isActive = activeConversation === user.user_id;
+                    const conversation = conversations.find(c => c.user_id === user.user_id);
+                    
+                    return (
+                      <Button
+                        key={user.user_id}
+                        variant={isActive ? "secondary" : "ghost"}
+                        className="w-full justify-start p-4 h-auto mb-2 rounded-lg hover:bg-accent/50 transition-all duration-200 opacity-60"
+                        onClick={() => handleUserSelect(user.user_id)}
+                      >
+                        <div className="flex items-center gap-3 w-full">
+                          <div className="relative">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={user.user_profile?.avatar_url} />
+                              <AvatarFallback className="text-sm">
+                                {getInitials(user.user_profile?.display_name || '')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <Circle className={`absolute -bottom-1 -right-1 h-3 w-3 fill-current ${getStatusColor(user.status)}`} />
+                          </div>
+                          
+                          <div className="flex-1 min-w-0 text-left">
+                            <div className="flex items-center justify-between mb-1">
+                              <p className="font-medium truncate text-foreground">
+                                {formatDisplayName(user.user_profile?.display_name || '')}
+                              </p>
+                              {conversation && conversation.unread_count > 0 && (
+                                <Badge variant="destructive" className="text-xs h-5 px-2">
+                                  {conversation.unread_count}
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className="text-xs">
+                                {user.status}
+                              </Badge>
+                              {user.last_seen && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {formatDistanceToNow(new Date(user.last_seen), { addSuffix: true })}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </Button>
+                    );
+                  })}
                 </div>
               )}
 
