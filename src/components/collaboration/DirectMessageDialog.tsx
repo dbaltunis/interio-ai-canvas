@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,9 +9,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { Send, Users, MessageCircle, Circle } from 'lucide-react';
+import { useUploadFile } from '@/hooks/useFileStorage';
+import { Send, Users, MessageCircle, Circle, Paperclip } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { formatDisplayName, getInitials } from '@/utils/userDisplay';
+import { toast } from 'sonner';
 
 interface DirectMessageDialogProps {
   open: boolean;
@@ -34,6 +36,8 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
   
   const [messageInput, setMessageInput] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadFile = useUploadFile();
 
   // Filter out current user from active users
   const otherUsers = activeUsers.filter(u => u.user_id !== user?.id);
@@ -63,6 +67,27 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+
+  const handleFileUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      await uploadFile.mutateAsync({
+        file,
+        projectId: 'messages', // Using a fixed project ID for messages
+        bucketName: 'message-attachments'
+      });
+      toast.success('File uploaded successfully!');
+    } catch (error) {
+      console.error('File upload failed:', error);
+      toast.error('Failed to upload file');
     }
   };
 
@@ -370,11 +395,22 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
 
                 {/* Message Input - Fixed at bottom */}
                 <div className="p-4 border-t border-border bg-background">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    accept="image/*,application/pdf,.doc,.docx,.txt"
+                  />
                   <div className="flex gap-2">
-                    <Button variant="outline" size="icon" className="shrink-0">
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                      </svg>
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="shrink-0"
+                      onClick={handleFileUpload}
+                      disabled={uploadFile.isPending}
+                    >
+                      <Paperclip className="h-4 w-4" />
                     </Button>
                     <Input
                       placeholder="Type your message..."
