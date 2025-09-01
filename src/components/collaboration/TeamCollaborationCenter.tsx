@@ -718,7 +718,13 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
       {/* Message Dialog */}
       <DirectMessageDialog 
         open={messageDialogOpen}
-        onOpenChange={setMessageDialogOpen}
+        onOpenChange={(open) => {
+          setMessageDialogOpen(open);
+          if (!open) {
+            setSelectedUserId(null);
+          }
+        }}
+        selectedUserId={selectedUserId}
       />
     </>
   , document.body);

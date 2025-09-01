@@ -16,9 +16,10 @@ import { formatDisplayName, getInitials } from '@/utils/userDisplay';
 interface DirectMessageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  selectedUserId?: string;
 }
 
-export const DirectMessageDialog = ({ open, onOpenChange }: DirectMessageDialogProps) => {
+export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSelectedUserId }: DirectMessageDialogProps) => {
   const { user } = useAuth();
   const { activeUsers = [], isLoading: presenceLoading } = useUserPresence();
   const { 
@@ -74,12 +75,15 @@ export const DirectMessageDialog = ({ open, onOpenChange }: DirectMessageDialogP
     activeUsers.find(u => u.user_id === activeConversation) ||
     conversations.find(c => c.user_id === activeConversation) : null;
 
-  // Reset selected user when dialog closes
+  // Reset selected user when dialog closes and handle prop changes
   useEffect(() => {
     if (!open) {
       setSelectedUserId(null);
+    } else if (propSelectedUserId && propSelectedUserId !== selectedUserId) {
+      setSelectedUserId(propSelectedUserId);
+      openConversation(propSelectedUserId);
     }
-  }, [open]);
+  }, [open, propSelectedUserId, selectedUserId, openConversation]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
