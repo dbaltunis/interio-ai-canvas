@@ -377,15 +377,15 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                 <div className="flex-1 overflow-hidden">
                   <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'team' | 'messages')} className="h-full flex flex-col">
                     <TabsList className="mx-4 mt-4 h-10 glass-morphism rounded-lg border p-1 grid grid-cols-2">
-                      <TabsTrigger value="team" className="h-8 rounded-md text-foreground data-[state=active]:bg-primary/20 data-[state=active]:text-foreground">
+                      <TabsTrigger value="team" className="h-8 rounded-md text-foreground data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
                         <Users className="h-4 w-4 mr-2" />
                         Team ({totalUsers})
                       </TabsTrigger>
-                      <TabsTrigger value="messages" className="h-8 rounded-md text-foreground data-[state=active]:bg-primary/20 data-[state=active]:text-foreground">
+                      <TabsTrigger value="messages" className="h-8 rounded-md text-foreground data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
                         <MessageCircle className="h-4 w-4 mr-2" />
                         Messages
                         {totalUnreadCount > 0 && (
-                          <Badge className="ml-2 bg-red-500 text-white text-xs">
+                          <Badge variant="destructive" className="ml-2 h-4 px-1.5 text-xs">
                             {totalUnreadCount}
                           </Badge>
                         )}
@@ -613,6 +613,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                     className="glass-morphism rounded-xl p-4 hover:bg-accent/30 transition-all duration-300 cursor-pointer border border-border shadow-sm hover:shadow-md"
                                      onClick={() => {
                                        setSelectedUserId(conversation.user_id);
+                                       openConversation(conversation.user_id);
                                        setMessageDialogOpen(true);
                                      }}
                                   >
