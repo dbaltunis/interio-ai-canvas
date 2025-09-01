@@ -19,6 +19,9 @@ export const CrmSheetPage = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   
   const { data: accounts = [], isLoading, error } = useCrmV2Accounts();
+  
+  // Add console logs for debugging
+  console.log('CrmSheetPage: accounts =', accounts, 'isLoading =', isLoading, 'error =', error);
   const createAccount = useCreateCrmV2Account();
   const updateAccount = useUpdateCrmV2Account();
   const pushToSheet = usePushToSheet();
