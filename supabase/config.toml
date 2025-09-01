@@ -21,3 +21,12 @@ verify_jwt = false
 
 [functions.crm-v2-api]
 verify_jwt = true
+
+[functions.sheets-pull]
+verify_jwt = true
+
+[functions.sheets-webhook]
+verify_jwt = false
+
+[functions.sheets-push-worker]
+verify_jwt = false

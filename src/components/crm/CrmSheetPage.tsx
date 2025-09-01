@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Plus, Share2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useCrmV2Accounts, useCreateCrmV2Account, useUpdateCrmV2Account, CrmAccountV2 } from "@/hooks/useCrmV2";
+import { GoogleSheetsIntegration } from "./GoogleSheetsIntegration";
+import { usePushToSheet } from "@/hooks/usePushToSheet";
 import { toast } from "sonner";
 
 export const CrmSheetPage = () => {
@@ -16,6 +18,7 @@ export const CrmSheetPage = () => {
   const { data: accounts = [], isLoading } = useCrmV2Accounts();
   const createAccount = useCreateCrmV2Account();
   const updateAccount = useUpdateCrmV2Account();
+  const pushToSheet = usePushToSheet();
 
   const columnDefs: ColDef[] = [
     {
@@ -156,6 +159,9 @@ export const CrmSheetPage = () => {
         }
       });
       toast.success("Account updated successfully");
+      
+      // Queue for push to sheet
+      pushToSheet.mutate(data.row_id);
     } catch (error) {
       console.error("Error updating account:", error);
       toast.error("Failed to update account");
@@ -223,7 +229,9 @@ export const CrmSheetPage = () => {
           <p className="text-muted-foreground">Spreadsheet-style CRM management</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleAddRow} className="flex items-center gap-2">
+          <GoogleSheetsIntegration />
+          
+            <Button onClick={handleAddRow} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Add Row
           </Button>

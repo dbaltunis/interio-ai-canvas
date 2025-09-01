@@ -1033,6 +1033,36 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_push_queue: {
+        Row: {
+          attempt: number | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          next_run_at: string | null
+          row_id: string
+          status: string | null
+        }
+        Insert: {
+          attempt?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          next_run_at?: string | null
+          row_id: string
+          status?: string | null
+        }
+        Update: {
+          attempt?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          next_run_at?: string | null
+          row_id?: string
+          status?: string | null
+        }
+        Relationships: []
+      }
       crm_sheet_links: {
         Row: {
           column_map: Json

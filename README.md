@@ -136,3 +136,71 @@ DELETE FROM public.app_user_flags WHERE flag = 'crm_sheet_view_enabled';
 - All new tables have RLS enabled for security
 - Feature flag system allows gradual rollout and instant disable
 - The `mirror_crm_v2_to_legacy()` function is a stub and safe to call
+
+## Google Sheets Integration Setup
+
+### Prerequisites
+1. **Create Google Cloud Project**:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create new project or select existing one
+   - Enable Google Sheets API and Google Drive API
+
+2. **Create Service Account**:
+   - Navigate to "IAM & Admin" > "Service Accounts"
+   - Click "Create Service Account"
+   - Download the JSON key file
+   - Copy the entire JSON content to the `GOOGLE_SERVICE_ACCOUNT_JSON` secret in Supabase
+
+3. **Setup OAuth Credentials (optional)**:
+   - Go to "APIs & Credentials" > "Credentials"
+   - Create OAuth 2.0 Client ID for web application
+   - Add the client ID and secret to `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` secrets
+
+### Sheet Setup
+1. **Share Your Google Sheet**:
+   - Open your Google Sheet
+   - Click "Share" button
+   - Add the service account email (found in the JSON) as "Editor"
+   - The email looks like: `your-service@your-project.iam.gserviceaccount.com`
+
+2. **Required Columns**:
+   - Your sheet should have a `row_id` column for sync tracking
+   - Other columns can be mapped via the UI (Client, Status, etc.)
+
+### Usage
+1. **Connect Sheet**:
+   - Go to `/crm/sheet` (with feature flag enabled)
+   - Click "Connect Google Sheet"
+   - Paste your sheet URL and configure column mapping
+
+2. **Pull Data**:
+   - Click "Pull Latest" to import data from sheet to app
+   - Existing records are matched by `row_id`
+
+3. **Push Data**:
+   - Enable "Push" to sync app changes to sheet
+   - Changes are queued and processed by background worker
+
+4. **Real-time Sync**:
+   - Copy the provided Apps Script to your Google Sheet
+   - Changes in sheet will trigger webhook to update app instantly
+
+### Column Mapping Example
+```json
+{
+  "Client": "name",
+  "Status": "status", 
+  "Shopify Plugin Payments": "plugin_payments_eur",
+  "Invoice payments": "invoice_payments_eur",
+  "Stripe subscriptions": "stripe_subs_eur", 
+  "Next step": "next_action",
+  "Next date": "next_action_date",
+  "Notes": "notes",
+  "row_id": "row_id"
+}
+```
+
+### Conflict Resolution
+- App changes within 30 seconds take precedence over sheet changes
+- Money fields (`*_eur`) always prefer app values over sheet values
+- Supabase database remains the source of truth
