@@ -88,8 +88,8 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[80vh] p-0">
-        <div className="flex h-full">
+      <DialogContent className="max-w-4xl h-[80vh] p-0 flex flex-col">
+        <div className="flex h-full min-h-0">
           {/* Left Sidebar - User List */}
           <div className="w-1/3 border-r border-border flex flex-col">
             <DialogHeader className="p-4 border-b border-border">
@@ -330,19 +330,19 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
                 </div>
 
                 {/* Messages */}
-                <ScrollArea className="flex-1 p-4">
+                <ScrollArea className="flex-1 min-h-0 p-4 max-h-[50vh]">
                   {messagesLoading ? (
                     <div className="flex items-center justify-center h-full">
                       <p className="text-muted-foreground">Loading messages...</p>
                     </div>
                   ) : messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center">
+                    <div className="flex flex-col items-center justify-center h-full text-center min-h-[200px]">
                       <MessageCircle className="h-16 w-16 text-muted-foreground mb-4" />
                       <p className="text-lg font-medium text-foreground mb-2">Start the conversation!</p>
                       <p className="text-muted-foreground">Send a message to begin chatting</p>
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-4 pb-4">
                       {messages.map((message, index) => (
                         <div
                           key={message.id}
@@ -353,7 +353,7 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
                               ? 'bg-primary text-primary-foreground'
                               : 'bg-muted text-foreground'
                           }`}>
-                            <p className="text-sm">{message.content}</p>
+                            <p className="text-sm break-words">{message.content}</p>
                             <p className="text-xs mt-1 opacity-70">
                               {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
                             </p>
@@ -364,8 +364,8 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
                   )}
                 </ScrollArea>
 
-                {/* Message Input */}
-                <div className="p-4 border-t border-border">
+                {/* Message Input - Fixed at bottom */}
+                <div className="p-4 border-t border-border bg-background">
                   <div className="flex gap-2">
                     <Input
                       placeholder="Type your message..."
@@ -386,7 +386,7 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
                 </div>
               </>
             ) : (
-              <div className="flex-1 flex items-center justify-center">
+              <div className="flex-1 flex items-center justify-center bg-muted/20">
                 <div className="text-center">
                   <MessageCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                   <p className="text-lg font-medium text-foreground mb-2">Select a conversation</p>

@@ -381,7 +381,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                         <Users className="h-4 w-4 mr-2" />
                         Team ({totalUsers})
                       </TabsTrigger>
-                      <TabsTrigger value="messages" className="h-8 rounded-md text-foreground data-[state=active]:bg-accent data-[state=active]:text-foreground">
+                      <TabsTrigger value="messages" className="h-8 rounded-md text-foreground data-[state=active]:bg-primary/20 data-[state=active]:text-foreground">
                         <MessageCircle className="h-4 w-4 mr-2" />
                         Messages
                         {totalUnreadCount > 0 && (
