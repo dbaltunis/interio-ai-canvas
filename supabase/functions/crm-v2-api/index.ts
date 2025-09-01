@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
     console.log(`CRM v2 API: ${method} ${url.pathname}`)
 
     // GET /crm-v2-api - List all accounts  
-    if (method === 'GET' && (pathParts.length === 1 || (pathParts.length === 2 && pathParts[1] === 'crm-v2-api'))) {
+    if (method === 'GET') {
       const { data: accounts, error } = await supabase
         .from('crm_accounts_v2')
         .select('*')
@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     }
 
     // POST /crm-v2-api - Create new account
-    if (method === 'POST' && (pathParts.length === 1 || (pathParts.length === 2 && pathParts[1] === 'crm-v2-api'))) {
+    if (method === 'POST') {
       let body = {};
       try {
         const text = await req.text();
