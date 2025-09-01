@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useFeatureFlags, useUpdateFeatureFlag } from "@/hooks/useFeatureFlags";
 import { toast } from "sonner";
 import { Settings } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
   Collapsible,
   CollapsibleContent,
@@ -55,14 +56,12 @@ export const FeatureFlagHelper = () => {
             </div>
             {flags['crm_sheet_view_enabled'] && (
               <div className="mt-3 pt-3 border-t">
-                <a
-                  href="/crm/sheet"
+                <Link
+                  to="/crm/sheet"
                   className="text-xs text-blue-600 hover:underline"
-                  target="_blank"
-                  rel="noopener noreferrer"
                 >
                   → Open CRM Sheet
-                </a>
+                </Link>
               </div>
             )}
           </div>
