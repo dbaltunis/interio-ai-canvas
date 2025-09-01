@@ -85,7 +85,6 @@ Deno.serve(async (req) => {
           plugin_payments_eur: body.plugin_payments_eur || 0,
           invoice_payments_eur: body.invoice_payments_eur || 0,
           stripe_subs_eur: body.stripe_subs_eur || 0,
-          mrr_eur: body.mrr_eur || 0,
           next_action: body.next_action || null,
           next_action_date: body.next_action_date || null,
           notes: body.notes || null,
