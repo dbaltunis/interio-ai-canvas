@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { BrandHeader } from './BrandHeader';
 import { UserProfile } from './UserProfile';
 // Removed NotificationDropdown - simplified UI
-import { TeamCollaborationCenter } from '../collaboration/TeamCollaborationCenter';
+
 import { AINotificationToast } from '../collaboration/AINotificationToast';
 import { Button } from '@/components/ui/button';
 import { useUserPresence } from '@/hooks/useUserPresence';
@@ -144,11 +144,6 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
         )}
       </header>
 
-      {/* Modern AI-style Team Collaboration */}
-      <TeamCollaborationCenter 
-        isOpen={presencePanelOpen}
-        onToggle={() => setPresencePanelOpen(!presencePanelOpen)}
-      />
 
       <AINotificationToast
         notifications={notifications}
