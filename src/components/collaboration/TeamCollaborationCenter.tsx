@@ -49,6 +49,21 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  // Listen for custom events to open direct messages
+  useEffect(() => {
+    const handleOpenDirectMessage = (event: CustomEvent) => {
+      const { userId } = event.detail;
+      setSelectedUserId(userId);
+      setActiveTab('messages');
+      setMessageDialogOpen(true);
+    };
+
+    window.addEventListener('openDirectMessage', handleOpenDirectMessage as EventListener);
+    return () => {
+      window.removeEventListener('openDirectMessage', handleOpenDirectMessage as EventListener);
+    };
+  }, []);
+
   const handleThemeChange = async (newTheme: string) => {
     setTheme(newTheme);
     try {
@@ -376,12 +391,12 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                 {/* Tabs for Team & Messages */}
                 <div className="flex-1 overflow-hidden">
                   <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'team' | 'messages')} className="h-full flex flex-col">
-                    <TabsList className="mx-4 mt-4 h-10 glass-morphism rounded-lg border p-1 grid grid-cols-2">
-                      <TabsTrigger value="team" className="h-8 rounded-md text-foreground data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
+                    <TabsList className="mx-4 mt-4 h-10 glass-morphism rounded-lg border p-1 grid grid-cols-2 bg-background/50">
+                      <TabsTrigger value="team" className="h-8 rounded-md text-foreground data-[state=active]:bg-background data-[state=active]:text-accent-foreground">
                         <Users className="h-4 w-4 mr-2" />
                         Team ({totalUsers})
                       </TabsTrigger>
-                      <TabsTrigger value="messages" className="h-8 rounded-md text-foreground data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
+                      <TabsTrigger value="messages" className="h-8 rounded-md text-foreground data-[state=active]:bg-background data-[state=active]:text-accent-foreground">
                         <MessageCircle className="h-4 w-4 mr-2" />
                         Messages
                         {totalUnreadCount > 0 && (
@@ -619,12 +634,12 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                   >
                                     <div className="flex items-center gap-3">
                                       <div className="relative">
-                                        <Avatar className="h-12 w-12 ring-2 ring-white/20 shadow-md">
-                                          <AvatarImage src={conversation.user_profile?.avatar_url} />
-                                          <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white font-semibold">
-                                            {getInitials(conversation.user_profile?.display_name || '')}
-                                          </AvatarFallback>
-                                        </Avatar>
+                                         <Avatar className="h-12 w-12 ring-2 ring-white/20 shadow-md">
+                                           <AvatarImage src={conversation.user_profile?.avatar_url} />
+                                           <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white font-semibold">
+                                             {getInitials(conversation.user_profile?.display_name || '')}
+                                           </AvatarFallback>
+                                         </Avatar>
                                         
                                         {/* Status indicator */}
                                         <Circle className={`absolute -bottom-1 -right-1 h-4 w-4 fill-current ${getStatusColor(conversation.user_profile?.status || 'offline')} border-2 border-white/30 rounded-full`} />
