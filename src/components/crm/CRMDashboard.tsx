@@ -2,10 +2,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HotLeadsList } from "./HotLeadsList";
 import { LeadSourceAnalytics } from "./LeadSourceAnalytics";
+import { SalesPipelineBoard } from "./SalesPipelineBoard";
+import { DealForm } from "./DealForm";
 import { Button } from "@/components/ui/button";
-import { Plus, Settings, Download } from "lucide-react";
+import { Plus, Settings, Download, Target } from "lucide-react";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const CRMDashboard = () => {
+  const [showCreateDeal, setShowCreateDeal] = useState(false);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -28,12 +34,17 @@ export const CRMDashboard = () => {
             <Plus className="h-4 w-4 mr-2" />
             Add Lead
           </Button>
+          <Button size="sm" onClick={() => setShowCreateDeal(true)}>
+            <Target className="h-4 w-4 mr-2" />
+            Add Deal
+          </Button>
         </div>
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="pipeline">Sales Pipeline</TabsTrigger>
           <TabsTrigger value="hot-leads">Hot Leads</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
@@ -43,15 +54,17 @@ export const CRMDashboard = () => {
             <HotLeadsList />
             <Card>
               <CardHeader>
-                <CardTitle>Quick Stats</CardTitle>
+                <CardTitle>Pipeline Summary</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center text-muted-foreground">
-                  Quick performance metrics coming soon
-                </div>
+                <SalesPipelineBoard />
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="pipeline" className="space-y-6">
+          <SalesPipelineBoard />
         </TabsContent>
 
         <TabsContent value="hot-leads" className="space-y-6">
@@ -62,6 +75,19 @@ export const CRMDashboard = () => {
           <LeadSourceAnalytics />
         </TabsContent>
       </Tabs>
+
+      {/* Create Deal Dialog */}
+      <Dialog open={showCreateDeal} onOpenChange={setShowCreateDeal}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Deal</DialogTitle>
+          </DialogHeader>
+          <DealForm 
+            onCancel={() => setShowCreateDeal(false)}
+            onSuccess={() => setShowCreateDeal(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

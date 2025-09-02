@@ -1219,6 +1219,68 @@ export type Database = {
         }
         Relationships: []
       }
+      deals: {
+        Row: {
+          actual_close_date: string | null
+          client_id: string
+          competitor: string | null
+          created_at: string
+          deal_value: number
+          description: string | null
+          expected_close_date: string | null
+          id: string
+          loss_reason: string | null
+          probability: number | null
+          source: string | null
+          stage: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actual_close_date?: string | null
+          client_id: string
+          competitor?: string | null
+          created_at?: string
+          deal_value?: number
+          description?: string | null
+          expected_close_date?: string | null
+          id?: string
+          loss_reason?: string | null
+          probability?: number | null
+          source?: string | null
+          stage?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actual_close_date?: string | null
+          client_id?: string
+          competitor?: string | null
+          created_at?: string
+          deal_value?: number
+          description?: string | null
+          expected_close_date?: string | null
+          id?: string
+          loss_reason?: string | null
+          probability?: number | null
+          source?: string | null
+          stage?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deals_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       direct_messages: {
         Row: {
           content: string
@@ -2154,6 +2216,48 @@ export type Database = {
         }
         Relationships: []
       }
+      pipeline_analytics: {
+        Row: {
+          avg_deal_size: number | null
+          avg_time_in_stage: unknown | null
+          conversion_rate: number | null
+          created_at: string
+          id: string
+          period_end: string
+          period_start: string
+          stage: string
+          total_deals: number | null
+          total_value: number | null
+          user_id: string
+        }
+        Insert: {
+          avg_deal_size?: number | null
+          avg_time_in_stage?: unknown | null
+          conversion_rate?: number | null
+          created_at?: string
+          id?: string
+          period_end: string
+          period_start: string
+          stage: string
+          total_deals?: number | null
+          total_value?: number | null
+          user_id: string
+        }
+        Update: {
+          avg_deal_size?: number | null
+          avg_time_in_stage?: unknown | null
+          conversion_rate?: number | null
+          created_at?: string
+          id?: string
+          period_end?: string
+          period_start?: string
+          stage?: string
+          total_deals?: number | null
+          total_value?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       product_orders: {
         Row: {
           actual_order_date: string | null
@@ -2579,6 +2683,48 @@ export type Database = {
           notes?: string | null
           project_id?: string
           room_type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sales_forecasts: {
+        Row: {
+          actual_amount: number | null
+          confidence_level: number | null
+          created_at: string
+          deal_count: number | null
+          forecast_period: string
+          forecasted_amount: number
+          id: string
+          period_end: string
+          period_start: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actual_amount?: number | null
+          confidence_level?: number | null
+          created_at?: string
+          deal_count?: number | null
+          forecast_period: string
+          forecasted_amount?: number
+          id?: string
+          period_end: string
+          period_start: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actual_amount?: number | null
+          confidence_level?: number | null
+          created_at?: string
+          deal_count?: number | null
+          forecast_period?: string
+          forecasted_amount?: number
+          id?: string
+          period_end?: string
+          period_start?: string
           updated_at?: string
           user_id?: string
         }
@@ -3661,6 +3807,14 @@ export type Database = {
         Args: { client_id_param: string }
         Returns: number
       }
+      calculate_sales_forecast: {
+        Args: {
+          period_end_param: string
+          period_start_param: string
+          user_id_param: string
+        }
+        Returns: number
+      }
       can_edit_record: {
         Args: {
           record_created_by: string
@@ -3771,6 +3925,10 @@ export type Database = {
       sanitize_text_input: {
         Args: { input_text: string }
         Returns: string
+      }
+      update_pipeline_analytics: {
+        Args: { user_id_param: string }
+        Returns: undefined
       }
       update_user_last_seen: {
         Args: { user_id: string }
