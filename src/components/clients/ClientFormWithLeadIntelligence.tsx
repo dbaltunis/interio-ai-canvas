@@ -7,40 +7,44 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormFieldGroup } from "@/components/ui/form-field-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useCreateClient } from "@/hooks/useClients";
+import { useCreateClient, useUpdateClient } from "@/hooks/useClients";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 
 interface ClientFormWithLeadIntelligenceProps {
   onCancel: () => void;
   onSuccess?: () => void;
+  editingClient?: any;
 }
 
-export const ClientFormWithLeadIntelligence = ({ onCancel, onSuccess }: ClientFormWithLeadIntelligenceProps) => {
-  const [clientType, setClientType] = useState<"B2B" | "B2C">("B2C");
-  const [companyName, setCompanyName] = useState("");
-  const [contactPerson, setContactPerson] = useState("");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-  const [city, setCity] = useState("");
-  const [state, setState] = useState("");
-  const [zipCode, setZipCode] = useState("");
-  const [country, setCountry] = useState("United States");
-  const [notes, setNotes] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
+export const ClientFormWithLeadIntelligence = ({ onCancel, onSuccess, editingClient }: ClientFormWithLeadIntelligenceProps) => {
+  const [clientType, setClientType] = useState<"B2B" | "B2C">(editingClient?.client_type || "B2C");
+  const [companyName, setCompanyName] = useState(editingClient?.company_name || "");
+  const [contactPerson, setContactPerson] = useState(editingClient?.contact_person || "");
+  const [name, setName] = useState(editingClient?.name || "");
+  const [email, setEmail] = useState(editingClient?.email || "");
+  const [phone, setPhone] = useState(editingClient?.phone || "");
+  const [address, setAddress] = useState(editingClient?.address || "");
+  const [city, setCity] = useState(editingClient?.city || "");
+  const [state, setState] = useState(editingClient?.state || "");
+  const [zipCode, setZipCode] = useState(editingClient?.zip_code || "");
+  const [country, setCountry] = useState(editingClient?.country || "United States");
+  const [notes, setNotes] = useState(editingClient?.notes || "");
+  const [tags, setTags] = useState<string[]>(editingClient?.tags || []);
   const [currentTag, setCurrentTag] = useState("");
   
   // Lead intelligence fields
-  const [leadSource, setLeadSource] = useState("");
-  const [referralSource, setReferralSource] = useState("");
-  const [dealValue, setDealValue] = useState("");
-  const [priorityLevel, setPriorityLevel] = useState("medium");
-  const [marketingConsent, setMarketingConsent] = useState(false);
-  const [followUpDate, setFollowUpDate] = useState("");
+  const [leadSource, setLeadSource] = useState(editingClient?.lead_source || "");
+  const [referralSource, setReferralSource] = useState(editingClient?.referral_source || "");
+  const [dealValue, setDealValue] = useState(editingClient?.deal_value?.toString() || "");
+  const [priorityLevel, setPriorityLevel] = useState(editingClient?.priority_level || "medium");
+  const [marketingConsent, setMarketingConsent] = useState(editingClient?.marketing_consent || false);
+  const [followUpDate, setFollowUpDate] = useState(
+    editingClient?.follow_up_date ? new Date(editingClient.follow_up_date).toISOString().split('T')[0] : ""
+  );
 
   const createClient = useCreateClient();
+  const updateClient = useUpdateClient();
 
   const addTag = () => {
     if (currentTag.trim() && !tags.includes(currentTag.trim())) {
@@ -80,10 +84,14 @@ export const ClientFormWithLeadIntelligence = ({ onCancel, onSuccess }: ClientFo
         follow_up_date: followUpDate ? new Date(followUpDate).toISOString() : null,
       };
 
-      await createClient.mutateAsync(clientData);
+      if (editingClient) {
+        await updateClient.mutateAsync({ id: editingClient.id, ...clientData });
+      } else {
+        await createClient.mutateAsync(clientData);
+      }
       onSuccess?.();
     } catch (error) {
-      console.error("Failed to create client:", error);
+      console.error(`Failed to ${editingClient ? 'update' : 'create'} client:`, error);
     }
   };
 
@@ -313,8 +321,11 @@ export const ClientFormWithLeadIntelligence = ({ onCancel, onSuccess }: ClientFo
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" disabled={createClient.isPending}>
-          {createClient.isPending ? "Creating..." : "Create Client"}
+        <Button type="submit" disabled={createClient.isPending || updateClient.isPending}>
+          {(createClient.isPending || updateClient.isPending) 
+            ? (editingClient ? "Updating..." : "Creating...") 
+            : (editingClient ? "Update Client" : "Create Client")
+          }
         </Button>
       </div>
     </form>
