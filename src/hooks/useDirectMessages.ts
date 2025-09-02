@@ -79,7 +79,7 @@ export const useDirectMessages = () => {
           user_id: row.user_id,
           user_profile: {
             display_name: row.display_name || 'Unknown User',
-            avatar_url: undefined,
+            avatar_url: row.avatar_url,
             status: (row.status as string) || 'offline',
           },
           last_message: lastMsgs?.[0] as DirectMessage | undefined,
@@ -248,9 +248,11 @@ export const useDirectMessages = () => {
   };
 
   const openConversation = (userId: string) => {
+    if (activeConversation === userId) return; // Prevent duplicate calls
+    
     setActiveConversation(userId);
-    // mark unread as read
-    markAsReadMutation.mutate(userId);
+    // mark unread as read only after setting conversation
+    setTimeout(() => markAsReadMutation.mutate(userId), 100);
   };
 
   const closeConversation = () => {

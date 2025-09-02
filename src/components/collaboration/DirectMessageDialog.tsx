@@ -76,15 +76,20 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !activeConversation) return;
 
     try {
-      await uploadFile.mutateAsync({
+      const result = await uploadFile.mutateAsync({
         file,
-        projectId: 'messages', // Using a fixed project ID for messages
-        bucketName: 'message-attachments'
+        projectId: activeConversation,
+        bucketName: 'email-attachments'
       });
-      toast.success('File uploaded successfully!');
+      
+      // Send the file as a message
+      const fileMessage = `📎 ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+      sendMessage(activeConversation, fileMessage);
+      
+      toast.success('File uploaded and sent!');
     } catch (error) {
       console.error('File upload failed:', error);
       toast.error('Failed to upload file');
@@ -359,7 +364,7 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
                 </div>
 
                 {/* Messages */}
-                <ScrollArea className="flex-1 min-h-0 p-4 max-h-[50vh]">
+                <ScrollArea className="flex-1 min-h-0 p-4">
                   {messagesLoading ? (
                     <div className="flex items-center justify-center h-full">
                       <p className="text-muted-foreground">Loading messages...</p>
@@ -394,7 +399,7 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
                 </ScrollArea>
 
                 {/* Message Input - Fixed at bottom */}
-                <div className="p-4 border-t border-border bg-background">
+                <div className="p-4 border-t border-border bg-background/95 backdrop-blur-sm">
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -402,18 +407,18 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
                     className="hidden"
                     accept="image/*,application/pdf,.doc,.docx,.txt"
                   />
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-end">
                     <Button 
                       variant="outline" 
-                      size="icon" 
-                      className="shrink-0"
+                      size="sm"
+                      className="shrink-0 h-10"
                       onClick={handleFileUpload}
                       disabled={uploadFile.isPending}
                     >
                       <Paperclip className="h-4 w-4" />
                     </Button>
                     <Input
-                      placeholder="Type your message..."
+                      placeholder={`Message ${activeUserData ? formatDisplayName(activeUserData.user_profile?.display_name || '') : ''}...`}
                       value={messageInput}
                       onChange={(e) => setMessageInput(e.target.value)}
                       onKeyPress={handleKeyPress}
@@ -423,7 +428,8 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
                     <Button
                       onClick={handleSendMessage}
                       disabled={!messageInput.trim() || sendingMessage}
-                      size="icon"
+                      size="sm"
+                      className="shrink-0 h-10"
                     >
                       <Send className="h-4 w-4" />
                     </Button>
