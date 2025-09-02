@@ -37,6 +37,7 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
   const [messageInput, setMessageInput] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const uploadFile = useUploadFile();
 
   // Filter out current user from active users
@@ -109,6 +110,20 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
   const activeUserData = activeConversation ? 
     activeUsers.find(u => u.user_id === activeConversation) ||
     conversations.find(c => c.user_id === activeConversation) : null;
+
+  // Auto-scroll to bottom when messages change or conversation opens
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, activeConversation]);
+
+  // Also scroll to bottom when sending a message completes
+  useEffect(() => {
+    if (!sendingMessage && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [sendingMessage]);
 
   // Reset selected user when dialog closes and handle prop changes
   useEffect(() => {
@@ -394,6 +409,7 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
                           </div>
                         </div>
                       ))}
+                      <div ref={messagesEndRef} />
                     </div>
                   )}
                 </ScrollArea>
