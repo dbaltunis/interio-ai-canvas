@@ -2,7 +2,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, Phone, User, Building2, MoreHorizontal } from "lucide-react";
+import { Mail, Phone, User, Building2, MoreHorizontal, Star, TrendingUp, Clock, AlertCircle, Target } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface Client {
@@ -19,6 +19,14 @@ interface Client {
   notes?: string;
   projectCount?: number;
   totalValue?: number;
+  lead_score?: number;
+  funnel_stage?: string;
+  priority_level?: string;
+  lead_source?: string;
+  follow_up_date?: string;
+  last_contact_date?: string;
+  deal_value?: number;
+  conversion_probability?: number;
 }
 
 interface ClientListViewProps {
@@ -39,6 +47,47 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
   const getTypeIcon = (type: string) => {
     return type === "B2B" ? <Building2 className="h-4 w-4" /> : <User className="h-4 w-4" />;
   };
+
+  const getStageColor = (stage: string) => {
+    const colors = {
+      'lead': 'bg-gray-100 text-gray-800',
+      'qualification': 'bg-blue-100 text-blue-800',
+      'proposal': 'bg-yellow-100 text-yellow-800',
+      'negotiation': 'bg-orange-100 text-orange-800',
+      'closed_won': 'bg-green-100 text-green-800',
+      'closed_lost': 'bg-red-100 text-red-800'
+    };
+    return colors[stage as keyof typeof colors] || colors.lead;
+  };
+
+  const getPriorityColor = (priority: string) => {
+    const colors = {
+      'low': 'bg-gray-100 text-gray-600',
+      'medium': 'bg-blue-100 text-blue-600',
+      'high': 'bg-orange-100 text-orange-600',
+      'urgent': 'bg-red-100 text-red-600'
+    };
+    return colors[priority as keyof typeof colors] || colors.medium;
+  };
+
+  const getPriorityIcon = (priority: string) => {
+    const icons = {
+      'low': <TrendingUp className="h-3 w-3" />,
+      'medium': <Target className="h-3 w-3" />,
+      'high': <AlertCircle className="h-3 w-3" />,
+      'urgent': <AlertCircle className="h-3 w-3" />
+    };
+    return icons[priority as keyof typeof icons] || icons.medium;
+  };
+
+  const getLeadScoreColor = (score: number) => {
+    if (score >= 80) return 'text-green-600';
+    if (score >= 60) return 'text-yellow-600';
+    if (score >= 40) return 'text-orange-600';
+    return 'text-gray-600';
+  };
+
+  const isHotLead = (score: number) => score >= 70;
 
   if (isLoading) {
     return (
@@ -66,9 +115,11 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
               <TableRow>
                 <TableHead className="font-semibold">Client Info</TableHead>
                 <TableHead className="font-semibold">Type</TableHead>
+                <TableHead className="font-semibold">Stage</TableHead>
+                <TableHead className="font-semibold">Lead Score</TableHead>
+                <TableHead className="font-semibold">Priority</TableHead>
+                <TableHead className="font-semibold">Deal Value</TableHead>
                 <TableHead className="font-semibold">Contact</TableHead>
-                <TableHead className="font-semibold">Location</TableHead>
-                <TableHead className="font-semibold">Projects</TableHead>
                 <TableHead className="font-semibold">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -80,20 +131,31 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                   onClick={() => onClientClick(client)}
                 >
                   <TableCell>
-                    <div>
-                      <div className="font-medium text-foreground">
-                        {client.client_type === 'B2B' ? client.company_name : client.name}
+                    <div className="flex items-center gap-2">
+                      {(client.lead_score && isHotLead(client.lead_score)) && (
+                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                      )}
+                      <div>
+                        <div className="font-medium text-foreground">
+                          {client.client_type === 'B2B' ? client.company_name : client.name}
+                        </div>
+                        {client.client_type === 'B2B' && client.contact_person && (
+                          <div className="text-sm text-muted-foreground">
+                            Contact: {client.contact_person}
+                          </div>
+                        )}
+                        {client.lead_source && (
+                          <div className="text-xs text-muted-foreground">
+                            Source: {client.lead_source}
+                          </div>
+                        )}
+                        {client.follow_up_date && (
+                          <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                            <Clock className="h-3 w-3" />
+                            Follow-up: {new Date(client.follow_up_date).toLocaleDateString()}
+                          </div>
+                        )}
                       </div>
-                      {client.client_type === 'B2B' && client.contact_person && (
-                        <div className="text-sm text-muted-foreground">
-                          Contact: {client.contact_person}
-                        </div>
-                      )}
-                      {client.notes && (
-                        <div className="text-sm text-muted-foreground truncate max-w-xs mt-1">
-                          {client.notes}
-                        </div>
-                      )}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -103,11 +165,54 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                     </Badge>
                   </TableCell>
                   <TableCell>
+                    <Badge className={`${getStageColor(client.funnel_stage || 'lead')} border-0 text-xs`} variant="outline">
+                      {(client.funnel_stage || 'lead').replace('_', ' ').toUpperCase()}
+                    </Badge>
+                    {client.conversion_probability && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {client.conversion_probability}% probability
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span className={`font-medium ${getLeadScoreColor(client.lead_score || 0)}`}>
+                        {client.lead_score || 0}
+                      </span>
+                      <div className="w-16 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-primary h-2 rounded-full transition-all" 
+                          style={{ width: `${Math.min((client.lead_score || 0), 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={`${getPriorityColor(client.priority_level || 'medium')} border-0 flex items-center gap-1 w-fit text-xs`} variant="outline">
+                      {getPriorityIcon(client.priority_level || 'medium')}
+                      <span>{(client.priority_level || 'medium').toUpperCase()}</span>
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      {client.deal_value && client.deal_value > 0 ? (
+                        <div className="font-medium text-green-600">
+                          ${client.deal_value.toLocaleString()}
+                        </div>
+                      ) : (
+                        <div className="text-muted-foreground">No deal set</div>
+                      )}
+                      <div className="text-xs text-muted-foreground">
+                        {client.projectCount || 0} projects
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
                     <div className="space-y-1">
                       {client.email && (
                         <div className="flex items-center text-sm text-foreground">
                           <Mail className="mr-2 h-3 w-3 text-muted-foreground" />
-                          {client.email}
+                          <span className="truncate max-w-xs">{client.email}</span>
                         </div>
                       )}
                       {client.phone && (
@@ -116,18 +221,10 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                           {client.phone}
                         </div>
                       )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-muted-foreground">
-                      {client.city && client.state ? `${client.city}, ${client.state}` : "Not specified"}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <div className="font-medium">{client.projectCount || 0} projects</div>
-                      {client.totalValue && client.totalValue > 0 && (
-                        <div className="text-muted-foreground">${client.totalValue.toLocaleString()}</div>
+                      {client.city && client.state && (
+                        <div className="text-xs text-muted-foreground">
+                          {client.city}, {client.state}
+                        </div>
                       )}
                     </div>
                   </TableCell>
