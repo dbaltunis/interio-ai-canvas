@@ -11,6 +11,7 @@ import { ClientProfilePage } from "./ClientProfilePage";
 import { ClientListView } from "./ClientListView";
 import { ClientFilters } from "./ClientFilters";
 import { ClientImportExport } from "./ClientImportExport";
+import { ClientFormWithLeadIntelligence } from "./ClientFormWithLeadIntelligence";
 import { JobsPagination } from "../jobs/JobsPagination";
 import { ErrorFallback } from "@/components/ui/error-fallback";
 import { LoadingFallback } from "@/components/ui/loading-fallback";
@@ -242,13 +243,16 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
         onPageChange={handlePageChange}
       />
 
-      {/* New Client Dialog */}
+      {/* Create Client Dialog with Lead Intelligence */}
       <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Client</DialogTitle>
           </DialogHeader>
-          <ClientCreateForm onBack={() => setShowCreateForm(false)} />
+          <ClientFormWithLeadIntelligence 
+            onCancel={() => setShowCreateForm(false)}
+            onSuccess={() => setShowCreateForm(false)}
+          />
         </DialogContent>
       </Dialog>
       
