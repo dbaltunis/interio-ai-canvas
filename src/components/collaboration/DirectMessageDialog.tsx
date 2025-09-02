@@ -76,18 +76,15 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !selectedUserId) return;
+    if (!file) return;
 
     try {
       await uploadFile.mutateAsync({
         file,
-        projectId: 'messages',
+        projectId: 'messages', // Using a fixed project ID for messages
         bucketName: 'message-attachments'
       });
-      
-      // Send file as message
-      sendMessage(selectedUserId, `📎 ${file.name}`);
-      toast.success('File uploaded and sent!');
+      toast.success('File uploaded successfully!');
     } catch (error) {
       console.error('File upload failed:', error);
       toast.error('Failed to upload file');
