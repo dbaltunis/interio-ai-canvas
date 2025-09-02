@@ -780,6 +780,36 @@ export type Database = {
           },
         ]
       }
+      client_interactions: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          interaction_details: Json | null
+          interaction_type: string
+          points_awarded: number | null
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          interaction_details?: Json | null
+          interaction_type: string
+          points_awarded?: number | null
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          interaction_details?: Json | null
+          interaction_type?: string
+          points_awarded?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       client_measurements: {
         Row: {
           client_id: string | null
@@ -856,66 +886,102 @@ export type Database = {
       clients: {
         Row: {
           address: string | null
+          assigned_to: string | null
           city: string | null
           client_type: string | null
           company_name: string | null
           contact_person: string | null
+          conversion_probability: number | null
           country: string | null
           created_at: string
           created_by: string | null
+          deal_value: number | null
           email: string | null
+          follow_up_date: string | null
           funnel_stage: string | null
           id: string
+          last_activity_date: string | null
           last_contact_date: string | null
+          lead_score: number | null
+          lead_source: string | null
+          lead_source_details: Json | null
+          marketing_consent: boolean | null
           name: string
           notes: string | null
           phone: string | null
+          priority_level: string | null
+          referral_source: string | null
           stage_changed_at: string | null
           state: string | null
+          tags: string[] | null
           updated_at: string
           user_id: string
           zip_code: string | null
         }
         Insert: {
           address?: string | null
+          assigned_to?: string | null
           city?: string | null
           client_type?: string | null
           company_name?: string | null
           contact_person?: string | null
+          conversion_probability?: number | null
           country?: string | null
           created_at?: string
           created_by?: string | null
+          deal_value?: number | null
           email?: string | null
+          follow_up_date?: string | null
           funnel_stage?: string | null
           id?: string
+          last_activity_date?: string | null
           last_contact_date?: string | null
+          lead_score?: number | null
+          lead_source?: string | null
+          lead_source_details?: Json | null
+          marketing_consent?: boolean | null
           name: string
           notes?: string | null
           phone?: string | null
+          priority_level?: string | null
+          referral_source?: string | null
           stage_changed_at?: string | null
           state?: string | null
+          tags?: string[] | null
           updated_at?: string
           user_id: string
           zip_code?: string | null
         }
         Update: {
           address?: string | null
+          assigned_to?: string | null
           city?: string | null
           client_type?: string | null
           company_name?: string | null
           contact_person?: string | null
+          conversion_probability?: number | null
           country?: string | null
           created_at?: string
           created_by?: string | null
+          deal_value?: number | null
           email?: string | null
+          follow_up_date?: string | null
           funnel_stage?: string | null
           id?: string
+          last_activity_date?: string | null
           last_contact_date?: string | null
+          lead_score?: number | null
+          lead_source?: string | null
+          lead_source_details?: Json | null
+          marketing_consent?: boolean | null
           name?: string
           notes?: string | null
           phone?: string | null
+          priority_level?: string | null
+          referral_source?: string | null
           stage_changed_at?: string | null
           state?: string | null
+          tags?: string[] | null
           updated_at?: string
           user_id?: string
           zip_code?: string | null
@@ -1913,6 +1979,39 @@ export type Database = {
           is_active?: boolean
           name?: string
           sort_order?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      lead_scoring_rules: {
+        Row: {
+          created_at: string
+          criteria: Json
+          id: string
+          is_active: boolean | null
+          points: number
+          rule_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          criteria: Json
+          id?: string
+          is_active?: boolean | null
+          points: number
+          rule_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          criteria?: Json
+          id?: string
+          is_active?: boolean | null
+          points?: number
+          rule_name?: string
           updated_at?: string
           user_id?: string
         }
@@ -3557,6 +3656,10 @@ export type Database = {
       accept_user_invitation: {
         Args: { invitation_token_param: string; user_id_param: string }
         Returns: Json
+      }
+      calculate_lead_score: {
+        Args: { client_id_param: string }
+        Returns: number
       }
       can_edit_record: {
         Args: {
