@@ -4,13 +4,17 @@ import { HotLeadsList } from "./HotLeadsList";
 import { LeadSourceAnalytics } from "./LeadSourceAnalytics";
 import { SalesPipelineBoard } from "./SalesPipelineBoard";
 import { DealForm } from "./DealForm";
+import { FollowUpReminders } from "./FollowUpReminders";
+import { AutomationWorkflows } from "./AutomationWorkflows";
+import { EmailSequenceForm } from "./EmailSequenceForm";
 import { Button } from "@/components/ui/button";
-import { Plus, Settings, Download, Target } from "lucide-react";
+import { Plus, Settings, Download, Target, Zap, Mail } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const CRMDashboard = () => {
   const [showCreateDeal, setShowCreateDeal] = useState(false);
+  const [showCreateSequence, setShowCreateSequence] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -38,6 +42,10 @@ export const CRMDashboard = () => {
             <Target className="h-4 w-4 mr-2" />
             Add Deal
           </Button>
+          <Button size="sm" onClick={() => setShowCreateSequence(true)}>
+            <Mail className="h-4 w-4 mr-2" />
+            Email Sequence
+          </Button>
         </div>
       </div>
 
@@ -45,6 +53,7 @@ export const CRMDashboard = () => {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="pipeline">Sales Pipeline</TabsTrigger>
+          <TabsTrigger value="automation">Automation</TabsTrigger>
           <TabsTrigger value="hot-leads">Hot Leads</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
@@ -52,19 +61,20 @@ export const CRMDashboard = () => {
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <HotLeadsList />
-            <Card>
-              <CardHeader>
-                <CardTitle>Pipeline Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <SalesPipelineBoard />
-              </CardContent>
-            </Card>
+            <FollowUpReminders />
           </div>
+          <SalesPipelineBoard />
         </TabsContent>
 
         <TabsContent value="pipeline" className="space-y-6">
           <SalesPipelineBoard />
+        </TabsContent>
+
+        <TabsContent value="automation" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <AutomationWorkflows />
+            <FollowUpReminders />
+          </div>
         </TabsContent>
 
         <TabsContent value="hot-leads" className="space-y-6">
@@ -85,6 +95,19 @@ export const CRMDashboard = () => {
           <DealForm 
             onCancel={() => setShowCreateDeal(false)}
             onSuccess={() => setShowCreateDeal(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Email Sequence Dialog */}
+      <Dialog open={showCreateSequence} onOpenChange={setShowCreateSequence}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Email Sequence</DialogTitle>
+          </DialogHeader>
+          <EmailSequenceForm 
+            onCancel={() => setShowCreateSequence(false)}
+            onSuccess={() => setShowCreateSequence(false)}
           />
         </DialogContent>
       </Dialog>

@@ -458,6 +458,92 @@ export type Database = {
           },
         ]
       }
+      automation_executions: {
+        Row: {
+          client_id: string | null
+          completed_at: string | null
+          deal_id: string | null
+          error_message: string | null
+          executed_at: string | null
+          execution_status: string | null
+          id: string
+          trigger_data: Json | null
+          workflow_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          completed_at?: string | null
+          deal_id?: string | null
+          error_message?: string | null
+          executed_at?: string | null
+          execution_status?: string | null
+          id?: string
+          trigger_data?: Json | null
+          workflow_id: string
+        }
+        Update: {
+          client_id?: string | null
+          completed_at?: string | null
+          deal_id?: string | null
+          error_message?: string | null
+          executed_at?: string | null
+          execution_status?: string | null
+          id?: string
+          trigger_data?: Json | null
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_executions_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "automation_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_workflows: {
+        Row: {
+          actions: Json
+          created_at: string
+          description: string | null
+          execution_count: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          trigger_conditions: Json | null
+          trigger_event: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actions?: Json
+          created_at?: string
+          description?: string | null
+          execution_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          trigger_conditions?: Json | null
+          trigger_event: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actions?: Json
+          created_at?: string
+          description?: string | null
+          execution_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          trigger_conditions?: Json | null
+          trigger_event?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       booking_notifications: {
         Row: {
           booking_id: string
@@ -1391,6 +1477,92 @@ export type Database = {
         }
         Relationships: []
       }
+      email_sequence_steps: {
+        Row: {
+          content: string
+          created_at: string
+          delay_days: number | null
+          delay_hours: number | null
+          id: string
+          is_active: boolean | null
+          sequence_id: string
+          step_number: number
+          subject: string
+          template_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          delay_days?: number | null
+          delay_hours?: number | null
+          id?: string
+          is_active?: boolean | null
+          sequence_id: string
+          step_number: number
+          subject: string
+          template_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          delay_days?: number | null
+          delay_hours?: number | null
+          id?: string
+          is_active?: boolean | null
+          sequence_id?: string
+          step_number?: number
+          subject?: string
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_sequence_steps_sequence_id_fkey"
+            columns: ["sequence_id"]
+            isOneToOne: false
+            referencedRelation: "email_sequences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_sequences: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          sequence_delay_days: number | null
+          trigger_conditions: Json | null
+          trigger_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          sequence_delay_days?: number | null
+          trigger_conditions?: Json | null
+          trigger_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          sequence_delay_days?: number | null
+          trigger_conditions?: Json | null
+          trigger_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_settings: {
         Row: {
           active: boolean | null
@@ -1688,6 +1860,50 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      follow_up_reminders: {
+        Row: {
+          client_id: string
+          created_at: string
+          deal_id: string | null
+          id: string
+          message: string
+          reminder_type: string
+          scheduled_for: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          message: string
+          reminder_type: string
+          scheduled_for: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          message?: string
+          reminder_type?: string
+          scheduled_for?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follow_up_reminders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]
@@ -2726,6 +2942,48 @@ export type Database = {
           period_end?: string
           period_start?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      scheduled_tasks: {
+        Row: {
+          client_id: string | null
+          completed_at: string | null
+          created_at: string
+          deal_id: string | null
+          id: string
+          priority: string | null
+          scheduled_for: string
+          status: string | null
+          task_data: Json | null
+          task_type: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          priority?: string | null
+          scheduled_for: string
+          status?: string | null
+          task_data?: Json | null
+          task_type: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          priority?: string | null
+          scheduled_for?: string
+          status?: string | null
+          task_data?: Json | null
+          task_type?: string
           user_id?: string
         }
         Relationships: []
@@ -3925,6 +4183,25 @@ export type Database = {
       sanitize_text_input: {
         Args: { input_text: string }
         Returns: string
+      }
+      schedule_follow_up_reminder: {
+        Args: {
+          client_id_param: string
+          custom_message?: string
+          deal_id_param?: string
+          reminder_days?: number
+          reminder_type_param?: string
+        }
+        Returns: string
+      }
+      trigger_automation_workflow: {
+        Args: {
+          entity_id: string
+          entity_type?: string
+          event_data?: Json
+          event_type: string
+        }
+        Returns: undefined
       }
       update_pipeline_analytics: {
         Args: { user_id_param: string }
