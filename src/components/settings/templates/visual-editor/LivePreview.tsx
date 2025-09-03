@@ -271,34 +271,22 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
             </h3>
             <div className="flex items-center gap-3">
               {hasRealData && (
-                <label className="flex items-center gap-2 text-sm">
+                <label className="flex items-center gap-2 text-sm text-gray-600">
                   <input
                     type="checkbox"
                     checked={groupByRoom}
                     onChange={(e) => setGroupByRoom(e.target.checked)}
-                    className="rounded"
+                    className="rounded border-gray-300"
                   />
                   Group by room
                 </label>
               )}
-              <Button
-                variant="outline"
-                size="sm"
+              <button
                 onClick={() => setShowDetailedProducts(!showDetailedProducts)}
-                className="flex items-center gap-2"
+                className="px-3 py-1 text-sm border rounded hover:bg-gray-50 transition-colors"
               >
-                {showDetailedProducts ? (
-                  <>
-                    <Minus className="h-4 w-4" />
-                    Simple
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4" />
-                    Detailed
-                  </>
-                )}
-              </Button>
+                {showDetailedProducts ? 'Simple' : 'Detailed'}
+              </button>
             </div>
           </div>
 
@@ -326,9 +314,9 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
                 {Object.entries(groupedItems).map(([roomName, items]: [string, any]) => (
                   <React.Fragment key={roomName}>
                     {groupByRoom && hasRealData && (
-                      <tr className="bg-blue-50">
-                        <td colSpan={6} className="p-3 font-medium text-blue-900">
-                          📍 {roomName}
+                      <tr className="bg-gray-100 border-t-2 border-gray-300">
+                        <td colSpan={6} className="p-3 font-medium text-gray-800">
+                          {roomName}
                         </td>
                       </tr>
                     )}
