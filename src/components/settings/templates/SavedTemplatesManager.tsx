@@ -24,6 +24,7 @@ interface QuoteTemplate {
   name: string;
   description: string;
   template_style: string;
+  type?: string;
   blocks: any[];
   is_default: boolean;
   created_at: string;
