@@ -4,8 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { VisualQuoteEditor } from "./VisualQuoteEditor";
 import { EnhancedTemplateEditor } from "./visual-editor/EnhancedTemplateEditor";
+import { DocumentTypeSelector } from "./DocumentTypeSelector";
 import { 
   Plus, 
   Edit, 
@@ -32,8 +32,8 @@ interface QuoteTemplate {
 
 
 export const SavedTemplatesManager = () => {
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isEnhancedEditorOpen, setIsEnhancedEditorOpen] = useState(false);
+  const [isDocumentSelectorOpen, setIsDocumentSelectorOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<QuoteTemplate | null>(null);
   const queryClient = useQueryClient();
 
@@ -129,18 +129,13 @@ export const SavedTemplatesManager = () => {
   });
 
   const handleCreateTemplate = () => {
-    setSelectedTemplate(null);
-    setIsEditorOpen(true);
+    setIsDocumentSelectorOpen(true);
   };
 
-  const handleCreateEnhancedTemplate = () => {
+  const handleSelectDocumentTemplate = (documentType: string, templateId: string) => {
     setSelectedTemplate(null);
     setIsEnhancedEditorOpen(true);
-  };
-
-  const handleEditTemplate = (template: QuoteTemplate) => {
-    setSelectedTemplate(template);
-    setIsEditorOpen(true);
+    // Here we could pre-load template based on documentType and templateId
   };
 
   const handleEditEnhancedTemplate = (template: QuoteTemplate) => {
@@ -183,13 +178,9 @@ export const SavedTemplatesManager = () => {
           <p className="text-gray-600 mt-1">Create and manage your quotation templates</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={handleCreateTemplate} variant="outline" className="flex items-center gap-2">
+          <Button onClick={handleCreateTemplate} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            Basic Template
-          </Button>
-          <Button onClick={handleCreateEnhancedTemplate} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Enhanced Template
+            Create Template
           </Button>
         </div>
       </div>
@@ -254,7 +245,7 @@ export const SavedTemplatesManager = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => template.template_style === 'enhanced' ? handleEditEnhancedTemplate(template) : handleEditTemplate(template)}
+                      onClick={() => handleEditEnhancedTemplate(template)}
                       className="flex-1"
                     >
                       <Edit className="h-3 w-3 mr-1" />
@@ -283,12 +274,11 @@ export const SavedTemplatesManager = () => {
         </div>
       )}
 
-      {/* Visual Editor */}
-      <VisualQuoteEditor
-        isOpen={isEditorOpen}
-        onClose={() => setIsEditorOpen(false)}
-        template={selectedTemplate}
-        onSave={handleSaveTemplate}
+      {/* Document Type Selector */}
+      <DocumentTypeSelector
+        isOpen={isDocumentSelectorOpen}
+        onClose={() => setIsDocumentSelectorOpen(false)}
+        onSelectTemplate={handleSelectDocumentTemplate}
       />
 
       {/* Enhanced Template Editor */}

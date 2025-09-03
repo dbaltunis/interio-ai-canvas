@@ -14,6 +14,7 @@ import { RealTimeCollaboration } from './RealTimeCollaboration';
 import { AdvancedLayoutTools } from './AdvancedLayoutTools';
 import '@/styles/template-editor.css';
 import { useProjectData } from '@/hooks/useProjectData';
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Palette,
   Type,
@@ -66,17 +67,63 @@ export const EnhancedTemplateEditor = ({
     lastSeen: 'now'
   };
 
-  const handleSave = () => {
-    const templateData = {
-      name: templateName,
-      blocks,
-      canvasData,
-      template_style: 'enhanced',
-      active: true
-    };
-    
-    onSave(templateData);
-    toast("Template saved successfully!");
+  const handleSave = async () => {
+    if (!templateName.trim()) {
+      toast.error('Please enter a template name');
+      return;
+    }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      let userId = null;
+      if (session?.user) {
+        userId = session.user.id;
+      } else {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+          throw new Error('Please log in to save templates');
+        }
+        userId = user.id;
+      }
+
+      const templateData = {
+        name: templateName,
+        description: `Enhanced template with ${blocks.length} blocks`,
+        template_style: 'enhanced',
+        blocks,
+        canvas_data: canvasData,
+        user_id: userId,
+        active: true
+      };
+
+      console.log('Saving enhanced template with blocks:', blocks.length, blocks.map(b => ({ id: b.id, type: b.type })));
+
+      if (template?.id) {
+        // Update existing template
+        const { error } = await supabase
+          .from('quote_templates')
+          .update(templateData)
+          .eq('id', template.id);
+        
+        if (error) throw error;
+        toast.success('Enhanced template updated successfully!');
+      } else {
+        // Create new template
+        const { error } = await supabase
+          .from('quote_templates')
+          .insert([templateData]);
+        
+        if (error) throw error;
+        toast.success('Enhanced template saved successfully!');
+      }
+
+      onSave(templateData);
+      onClose();
+    } catch (error) {
+      console.error('Error saving enhanced template:', error);
+      toast.error(`Failed to save template: ${error.message}`);
+    }
   };
 
   const handleBlocksChange = (newBlocks: any[]) => {
