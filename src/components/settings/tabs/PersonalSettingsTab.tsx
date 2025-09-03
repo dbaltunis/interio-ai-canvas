@@ -245,6 +245,66 @@ export const PersonalSettingsTab = () => {
     }
   };
 
+  const handleTestEmail = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('send-test-email', {
+        body: {
+          to: user?.email,
+          subject: 'Test Email from Personal Settings',
+          message: 'This is a test email to verify your email notification settings are working correctly.'
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Test email sent",
+        description: `A test email has been sent to ${user?.email}`,
+      });
+    } catch (error) {
+      console.error('Error sending test email:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send test email. Please check your email settings.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleTestSMS = async () => {
+    try {
+      if (!profileData.phone_number) {
+        toast({
+          title: "Phone number required",
+          description: "Please add a phone number to test SMS notifications.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('send-test-sms', {
+        body: {
+          to: profileData.phone_number,
+          message: 'This is a test SMS from your notification settings. SMS notifications are working correctly!'
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Test SMS sent",
+        description: `A test SMS has been sent to ${profileData.phone_number}`,
+      });
+    } catch (error) {
+      console.error('Error sending test SMS:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send test SMS. Please check your phone number and SMS settings.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   };
@@ -400,11 +460,22 @@ export const PersonalSettingsTab = () => {
                   Receive email notifications for appointments and updates
                 </p>
               </div>
-              <Switch
-                checked={profileData.email_notifications}
-                onCheckedChange={(checked) => handleInputChange("email_notifications", checked)}
-                disabled={!isEditing}
-              />
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={profileData.email_notifications}
+                  onCheckedChange={(checked) => handleInputChange("email_notifications", checked)}
+                  disabled={!isEditing}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleTestEmail}
+                  disabled={!profileData.email_notifications}
+                  className="ml-2"
+                >
+                  Test Email
+                </Button>
+              </div>
             </div>
 
             <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -414,11 +485,22 @@ export const PersonalSettingsTab = () => {
                   Receive SMS notifications for urgent updates
                 </p>
               </div>
-              <Switch
-                checked={profileData.sms_notifications}
-                onCheckedChange={(checked) => handleInputChange("sms_notifications", checked)}
-                disabled={!isEditing}
-              />
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={profileData.sms_notifications}
+                  onCheckedChange={(checked) => handleInputChange("sms_notifications", checked)}
+                  disabled={!isEditing}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleTestSMS}
+                  disabled={!profileData.sms_notifications || !profileData.phone_number}
+                  className="ml-2"
+                >
+                  Test SMS
+                </Button>
+              </div>
             </div>
 
             <FormFieldGroup 
