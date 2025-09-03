@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUpdateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, Edit, Mail, Download, Save, X } from "lucide-react";
+import { QuoteErrorBoundary } from "@/components/performance/QuoteErrorBoundary";
 
 interface Quote {
   id: string;
@@ -100,16 +101,17 @@ export const QuoteViewer = ({ quote, isEditable = false, children }: QuoteViewer
   };
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        {children || (
-          <Button variant="outline" size="sm">
-            <Eye className="h-4 w-4 mr-2" />
-            View Quote
-          </Button>
-        )}
-      </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+    <QuoteErrorBoundary>
+      <Dialog>
+        <DialogTrigger asChild>
+          {children || (
+            <Button variant="outline" size="sm">
+              <Eye className="h-4 w-4 mr-2" />
+              View Quote
+            </Button>
+          )}
+        </DialogTrigger>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -297,5 +299,6 @@ export const QuoteViewer = ({ quote, isEditable = false, children }: QuoteViewer
         </div>
       </DialogContent>
     </Dialog>
+    </QuoteErrorBoundary>
   );
 };

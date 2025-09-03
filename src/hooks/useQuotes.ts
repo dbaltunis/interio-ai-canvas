@@ -19,20 +19,32 @@ export const useQuotes = (projectId?: string) => {
         .from("quotes")
         .select(`
           *,
-          clients (
+          clients!quotes_client_id_fkey (
             id,
             name,
-            email
+            email,
+            company_name,
+            phone,
+            address,
+            city,
+            state,
+            zip_code
           ),
-          projects (
+          projects!quotes_project_id_fkey (
             id,
             name,
             status,
             client_id,
-            clients (
+            clients!projects_client_id_fkey (
               id,
               name,
-              email
+              email,
+              company_name,
+              phone,
+              address,
+              city,
+              state,
+              zip_code
             )
           )
         `);

@@ -11,6 +11,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useUpdateQuote } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
 import { QuoteLineItems } from "./QuoteLineItems";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { useProjects } from "@/hooks/useProjects";
+import { QuoteErrorBoundary } from "@/components/performance/QuoteErrorBoundary";
 
 interface LineItem {
   id: string;
@@ -40,8 +43,15 @@ export const QuoteManagement = ({ quote, onBack }: QuoteManagementProps) => {
   const { toast } = useToast();
   const updateQuote = useUpdateQuote();
   const { data: clients } = useClients();
+  const { data: businessSettings } = useBusinessSettings();
+  const { data: projects } = useProjects();
 
-  const selectedClient = quote.client_id ? clients?.find(c => c.id === quote.client_id) : null;
+  // Enhanced data retrieval with fallbacks
+  const selectedClient = quote.clients || 
+    (quote.client_id ? clients?.find(c => c.id === quote.client_id) : null);
+  
+  const selectedProject = quote.projects || 
+    (quote.project_id ? projects?.find(p => p.id === quote.project_id) : null);
 
   // Calculate totals
   const subtotal = lineItems.reduce((sum, item) => sum + item.total, 0);
@@ -112,7 +122,8 @@ export const QuoteManagement = ({ quote, onBack }: QuoteManagementProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-white w-full">
+    <QuoteErrorBoundary>
+      <div className="min-h-screen bg-white w-full">
       {/* Header */}
       <div className="border-b bg-white px-6 py-4">
         <div className="flex items-center justify-between">
@@ -155,7 +166,47 @@ export const QuoteManagement = ({ quote, onBack }: QuoteManagementProps) => {
 
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* Quote Details */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Company Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Company Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {businessSettings ? (
+                <div className="space-y-2">
+                  {businessSettings.company_name && (
+                    <div>
+                      <span className="font-medium text-lg">{businessSettings.company_name}</span>
+                    </div>
+                  )}
+                  {businessSettings.abn && (
+                    <div className="text-sm text-gray-600">ABN: {businessSettings.abn}</div>
+                  )}
+                  {businessSettings.business_email && (
+                    <div className="text-sm text-gray-600">{businessSettings.business_email}</div>
+                  )}
+                  {businessSettings.business_phone && (
+                    <div className="text-sm text-gray-600">{businessSettings.business_phone}</div>
+                  )}
+                  {businessSettings.address && (
+                    <div className="text-sm text-gray-600">
+                      {businessSettings.address}
+                      {businessSettings.city && `, ${businessSettings.city}`}
+                      {businessSettings.state && `, ${businessSettings.state}`}
+                      {businessSettings.zip_code && ` ${businessSettings.zip_code}`}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-gray-500 italic">
+                  No company information configured
+                  <p className="text-xs mt-1">Configure in Settings → Business</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Quote Information</CardTitle>
@@ -236,29 +287,62 @@ export const QuoteManagement = ({ quote, onBack }: QuoteManagementProps) => {
             </CardContent>
           </Card>
 
+          {/* Project Information */}
           <Card>
             <CardHeader>
-              <CardTitle>Quote Summary</CardTitle>
+              <CardTitle>Project Information</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Subtotal:</span>
-                <span className="font-medium">{formatCurrency(subtotal)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Tax ({(taxRate * 100).toFixed(1)}%):</span>
-                <span className="font-medium">{formatCurrency(taxAmount)}</span>
-              </div>
-              <div className="flex justify-between text-lg font-bold border-t pt-3">
-                <span>Total:</span>
-                <span className="text-brand-primary">{formatCurrency(total)}</span>
-              </div>
-              <div className="text-sm text-gray-500 mt-2">
-                {lineItems.length} line item{lineItems.length !== 1 ? 's' : ''}
-              </div>
+            <CardContent>
+              {selectedProject ? (
+                <div className="space-y-2">
+                  <div>
+                    <span className="font-medium">{selectedProject.name}</span>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Status: <span className="capitalize">{selectedProject.status}</span>
+                  </div>
+                  {selectedProject.created_at && (
+                    <div className="text-sm text-gray-600">
+                      Created: {new Date(selectedProject.created_at).toLocaleDateString()}
+                    </div>
+                  )}
+                  {quote.project_id && (
+                    <div className="text-xs text-gray-500">
+                      Project ID: {quote.project_id}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-gray-500 italic">No project assigned</div>
+              )}
             </CardContent>
           </Card>
+
         </div>
+
+        {/* Quote Summary */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quote Summary</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Subtotal:</span>
+              <span className="font-medium">{formatCurrency(subtotal)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Tax ({(taxRate * 100).toFixed(1)}%):</span>
+              <span className="font-medium">{formatCurrency(taxAmount)}</span>
+            </div>
+            <div className="flex justify-between text-lg font-bold border-t pt-3">
+              <span>Total:</span>
+              <span className="text-brand-primary">{formatCurrency(total)}</span>
+            </div>
+            <div className="text-sm text-gray-500 mt-2">
+              {lineItems.length} line item{lineItems.length !== 1 ? 's' : ''}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Line Items */}
         <QuoteLineItems
@@ -287,5 +371,6 @@ export const QuoteManagement = ({ quote, onBack }: QuoteManagementProps) => {
         </Card>
       </div>
     </div>
+    </QuoteErrorBoundary>
   );
 };
