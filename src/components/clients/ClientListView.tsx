@@ -27,6 +27,8 @@ interface Client {
   last_contact_date?: string;
   deal_value?: number;
   conversion_probability?: number;
+  tags?: string[];
+  referral_source?: string;
 }
 
 interface ClientListViewProps {
@@ -114,7 +116,7 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
             <TableHeader>
               <TableRow>
                 <TableHead className="font-semibold">Client Info</TableHead>
-                <TableHead className="font-semibold">Type</TableHead>
+                <TableHead className="font-semibold">Type & Tags</TableHead>
                 <TableHead className="font-semibold">Stage</TableHead>
                 <TableHead className="font-semibold">Lead Score</TableHead>
                 <TableHead className="font-semibold">Priority</TableHead>
@@ -159,10 +161,26 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge className={`${getTypeColor(client.client_type || 'B2C')} border-0 flex items-center space-x-1 w-fit`} variant="secondary">
-                      {getTypeIcon(client.client_type || 'B2C')}
-                      <span>{client.client_type || 'B2C'}</span>
-                    </Badge>
+                    <div className="space-y-2">
+                      <Badge className={`${getTypeColor(client.client_type || 'B2C')} border-0 flex items-center space-x-1 w-fit`} variant="secondary">
+                        {getTypeIcon(client.client_type || 'B2C')}
+                        <span>{client.client_type || 'B2C'}</span>
+                      </Badge>
+                      {client.tags && client.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {client.tags.slice(0, 2).map((tag) => (
+                            <Badge key={tag} variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20">
+                              {tag}
+                            </Badge>
+                          ))}
+                          {client.tags.length > 2 && (
+                            <Badge variant="outline" className="text-xs bg-muted text-muted-foreground">
+                              +{client.tags.length - 2}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Badge className={`${getStageColor(client.funnel_stage || 'lead')} border-0 text-xs`} variant="outline">

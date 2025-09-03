@@ -21,6 +21,12 @@ interface ClientFiltersProps {
   setClientType: (type: string) => void;
   activityFilter: string;
   setActivityFilter: (filter: string) => void;
+  selectedTags: string[];
+  setSelectedTags: (tags: string[]) => void;
+  leadSourceFilter: string;
+  setLeadSourceFilter: (source: string) => void;
+  priorityFilter: string;
+  setPriorityFilter: (priority: string) => void;
   onClearFilters: () => void;
 }
 
@@ -35,6 +41,12 @@ export const ClientFilters = ({
   setClientType,
   activityFilter,
   setActivityFilter,
+  selectedTags,
+  setSelectedTags,
+  leadSourceFilter,
+  setLeadSourceFilter,
+  priorityFilter,
+  setPriorityFilter,
   onClearFilters
 }: ClientFiltersProps) => {
   const [filterOpen, setFilterOpen] = useState(false);
@@ -66,8 +78,21 @@ export const ClientFilters = ({
     }
   };
 
-  const activeFiltersCount = selectedStatuses.length + selectedProjects.length + (clientType !== 'all' ? 1 : 0) + (activityFilter !== 'all' ? 1 : 0);
+  const activeFiltersCount = selectedStatuses.length + selectedProjects.length + selectedTags.length + 
+    (clientType !== 'all' ? 1 : 0) + (activityFilter !== 'all' ? 1 : 0) + 
+    (leadSourceFilter !== 'all' ? 1 : 0) + (priorityFilter !== 'all' ? 1 : 0);
   const hasActiveFilters = searchTerm || activeFiltersCount > 0;
+
+  // Sample tags - in real app these would come from clients data
+  const availableTags = ['VIP', 'Corporate', 'Referral', 'New Client', 'High Value', 'Repeat Customer'];
+
+  const handleTagToggle = (tag: string) => {
+    if (selectedTags.includes(tag)) {
+      setSelectedTags(selectedTags.filter(t => t !== tag));
+    } else {
+      setSelectedTags([...selectedTags, tag]);
+    }
+  };
 
   const clearFilters = () => {
     onClearFilters();
@@ -108,6 +133,36 @@ export const ClientFilters = ({
             <SelectItem value="pending_quotes">Pending Quotes</SelectItem>
             <SelectItem value="high_value">High Value (&gt;$5K)</SelectItem>
             <SelectItem value="inactive">No Activity</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={leadSourceFilter} onValueChange={setLeadSourceFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Lead Source" />
+          </SelectTrigger>
+          <SelectContent className="z-[9999] bg-background border border-border shadow-lg">
+            <SelectItem value="all">All Sources</SelectItem>
+            <SelectItem value="website">Website</SelectItem>
+            <SelectItem value="google_ads">Google Ads</SelectItem>
+            <SelectItem value="facebook_ads">Facebook Ads</SelectItem>
+            <SelectItem value="referral">Referral</SelectItem>
+            <SelectItem value="trade_show">Trade Show</SelectItem>
+            <SelectItem value="cold_call">Cold Call</SelectItem>
+            <SelectItem value="email_campaign">Email Campaign</SelectItem>
+            <SelectItem value="social_media">Social Media</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Priority" />
+          </SelectTrigger>
+          <SelectContent className="z-[9999] bg-background border border-border shadow-lg">
+            <SelectItem value="all">All Priorities</SelectItem>
+            <SelectItem value="urgent">Urgent</SelectItem>
+            <SelectItem value="high">High</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="low">Low</SelectItem>
           </SelectContent>
         </Select>
 
@@ -181,6 +236,28 @@ export const ClientFilters = ({
                     </div>
                   </div>
                 )}
+
+                {/* Tags Filter */}
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Tags</label>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {availableTags.map((tag) => (
+                      <div key={tag} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`tag-${tag}`}
+                          checked={selectedTags.includes(tag)}
+                          onCheckedChange={() => handleTagToggle(tag)}
+                        />
+                        <label
+                          htmlFor={`tag-${tag}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          {tag}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </PopoverContent>
@@ -220,6 +297,33 @@ export const ClientFilters = ({
               />
             </Badge>
           )}
+          {leadSourceFilter !== 'all' && (
+            <Badge variant="secondary" className="flex items-center gap-1">
+              Source: {leadSourceFilter.replace('_', ' ')}
+              <X
+                className="h-3 w-3 cursor-pointer"
+                onClick={() => setLeadSourceFilter('all')}
+              />
+            </Badge>
+          )}
+          {priorityFilter !== 'all' && (
+            <Badge variant="secondary" className="flex items-center gap-1">
+              Priority: {priorityFilter}
+              <X
+                className="h-3 w-3 cursor-pointer"
+                onClick={() => setPriorityFilter('all')}
+              />
+            </Badge>
+          )}
+          {selectedTags.map((tag) => (
+            <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+              Tag: {tag}
+              <X
+                className="h-3 w-3 cursor-pointer"
+                onClick={() => handleTagToggle(tag)}
+              />
+            </Badge>
+          ))}
           {selectedStatuses.map((status) => (
             <Badge key={status} variant="secondary" className="flex items-center gap-1">
               Status: {projectStatuses.find(s => s.value === status)?.label}

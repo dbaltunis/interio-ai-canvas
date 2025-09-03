@@ -13,6 +13,7 @@ import { ClientProjectsList } from "./ClientProjectsList";
 import { MeasurementsList } from "../measurements/MeasurementsList";
 import { EmailComposer } from "../jobs/email/EmailComposer";
 import { ClientFormWithLeadIntelligence } from "./ClientFormWithLeadIntelligence";
+import { FollowUpManager } from "./FollowUpManager";
 
 interface ClientProfilePageProps {
   clientId: string;
@@ -302,6 +303,26 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit, onTabChange }: Cli
             </div>
           </div>
           
+          {(client.tags && client.tags.length > 0) && (
+            <div className="mt-6 pt-6 border-t">
+              <p className="text-sm text-muted-foreground mb-2">Tags</p>
+              <div className="flex flex-wrap gap-2">
+                {client.tags.map((tag) => (
+                  <Badge key={tag} variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {client.referral_source && (
+            <div className="mt-6 pt-6 border-t">
+              <p className="text-sm text-muted-foreground mb-2">Referral Source</p>
+              <p className="text-foreground">{client.referral_source}</p>
+            </div>
+          )}
+          
           {client.notes && (
             <div className="mt-6 pt-6 border-t">
               <p className="text-sm text-muted-foreground mb-2">Notes</p>
@@ -316,6 +337,7 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit, onTabChange }: Cli
         <TabsList className="bg-background border-b border-border/50 rounded-none p-0 h-auto flex w-full justify-start gap-0">
           <TabsTrigger value="measurements" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">Measurements</TabsTrigger>
           <TabsTrigger value="projects" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">Projects & Jobs</TabsTrigger>
+          <TabsTrigger value="followups" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">Follow-ups</TabsTrigger>
           <TabsTrigger value="emails" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">Email History</TabsTrigger>
         </TabsList>
         
@@ -329,6 +351,10 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit, onTabChange }: Cli
         
         <TabsContent value="projects" className="space-y-4">
           <ClientProjectsList clientId={clientId} onTabChange={onTabChange} />
+        </TabsContent>
+        
+        <TabsContent value="followups" className="space-y-4">
+          <FollowUpManager clientId={clientId} />
         </TabsContent>
         
         <TabsContent value="emails" className="space-y-4">

@@ -32,8 +32,11 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
   const [showFilters, setShowFilters] = useState(false);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [clientType, setClientType] = useState("all");
   const [activityFilter, setActivityFilter] = useState("all");
+  const [leadSourceFilter, setLeadSourceFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [showHelp, setShowHelp] = useState(false);
   const itemsPerPage = 20;
@@ -72,9 +75,17 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
   const filteredClients = clientsWithStats.filter(client => {
     const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.company_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      client.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesType = clientType === 'all' || client.client_type === clientType;
+    
+    const matchesLeadSource = leadSourceFilter === 'all' || client.lead_source === leadSourceFilter;
+    
+    const matchesPriority = priorityFilter === 'all' || client.priority_level === priorityFilter;
+    
+    const matchesTags = selectedTags.length === 0 || 
+      selectedTags.some(tag => client.tags?.includes(tag));
     
     // Activity filter logic
     let matchesActivity = true;
@@ -95,7 +106,7 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
       }
     }
     
-    return matchesSearch && matchesType && matchesActivity;
+    return matchesSearch && matchesType && matchesActivity && matchesLeadSource && matchesPriority && matchesTags;
   });
 
   // Pagination logic
@@ -113,8 +124,11 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
     setSearchTerm("");
     setSelectedStatuses([]);
     setSelectedProjects([]);
+    setSelectedTags([]);
     setClientType("all");
     setActivityFilter("all");
+    setLeadSourceFilter("all");
+    setPriorityFilter("all");
     setCurrentPage(1);
   };
 
@@ -217,10 +231,16 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
             setSelectedStatuses={setSelectedStatuses}
             selectedProjects={selectedProjects}
             setSelectedProjects={setSelectedProjects}
+            selectedTags={selectedTags}
+            setSelectedTags={setSelectedTags}
             clientType={clientType}
             setClientType={setClientType}
             activityFilter={activityFilter}
             setActivityFilter={setActivityFilter}
+            leadSourceFilter={leadSourceFilter}
+            setLeadSourceFilter={setLeadSourceFilter}
+            priorityFilter={priorityFilter}
+            setPriorityFilter={setPriorityFilter}
             onClearFilters={clearFilters}
           />
         </div>
