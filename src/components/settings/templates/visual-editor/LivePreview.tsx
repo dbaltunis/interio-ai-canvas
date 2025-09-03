@@ -36,14 +36,33 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
   const style = content.style || {};
 
   const renderTokenValue = (token: string) => {
+    // Use real project data or fallback to defaults
+    const project = projectData?.project || {};
+    const client = project.client || {};
+    const businessSettings = projectData?.businessSettings || {};
+    
     const tokens = {
-      company_name: 'Acme Window Solutions',
-      company_address: '123 Business Ave, Suite 100',
-      company_phone: '(555) 123-4567',
-      company_email: 'info@acmewindows.com',
-      quote_number: 'QT-2024-001',
-      date: new Date().toLocaleDateString(),
+      company_name: businessSettings.company_name || 'Your Company Name',
+      company_address: businessSettings.address ? 
+        `${businessSettings.address}${businessSettings.city ? ', ' + businessSettings.city : ''}${businessSettings.state ? ', ' + businessSettings.state : ''}${businessSettings.zip_code ? ' ' + businessSettings.zip_code : ''}` 
+        : '123 Business Ave, Suite 100',
+      company_phone: businessSettings.business_phone || '(555) 123-4567',
+      company_email: businessSettings.business_email || 'info@company.com',
+      client_name: client.name || 'John Smith',
+      client_email: client.email || 'client@example.com', 
+      client_phone: client.phone || '(555) 987-6543',
+      client_address: client.address ? 
+        `${client.address}${client.city ? ', ' + client.city : ''}${client.state ? ', ' + client.state : ''}${client.zip_code ? ' ' + client.zip_code : ''}` 
+        : '456 Residential Street, Anytown, ST 12345',
+      client_company: client.company_name || '',
+      quote_number: project.quote_number || project.job_number || 'QT-2024-001',
+      project_name: project.name || 'Project',
+      date: project.created_at ? new Date(project.created_at).toLocaleDateString() : new Date().toLocaleDateString(),
       valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+      subtotal: projectData?.subtotal ? `$${projectData.subtotal.toFixed(2)}` : '$0.00',
+      tax_amount: projectData?.taxAmount ? `$${projectData.taxAmount.toFixed(2)}` : '$0.00',
+      tax_rate: projectData?.taxRate ? `${(projectData.taxRate * 100).toFixed(1)}%` : '8.5%',
+      total: projectData?.total ? `$${projectData.total.toFixed(2)}` : '$0.00',
     };
     return tokens[token as keyof typeof tokens] || token;
   };
@@ -73,20 +92,20 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
                 </div>
               )}
               <h1 className="text-3xl font-bold mb-2">
-                {replaceTokens(content.companyName) || 'Your Company Name'}
+                {renderTokenValue('company_name')}
               </h1>
               <div className="space-y-1 opacity-90 text-sm">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
-                  <span>{replaceTokens(content.companyAddress) || 'Company Address'}</span>
+                  <span>{renderTokenValue('company_address')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4" />
-                  <span>{replaceTokens(content.companyPhone) || '(555) 123-4567'}</span>
+                  <span>{renderTokenValue('company_phone')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4" />
-                  <span>{replaceTokens(content.companyEmail) || 'info@company.com'}</span>
+                  <span>{renderTokenValue('company_email')}</span>
                 </div>
               </div>
             </div>
@@ -120,12 +139,18 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
           </h3>
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="space-y-1">
-              <p className="font-medium">John Smith</p>
-              {content.showCompany && <p className="text-gray-600">Smith Construction Co.</p>}
-              {content.showClientEmail && <p className="text-gray-600">john@smithconstruction.com</p>}
-              {content.showClientPhone && <p className="text-gray-600">(555) 987-6543</p>}
+              <p className="font-medium">{renderTokenValue('client_name')}</p>
+              {content.showCompany && renderTokenValue('client_company') && (
+                <p className="text-gray-600">{renderTokenValue('client_company')}</p>
+              )}
+              {content.showClientEmail && (
+                <p className="text-gray-600">{renderTokenValue('client_email')}</p>
+              )}
+              {content.showClientPhone && (
+                <p className="text-gray-600">{renderTokenValue('client_phone')}</p>
+              )}
               {content.showClientAddress && (
-                <p className="text-gray-600">456 Residential Street, Anytown, ST 12345</p>
+                <p className="text-gray-600">{renderTokenValue('client_address')}</p>
               )}
             </div>
           </div>
@@ -151,20 +176,35 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-t">
-                  <td className="p-3">Premium Blinds - White</td>
-                  {content.showDescription && <td className="p-3 text-sm text-gray-600">2" Faux Wood Blinds with Cord Tilt</td>}
-                  {content.showQuantity !== false && <td className="p-3 text-center">3</td>}
-                  {content.showUnitPrice !== false && <td className="p-3 text-right">$125.00</td>}
-                  {content.showTotal !== false && <td className="p-3 text-right font-medium">$375.00</td>}
-                </tr>
-                <tr className="border-t">
-                  <td className="p-3">Installation Service</td>
-                  {content.showDescription && <td className="p-3 text-sm text-gray-600">Professional Installation & Setup</td>}
-                  {content.showQuantity !== false && <td className="p-3 text-center">1</td>}
-                  {content.showUnitPrice !== false && <td className="p-3 text-right">$150.00</td>}
-                  {content.showTotal !== false && <td className="p-3 text-right font-medium">$150.00</td>}
-                </tr>
+                {(projectData?.treatments || projectData?.windowSummaries || []).length > 0 ? (
+                  (projectData?.treatments || projectData?.windowSummaries || []).map((item: any, index: number) => (
+                    <tr key={index} className="border-t">
+                      <td className="p-3">{item.name || item.treatment_type || item.product_name || 'Window Treatment'}</td>
+                      {content.showDescription && (
+                        <td className="p-3 text-sm text-gray-600">
+                          {item.description || item.notes || `${item.width || 0}"W x ${item.height || 0}"H`}
+                        </td>
+                      )}
+                      {content.showQuantity !== false && (
+                        <td className="p-3 text-center">{item.quantity || item.qty || 1}</td>
+                      )}
+                      {content.showUnitPrice !== false && (
+                        <td className="p-3 text-right">${(item.unit_price || item.cost_per_unit || 0).toFixed(2)}</td>
+                      )}
+                      {content.showTotal !== false && (
+                        <td className="p-3 text-right font-medium">${(item.total_cost || item.total_price || 0).toFixed(2)}</td>
+                      )}
+                    </tr>
+                  ))
+                ) : (
+                  <tr className="border-t">
+                    <td className="p-3">No items available</td>
+                    {content.showDescription && <td className="p-3 text-sm text-gray-600">Add treatments to your project</td>}
+                    {content.showQuantity !== false && <td className="p-3 text-center">-</td>}
+                    {content.showUnitPrice !== false && <td className="p-3 text-right">$0.00</td>}
+                    {content.showTotal !== false && <td className="p-3 text-right font-medium">$0.00</td>}
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -185,18 +225,18 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
               {content.showSubtotal !== false && (
                 <div className="flex justify-between py-2">
                   <span className="text-gray-600">Subtotal:</span>
-                  <span className="font-medium">$525.00</span>
+                  <span className="font-medium">{renderTokenValue('subtotal')}</span>
                 </div>
               )}
               {content.showTax && (
                 <div className="flex justify-between py-2">
-                  <span className="text-gray-600">Tax (8.5%):</span>
-                  <span className="font-medium">$44.63</span>
+                  <span className="text-gray-600">Tax ({renderTokenValue('tax_rate')}):</span>
+                  <span className="font-medium">{renderTokenValue('tax_amount')}</span>
                 </div>
               )}
               <div className="flex justify-between py-2 text-lg font-bold border-t border-gray-300 pt-3">
                 <span>Total:</span>
-                <span className="text-brand-primary">$569.63</span>
+                <span className="text-brand-primary">{renderTokenValue('total')}</span>
               </div>
             </div>
           </div>

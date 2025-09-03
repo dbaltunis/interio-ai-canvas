@@ -157,33 +157,54 @@ export const AIDesignAssistant = ({ onApplyDesign, currentBlocks }: AIDesignAssi
 
     setIsGenerating(true);
     
-    // Simulate AI generation
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Generate design based on prompt
-    const generatedDesign = {
-      primary: '#' + Math.floor(Math.random()*16777215).toString(16),
-      secondary: '#' + Math.floor(Math.random()*16777215).toString(16),
-      accent: '#' + Math.floor(Math.random()*16777215).toString(16)
-    };
+    try {
+      console.log('Requesting AI design assistance...');
+      
+      const response = await fetch(`https://ldgrcodffsalkevafbkb.functions.supabase.co/functions/v1/ai-design-assistant`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: designPrompt,
+          documentType: 'quote',
+          currentStyle: {},
+          projectData: {}
+        }),
+      });
 
-    const updatedBlocks = currentBlocks.map(block => ({
-      ...block,
-      content: {
-        ...block.content,
-        style: {
-          ...block.content?.style,
-          backgroundColor: generatedDesign.primary,
-          borderColor: generatedDesign.secondary
-        }
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    }));
 
-    onApplyDesign({ blocks: updatedBlocks, theme: generatedDesign });
-    setIsGenerating(false);
-    toast("🤖 AI design generated!", {
-      description: `Created design based on: "${designPrompt}"`
-    });
+      const data = await response.json();
+      console.log('AI Design Assistant response:', data);
+      
+      // Apply AI-generated design recommendations
+      const aiColors = data.colors || {};
+      const updatedBlocks = currentBlocks.map(block => ({
+        ...block,
+        content: {
+          ...block.content,
+          style: {
+            ...block.content?.style,
+            backgroundColor: aiColors.primary || aiColors.background,
+            borderColor: aiColors.secondary,
+            color: aiColors.text
+          }
+        }
+      }));
+
+      onApplyDesign({ blocks: updatedBlocks, theme: aiColors, aiAdvice: data.aiAdvice });
+      toast("🤖 AI design generated!", {
+        description: `Created design based on: "${designPrompt}"`
+      });
+    } catch (error) {
+      console.error('Error getting AI design:', error);
+      toast.error("Failed to generate AI design. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const filteredSuggestions = selectedCategory === 'all' 

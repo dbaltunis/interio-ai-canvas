@@ -4,10 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 export const useProjectData = (projectId?: string) => {
   return useQuery({
     queryKey: ['project-data', projectId],
-    queryFn: async () => {
+    queryFn: async (): Promise<any> => {
       if (!projectId) return null;
 
-      // Fetch project with client
+      // Fetch project with client and business settings
       const { data: project, error: projectError } = await supabase
         .from('projects')
         .select(`
@@ -18,6 +18,17 @@ export const useProjectData = (projectId?: string) => {
         .single();
 
       if (projectError) throw projectError;
+      
+      // Fetch business settings for the project owner
+      const { data: businessSettings, error: businessError } = await supabase
+        .from('business_settings')
+        .select('*')
+        .eq('user_id', project?.user_id || project?.client?.user_id)
+        .single();
+
+      if (businessError && businessError.code !== 'PGRST116') {
+        console.warn('No business settings found:', businessError);
+      }
 
       // Fetch related project data - use quotes table instead of non-existent tables
       const { data: quotes, error: quotesError } = await supabase
@@ -27,34 +38,57 @@ export const useProjectData = (projectId?: string) => {
 
       if (quotesError && quotesError.code !== 'PGRST116') throw quotesError;
 
-      // Get workshop data if available
+      // Get actual project treatments/items
       const { data: workshopItems, error: workshopError } = await supabase
         .from('workshop_items')
         .select('*')
         .eq('project_id', projectId);
 
       if (workshopError && workshopError.code !== 'PGRST116') throw workshopError;
-
-      // Calculate totals from workshop items or use mock data
-      const treatments = workshopItems || [];
-      const rooms = [{ id: '1', name: 'Sample Room', project_id: projectId }];
-      const surfaces = [{ id: '1', name: 'Sample Window', room_id: '1', project_id: projectId }];
       
-      const subtotal = treatments?.reduce((sum: number, t: any) => sum + (t.total_cost || 0), 0) || 200;
-      const taxRate = 0.08; // 8% tax rate - should come from business settings
+      // Get window summaries for more detailed pricing
+      const { data: windowSummaries, error: summariesError } = await supabase
+        .from('windows_summary')
+        .select('*')
+        .eq('project_id', projectId);
+
+      if (summariesError && summariesError.code !== 'PGRST116') {
+        console.warn('No window summaries found:', summariesError);
+      }
+
+      // Calculate totals from real data
+      const treatments = workshopItems || [];
+      const windowSummaryData = windowSummaries || [];
+      
+      // Use window summaries for more accurate pricing if available
+      const itemsWithPricing = windowSummaryData.length > 0 ? windowSummaryData : treatments;
+      
+      let subtotal = 0;
+      for (const item of itemsWithPricing) {
+        subtotal += Number((item as any).total_cost || 0);
+      }
+      
+      // Get tax rate from business settings or default
+      const pricingSettings = businessSettings?.pricing_settings as any || {};
+      const taxRate = pricingSettings.tax_rate || 0.085;
       const taxAmount = subtotal * taxRate;
       const total = subtotal + taxAmount;
+      
+      // Get markup percentage from business settings
+      const markupPercentage = pricingSettings.default_markup_percentage || 45;
 
       return {
         project,
         treatments: treatments || [],
-        rooms: rooms || [],
-        surfaces: surfaces || [],
+        windowSummaries: windowSummaryData || [],
+        rooms: [],
+        surfaces: [],
         subtotal,
         taxRate,
         taxAmount,
         total,
-        markupPercentage: 45 // Should come from business settings
+        markupPercentage,
+        businessSettings: businessSettings || {}
       };
     },
     enabled: !!projectId
