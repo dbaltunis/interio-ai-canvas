@@ -4,7 +4,8 @@ import { useQuotes } from "@/hooks/useQuotes";
 import { useProjects } from "@/hooks/useProjects";
 import { useUsers } from "@/hooks/useUsers";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
-import { Users, Briefcase, FileText, Building } from "lucide-react";
+import { useIntegrations } from "@/hooks/useIntegrations";
+import { Users, Briefcase, FileText, Building, Mail, MessageSquare } from "lucide-react";
 
 export const TeamMemberTest = () => {
   const { data: profile } = useCurrentUserProfile();
@@ -12,6 +13,10 @@ export const TeamMemberTest = () => {
   const { data: clients = [] } = useClients();
   const { data: quotes = [] } = useQuotes();
   const { data: projects = [] } = useProjects();
+  const { integrations = [] } = useIntegrations();
+
+  const emailIntegration = integrations.find(i => i.integration_type === 'sendgrid');
+  const smsIntegration = integrations.find(i => i.integration_type === 'twilio');
 
   return (
     <Card>
@@ -66,6 +71,29 @@ export const TeamMemberTest = () => {
             <p><strong>Role:</strong> {profile?.role || 'Unknown'}</p>
             <p><strong>Status:</strong> {profile?.is_active ? 'Active' : 'Inactive'}</p>
             <p><strong>Account Type:</strong> {profile?.parent_account_id === profile?.user_id ? 'Account Owner' : 'Team Member'}</p>
+          </div>
+        </div>
+        
+        <div className="bg-background p-4 rounded-lg border">
+          <h4 className="font-medium mb-2">Notification Integrations:</h4>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4 text-blue-500" />
+              <span className="text-sm">
+                Email (SendGrid): {emailIntegration ? '✅ Configured' : '❌ Not configured'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-green-500" />
+              <span className="text-sm">
+                SMS (Twilio): {smsIntegration ? '✅ Configured' : '❌ Not configured'}
+              </span>
+            </div>
+            {!profile?.parent_account_id || profile?.parent_account_id === profile?.user_id ? null : (
+              <p className="text-xs text-muted-foreground mt-2">
+                ℹ️ As a team member, you inherit integrations from the account owner
+              </p>
+            )}
           </div>
         </div>
         

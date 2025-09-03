@@ -34,12 +34,19 @@ export const useIntegrations = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Get the account owner ID
+      const { data: accountOwnerData } = await supabase.rpc('get_account_owner', { 
+        user_id_param: user.id 
+      });
+      
+      const accountOwnerId = accountOwnerData || user.id;
+
       const { data, error } = await supabase
         .from('integration_settings')
         .insert({
           ...integration,
           user_id: user.id,
-          account_owner_id: user.id,
+          account_owner_id: accountOwnerId,
         })
         .select()
         .single();

@@ -107,7 +107,19 @@ export interface TwilioIntegration extends BaseIntegration {
   };
 }
 
-export type IntegrationType = TIGPIMIntegration | MYOBExoIntegration | RFMSIntegration | ZohoCRMIntegration | GoogleCalendarIntegration | TwilioIntegration;
+export interface SendGridIntegration extends BaseIntegration {
+  integration_type: 'sendgrid';
+  api_credentials: {
+    api_key: string;
+  };
+  configuration: {
+    sender_email: string;
+    sender_name: string;
+    default_template_id?: string;
+  };
+}
+
+export type IntegrationType = TIGPIMIntegration | MYOBExoIntegration | RFMSIntegration | ZohoCRMIntegration | GoogleCalendarIntegration | TwilioIntegration | SendGridIntegration;
 
 export interface IntegrationSyncLog {
   id: string;
