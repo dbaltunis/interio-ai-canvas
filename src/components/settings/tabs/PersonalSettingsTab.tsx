@@ -249,7 +249,7 @@ export const PersonalSettingsTab = () => {
     try {
       const { data, error } = await supabase.functions.invoke('send-test-email', {
         body: {
-          to: user?.email,
+          to_email: user?.email,
           subject: 'Test Email from Personal Settings',
           message: 'This is a test email to verify your email notification settings are working correctly.'
         }
@@ -284,8 +284,7 @@ export const PersonalSettingsTab = () => {
 
       const { data, error } = await supabase.functions.invoke('send-test-sms', {
         body: {
-          to: profileData.phone_number,
-          message: 'This is a test SMS from your notification settings. SMS notifications are working correctly!'
+          phoneNumber: profileData.phone_number
         }
       });
 

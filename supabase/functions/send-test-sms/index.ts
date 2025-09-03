@@ -56,7 +56,7 @@ const handler = async (req: Request): Promise<Response> => {
         },
         body: new URLSearchParams({
           To: phoneNumber,
-          From: '+15551234567', // You'll need to replace this with your Twilio phone number
+          From: Deno.env.get('TWILIO_PHONE_NUMBER') || '+15551234567',
           Body: 'This is a test SMS from your appointment notification system! 📱✨ Your SMS notifications are working correctly.',
         }),
       }
