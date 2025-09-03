@@ -169,7 +169,7 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a role..." />
               </SelectTrigger>
-              <SelectContent className="z-50">
+              <SelectContent className="z-[9999] bg-popover border border-border shadow-md">
                 <SelectItem value="Admin">Admin</SelectItem>
                 <SelectItem value="Manager">Manager</SelectItem>
                 <SelectItem value="Staff">Staff</SelectItem>

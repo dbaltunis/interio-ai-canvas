@@ -24,7 +24,7 @@ export const useUsers = () => {
         return [];
       }
       
-      // Get user profiles 
+      // Get user profiles from the same account
       const { data: profiles, error } = await supabase
         .from('user_profiles')
         .select(`
@@ -34,7 +34,8 @@ export const useUsers = () => {
           is_active,
           phone_number,
           avatar_url,
-          created_at
+          created_at,
+          parent_account_id
         `)
         .order('created_at', { ascending: false });
 
