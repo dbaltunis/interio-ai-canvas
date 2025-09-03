@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +58,18 @@ export const EnhancedTemplateEditor = ({
   const [selectedElements, setSelectedElements] = useState<any[]>([]);
   
   const { data: projectData } = useProjectData(projectId);
+
+  // Update blocks when template changes
+  useEffect(() => {
+    console.log('Template prop changed:', template);
+    if (template?.blocks && Array.isArray(template.blocks)) {
+      console.log('Template changed, loading blocks:', template.blocks.length);
+      setBlocks(template.blocks);
+      setTemplateName(template.name || 'Untitled Template');
+    } else if (template) {
+      console.log('Template exists but no blocks:', template);
+    }
+  }, [template]);
 
   // Mock current user for collaboration
   const currentUser = {

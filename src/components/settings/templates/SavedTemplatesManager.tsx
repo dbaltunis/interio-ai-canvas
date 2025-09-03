@@ -142,6 +142,7 @@ export const SavedTemplatesManager = () => {
       
       if (professionalTemplate && professionalTemplate.blocks) {
         console.log('Loading professional template with', professionalTemplate.blocks.length, 'blocks');
+        console.log('Template blocks:', professionalTemplate.blocks.map(b => ({ id: b.id, type: b.type })));
         
         // Create a new template with the professional template blocks
         const templateData = {
@@ -155,6 +156,7 @@ export const SavedTemplatesManager = () => {
           updated_at: new Date().toISOString()
         };
         
+        console.log('Setting selected template:', templateData);
         setSelectedTemplate(templateData);
       } else {
         console.error('Professional template not found or has no blocks:', { documentType, templateId });
