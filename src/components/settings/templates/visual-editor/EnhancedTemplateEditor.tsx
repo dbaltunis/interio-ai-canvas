@@ -9,6 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { StreamlinedEditor } from './StreamlinedEditor';
 import { CanvasEditor } from './CanvasEditor';
 import { LivePreview } from './LivePreview';
+import { AdvancedExportSystem } from './AdvancedExportSystem';
+import { RealTimeCollaboration } from './RealTimeCollaboration';
+import { AdvancedLayoutTools } from './AdvancedLayoutTools';
 import '@/styles/template-editor.css';
 import { useProjectData } from '@/hooks/useProjectData';
 import { 
@@ -22,7 +25,9 @@ import {
   Share2,
   Layers,
   Settings,
-  Paintbrush2
+  Paintbrush2,
+  Users,
+  Grid3x3
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -44,10 +49,22 @@ export const EnhancedTemplateEditor = ({
   const [templateName, setTemplateName] = useState(template?.name || '');
   const [blocks, setBlocks] = useState(template?.blocks || []);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'blocks' | 'canvas' | 'preview'>('blocks');
+  const [activeTab, setActiveTab] = useState<'blocks' | 'canvas' | 'preview' | 'export' | 'collaborate' | 'layout'>('blocks');
   const [canvasData, setCanvasData] = useState<string>('');
+  const templateRef = useRef<HTMLDivElement>(null);
+  const [selectedElements, setSelectedElements] = useState<any[]>([]);
   
   const { data: projectData } = useProjectData(projectId);
+
+  // Mock current user for collaboration
+  const currentUser = {
+    id: 'current-user',
+    name: 'You',
+    email: 'you@company.com',
+    role: 'owner' as const,
+    status: 'online' as const,
+    lastSeen: 'now'
+  };
 
   const handleSave = () => {
     const templateData = {
@@ -95,10 +112,57 @@ export const EnhancedTemplateEditor = ({
       
       case 'preview':
         return (
-          <LivePreview
-            blocks={blocks}
-            projectData={projectData}
-            isEditable={false}
+          <div ref={templateRef}>
+            <LivePreview
+              blocks={blocks}
+              projectData={projectData}
+              isEditable={false}
+            />
+          </div>
+        );
+
+      case 'export':
+        return (
+          <AdvancedExportSystem
+            templateRef={templateRef}
+            templateData={{ name: templateName, blocks, canvasData }}
+            onExport={(format, options) => {
+              console.log('Exporting:', format, options);
+            }}
+          />
+        );
+
+      case 'collaborate':
+        return (
+          <RealTimeCollaboration
+            templateId={template?.id || 'new'}
+            currentUser={currentUser}
+            onCollaboratorChange={(collaborators) => {
+              console.log('Collaborators updated:', collaborators);
+            }}
+            onCommentAdd={(comment) => {
+              console.log('Comment added:', comment);
+            }}
+          />
+        );
+
+      case 'layout':
+        return (
+          <AdvancedLayoutTools
+            selectedElements={selectedElements}
+            onElementUpdate={(elements) => {
+              setSelectedElements(elements);
+              console.log('Elements updated:', elements);
+            }}
+            onAlignment={(type) => {
+              console.log('Alignment:', type);
+            }}
+            onDistribution={(type) => {
+              console.log('Distribution:', type);
+            }}
+            onGrouping={(action) => {
+              console.log('Grouping:', action);
+            }}
           />
         );
       
@@ -141,7 +205,7 @@ export const EnhancedTemplateEditor = ({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-1 px-6 border-b">
+        <div className="flex items-center gap-1 px-6 border-b overflow-x-auto">
           <Button
             variant={activeTab === 'blocks' ? 'default' : 'ghost'}
             size="sm"
@@ -149,7 +213,7 @@ export const EnhancedTemplateEditor = ({
             className="flex items-center gap-2"
           >
             <Layers className="h-4 w-4" />
-            Document Blocks
+            Blocks
           </Button>
           <Button
             variant={activeTab === 'canvas' ? 'default' : 'ghost'}
@@ -158,7 +222,34 @@ export const EnhancedTemplateEditor = ({
             className="flex items-center gap-2"
           >
             <Paintbrush2 className="h-4 w-4" />
-            Canvas Design
+            Canvas
+          </Button>
+          <Button
+            variant={activeTab === 'layout' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('layout')}
+            className="flex items-center gap-2"
+          >
+            <Grid3x3 className="h-4 w-4" />
+            Layout
+          </Button>
+          <Button
+            variant={activeTab === 'collaborate' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('collaborate')}
+            className="flex items-center gap-2"
+          >
+            <Users className="h-4 w-4" />
+            Collaborate
+          </Button>
+          <Button
+            variant={activeTab === 'export' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('export')}
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Export
           </Button>
           <Button
             variant={activeTab === 'preview' ? 'default' : 'ghost'}
@@ -167,7 +258,7 @@ export const EnhancedTemplateEditor = ({
             className="flex items-center gap-2"
           >
             <Eye className="h-4 w-4" />
-            Live Preview
+            Preview
           </Button>
         </div>
 
