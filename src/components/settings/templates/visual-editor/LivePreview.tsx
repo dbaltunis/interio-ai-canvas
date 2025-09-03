@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -356,10 +356,36 @@ interface LivePreviewProps {
   blocks: any[];
   projectData?: any;
   isEditable?: boolean;
+  onBlocksChange?: (blocks: any[]) => void;
+  containerStyles?: any;
+  onContainerStylesChange?: (styles: any) => void;
 }
 
-export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePreviewProps) => {
+export const LivePreview = ({ 
+  blocks, 
+  projectData, 
+  isEditable = false,
+  onBlocksChange,
+  containerStyles,
+  onContainerStylesChange 
+}: LivePreviewProps) => {
   console.log('LivePreview rendering with blocks:', blocks?.length || 0);
+
+  // If editable and we have update functions, use the editable version
+  if (isEditable && onBlocksChange) {
+    const EditableLivePreview = React.lazy(() => import('./EditableLivePreview').then(module => ({ default: module.EditableLivePreview })));
+    return (
+      <Suspense fallback={<div className="p-8 text-center">Loading editor...</div>}>
+        <EditableLivePreview
+          blocks={blocks}
+          projectData={projectData}
+          onBlocksChange={onBlocksChange}
+          containerStyles={containerStyles}
+          onContainerStylesChange={onContainerStylesChange}
+        />
+      </Suspense>
+    );
+  }
 
   if (!blocks || blocks.length === 0) {
     return (
@@ -374,8 +400,14 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
   }
 
   return (
-    <div className="bg-white min-h-full">
-      <div className="max-w-4xl mx-auto p-8">
+    <div 
+      className="bg-white min-h-full"
+      style={{ backgroundColor: containerStyles?.backgroundColor || '#ffffff' }}
+    >
+      <div 
+        className={`mx-auto ${containerStyles?.maxWidth === 'full' ? 'w-full' : `max-w-${containerStyles?.maxWidth || '4xl'}`}`}
+        style={{ padding: containerStyles?.padding || '32px' }}
+      >
         {blocks.map((block, index) => (
           <LivePreviewBlock 
             key={block.id || index} 

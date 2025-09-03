@@ -1,0 +1,718 @@
+import React, { useState, useCallback } from 'react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { 
+  Building2,
+  MapPin,
+  Phone,
+  Mail,
+  Calendar,
+  DollarSign,
+  Hash,
+  FileText,
+  User,
+  ShoppingCart,
+  Calculator,
+  PenTool,
+  Type,
+  Image as ImageIcon,
+  Palette,
+  Move,
+  Edit3,
+  Settings,
+  Minus,
+  Plus,
+  Space,
+  Eye,
+  EyeOff
+} from "lucide-react";
+import { SignatureCanvas } from './SignatureCanvas';
+import { cn } from "@/lib/utils";
+
+interface EditableTextProps {
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+  style?: React.CSSProperties;
+  multiline?: boolean;
+  placeholder?: string;
+}
+
+const EditableText = ({ value, onChange, className, style, multiline, placeholder }: EditableTextProps) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(value);
+
+  const handleSave = () => {
+    onChange(editValue);
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditValue(value);
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <div className="relative group">
+        {multiline ? (
+          <Textarea
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            className={cn("min-h-[60px]", className)}
+            style={style}
+            placeholder={placeholder}
+            autoFocus
+            onBlur={handleSave}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') handleCancel();
+              if (e.key === 'Enter' && e.ctrlKey) handleSave();
+            }}
+          />
+        ) : (
+          <Input
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            className={className}
+            style={style}
+            placeholder={placeholder}
+            autoFocus
+            onBlur={handleSave}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') handleCancel();
+              if (e.key === 'Enter') handleSave();
+            }}
+          />
+        )}
+        <div className="absolute -top-8 left-0 flex gap-1 bg-white border rounded shadow-lg p-1 z-10">
+          <Button size="sm" variant="ghost" onClick={handleSave} className="h-6 px-2">
+            ✓
+          </Button>
+          <Button size="sm" variant="ghost" onClick={handleCancel} className="h-6 px-2">
+            ✕
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      className={cn("cursor-pointer hover:bg-blue-50 hover:ring-2 hover:ring-blue-200 rounded transition-all relative group", className)}
+      style={style}
+      onClick={() => setIsEditing(true)}
+    >
+      {value || placeholder}
+      <Edit3 className="absolute -top-2 -right-2 h-4 w-4 text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+    </div>
+  );
+};
+
+interface EditableContainerProps {
+  children: React.ReactNode;
+  onStyleChange: (styles: any) => void;
+  currentStyles: any;
+  className?: string;
+}
+
+const EditableContainer = ({ children, onStyleChange, currentStyles, className }: EditableContainerProps) => {
+  const [showControls, setShowControls] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState<string>('');
+
+  const updateStyle = (property: string, value: any) => {
+    onStyleChange({
+      ...currentStyles,
+      [property]: value
+    });
+  };
+
+  return (
+    <div className={cn("relative group", className)}>
+      <div 
+        className="relative hover:ring-2 hover:ring-purple-200 rounded transition-all"
+        style={currentStyles}
+      >
+        {children}
+        
+        {/* Hover Controls */}
+        <div className="absolute -top-10 left-0 opacity-0 group-hover:opacity-100 transition-all z-20">
+          <div className="flex gap-1 bg-white border rounded shadow-lg p-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowControls(!showControls)}
+              className="h-8 px-2"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setSelectedProperty('padding')}
+              className="h-8 px-2"
+            >
+              <Space className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setSelectedProperty('background')}
+              className="h-8 px-2"
+            >
+              <Palette className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Quick Controls Overlay */}
+        {selectedProperty === 'padding' && (
+          <div className="absolute top-0 left-0 right-0 bg-white/95 border rounded p-2 z-30">
+            <div className="flex items-center gap-2 text-sm">
+              <span>Padding:</span>
+              <Slider
+                value={[parseInt(currentStyles.padding) || 16]}
+                onValueChange={([value]) => updateStyle('padding', `${value}px`)}
+                max={100}
+                step={4}
+                className="flex-1"
+              />
+              <span>{parseInt(currentStyles.padding) || 16}px</span>
+              <Button size="sm" variant="ghost" onClick={() => setSelectedProperty('')}>
+                ✕
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {selectedProperty === 'background' && (
+          <div className="absolute top-0 left-0 right-0 bg-white/95 border rounded p-2 z-30">
+            <div className="flex items-center gap-2 text-sm">
+              <span>Background:</span>
+              <Input
+                type="color"
+                value={currentStyles.backgroundColor || '#ffffff'}
+                onChange={(e) => updateStyle('backgroundColor', e.target.value)}
+                className="w-16 h-8"
+              />
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                onClick={() => updateStyle('backgroundColor', 'transparent')}
+              >
+                Clear
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelectedProperty('')}>
+                ✕
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Advanced Controls Panel */}
+      {showControls && (
+        <div className="absolute top-full left-0 w-80 bg-white border rounded-lg shadow-xl p-4 z-40 mt-2">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h4 className="font-medium">Style Controls</h4>
+              <Button size="sm" variant="ghost" onClick={() => setShowControls(false)}>
+                ✕
+              </Button>
+            </div>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium">Padding</label>
+                <Slider
+                  value={[parseInt(currentStyles.padding) || 16]}
+                  onValueChange={([value]) => updateStyle('padding', `${value}px`)}
+                  max={100}
+                  step={4}
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Margin</label>
+                <Slider
+                  value={[parseInt(currentStyles.margin) || 0]}
+                  onValueChange={([value]) => updateStyle('margin', `${value}px`)}
+                  max={100}
+                  step={4}
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Background Color</label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    type="color"
+                    value={currentStyles.backgroundColor || '#ffffff'}
+                    onChange={(e) => updateStyle('backgroundColor', e.target.value)}
+                    className="w-16"
+                  />
+                  <Input
+                    value={currentStyles.backgroundColor || ''}
+                    onChange={(e) => updateStyle('backgroundColor', e.target.value)}
+                    placeholder="#ffffff"
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Border Radius</label>
+                <Slider
+                  value={[parseInt(currentStyles.borderRadius) || 0]}
+                  onValueChange={([value]) => updateStyle('borderRadius', `${value}px`)}
+                  max={50}
+                  step={2}
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Border</label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    value={currentStyles.borderWidth || '0'}
+                    onChange={(e) => updateStyle('borderWidth', e.target.value)}
+                    placeholder="1px"
+                    className="w-20"
+                  />
+                  <Input
+                    type="color"
+                    value={currentStyles.borderColor || '#e5e7eb'}
+                    onChange={(e) => updateStyle('borderColor', e.target.value)}
+                    className="w-16"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface EditableLivePreviewBlockProps {
+  block: any;
+  projectData?: any;
+  onBlockUpdate: (blockId: string, updates: any) => void;
+}
+
+const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate }: EditableLivePreviewBlockProps) => {
+  const content = block.content || {};
+  const style = content.style || {};
+
+  const updateBlockContent = (updates: any) => {
+    onBlockUpdate(block.id, {
+      ...block,
+      content: {
+        ...content,
+        ...updates
+      }
+    });
+  };
+
+  const updateBlockStyle = (styleUpdates: any) => {
+    onBlockUpdate(block.id, {
+      ...block,
+      content: {
+        ...content,
+        style: {
+          ...style,
+          ...styleUpdates
+        }
+      }
+    });
+  };
+
+  const renderTokenValue = (token: string) => {
+    const project = projectData?.project || {};
+    const client = project.client || {};
+    const businessSettings = projectData?.businessSettings || {};
+    
+    const tokens = {
+      company_name: businessSettings.company_name || 'Your Company Name',
+      company_address: businessSettings.address ? 
+        `${businessSettings.address}${businessSettings.city ? ', ' + businessSettings.city : ''}${businessSettings.state ? ', ' + businessSettings.state : ''}${businessSettings.zip_code ? ' ' + businessSettings.zip_code : ''}` 
+        : '123 Business Ave, Suite 100',
+      company_phone: businessSettings.business_phone || '(555) 123-4567',
+      company_email: businessSettings.business_email || 'info@company.com',
+      client_name: client.name || 'John Smith',
+      client_email: client.email || 'client@example.com', 
+      client_phone: client.phone || '(555) 987-6543',
+      client_address: client.address ? 
+        `${client.address}${client.city ? ', ' + client.city : ''}${client.state ? ', ' + client.state : ''}${client.zip_code ? ' ' + client.zip_code : ''}` 
+        : '456 Residential Street, Anytown, ST 12345',
+      client_company: client.company_name || '',
+      quote_number: project.quote_number || project.job_number || 'QT-2024-001',
+      project_name: project.name || 'Project',
+      date: project.created_at ? new Date(project.created_at).toLocaleDateString() : new Date().toLocaleDateString(),
+      valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+      subtotal: projectData?.subtotal ? `$${projectData.subtotal.toFixed(2)}` : '$0.00',
+      tax_amount: projectData?.taxAmount ? `$${projectData.taxAmount.toFixed(2)}` : '$0.00',
+      tax_rate: projectData?.taxRate ? `${(projectData.taxRate * 100).toFixed(1)}%` : '8.5%',
+      total: projectData?.total ? `$${projectData.total.toFixed(2)}` : '$0.00',
+    };
+    return tokens[token as keyof typeof tokens] || token;
+  };
+
+  switch (block.type) {
+    case 'header':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            backgroundColor: style.backgroundColor || '#f8fafc',
+            color: style.textColor || '#1e293b',
+            padding: style.padding || '24px',
+            borderRadius: style.borderRadius || '8px',
+            margin: style.margin || '0 0 24px 0'
+          }}
+          className="mb-6"
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              {content.showLogo && (
+                <div className={`mb-4 ${content.logoPosition === 'center' ? 'text-center' : ''}`}>
+                  {projectData?.businessSettings?.company_logo_url ? (
+                    <img 
+                      src={projectData.businessSettings.company_logo_url} 
+                      alt="Company Logo" 
+                      className="h-16 w-auto object-contain"
+                      style={{ maxWidth: '200px' }}
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center">
+                      <Building2 className="h-8 w-8 text-white" />
+                    </div>
+                  )}
+                </div>
+              )}
+              <EditableText
+                value={renderTokenValue('company_name')}
+                onChange={(value) => updateBlockContent({ companyName: value })}
+                className="text-3xl font-bold mb-2"
+                placeholder="Company Name"
+              />
+              <div className="space-y-1 opacity-90 text-sm">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  <EditableText
+                    value={renderTokenValue('company_address')}
+                    onChange={(value) => updateBlockContent({ companyAddress: value })}
+                    placeholder="Company Address"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  <EditableText
+                    value={renderTokenValue('company_phone')}
+                    onChange={(value) => updateBlockContent({ companyPhone: value })}
+                    placeholder="Company Phone"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  <EditableText
+                    value={renderTokenValue('company_email')}
+                    onChange={(value) => updateBlockContent({ companyEmail: value })}
+                    placeholder="Company Email"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="text-right">
+              <EditableText
+                value="Quote"
+                onChange={(value) => updateBlockContent({ documentTitle: value })}
+                className="text-2xl font-semibold mb-2"
+                placeholder="Document Title"
+              />
+              <div className="text-sm space-y-1">
+                <div className="flex items-center gap-2">
+                  <Hash className="h-3 w-3" />
+                  <span>Quote #: {renderTokenValue('quote_number')}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-3 w-3" />
+                  <span>Date: {renderTokenValue('date')}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-3 w-3" />
+                  <span>Valid Until: {renderTokenValue('valid_until')}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </EditableContainer>
+      );
+
+    case 'client-info':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '16px',
+            margin: style.margin || '0 0 24px 0',
+            backgroundColor: style.backgroundColor || 'transparent'
+          }}
+          className="mb-6"
+        >
+          <EditableText
+            value={content.title || 'Bill To:'}
+            onChange={(value) => updateBlockContent({ title: value })}
+            className="text-lg font-semibold mb-3 text-brand-primary flex items-center gap-2"
+            placeholder="Section Title"
+          />
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="space-y-1">
+              <EditableText
+                value={renderTokenValue('client_name')}
+                onChange={(value) => updateBlockContent({ clientName: value })}
+                className="font-medium"
+                placeholder="Client Name"
+              />
+              {content.showCompany && renderTokenValue('client_company') && (
+                <EditableText
+                  value={renderTokenValue('client_company')}
+                  onChange={(value) => updateBlockContent({ clientCompany: value })}
+                  className="text-gray-600"
+                  placeholder="Client Company"
+                />
+              )}
+              {content.showClientEmail && (
+                <EditableText
+                  value={renderTokenValue('client_email')}
+                  onChange={(value) => updateBlockContent({ clientEmail: value })}
+                  className="text-gray-600"
+                  placeholder="Client Email"
+                />
+              )}
+              {content.showClientPhone && (
+                <EditableText
+                  value={renderTokenValue('client_phone')}
+                  onChange={(value) => updateBlockContent({ clientPhone: value })}
+                  className="text-gray-600"
+                  placeholder="Client Phone"
+                />
+              )}
+              {content.showClientAddress && (
+                <EditableText
+                  value={renderTokenValue('client_address')}
+                  onChange={(value) => updateBlockContent({ clientAddress: value })}
+                  className="text-gray-600"
+                  placeholder="Client Address"
+                  multiline
+                />
+              )}
+            </div>
+          </div>
+        </EditableContainer>
+      );
+
+    case 'text':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            fontSize: style.fontSize || '16px',
+            fontWeight: style.fontWeight || 'normal',
+            fontStyle: style.fontStyle || 'normal',
+            textAlign: style.textAlign || 'left',
+            color: style.color || 'inherit',
+            padding: style.padding || '16px',
+            margin: style.margin || '0 0 24px 0',
+            backgroundColor: style.backgroundColor || 'transparent'
+          }}
+          className="mb-6"
+        >
+          <EditableText
+            value={content.text || 'Enter your text here...'}
+            onChange={(value) => updateBlockContent({ text: value })}
+            multiline
+            placeholder="Enter your text here..."
+          />
+        </EditableContainer>
+      );
+
+    // Add other block types with similar editable functionality...
+    default:
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={style}
+          className="mb-6"
+        >
+          <div className="p-4 border border-dashed border-gray-300 rounded-lg text-center text-gray-500">
+            <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <EditableText
+              value={`Unknown block type: ${block.type}`}
+              onChange={() => {}}
+              placeholder="Block content"
+            />
+          </div>
+        </EditableContainer>
+      );
+  }
+};
+
+interface EditableLivePreviewProps {
+  blocks: any[];
+  projectData?: any;
+  onBlocksChange: (blocks: any[]) => void;
+  containerStyles?: any;
+  onContainerStylesChange?: (styles: any) => void;
+}
+
+export const EditableLivePreview = ({ 
+  blocks, 
+  projectData, 
+  onBlocksChange,
+  containerStyles = {},
+  onContainerStylesChange 
+}: EditableLivePreviewProps) => {
+  const [showPageControls, setShowPageControls] = useState(false);
+
+  const handleBlockUpdate = useCallback((blockId: string, updatedBlock: any) => {
+    const newBlocks = blocks.map(block => 
+      block.id === blockId ? updatedBlock : block
+    );
+    onBlocksChange(newBlocks);
+  }, [blocks, onBlocksChange]);
+
+  const updatePageStyles = (styleUpdates: any) => {
+    if (onContainerStylesChange) {
+      onContainerStylesChange({
+        ...containerStyles,
+        ...styleUpdates
+      });
+    }
+  };
+
+  if (!blocks || blocks.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-96 text-gray-500">
+        <div className="text-center">
+          <FileText className="h-16 w-16 mx-auto mb-4 opacity-50" />
+          <h3 className="text-lg font-medium mb-2">No blocks to preview</h3>
+          <p className="text-sm">Add some blocks to see the preview</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      {/* Page-level controls */}
+      <div className="absolute -top-12 right-0 z-50">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setShowPageControls(!showPageControls)}
+          className="flex items-center gap-2"
+        >
+          <Settings className="h-4 w-4" />
+          Page Settings
+        </Button>
+      </div>
+
+      {showPageControls && (
+        <div className="absolute -top-4 right-0 w-80 bg-white border rounded-lg shadow-xl p-4 z-50">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h4 className="font-medium">Page Settings</h4>
+              <Button size="sm" variant="ghost" onClick={() => setShowPageControls(false)}>
+                ✕
+              </Button>
+            </div>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium">Page Background</label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    type="color"
+                    value={containerStyles.backgroundColor || '#ffffff'}
+                    onChange={(e) => updatePageStyles({ backgroundColor: e.target.value })}
+                    className="w-16"
+                  />
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => updatePageStyles({ backgroundColor: '#ffffff' })}
+                  >
+                    Reset
+                  </Button>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Page Margins</label>
+                <Slider
+                  value={[parseInt(containerStyles.padding) || 32]}
+                  onValueChange={([value]) => updatePageStyles({ padding: `${value}px` })}
+                  max={100}
+                  step={8}
+                  className="mt-1"
+                />
+                <div className="text-xs text-gray-500 mt-1">
+                  {parseInt(containerStyles.padding) || 32}px
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Max Width</label>
+                <Select 
+                  value={containerStyles.maxWidth || '4xl'}
+                  onValueChange={(value) => updatePageStyles({ maxWidth: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="2xl">Small (672px)</SelectItem>
+                    <SelectItem value="3xl">Medium (768px)</SelectItem>
+                    <SelectItem value="4xl">Large (896px)</SelectItem>
+                    <SelectItem value="5xl">Extra Large (1024px)</SelectItem>
+                    <SelectItem value="full">Full Width</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div 
+        className="bg-white min-h-full"
+        style={{
+          backgroundColor: containerStyles.backgroundColor || '#ffffff'
+        }}
+      >
+        <div 
+          className={`mx-auto ${containerStyles.maxWidth === 'full' ? 'w-full' : `max-w-${containerStyles.maxWidth || '4xl'}`}`}
+          style={{
+            padding: containerStyles.padding || '32px'
+          }}
+        >
+          {blocks.map((block, index) => (
+            <EditableLivePreviewBlock 
+              key={block.id || index} 
+              block={block} 
+              projectData={projectData}
+              onBlockUpdate={handleBlockUpdate}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};

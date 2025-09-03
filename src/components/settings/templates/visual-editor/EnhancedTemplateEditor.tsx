@@ -53,7 +53,7 @@ export const EnhancedTemplateEditor = ({
   const [blocks, setBlocks] = useState(template?.blocks || []);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'blocks' | 'canvas' | 'preview' | 'export' | 'collaborate' | 'layout' | 'ai-assistant'>('blocks');
-  const [canvasData, setCanvasData] = useState<string>('');
+  const [canvasData, setCanvasData] = useState<any>({});
   const templateRef = useRef<HTMLDivElement>(null);
   const [selectedElements, setSelectedElements] = useState<any[]>([]);
   
@@ -151,7 +151,7 @@ export const EnhancedTemplateEditor = ({
     setBlocks(newBlocks);
   };
 
-  const handleCanvasSave = (data: string) => {
+  const handleCanvasSave = (data: any) => {
     setCanvasData(data);
     toast("Canvas design saved!");
   };
@@ -184,7 +184,10 @@ export const EnhancedTemplateEditor = ({
             <LivePreview
               blocks={blocks}
               projectData={projectData}
-              isEditable={false}
+              isEditable={true}
+              onBlocksChange={handleBlocksChange}
+              containerStyles={canvasData?.containerStyles}
+              onContainerStylesChange={(styles) => setCanvasData(prev => ({ ...prev, containerStyles: styles }))}
             />
           </div>
         );
