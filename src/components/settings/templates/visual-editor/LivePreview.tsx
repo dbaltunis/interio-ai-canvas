@@ -169,39 +169,76 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
 
     case 'products':
       const [showDetailedProducts, setShowDetailedProducts] = React.useState(false);
+      const [groupByRoom, setGroupByRoom] = React.useState(false);
       
-      // Mock detailed itemization data - in real app, this would come from projectData
-      const detailedProductItems = [
-        {
-          category: 'Fabric & Materials',
-          items: [
-            { name: 'Premium Linen Fabric', quantity: '8.5', unit: 'metres', unitPrice: 45.00, total: 382.50 },
-            { name: 'Fabric Cutting & Preparation', quantity: '1', unit: 'service', unitPrice: 25.00, total: 25.00 },
-            { name: 'Thread & Notions', quantity: '1', unit: 'set', unitPrice: 15.00, total: 15.00 }
-          ]
-        },
-        {
-          category: 'Hardware',
-          items: [
-            { name: 'Curtain Rod - Premium Steel', quantity: '1', unit: 'piece', unitPrice: 185.00, total: 185.00 },
-            { name: 'End Caps & Brackets', quantity: '2', unit: 'sets', unitPrice: 35.00, total: 70.00 },
-            { name: 'Installation Hardware & Screws', quantity: '1', unit: 'kit', unitPrice: 45.00, total: 45.00 }
-          ]
-        },
-        {
-          category: 'Labor & Services',
-          items: [
-            { name: 'Professional Measurement', quantity: '1', unit: 'hour', unitPrice: 85.00, total: 85.00 },
-            { name: 'Custom Fabrication', quantity: '6', unit: 'hours', unitPrice: 65.00, total: 390.00 },
-            { name: 'Installation Service', quantity: '2', unit: 'hours', unitPrice: 75.00, total: 150.00 },
-            { name: 'Final Styling & Adjustments', quantity: '0.5', unit: 'hours', unitPrice: 75.00, total: 37.50 }
-          ]
-        }
-      ];
+      // Get real project data or use fallback
+      const projectItems = projectData?.treatments || projectData?.windowSummaries || [];
+      const hasRealData = projectItems.length > 0;
 
-      const simpleProductItems = (projectData?.treatments || projectData?.windowSummaries || []).length > 0 
-        ? (projectData?.treatments || projectData?.windowSummaries || [])
-        : [{ name: 'Custom Drapery Installation', quantity: 1, unit_price: 1250.00, total_cost: 1250.00 }];
+      // Function to get itemized breakdown for a treatment
+      const getItemizedBreakdown = (treatment: any) => {
+        const items = [];
+        
+        // Add fabric if available
+        if (treatment.fabric_name || treatment.fabric_code) {
+          items.push({
+            type: 'Fabric',
+            description: `${treatment.fabric_code || 'Custom'} ${treatment.fabric_name || 'Fabric'}${treatment.fabric_width ? ` | ${treatment.fabric_width}m` : ''}`,
+            quantity: treatment.fabric_quantity || treatment.fabric_metres || '0',
+            unit: 'm',
+            rate: treatment.fabric_cost_per_metre || treatment.fabric_price || 0,
+            total: (treatment.fabric_quantity || treatment.fabric_metres || 0) * (treatment.fabric_cost_per_metre || treatment.fabric_price || 0)
+          });
+        }
+
+        // Add manufacturing/making cost
+        if (treatment.making_cost || treatment.manufacturing_cost) {
+          items.push({
+            type: 'Manufacturing price',
+            description: '-',
+            quantity: treatment.quantity || 1,
+            unit: 'piece',
+            rate: treatment.making_cost || treatment.manufacturing_cost || 0,
+            total: (treatment.quantity || 1) * (treatment.making_cost || treatment.manufacturing_cost || 0)
+          });
+        }
+
+        // Add lining if available
+        if (treatment.lining_type && treatment.lining_type !== 'none') {
+          items.push({
+            type: 'Lining',
+            description: treatment.lining_type,
+            quantity: treatment.fabric_quantity || treatment.fabric_metres || '0',
+            unit: 'm',
+            rate: treatment.lining_cost_per_metre || 10,
+            total: (treatment.fabric_quantity || treatment.fabric_metres || 0) * (treatment.lining_cost_per_metre || 10)
+          });
+        }
+
+        // Add heading/hardware
+        if (treatment.heading_type || treatment.hardware_type) {
+          items.push({
+            type: 'Heading',
+            description: treatment.heading_type || treatment.hardware_type || 'Standard',
+            quantity: treatment.width || treatment.heading_quantity || '0',
+            unit: 'cm',
+            rate: treatment.heading_cost || 0,
+            total: treatment.heading_cost || 0
+          });
+        }
+
+        return items;
+      };
+
+      // Group items by room if enabled
+      const groupedItems = groupByRoom && hasRealData ? 
+        projectItems.reduce((acc: any, item: any) => {
+          const room = item.room_name || item.location || 'Main Area';
+          if (!acc[room]) acc[room] = [];
+          acc[room].push(item);
+          return acc;
+        }, {}) : 
+        { 'All Items': projectItems };
 
       return (
         <div className="mb-8">
@@ -210,118 +247,141 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
               <ShoppingCart className="h-5 w-5" />
               {content.title || 'Quote Items'}
             </h3>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowDetailedProducts(!showDetailedProducts)}
-              className="flex items-center gap-2"
-            >
-              {showDetailedProducts ? (
-                <>
-                  <Minus className="h-4 w-4" />
-                  Simple View
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4" />
-                  Detailed Breakdown
-                </>
+            <div className="flex items-center gap-3">
+              {hasRealData && (
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={groupByRoom}
+                    onChange={(e) => setGroupByRoom(e.target.checked)}
+                    className="rounded"
+                  />
+                  Group by room
+                </label>
               )}
-            </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDetailedProducts(!showDetailedProducts)}
+                className="flex items-center gap-2"
+              >
+                {showDetailedProducts ? (
+                  <>
+                    <Minus className="h-4 w-4" />
+                    Simple
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4" />
+                    Detailed
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
 
-          {showDetailedProducts ? (
-            // Detailed Itemized View
-            <div className="space-y-6">
-              {detailedProductItems.map((category, categoryIndex) => (
-                <div key={categoryIndex} className="border rounded-lg overflow-hidden">
-                  <div className="bg-gray-100 px-4 py-3 border-b">
-                    <h4 className="font-medium text-gray-900 flex items-center gap-2">
-                      <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                      {category.category}
-                    </h4>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-gray-50 text-sm">
-                          <th className="text-left p-3 font-medium">Item Description</th>
-                          <th className="text-center p-3 font-medium w-20">Qty</th>
-                          <th className="text-center p-3 font-medium w-20">Unit</th>
-                          <th className="text-right p-3 font-medium w-28">Unit Price</th>
-                          <th className="text-right p-3 font-medium w-28">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {category.items.map((item, itemIndex) => (
-                          <tr key={itemIndex} className="border-t border-gray-200 hover:bg-gray-50">
-                            <td className="p-3 text-sm">{item.name}</td>
-                            <td className="p-3 text-sm text-center">{item.quantity}</td>
-                            <td className="p-3 text-sm text-center text-gray-600">{item.unit}</td>
-                            <td className="p-3 text-sm text-right">${item.unitPrice.toFixed(2)}</td>
-                            <td className="p-3 text-sm text-right font-medium">${item.total.toFixed(2)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="bg-gray-50 px-4 py-3 border-t">
-                    <div className="flex justify-between items-center text-sm font-medium">
-                      <span className="text-gray-700">{category.category} Subtotal:</span>
-                      <span className="text-gray-900">${category.items.reduce((sum, item) => sum + item.total, 0).toFixed(2)}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-blue-900 font-medium">Total Project Cost:</span>
-                  <span className="text-blue-900 font-bold text-lg">
-                    ${detailedProductItems.reduce((total, category) => 
-                      total + category.items.reduce((sum, item) => sum + item.total, 0), 0
-                    ).toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            // Simple View
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="text-left p-3 text-sm font-medium">Product/Service</th>
-                    {content.showDescription && <th className="text-left p-3 text-sm font-medium">Description</th>}
-                    {content.showQuantity !== false && <th className="text-center p-3 text-sm font-medium">Qty</th>}
-                    {content.showUnitPrice !== false && <th className="text-right p-3 text-sm font-medium">Unit Price</th>}
-                    {content.showTotal !== false && <th className="text-right p-3 text-sm font-medium">Total</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {simpleProductItems.map((item: any, index: number) => (
-                    <tr key={index} className="border-t">
-                      <td className="p-3">{item.name || item.treatment_type || item.product_name || 'Window Treatment'}</td>
-                      {content.showDescription && (
-                        <td className="p-3 text-sm text-gray-600">
-                          {item.description || item.notes || `${item.width || 0}"W x ${item.height || 0}"H`}
-                        </td>
-                      )}
-                      {content.showQuantity !== false && (
-                        <td className="p-3 text-center">{item.quantity || item.qty || 1}</td>
-                      )}
-                      {content.showUnitPrice !== false && (
-                        <td className="p-3 text-right">${(item.unit_price || item.cost_per_unit || 0).toFixed(2)}</td>
-                      )}
-                      {content.showTotal !== false && (
-                        <td className="p-3 text-right font-medium">${(item.total_cost || item.total_price || 0).toFixed(2)}</td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {!hasRealData && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+              <p className="text-yellow-800 text-sm">
+                💡 No project data available. Add treatments to your project to see itemized breakdown.
+              </p>
             </div>
           )}
+
+          <div className="border rounded-lg overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="text-left p-3 text-sm font-medium">#</th>
+                  <th className="text-left p-3 text-sm font-medium">Product/Service</th>
+                  <th className="text-left p-3 text-sm font-medium">Description</th>
+                  <th className="text-center p-3 text-sm font-medium">Quantity</th>
+                  <th className="text-right p-3 text-sm font-medium">Price rate</th>
+                  <th className="text-right p-3 text-sm font-medium">Total without GST</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(groupedItems).map(([roomName, items]: [string, any]) => (
+                  <React.Fragment key={roomName}>
+                    {groupByRoom && hasRealData && (
+                      <tr className="bg-blue-50">
+                        <td colSpan={6} className="p-3 font-medium text-blue-900">
+                          📍 {roomName}
+                        </td>
+                      </tr>
+                    )}
+                    {(items as any[]).map((item: any, itemIndex: number) => {
+                      const itemNumber = groupByRoom ? itemIndex + 1 : Object.values(groupedItems).flat().indexOf(item) + 1;
+                      
+                      if (showDetailedProducts && hasRealData) {
+                        // Detailed view with itemization
+                        const itemizedComponents = getItemizedBreakdown(item);
+                        return (
+                          <React.Fragment key={`${roomName}-${itemIndex}`}>
+                            {/* Main product row */}
+                            <tr className="border-t">
+                              <td className="p-3 font-medium">{itemNumber}</td>
+                              <td className="p-3 font-medium">
+                                {item.treatment_type || item.name || 'Window Treatment'}
+                              </td>
+                              <td className="p-3">
+                                {item.treatment_type || item.name || 'Custom Treatment'}
+                              </td>
+                              <td className="p-3 text-center">{item.quantity || 1}</td>
+                              <td className="p-3 text-right">
+                                ${(item.total_cost || item.total_price || 0).toFixed(2)}
+                              </td>
+                              <td className="p-3 text-right font-medium">
+                                ${((item.total_cost || item.total_price || 0) * (item.quantity || 1)).toFixed(2)}
+                              </td>
+                            </tr>
+                            {/* Itemized component rows */}
+                            {itemizedComponents.map((component, compIndex) => (
+                              <tr key={`${roomName}-${itemIndex}-${compIndex}`} className="bg-gray-50">
+                                <td className="p-3"></td>
+                                <td className="p-3 pl-8 text-sm text-gray-700">{component.type}</td>
+                                <td className="p-3 text-sm text-gray-600">{component.description}</td>
+                                <td className="p-3 text-center text-sm">{component.quantity} {component.unit}</td>
+                                <td className="p-3 text-right text-sm">${component.rate.toFixed(2)}</td>
+                                <td className="p-3 text-right text-sm">${component.total.toFixed(2)}</td>
+                              </tr>
+                            ))}
+                          </React.Fragment>
+                        );
+                      } else {
+                        // Simple view
+                        return (
+                          <tr key={`${roomName}-${itemIndex}`} className="border-t">
+                            <td className="p-3">{itemNumber}</td>
+                            <td className="p-3">{item.treatment_type || item.name || 'Window Treatment'}</td>
+                            <td className="p-3 text-sm text-gray-600">
+                              {item.description || item.notes || `${item.width || 0}" x ${item.height || 0}"`}
+                            </td>
+                            <td className="p-3 text-center">{item.quantity || 1}</td>
+                            <td className="p-3 text-right">${(item.unit_price || item.cost_per_unit || 0).toFixed(2)}</td>
+                            <td className="p-3 text-right font-medium">
+                              ${(item.total_cost || item.total_price || 0).toFixed(2)}
+                            </td>
+                          </tr>
+                        );
+                      }
+                    })}
+                  </React.Fragment>
+                ))}
+                
+                {!hasRealData && (
+                  <tr className="border-t">
+                    <td className="p-3">1</td>
+                    <td className="p-3">Sample Window Treatment</td>
+                    <td className="p-3 text-sm text-gray-600">Custom drapery installation</td>
+                    <td className="p-3 text-center">1</td>
+                    <td className="p-3 text-right">$1,250.00</td>
+                    <td className="p-3 text-right font-medium">$1,250.00</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       );
 
