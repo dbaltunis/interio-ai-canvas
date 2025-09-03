@@ -27,7 +27,9 @@ import {
   Plus,
   Space,
   Eye,
-  EyeOff
+  EyeOff,
+  Layout,
+  X
 } from "lucide-react";
 import { SignatureCanvas } from './SignatureCanvas';
 import { cn } from "@/lib/utils";
@@ -304,9 +306,10 @@ interface EditableLivePreviewBlockProps {
   block: any;
   projectData?: any;
   onBlockUpdate: (blockId: string, updates: any) => void;
+  onBlockRemove: (blockId: string) => void;
 }
 
-const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate }: EditableLivePreviewBlockProps) => {
+const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRemove }: EditableLivePreviewBlockProps) => {
   const content = block.content || {};
   const style = content.style || {};
 
@@ -969,6 +972,98 @@ export const EditableLivePreview = ({
   onContainerStylesChange 
 }: EditableLivePreviewProps) => {
   const [showPageControls, setShowPageControls] = useState(false);
+  const [showComponentLibrary, setShowComponentLibrary] = useState(false);
+
+  const availableBlocks = [
+    { type: 'header', name: 'Company Header', icon: Building2, description: 'Company info & logo' },
+    { type: 'client-info', name: 'Client Details', icon: User, description: 'Client information' },
+    { type: 'text', name: 'Text Block', icon: Type, description: 'Add formatted text' },
+    { type: 'line-items', name: 'Line Items Table', icon: ShoppingCart, description: 'Professional itemized list' },
+    { type: 'terms-conditions', name: 'Terms & Conditions', icon: FileText, description: 'Legal terms and policies' },
+    { type: 'payment-info', name: 'Payment Information', icon: DollarSign, description: 'Payment methods and schedule' },
+    { type: 'project-scope', name: 'Project Scope', icon: Calculator, description: 'What\'s included and excluded' },
+    { type: 'signature', name: 'Signature Block', icon: PenTool, description: 'Authorization signatures' },
+    { type: 'spacer', name: 'Spacer', icon: Space, description: 'Add vertical space' },
+    { type: 'divider', name: 'Divider', icon: Minus, description: 'Section separator' },
+  ];
+
+  const addBlock = (type: string) => {
+    const newBlock = {
+      id: `block_${Date.now()}`,
+      type,
+      content: getDefaultContentForType(type)
+    };
+    onBlocksChange([...blocks, newBlock]);
+    setShowComponentLibrary(false);
+  };
+
+  const removeBlock = (blockId: string) => {
+    const newBlocks = blocks.filter(block => block.id !== blockId);
+    onBlocksChange(newBlocks);
+  };
+
+  const getDefaultContentForType = (type: string) => {
+    switch (type) {
+      case 'header':
+        return {
+          showLogo: true,
+          logoPosition: 'left',
+          style: {
+            backgroundColor: '#f8fafc',
+            textColor: '#1e293b',
+            padding: '24px',
+            borderRadius: '8px'
+          }
+        };
+      case 'client-info':
+        return {
+          title: 'Bill To:',
+          showCompany: true,
+          showClientEmail: true,
+          showClientPhone: true,
+          showClientAddress: true
+        };
+      case 'text':
+        return {
+          text: 'Enter your text here...'
+        };
+      case 'line-items':
+        return {
+          title: 'Line Items'
+        };
+      case 'terms-conditions':
+        return {
+          title: 'Terms & Conditions'
+        };
+      case 'payment-info':
+        return {
+          title: 'Payment Information'
+        };
+      case 'project-scope':
+        return {
+          title: 'Project Scope'
+        };
+      case 'signature':
+        return {
+          title: 'Authorization'
+        };
+      case 'spacer':
+        return {
+          style: {
+            height: '24px'
+          }
+        };
+      case 'divider':
+        return {
+          style: {
+            borderColor: '#e5e7eb',
+            borderWidth: '1px'
+          }
+        };
+      default:
+        return {};
+    }
+  };
 
   const handleBlockUpdate = useCallback((blockId: string, updatedBlock: any) => {
     const newBlocks = blocks.map(block => 
@@ -1000,6 +1095,51 @@ export const EditableLivePreview = ({
 
   return (
     <div className="relative">
+      {/* Floating Add Block Button */}
+      <div className="fixed bottom-4 right-4 z-50">
+        <Button
+          onClick={() => setShowComponentLibrary(true)}
+          className="rounded-full w-14 h-14 shadow-lg"
+          size="lg"
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
+      </div>
+
+      {/* Component Library Modal */}
+      {showComponentLibrary && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-96 max-h-[80vh] overflow-auto">
+            <div className="p-4 border-b">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Add Block</h3>
+                <Button size="sm" variant="ghost" onClick={() => setShowComponentLibrary(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="p-4 space-y-2">
+              {availableBlocks.map((blockType) => (
+                <Button
+                  key={blockType.type}
+                  variant="ghost"
+                  onClick={() => addBlock(blockType.type)}
+                  className="w-full justify-start h-auto p-3 text-left"
+                >
+                  <div className="flex items-start gap-3">
+                    <blockType.icon className="h-5 w-5 text-gray-500 mt-0.5" />
+                    <div>
+                      <div className="font-medium">{blockType.name}</div>
+                      <div className="text-sm text-gray-500">{blockType.description}</div>
+                    </div>
+                  </div>
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Page-level controls */}
       <div className="absolute -top-12 right-0 z-50">
         <Button
@@ -1093,12 +1233,25 @@ export const EditableLivePreview = ({
           }}
         >
           {blocks.map((block, index) => (
-            <EditableLivePreviewBlock 
-              key={block.id || index} 
-              block={block} 
-              projectData={projectData}
-              onBlockUpdate={handleBlockUpdate}
-            />
+            <div key={block.id || index} className="relative group">
+              {/* Block Delete Button */}
+              <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity z-30">
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => removeBlock(block.id)}
+                  className="rounded-full w-8 h-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <EditableLivePreviewBlock 
+                block={block} 
+                projectData={projectData}
+                onBlockUpdate={handleBlockUpdate}
+                onBlockRemove={removeBlock}
+              />
+            </div>
           ))}
         </div>
       </div>
