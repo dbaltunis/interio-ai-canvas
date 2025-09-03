@@ -11,6 +11,9 @@ import { GripVertical, X, Settings, Copy, Trash2 } from "lucide-react";
 import { ImageUploadBlock } from './ImageUploadBlock';
 import { SignatureCanvas } from './SignatureCanvas';
 import { PaymentBlock } from './PaymentBlock';
+import { EnhancedProductDisplay } from './EnhancedProductDisplay';
+import { AdvancedSignatureSystem } from './AdvancedSignatureSystem';
+import { DynamicContentBlock } from './DynamicContentBlocks';
 
 interface DocumentBlockProps {
   block: any;
@@ -60,10 +63,14 @@ export const DocumentBlock = ({
         return <ImageUploadBlock content={block.content} onUpdate={onUpdateContent} />;
       case 'products':
         return <ProductsContent content={block.content} onUpdate={onUpdateContent} isEditing={isEditing} setIsEditing={setIsEditing} />;
+      case 'product-showcase':
+        return <EnhancedProductDisplay content={block.content} onUpdate={onUpdateContent} isEditable={isEditing} />;
       case 'totals':
         return <TotalsContent content={block.content} onUpdate={onUpdateContent} isEditing={isEditing} setIsEditing={setIsEditing} />;
       case 'signature':
         return <SignatureContent content={block.content} onUpdate={onUpdateContent} isEditing={isEditing} setIsEditing={setIsEditing} />;
+      case 'advanced-signature':
+        return <AdvancedSignatureSystem content={block.content} onUpdate={onUpdateContent} isEditable={isEditing} />;
       case 'payment':
         return <PaymentBlock content={block.content} onUpdate={onUpdateContent} />;
       case 'footer':
@@ -72,6 +79,16 @@ export const DocumentBlock = ({
         return <SpacerContent content={block.content} onUpdate={onUpdateContent} />;
       case 'divider':
         return <DividerContent content={block.content} onUpdate={onUpdateContent} />;
+      case 'qr-code':
+        return <DynamicContentBlock type="qr-code" content={block.content} onUpdate={onUpdateContent} isEditable={isEditing} />;
+      case 'auto-calculation':
+        return <DynamicContentBlock type="auto-calculation" content={block.content} onUpdate={onUpdateContent} isEditable={isEditing} />;
+      case 'conditional-content':
+        return <DynamicContentBlock type="conditional-content" content={block.content} onUpdate={onUpdateContent} isEditable={isEditing} />;
+      case 'progress-tracker':
+        return <DynamicContentBlock type="progress-tracker" content={block.content} onUpdate={onUpdateContent} isEditable={isEditing} />;
+      case 'interactive-cta':
+        return <DynamicContentBlock type="interactive-cta" content={block.content} onUpdate={onUpdateContent} isEditable={isEditing} />;
       default:
         return <div>Unknown block type: {block.type}</div>;
     }
