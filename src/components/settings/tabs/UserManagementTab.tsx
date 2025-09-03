@@ -10,6 +10,7 @@ import { RolePermissions } from "../user-management/RolePermissions";
 import { PermissionManager } from "../user-management/PermissionManager";
 import { TeamOverview } from "../user-management/TeamOverview";
 import { UserManagementStats } from "../user-management/UserManagementStats";
+import { TeamMemberTest } from "@/components/settings/TeamMemberTest";
 
 export const UserManagementTab = () => {
   const { data: users = [], isLoading: usersLoading } = useUsers();

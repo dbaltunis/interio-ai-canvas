@@ -9,10 +9,8 @@ type QuoteInsert = TablesInsert<"quotes">;
 type QuoteUpdate = TablesUpdate<"quotes">;
 
 export const useQuotes = (projectId?: string) => {
-  const canViewAllJobs = useHasPermission('view_all_jobs');
-  
   return useQuery({
-    queryKey: ["quotes", projectId, canViewAllJobs],
+    queryKey: ["quotes", projectId],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
@@ -39,11 +37,6 @@ export const useQuotes = (projectId?: string) => {
           )
         `);
       
-      // If user doesn't have view_all_jobs permission, filter by user_id
-      if (!canViewAllJobs) {
-        query = query.eq("user_id", user.id);
-      }
-      
       if (projectId) {
         query = query.eq("project_id", projectId);
       }
@@ -53,7 +46,6 @@ export const useQuotes = (projectId?: string) => {
       if (error) throw error;
       return data || [];
     },
-    enabled: canViewAllJobs !== undefined, // Wait for permission to load
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,

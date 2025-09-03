@@ -9,10 +9,8 @@ type ProjectInsert = TablesInsert<"projects">;
 type ProjectUpdate = TablesUpdate<"projects">;
 
 export const useProjects = () => {
-  const canViewAllProjects = useHasPermission('view_all_projects');
-  
   return useQuery({
-    queryKey: ["projects", canViewAllProjects],
+    queryKey: ["projects"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
@@ -26,7 +24,6 @@ export const useProjects = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: canViewAllProjects !== undefined, // Wait for permission to load
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,

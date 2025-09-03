@@ -10,10 +10,8 @@ type ClientInsert = TablesInsert<"clients">;
 type ClientUpdate = TablesUpdate<"clients">;
 
 export const useClients = (enabled: boolean = true) => {
-  const canViewAllClients = useHasPermission('view_all_clients');
-  
   return useQuery({
-    queryKey: ["clients", canViewAllClients],
+    queryKey: ["clients"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
@@ -27,7 +25,7 @@ export const useClients = (enabled: boolean = true) => {
       if (error) throw error;
       return data || [];
     },
-    enabled: enabled && canViewAllClients !== undefined, // Wait for permission to load
+    enabled: enabled,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
