@@ -179,73 +179,54 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
       const getItemizedBreakdown = (item: any) => {
         const components = [];
         
-        // Extract fabric details from JSONB
-        const fabricDetails = item.fabric_details || {};
-        if (fabricDetails.fabric_name || fabricDetails.fabric_code) {
+        // Extract fabric details
+        if (item.fabric_details) {
+          const fabricCost = parseFloat(item.linear_meters || 0) * parseFloat(item.fabric_details.price_per_meter || 0);
           components.push({
             type: 'Fabric',
-            description: `${fabricDetails.fabric_code || ''} ${fabricDetails.fabric_name || 'Custom Fabric'}${fabricDetails.width ? ` | ${fabricDetails.width}m` : ''}`,
-            quantity: item.linear_meters || fabricDetails.meters_required || fabricDetails.quantity || '0',
+            description: item.fabric_details.name || 'Fabric',
+            quantity: parseFloat(item.linear_meters || 0).toFixed(2),
             unit: 'm',
-            rate: fabricDetails.cost_per_meter || fabricDetails.price_per_meter || fabricDetails.unit_cost || 0,
-            total: (item.linear_meters || fabricDetails.meters_required || 0) * (fabricDetails.cost_per_meter || fabricDetails.price_per_meter || 0)
+            rate: parseFloat(item.fabric_details.price_per_meter || 0).toFixed(2),
+            total: fabricCost.toFixed(2)
           });
         }
 
-        // Extract manufacturing details from JSONB
-        const manufacturingDetails = item.manufacturing_details || {};
-        if (manufacturingDetails.making_cost || manufacturingDetails.labor_cost || manufacturingDetails.manufacturing_price) {
+        // Extract manufacturing details
+        if (item.manufacturing_details && item.manufacturing_details.cost > 0) {
+          const manufacturingType = item.manufacturing_details.hand_finished ? 'Hand Finished' : 'Machine';
           components.push({
-            type: 'Manufacturing price',
-            description: manufacturingDetails.process_type || manufacturingDetails.manufacturing_type || '-',
-            quantity: item.widths_required || manufacturingDetails.panels || manufacturingDetails.pieces || 1,
-            unit: 'piece',
-            rate: manufacturingDetails.making_cost || manufacturingDetails.labor_cost || manufacturingDetails.manufacturing_price || 0,
-            total: (item.widths_required || 1) * (manufacturingDetails.making_cost || manufacturingDetails.labor_cost || 0)
+            type: 'Manufacturing',
+            description: `${manufacturingType} Manufacturing`,
+            quantity: '1',
+            unit: 'service',
+            rate: parseFloat(item.manufacturing_details.cost || 0).toFixed(2),
+            total: parseFloat(item.manufacturing_details.cost || 0).toFixed(2)
           });
         }
 
-        // Extract lining details
-        if (fabricDetails.lining_type && fabricDetails.lining_type !== 'none') {
-          const liningMeters = item.linear_meters || fabricDetails.meters_required || 0;
-          const liningCost = fabricDetails.lining_cost_per_meter || 10; // Default lining cost
+        // Extract lining if present
+        if (item.manufacturing_details?.lining_type) {
+          const liningCost = parseFloat(item.linear_meters || 0) * 15; // Estimate lining cost
           components.push({
             type: 'Lining',
-            description: fabricDetails.lining_type || 'Standard Lining',
-            quantity: liningMeters,
+            description: item.manufacturing_details.lining_type,
+            quantity: parseFloat(item.linear_meters || 0).toFixed(2),
             unit: 'm',
-            rate: liningCost,
-            total: liningMeters * liningCost
+            rate: '15.00',
+            total: liningCost.toFixed(2)
           });
         }
 
-        // Extract heading/hardware details
-        if (fabricDetails.heading_type || manufacturingDetails.heading_type || manufacturingDetails.hardware_type) {
-          const headingType = fabricDetails.heading_type || manufacturingDetails.heading_type || manufacturingDetails.hardware_type;
-          const headingQuantity = (item.measurements?.width || manufacturingDetails.heading_length || 200) / 100; // Convert cm to meters
-          const headingCost = manufacturingDetails.heading_cost || fabricDetails.heading_cost || 0;
-          
-          if (headingCost > 0 || headingType !== 'none') {
-            components.push({
-              type: 'Heading',
-              description: headingType || 'Standard Heading',
-              quantity: Math.round(headingQuantity * 100), // Display in cm
-              unit: 'cm',
-              rate: headingCost,
-              total: headingCost
-            });
-          }
-        }
-
-        // If no detailed components found, create a basic breakdown from available data
+        // If no detailed components found, create a basic breakdown
         if (components.length === 0 && item.total_cost > 0) {
           components.push({
-            type: 'Treatment Cost',
+            type: 'Treatment',
             description: `${item.treatment_type} - ${item.surface_name}`,
-            quantity: 1,
+            quantity: '1',
             unit: 'item',
-            rate: item.total_cost,
-            total: item.total_cost
+            rate: parseFloat(item.total_cost || 0).toFixed(2),
+            total: parseFloat(item.total_cost || 0).toFixed(2)
           });
         }
 
