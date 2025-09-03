@@ -14,10 +14,15 @@ export const useIntegrations = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
+      // Get account owner to fetch account-level integrations
+      const { data: accountOwnerId } = await supabase.rpc('get_account_owner', { 
+        user_id_param: user.id 
+      });
+
       const { data, error } = await supabase
         .from('integration_settings')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('account_owner_id', accountOwnerId || user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
