@@ -51,6 +51,26 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const { data: rooms } = useRooms(projectId);
   const { data: surfaces } = useSurfaces(projectId);
   const { data: projectSummaries } = useProjectWindowSummaries(projectId);
+  
+  // Fetch workshop items for detailed breakdown
+  const { data: workshopItems } = useQuery({
+    queryKey: ["workshop-items", projectId],
+    queryFn: async () => {
+      if (!projectId) return [];
+      const { data, error } = await supabase
+        .from("workshop_items")
+        .select("*")
+        .eq("project_id", projectId);
+      
+      if (error) {
+        console.error('Error fetching workshop items:', error);
+        return [];
+      }
+      
+      return data || [];
+    },
+    enabled: !!projectId,
+  });
   // Fetch quote templates from database
   const { data: activeTemplates, isLoading: templatesLoading, refetch: refetchTemplates } = useQuery({
     queryKey: ["quote-templates"],
@@ -354,7 +374,8 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
               taxAmount: quotationData.taxAmount || 0,
               total: quotationData.total || 0,
               markupPercentage: 25,
-              windowSummaries: projectSummaries?.windows || []
+              windowSummaries: projectSummaries?.windows || [],
+              workshopItems: workshopItems || []
             }}
             isEditable={true}
           />
