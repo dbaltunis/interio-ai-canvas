@@ -326,15 +326,15 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
                                 ${((item.total_cost || item.total_price || 0) * (item.quantity || 1)).toFixed(2)}
                               </td>
                             </tr>
-                            {/* Itemized component rows */}
+                            {/* Itemized component rows with smaller font and indentation */}
                             {itemizedComponents.map((component, compIndex) => (
-                              <tr key={`${roomName}-${itemIndex}-${compIndex}`} className="bg-gray-50">
+                              <tr key={`${roomName}-${itemIndex}-${compIndex}`} className="border-t border-gray-100">
                                 <td className="p-3"></td>
-                                <td className="p-3 pl-8 text-sm text-gray-700">{component.type}</td>
+                                <td className="p-3 pl-8 text-sm text-gray-600">{component.type}</td>
                                 <td className="p-3 text-sm text-gray-600">{component.description}</td>
-                                <td className="p-3 text-center text-sm">{component.quantity} {component.unit}</td>
-                                <td className="p-3 text-right text-sm">${component.rate.toFixed(2)}</td>
-                                <td className="p-3 text-right text-sm">${component.total.toFixed(2)}</td>
+                                <td className="p-3 text-center text-sm text-gray-600">{component.quantity} {component.unit}</td>
+                                <td className="p-3 text-right text-sm text-gray-600">${component.rate}</td>
+                                <td className="p-3 text-right text-sm text-gray-600">${component.total}</td>
                               </tr>
                             ))}
                           </React.Fragment>
