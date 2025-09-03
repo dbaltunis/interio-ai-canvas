@@ -4,12 +4,11 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { DocumentBlock } from "./DocumentBlock";
 import { ComponentLibrary } from "./ComponentLibrary";
-import { EnhancedStyleControls } from "./EnhancedStyleControls";
 import { ResponsiveToolbar } from "./ResponsiveToolbar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Plus, Settings } from "lucide-react";
+import { Plus } from "lucide-react";
 
 interface StreamlinedEditorProps {
   blocks: any[];
@@ -271,22 +270,6 @@ export const StreamlinedEditor = ({
       </div>
 
 
-      {/* Mobile Properties Sheet */}
-      {isMobile && selectedBlock && !showPreview && (
-        <Sheet open={!!selectedBlock} onOpenChange={() => setSelectedBlockId(null)}>
-          <SheetContent side="bottom" className="h-[70vh]">
-            <SheetHeader>
-              <SheetTitle>Block Properties</SheetTitle>
-            </SheetHeader>
-            <div className="mt-4 h-full overflow-auto">
-              <EnhancedStyleControls
-                block={selectedBlock}
-                onUpdate={(content) => updateBlockContent(selectedBlockId!, content)}
-              />
-            </div>
-          </SheetContent>
-        </Sheet>
-      )}
 
       {/* Mobile Component Library */}
       {isMobile && !showPreview && <MobileLibrary />}
