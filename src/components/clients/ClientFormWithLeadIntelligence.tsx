@@ -107,7 +107,7 @@ export const ClientFormWithLeadIntelligence = ({ onCancel, onSuccess, editingCli
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="z-50 bg-background border border-border shadow-lg">
+              <SelectContent className="z-[9999] bg-background border border-border shadow-lg" position="popper" sideOffset={4}>
                 <SelectItem value="B2C">Individual (B2C)</SelectItem>
                 <SelectItem value="B2B">Business (B2B)</SelectItem>
               </SelectContent>
@@ -189,7 +189,7 @@ export const ClientFormWithLeadIntelligence = ({ onCancel, onSuccess, editingCli
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="z-50 bg-background border border-border shadow-lg">
+              <SelectContent className="z-[9999] bg-background border border-border shadow-lg" position="popper" sideOffset={4}>
                 <SelectItem value="United States">United States</SelectItem>
                 <SelectItem value="Canada">Canada</SelectItem>
                 <SelectItem value="Australia">Australia</SelectItem>
@@ -248,7 +248,7 @@ export const ClientFormWithLeadIntelligence = ({ onCancel, onSuccess, editingCli
                 <SelectTrigger>
                   <SelectValue placeholder="Select lead source" />
                 </SelectTrigger>
-                <SelectContent className="z-50 bg-background border border-border shadow-lg">
+                <SelectContent className="z-[9999] bg-background border border-border shadow-lg" position="popper" sideOffset={4}>
                   <SelectItem value="website">Website</SelectItem>
                   <SelectItem value="google_ads">Google Ads</SelectItem>
                   <SelectItem value="facebook_ads">Facebook Ads</SelectItem>
@@ -267,7 +267,7 @@ export const ClientFormWithLeadIntelligence = ({ onCancel, onSuccess, editingCli
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="z-50 bg-background border border-border shadow-lg">
+                <SelectContent className="z-[9999] bg-background border border-border shadow-lg" position="popper" sideOffset={4}>
                   <SelectItem value="low">Low</SelectItem>
                   <SelectItem value="medium">Medium</SelectItem>
                   <SelectItem value="high">High</SelectItem>
