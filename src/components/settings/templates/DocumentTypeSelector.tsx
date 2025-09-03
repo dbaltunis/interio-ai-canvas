@@ -156,6 +156,7 @@ export const DocumentTypeSelector = ({ isOpen, onClose, onSelectTemplate }: Docu
   const marketingTypes = documentTypes.filter(type => type.category === 'marketing');
 
   const handleTemplateSelect = (documentTypeId: string, templateId: string) => {
+    console.log('Selected template:', { documentTypeId, templateId });
     onSelectTemplate(documentTypeId, templateId);
     onClose();
   };

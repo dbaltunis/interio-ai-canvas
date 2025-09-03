@@ -132,10 +132,25 @@ export const SavedTemplatesManager = () => {
     setIsDocumentSelectorOpen(true);
   };
 
-  const handleSelectDocumentTemplate = (documentType: string, templateId: string) => {
-    setSelectedTemplate(null);
+  const handleSelectDocumentTemplate = async (documentType: string, templateId: string) => {
+    console.log('Creating template from:', { documentType, templateId });
+    
+    try {
+      // Import the professional templates
+      const { getTemplateByTypeAndId } = await import('./professional-templates/TemplateLibrary');
+      const professionalTemplate = getTemplateByTypeAndId(documentType, templateId);
+      
+      if (professionalTemplate) {
+        setSelectedTemplate(professionalTemplate);
+      } else {
+        setSelectedTemplate(null);
+      }
+    } catch (error) {
+      console.error('Error loading professional template:', error);
+      setSelectedTemplate(null);
+    }
+    
     setIsEnhancedEditorOpen(true);
-    // Here we could pre-load template based on documentType and templateId
   };
 
   const handleEditEnhancedTemplate = (template: QuoteTemplate) => {
