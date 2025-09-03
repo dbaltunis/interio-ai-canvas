@@ -26,8 +26,12 @@ export const useUpdateUser = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_, { userId }) => {
+      // Invalidate all related queries to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["custom-permissions", userId] });
+      queryClient.invalidateQueries({ queryKey: ["user-permissions"] });
+      queryClient.invalidateQueries({ queryKey: ["user-profile", userId] });
       toast({
         title: "User updated",
         description: "User profile has been updated successfully.",

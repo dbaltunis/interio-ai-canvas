@@ -72,7 +72,7 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
     invited_email: "",
     invited_name: "",
     role: "Staff",
-    customPermissions: [] as string[],
+    customPermissions: [...(ROLE_PERMISSIONS.Staff || [])], // Initialize with Staff permissions
   });
 
   const createInvitation = useCreateInvitation();
@@ -98,17 +98,18 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
           invited_email: "",
           invited_name: "",
           role: "Staff",
-          customPermissions: [],
+          customPermissions: [...(ROLE_PERMISSIONS.Staff || [])], // Reset to Staff permissions
         });
       },
     });
   };
 
   const handleRoleChange = (role: string) => {
+    const rolePermissions = ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS] || [];
     setFormData(prev => ({
       ...prev,
       role,
-      customPermissions: ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS] || [],
+      customPermissions: [...rolePermissions], // Always copy array to ensure state update
     }));
   };
 
@@ -169,7 +170,7 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a role..." />
               </SelectTrigger>
-              <SelectContent className="z-[9999] bg-popover border border-border shadow-md">
+              <SelectContent className="z-[9999] bg-popover border border-border shadow-lg">
                 <SelectItem value="Admin">Admin</SelectItem>
                 <SelectItem value="Manager">Manager</SelectItem>
                 <SelectItem value="Staff">Staff</SelectItem>

@@ -9,6 +9,7 @@ import { useUsers } from "@/hooks/useUsers";
 import { useUpdateUser } from "@/hooks/useUpdateUser";
 import { useCustomPermissions, useUpdateCustomPermissions } from "@/hooks/useCustomPermissions";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import { Shield, Save, RotateCcw, Info } from "lucide-react";
 import { PermissionGrid } from "./PermissionGrid";
 import { RolePermissionPreview } from "./RolePermissionPreview";
@@ -95,6 +96,7 @@ export const PermissionManager = () => {
   const { mutate: updateUser } = useUpdateUser();
   const { mutate: updateCustomPermissions } = useUpdateCustomPermissions();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [activeTab, setActiveTab] = useState("role-based");
   const [customPermissions, setCustomPermissions] = useState<string[]>([]);
@@ -145,6 +147,10 @@ export const PermissionManager = () => {
     const newRolePermissions = ROLE_PERMISSIONS[newRole as keyof typeof ROLE_PERMISSIONS] || [];
     setCustomPermissions([...newRolePermissions]);
     setHasChanges(false);
+    
+    // Invalidate queries to ensure UI updates
+    queryClient.invalidateQueries({ queryKey: ["users"] });
+    queryClient.invalidateQueries({ queryKey: ["custom-permissions", selectedUser.id] });
     
     toast({
       title: "Role updated",
@@ -227,7 +233,7 @@ export const PermissionManager = () => {
             <SelectTrigger>
               <SelectValue placeholder="Choose a user to manage..." />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[9999] bg-popover border border-border shadow-lg">
               {users.map((user) => (
                 <SelectItem key={user.id} value={user.id}>
                   <div className="flex items-center gap-2">
@@ -274,7 +280,7 @@ export const PermissionManager = () => {
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[9999] bg-popover border border-border shadow-lg">
                       <SelectItem value="Staff">Staff</SelectItem>
                       <SelectItem value="Manager">Manager</SelectItem>
                       <SelectItem value="Admin">Admin</SelectItem>
