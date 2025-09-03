@@ -112,6 +112,30 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`SendGrid API error: ${emailResponse.status} ${errorText}`);
     }
 
+    // Update email usage tracking
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const { data: usage } = await supabase
+      .from('notification_usage')
+      .select('email_count')
+      .eq('user_id', user.id)
+      .gte('period_start', startOfMonth.toISOString())
+      .single();
+
+    const currentUsage = usage?.email_count || 0;
+
+    await supabase
+      .from('notification_usage')
+      .upsert({
+        user_id: user.id,
+        period_start: startOfMonth.toISOString(),
+        period_end: new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0).toISOString(),
+        email_count: currentUsage + 1,
+        sms_count: usage?.sms_count || 0,
+      });
+
     console.log("Email sent successfully via SendGrid");
 
     return new Response(JSON.stringify({ success: true, messageId: emailResponse.headers.get('X-Message-Id') }), {
