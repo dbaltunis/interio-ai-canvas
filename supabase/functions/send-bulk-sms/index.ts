@@ -6,14 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-);
-
 interface BulkSMSRequest {
-  campaignId?: string;
-  templateId?: string;
   phoneNumbers: string[];
   message: string;
   userId: string;
@@ -26,161 +19,137 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { campaignId, templateId, phoneNumbers, message, userId }: BulkSMSRequest = await req.json();
+    const { phoneNumbers, message, userId }: BulkSMSRequest = await req.json();
+    
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    if (!phoneNumbers || phoneNumbers.length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'Phone numbers are required' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
-        }
-      );
-    }
-
+    // Get Twilio credentials
     const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
     const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
     const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
 
     if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
-      console.error('Missing Twilio credentials');
-      return new Response(
-        JSON.stringify({ 
-          error: 'Twilio credentials not configured properly',
-          details: {
-            hasAccountSid: !!twilioAccountSid,
-            hasAuthToken: !!twilioAuthToken,
-            hasPhoneNumber: !!twilioPhoneNumber
-          }
-        }),
-        {
-          status: 500,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
-        }
-      );
+      throw new Error('Twilio credentials not configured');
     }
 
-    const auth = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
-    let sentCount = 0;
-    let failedCount = 0;
+    // Check user's subscription limits
+    const { data: subscription, error: subError } = await supabase
+      .from('user_subscriptions')
+      .select(`
+        subscription_plans!inner(
+          notification_limits
+        )
+      `)
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .single();
+
+    if (subError) {
+      console.log('No active subscription found, checking usage limits');
+    }
+
+    const smsLimit = subscription?.subscription_plans?.notification_limits?.sms_monthly || 0;
+    
+    // Check current month usage
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const { data: usage } = await supabase
+      .from('notification_usage')
+      .select('sms_count')
+      .eq('user_id', userId)
+      .gte('period_start', startOfMonth.toISOString())
+      .single();
+
+    const currentUsage = usage?.sms_count || 0;
+    
+    if (smsLimit > 0 && currentUsage + phoneNumbers.length > smsLimit) {
+      throw new Error(`SMS limit exceeded. Current usage: ${currentUsage}, Limit: ${smsLimit}`);
+    }
+
+    // Send SMS messages
     const results = [];
+    let successCount = 0;
+    let failedCount = 0;
 
-    // Update campaign status to sending if campaign exists
-    if (campaignId) {
-      await supabase
-        .from('sms_campaigns')
-        .update({ status: 'sending', sent_at: new Date().toISOString() })
-        .eq('id', campaignId);
-    }
-
-    // Send SMS to each phone number
     for (const phoneNumber of phoneNumbers) {
       try {
-        console.log(`Sending SMS to ${phoneNumber}`);
-        
-        const twilioResponse = await fetch(
+        const response = await fetch(
           `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`,
           {
             method: 'POST',
             headers: {
-              'Authorization': `Basic ${auth}`,
+              'Authorization': `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`,
               'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: new URLSearchParams({
-              To: phoneNumber,
               From: twilioPhoneNumber,
+              To: phoneNumber,
               Body: message,
             }),
           }
         );
 
-        if (!twilioResponse.ok) {
-          const error = await twilioResponse.text();
-          console.error(`Twilio API error for ${phoneNumber}:`, error);
-          failedCount++;
-          
-          // Log failed delivery
-          await supabase.from('sms_delivery_logs').insert({
-            campaign_id: campaignId,
-            template_id: templateId,
-            phone_number: phoneNumber,
-            message: message,
-            status: 'failed',
-            error_message: error,
-          });
-
-          results.push({ phoneNumber, status: 'failed', error });
+        if (response.ok) {
+          successCount++;
+          results.push({ phoneNumber, status: 'sent' });
         } else {
-          const result = await twilioResponse.json();
-          sentCount++;
-          
-          // Log successful delivery
-          await supabase.from('sms_delivery_logs').insert({
-            campaign_id: campaignId,
-            template_id: templateId,
-            phone_number: phoneNumber,
-            message: message,
-            status: 'sent',
-            provider_message_id: result.sid,
-            sent_at: new Date().toISOString(),
-          });
-
-          results.push({ phoneNumber, status: 'sent', messageId: result.sid });
+          const errorData = await response.text();
+          failedCount++;
+          results.push({ phoneNumber, status: 'failed', error: errorData });
         }
-      } catch (error: any) {
+      } catch (error) {
         failedCount++;
-        console.error(`Error sending SMS to ${phoneNumber}:`, error);
-        
-        // Log failed delivery
-        await supabase.from('sms_delivery_logs').insert({
-          campaign_id: campaignId,
-          template_id: templateId,
-          phone_number: phoneNumber,
-          message: message,
-          status: 'failed',
-          error_message: error.message,
-        });
-
         results.push({ phoneNumber, status: 'failed', error: error.message });
       }
     }
 
-    // Update campaign statistics
-    if (campaignId) {
-      const status = failedCount === phoneNumbers.length ? 'failed' : 'completed';
+    // Update usage tracking
+    if (successCount > 0) {
       await supabase
-        .from('sms_campaigns')
-        .update({ 
-          status,
-          sent_count: sentCount,
-          failed_count: failedCount,
-        })
-        .eq('id', campaignId);
+        .from('notification_usage')
+        .upsert({
+          user_id: userId,
+          period_start: startOfMonth.toISOString(),
+          period_end: new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0).toISOString(),
+          sms_count: currentUsage + successCount,
+          email_count: usage?.email_count || 0,
+        });
     }
 
-    console.log(`SMS sending complete: ${sentCount} sent, ${failedCount} failed`);
+    console.log(`Bulk SMS completed for user ${userId}:`, {
+      total: phoneNumbers.length,
+      success: successCount,
+      failed: failedCount,
+    });
 
     return new Response(
       JSON.stringify({
         success: true,
-        sentCount,
-        failedCount,
-        totalRequested: phoneNumbers.length,
-        results
+        total: phoneNumbers.length,
+        success_count: successCount,
+        failed_count: failedCount,
+        results,
       }),
       {
         status: 200,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
-
-  } catch (error: any) {
-    console.error('Error in send-bulk-sms function:', error);
+  } catch (error) {
+    console.error('Error in send-bulk-sms:', error);
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({
+        error: error.message,
+        success: false,
+      }),
       {
         status: 500,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
   }
