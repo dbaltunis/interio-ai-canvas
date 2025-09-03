@@ -16,9 +16,14 @@ export const useUpdateUser = () => {
 
   return useMutation({
     mutationFn: async ({ userId, ...updateData }: UpdateUserData) => {
+      // Clean up updateData to ensure phone_number is handled properly
+      const cleanedData = Object.fromEntries(
+        Object.entries(updateData).filter(([_, value]) => value !== undefined)
+      );
+
       const { data, error } = await supabase
         .from('user_profiles')
-        .update(updateData)
+        .update(cleanedData)
         .eq('user_id', userId)
         .select()
         .single();

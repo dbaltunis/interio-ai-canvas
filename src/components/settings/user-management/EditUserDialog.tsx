@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useUpdateUser } from "@/hooks/useUpdateUser";
+import { useToast } from "@/hooks/use-toast";
 import { User } from "@/hooks/useUsers";
 
 interface EditUserDialogProps {
@@ -15,12 +16,13 @@ interface EditUserDialogProps {
 }
 
 export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps) => {
-  const [displayName, setDisplayName] = useState(user?.name || "");
-  const [role, setRole] = useState(user?.role || "Staff");
-  const [isActive, setIsActive] = useState(user?.status === "Active");
-  const [phone, setPhone] = useState(user?.phone || "");
+  const [displayName, setDisplayName] = useState("");
+  const [role, setRole] = useState("Staff");
+  const [isActive, setIsActive] = useState(true);
+  const [phone, setPhone] = useState("");
 
   const updateUser = useUpdateUser();
+  const { toast } = useToast();
 
   const handleSave = async () => {
     if (!user) return;
@@ -31,23 +33,34 @@ export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps
         display_name: displayName,
         role,
         is_active: isActive,
-        phone_number: phone || null,
+        phone_number: phone || undefined,
       });
+      
+      toast({
+        title: "User updated",
+        description: `${displayName}'s profile has been updated successfully.`,
+      });
+      
       onOpenChange(false);
     } catch (error) {
       console.error('Error updating user:', error);
+      toast({
+        title: "Update failed",
+        description: "Failed to update user. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
   // Update local state when user prop changes
-  React.useEffect(() => {
-    if (user) {
-      setDisplayName(user.name);
-      setRole(user.role);
+  useEffect(() => {
+    if (user && open) {
+      setDisplayName(user.name || "");
+      setRole(user.role || "Staff");
       setIsActive(user.status === "Active");
       setPhone(user.phone || "");
     }
-  }, [user]);
+  }, [user, open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -83,13 +96,15 @@ export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps
           <div className="grid gap-2">
             <Label htmlFor="role">Role</Label>
             <Select value={role} onValueChange={setRole}>
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[9999] bg-popover border border-border shadow-lg">
+                <SelectItem value="Owner">Owner</SelectItem>
                 <SelectItem value="Admin">Admin</SelectItem>
                 <SelectItem value="Manager">Manager</SelectItem>
                 <SelectItem value="Staff">Staff</SelectItem>
+                <SelectItem value="User">User</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -115,12 +130,16 @@ export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps
         </div>
         
         <div className="flex justify-end space-x-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            disabled={updateUser.isPending}
+          >
             Cancel
           </Button>
           <Button 
             onClick={handleSave}
-            disabled={updateUser.isPending}
+            disabled={updateUser.isPending || !displayName.trim()}
           >
             {updateUser.isPending ? "Saving..." : "Save Changes"}
           </Button>
