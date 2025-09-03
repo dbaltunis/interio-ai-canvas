@@ -580,6 +580,71 @@ export type Database = {
         }
         Relationships: []
       }
+      broadcast_notifications: {
+        Row: {
+          created_at: string
+          failed_count: number | null
+          id: string
+          message: string
+          recipient_ids: string[] | null
+          recipient_type: string
+          recipients_count: number | null
+          scheduled_for: string | null
+          sent_at: string | null
+          status: string
+          success_count: number | null
+          template_id: string | null
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          failed_count?: number | null
+          id?: string
+          message: string
+          recipient_ids?: string[] | null
+          recipient_type: string
+          recipients_count?: number | null
+          scheduled_for?: string | null
+          sent_at?: string | null
+          status?: string
+          success_count?: number | null
+          template_id?: string | null
+          title: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          failed_count?: number | null
+          id?: string
+          message?: string
+          recipient_ids?: string[] | null
+          recipient_type?: string
+          recipients_count?: number | null
+          scheduled_for?: string | null
+          sent_at?: string | null
+          status?: string
+          success_count?: number | null
+          template_id?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broadcast_notifications_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "notification_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_settings: {
         Row: {
           abn: string | null
@@ -2332,6 +2397,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notification_templates: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          message: string
+          name: string
+          subject: string | null
+          type: string
+          updated_at: string
+          user_id: string
+          variables: Json | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          message: string
+          name: string
+          subject?: string | null
+          type: string
+          updated_at?: string
+          user_id: string
+          variables?: Json | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          message?: string
+          name?: string
+          subject?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+          variables?: Json | null
+        }
+        Relationships: []
       }
       notifications: {
         Row: {

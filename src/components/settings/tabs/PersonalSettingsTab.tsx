@@ -460,11 +460,33 @@ export const PersonalSettingsTab = () => {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Switch
-                  checked={profileData.email_notifications}
-                  onCheckedChange={(checked) => handleInputChange("email_notifications", checked)}
-                  disabled={!isEditing}
-                />
+                <div className="relative">
+                  <Switch
+                    checked={profileData.email_notifications}
+                    onCheckedChange={(checked) => {
+                      if (!isEditing) {
+                        toast({
+                          title: "Edit mode required",
+                          description: "Please click 'Edit' in the Profile Information section to make changes.",
+                          variant: "default",
+                        });
+                        return;
+                      }
+                      handleInputChange("email_notifications", checked);
+                    }}
+                    disabled={!isEditing}
+                    className={!isEditing ? "opacity-50 cursor-not-allowed" : ""}
+                  />
+                  {!isEditing && (
+                    <div className="absolute inset-0 bg-transparent cursor-pointer" 
+                         onClick={() => toast({
+                           title: "Edit mode required",
+                           description: "Please click 'Edit' in the Profile Information section to make changes.",
+                           variant: "default",
+                         })} 
+                    />
+                  )}
+                </div>
                 <Button
                   variant="outline"
                   size="sm"
@@ -485,11 +507,33 @@ export const PersonalSettingsTab = () => {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Switch
-                  checked={profileData.sms_notifications}
-                  onCheckedChange={(checked) => handleInputChange("sms_notifications", checked)}
-                  disabled={!isEditing}
-                />
+                <div className="relative">
+                  <Switch
+                    checked={profileData.sms_notifications}
+                    onCheckedChange={(checked) => {
+                      if (!isEditing) {
+                        toast({
+                          title: "Edit mode required", 
+                          description: "Please click 'Edit' in the Profile Information section to make changes.",
+                          variant: "default",
+                        });
+                        return;
+                      }
+                      handleInputChange("sms_notifications", checked);
+                    }}
+                    disabled={!isEditing}
+                    className={!isEditing ? "opacity-50 cursor-not-allowed" : ""}
+                  />
+                  {!isEditing && (
+                    <div className="absolute inset-0 bg-transparent cursor-pointer"
+                         onClick={() => toast({
+                           title: "Edit mode required",
+                           description: "Please click 'Edit' in the Profile Information section to make changes.",
+                           variant: "default",
+                         })}
+                    />
+                  )}
+                </div>
                 <Button
                   variant="outline"
                   size="sm"

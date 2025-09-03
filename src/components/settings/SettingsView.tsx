@@ -15,7 +15,7 @@ import { PricingRulesTab } from "./tabs/PricingRulesTab";
 import { AccountManagementTab } from "./tabs/AccountManagementTab";
 import { TutorialOverlay } from "./TutorialOverlay";
 import { InteractiveOnboarding } from "./InteractiveOnboarding";
-import { EnhancedNotificationSettings } from "./EnhancedNotificationSettings";
+import { NotificationManagementTab } from "./tabs/NotificationManagementTab";
 import { EnhancedPersonalizationTab } from "./tabs/EnhancedPersonalizationTab";
 import { SecurityPrivacyTab } from "./tabs/SecurityPrivacyTab";
 import { SettingsOverviewTab } from "./tabs/SettingsOverviewTab";
@@ -262,13 +262,7 @@ export const SettingsView = () => {
         <TabsContent value="notifications" className="animate-fade-in">
           <Card className="hover:shadow-md transition-all duration-300">
             <CardContent className="p-6">
-              <div className="space-y-8">
-                <EnhancedNotificationSettings />
-                <div className="border-t border-border/50 pt-8">
-                  <h3 className="text-lg font-semibold mb-4">Advanced Personalization</h3>
-                  <EnhancedPersonalizationTab />
-                </div>
-              </div>
+              <NotificationManagementTab />
             </CardContent>
           </Card>
         </TabsContent>
