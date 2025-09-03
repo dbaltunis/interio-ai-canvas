@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Bell, MessageSquare, Send, Crown, Zap } from "lucide-react";
 import { NotificationTemplatesManager } from "@/components/notifications/NotificationTemplatesManager";
 import { BroadcastNotificationPanel } from "@/components/notifications/BroadcastNotificationPanel";
+import { NotificationTestPanel } from "@/components/notifications/NotificationTestPanel";
 import { useUserSubscription } from "@/hooks/useUserSubscription";
 
 export const NotificationManagementTab = () => {
@@ -91,6 +92,9 @@ export const NotificationManagementTab = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Test Panel */}
+      <NotificationTestPanel />
 
       {/* Notification Management Tabs */}
       <Tabs defaultValue="templates" className="w-full">

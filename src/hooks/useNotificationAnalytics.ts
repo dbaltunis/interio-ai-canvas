@@ -20,18 +20,29 @@ export const useNotificationUsage = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // For now, return mock data since notification_usage table may not be fully set up
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
       const endOfMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0);
 
-      // TODO: Replace with actual database query when notification_usage table is properly configured
-      return { 
-        email_count: 5, // Mock data - will be replaced with real data
-        sms_count: 2,   // Mock data - will be replaced with real data
-        period_start: startOfMonth.toISOString(), 
-        period_end: endOfMonth.toISOString() 
+      // Get usage data from the database
+      const { data, error } = await supabase
+        .from('notification_usage')
+        .select('email_count, sms_count, period_start, period_end')
+        .eq('user_id', user.id)
+        .eq('period_start', startOfMonth.toISOString().split('T')[0])
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error("Error fetching notification usage:", error);
+      }
+
+      // Return existing data or defaults for new users
+      return {
+        email_count: data?.email_count || 0,
+        sms_count: data?.sms_count || 0,
+        period_start: startOfMonth.toISOString(),
+        period_end: endOfMonth.toISOString()
       } as NotificationUsage;
     },
   });
@@ -44,7 +55,7 @@ export const useNotificationLimits = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // For now, return default limits since subscription system might not be fully implemented
+      // For now, return default limits since subscription system is being refactored
       return {
         plan_name: "Basic",
         limits: {

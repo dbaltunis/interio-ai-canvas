@@ -2443,6 +2443,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_usage: {
+        Row: {
+          created_at: string
+          email_count: number
+          id: string
+          period_end: string
+          period_start: string
+          sms_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_count?: number
+          id?: string
+          period_end: string
+          period_start: string
+          sms_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_count?: number
+          id?: string
+          period_end?: string
+          period_start?: string
+          sms_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           action_url: string | null
