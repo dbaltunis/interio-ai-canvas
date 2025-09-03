@@ -168,26 +168,138 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
       );
 
     case 'products':
+      const [showDetailedProducts, setShowDetailedProducts] = React.useState(false);
+      
+      // Mock detailed itemization data - in real app, this would come from projectData
+      const detailedProductItems = [
+        {
+          category: 'Fabric & Materials',
+          items: [
+            { name: 'Premium Linen Fabric', quantity: '8.5', unit: 'metres', unitPrice: 45.00, total: 382.50 },
+            { name: 'Fabric Cutting & Preparation', quantity: '1', unit: 'service', unitPrice: 25.00, total: 25.00 },
+            { name: 'Thread & Notions', quantity: '1', unit: 'set', unitPrice: 15.00, total: 15.00 }
+          ]
+        },
+        {
+          category: 'Hardware',
+          items: [
+            { name: 'Curtain Rod - Premium Steel', quantity: '1', unit: 'piece', unitPrice: 185.00, total: 185.00 },
+            { name: 'End Caps & Brackets', quantity: '2', unit: 'sets', unitPrice: 35.00, total: 70.00 },
+            { name: 'Installation Hardware & Screws', quantity: '1', unit: 'kit', unitPrice: 45.00, total: 45.00 }
+          ]
+        },
+        {
+          category: 'Labor & Services',
+          items: [
+            { name: 'Professional Measurement', quantity: '1', unit: 'hour', unitPrice: 85.00, total: 85.00 },
+            { name: 'Custom Fabrication', quantity: '6', unit: 'hours', unitPrice: 65.00, total: 390.00 },
+            { name: 'Installation Service', quantity: '2', unit: 'hours', unitPrice: 75.00, total: 150.00 },
+            { name: 'Final Styling & Adjustments', quantity: '0.5', unit: 'hours', unitPrice: 75.00, total: 37.50 }
+          ]
+        }
+      ];
+
+      const simpleProductItems = (projectData?.treatments || projectData?.windowSummaries || []).length > 0 
+        ? (projectData?.treatments || projectData?.windowSummaries || [])
+        : [{ name: 'Custom Drapery Installation', quantity: 1, unit_price: 1250.00, total_cost: 1250.00 }];
+
       return (
         <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-4 text-brand-primary flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5" />
-            {content.title || 'Quote Items'}
-          </h3>
-          <div className="border rounded-lg overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="text-left p-3 text-sm font-medium">Product/Service</th>
-                  {content.showDescription && <th className="text-left p-3 text-sm font-medium">Description</th>}
-                  {content.showQuantity !== false && <th className="text-center p-3 text-sm font-medium">Qty</th>}
-                  {content.showUnitPrice !== false && <th className="text-right p-3 text-sm font-medium">Unit Price</th>}
-                  {content.showTotal !== false && <th className="text-right p-3 text-sm font-medium">Total</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {(projectData?.treatments || projectData?.windowSummaries || []).length > 0 ? (
-                  (projectData?.treatments || projectData?.windowSummaries || []).map((item: any, index: number) => (
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-brand-primary flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5" />
+              {content.title || 'Quote Items'}
+            </h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDetailedProducts(!showDetailedProducts)}
+              className="flex items-center gap-2"
+            >
+              {showDetailedProducts ? (
+                <>
+                  <Minus className="h-4 w-4" />
+                  Simple View
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4" />
+                  Detailed Breakdown
+                </>
+              )}
+            </Button>
+          </div>
+
+          {showDetailedProducts ? (
+            // Detailed Itemized View
+            <div className="space-y-6">
+              {detailedProductItems.map((category, categoryIndex) => (
+                <div key={categoryIndex} className="border rounded-lg overflow-hidden">
+                  <div className="bg-gray-100 px-4 py-3 border-b">
+                    <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                      {category.category}
+                    </h4>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-gray-50 text-sm">
+                          <th className="text-left p-3 font-medium">Item Description</th>
+                          <th className="text-center p-3 font-medium w-20">Qty</th>
+                          <th className="text-center p-3 font-medium w-20">Unit</th>
+                          <th className="text-right p-3 font-medium w-28">Unit Price</th>
+                          <th className="text-right p-3 font-medium w-28">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {category.items.map((item, itemIndex) => (
+                          <tr key={itemIndex} className="border-t border-gray-200 hover:bg-gray-50">
+                            <td className="p-3 text-sm">{item.name}</td>
+                            <td className="p-3 text-sm text-center">{item.quantity}</td>
+                            <td className="p-3 text-sm text-center text-gray-600">{item.unit}</td>
+                            <td className="p-3 text-sm text-right">${item.unitPrice.toFixed(2)}</td>
+                            <td className="p-3 text-sm text-right font-medium">${item.total.toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="bg-gray-50 px-4 py-3 border-t">
+                    <div className="flex justify-between items-center text-sm font-medium">
+                      <span className="text-gray-700">{category.category} Subtotal:</span>
+                      <span className="text-gray-900">${category.items.reduce((sum, item) => sum + item.total, 0).toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-blue-900 font-medium">Total Project Cost:</span>
+                  <span className="text-blue-900 font-bold text-lg">
+                    ${detailedProductItems.reduce((total, category) => 
+                      total + category.items.reduce((sum, item) => sum + item.total, 0), 0
+                    ).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            // Simple View
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="text-left p-3 text-sm font-medium">Product/Service</th>
+                    {content.showDescription && <th className="text-left p-3 text-sm font-medium">Description</th>}
+                    {content.showQuantity !== false && <th className="text-center p-3 text-sm font-medium">Qty</th>}
+                    {content.showUnitPrice !== false && <th className="text-right p-3 text-sm font-medium">Unit Price</th>}
+                    {content.showTotal !== false && <th className="text-right p-3 text-sm font-medium">Total</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {simpleProductItems.map((item: any, index: number) => (
                     <tr key={index} className="border-t">
                       <td className="p-3">{item.name || item.treatment_type || item.product_name || 'Window Treatment'}</td>
                       {content.showDescription && (
@@ -205,19 +317,11 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
                         <td className="p-3 text-right font-medium">${(item.total_cost || item.total_price || 0).toFixed(2)}</td>
                       )}
                     </tr>
-                  ))
-                ) : (
-                  <tr className="border-t">
-                    <td className="p-3">No items available</td>
-                    {content.showDescription && <td className="p-3 text-sm text-gray-600">Add treatments to your project</td>}
-                    {content.showQuantity !== false && <td className="p-3 text-center">-</td>}
-                    {content.showUnitPrice !== false && <td className="p-3 text-right">$0.00</td>}
-                    {content.showTotal !== false && <td className="p-3 text-right font-medium">$0.00</td>}
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       );
 
