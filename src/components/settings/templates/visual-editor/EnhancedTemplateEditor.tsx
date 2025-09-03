@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { StreamlinedEditor } from './StreamlinedEditor';
 import { CanvasEditor } from './CanvasEditor';
 import { LivePreview } from './LivePreview';
+import '@/styles/template-editor.css';
 import { useProjectData } from '@/hooks/useProjectData';
 import { 
   Palette,
