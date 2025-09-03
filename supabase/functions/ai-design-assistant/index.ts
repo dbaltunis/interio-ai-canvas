@@ -1,12 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-
-if (!openAIApiKey) {
-  console.error('OpenAI API key not configured');
-}
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -19,34 +13,39 @@ serve(async (req) => {
   }
 
   try {
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    
     if (!openAIApiKey) {
-      console.error('OpenAI API key is missing');
+      console.error('OpenAI API key not configured');
       return new Response(JSON.stringify({ 
         error: 'OpenAI API key not configured',
-        fallbackSuggestion: "Please configure your OpenAI API key in the Supabase secrets to enable AI design suggestions."
+        fallbackSuggestion: "Please configure your OpenAI API key to enable AI design suggestions.",
+        designRecommendations: generateFallbackRecommendations()
       }), {
-        status: 500,
+        status: 200, // Return 200 with fallback instead of 500
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const { prompt, documentType, currentStyle, projectData } = await req.json();
+    console.log('AI Design Assistant request:', { prompt, documentType, hasApiKey: !!openAIApiKey });
 
-    console.log('AI Design Assistant request:', { prompt, documentType, currentStyle, hasApiKey: !!openAIApiKey });
+    // Enhanced system prompt for better design suggestions
+    const systemPrompt = `You are an expert interior design and document template specialist. 
 
-    // Build context-aware prompt for AI design suggestions
-    const systemPrompt = `You are an expert document design assistant specializing in professional business documents like quotes, invoices, and work orders. 
+Document Type: ${documentType || 'quote'}
+Industry: Interior Design & Window Treatments
+Current Style: ${JSON.stringify(currentStyle || {})}
 
-Current document type: ${documentType || 'quote'}
-Current style: ${JSON.stringify(currentStyle || {})}
+Create intelligent, actionable design suggestions for professional business documents used by interior designers and curtain retailers. Focus on:
 
-Provide intelligent design suggestions based on:
-1. Industry best practices for ${documentType || 'business documents'}
-2. Professional color palettes that work well for business documents
-3. Typography recommendations for readability and professionalism
-4. Layout optimizations based on content type
+1. Professional color schemes that convey trust and luxury
+2. Typography that ensures readability while maintaining elegance  
+3. Layout structures that guide the eye and highlight important information
+4. Brand elements that establish credibility
+5. Visual hierarchy that makes pricing and services clear
 
-Always respond with practical, actionable design advice that can be implemented immediately.`;
+Provide specific, implementable recommendations that can be applied immediately. Consider the target audience: homeowners and businesses seeking premium interior design services.`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -60,13 +59,13 @@ Always respond with practical, actionable design advice that can be implemented 
           { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 500,
+        max_tokens: 800,
         temperature: 0.7,
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
+      throw new Error(`OpenAI API error: ${response.status} - ${await response.text()}`);
     }
 
     const data = await response.json();
@@ -74,12 +73,14 @@ Always respond with practical, actionable design advice that can be implemented 
 
     console.log('AI Design Assistant response generated successfully');
 
-    // Generate concrete design recommendations
+    // Generate comprehensive design recommendations
     const designRecommendations = {
       colors: generateColorPalette(documentType),
       typography: generateTypographyRecommendations(documentType),
       layout: generateLayoutSuggestions(documentType),
-      aiAdvice: aiSuggestion
+      aiAdvice: aiSuggestion,
+      templates: generateSmartTemplates(documentType, prompt),
+      blocks: generateRecommendedBlocks(documentType)
     };
 
     return new Response(JSON.stringify(designRecommendations), {
@@ -89,13 +90,24 @@ Always respond with practical, actionable design advice that can be implemented 
     console.error('Error in AI Design Assistant:', error);
     return new Response(JSON.stringify({ 
       error: error.message,
-      fallbackSuggestion: "Consider using a professional blue (#1e40af) as your primary color with clean, modern typography for better readability."
+      designRecommendations: generateFallbackRecommendations()
     }), {
-      status: 500,
+      status: 200, // Return 200 with fallback recommendations
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });
+
+function generateFallbackRecommendations() {
+  return {
+    colors: generateColorPalette('quote'),
+    typography: generateTypographyRecommendations('quote'),
+    layout: generateLayoutSuggestions('quote'),
+    aiAdvice: "Consider using a professional color scheme with navy blue or deep green as primary colors, paired with clean typography for a trustworthy appearance. Structure your quote with clear sections for services, pricing, and terms.",
+    templates: generateSmartTemplates('quote', 'professional quote'),
+    blocks: generateRecommendedBlocks('quote')
+  };
+}
 
 function generateColorPalette(documentType: string) {
   const palettes = {
@@ -103,22 +115,25 @@ function generateColorPalette(documentType: string) {
       primary: '#1e40af',
       secondary: '#3b82f6', 
       accent: '#10b981',
-      background: '#f8fafc',
-      text: '#1e293b'
+      background: '#fafafa',
+      text: '#1e293b',
+      border: '#e2e8f0'
     },
     invoice: {
       primary: '#dc2626',
       secondary: '#ef4444',
       accent: '#f59e0b', 
       background: '#fefefe',
-      text: '#111827'
+      text: '#111827',
+      border: '#d1d5db'
     },
-    'work-order': {
+    proposal: {
       primary: '#7c3aed',
       secondary: '#8b5cf6',
       accent: '#06b6d4',
       background: '#f9fafb', 
-      text: '#374151'
+      text: '#374151',
+      border: '#d1d5db'
     }
   };
   
@@ -132,31 +147,75 @@ function generateTypographyRecommendations(documentType: string) {
     headingSize: '1.875rem',
     bodySize: '1rem',
     lineHeight: '1.6',
-    letterSpacing: '-0.025em'
+    letterSpacing: '-0.025em',
+    fontWeights: {
+      heading: '600',
+      subheading: '500',
+      body: '400',
+      emphasis: '500'
+    }
   };
 }
 
 function generateLayoutSuggestions(documentType: string) {
   const suggestions = {
     quote: [
-      'Use a clean header with company logo and contact info on the left, quote details on the right',
-      'Organize line items in a clear table with proper spacing', 
-      'Place totals section prominently on the right side',
-      'Include signature area at the bottom for client approval'
+      'Professional header with logo and company details prominently displayed',
+      'Clear client information section with elegant formatting', 
+      'Detailed service/product table with visual hierarchy',
+      'Prominent pricing section with clear breakdowns',
+      'Professional footer with terms and contact information',
+      'Signature area for client approval'
     ],
     invoice: [
-      'Make invoice number and due date prominent in the header',
-      'Use professional color coding for overdue amounts',
-      'Include payment terms and methods clearly',
-      'Add QR code for easy payment processing'
+      'Invoice number and due date prominently displayed',
+      'Professional billing information layout',
+      'Clear itemized services with quantities and rates',
+      'Payment terms and methods clearly outlined',
+      'Overdue notices with appropriate styling'
     ],
-    'work-order': [
-      'Prioritize work description and timeline information',
-      'Use status indicators for different work phases',
-      'Include safety notes and requirements prominently',
-      'Add sections for before/after photos'
+    proposal: [
+      'Executive summary section at the top',
+      'Detailed project scope and timeline',
+      'Visual mockups or inspiration images',
+      'Investment breakdown with package options',
+      'Next steps and approval process'
     ]
   };
   
   return suggestions[documentType as keyof typeof suggestions] || suggestions.quote;
+}
+
+function generateSmartTemplates(documentType: string, prompt: string) {
+  return [
+    {
+      name: 'Luxury Interior Design Quote',
+      description: 'Premium template for high-end interior design services',
+      style: 'luxury',
+      recommendedFor: 'High-value residential projects'
+    },
+    {
+      name: 'Professional Business Quote', 
+      description: 'Clean, corporate template for commercial projects',
+      style: 'professional',
+      recommendedFor: 'Commercial and office spaces'
+    },
+    {
+      name: 'Boutique Curtain Specialist',
+      description: 'Specialized template for window treatment services',
+      style: 'specialized',
+      recommendedFor: 'Custom curtain and blind installations'
+    }
+  ];
+}
+
+function generateRecommendedBlocks(documentType: string) {
+  return [
+    { type: 'header', priority: 'high', reason: 'Professional brand presentation' },
+    { type: 'client-info', priority: 'high', reason: 'Clear project identification' },
+    { type: 'products', priority: 'high', reason: 'Detailed service breakdown' },
+    { type: 'totals', priority: 'high', reason: 'Clear pricing summary' },
+    { type: 'signature', priority: 'medium', reason: 'Professional approval process' },
+    { type: 'text', priority: 'medium', reason: 'Custom messaging and terms' }
+  ];
 }

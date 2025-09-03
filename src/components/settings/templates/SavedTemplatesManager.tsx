@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { EnhancedTemplateEditor } from "./visual-editor/EnhancedTemplateEditor";
 import { DocumentTypeSelector } from "./DocumentTypeSelector";
+import { SmartTemplateCreator } from "./SmartTemplateCreator";
+import { ProfessionalTemplateLibrary } from "./ProfessionalTemplateLibrary";
 import { 
   Plus, 
   Edit, 
@@ -15,9 +17,12 @@ import {
   FileText, 
   Calendar,
   Users,
-  DollarSign
+  DollarSign,
+  Sparkles,
+  FolderOpen
 } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 interface QuoteTemplate {
   id: string;
@@ -31,11 +36,15 @@ interface QuoteTemplate {
   updated_at: string;
 }
 
+interface SavedTemplatesManagerProps {
+  projectId?: string;
+}
 
-export const SavedTemplatesManager = () => {
+export const SavedTemplatesManager: React.FC<SavedTemplatesManagerProps> = ({ projectId }) => {
   const [isEnhancedEditorOpen, setIsEnhancedEditorOpen] = useState(false);
   const [isDocumentSelectorOpen, setIsDocumentSelectorOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<QuoteTemplate | null>(null);
+  const [activeTab, setActiveTab] = useState<'browse' | 'create' | 'my-templates'>('my-templates');
   const queryClient = useQueryClient();
 
   // Helper: keep only the first 'products' block
@@ -181,11 +190,18 @@ export const SavedTemplatesManager = () => {
     queryClient.invalidateQueries({ queryKey: ['quote-templates'] });
   };
 
+  const handleTemplateCreated = (template: any) => {
+    queryClient.invalidateQueries({ queryKey: ['quote-templates'] });
+    setActiveTab('my-templates');
+    toast.success('Template created successfully!');
+  };
+
   const getTemplateIcon = (style: string) => {
     switch (style) {
       case 'simple': return FileText;
       case 'detailed': return Users;
       case 'brochure': return DollarSign;
+      case 'luxury': return Sparkles;
       default: return FileText;
     }
   };
@@ -205,115 +221,152 @@ export const SavedTemplatesManager = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-2xl font-semibold text-gray-900">Quote Templates</h3>
-          <p className="text-gray-600 mt-1">Create and manage your quotation templates</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={handleCreateTemplate} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Create Template
+      <div className="text-center space-y-2">
+        <h1 className="text-3xl font-bold">Template Manager</h1>
+        <p className="text-muted-foreground">
+          Create professional quotes, invoices, and proposals with intelligent templates
+        </p>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="flex justify-center">
+        <div className="flex space-x-1 bg-muted p-1 rounded-lg">
+          <Button
+            variant={activeTab === 'browse' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('browse')}
+            className="px-6"
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            Browse Templates
+          </Button>
+          <Button
+            variant={activeTab === 'create' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('create')}
+            className="px-6"
+          >
+            <Sparkles className="mr-2 h-4 w-4" />
+            Create New
+          </Button>
+          <Button
+            variant={activeTab === 'my-templates' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('my-templates')}
+            className="px-6"
+          >
+            <FolderOpen className="mr-2 h-4 w-4" />
+            My Templates ({templates.length})
           </Button>
         </div>
       </div>
 
-      {/* Templates Grid */}
-      {templates.length === 0 ? (
-        <Card className="text-center py-12">
-          <CardContent>
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FileText className="h-8 w-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No templates yet</h3>
-            <p className="text-gray-500 mb-4">Create your first quote template to get started</p>
-            <Button onClick={handleCreateTemplate}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Your First Template
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {templates.map((template) => {
-            const IconComponent = getTemplateIcon(template.template_style);
-            return (
-              <Card key={template.id} className="group hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <IconComponent className="h-5 w-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">{template.name}</CardTitle>
-                        <Badge className={`text-xs ${getTemplateStyleColor(template.template_style)}`}>
-                          {template.template_style}
-                        </Badge>
-                      </div>
-                    </div>
-                    {template.is_default && (
-                      <Badge variant="secondary" className="text-xs">Default</Badge>
-                    )}
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="pt-0">
-                  <CardDescription className="mb-4 line-clamp-2">
-                    {template.description || `Template with ${template.blocks?.length || 0} blocks`}
-                  </CardDescription>
-                  
-                  <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
-                    <div className="flex items-center gap-1">
-                      <FileText className="h-3 w-3" />
-                      <span>{template.blocks?.length || 0} blocks</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      <span>{format(new Date(template.updated_at), 'MMM d')}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditEnhancedTemplate(template)}
-                      className="flex-1"
-                    >
-                      <Edit className="h-3 w-3 mr-1" />
-                      Edit
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => duplicateTemplate.mutate(template)}
-                    >
-                      <Copy className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteTemplate.mutate(template.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+      {/* Tab Content */}
+      {activeTab === 'browse' && (
+        <ProfessionalTemplateLibrary 
+          onSelectTemplate={(template) => {
+            setSelectedTemplate(template);
+            setIsEnhancedEditorOpen(true);
+          }}
+          onClose={() => {}}
+        />
       )}
 
-      {/* Document Type Selector */}
-      <DocumentTypeSelector
-        isOpen={isDocumentSelectorOpen}
-        onClose={() => setIsDocumentSelectorOpen(false)}
-        onSelectTemplate={handleSelectDocumentTemplate}
-      />
+      {activeTab === 'create' && (
+        <SmartTemplateCreator 
+          onTemplateCreated={handleTemplateCreated}
+          projectId={projectId}
+        />
+      )}
+
+      {activeTab === 'my-templates' && (
+        <div className="space-y-4">
+          {templates.length === 0 ? (
+            <Card className="text-center py-12">
+              <CardContent>
+                <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Templates Yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Create your first template to get started
+                </p>
+                <Button onClick={() => setActiveTab('create')}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Template
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {templates.map((template) => {
+                const IconComponent = getTemplateIcon(template.template_style);
+                return (
+                  <Card key={template.id} className="group hover:shadow-lg transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <IconComponent className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg">{template.name}</CardTitle>
+                            <Badge className={`text-xs ${getTemplateStyleColor(template.template_style)}`}>
+                              {template.template_style}
+                            </Badge>
+                          </div>
+                        </div>
+                        {template.is_default && (
+                          <Badge variant="secondary" className="text-xs">Default</Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent className="pt-0">
+                      <CardDescription className="mb-4 line-clamp-2">
+                        {template.description || `Template with ${template.blocks?.length || 0} blocks`}
+                      </CardDescription>
+                      
+                      <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                        <div className="flex items-center gap-1">
+                          <FileText className="h-3 w-3" />
+                          <span>{template.blocks?.length || 0} blocks</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          <span>{format(new Date(template.updated_at), 'MMM d')}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditEnhancedTemplate(template)}
+                          className="flex-1"
+                        >
+                          <Edit className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => duplicateTemplate.mutate(template)}
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteTemplate.mutate(template.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Enhanced Template Editor */}
       <EnhancedTemplateEditor
@@ -321,6 +374,7 @@ export const SavedTemplatesManager = () => {
         onClose={() => setIsEnhancedEditorOpen(false)}
         template={selectedTemplate}
         onSave={handleSaveTemplate}
+        projectId={projectId}
       />
     </div>
   );
