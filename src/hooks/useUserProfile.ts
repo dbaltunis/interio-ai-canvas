@@ -46,13 +46,16 @@ export const useUpdateUserProfile = () => {
 
   return useMutation({
     mutationFn: async (profileData: Partial<{ 
-      display_name: string; 
+      display_name: string;
+      first_name: string;
+      last_name: string;
       phone_number: string; 
       email_notifications: boolean; 
       sms_notifications: boolean; 
       default_notification_minutes: number;
       avatar_url: string;
       status_message: string;
+      status: string;
       theme_preference: string;
     }>) => {
       const { data: { user } } = await supabase.auth.getUser();
