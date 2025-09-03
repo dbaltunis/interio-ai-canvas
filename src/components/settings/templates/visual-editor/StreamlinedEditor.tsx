@@ -270,21 +270,6 @@ export const StreamlinedEditor = ({
         </div>
       </div>
 
-      {/* Desktop Properties Panel */}
-      {!isMobile && !showPreview && selectedBlock && (
-        <div className="w-80 bg-white border-l flex-shrink-0">
-          <div className="p-4">
-            <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Block Properties
-            </h3>
-            <EnhancedStyleControls
-              block={selectedBlock}
-              onUpdate={(content) => updateBlockContent(selectedBlockId!, content)}
-            />
-          </div>
-        </div>
-      )}
 
       {/* Mobile Properties Sheet */}
       {isMobile && selectedBlock && !showPreview && (

@@ -29,7 +29,9 @@ import {
   ZoomOut,
   Grid,
   Eye,
-  EyeOff
+  EyeOff,
+  Settings,
+  Sparkles
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -72,6 +74,126 @@ const colorPresets = [
   "#000000", "#333333", "#666666", "#999999", "#CCCCCC", "#FFFFFF",
   "#ef4444", "#10b981", "#3b82f6", "#f59e0b", "#8b5cf6", "#ec4899"
 ];
+
+// Advanced Style Panel Component
+const AdvancedStylePanel = ({ selectedBlock, onUpdateBlock }: { selectedBlock: any, onUpdateBlock?: (updates: any) => void }) => {
+  const updateStyle = (field: string, value: any) => {
+    if (!selectedBlock || !onUpdateBlock) return;
+    
+    const currentStyle = selectedBlock.content?.style || {};
+    onUpdateBlock({
+      style: {
+        ...currentStyle,
+        [field]: value
+      }
+    });
+  };
+
+  const currentStyle = selectedBlock?.content?.style || {};
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 pb-2 border-b">
+        <Sparkles className="h-4 w-4 text-primary" />
+        <h3 className="font-semibold text-sm">Advanced Styling</h3>
+      </div>
+
+      {/* Font Size */}
+      <div className="space-y-2">
+        <Label className="text-xs font-medium">Font Size</Label>
+        <Select
+          value={currentStyle.fontSize?.replace('px', '') || '16'}
+          onValueChange={(value) => updateStyle('fontSize', `${value}px`)}
+        >
+          <SelectTrigger className="h-8">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {fontSizes.map((size) => (
+              <SelectItem key={size} value={size.toString()}>
+                {size}px
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Background Color */}
+      <div className="space-y-2">
+        <Label className="text-xs font-medium">Background Color</Label>
+        <div className="flex items-center gap-2">
+          <Input
+            type="color"
+            value={currentStyle.backgroundColor || '#ffffff'}
+            onChange={(e) => updateStyle('backgroundColor', e.target.value)}
+            className="w-12 h-8 p-0 border rounded cursor-pointer"
+          />
+          <Input
+            value={currentStyle.backgroundColor || '#ffffff'}
+            onChange={(e) => updateStyle('backgroundColor', e.target.value)}
+            placeholder="#ffffff"
+            className="flex-1 h-8 font-mono text-xs"
+          />
+        </div>
+      </div>
+
+      {/* Border */}
+      <div className="space-y-2">
+        <Label className="text-xs font-medium">Border</Label>
+        <div className="flex items-center gap-2">
+          <Select
+            value={currentStyle.borderStyle || 'none'}
+            onValueChange={(value) => updateStyle('borderStyle', value)}
+          >
+            <SelectTrigger className="h-8 flex-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="solid">Solid</SelectItem>
+              <SelectItem value="dashed">Dashed</SelectItem>
+              <SelectItem value="dotted">Dotted</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input
+            type="number"
+            value={currentStyle.borderWidth?.replace('px', '') || '1'}
+            onChange={(e) => updateStyle('borderWidth', `${e.target.value}px`)}
+            placeholder="Width"
+            className="w-16 h-8 text-xs"
+            min="0"
+            max="10"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Input
+            type="color"
+            value={currentStyle.borderColor || '#000000'}
+            onChange={(e) => updateStyle('borderColor', e.target.value)}
+            className="w-12 h-8 p-0 border rounded cursor-pointer"
+          />
+          <Input
+            value={currentStyle.borderColor || '#000000'}
+            onChange={(e) => updateStyle('borderColor', e.target.value)}
+            placeholder="#000000"
+            className="flex-1 h-8 font-mono text-xs"
+          />
+        </div>
+      </div>
+
+      {/* Padding */}
+      <div className="space-y-2">
+        <Label className="text-xs font-medium">Padding</Label>
+        <Input
+          value={currentStyle.padding || ''}
+          onChange={(e) => updateStyle('padding', e.target.value)}
+          placeholder="e.g. 16px or 1rem"
+          className="h-8 text-xs"
+        />
+      </div>
+    </div>
+  );
+};
 
 export const ResponsiveToolbar = ({
   hasSelection = false,
@@ -443,6 +565,22 @@ export const ResponsiveToolbar = ({
                   />
                 ))}
               </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Advanced Styling */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Settings className="h-4 w-4 mr-1" />
+                Style
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-4" align="end">
+              <AdvancedStylePanel 
+                selectedBlock={selectedBlock}
+                onUpdateBlock={onUpdateBlock}
+              />
             </PopoverContent>
           </Popover>
 
