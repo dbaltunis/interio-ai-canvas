@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FileText, Mail, Printer, DollarSign, MapPin } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
@@ -14,7 +14,6 @@ import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
 import QuoteItemBreakdown from "@/components/quotes/QuoteItemBreakdown";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
 import { DetailedQuotationTable } from "@/components/jobs/quotation/DetailedQuotationTable";
-import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 interface ProjectQuoteTabProps {
   project: any;
   shouldHighlightNewQuote?: boolean;
@@ -26,7 +25,6 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
   const { data: rooms = [] } = useRooms(project?.id);
   const { data: surfaces = [] } = useSurfaces(project?.id);
   const { data: projectSummaries } = useProjectWindowSummaries(project?.id);
-  const { data: businessSettings } = useBusinessSettings();
   const { buildQuotationItems } = useQuotationSync({
     projectId: project?.id || "",
     clientId: project?.client_id || "",
@@ -60,65 +58,6 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
 
   return (
     <div className="space-y-6">
-      {/* Company & Project Header */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <FileText className="h-5 w-5" />
-              <span>Project Information</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {project ? (
-              <div className="space-y-2">
-                <div>
-                  <span className="font-medium">{project.name}</span>
-                </div>
-                <div className="text-sm text-gray-600">
-                  Status: <span className="capitalize">{project.status}</span>
-                </div>
-                {project.created_at && (
-                  <div className="text-sm text-gray-600">
-                    Created: {new Date(project.created_at).toLocaleDateString()}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-gray-500 italic">No project data available</div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Company Information</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {businessSettings ? (
-              <div className="space-y-2">
-                {businessSettings.company_name && (
-                  <div>
-                    <span className="font-medium">{businessSettings.company_name}</span>
-                  </div>
-                )}
-                {businessSettings.business_email && (
-                  <div className="text-sm text-gray-600">{businessSettings.business_email}</div>
-                )}
-                {businessSettings.business_phone && (
-                  <div className="text-sm text-gray-600">{businessSettings.business_phone}</div>
-                )}
-              </div>
-            ) : (
-              <div className="text-gray-500 italic">
-                No company information configured
-                <p className="text-xs mt-1">Configure in Settings → Business</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Quote Status */}
       <Card className="bg-blue-50 border-blue-200">
         <div className="flex items-center justify-between p-4">
