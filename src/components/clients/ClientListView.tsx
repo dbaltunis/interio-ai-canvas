@@ -117,6 +117,9 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
               <TableRow>
                 <TableHead className="font-semibold">Client Info</TableHead>
                 <TableHead className="font-semibold">Type & Tags</TableHead>
+                <TableHead className="font-semibold">Stage</TableHead>
+                <TableHead className="font-semibold">Lead Score</TableHead>
+                <TableHead className="font-semibold">Priority</TableHead>
                 <TableHead className="font-semibold">Deal Value</TableHead>
                 <TableHead className="font-semibold">Contact</TableHead>
                 <TableHead className="font-semibold">Actions</TableHead>
@@ -131,6 +134,9 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                 >
                   <TableCell>
                     <div className="flex items-center gap-2">
+                      {(client.lead_score && isHotLead(client.lead_score)) && (
+                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                      )}
                       <div>
                         <div className="font-medium text-foreground">
                           {client.client_type === 'B2B' ? client.company_name : client.name}
@@ -162,19 +168,48 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                       </Badge>
                       {client.tags && client.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1">
-                          {client.tags.slice(0, 3).map((tag) => (
+                          {client.tags.slice(0, 2).map((tag) => (
                             <Badge key={tag} variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20">
                               {tag}
                             </Badge>
                           ))}
-                          {client.tags.length > 3 && (
+                          {client.tags.length > 2 && (
                             <Badge variant="outline" className="text-xs bg-muted text-muted-foreground">
-                              +{client.tags.length - 3}
+                              +{client.tags.length - 2}
                             </Badge>
                           )}
                         </div>
                       )}
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={`${getStageColor(client.funnel_stage || 'lead')} border-0 text-xs`} variant="outline">
+                      {(client.funnel_stage || 'lead').replace('_', ' ').toUpperCase()}
+                    </Badge>
+                    {client.conversion_probability && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {client.conversion_probability}% probability
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span className={`font-medium ${getLeadScoreColor(client.lead_score || 0)}`}>
+                        {client.lead_score || 0}
+                      </span>
+                      <div className="w-16 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-primary h-2 rounded-full transition-all" 
+                          style={{ width: `${Math.min((client.lead_score || 0), 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={`${getPriorityColor(client.priority_level || 'medium')} border-0 flex items-center gap-1 w-fit text-xs`} variant="outline">
+                      {getPriorityIcon(client.priority_level || 'medium')}
+                      <span>{(client.priority_level || 'medium').toUpperCase()}</span>
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">
