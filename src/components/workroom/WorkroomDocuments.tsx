@@ -36,7 +36,10 @@ export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId 
       />
 
       <section>
-        <DocumentRenderer template={template} data={data} />
+        <DocumentRenderer 
+          template={template} 
+          data={data}
+        />
       </section>
     </main>
   );
