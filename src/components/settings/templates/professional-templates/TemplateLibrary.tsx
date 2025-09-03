@@ -1,12 +1,10 @@
-import { modernQuoteTemplate, detailedQuoteTemplate, luxuryQuoteTemplate } from './ModernQuoteTemplate';
+// Professional Template Library
+import { modernQuoteTemplate } from './ModernQuoteTemplate';
+import { detailedQuoteTemplate, luxuryQuoteTemplate } from './QuoteTemplates';
+import { standardInvoiceTemplate, installerWorkOrderTemplate, measurementSheetTemplate } from './BusinessDocumentTemplates';
 import { productShowcaseTemplate, digitalEbookTemplate } from './BrochureTemplates';
-import { 
-  standardInvoiceTemplate, 
-  installerWorkOrderTemplate, 
-  measurementSheetTemplate 
-} from './BusinessDocumentTemplates';
 
-// Template library with all professional templates
+// Template Library Definition
 const templateLibrary = {
   quote: {
     'modern-quote': modernQuoteTemplate,
@@ -23,92 +21,42 @@ const templateLibrary = {
     }
   },
   'work-order': {
-    'installer-workorder': installerWorkOrderTemplate,
-    'fitter-workorder': {
-      ...installerWorkOrderTemplate,
-      id: 'fitter-workorder',
-      name: 'Fitter Work Order',
-      description: 'Specialized fitting instructions and measurements'
-    }
+    'installer-work-order': installerWorkOrderTemplate
   },
   measurement: {
-    'standard-measurement': measurementSheetTemplate
+    'measurement-sheet': measurementSheetTemplate
   },
   brochure: {
     'product-showcase': productShowcaseTemplate,
-    'company-brochure': {
-      ...productShowcaseTemplate,
-      id: 'company-brochure',
-      name: 'Company Brochure',
-      description: 'Professional company presentation'
-    },
-    'ebook-template': digitalEbookTemplate
-  },
-  portfolio: {
-    'project-portfolio': {
-      id: 'project-portfolio',
-      name: 'Project Portfolio',
-      description: 'Before/after project showcases',
-      documentType: 'portfolio',
-      blocks: [
-        {
-          id: 'portfolio-cover',
-          type: 'cover-page',
-          content: {
-            title: '{{company_name}} Portfolio',
-            subtitle: 'Transforming Homes with Beautiful Window Treatments',
-            style: {
-              backgroundColor: '#1e293b',
-              textColor: '#ffffff'
-            }
-          },
-          editable: true
-        },
-        {
-          id: 'project-showcase',
-          type: 'project-gallery',
-          content: {
-            title: 'Recent Projects',
-            projects: [
-              {
-                name: 'Modern Family Home',
-                location: 'Chelsea, London',
-                beforeImage: '/api/placeholder/400/300',
-                afterImage: '/api/placeholder/400/300',
-                description: 'Complete window treatment solution for contemporary family home'
-              }
-            ],
-            style: {
-              layout: 'before-after-gallery'
-            }
-          },
-          editable: true
-        }
-      ]
-    }
+    'digital-ebook': digitalEbookTemplate
   }
 };
 
+// Get template by type and ID
 export const getTemplateByTypeAndId = (documentType: string, templateId: string) => {
   const typeTemplates = templateLibrary[documentType as keyof typeof templateLibrary];
+  
   if (!typeTemplates) {
-    console.warn(`Document type "${documentType}" not found in template library`);
+    console.warn(`Document type '${documentType}' not found in template library`);
     return null;
   }
   
   const template = typeTemplates[templateId as keyof typeof typeTemplates];
+  
   if (!template) {
-    console.warn(`Template "${templateId}" not found for document type "${documentType}"`);
+    console.warn(`Template '${templateId}' not found for document type '${documentType}'`);
     return null;
   }
   
   return template;
 };
 
+// Get all templates for a document type
 export const getAllTemplatesByType = (documentType: string) => {
   return templateLibrary[documentType as keyof typeof templateLibrary] || {};
 };
 
+// Get all available document types
 export const getAllDocumentTypes = () => {
   return Object.keys(templateLibrary);
 };

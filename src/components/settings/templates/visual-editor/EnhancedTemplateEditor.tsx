@@ -12,6 +12,7 @@ import { LivePreview } from './LivePreview';
 import { AdvancedExportSystem } from './AdvancedExportSystem';
 import { RealTimeCollaboration } from './RealTimeCollaboration';
 import { FunctionalLayoutTools } from './FunctionalLayoutTools';
+import { AIDesignAssistant } from './AIDesignAssistant';
 import '@/styles/template-editor.css';
 import { useProjectData } from '@/hooks/useProjectData';
 import { supabase } from "@/integrations/supabase/client";
@@ -28,7 +29,8 @@ import {
   Settings,
   Paintbrush2,
   Users,
-  Grid3x3
+  Grid3x3,
+  Wand2
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -50,7 +52,7 @@ export const EnhancedTemplateEditor = ({
   const [templateName, setTemplateName] = useState(template?.name || '');
   const [blocks, setBlocks] = useState(template?.blocks || []);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'blocks' | 'canvas' | 'preview' | 'export' | 'collaborate' | 'layout'>('blocks');
+  const [activeTab, setActiveTab] = useState<'blocks' | 'canvas' | 'preview' | 'export' | 'collaborate' | 'layout' | 'ai-assistant'>('blocks');
   const [canvasData, setCanvasData] = useState<string>('');
   const templateRef = useRef<HTMLDivElement>(null);
   const [selectedElements, setSelectedElements] = useState<any[]>([]);
@@ -212,6 +214,19 @@ export const EnhancedTemplateEditor = ({
             }}
           />
         );
+
+      case 'ai-assistant':
+        return (
+          <AIDesignAssistant
+            onApplyDesign={(designData) => {
+              if (designData.blocks) {
+                setBlocks(designData.blocks);
+              }
+              console.log('AI Design applied:', designData);
+            }}
+            currentBlocks={blocks}
+          />
+        );
       
       default:
         return null;
@@ -297,6 +312,15 @@ export const EnhancedTemplateEditor = ({
           >
             <Download className="h-4 w-4" />
             Export
+          </Button>
+          <Button
+            variant={activeTab === 'ai-assistant' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('ai-assistant')}
+            className="flex items-center gap-2"
+          >
+            <Wand2 className="h-4 w-4" />
+            AI Assistant
           </Button>
           <Button
             variant={activeTab === 'preview' ? 'default' : 'ghost'}

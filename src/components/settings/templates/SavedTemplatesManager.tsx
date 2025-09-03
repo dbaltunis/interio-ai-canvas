@@ -140,9 +140,24 @@ export const SavedTemplatesManager = () => {
       const { getTemplateByTypeAndId } = await import('./professional-templates/TemplateLibrary');
       const professionalTemplate = getTemplateByTypeAndId(documentType, templateId);
       
-      if (professionalTemplate) {
-        setSelectedTemplate(professionalTemplate);
+      if (professionalTemplate && professionalTemplate.blocks) {
+        console.log('Loading professional template with', professionalTemplate.blocks.length, 'blocks');
+        
+        // Create a new template with the professional template blocks
+        const templateData = {
+          id: null as any,
+          name: `${professionalTemplate.name} - ${new Date().toLocaleDateString()}`,
+          description: professionalTemplate.description || `Professional ${documentType} template`,
+          template_style: 'enhanced',
+          blocks: professionalTemplate.blocks,
+          is_default: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
+        setSelectedTemplate(templateData);
       } else {
+        console.error('Professional template not found or has no blocks:', { documentType, templateId });
         setSelectedTemplate(null);
       }
     } catch (error) {
@@ -151,6 +166,7 @@ export const SavedTemplatesManager = () => {
     }
     
     setIsEnhancedEditorOpen(true);
+    setIsDocumentSelectorOpen(false);
   };
 
   const handleEditEnhancedTemplate = (template: QuoteTemplate) => {
