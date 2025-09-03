@@ -5,10 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, FileText, DollarSign, Building, Palette, Wand2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sparkles, FileText, DollarSign, Building, Palette, Wand2, Zap } from 'lucide-react';
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useProjectData } from "@/hooks/useProjectData";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { DynamicTemplateGenerator } from './DynamicTemplateGenerator';
+import { TemplateStyleCustomizer } from './TemplateStyleCustomizer';
 
 interface SmartTemplateCreatorProps {
   onTemplateCreated: (template: any) => void;
@@ -23,7 +27,10 @@ export const SmartTemplateCreator: React.FC<SmartTemplateCreatorProps> = ({
   const [templateName, setTemplateName] = useState('');
   const [customPrompt, setCustomPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [activeTab, setActiveTab] = useState('presets');
+  const [customStyle, setCustomStyle] = useState({});
   const { data: projectData } = useProjectData(projectId || '');
+  const { data: businessSettings } = useBusinessSettings();
 
   const templatePresets = [
     {
@@ -235,11 +242,29 @@ export const SmartTemplateCreator: React.FC<SmartTemplateCreatorProps> = ({
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold">Create Professional Template</h2>
+        <h2 className="text-2xl font-bold">Template Creation Studio</h2>
         <p className="text-muted-foreground">
-          Choose from professional presets or let AI create a custom template for your business
+          Create professional, dynamic templates that reflect your brand and wow your clients
         </p>
       </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="presets" className="flex items-center gap-2">
+            <Palette className="h-4 w-4" />
+            Quick Presets
+          </TabsTrigger>
+          <TabsTrigger value="smart" className="flex items-center gap-2">
+            <Zap className="h-4 w-4" />
+            Smart Generator
+          </TabsTrigger>
+          <TabsTrigger value="customize" className="flex items-center gap-2">
+            <Wand2 className="h-4 w-4" />
+            Custom Style
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="presets" className="space-y-6">
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {templatePresets.map((preset) => (
@@ -327,6 +352,56 @@ export const SmartTemplateCreator: React.FC<SmartTemplateCreatorProps> = ({
           </CardContent>
         </Card>
       )}
+        </TabsContent>
+
+        <TabsContent value="smart">
+          <DynamicTemplateGenerator 
+            onTemplateGenerated={onTemplateCreated}
+            businessData={businessSettings}
+            projectData={projectData}
+          />
+        </TabsContent>
+
+        <TabsContent value="customize">
+          <Card>
+            <CardHeader>
+              <CardTitle>Custom Style Editor</CardTitle>
+              <CardDescription>
+                Fine-tune every aspect of your template design
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TemplateStyleCustomizer 
+                templateStyle={customStyle}
+                onStyleChange={setCustomStyle}
+              />
+              
+              <div className="mt-6 pt-6 border-t">
+                <Button 
+                  onClick={() => {
+                    const styledTemplate = {
+                      id: `custom-${Date.now()}`,
+                      name: 'Custom Styled Template',
+                      description: 'Custom template with personalized styling',
+                      type: 'enhanced',
+                      blocks: templatePresets[0].blocks, // Use first preset as base
+                      style: customStyle,
+                      created_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString()
+                    };
+                    onTemplateCreated(styledTemplate);
+                    toast.success('Custom template created!');
+                  }}
+                  className="w-full"
+                  size="lg"
+                >
+                  Create Custom Template
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

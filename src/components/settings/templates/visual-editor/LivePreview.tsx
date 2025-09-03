@@ -86,9 +86,18 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
             <div className="flex-1">
               {content.showLogo && (
                 <div className={`mb-4 ${content.logoPosition === 'center' ? 'text-center' : ''}`}>
-                  <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <Building2 className="h-8 w-8 text-white" />
-                  </div>
+                  {projectData?.businessSettings?.company_logo_url ? (
+                    <img 
+                      src={projectData.businessSettings.company_logo_url} 
+                      alt="Company Logo" 
+                      className="h-16 w-auto object-contain"
+                      style={{ maxWidth: '200px' }}
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center">
+                      <Building2 className="h-8 w-8 text-white" />
+                    </div>
+                  )}
                 </div>
               )}
               <h1 className="text-3xl font-bold mb-2">
