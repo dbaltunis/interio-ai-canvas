@@ -3,6 +3,10 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
+if (!openAIApiKey) {
+  console.error('OpenAI API key not configured');
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -15,9 +19,20 @@ serve(async (req) => {
   }
 
   try {
+    if (!openAIApiKey) {
+      console.error('OpenAI API key is missing');
+      return new Response(JSON.stringify({ 
+        error: 'OpenAI API key not configured',
+        fallbackSuggestion: "Please configure your OpenAI API key in the Supabase secrets to enable AI design suggestions."
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { prompt, documentType, currentStyle, projectData } = await req.json();
 
-    console.log('AI Design Assistant request:', { prompt, documentType, currentStyle });
+    console.log('AI Design Assistant request:', { prompt, documentType, currentStyle, hasApiKey: !!openAIApiKey });
 
     // Build context-aware prompt for AI design suggestions
     const systemPrompt = `You are an expert document design assistant specializing in professional business documents like quotes, invoices, and work orders. 
