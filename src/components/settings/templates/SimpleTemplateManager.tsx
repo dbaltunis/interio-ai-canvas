@@ -163,6 +163,42 @@ export const SimpleTemplateManager: React.FC = () => {
   const [loading, setLoading] = useState(false);
   
   const { data: projectData } = useProjectData();
+  
+  // Create mock project data for template preview
+  const mockProjectData = {
+    project: {
+      quote_number: 'QT-2024-001',
+      name: 'Sample Project',
+      created_at: new Date().toISOString(),
+      client: {
+        name: 'John Smith',
+        email: 'client@example.com',
+        phone: '(555) 987-6543',
+        address: '456 Residential Street',
+        city: 'Anytown',
+        state: 'ST',
+        zip_code: '12345',
+        company_name: 'Client Company LLC'
+      }
+    },
+    businessSettings: {
+      company_name: 'Your Company Name',
+      address: '123 Business Ave, Suite 100',
+      city: 'Business City',
+      state: 'BC',
+      zip_code: '54321',
+      business_phone: '(555) 123-4567',
+      business_email: 'info@company.com',
+      company_logo_url: null // This will show the icon placeholder
+    },
+    subtotal: 1250.00,
+    taxRate: 0.085,
+    taxAmount: 106.25,
+    total: 1356.25
+  };
+  
+  // Use real project data if available, otherwise use mock data
+  const displayProjectData = projectData || mockProjectData;
 
   useEffect(() => {
     loadTemplates();
@@ -508,7 +544,7 @@ export const SimpleTemplateManager: React.FC = () => {
             {selectedTemplate && (
               <LivePreview
                 blocks={selectedTemplate.blocks}
-                projectData={projectData}
+                projectData={displayProjectData}
                 isEditable={!selectedTemplate.is_default}
                 onBlocksChange={selectedTemplate.is_default ? undefined : saveTemplateChanges}
               />

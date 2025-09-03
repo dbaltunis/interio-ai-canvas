@@ -252,35 +252,6 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
         </div>
       );
 
-    case 'signature':
-      return (
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-4 text-brand-primary flex items-center gap-2">
-            <PenTool className="h-5 w-5" />
-            Signature
-          </h3>
-          <div className="grid grid-cols-2 gap-8 pt-8">
-            <div className="space-y-2">
-              <div className="border-b border-gray-300 h-12 flex items-end pb-2">
-                {content.enableDigitalSignature ? (
-                  <SignatureCanvas onSignatureSave={() => {}} width={200} height={50} />
-                ) : (
-                  <div className="w-full h-1 bg-gray-200 rounded"></div>
-                )}
-              </div>
-              <p className="text-sm text-gray-600 text-center">
-                {content.signatureLabel || 'Authorized Signature'}
-              </p>
-            </div>
-            <div className="space-y-2">
-              <div className="border-b border-gray-300 h-12"></div>
-              <p className="text-sm text-gray-600 text-center">
-                {content.dateLabel || 'Date'}
-              </p>
-            </div>
-          </div>
-        </div>
-      );
 
     case 'text':
       return (
@@ -339,6 +310,159 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
               borderWidth: content.thickness || '1px'
             }} 
           />
+        </div>
+      );
+
+    case 'line-items':
+      return (
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-4 text-brand-primary flex items-center gap-2">
+            <ShoppingCart className="h-5 w-5" />
+            {content.title || 'Line Items'}
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse border border-gray-300">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="border border-gray-300 p-3 text-left font-medium">Description</th>
+                  <th className="border border-gray-300 p-3 text-center w-24 font-medium">Qty</th>
+                  <th className="border border-gray-300 p-3 text-right w-32 font-medium">Unit Price</th>
+                  <th className="border border-gray-300 p-3 text-right w-32 font-medium">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="border border-gray-300 p-3">Custom Drapery Installation</td>
+                  <td className="border border-gray-300 p-3 text-center">1</td>
+                  <td className="border border-gray-300 p-3 text-right">$1,250.00</td>
+                  <td className="border border-gray-300 p-3 text-right font-medium">$1,250.00</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-4 bg-gray-50 p-4 rounded-lg">
+            <div className="flex justify-end">
+              <div className="w-64">
+                <div className="flex justify-between py-1">
+                  <span>Subtotal:</span>
+                  <span className="font-medium">{renderTokenValue('subtotal')}</span>
+                </div>
+                <div className="flex justify-between py-1">
+                  <span>Tax ({renderTokenValue('tax_rate')}):</span>
+                  <span className="font-medium">{renderTokenValue('tax_amount')}</span>
+                </div>
+                <div className="flex justify-between py-2 border-t border-gray-300 font-bold text-lg">
+                  <span>Total:</span>
+                  <span>{renderTokenValue('total')}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'terms-conditions':
+      return (
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-4 text-brand-primary">
+            {content.title || 'Terms & Conditions'}
+          </h3>
+          <div className="text-sm space-y-3">
+            <div>1. Payment Terms: 50% deposit required upon acceptance of this quote. Remaining balance due upon completion.</div>
+            <div>2. Timeline: Project completion is estimated at 2-3 weeks from deposit receipt and final measurements.</div>
+            <div>3. Warranty: All work comes with a 1-year warranty against defects in workmanship.</div>
+            <div>4. Cancellation: This quote is valid for 30 days. Cancellation after work begins subject to materials and labor charges.</div>
+          </div>
+        </div>
+      );
+
+    case 'payment-info':
+      return (
+        <div className="mb-6 bg-gray-50 p-4 rounded-lg">
+          <h3 className="text-lg font-semibold mb-4 text-brand-primary flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            {content.title || 'Payment Information'}
+          </h3>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <h4 className="font-medium mb-2 flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                Payment Methods
+              </h4>
+              <div className="text-sm space-y-1">
+                <div>• Cash, Check, or Credit Card</div>
+                <div>• Bank Transfer (ACH)</div>
+                <div>• Financing Available</div>
+              </div>
+            </div>
+            <div>
+              <h4 className="font-medium mb-2">Payment Schedule</h4>
+              <div className="text-sm space-y-1">
+                <div>Deposit: 50% upon signing</div>
+                <div>Progress: 25% at midpoint</div>
+                <div>Final: 25% upon completion</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'project-scope':
+      return (
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-4 text-brand-primary">
+            {content.title || 'Project Scope'}
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-medium mb-2">Included:</h4>
+              <div className="text-sm space-y-1 pl-4">
+                <div>✓ Professional measurement and consultation</div>
+                <div>✓ Custom fabrication of drapery</div>
+                <div>✓ Hardware installation and mounting</div>
+                <div>✓ Final styling and adjustments</div>
+              </div>
+            </div>
+            <div>
+              <h4 className="font-medium mb-2">Not Included:</h4>
+              <div className="text-sm space-y-1 pl-4">
+                <div>• Wall repairs or painting</div>
+                <div>• Removal of existing treatments</div>
+                <div>• Electrical work for motorization</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'signature':
+      return (
+        <div className="mt-8 mb-6">
+          <h3 className="text-lg font-semibold mb-6 text-brand-primary">
+            {content.title || 'Authorization'}
+          </h3>
+          <div className="grid md:grid-cols-2 gap-8">
+            <div>
+              <p className="text-sm mb-4">By signing below, you authorize us to proceed with this work as described:</p>
+              <div className="border-t border-gray-400 pt-2 mt-12">
+                <div className="text-sm">
+                  <div className="font-medium">Client Signature</div>
+                  <div className="text-gray-600">Print Name: {renderTokenValue('client_name')}</div>
+                  <div className="text-gray-600">Date: _________________</div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm mb-4">Thank you for choosing us for your project!</p>
+              <div className="border-t border-gray-400 pt-2 mt-12">
+                <div className="text-sm">
+                  <div className="font-medium">Company Representative</div>
+                  <div className="text-gray-600">Print Name: _________________</div>
+                  <div className="text-gray-600">Date: _________________</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       );
 
