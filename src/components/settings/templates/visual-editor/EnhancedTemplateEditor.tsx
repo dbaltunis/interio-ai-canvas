@@ -7,11 +7,11 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StreamlinedEditor } from './StreamlinedEditor';
-import { CanvasEditor } from './CanvasEditor';
+import { EnhancedCanvasEditor } from './EnhancedCanvasEditor';
 import { LivePreview } from './LivePreview';
 import { AdvancedExportSystem } from './AdvancedExportSystem';
 import { RealTimeCollaboration } from './RealTimeCollaboration';
-import { AdvancedLayoutTools } from './AdvancedLayoutTools';
+import { FunctionalLayoutTools } from './FunctionalLayoutTools';
 import '@/styles/template-editor.css';
 import { useProjectData } from '@/hooks/useProjectData';
 import { supabase } from "@/integrations/supabase/client";
@@ -149,11 +149,11 @@ export const EnhancedTemplateEditor = ({
       
       case 'canvas':
         return (
-          <CanvasEditor
+          <EnhancedCanvasEditor
             onSave={handleCanvasSave}
             initialData={canvasData}
             width={800}
-            height={1000}
+            height={600}
           />
         );
       
@@ -195,7 +195,7 @@ export const EnhancedTemplateEditor = ({
 
       case 'layout':
         return (
-          <AdvancedLayoutTools
+          <FunctionalLayoutTools
             selectedElements={selectedElements}
             onElementUpdate={(elements) => {
               setSelectedElements(elements);
