@@ -68,6 +68,13 @@ export const EnhancedTemplateEditor = ({
       setTemplateName(template.name || 'Untitled Template');
     } else if (template) {
       console.log('Template exists but no blocks:', template);
+      // Ensure we always have some content to show
+      setBlocks([]);
+      setTemplateName(template.name || 'Empty Template');
+    } else {
+      console.log('No template provided');
+      setBlocks([]);
+      setTemplateName('New Template');
     }
   }, [template]);
 

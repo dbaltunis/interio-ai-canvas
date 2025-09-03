@@ -214,9 +214,13 @@ export const StreamlinedEditor = ({
               }}
             >
               {!showPreview && (
-                <div className="mb-4 pb-2 border-b border-gray-200">
-                  <h1 className="text-lg font-semibold text-gray-900">{templateName}</h1>
-                  <p className="text-sm text-gray-500">{blocks.length} blocks loaded</p>
+                <div className="mb-6 pb-4 border-b border-gray-200 bg-gray-50 p-4 rounded">
+                  <h1 className="text-xl font-bold text-gray-900 mb-2">{templateName}</h1>
+                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <span>{blocks.length} blocks loaded</span>
+                    <span>•</span>
+                    <span>Ready to edit</span>
+                  </div>
                 </div>
               )}
 

@@ -197,89 +197,107 @@ const HeaderContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => {
     setEditingField(null);
   };
 
+  // Ensure content has default values
+  const safeContent = {
+    showLogo: true,
+    logoPosition: 'left',
+    companyName: 'Your Company Name',
+    companyAddress: '123 Business Street, City, State 12345',
+    companyPhone: '(555) 123-4567',
+    companyEmail: 'contact@company.com',
+    style: { primaryColor: '#1e40af', textColor: '#ffffff' },
+    ...content
+  };
+
   return (
-    <div className="space-y-4">
+    <div 
+      className="p-6 rounded-lg shadow-sm"
+      style={{ 
+        backgroundColor: safeContent.style?.backgroundColor || '#1e293b',
+        color: safeContent.style?.textColor || '#ffffff'
+      }}
+    >
       <div className={`flex items-start gap-4 ${
-        content.logoPosition === 'center' ? 'flex-col items-center' : 
-        content.logoPosition === 'right' ? 'flex-row-reverse' : 'flex-row'
+        safeContent.logoPosition === 'center' ? 'flex-col items-center' : 
+        safeContent.logoPosition === 'right' ? 'flex-row-reverse' : 'flex-row'
       }`}>
-        {content.showLogo && (
-          <div className="w-16 h-16 bg-gray-100 flex items-center justify-center rounded flex-shrink-0">
-            <span className="text-xs text-gray-500">LOGO</span>
+        {safeContent.showLogo && (
+          <div className="w-16 h-16 bg-white/20 flex items-center justify-center rounded flex-shrink-0">
+            <span className="text-xs text-white/80">LOGO</span>
           </div>
         )}
         <div className="flex-1 space-y-2">
           {editingField === 'companyName' && isEditing ? (
             <Input
-              value={content.companyName || ''}
+              value={safeContent.companyName || ''}
               onChange={(e) => updateField('companyName', e.target.value)}
               onBlur={() => setEditingField(null)}
               onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
               autoFocus
-              className="text-xl font-bold border-none p-0 focus:ring-0"
+              className="text-xl font-bold border-none p-0 focus:ring-0 bg-transparent text-white"
             />
           ) : (
             <h2 
-              className={`text-xl font-bold ${isEditing ? 'cursor-pointer hover:bg-yellow-100' : ''}`}
+              className={`text-2xl font-bold ${isEditing ? 'cursor-pointer hover:bg-white/10 rounded px-2 py-1' : ''}`}
               onClick={() => isEditing && setEditingField('companyName')}
-              style={{ color: content.style?.primaryColor || '#415e6b' }}
+              style={{ color: safeContent.style?.primaryColor || '#ffffff' }}
             >
-              {content.companyName || "Company Name"}
+              {safeContent.companyName}
             </h2>
           )}
 
-          <div className="text-sm text-gray-600 space-y-1">
+          <div className="text-sm space-y-1 opacity-90">
             {editingField === 'companyAddress' && isEditing ? (
               <Input
-                value={content.companyAddress || ''}
+                value={safeContent.companyAddress || ''}
                 onChange={(e) => updateField('companyAddress', e.target.value)}
                 onBlur={() => setEditingField(null)}
                 onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
                 autoFocus
-                className="border-none p-0 focus:ring-0"
+                className="border-none p-0 focus:ring-0 bg-transparent text-white"
               />
             ) : (
               <div 
-                className={`${isEditing ? 'cursor-pointer hover:bg-yellow-100' : ''}`}
+                className={`${isEditing ? 'cursor-pointer hover:bg-white/10 rounded px-2 py-1' : ''}`}
                 onClick={() => isEditing && setEditingField('companyAddress')}
               >
-                {content.companyAddress || "Company Address"}
+                {safeContent.companyAddress}
               </div>
             )}
 
             {editingField === 'companyPhone' && isEditing ? (
               <Input
-                value={content.companyPhone || ''}
+                value={safeContent.companyPhone || ''}
                 onChange={(e) => updateField('companyPhone', e.target.value)}
                 onBlur={() => setEditingField(null)}
                 onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
                 autoFocus
-                className="border-none p-0 focus:ring-0"
+                className="border-none p-0 focus:ring-0 bg-transparent text-white"
               />
             ) : (
               <div 
-                className={`${isEditing ? 'cursor-pointer hover:bg-yellow-100' : ''}`}
+                className={`${isEditing ? 'cursor-pointer hover:bg-white/10 rounded px-2 py-1' : ''}`}
                 onClick={() => isEditing && setEditingField('companyPhone')}
               >
-                {content.companyPhone || "Phone Number"}
+                {safeContent.companyPhone}
               </div>
             )}
 
             {editingField === 'companyEmail' && isEditing ? (
               <Input
-                value={content.companyEmail || ''}
+                value={safeContent.companyEmail || ''}
                 onChange={(e) => updateField('companyEmail', e.target.value)}
                 onBlur={() => setEditingField(null)}
                 onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
                 autoFocus
-                className="border-none p-0 focus:ring-0"
+                className="border-none p-0 focus:ring-0 bg-transparent text-white"
               />
             ) : (
               <div 
-                className={`${isEditing ? 'cursor-pointer hover:bg-yellow-100' : ''}`}
+                className={`${isEditing ? 'cursor-pointer hover:bg-white/10 rounded px-2 py-1' : ''}`}
                 onClick={() => isEditing && setEditingField('companyEmail')}
               >
-                {content.companyEmail || "Email Address"}
+                {safeContent.companyEmail}
               </div>
             )}
           </div>
@@ -289,17 +307,28 @@ const HeaderContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => {
   );
 };
 
-const ClientInfoContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => (
-  <div className="space-y-2">
-    <h3 className="font-semibold text-gray-900">{content.title || 'Bill To:'}</h3>
-    <div className="text-sm text-gray-600 space-y-1">
-      {content.showClientName && <div>Client Name</div>}
-      {content.showClientEmail && <div>client@email.com</div>}
-      {content.showClientAddress && <div>Client Address</div>}
-      {content.showClientPhone && <div>Client Phone</div>}
+const ClientInfoContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => {
+  const safeContent = {
+    title: 'Bill To:',
+    showClientName: true,
+    showClientEmail: true,
+    showClientAddress: true,
+    showClientPhone: true,
+    ...content
+  };
+
+  return (
+    <div className="space-y-3 p-4 bg-gray-50 rounded border">
+      <h3 className="font-semibold text-gray-900 text-lg">{safeContent.title}</h3>
+      <div className="text-sm text-gray-700 space-y-2">
+        {safeContent.showClientName && <div className="font-medium">John Doe</div>}
+        {safeContent.showClientEmail && <div>john.doe@email.com</div>}
+        {safeContent.showClientAddress && <div>456 Client Avenue<br />Client City, State 67890</div>}
+        {safeContent.showClientPhone && <div>(555) 987-6543</div>}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const TextContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => {
   if (isEditing) {
@@ -325,35 +354,46 @@ const TextContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => {
 };
 
 const ProductsContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => {
+  const safeContent = {
+    title: 'Quote Items',
+    layout: 'detailed',
+    showProduct: true,
+    showDescription: true,
+    showQuantity: true,
+    showUnitPrice: true,
+    showTotal: true,
+    tableStyle: 'modern',
+    ...content
+  };
+
   const mockQuoteItems = [
-    { description: 'Sample Product', qty: 1, unit_price: 100, total: 100 },
-    { description: 'Another Item', qty: 2, unit_price: 50, total: 100 }
+    { description: 'Premium Window Blinds', qty: 3, unit_price: 245.00, total: 735.00 },
+    { description: 'Installation Service', qty: 1, unit_price: 150.00, total: 150.00 },
+    { description: 'Hardware & Mounting', qty: 1, unit_price: 75.00, total: 75.00 }
   ];
 
   return (
     <div className="space-y-4">
-      <h3 className="font-semibold text-gray-900">{content.title || 'Products & Services'}</h3>
+      <h3 className="font-semibold text-gray-900 text-lg border-b pb-2">{safeContent.title}</h3>
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse border border-gray-300">
+        <table className="w-full border-collapse border border-gray-300 shadow-sm">
           <thead>
-            <tr className="bg-gray-50">
-              {content.showProduct && <th className="border border-gray-300 p-2 text-left">Product</th>}
-              {content.showDescription && <th className="border border-gray-300 p-2 text-left">Description</th>}
-              {content.showQuantity && <th className="border border-gray-300 p-2 text-left">Qty</th>}
-              {content.showUnitPrice && <th className="border border-gray-300 p-2 text-left">Unit Price</th>}
-              {content.showTotal && <th className="border border-gray-300 p-2 text-left">Total</th>}
-              {content.showTax && <th className="border border-gray-300 p-2 text-left">Tax</th>}
+            <tr className="bg-gray-100">
+              {safeContent.showProduct && <th className="border border-gray-300 p-3 text-left font-semibold">Product</th>}
+              {safeContent.showDescription && <th className="border border-gray-300 p-3 text-left font-semibold">Description</th>}
+              {safeContent.showQuantity && <th className="border border-gray-300 p-3 text-center font-semibold">Qty</th>}
+              {safeContent.showUnitPrice && <th className="border border-gray-300 p-3 text-right font-semibold">Unit Price</th>}
+              {safeContent.showTotal && <th className="border border-gray-300 p-3 text-right font-semibold">Total</th>}
             </tr>
           </thead>
           <tbody>
             {mockQuoteItems.map((item, index) => (
-              <tr key={index}>
-                {content.showProduct && <td className="border border-gray-300 p-2">{item.description}</td>}
-                {content.showDescription && <td className="border border-gray-300 p-2">Product description</td>}
-                {content.showQuantity && <td className="border border-gray-300 p-2">{item.qty}</td>}
-                {content.showUnitPrice && <td className="border border-gray-300 p-2">${item.unit_price.toFixed(2)}</td>}
-                {content.showTotal && <td className="border border-gray-300 p-2">${item.total.toFixed(2)}</td>}
-                {content.showTax && <td className="border border-gray-300 p-2">$10.00</td>}
+              <tr key={index} className="hover:bg-gray-50">
+                {safeContent.showProduct && <td className="border border-gray-300 p-3 font-medium">{item.description}</td>}
+                {safeContent.showDescription && <td className="border border-gray-300 p-3 text-gray-600">High-quality materials and professional installation</td>}
+                {safeContent.showQuantity && <td className="border border-gray-300 p-3 text-center">{item.qty}</td>}
+                {safeContent.showUnitPrice && <td className="border border-gray-300 p-3 text-right">${item.unit_price.toFixed(2)}</td>}
+                {safeContent.showTotal && <td className="border border-gray-300 p-3 text-right font-semibold">${item.total.toFixed(2)}</td>}
               </tr>
             ))}
           </tbody>
@@ -363,28 +403,46 @@ const ProductsContent = ({ content, onUpdate, isEditing, setIsEditing }: any) =>
   );
 };
 
-const TotalsContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => (
-  <div className="space-y-2 max-w-xs ml-auto">
-    {content.showSubtotal && (
-      <div className="flex justify-between">
-        <span>Subtotal:</span>
-        <span>$100.00</span>
+const TotalsContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => {
+  const safeContent = {
+    showSubtotal: true,
+    showTax: true,
+    showTotal: true,
+    style: {},
+    ...content
+  };
+
+  return (
+    <div className="max-w-sm ml-auto">
+      <div 
+        className="space-y-3 p-4 rounded border"
+        style={{ 
+          backgroundColor: safeContent.style?.backgroundColor || '#f8fafc',
+          borderColor: safeContent.style?.borderColor || '#e2e8f0'
+        }}
+      >
+        {safeContent.showSubtotal && (
+          <div className="flex justify-between text-lg">
+            <span className="text-gray-700">Subtotal:</span>
+            <span className="font-medium">$960.00</span>
+          </div>
+        )}
+        {safeContent.showTax && (
+          <div className="flex justify-between text-lg">
+            <span className="text-gray-700">Tax (10%):</span>
+            <span className="font-medium">$96.00</span>
+          </div>
+        )}
+        {safeContent.showTotal && (
+          <div className="flex justify-between text-xl font-bold border-t-2 pt-3 border-gray-300">
+            <span className="text-gray-900">Total:</span>
+            <span className="text-blue-600">$1,056.00</span>
+          </div>
+        )}
       </div>
-    )}
-    {content.showTax && (
-      <div className="flex justify-between">
-        <span>Tax:</span>
-        <span>$10.00</span>
-      </div>
-    )}
-    {content.showTotal && (
-      <div className="flex justify-between font-bold border-t pt-2">
-        <span>Total:</span>
-        <span>$110.00</span>
-      </div>
-    )}
-  </div>
-);
+    </div>
+  );
+};
 
 const FooterContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => {
   if (isEditing) {
