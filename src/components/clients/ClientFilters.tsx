@@ -116,23 +116,10 @@ export const ClientFilters = ({
           <SelectTrigger className="w-48">
             <SelectValue placeholder="Client Type" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-[9999] bg-background border border-border shadow-lg">
             <SelectItem value="all">All Types</SelectItem>
             <SelectItem value="B2B">B2B Clients</SelectItem>
             <SelectItem value="B2C">B2C Clients</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={activityFilter} onValueChange={setActivityFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Activity Level" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Activity</SelectItem>
-            <SelectItem value="active_projects">Active Projects</SelectItem>
-            <SelectItem value="pending_quotes">Pending Quotes</SelectItem>
-            <SelectItem value="high_value">High Value (&gt;$5K)</SelectItem>
-            <SelectItem value="inactive">No Activity</SelectItem>
           </SelectContent>
         </Select>
 
@@ -153,24 +140,11 @@ export const ClientFilters = ({
           </SelectContent>
         </Select>
 
-        <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Priority" />
-          </SelectTrigger>
-          <SelectContent className="z-[9999] bg-background border border-border shadow-lg">
-            <SelectItem value="all">All Priorities</SelectItem>
-            <SelectItem value="urgent">Urgent</SelectItem>
-            <SelectItem value="high">High</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="low">Low</SelectItem>
-          </SelectContent>
-        </Select>
-
         <Popover open={filterOpen} onOpenChange={setFilterOpen}>
           <PopoverTrigger asChild>
             <Button variant="outline" className="flex items-center gap-2">
               <Filter className="h-4 w-4" />
-              Filters
+              Tags & More
               {activeFiltersCount > 0 && (
                 <span className="bg-primary text-primary-foreground rounded-full text-xs px-2 py-0.5 ml-1">
                   {activeFiltersCount}
@@ -181,7 +155,7 @@ export const ClientFilters = ({
           <PopoverContent className="w-80" align="end">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="font-medium">Filter Clients</h4>
+                <h4 className="font-medium">Filter by Tags & Activity</h4>
                 {hasActiveFilters && (
                   <Button variant="ghost" size="sm" onClick={clearFilters}>
                     <X className="h-4 w-4 mr-1" />
@@ -191,55 +165,9 @@ export const ClientFilters = ({
               </div>
               
               <div className="space-y-3">
-                {/* Project Status Filter */}
+                {/* Tags Filter - Featured */}
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Project Status</label>
-                  <div className="space-y-2 max-h-32 overflow-y-auto">
-                    {projectStatuses.map((status) => (
-                      <div key={status.value} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={status.value}
-                          checked={selectedStatuses.includes(status.value)}
-                          onCheckedChange={() => handleStatusToggle(status.value)}
-                        />
-                        <label
-                          htmlFor={status.value}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >
-                          {status.label}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Projects Filter */}
-                {projects && projects.length > 0 && (
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Associated Projects</label>
-                    <div className="space-y-2 max-h-32 overflow-y-auto">
-                      {projects.map((project) => (
-                        <div key={project.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={project.id}
-                            checked={selectedProjects.includes(project.id)}
-                            onCheckedChange={() => handleProjectToggle(project.id)}
-                          />
-                          <label
-                            htmlFor={project.id}
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                          >
-                            {project.name}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Tags Filter */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Tags</label>
+                  <label className="text-sm font-medium mb-2 block">Client Tags (Primary Filters)</label>
                   <div className="space-y-2 max-h-32 overflow-y-auto">
                     {availableTags.map((tag) => (
                       <div key={tag} className="flex items-center space-x-2">
@@ -258,6 +186,47 @@ export const ClientFilters = ({
                     ))}
                   </div>
                 </div>
+
+                {/* Activity Level Filter */}
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Activity Level</label>
+                  <Select value={activityFilter} onValueChange={setActivityFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Activity" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[9999] bg-background border border-border shadow-lg">
+                      <SelectItem value="all">All Activity</SelectItem>
+                      <SelectItem value="active_projects">Active Projects</SelectItem>
+                      <SelectItem value="pending_quotes">Pending Quotes</SelectItem>
+                      <SelectItem value="high_value">High Value (&gt;$5K)</SelectItem>
+                      <SelectItem value="inactive">No Activity</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Projects Filter */}
+                {projects && projects.length > 0 && (
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Associated Projects</label>
+                    <div className="space-y-2 max-h-24 overflow-y-auto">
+                      {projects.slice(0, 5).map((project) => (
+                        <div key={project.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={project.id}
+                            checked={selectedProjects.includes(project.id)}
+                            onCheckedChange={() => handleProjectToggle(project.id)}
+                          />
+                          <label
+                            htmlFor={project.id}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 truncate"
+                          >
+                            {project.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </PopoverContent>
@@ -288,15 +257,6 @@ export const ClientFilters = ({
               />
             </Badge>
           )}
-          {activityFilter !== 'all' && (
-            <Badge variant="secondary" className="flex items-center gap-1">
-              Activity: {activityFilter.replace('_', ' ')}
-              <X
-                className="h-3 w-3 cursor-pointer"
-                onClick={() => setActivityFilter('all')}
-              />
-            </Badge>
-          )}
           {leadSourceFilter !== 'all' && (
             <Badge variant="secondary" className="flex items-center gap-1">
               Source: {leadSourceFilter.replace('_', ' ')}
@@ -306,18 +266,18 @@ export const ClientFilters = ({
               />
             </Badge>
           )}
-          {priorityFilter !== 'all' && (
+          {activityFilter !== 'all' && (
             <Badge variant="secondary" className="flex items-center gap-1">
-              Priority: {priorityFilter}
+              Activity: {activityFilter.replace('_', ' ')}
               <X
                 className="h-3 w-3 cursor-pointer"
-                onClick={() => setPriorityFilter('all')}
+                onClick={() => setActivityFilter('all')}
               />
             </Badge>
           )}
           {selectedTags.map((tag) => (
             <Badge key={tag} variant="secondary" className="flex items-center gap-1">
-              Tag: {tag}
+              {tag}
               <X
                 className="h-3 w-3 cursor-pointer"
                 onClick={() => handleTagToggle(tag)}
