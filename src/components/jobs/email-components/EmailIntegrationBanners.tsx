@@ -1,7 +1,7 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Settings } from "lucide-react";
+import { AlertCircle, Settings, CheckCircle, Mail } from "lucide-react";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface EmailIntegrationBannersProps {
   hasSendGridIntegration: boolean;
@@ -14,6 +14,43 @@ export const EmailIntegrationBanners = ({
   hasEmailSettings, 
   onEmailSettingsClick 
 }: EmailIntegrationBannersProps) => {
+  const { data: userRole } = useUserRole();
+  const isAccountOwner = userRole?.isOwner || false;
+
+  // For team members, show a simple ready-to-use banner when email is configured
+  if (!isAccountOwner) {
+    if (hasSendGridIntegration && hasEmailSettings) {
+      return (
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <div>
+                <p className="font-medium text-green-800">Company Email Ready</p>
+                <p className="text-sm text-green-700">Your company email is configured and ready to use. You can send emails to clients and prospects.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    } else {
+      return (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Mail className="h-5 w-5 text-blue-600" />
+              <div>
+                <p className="font-medium text-blue-800">Email Setup in Progress</p>
+                <p className="text-sm text-blue-700">Your account owner is setting up company email. You'll be able to send emails once it's ready.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+  }
+
+  // Account owners see the full setup banners
   return (
     <>
       {/* SendGrid Integration Status */}
