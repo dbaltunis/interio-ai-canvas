@@ -25,7 +25,7 @@ export const useIntegrations = () => {
         throw error;
       }
 
-      return data as IntegrationType[];
+      return (data || []) as unknown as IntegrationType[];
     },
   });
 

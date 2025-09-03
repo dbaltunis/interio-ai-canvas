@@ -42,17 +42,24 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Invalid authorization');
     }
 
-    // Get user's email settings and SendGrid integration
+    // Get the account owner for shared settings
+    const { data: accountOwner } = await supabase.rpc('get_account_owner', { 
+      user_id_param: user.id 
+    });
+    
+    const ownerId = accountOwner || user.id;
+
+    // Get account owner's email settings and SendGrid integration (shared by team)
     const { data: emailSettings } = await supabase
       .from('email_settings')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('account_owner_id', ownerId)
       .single();
 
     const { data: integrationSettings } = await supabase
       .from('integration_settings')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('account_owner_id', ownerId)
       .eq('integration_type', 'sendgrid')
       .eq('active', true)
       .single();

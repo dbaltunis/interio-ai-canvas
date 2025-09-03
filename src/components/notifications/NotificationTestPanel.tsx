@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Send, TestTube, CheckCircle, AlertCircle } from "lucide-react";
+import { Send, TestTube, CheckCircle, AlertCircle, Users, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNotificationUsage } from "@/hooks/useNotificationAnalytics";
@@ -16,8 +16,31 @@ export const NotificationTestPanel = () => {
   const [testSubject, setTestSubject] = useState("Test Email from Notification System");
   const [testMessage, setTestMessage] = useState("This is a test email to verify your notification system is working correctly.");
   const [lastTestResult, setLastTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [userRole, setUserRole] = useState<string>("User");
+  const [isAccountOwner, setIsAccountOwner] = useState(false);
 
   const { data: usage, refetch: refetchUsage } = useNotificationUsage();
+
+  // Check user role and account status
+  React.useEffect(() => {
+    const checkUserStatus = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('role, parent_account_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profile) {
+        setUserRole(profile.role || 'User');
+        setIsAccountOwner(profile.parent_account_id === user.id || !profile.parent_account_id);
+      }
+    };
+
+    checkUserStatus();
+  }, []);
 
   const handleSendTestEmail = async () => {
     if (!testEmail.trim()) {
@@ -74,15 +97,34 @@ export const NotificationTestPanel = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Current Usage Display */}
+        {/* User Status & Current Usage Display */}
         <div className="p-4 bg-muted/50 rounded-lg">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">Current Month Usage</span>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Account Status</span>
+              {isAccountOwner ? (
+                <Badge variant="default" className="flex items-center gap-1">
+                  <Crown className="h-3 w-3" />
+                  Account Owner
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  Team Member ({userRole})
+                </Badge>
+              )}
+            </div>
             <Badge variant="outline">
               {usage?.email_count || 0} emails sent
             </Badge>
           </div>
           <div className="text-xs text-muted-foreground">
+            {isAccountOwner 
+              ? "You can configure notification settings for your team"
+              : "Using account owner's notification settings"
+            }
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
             Period: {usage?.period_start ? new Date(usage.period_start).toLocaleDateString() : 'N/A'} - {usage?.period_end ? new Date(usage.period_end).toLocaleDateString() : 'N/A'}
           </div>
         </div>

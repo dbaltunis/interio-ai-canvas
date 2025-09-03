@@ -1630,6 +1630,7 @@ export type Database = {
       }
       email_settings: {
         Row: {
+          account_owner_id: string | null
           active: boolean | null
           created_at: string
           from_email: string
@@ -1641,6 +1642,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_owner_id?: string | null
           active?: boolean | null
           created_at?: string
           from_email: string
@@ -1652,6 +1654,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_owner_id?: string | null
           active?: boolean | null
           created_at?: string
           from_email?: string
@@ -2017,6 +2020,7 @@ export type Database = {
       }
       integration_settings: {
         Row: {
+          account_owner_id: string | null
           active: boolean | null
           api_credentials: Json | null
           configuration: Json | null
@@ -2028,6 +2032,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_owner_id?: string | null
           active?: boolean | null
           api_credentials?: Json | null
           configuration?: Json | null
@@ -2039,6 +2044,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_owner_id?: string | null
           active?: boolean | null
           api_credentials?: Json | null
           configuration?: Json | null
@@ -3580,6 +3586,7 @@ export type Database = {
       }
       user_notification_settings: {
         Row: {
+          account_owner_id: string | null
           created_at: string
           email_api_key_encrypted: string | null
           email_from_address: string | null
@@ -3595,6 +3602,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_owner_id?: string | null
           created_at?: string
           email_api_key_encrypted?: string | null
           email_from_address?: string | null
@@ -3610,6 +3618,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_owner_id?: string | null
           created_at?: string
           email_api_key_encrypted?: string | null
           email_from_address?: string | null
