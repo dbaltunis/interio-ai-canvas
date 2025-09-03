@@ -16,7 +16,13 @@ import {
   Star,
   Palette,
   Shapes,
-  Layout
+  Layout,
+  ShoppingCart,
+  DollarSign,
+  ScrollText,
+  Target,
+  Minus,
+  Space
 } from "lucide-react";
 
 interface ComponentLibraryProps {
@@ -45,8 +51,18 @@ const componentCategories = [
     name: "Data & Tables",
     icon: Table,
     components: [
-      { type: 'products', name: 'Products Table', icon: Table, description: 'Itemized product list' },
+      { type: 'line-items', name: 'Line Items Table', icon: ShoppingCart, description: 'Professional itemized list with totals' },
+      { type: 'products', name: 'Products Table', icon: Table, description: 'Product showcase table' },
       { type: 'totals', name: 'Price Summary', icon: Calculator, description: 'Subtotal, tax, total' },
+    ]
+  },
+  {
+    name: "Business Content",
+    icon: FileText,
+    components: [
+      { type: 'terms-conditions', name: 'Terms & Conditions', icon: ScrollText, description: 'Legal terms and policies' },
+      { type: 'payment-info', name: 'Payment Information', icon: DollarSign, description: 'Payment methods and schedule' },
+      { type: 'project-scope', name: 'Project Scope', icon: Target, description: 'What\'s included and excluded' },
     ]
   },
   {
@@ -69,10 +85,10 @@ const componentCategories = [
 ];
 
 const popularComponents = [
-  { type: 'products', name: 'Product Showcase', badge: 'Popular' },
-  { type: 'totals', name: 'Price Summary', badge: 'Essential' },
-  { type: 'signature', name: 'Digital Signature', badge: 'Pro' },
-  { type: 'payment', name: 'Payment Button', badge: 'New' }
+  { type: 'line-items', name: 'Line Items Table', badge: 'New' },
+  { type: 'terms-conditions', name: 'Terms & Conditions', badge: 'Essential' },
+  { type: 'payment-info', name: 'Payment Information', badge: 'Popular' },
+  { type: 'signature', name: 'Digital Signature', badge: 'Pro' }
 ];
 
 export const ComponentLibrary = ({ onAddBlock }: ComponentLibraryProps) => {

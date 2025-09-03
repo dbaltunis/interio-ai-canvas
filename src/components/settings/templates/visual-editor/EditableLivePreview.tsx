@@ -543,7 +543,396 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate }: Editabl
         </EditableContainer>
       );
 
-    // Add other block types with similar editable functionality...
+    case 'line-items':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '16px',
+            margin: style.margin || '0 0 24px 0',
+            backgroundColor: style.backgroundColor || 'transparent'
+          }}
+          className="mb-6"
+        >
+          <EditableText
+            value={content.title || 'Line Items'}
+            onChange={(value) => updateBlockContent({ title: value })}
+            className="text-lg font-semibold mb-4 text-brand-primary flex items-center gap-2"
+            placeholder="Section Title"
+          />
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse border border-gray-300">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="border border-gray-300 p-3 text-left">
+                    <EditableText
+                      value="Description"
+                      onChange={() => {}}
+                      className="font-medium"
+                      placeholder="Description"
+                    />
+                  </th>
+                  <th className="border border-gray-300 p-3 text-center w-24">
+                    <EditableText
+                      value="Qty"
+                      onChange={() => {}}
+                      className="font-medium"
+                      placeholder="Qty"
+                    />
+                  </th>
+                  <th className="border border-gray-300 p-3 text-right w-32">
+                    <EditableText
+                      value="Unit Price"
+                      onChange={() => {}}
+                      className="font-medium"
+                      placeholder="Unit Price"
+                    />
+                  </th>
+                  <th className="border border-gray-300 p-3 text-right w-32">
+                    <EditableText
+                      value="Total"
+                      onChange={() => {}}
+                      className="font-medium"
+                      placeholder="Total"
+                    />
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="border border-gray-300 p-3">
+                    <EditableText
+                      value="Custom Drapery Installation"
+                      onChange={() => {}}
+                      placeholder="Item description"
+                    />
+                  </td>
+                  <td className="border border-gray-300 p-3 text-center">
+                    <EditableText
+                      value="1"
+                      onChange={() => {}}
+                      placeholder="1"
+                    />
+                  </td>
+                  <td className="border border-gray-300 p-3 text-right">
+                    <EditableText
+                      value="$1,250.00"
+                      onChange={() => {}}
+                      placeholder="$0.00"
+                    />
+                  </td>
+                  <td className="border border-gray-300 p-3 text-right font-medium">
+                    <EditableText
+                      value="$1,250.00"
+                      onChange={() => {}}
+                      placeholder="$0.00"
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-4 bg-gray-50 p-4 rounded-lg">
+            <div className="flex justify-end space-y-2">
+              <div className="w-64">
+                <div className="flex justify-between py-1">
+                  <span>Subtotal:</span>
+                  <span className="font-medium">{renderTokenValue('subtotal')}</span>
+                </div>
+                <div className="flex justify-between py-1">
+                  <span>Tax ({renderTokenValue('tax_rate')}):</span>
+                  <span className="font-medium">{renderTokenValue('tax_amount')}</span>
+                </div>
+                <div className="flex justify-between py-2 border-t border-gray-300 font-bold text-lg">
+                  <span>Total:</span>
+                  <span>{renderTokenValue('total')}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </EditableContainer>
+      );
+
+    case 'terms-conditions':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '16px',
+            margin: style.margin || '0 0 24px 0',
+            backgroundColor: style.backgroundColor || 'transparent'
+          }}
+          className="mb-6"
+        >
+          <EditableText
+            value={content.title || 'Terms & Conditions'}
+            onChange={(value) => updateBlockContent({ title: value })}
+            className="text-lg font-semibold mb-4 text-brand-primary"
+            placeholder="Section Title"
+          />
+          <div className="text-sm space-y-3">
+            <div>
+              <EditableText
+                value="1. Payment Terms: 50% deposit required upon acceptance of this quote. Remaining balance due upon completion."
+                onChange={() => {}}
+                multiline
+                placeholder="Payment terms..."
+              />
+            </div>
+            <div>
+              <EditableText
+                value="2. Timeline: Project completion is estimated at 2-3 weeks from deposit receipt and final measurements."
+                onChange={() => {}}
+                multiline
+                placeholder="Timeline information..."
+              />
+            </div>
+            <div>
+              <EditableText
+                value="3. Warranty: All work comes with a 1-year warranty against defects in workmanship."
+                onChange={() => {}}
+                multiline
+                placeholder="Warranty details..."
+              />
+            </div>
+            <div>
+              <EditableText
+                value="4. Cancellation: This quote is valid for 30 days. Cancellation after work begins subject to materials and labor charges."
+                onChange={() => {}}
+                multiline
+                placeholder="Cancellation policy..."
+              />
+            </div>
+          </div>
+        </EditableContainer>
+      );
+
+    case 'payment-info':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '16px',
+            margin: style.margin || '0 0 24px 0',
+            backgroundColor: style.backgroundColor || '#f8fafc'
+          }}
+          className="mb-6"
+        >
+          <EditableText
+            value={content.title || 'Payment Information'}
+            onChange={(value) => updateBlockContent({ title: value })}
+            className="text-lg font-semibold mb-4 text-brand-primary flex items-center gap-2"
+            placeholder="Section Title"
+          />
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <h4 className="font-medium mb-2 flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                Payment Methods
+              </h4>
+              <div className="text-sm space-y-1">
+                <EditableText
+                  value="• Cash, Check, or Credit Card"
+                  onChange={() => {}}
+                  placeholder="Payment method 1"
+                />
+                <EditableText
+                  value="• Bank Transfer (ACH)"
+                  onChange={() => {}}
+                  placeholder="Payment method 2"
+                />
+                <EditableText
+                  value="• Financing Available"
+                  onChange={() => {}}
+                  placeholder="Payment method 3"
+                />
+              </div>
+            </div>
+            <div>
+              <h4 className="font-medium mb-2">Payment Schedule</h4>
+              <div className="text-sm space-y-1">
+                <EditableText
+                  value="Deposit: 50% upon signing"
+                  onChange={() => {}}
+                  placeholder="Payment schedule item"
+                />
+                <EditableText
+                  value="Progress: 25% at midpoint"
+                  onChange={() => {}}
+                  placeholder="Payment schedule item"
+                />
+                <EditableText
+                  value="Final: 25% upon completion"
+                  onChange={() => {}}
+                  placeholder="Payment schedule item"
+                />
+              </div>
+            </div>
+          </div>
+        </EditableContainer>
+      );
+
+    case 'project-scope':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '16px',
+            margin: style.margin || '0 0 24px 0',
+            backgroundColor: style.backgroundColor || 'transparent'
+          }}
+          className="mb-6"
+        >
+          <EditableText
+            value={content.title || 'Project Scope'}
+            onChange={(value) => updateBlockContent({ title: value })}
+            className="text-lg font-semibold mb-4 text-brand-primary"
+            placeholder="Section Title"
+          />
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-medium mb-2">Included:</h4>
+              <div className="text-sm space-y-1 pl-4">
+                <EditableText
+                  value="✓ Professional measurement and consultation"
+                  onChange={() => {}}
+                  placeholder="Included item"
+                />
+                <EditableText
+                  value="✓ Custom fabrication of drapery"
+                  onChange={() => {}}
+                  placeholder="Included item"
+                />
+                <EditableText
+                  value="✓ Hardware installation and mounting"
+                  onChange={() => {}}
+                  placeholder="Included item"
+                />
+                <EditableText
+                  value="✓ Final styling and adjustments"
+                  onChange={() => {}}
+                  placeholder="Included item"
+                />
+              </div>
+            </div>
+            <div>
+              <h4 className="font-medium mb-2">Not Included:</h4>
+              <div className="text-sm space-y-1 pl-4">
+                <EditableText
+                  value="• Wall repairs or painting"
+                  onChange={() => {}}
+                  placeholder="Excluded item"
+                />
+                <EditableText
+                  value="• Removal of existing treatments"
+                  onChange={() => {}}
+                  placeholder="Excluded item"
+                />
+                <EditableText
+                  value="• Electrical work for motorization"
+                  onChange={() => {}}
+                  placeholder="Excluded item"
+                />
+              </div>
+            </div>
+          </div>
+        </EditableContainer>
+      );
+
+    case 'signature':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '24px',
+            margin: style.margin || '24px 0 0 0',
+            backgroundColor: style.backgroundColor || 'transparent'
+          }}
+          className="mt-8"
+        >
+          <EditableText
+            value={content.title || 'Authorization'}
+            onChange={(value) => updateBlockContent({ title: value })}
+            className="text-lg font-semibold mb-6 text-brand-primary"
+            placeholder="Section Title"
+          />
+          <div className="grid md:grid-cols-2 gap-8">
+            <div>
+              <EditableText
+                value="By signing below, you authorize us to proceed with this work as described:"
+                onChange={() => {}}
+                className="text-sm mb-4"
+                placeholder="Authorization text"
+              />
+              <div className="border-t border-gray-400 pt-2 mt-12">
+                <div className="text-sm">
+                  <div className="font-medium">Client Signature</div>
+                  <div className="text-gray-600">Print Name: {renderTokenValue('client_name')}</div>
+                  <div className="text-gray-600">Date: _________________</div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <EditableText
+                value="Thank you for choosing us for your project!"
+                onChange={() => {}}
+                className="text-sm mb-4"
+                placeholder="Thank you message"
+              />
+              <div className="border-t border-gray-400 pt-2 mt-12">
+                <div className="text-sm">
+                  <div className="font-medium">Company Representative</div>
+                  <div className="text-gray-600">Print Name: _________________</div>
+                  <div className="text-gray-600">Date: _________________</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </EditableContainer>
+      );
+
+    case 'spacer':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            height: style.height || '24px',
+            margin: style.margin || '0',
+            backgroundColor: style.backgroundColor || 'transparent'
+          }}
+          className="relative"
+        >
+          <div 
+            className="w-full border-2 border-dashed border-gray-200 rounded flex items-center justify-center text-gray-400 text-sm hover:border-gray-400 transition-colors"
+            style={{ height: style.height || '24px' }}
+          >
+            <Space className="h-4 w-4 mr-2" />
+            Spacer ({style.height || '24px'})
+          </div>
+        </EditableContainer>
+      );
+
+    case 'divider':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            margin: style.margin || '24px 0',
+            borderColor: style.borderColor || '#e5e7eb',
+            borderWidth: style.borderWidth || '1px'
+          }}
+          className="my-6"
+        >
+          <hr 
+            className="w-full"
+            style={{
+              borderColor: style.borderColor || '#e5e7eb',
+              borderWidth: `${style.borderWidth || 1}px 0 0 0`,
+              borderStyle: style.borderStyle || 'solid'
+            }}
+          />
+        </EditableContainer>
+      );
     default:
       return (
         <EditableContainer 
