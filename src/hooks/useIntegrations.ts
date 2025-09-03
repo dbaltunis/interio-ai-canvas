@@ -30,7 +30,7 @@ export const useIntegrations = () => {
   });
 
   const createIntegration = useMutation({
-    mutationFn: async (integration: Omit<IntegrationType, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (integration: Omit<IntegrationType, 'id' | 'user_id' | 'account_owner_id' | 'created_at' | 'updated_at'>) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
@@ -39,6 +39,7 @@ export const useIntegrations = () => {
         .insert({
           ...integration,
           user_id: user.id,
+          account_owner_id: user.id,
         })
         .select()
         .single();

@@ -1,6 +1,7 @@
 export interface BaseIntegration {
   id: string;
   user_id: string;
+  account_owner_id: string;
   integration_type: string;
   active: boolean;
   api_credentials: Record<string, any>;
