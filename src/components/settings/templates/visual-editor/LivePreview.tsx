@@ -21,6 +21,7 @@ import {
   Type,
   Image as ImageIcon,
   Minus,
+  Plus,
   Space
 } from "lucide-react";
 import { SignatureCanvas } from './SignatureCanvas';
@@ -314,32 +315,133 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
       );
 
     case 'line-items':
+      const [showDetailed, setShowDetailed] = React.useState(false);
+      
+      // Mock detailed itemization data - in real app, this would come from projectData
+      const detailedItems = [
+        {
+          category: 'Fabric',
+          items: [
+            { name: 'Premium Linen Fabric', quantity: '8.5', unit: 'metres', unitPrice: 45.00, total: 382.50 },
+            { name: 'Fabric Cutting & Preparation', quantity: '1', unit: 'service', unitPrice: 25.00, total: 25.00 }
+          ]
+        },
+        {
+          category: 'Hardware',
+          items: [
+            { name: 'Curtain Rod - Premium Steel', quantity: '1', unit: 'piece', unitPrice: 185.00, total: 185.00 },
+            { name: 'End Caps & Brackets', quantity: '2', unit: 'sets', unitPrice: 35.00, total: 70.00 },
+            { name: 'Installation Hardware', quantity: '1', unit: 'kit', unitPrice: 45.00, total: 45.00 }
+          ]
+        },
+        {
+          category: 'Labor',
+          items: [
+            { name: 'Professional Measurement', quantity: '1', unit: 'hour', unitPrice: 85.00, total: 85.00 },
+            { name: 'Custom Fabrication', quantity: '6', unit: 'hours', unitPrice: 65.00, total: 390.00 },
+            { name: 'Installation Service', quantity: '2', unit: 'hours', unitPrice: 75.00, total: 150.00 }
+          ]
+        }
+      ];
+
+      const simpleItems = [
+        { description: 'Custom Drapery Installation', quantity: '1', unitPrice: '$1,250.00', total: '$1,250.00' }
+      ];
+
       return (
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-4 text-brand-primary flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5" />
-            {content.title || 'Line Items'}
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse border border-gray-300">
-              <thead>
-                <tr className="bg-gray-50">
-                  <th className="border border-gray-300 p-3 text-left font-medium">Description</th>
-                  <th className="border border-gray-300 p-3 text-center w-24 font-medium">Qty</th>
-                  <th className="border border-gray-300 p-3 text-right w-32 font-medium">Unit Price</th>
-                  <th className="border border-gray-300 p-3 text-right w-32 font-medium">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="border border-gray-300 p-3">Custom Drapery Installation</td>
-                  <td className="border border-gray-300 p-3 text-center">1</td>
-                  <td className="border border-gray-300 p-3 text-right">$1,250.00</td>
-                  <td className="border border-gray-300 p-3 text-right font-medium">$1,250.00</td>
-                </tr>
-              </tbody>
-            </table>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-brand-primary flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5" />
+              {content.title || 'Line Items'}
+            </h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDetailed(!showDetailed)}
+              className="flex items-center gap-2"
+            >
+              {showDetailed ? (
+                <>
+                  <Minus className="h-4 w-4" />
+                  Simple View
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4" />
+                  Detailed View
+                </>
+              )}
+            </Button>
           </div>
+
+          {showDetailed ? (
+            // Detailed Itemized View
+            <div className="space-y-6">
+              {detailedItems.map((category, categoryIndex) => (
+                <div key={categoryIndex} className="border rounded-lg overflow-hidden">
+                  <div className="bg-gray-100 px-4 py-2 border-b">
+                    <h4 className="font-medium text-gray-900">{category.category}</h4>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-gray-50 text-sm">
+                          <th className="text-left p-3 font-medium">Item Description</th>
+                          <th className="text-center p-3 font-medium w-20">Qty</th>
+                          <th className="text-center p-3 font-medium w-20">Unit</th>
+                          <th className="text-right p-3 font-medium w-24">Unit Price</th>
+                          <th className="text-right p-3 font-medium w-24">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {category.items.map((item, itemIndex) => (
+                          <tr key={itemIndex} className="border-t border-gray-200">
+                            <td className="p-3 text-sm">{item.name}</td>
+                            <td className="p-3 text-sm text-center">{item.quantity}</td>
+                            <td className="p-3 text-sm text-center text-gray-600">{item.unit}</td>
+                            <td className="p-3 text-sm text-right">${item.unitPrice.toFixed(2)}</td>
+                            <td className="p-3 text-sm text-right font-medium">${item.total.toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="bg-gray-50 px-4 py-2 border-t">
+                    <div className="flex justify-between items-center text-sm font-medium">
+                      <span>{category.category} Subtotal:</span>
+                      <span>${category.items.reduce((sum, item) => sum + item.total, 0).toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            // Simple View
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse border border-gray-300">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="border border-gray-300 p-3 text-left font-medium">Description</th>
+                    <th className="border border-gray-300 p-3 text-center w-24 font-medium">Qty</th>
+                    <th className="border border-gray-300 p-3 text-right w-32 font-medium">Unit Price</th>
+                    <th className="border border-gray-300 p-3 text-right w-32 font-medium">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {simpleItems.map((item, index) => (
+                    <tr key={index}>
+                      <td className="border border-gray-300 p-3">{item.description}</td>
+                      <td className="border border-gray-300 p-3 text-center">{item.quantity}</td>
+                      <td className="border border-gray-300 p-3 text-right">{item.unitPrice}</td>
+                      <td className="border border-gray-300 p-3 text-right font-medium">{item.total}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
           <div className="mt-4 bg-gray-50 p-4 rounded-lg">
             <div className="flex justify-end">
               <div className="w-64">
