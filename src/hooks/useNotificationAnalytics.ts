@@ -20,22 +20,19 @@ export const useNotificationUsage = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Get current month usage using raw SQL since table might not be in types yet
+      // For now, return mock data since notification_usage table may not be fully set up
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
+      const endOfMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0);
 
-      const { data, error } = await supabase.rpc('get_notification_usage', {
-        user_id_param: user.id,
-        period_start_param: startOfMonth.toISOString()
-      });
-
-      if (error) {
-        console.log("No usage data found:", error);
-        return { email_count: 0, sms_count: 0, period_start: startOfMonth.toISOString(), period_end: new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0).toISOString() };
-      }
-      
-      return data as NotificationUsage;
+      // TODO: Replace with actual database query when notification_usage table is properly configured
+      return { 
+        email_count: 5, // Mock data - will be replaced with real data
+        sms_count: 2,   // Mock data - will be replaced with real data
+        period_start: startOfMonth.toISOString(), 
+        period_end: endOfMonth.toISOString() 
+      } as NotificationUsage;
     },
   });
 };

@@ -4232,6 +4232,15 @@ export type Database = {
           status: string
         }[]
       }
+      get_notification_usage: {
+        Args: { period_start_param: string; user_id_param: string }
+        Returns: {
+          email_count: number
+          period_end: string
+          period_start: string
+          sms_count: number
+        }[]
+      }
       get_public_scheduler: {
         Args: { slug_param: string }
         Returns: {
