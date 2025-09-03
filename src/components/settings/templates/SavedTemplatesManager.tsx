@@ -264,8 +264,9 @@ export const SavedTemplatesManager: React.FC<SavedTemplatesManagerProps> = ({ pr
           onSelectTemplate={(template) => {
             setSelectedTemplate(template);
             setIsEnhancedEditorOpen(true);
+            setActiveTab('my-templates'); // Switch to manage tab after selection
           }}
-          onClose={() => {}}
+          onClose={() => setActiveTab('my-templates')} // Fix close functionality
         />
       )}
 

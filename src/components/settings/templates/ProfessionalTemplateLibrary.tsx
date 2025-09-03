@@ -1,17 +1,22 @@
-import React from "react";
+import React from 'react';
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { 
+  Sparkles, 
   FileText, 
+  DollarSign, 
+  Building, 
+  Palette, 
+  X,
+  Eye,
   Receipt, 
   Wrench, 
   Ruler, 
-  BookOpen, 
-  Sparkles,
+  BookOpen,
   Crown,
   Wand2
-} from "lucide-react";
+} from 'lucide-react';
 
 interface TemplateCategory {
   id: string;
@@ -372,8 +377,13 @@ export const ProfessionalTemplateLibrary = ({ onSelectTemplate, onClose }: Profe
               <p className="text-sm text-gray-600">Choose from our collection of professionally designed templates</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            ×
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onClose}
+            className="h-8 w-8 p-0 hover:bg-red-100"
+          >
+            <X className="h-4 w-4" />
           </Button>
         </div>
 

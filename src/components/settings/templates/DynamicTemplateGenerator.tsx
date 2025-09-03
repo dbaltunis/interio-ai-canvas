@@ -6,9 +6,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Sparkles, Wand2, Palette, FileText, DollarSign } from 'lucide-react';
+import { Sparkles, Wand2, Palette, FileText, DollarSign, Eye } from 'lucide-react';
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { TemplatePreviewModal } from './TemplatePreviewModal';
 
 interface DynamicTemplateGeneratorProps {
   onTemplateGenerated: (template: any) => void;
@@ -28,6 +29,8 @@ export const DynamicTemplateGenerator: React.FC<DynamicTemplateGeneratorProps> =
   const [designStyle, setDesignStyle] = useState('');
   const [customRequirements, setCustomRequirements] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [generatedTemplate, setGeneratedTemplate] = useState<any>(null);
 
   const templateTypes = [
     { value: 'quote', label: 'Quote', description: 'For providing pricing estimates', icon: <DollarSign className="h-4 w-4" /> },
@@ -129,8 +132,12 @@ Please generate a template with appropriate blocks, styling, and content that re
           updated_at: new Date().toISOString()
         };
 
-        onTemplateGenerated(template);
-        toast.success('Smart template generated successfully!');
+        // Save template to database first
+        await saveTemplateToDatabase(template);
+        
+        setGeneratedTemplate(template);
+        setShowPreview(true);
+        toast.success('Smart template generated successfully! Preview it below.');
       } else {
         throw new Error('Failed to generate template with AI');
       }
@@ -150,10 +157,38 @@ Please generate a template with appropriate blocks, styling, and content that re
         updated_at: new Date().toISOString()
       };
 
-      onTemplateGenerated(template);
-      toast.success('Template created successfully!');
+      // Save fallback template to database
+      await saveTemplateToDatabase(template);
+      
+      setGeneratedTemplate(template);
+      setShowPreview(true);
+      toast.success('Template created successfully! Preview it below.');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const saveTemplateToDatabase = async (template: any) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('quote_templates')
+        .insert({
+          user_id: user.id,
+          name: template.name,
+          description: template.description,
+          template_style: 'enhanced',
+          blocks: template.blocks,
+          is_default: false,
+          active: true
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error saving template to database:', error);
+      // Don't throw here, just log the error so the template generation can continue
     }
   };
 
@@ -401,6 +436,21 @@ Please generate a template with appropriate blocks, styling, and content that re
           </Button>
         </CardContent>
       </Card>
+
+      {/* Preview Modal */}
+      {showPreview && generatedTemplate && (
+        <TemplatePreviewModal
+          template={generatedTemplate}
+          projectData={projectData}
+          onClose={() => setShowPreview(false)}
+          onSave={() => {
+            onTemplateGenerated(generatedTemplate);
+            setShowPreview(false);
+            toast.success('Template saved to your collection!');
+          }}
+          showActions={true}
+        />
+      )}
     </div>
   );
 };
