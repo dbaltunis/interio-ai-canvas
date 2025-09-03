@@ -174,13 +174,20 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
       // Get real project data or use fallback
       const projectItems = projectData?.treatments || projectData?.windowSummaries || [];
       const hasRealData = projectItems.length > 0;
+      
+      console.log('LivePreview projectItems:', projectItems);
+      console.log('LivePreview hasRealData:', hasRealData);
+      console.log('LivePreview showDetailedProducts:', showDetailedProducts);
 
       // Function to get itemized breakdown for a workshop item
       const getItemizedBreakdown = (item: any) => {
+        console.log('getItemizedBreakdown called with item:', item);
+        
         const components = [];
         
         // Extract fabric details
         if (item.fabric_details) {
+          console.log('Found fabric_details:', item.fabric_details);
           const fabricCost = parseFloat(item.linear_meters || 0) * parseFloat(item.fabric_details.price_per_meter || 0);
           components.push({
             type: 'Fabric',
@@ -190,10 +197,13 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
             rate: parseFloat(item.fabric_details.price_per_meter || 0).toFixed(2),
             total: fabricCost.toFixed(2)
           });
+        } else {
+          console.log('No fabric_details found');
         }
 
         // Extract manufacturing details
         if (item.manufacturing_details && item.manufacturing_details.cost > 0) {
+          console.log('Found manufacturing_details:', item.manufacturing_details);
           const manufacturingType = item.manufacturing_details.hand_finished ? 'Hand Finished' : 'Machine';
           components.push({
             type: 'Manufacturing',
@@ -203,10 +213,13 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
             rate: parseFloat(item.manufacturing_details.cost || 0).toFixed(2),
             total: parseFloat(item.manufacturing_details.cost || 0).toFixed(2)
           });
+        } else {
+          console.log('No manufacturing_details found or cost is 0');
         }
 
         // Extract lining if present
         if (item.manufacturing_details?.lining_type) {
+          console.log('Found lining_type:', item.manufacturing_details.lining_type);
           const liningCost = parseFloat(item.linear_meters || 0) * 15; // Estimate lining cost
           components.push({
             type: 'Lining',
@@ -220,6 +233,7 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
 
         // If no detailed components found, create a basic breakdown
         if (components.length === 0 && item.total_cost > 0) {
+          console.log('No components found, creating basic breakdown');
           components.push({
             type: 'Treatment',
             description: `${item.treatment_type} - ${item.surface_name}`,
@@ -230,6 +244,7 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
           });
         }
 
+        console.log('getItemizedBreakdown returning components:', components);
         return components;
       };
 
