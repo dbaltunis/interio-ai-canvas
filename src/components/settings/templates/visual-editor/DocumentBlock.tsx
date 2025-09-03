@@ -399,19 +399,11 @@ const SpacerContent = ({ content, onUpdate }: any) => (
 const SignatureContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => {
   const [showSignaturePopup, setShowSignaturePopup] = useState(false);
   const [signatureData, setSignatureData] = useState(content.signatureData || null);
-  const [tempSignatureData, setTempSignatureData] = useState<string | null>(null);
 
   const handleSignatureSave = (dataUrl: string) => {
-    setTempSignatureData(dataUrl);
-  };
-
-  const confirmSignature = () => {
-    if (tempSignatureData) {
-      setSignatureData(tempSignatureData);
-      onUpdate({ ...content, signatureData: tempSignatureData });
-      setShowSignaturePopup(false);
-      setTempSignatureData(null);
-    }
+    setSignatureData(dataUrl);
+    onUpdate({ ...content, signatureData: dataUrl });
+    setShowSignaturePopup(false);
   };
 
   const openSignaturePopup = (e: React.MouseEvent) => {
@@ -481,8 +473,8 @@ const SignatureContent = ({ content, onUpdate, isEditing, setIsEditing }: any) =
                     Cancel
                   </Button>
                   <Button
-                    onClick={confirmSignature}
-                    disabled={!tempSignatureData}
+                    onClick={() => setShowSignaturePopup(false)}
+                    disabled={!signatureData}
                   >
                     Save Signature
                   </Button>

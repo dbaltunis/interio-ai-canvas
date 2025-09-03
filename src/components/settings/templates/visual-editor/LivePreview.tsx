@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useClients } from "@/hooks/useClients";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { replaceTokens, formatCurrency } from "@/utils/templateRenderer";
+import { SignatureCanvas } from "./SignatureCanvas";
 
 interface LivePreviewProps {
   blocks: any[];
@@ -36,25 +38,17 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
     ? clients?.find(c => c.id === projectData.project.client_id) 
     : null;
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrencyAmount = (amount: number) => {
     if (businessSettings?.measurement_units) {
       try {
         const units = JSON.parse(businessSettings.measurement_units);
         const currency = units.currency || 'USD';
-        const currencySymbols: Record<string, string> = {
-          'NZD': 'NZ$',
-          'AUD': 'A$',
-          'USD': '$',
-          'GBP': '£',
-          'EUR': '€',
-          'ZAR': 'R'
-        };
-        return `${currencySymbols[currency] || currency}${amount.toFixed(2)}`;
+        return formatCurrency(amount, currency);
       } catch {
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+        return formatCurrency(amount, 'USD');
       }
     }
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+    return formatCurrency(amount, 'USD');
   };
 
   const replaceTokens = (text: string, data: any = {}) => {
@@ -192,12 +186,25 @@ export const LivePreview = ({ blocks, projectData, isEditable = false }: LivePre
     const rooms = projectData?.rooms || [];
     const surfaces = projectData?.surfaces || [];
 
+    // Use real project data instead of mock data
+    const productItems = treatments.map(treatment => ({
+      id: treatment.id,
+      description: treatment.description || treatment.treatment_type || 'Treatment',
+      room: rooms.find(r => r.id === treatment.room_id)?.name || 'Room',
+      quantity: treatment.quantity || 1,
+      unit_price: treatment.unit_price || 0,
+      total_cost: treatment.total_cost || 0,
+      markup_amount: treatment.markup_amount || 0,
+      client_cost: (treatment.total_cost || 0) + (treatment.markup_amount || 0)
+    }));
+
     // Derive columns from booleans when columns array isn't provided
     const columns = (content.columns && Array.isArray(content.columns) && content.columns.length > 0)
       ? content.columns
       : [
           content.showProduct !== false ? 'product' : null,
           content.showDescription ? 'description' : null,
+          content.showRoom ? 'room' : null,
           content.showQuantity !== false ? 'qty' : null,
           content.showUnitPrice !== false ? 'unit_price' : null,
           content.showTotal !== false ? 'total' : null,
