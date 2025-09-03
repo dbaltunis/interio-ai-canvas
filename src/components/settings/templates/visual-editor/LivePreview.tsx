@@ -175,59 +175,81 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
       const projectItems = projectData?.treatments || projectData?.windowSummaries || [];
       const hasRealData = projectItems.length > 0;
 
-      // Function to get itemized breakdown for a treatment
-      const getItemizedBreakdown = (treatment: any) => {
-        const items = [];
+      // Function to get itemized breakdown for a workshop item
+      const getItemizedBreakdown = (item: any) => {
+        const components = [];
         
-        // Add fabric if available
-        if (treatment.fabric_name || treatment.fabric_code) {
-          items.push({
+        // Extract fabric details from JSONB
+        const fabricDetails = item.fabric_details || {};
+        if (fabricDetails.fabric_name || fabricDetails.fabric_code) {
+          components.push({
             type: 'Fabric',
-            description: `${treatment.fabric_code || 'Custom'} ${treatment.fabric_name || 'Fabric'}${treatment.fabric_width ? ` | ${treatment.fabric_width}m` : ''}`,
-            quantity: treatment.fabric_quantity || treatment.fabric_metres || '0',
+            description: `${fabricDetails.fabric_code || ''} ${fabricDetails.fabric_name || 'Custom Fabric'}${fabricDetails.width ? ` | ${fabricDetails.width}m` : ''}`,
+            quantity: item.linear_meters || fabricDetails.meters_required || fabricDetails.quantity || '0',
             unit: 'm',
-            rate: treatment.fabric_cost_per_metre || treatment.fabric_price || 0,
-            total: (treatment.fabric_quantity || treatment.fabric_metres || 0) * (treatment.fabric_cost_per_metre || treatment.fabric_price || 0)
+            rate: fabricDetails.cost_per_meter || fabricDetails.price_per_meter || fabricDetails.unit_cost || 0,
+            total: (item.linear_meters || fabricDetails.meters_required || 0) * (fabricDetails.cost_per_meter || fabricDetails.price_per_meter || 0)
           });
         }
 
-        // Add manufacturing/making cost
-        if (treatment.making_cost || treatment.manufacturing_cost) {
-          items.push({
+        // Extract manufacturing details from JSONB
+        const manufacturingDetails = item.manufacturing_details || {};
+        if (manufacturingDetails.making_cost || manufacturingDetails.labor_cost || manufacturingDetails.manufacturing_price) {
+          components.push({
             type: 'Manufacturing price',
-            description: '-',
-            quantity: treatment.quantity || 1,
+            description: manufacturingDetails.process_type || manufacturingDetails.manufacturing_type || '-',
+            quantity: item.widths_required || manufacturingDetails.panels || manufacturingDetails.pieces || 1,
             unit: 'piece',
-            rate: treatment.making_cost || treatment.manufacturing_cost || 0,
-            total: (treatment.quantity || 1) * (treatment.making_cost || treatment.manufacturing_cost || 0)
+            rate: manufacturingDetails.making_cost || manufacturingDetails.labor_cost || manufacturingDetails.manufacturing_price || 0,
+            total: (item.widths_required || 1) * (manufacturingDetails.making_cost || manufacturingDetails.labor_cost || 0)
           });
         }
 
-        // Add lining if available
-        if (treatment.lining_type && treatment.lining_type !== 'none') {
-          items.push({
+        // Extract lining details
+        if (fabricDetails.lining_type && fabricDetails.lining_type !== 'none') {
+          const liningMeters = item.linear_meters || fabricDetails.meters_required || 0;
+          const liningCost = fabricDetails.lining_cost_per_meter || 10; // Default lining cost
+          components.push({
             type: 'Lining',
-            description: treatment.lining_type,
-            quantity: treatment.fabric_quantity || treatment.fabric_metres || '0',
+            description: fabricDetails.lining_type || 'Standard Lining',
+            quantity: liningMeters,
             unit: 'm',
-            rate: treatment.lining_cost_per_metre || 10,
-            total: (treatment.fabric_quantity || treatment.fabric_metres || 0) * (treatment.lining_cost_per_metre || 10)
+            rate: liningCost,
+            total: liningMeters * liningCost
           });
         }
 
-        // Add heading/hardware
-        if (treatment.heading_type || treatment.hardware_type) {
-          items.push({
-            type: 'Heading',
-            description: treatment.heading_type || treatment.hardware_type || 'Standard',
-            quantity: treatment.width || treatment.heading_quantity || '0',
-            unit: 'cm',
-            rate: treatment.heading_cost || 0,
-            total: treatment.heading_cost || 0
+        // Extract heading/hardware details
+        if (fabricDetails.heading_type || manufacturingDetails.heading_type || manufacturingDetails.hardware_type) {
+          const headingType = fabricDetails.heading_type || manufacturingDetails.heading_type || manufacturingDetails.hardware_type;
+          const headingQuantity = (item.measurements?.width || manufacturingDetails.heading_length || 200) / 100; // Convert cm to meters
+          const headingCost = manufacturingDetails.heading_cost || fabricDetails.heading_cost || 0;
+          
+          if (headingCost > 0 || headingType !== 'none') {
+            components.push({
+              type: 'Heading',
+              description: headingType || 'Standard Heading',
+              quantity: Math.round(headingQuantity * 100), // Display in cm
+              unit: 'cm',
+              rate: headingCost,
+              total: headingCost
+            });
+          }
+        }
+
+        // If no detailed components found, create a basic breakdown from available data
+        if (components.length === 0 && item.total_cost > 0) {
+          components.push({
+            type: 'Treatment Cost',
+            description: `${item.treatment_type} - ${item.surface_name}`,
+            quantity: 1,
+            unit: 'item',
+            rate: item.total_cost,
+            total: item.total_cost
           });
         }
 
-        return items;
+        return components;
       };
 
       // Group items by room if enabled
