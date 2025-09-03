@@ -10,10 +10,15 @@ export const useIntegrationStatus = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
+      // Get account owner to fetch account-level integrations
+      const { data: accountOwnerId } = await supabase.rpc('get_account_owner', { 
+        user_id_param: user.id 
+      });
+
       const { data, error } = await supabase
         .from('integration_settings')
         .select('integration_type, active, configuration')
-        .eq('user_id', user.id)
+        .eq('account_owner_id', accountOwnerId || user.id)
         .eq('integration_type', 'sendgrid')
         .eq('active', true)
         .maybeSingle();
