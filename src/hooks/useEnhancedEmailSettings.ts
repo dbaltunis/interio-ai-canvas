@@ -1,9 +1,11 @@
 import { useEmailSettings } from './useEmailSettings';
 import { useBusinessSettings } from './useBusinessSettings';
+import { useCurrentUserProfile } from './useUserProfile';
 
 export const useEnhancedEmailSettings = () => {
   const { data: emailSettings, ...emailQuery } = useEmailSettings();
   const { data: businessSettings } = useBusinessSettings();
+  const { data: profile } = useCurrentUserProfile();
 
   const getEmailSignature = () => {
     if (emailSettings?.signature) {
@@ -48,6 +50,8 @@ export const useEnhancedEmailSettings = () => {
     return emailSettings?.reply_to_email || businessSettings?.business_email || getFromEmail();
   };
 
+  const isTeamMember = profile?.parent_account_id && profile.parent_account_id !== profile.user_id;
+
   return {
     ...emailQuery,
     data: emailSettings,
@@ -56,5 +60,7 @@ export const useEnhancedEmailSettings = () => {
     getFromEmail,
     getFromName,
     getReplyToEmail,
+    isTeamMember,
+    isInheritingSettings: isTeamMember && !!emailSettings,
   };
 };

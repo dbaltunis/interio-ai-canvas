@@ -22,13 +22,37 @@ export const useEmailSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      const { data, error } = await supabase
+      // First try to get user's own email settings
+      let { data, error } = await supabase
         .from('email_settings')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
+
+      // If no settings found, try to get account owner's settings
+      if (!data) {
+        const { data: accountOwnerId } = await supabase
+          .rpc('get_account_owner', { user_id_param: user.id });
+
+        if (accountOwnerId && accountOwnerId !== user.id) {
+          const { data: ownerSettings, error: ownerError } = await supabase
+            .from('email_settings')
+            .select('*')
+            .eq('user_id', accountOwnerId)
+            .maybeSingle();
+
+          if (ownerError && ownerError.code !== 'PGRST116') {
+            console.error('Error fetching account owner email settings:', ownerError);
+          } else {
+            data = ownerSettings;
+          }
+        }
+      }
       
-      if (error) throw error;
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching email settings:', error);
+      }
+      
       return data as EmailSettings | null;
     },
   });

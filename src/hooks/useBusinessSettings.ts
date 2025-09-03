@@ -52,25 +52,22 @@ export const useBusinessSettings = () => {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      // If no settings found, try to get parent account settings
+      // If no settings found, try to get account owner's settings
       if (!data) {
-        const { data: profile } = await supabase
-          .from("user_profiles")
-          .select("parent_account_id")
-          .eq("user_id", user.id)
-          .single();
+        const { data: accountOwnerId } = await supabase
+          .rpc('get_account_owner', { user_id_param: user.id });
 
-        if (profile?.parent_account_id) {
-          const { data: parentSettings, error: parentError } = await supabase
+        if (accountOwnerId && accountOwnerId !== user.id) {
+          const { data: ownerSettings, error: ownerError } = await supabase
             .from('business_settings')
             .select('*')
-            .eq('user_id', profile.parent_account_id)
+            .eq('user_id', accountOwnerId)
             .maybeSingle();
 
-          if (parentError && parentError.code !== 'PGRST116') {
-            console.error('Error fetching parent business settings:', parentError);
+          if (ownerError && ownerError.code !== 'PGRST116') {
+            console.error('Error fetching account owner business settings:', ownerError);
           } else {
-            data = parentSettings;
+            data = ownerSettings;
           }
         }
       }
