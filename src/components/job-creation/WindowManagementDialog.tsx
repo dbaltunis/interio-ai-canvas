@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Ruler, Package, Calculator, Save } from "lucide-react";
 import { MeasurementWorksheet } from "../measurements/MeasurementWorksheet";
-import { EnhancedMeasurementWorksheet } from "../measurements/EnhancedMeasurementWorksheet";
+import { DynamicWindowWorksheet } from "../measurements/DynamicWindowWorksheet";
 import { TreatmentPricingForm } from "./TreatmentPricingForm";
 import { useInventory } from "@/hooks/useInventory";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
@@ -126,7 +126,7 @@ export const WindowManagementDialog = ({
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto">
-            <EnhancedMeasurementWorksheet
+            <DynamicWindowWorksheet
               key={surface?.id} // CRITICAL: Add key to force proper remounting
               ref={worksheetRef}
               clientId={clientId || ""}
