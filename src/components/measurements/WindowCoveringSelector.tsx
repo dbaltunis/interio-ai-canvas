@@ -43,9 +43,13 @@ export const WindowCoveringSelector = ({
   }, {} as Record<string, CurtainTemplate[]>);
 
   const handleCoveringSelect = (covering: CurtainTemplate) => {
+    console.log("🔄 WindowCoveringSelector: Selecting covering:", covering.name);
     onCoveringSelect(covering);
-    setIsOpen(false);
-    setSearchQuery("");
+    // Small delay to ensure parent state updates before closing
+    setTimeout(() => {
+      setIsOpen(false);
+      setSearchQuery("");
+    }, 50);
   };
 
   const handleRemoveCovering = () => {
@@ -56,10 +60,10 @@ export const WindowCoveringSelector = ({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button
+          <Button
           variant="outline"
           disabled={disabled}
-          className="w-full justify-start gap-2"
+          className="w-full justify-start gap-2 min-h-[2.5rem] transition-all hover:bg-accent/80"
         >
           <Layers className="h-4 w-4" />
           {selectedCovering ? (

@@ -848,8 +848,24 @@ export const EnhancedMeasurementWorksheet = forwardRef<
               <WindowCoveringSelector
                 selectedCoveringId={selectedWindowCovering !== "no_covering" ? selectedWindowCovering : undefined}
                 onCoveringSelect={(covering) => {
-                  // Connect to the existing working system
-                  setSelectedWindowCovering(covering?.id || "no_covering");
+                  const newCoveringId = covering?.id || "no_covering";
+                  console.log("🎯 WindowCovering selected:", covering?.name, "ID:", newCoveringId);
+                  
+                  // Immediate state update
+                  setSelectedWindowCovering(newCoveringId);
+                  
+                  // Reset dependent selections when covering changes
+                  if (newCoveringId !== selectedWindowCovering) {
+                    setSelectedFabric(null);
+                    setSelectedHeading(null);
+                    setSelectedLining(null);
+                    setSelectedInventoryItem(null);
+                  }
+                  
+                  // Trigger auto-save after state updates
+                  setTimeout(() => {
+                    debouncedAutoSave();
+                  }, 100);
                 }}
                 disabled={readOnly}
               />
