@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Ruler, Package, Calculator, Save } from "lucide-react";
 import { MeasurementWorksheet } from "../measurements/MeasurementWorksheet";
 import { DynamicWindowWorksheet } from "../measurements/DynamicWindowWorksheet";
+import { MeasurementBridge } from "../measurements/MeasurementBridge";
+import { convertLegacyToDynamic, validateMeasurement } from "../measurements/utils/measurementMigration";
 import { TreatmentPricingForm } from "./TreatmentPricingForm";
 import { useInventory } from "@/hooks/useInventory";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
@@ -44,6 +46,7 @@ export const WindowManagementDialog = ({
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<any>(null);
   const [showTreatmentForm, setShowTreatmentForm] = useState(false);
   const [calculatedCost, setCalculatedCost] = useState(0);
+  const [measurementMode, setMeasurementMode] = useState<'dynamic' | 'enhanced'>('dynamic');
   
   // Reference to access worksheet's save function
   const worksheetRef = useRef<any>(null);
@@ -126,14 +129,41 @@ export const WindowManagementDialog = ({
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto">
-            <DynamicWindowWorksheet
-              key={surface?.id} // CRITICAL: Add key to force proper remounting
+            {/* Mode toggle for advanced users */}
+            <div className="mb-4 flex justify-end">
+              <div className="flex gap-2 text-xs">
+                <button
+                  onClick={() => setMeasurementMode('dynamic')}
+                  className={`px-3 py-1 rounded ${
+                    measurementMode === 'dynamic' 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  Dynamic Mode
+                </button>
+                <button
+                  onClick={() => setMeasurementMode('enhanced')}
+                  className={`px-3 py-1 rounded ${
+                    measurementMode === 'enhanced' 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  Enhanced Mode
+                </button>
+              </div>
+            </div>
+
+            <MeasurementBridge
+              key={`${surface?.id}-${measurementMode}`} // Force remount on mode change
               ref={worksheetRef}
+              mode={measurementMode}
               clientId={clientId || ""}
               projectId={projectId}
-              surfaceId={surface?.id} // Pass unique surface ID to isolate state
-              surfaceData={surface} // Pass surface data to extract room_id
-              onClose={onClose}
+              surfaceId={surface?.id}
+              surfaceData={surface}
+              currentRoomId={surface?.room_id}
               existingMeasurement={existingMeasurement}
               existingTreatments={existingTreatments}
               onSave={() => console.log("Measurements saved")}

@@ -65,8 +65,29 @@ export const DynamicWindowWorksheet = forwardRef<
   // Load existing data
   useEffect(() => {
     if (existingMeasurement) {
+      console.log("Loading existing measurement data:", existingMeasurement);
+      
       setMeasurements(existingMeasurement.measurements || {});
-      // Load other existing data
+      
+      // Load window type if saved
+      if (existingMeasurement.window_type) {
+        setSelectedWindowType(existingMeasurement.window_type);
+      }
+      
+      // Load template if saved
+      if (existingMeasurement.template) {
+        setSelectedTemplate(existingMeasurement.template);
+      }
+      
+      // Load treatment type if saved
+      if (existingMeasurement.treatment_type) {
+        setSelectedTreatmentType(existingMeasurement.treatment_type);
+      }
+      
+      // Load selected items if saved
+      if (existingMeasurement.selected_items) {
+        setSelectedItems(existingMeasurement.selected_items);
+      }
     }
   }, [existingMeasurement]);
 
@@ -74,11 +95,29 @@ export const DynamicWindowWorksheet = forwardRef<
   useImperativeHandle(ref, () => ({
     autoSave: async () => {
       try {
-        // Implement auto-save logic here
-        console.log("Auto-saving dynamic worksheet data");
-        // This would call your save functions
+        console.log("Auto-saving dynamic worksheet data for surface:", surfaceId);
+        
+        // Create comprehensive measurement data
+        const measurementData = {
+          measurements,
+          window_type: selectedWindowType,
+          template: selectedTemplate,
+          treatment_type: selectedTreatmentType,
+          selected_items: selectedItems,
+          fabric_calculation: fabricCalculation,
+          surface_id: surfaceId,
+          client_id: clientId,
+          project_id: projectId
+        };
+
+        // Save the configuration if we have enough data
+        if (Object.keys(measurements).length > 0 && onSave) {
+          await onSave();
+        }
+
+        console.log("Dynamic worksheet auto-save completed");
       } catch (error) {
-        console.error("Auto-save failed:", error);
+        console.error("Dynamic worksheet auto-save failed:", error);
         throw error;
       }
     }
