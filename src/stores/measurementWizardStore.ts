@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
-import { generateSVGSnapshot, svgToPng } from '@/utils/svgToPng';
 
 export interface MeasurementState {
   // Step data
@@ -21,7 +20,6 @@ export interface MeasurementState {
   bom?: any[];
   priceBreakdown?: any;
   priceTotal?: number;
-  windowTypeId?: string;
   
   // Metadata
   currentStep: number;
@@ -47,7 +45,6 @@ interface MeasurementActions {
   setPanelSetup: (setup: 'pair' | 'single_left' | 'single_right') => void;
   updateMeasurement: (key: string, value: number) => void;
   setFabric: (fabric: any) => void;
-  setJobId: (jobId: string) => void;
   setLining: (lining: any) => void;
   setInterlining: (interlining: any) => void;
   setHeading: (heading: string) => void;
@@ -131,8 +128,6 @@ export const useMeasurementWizardStore = create<MeasurementState & MeasurementAc
     set({ selectedFabric: fabric });
     get().autosave();
   },
-
-  setJobId: (jobId) => set({ jobId }),
   
   setLining: (lining) => set({ selectedLining: lining }),
   
@@ -231,19 +226,6 @@ export const useMeasurementWizardStore = create<MeasurementState & MeasurementAc
         throw new Error('Organization ID not found');
       }
       
-      // Generate SVG snapshot
-      let svgSnapshot;
-      let pngSnapshot;
-      if (state.selectedTemplate && state.measurements) {
-        svgSnapshot = generateSVGSnapshot(state.measurements, state.selectedTemplate);
-        try {
-          pngSnapshot = await svgToPng(svgSnapshot);
-        } catch (error) {
-          console.warn('Failed to generate PNG snapshot:', error);
-          pngSnapshot = svgSnapshot; // Fallback to SVG
-        }
-      }
-      
       const windowData = {
         org_id: orgId,
         job_id: state.jobId,
@@ -266,8 +248,7 @@ export const useMeasurementWizardStore = create<MeasurementState & MeasurementAc
         },
         bom: state.bom,
         price_breakdown: state.priceBreakdown,
-        price_total: state.priceTotal,
-        svg_snapshot: pngSnapshot || svgSnapshot
+        price_total: state.priceTotal
       };
       
       if (state.windowId) {
