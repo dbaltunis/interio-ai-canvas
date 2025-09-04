@@ -25,6 +25,10 @@ export const WindowCoveringSelector = ({
   const { data: curtainTemplates = [], isLoading } = useCurtainTemplates();
 
   const selectedCovering = curtainTemplates.find(c => c.id === selectedCoveringId);
+  
+  // Add logging to track selectedCoveringId changes
+  console.log("🔍 WindowCoveringSelector render - selectedCoveringId:", selectedCoveringId);
+  console.log("🔍 WindowCoveringSelector render - selectedCovering found:", selectedCovering?.name || "none");
 
   const filteredCoverings = curtainTemplates.filter(covering =>
     covering.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -43,13 +47,19 @@ export const WindowCoveringSelector = ({
   }, {} as Record<string, CurtainTemplate[]>);
 
   const handleCoveringSelect = (covering: CurtainTemplate) => {
-    console.log("🔄 WindowCoveringSelector: Selecting covering:", covering.name);
+    console.log("🔄 WindowCoveringSelector: Selecting covering:", covering.name, "ID:", covering.id);
+    console.log("🔄 Current selectedCoveringId before selection:", selectedCoveringId);
+    
     onCoveringSelect(covering);
+    
+    console.log("🔄 Called onCoveringSelect, waiting to close dialog...");
+    
     // Small delay to ensure parent state updates before closing
     setTimeout(() => {
+      console.log("🔄 Closing dialog after selection");
       setIsOpen(false);
       setSearchQuery("");
-    }, 50);
+    }, 100); // Increased delay to ensure state propagates
   };
 
   const handleRemoveCovering = () => {
