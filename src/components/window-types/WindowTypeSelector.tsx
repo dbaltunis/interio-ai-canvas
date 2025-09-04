@@ -1,26 +1,19 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-interface WindowType {
+interface SimpleWindowType {
   id: string;
   name: string;
-  description?: string;
   key: string;
   visual_key: string;
-  configurations?: any;
-  measurement_fields?: any[];
-  created_at?: string;
-  org_id?: string;
-  updated_at?: string;
 }
 
 interface WindowTypeSelectorProps {
-  selectedWindowType?: WindowType;
-  onWindowTypeChange: (windowType: WindowType) => void;
+  selectedWindowType?: SimpleWindowType | null;
+  onWindowTypeChange: (windowType: SimpleWindowType) => void;
   readOnly?: boolean;
 }
 
@@ -29,7 +22,7 @@ export const WindowTypeSelector = ({
   onWindowTypeChange,
   readOnly = false
 }: WindowTypeSelectorProps) => {
-  const [windowTypes, setWindowTypes] = useState<WindowType[]>([]);
+  const [windowTypes, setWindowTypes] = useState<SimpleWindowType[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,28 +30,27 @@ export const WindowTypeSelector = ({
       try {
         const { data, error } = await supabase
           .from('window_types')
-          .select('*')
-          .eq('active', true)
-          .order('sort_order', { ascending: true });
+          .select('id, name, key, visual_key')
+          .order('name', { ascending: true });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching window types:', error);
+          setWindowTypes([]);
+          return;
+        }
 
-        const mappedData: WindowType[] = (data || []).map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          description: item.description || '',
-          key: item.key,
-          visual_key: item.visual_key,
-          configurations: item.configurations || {},
-          measurement_fields: item.measurement_fields || [],
-          created_at: item.created_at,
-          org_id: item.org_id,
-          updated_at: item.updated_at
-        }));
-        
-        setWindowTypes(mappedData);
+        if (data) {
+          const simpleTypes: SimpleWindowType[] = data.map(item => ({
+            id: item.id,
+            name: item.name,
+            key: item.key,
+            visual_key: item.visual_key
+          }));
+          setWindowTypes(simpleTypes);
+        }
       } catch (error) {
-        console.error('Error fetching window types:', error);
+        console.error('Error in fetchWindowTypes:', error);
+        setWindowTypes([]);
       } finally {
         setLoading(false);
       }
@@ -67,8 +59,8 @@ export const WindowTypeSelector = ({
     fetchWindowTypes();
   }, []);
 
-  const getWindowIcon = (visualKey: string) => {
-    const iconMap: Record<string, string> = {
+  const getWindowIcon = (visualKey: string): string => {
+    const icons: { [key: string]: string } = {
       'standard': '🪟',
       'bay': '🏠',
       'french_doors': '🚪',
@@ -79,7 +71,7 @@ export const WindowTypeSelector = ({
       'arched_window': '⛪',
       'skylight': '☀️'
     };
-    return iconMap[visualKey] || '🪟';
+    return icons[visualKey] || '🪟';
   };
 
   if (loading) {
@@ -120,23 +112,20 @@ export const WindowTypeSelector = ({
             
             <CardContent>
               <p className="text-sm text-muted-foreground mb-3">
-                {windowType.description || 'Standard window configuration'}
+                Window configuration for {windowType.key}
               </p>
               
               <div className="flex items-center justify-between">
                 <Badge variant="secondary" className="text-xs">
                   {windowType.key}
                 </Badge>
-                <span className="text-xs text-muted-foreground">
-                  {windowType.measurement_fields?.length || 0} fields
-                </span>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {windowTypes.length === 0 && (
+      {windowTypes.length === 0 && !loading && (
         <div className="text-center py-8 text-muted-foreground">
           <p>No window types available</p>
           <p className="text-sm">Please configure window types in settings</p>
