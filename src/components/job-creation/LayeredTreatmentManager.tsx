@@ -25,6 +25,10 @@ interface LayeredTreatment {
   zIndex: number;
   opacity: number;
   name: string;
+  // Individual fabric/material selections for this treatment
+  selectedFabric?: any;
+  selectedLining?: string;
+  selectedHeading?: string;
 }
 
 interface LayeredTreatmentManagerProps {
@@ -87,6 +91,33 @@ const SortableTreatmentItem = ({
             {treatment.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
           </div>
         </div>
+
+        {/* Fabric Selection for Curtains */}
+        {treatment.type === 'curtains' && (
+          <div>
+            <label className="text-xs font-medium">Fabric</label>
+            <Select 
+              value={treatment.selectedFabric?.id || ''} 
+              onValueChange={(fabricId) => {
+                // Find fabric from inventory and update treatment
+                // This would need inventory context - simplified for now
+                onUpdate({ 
+                  ...treatment, 
+                  selectedFabric: { id: fabricId, name: `Fabric ${fabricId}` }
+                });
+              }}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select fabric" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="fabric1">Sample Fabric 1</SelectItem>
+                <SelectItem value="fabric2">Sample Fabric 2</SelectItem>
+                <SelectItem value="fabric3">Sample Fabric 3</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div>
           <label className="text-xs font-medium">Opacity: {Math.round(treatment.opacity * 100)}%</label>

@@ -72,6 +72,17 @@ export const CostCalculationSummary = ({
   const height = parseFloat(measurements.drop || measurements.measurement_b || '0');
   const pooling = parseFloat(measurements.pooling_amount || '0');
   
+  // Early return if template is null
+  if (!template) {
+    return (
+      <div className="p-4 border rounded-lg bg-muted/50">
+        <p className="text-sm text-muted-foreground">
+          No template selected. Please select a curtain template to see cost calculations.
+        </p>
+      </div>
+    );
+  }
+
   // Manufacturing allowances from template
   const curtainCount = template.curtain_type === 'pair' ? 2 : 1;
   const sideHems = template.side_hems || 0;
@@ -79,7 +90,7 @@ export const CostCalculationSummary = ({
   const returnLeft = template.return_left || 0;
   const returnRight = template.return_right || 0;
   const seamHems = template.seam_hems || 0;
-  const requiredWidth = width * template.fullness_ratio;
+  const requiredWidth = width * (template.fullness_ratio || 2);
   const totalWidthWithAllowances = requiredWidth + returnLeft + returnRight + totalSideHems;
   const fabricWidthCm = selectedFabric?.fabric_width_cm || selectedFabric?.fabric_width || 137;
   const widthsRequired = Math.ceil(totalWidthWithAllowances / fabricWidthCm);
