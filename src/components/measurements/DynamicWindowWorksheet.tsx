@@ -264,15 +264,6 @@ export const DynamicWindowWorksheet = forwardRef<
                 <LayeredTreatmentManager
                   treatments={layeredTreatments}
                   onTreatmentsChange={setLayeredTreatments}
-                  availableTreatmentTypes={[
-                    { value: "curtains", label: "Curtains" },
-                    { value: "roman_blinds", label: "Roman Blinds" },
-                    { value: "venetian_blinds", label: "Venetian Blinds" },
-                    { value: "shutters", label: "Shutters" },
-                    { value: "blinds", label: "Blinds" },
-                    { value: "vertical_blinds", label: "Vertical Blinds" },
-                    { value: "roller_blinds", label: "Roller Blinds" }
-                  ]}
                 />
               ) : (
                 /* Single Treatment Configuration */

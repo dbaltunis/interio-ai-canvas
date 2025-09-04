@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, GripVertical } from "lucide-react";
+import { useTreatmentTypes } from "@/hooks/useTreatmentTypes";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
@@ -27,7 +28,6 @@ interface LayeredTreatment {
 interface LayeredTreatmentManagerProps {
   treatments: LayeredTreatment[];
   onTreatmentsChange: (treatments: LayeredTreatment[]) => void;
-  availableTreatmentTypes: Array<{ value: string; label: string }>;
 }
 
 const SortableTreatmentItem = ({ 
@@ -104,10 +104,10 @@ const SortableTreatmentItem = ({
 
 export const LayeredTreatmentManager = ({
   treatments,
-  onTreatmentsChange,
-  availableTreatmentTypes
+  onTreatmentsChange
 }: LayeredTreatmentManagerProps) => {
   const [newTreatmentType, setNewTreatmentType] = useState<string>("");
+  const { data: treatmentTypes = [], isLoading } = useTreatmentTypes();
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -138,12 +138,16 @@ export const LayeredTreatmentManager = ({
   const addTreatment = () => {
     if (!newTreatmentType) return;
 
+    const selectedTreatmentType = treatmentTypes.find(tt => tt.id === newTreatmentType);
+    if (!selectedTreatmentType) return;
+
     const newTreatment: LayeredTreatment = {
       id: `treatment-${Date.now()}`,
-      type: newTreatmentType,
+      type: selectedTreatmentType.category || 'curtains',
+      template: selectedTreatmentType,
       zIndex: treatments.length + 1,
       opacity: 1,
-      name: `${newTreatmentType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} ${treatments.length + 1}`
+      name: selectedTreatmentType.name
     };
 
     onTreatmentsChange([...treatments, newTreatment]);
@@ -174,19 +178,24 @@ export const LayeredTreatmentManager = ({
       <CardContent className="space-y-4">
         {/* Add new treatment */}
         <div className="flex gap-2">
-          <Select value={newTreatmentType} onValueChange={setNewTreatmentType}>
+          <Select value={newTreatmentType} onValueChange={setNewTreatmentType} disabled={isLoading}>
             <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Select treatment type" />
+              <SelectValue placeholder={isLoading ? "Loading treatments..." : "Select configured treatment"} />
             </SelectTrigger>
             <SelectContent>
-              {availableTreatmentTypes.map(type => (
-                <SelectItem key={type.value} value={type.value}>
-                  {type.label}
+              {treatmentTypes.map(treatmentType => (
+                <SelectItem key={treatmentType.id} value={treatmentType.id}>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {treatmentType.category || 'General'}
+                    </Badge>
+                    {treatmentType.name}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Button onClick={addTreatment} disabled={!newTreatmentType} size="sm">
+          <Button onClick={addTreatment} disabled={!newTreatmentType || isLoading} size="sm">
             <Plus className="h-4 w-4" />
           </Button>
         </div>
