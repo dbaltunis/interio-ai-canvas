@@ -1,0 +1,379 @@
+import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Ruler, Eye, Package, Calculator, Save } from "lucide-react";
+
+import { WindowTypeSelector } from "../window-types/WindowTypeSelector";
+import { TreatmentPreviewEngine } from "../treatment-visualizers/TreatmentPreviewEngine";
+import { InventorySelectionPanel } from "../inventory/InventorySelectionPanel";
+import { FixedWindowCoveringSelector } from "./FixedWindowCoveringSelector";
+import { VisualMeasurementSheet } from "./VisualMeasurementSheet";
+import { CostCalculationSummary } from "./dynamic-options/CostCalculationSummary";
+
+import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
+import { useWindowCoverings } from "@/hooks/useWindowCoverings";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+
+interface DynamicWindowWorksheetProps {
+  clientId?: string;
+  projectId?: string;
+  surfaceId?: string;
+  surfaceData?: any;
+  existingMeasurement?: any;
+  existingTreatments?: any[];
+  onSave?: () => void;
+  onClose?: () => void;
+  onSaveTreatment?: (treatmentData: any) => void;
+  readOnly?: boolean;
+}
+
+export const DynamicWindowWorksheet = forwardRef<
+  { autoSave: () => Promise<void> },
+  DynamicWindowWorksheetProps
+>(({
+  clientId,
+  projectId,
+  surfaceId,
+  surfaceData,
+  existingMeasurement,
+  existingTreatments = [],
+  onSave,
+  onClose,
+  onSaveTreatment,
+  readOnly = false
+}, ref) => {
+  // State management
+  const [selectedWindowType, setSelectedWindowType] = useState<any>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const [selectedTreatmentType, setSelectedTreatmentType] = useState("curtains");
+  const [measurements, setMeasurements] = useState<Record<string, any>>({});
+  const [selectedItems, setSelectedItems] = useState<{
+    fabric?: any;
+    hardware?: any;
+    material?: any;
+  }>({});
+  const [activeTab, setActiveTab] = useState("window-type");
+  const [fabricCalculation, setFabricCalculation] = useState<any>(null);
+
+  // Hooks
+  const { data: curtainTemplates = [] } = useCurtainTemplates();
+  const { data: windowCoverings = [] } = useWindowCoverings();
+  const { units } = useMeasurementUnits();
+
+  // Load existing data
+  useEffect(() => {
+    if (existingMeasurement) {
+      setMeasurements(existingMeasurement.measurements || {});
+      // Load other existing data
+    }
+  }, [existingMeasurement]);
+
+  // Auto-save implementation
+  useImperativeHandle(ref, () => ({
+    autoSave: async () => {
+      try {
+        // Implement auto-save logic here
+        console.log("Auto-saving dynamic worksheet data");
+        // This would call your save functions
+      } catch (error) {
+        console.error("Auto-save failed:", error);
+        throw error;
+      }
+    }
+  }));
+
+  const handleMeasurementChange = (field: string, value: string) => {
+    setMeasurements(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleItemSelect = (category: string, item: any) => {
+    setSelectedItems(prev => ({
+      ...prev,
+      [category]: item
+    }));
+  };
+
+  const handleItemDeselect = (category: string) => {
+    setSelectedItems(prev => ({
+      ...prev,
+      [category]: undefined
+    }));
+  };
+
+  const handleTemplateSelect = (template: any) => {
+    setSelectedTemplate(template);
+    setSelectedTreatmentType("curtains"); // Templates are typically for curtains
+  };
+
+  const canProceedToMeasurements = selectedWindowType && (selectedTemplate || selectedTreatmentType);
+  const canShowPreview = canProceedToMeasurements && Object.keys(measurements).length > 0;
+
+  return (
+    <div className="space-y-6">
+      {/* Progress indicator */}
+      <div className="flex items-center space-x-4">
+        {["window-type", "treatment", "inventory", "measurements", "preview"].map((step, index) => (
+          <div key={step} className="flex items-center">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
+              activeTab === step ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+            }`}>
+              {index + 1}
+            </div>
+            {index < 4 && <div className="w-8 h-px bg-border mx-2" />}
+          </div>
+        ))}
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="window-type">
+            <Ruler className="h-4 w-4 mr-2" />
+            Window Type
+          </TabsTrigger>
+          <TabsTrigger value="treatment" disabled={!selectedWindowType}>
+            <Package className="h-4 w-4 mr-2" />
+            Treatment
+          </TabsTrigger>
+          <TabsTrigger value="inventory" disabled={!canProceedToMeasurements}>
+            <Package className="h-4 w-4 mr-2" />
+            Inventory
+          </TabsTrigger>
+          <TabsTrigger value="measurements" disabled={!canProceedToMeasurements}>
+            <Ruler className="h-4 w-4 mr-2" />
+            Measurements
+          </TabsTrigger>
+          <TabsTrigger value="preview" disabled={!canShowPreview}>
+            <Eye className="h-4 w-4 mr-2" />
+            Preview
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Window Type Selection */}
+        <TabsContent value="window-type" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Select Window Type</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <WindowTypeSelector
+                selectedWindowType={selectedWindowType}
+                onWindowTypeChange={setSelectedWindowType}
+                readOnly={readOnly}
+              />
+              
+              {selectedWindowType && (
+                <div className="mt-6 p-4 bg-primary/5 rounded-lg">
+                  <h4 className="font-medium mb-2">Selected Window Type</h4>
+                  <p className="text-sm">{selectedWindowType.name}</p>
+                  <p className="text-xs text-muted-foreground">{selectedWindowType.description}</p>
+                  
+                  <Button 
+                    className="mt-4" 
+                    onClick={() => setActiveTab("treatment")}
+                  >
+                    Continue to Treatment Selection
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Treatment Selection */}
+        <TabsContent value="treatment" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Select Treatment & Template</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FixedWindowCoveringSelector
+                selectedCoveringId={selectedTemplate?.id || ""}
+                onCoveringSelect={(template) => {
+                  setSelectedTemplate(template);
+                }}
+                disabled={readOnly}
+              />
+              
+              {selectedTemplate && (
+                <div className="mt-6 p-4 bg-primary/5 rounded-lg">
+                  <h4 className="font-medium mb-2">Selected Template</h4>
+                  <p className="text-sm">{selectedTemplate.name}</p>
+                  <div className="flex gap-2 mt-2">
+                    <Badge variant="outline">{selectedTemplate.curtain_type || selectedTemplate.type}</Badge>
+                    {selectedTemplate.fullness_ratio && (
+                      <Badge variant="outline">Fullness: {selectedTemplate.fullness_ratio}x</Badge>
+                    )}
+                  </div>
+                  
+                  <Button 
+                    className="mt-4" 
+                    onClick={() => setActiveTab("inventory")}
+                  >
+                    Continue to Inventory Selection
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Inventory Selection */}
+        <TabsContent value="inventory" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Select Materials & Hardware</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <InventorySelectionPanel
+                treatmentType={selectedTreatmentType}
+                selectedItems={selectedItems}
+                onItemSelect={handleItemSelect}
+                onItemDeselect={handleItemDeselect}
+                measurements={measurements}
+              />
+              
+              <div className="mt-6">
+                <Button 
+                  onClick={() => setActiveTab("measurements")}
+                  disabled={!Object.values(selectedItems).some(item => item)}
+                >
+                  Continue to Measurements
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Measurements */}
+        <TabsContent value="measurements" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Enter Measurements</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <VisualMeasurementSheet
+                  measurements={measurements}
+                  onMeasurementChange={handleMeasurementChange}
+                  windowType={selectedWindowType?.key || "standard"}
+                  selectedTemplate={selectedTemplate}
+                  selectedFabric={selectedItems.fabric?.id}
+                  onFabricCalculationChange={setFabricCalculation}
+                  readOnly={readOnly}
+                />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Cost Calculation</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CostCalculationSummary
+                  template={selectedTemplate}
+                  measurements={measurements}
+                  selectedFabric={selectedItems.fabric}
+                  selectedLining={selectedItems.material?.type || "none"}
+                  selectedHeading={selectedItems.hardware?.id || "standard"}
+                  inventory={[]}
+                  fabricCalculation={fabricCalculation}
+                />
+                
+                <div className="mt-6">
+                  <Button 
+                    onClick={() => setActiveTab("preview")}
+                    disabled={!measurements.rail_width || !measurements.drop}
+                  >
+                    Continue to Preview
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Preview */}
+        <TabsContent value="preview" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Treatment Preview</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TreatmentPreviewEngine
+                  windowType={selectedWindowType?.key || "standard"}
+                  treatmentType={selectedTreatmentType}
+                  measurements={measurements}
+                  template={selectedTemplate}
+                  selectedItems={selectedItems}
+                  className="min-h-[400px]"
+                />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Summary & Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <h4 className="font-medium">Configuration Summary</h4>
+                  <div className="text-sm space-y-1">
+                    <p><strong>Window:</strong> {selectedWindowType?.name}</p>
+                    <p><strong>Treatment:</strong> {selectedTemplate?.name}</p>
+                    <p><strong>Dimensions:</strong> {measurements.rail_width}cm × {measurements.drop}cm</p>
+                    {selectedItems.fabric && (
+                      <p><strong>Fabric:</strong> {selectedItems.fabric.name}</p>
+                    )}
+                  </div>
+                </div>
+
+                {fabricCalculation && (
+                  <div className="p-4 bg-primary/5 rounded-lg">
+                    <h4 className="font-medium mb-2">Cost Summary</h4>
+                    <div className="text-sm space-y-1">
+                      <p>Linear Meters: {fabricCalculation.linearMeters?.toFixed(2)}m</p>
+                      <p>Total Cost: ${fabricCalculation.totalCost?.toFixed(2)}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={onSave}
+                    disabled={readOnly}
+                    className="flex-1"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Configuration
+                  </Button>
+                  
+                  {onSaveTreatment && (
+                    <Button 
+                      variant="outline"
+                      onClick={() => onSaveTreatment?.({
+                        window_type: selectedWindowType,
+                        template: selectedTemplate,
+                        measurements,
+                        selected_items: selectedItems,
+                        fabric_calculation: fabricCalculation
+                      })}
+                      disabled={readOnly}
+                    >
+                      Save as Treatment
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+});
