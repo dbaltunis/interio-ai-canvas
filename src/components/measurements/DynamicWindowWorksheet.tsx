@@ -11,6 +11,8 @@ import { InventorySelectionPanel } from "../inventory/InventorySelectionPanel";
 import { FixedWindowCoveringSelector } from "./FixedWindowCoveringSelector";
 import { VisualMeasurementSheet } from "./VisualMeasurementSheet";
 import { CostCalculationSummary } from "./dynamic-options/CostCalculationSummary";
+import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
+import { LiningOptionsSection } from "./dynamic-options/LiningOptionsSection";
 
 import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
@@ -56,6 +58,8 @@ export const DynamicWindowWorksheet = forwardRef<
   }>({});
   const [activeTab, setActiveTab] = useState("window-type");
   const [fabricCalculation, setFabricCalculation] = useState<any>(null);
+  const [selectedHeading, setSelectedHeading] = useState("standard");
+  const [selectedLining, setSelectedLining] = useState("none");
 
   // Hooks
   const { data: curtainTemplates = [] } = useCurtainTemplates();
@@ -298,9 +302,9 @@ export const DynamicWindowWorksheet = forwardRef<
               </p>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 2xl:grid-cols-5 gap-6">
                 {/* Left Side - Live Visual Worksheet */}
-                <div className="xl:col-span-2">
+                <div className="2xl:col-span-3">
                   <VisualMeasurementSheet
                     measurements={measurements}
                     onMeasurementChange={handleMeasurementChange}
@@ -312,8 +316,8 @@ export const DynamicWindowWorksheet = forwardRef<
                   />
                 </div>
 
-                {/* Right Side - Treatment Configuration & Cost */}
-                <div className="space-y-4">
+                {/* Right Side - Treatment Options & Cost */}
+                <div className="2xl:col-span-2 space-y-4">
                   <div className="p-4 bg-primary/5 rounded-lg">
                     <h4 className="font-medium mb-3">Selected Configuration</h4>
                     <div className="space-y-2 text-sm">
@@ -334,12 +338,31 @@ export const DynamicWindowWorksheet = forwardRef<
                     </div>
                   </div>
 
+                  {/* Heading & Lining Options */}
+                  {selectedTemplate && (
+                    <>
+                      <HeadingOptionsSection
+                        template={selectedTemplate}
+                        selectedHeading={selectedHeading}
+                        onHeadingChange={setSelectedHeading}
+                        readOnly={readOnly}
+                      />
+                      
+                      <LiningOptionsSection
+                        template={selectedTemplate}
+                        selectedLining={selectedLining}
+                        onLiningChange={setSelectedLining}
+                        readOnly={readOnly}
+                      />
+                    </>
+                  )}
+
                   <CostCalculationSummary
                     template={selectedTemplate}
                     measurements={measurements}
                     selectedFabric={selectedItems.fabric}
-                    selectedLining={selectedItems.material?.type || "none"}
-                    selectedHeading={selectedItems.hardware?.id || "standard"}
+                    selectedLining={selectedLining}
+                    selectedHeading={selectedHeading}
                     inventory={[]}
                     fabricCalculation={fabricCalculation}
                   />
