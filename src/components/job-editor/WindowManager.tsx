@@ -140,6 +140,7 @@ export const WindowManager = ({ projectId, activeRoomId, selectedWindowId, onWin
           </DialogHeader>
           {selectedSurface && (
             <EnhancedMeasurementWorksheet
+              key={selectedSurface.id} // CRITICAL: Add key to force proper remounting
               clientId={undefined} // No client required - measurements can exist independently
               projectId={projectId}
               surfaceId={selectedSurface.id} // Pass unique surface ID to isolate state

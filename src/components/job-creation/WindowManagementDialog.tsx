@@ -127,6 +127,7 @@ export const WindowManagementDialog = ({
 
           <div className="flex-1 overflow-y-auto">
             <EnhancedMeasurementWorksheet
+              key={surface?.id} // CRITICAL: Add key to force proper remounting
               ref={worksheetRef}
               clientId={clientId || ""}
               projectId={projectId}
