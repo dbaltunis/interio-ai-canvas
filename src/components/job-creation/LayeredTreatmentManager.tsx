@@ -6,6 +6,8 @@ import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, GripVertical } from "lucide-react";
 import { useTreatmentTypes } from "@/hooks/useTreatmentTypes";
+import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
@@ -107,7 +109,11 @@ export const LayeredTreatmentManager = ({
   onTreatmentsChange
 }: LayeredTreatmentManagerProps) => {
   const [newTreatmentType, setNewTreatmentType] = useState<string>("");
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const [selectedTreatmentCategory, setSelectedTreatmentCategory] = useState<string>("");
+  
   const { data: treatmentTypes = [], isLoading } = useTreatmentTypes();
+  const { data: curtainTemplates = [] } = useCurtainTemplates();
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -135,23 +141,24 @@ export const LayeredTreatmentManager = ({
     }
   };
 
-  const addTreatment = () => {
-    if (!newTreatmentType) return;
+  const handleTreatmentCategorySelect = (category: string) => {
+    setSelectedTreatmentCategory(category);
+    setShowTemplateSelector(true);
+  };
 
-    const selectedTreatmentType = treatmentTypes.find(tt => tt.id === newTreatmentType);
-    if (!selectedTreatmentType) return;
-
+  const handleTemplateSelect = (template: any) => {
     const newTreatment: LayeredTreatment = {
       id: `treatment-${Date.now()}`,
-      type: selectedTreatmentType.category || 'curtains',
-      template: selectedTreatmentType,
+      type: selectedTreatmentCategory,
+      template: template,
       zIndex: treatments.length + 1,
       opacity: 1,
-      name: selectedTreatmentType.name
+      name: template.name || `${selectedTreatmentCategory} ${treatments.length + 1}`
     };
 
     onTreatmentsChange([...treatments, newTreatment]);
-    setNewTreatmentType("");
+    setShowTemplateSelector(false);
+    setSelectedTreatmentCategory("");
   };
 
   const updateTreatment = (updatedTreatment: LayeredTreatment) => {
@@ -178,26 +185,45 @@ export const LayeredTreatmentManager = ({
       <CardContent className="space-y-4">
         {/* Add new treatment */}
         <div className="flex gap-2">
-          <Select value={newTreatmentType} onValueChange={setNewTreatmentType} disabled={isLoading}>
+          <Select value={selectedTreatmentCategory} onValueChange={handleTreatmentCategorySelect}>
             <SelectTrigger className="flex-1">
-              <SelectValue placeholder={isLoading ? "Loading treatments..." : "Select configured treatment"} />
+              <SelectValue placeholder="Select treatment category" />
             </SelectTrigger>
             <SelectContent>
-              {treatmentTypes.map(treatmentType => (
-                <SelectItem key={treatmentType.id} value={treatmentType.id}>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-xs">
-                      {treatmentType.category || 'General'}
-                    </Badge>
-                    {treatmentType.name}
-                  </div>
-                </SelectItem>
-              ))}
+              <SelectItem value="curtains">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-xs">
+                    Curtains
+                  </Badge>
+                  Select Curtain Template
+                </div>
+              </SelectItem>
+              <SelectItem value="roman_blinds">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-xs">
+                    Blinds
+                  </Badge>
+                  Roman Blinds
+                </div>
+              </SelectItem>
+              <SelectItem value="venetian_blinds">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-xs">
+                    Blinds
+                  </Badge>
+                  Venetian Blinds
+                </div>
+              </SelectItem>
+              <SelectItem value="shutters">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-xs">
+                    Shutters
+                  </Badge>
+                  Shutters
+                </div>
+              </SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={addTreatment} disabled={!newTreatmentType || isLoading} size="sm">
-            <Plus className="h-4 w-4" />
-          </Button>
         </div>
 
         {/* Treatment list */}
@@ -232,6 +258,75 @@ export const LayeredTreatmentManager = ({
           </div>
         )}
       </CardContent>
+
+      {/* Template Selection Dialog */}
+      <Dialog open={showTemplateSelector} onOpenChange={setShowTemplateSelector}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Select {selectedTreatmentCategory === 'curtains' ? 'Curtain' : selectedTreatmentCategory.replace('_', ' ')} Template
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {selectedTreatmentCategory === 'curtains' && (
+              <div className="grid gap-3">
+                {curtainTemplates.map(template => (
+                  <div 
+                    key={template.id} 
+                    className="p-4 border rounded-lg cursor-pointer hover:bg-accent transition-colors"
+                    onClick={() => handleTemplateSelect(template)}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-medium">{template.name}</h3>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          Fullness: {template.fullness_ratio}x • Type: {template.curtain_type}
+                        </div>
+                        <div className="flex gap-2 mt-2">
+                          <Badge variant="outline" className="text-xs">
+                            {template.curtain_type}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            Created {new Date(template.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm">
+                        Select
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                
+                {curtainTemplates.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No curtain templates configured yet. 
+                    <br />
+                    Go to Settings → Products → Window Coverings to create templates.
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {selectedTreatmentCategory !== 'curtains' && (
+              <div className="text-center py-8 text-muted-foreground">
+                {selectedTreatmentCategory.replace('_', ' ')} templates coming soon...
+                <br />
+                For now, a basic template will be created.
+                <div className="mt-4">
+                  <Button onClick={() => handleTemplateSelect({ 
+                    name: `Default ${selectedTreatmentCategory.replace('_', ' ')}`,
+                    type: selectedTreatmentCategory 
+                  })}>
+                    Create Basic Template
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
