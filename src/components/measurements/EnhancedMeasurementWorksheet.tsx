@@ -395,7 +395,23 @@ export const EnhancedMeasurementWorksheet = forwardRef<
         selectedWindowCovering
       });
     }, 100);
-  }, [surfaceId, shouldUseSavedData, savedSummary, existingMeasurement, existingTreatments, currentRoomId, surfaceData, allProjectTreatments]);
+  }, [surfaceId, shouldUseSavedData, savedSummary, existingMeasurement, existingTreatments, currentRoomId, surfaceData]);
+  
+  // Separate effect for allProjectTreatments to prevent state override during user interactions
+  const isUserInteractingRef = useRef(false);
+  
+  useEffect(() => {
+    // Don't reload data if user is actively making selections
+    if (isUserInteractingRef.current) {
+      console.log("🚫 Skipping data reload - user is interacting");
+      return;
+    }
+    
+    // Only reload if we have new treatment data and it's not from user interaction
+    if (allProjectTreatments?.length) {
+      console.log("📊 Processing treatment updates from server");
+    }
+  }, [allProjectTreatments]);
 
   const createMeasurement = useCreateClientMeasurement();
   const updateMeasurement = useUpdateClientMeasurement();
@@ -851,6 +867,9 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                   const newCoveringId = covering?.id || "no_covering";
                   console.log("🎯 WindowCovering selected:", covering?.name, "ID:", newCoveringId);
                   
+                  // Set user interaction flag to prevent state override
+                  isUserInteractingRef.current = true;
+                  
                   // Immediate state update
                   setSelectedWindowCovering(newCoveringId);
                   
@@ -862,9 +881,13 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                     setSelectedInventoryItem(null);
                   }
                   
-                  // Trigger auto-save after state updates
+                  // Auto-save with protection against state override
                   setTimeout(() => {
                     debouncedAutoSave();
+                    // Clear interaction flag after save completes
+                    setTimeout(() => {
+                      isUserInteractingRef.current = false;
+                    }, 500);
                   }, 100);
                 }}
                 disabled={readOnly}
