@@ -288,52 +288,73 @@ export const DynamicWindowWorksheet = forwardRef<
           </Card>
         </TabsContent>
 
-        {/* Measurements */}
+        {/* Measurements - Full Interactive Visual Experience */}
         <TabsContent value="measurements" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Enter Measurements</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <VisualMeasurementSheet
-                  measurements={measurements}
-                  onMeasurementChange={handleMeasurementChange}
-                  windowType={selectedWindowType?.key || "standard"}
-                  selectedTemplate={selectedTemplate}
-                  selectedFabric={selectedItems.fabric?.id}
-                  onFabricCalculationChange={setFabricCalculation}
-                  readOnly={readOnly}
-                />
-              </CardContent>
-            </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Interactive Window Measurement Worksheet</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Live visual measurement system with dynamic updates - measurements affect the visualization in real-time
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                {/* Left Side - Live Visual Worksheet */}
+                <div className="xl:col-span-2">
+                  <VisualMeasurementSheet
+                    measurements={measurements}
+                    onMeasurementChange={handleMeasurementChange}
+                    windowType={selectedWindowType?.key || "standard"}
+                    selectedTemplate={selectedTemplate}
+                    selectedFabric={selectedItems.fabric?.id}
+                    onFabricCalculationChange={setFabricCalculation}
+                    readOnly={readOnly}
+                  />
+                </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Cost Calculation</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CostCalculationSummary
-                  template={selectedTemplate}
-                  measurements={measurements}
-                  selectedFabric={selectedItems.fabric}
-                  selectedLining={selectedItems.material?.type || "none"}
-                  selectedHeading={selectedItems.hardware?.id || "standard"}
-                  inventory={[]}
-                  fabricCalculation={fabricCalculation}
-                />
-                
-                <div className="mt-6">
+                {/* Right Side - Treatment Configuration & Cost */}
+                <div className="space-y-4">
+                  <div className="p-4 bg-primary/5 rounded-lg">
+                    <h4 className="font-medium mb-3">Selected Configuration</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Window:</span>
+                        <span className="font-medium">{selectedWindowType?.name}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Treatment:</span>
+                        <span className="font-medium">{selectedTemplate?.name || selectedTreatmentType}</span>
+                      </div>
+                      {selectedItems.fabric && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Fabric:</span>
+                          <span className="font-medium">{selectedItems.fabric.name}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <CostCalculationSummary
+                    template={selectedTemplate}
+                    measurements={measurements}
+                    selectedFabric={selectedItems.fabric}
+                    selectedLining={selectedItems.material?.type || "none"}
+                    selectedHeading={selectedItems.hardware?.id || "standard"}
+                    inventory={[]}
+                    fabricCalculation={fabricCalculation}
+                  />
+                  
                   <Button 
                     onClick={() => setActiveTab("preview")}
                     disabled={!measurements.rail_width || !measurements.drop}
+                    className="w-full"
                   >
                     Continue to Preview
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Preview */}
