@@ -24,10 +24,13 @@ export const WindowCoveringSelector = ({
   const [searchQuery, setSearchQuery] = useState("");
   const { data: curtainTemplates = [], isLoading } = useCurtainTemplates();
 
-  const selectedCovering = curtainTemplates.find(c => c.id === selectedCoveringId);
+  // Ensure selectedCoveringId is always a string, never an object
+  const safeSelectedCoveringId = typeof selectedCoveringId === 'string' ? selectedCoveringId : undefined;
+  const selectedCovering = curtainTemplates.find(c => c.id === safeSelectedCoveringId);
   
   // Add logging to track selectedCoveringId changes
-  console.log("🔍 WindowCoveringSelector render - selectedCoveringId:", selectedCoveringId);
+  console.log("🔍 WindowCoveringSelector render - selectedCoveringId:", selectedCoveringId, "type:", typeof selectedCoveringId);
+  console.log("🔍 WindowCoveringSelector render - safeSelectedCoveringId:", safeSelectedCoveringId);
   console.log("🔍 WindowCoveringSelector render - selectedCovering found:", selectedCovering?.name || "none");
 
   const filteredCoverings = curtainTemplates.filter(covering =>
@@ -157,7 +160,7 @@ export const WindowCoveringSelector = ({
                         <Card
                           key={covering.id}
                           className={`cursor-pointer transition-all hover:shadow-md ${
-                            selectedCoveringId === covering.id
+                            safeSelectedCoveringId === covering.id
                               ? "ring-2 ring-primary bg-primary/5"
                               : "hover:bg-accent/50"
                           }`}

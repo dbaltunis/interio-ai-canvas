@@ -105,9 +105,12 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const [selectedRoom, setSelectedRoom] = useState(() => 
     safeExistingMeasurement?.room_id || safeSurfaceData?.room_id || currentRoomId || "no_room"
   );
-  const [selectedWindowCovering, setSelectedWindowCovering] = useState(() => 
-    safeExistingMeasurement?.window_covering_id || "no_covering"
-  );
+  const [selectedWindowCovering, setSelectedWindowCovering] = useState(() => {
+    const initialValue = safeExistingMeasurement?.window_covering_id || "no_covering";
+    console.log("🔍 INITIAL selectedWindowCovering value:", initialValue, "type:", typeof initialValue);
+    // Ensure we always return a string, never an object
+    return typeof initialValue === 'string' ? initialValue : "no_covering";
+  });
   
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<any>(null);
   const [measurements, setMeasurements] = useState(() => {
@@ -884,9 +887,10 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                   isUserInteractingRef.current = true;
                   console.log("🎯 STEP 2: Set interaction flag to true");
                   
-                  // Immediate state update
-                  setSelectedWindowCovering(newCoveringId);
-                  console.log("🎯 STEP 3: Called setSelectedWindowCovering with:", newCoveringId);
+                  // Immediate state update - ensure it's always a string
+                  const safeNewCoveringId = typeof newCoveringId === 'string' ? newCoveringId : "no_covering";
+                  setSelectedWindowCovering(safeNewCoveringId);
+                  console.log("🎯 STEP 3: Called setSelectedWindowCovering with:", safeNewCoveringId);
                   
                   // Reset dependent selections when covering changes
                   if (newCoveringId !== selectedWindowCovering) {
