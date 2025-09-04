@@ -3,7 +3,21 @@ import { BlindVisualizer } from "./BlindVisualizer";
 import { RomanBlindVisualizer } from "./RomanBlindVisualizer";
 import { VenetianBlindVisualizer } from "./VenetianBlindVisualizer";
 import { ShutterVisualizer } from "./ShutterVisualizer";
+import { LayeredTreatmentVisualizer } from "./LayeredTreatmentVisualizer";
 import { DynamicWindowRenderer } from "../window-types/DynamicWindowRenderer";
+
+interface LayeredTreatment {
+  id: string;
+  type: string;
+  template?: any;
+  selectedItems?: {
+    fabric?: any;
+    hardware?: any;
+    material?: any;
+  };
+  zIndex: number;
+  opacity?: number;
+}
 
 interface TreatmentPreviewEngineProps {
   windowType: string;
@@ -17,6 +31,7 @@ interface TreatmentPreviewEngineProps {
   };
   showWindowOnly?: boolean;
   className?: string;
+  layeredTreatments?: LayeredTreatment[];
 }
 
 export const TreatmentPreviewEngine = ({
@@ -26,7 +41,8 @@ export const TreatmentPreviewEngine = ({
   template,
   selectedItems = {},
   showWindowOnly = false,
-  className = ""
+  className = "",
+  layeredTreatments = []
 }: TreatmentPreviewEngineProps) => {
   
   if (showWindowOnly) {
@@ -35,6 +51,18 @@ export const TreatmentPreviewEngine = ({
         windowType={windowType}
         measurements={measurements}
         selectedTreatment={null}
+        className={className}
+      />
+    );
+  }
+
+  // Handle layered treatments
+  if (layeredTreatments.length > 0) {
+    return (
+      <LayeredTreatmentVisualizer
+        windowType={windowType}
+        measurements={measurements}
+        treatments={layeredTreatments}
         className={className}
       />
     );

@@ -11,6 +11,7 @@ import { InventorySelectionPanel } from "../inventory/InventorySelectionPanel";
 import { FixedWindowCoveringSelector } from "./FixedWindowCoveringSelector";
 import { VisualMeasurementSheet } from "./VisualMeasurementSheet";
 import { CostCalculationSummary } from "./dynamic-options/CostCalculationSummary";
+import { LayeredTreatmentManager } from "../job-creation/LayeredTreatmentManager";
 
 import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
@@ -58,6 +59,16 @@ export const DynamicWindowWorksheet = forwardRef<
   const [fabricCalculation, setFabricCalculation] = useState<any>(null);
   const [selectedHeading, setSelectedHeading] = useState("standard");
   const [selectedLining, setSelectedLining] = useState("none");
+  const [layeredTreatments, setLayeredTreatments] = useState<Array<{
+    id: string;
+    type: string;
+    template?: any;
+    selectedItems?: any;
+    zIndex: number;
+    opacity: number;
+    name: string;
+  }>>([]);
+  const [isLayeredMode, setIsLayeredMode] = useState(false);
 
   // Hooks
   const { data: curtainTemplates = [] } = useCurtainTemplates();
@@ -230,35 +241,73 @@ export const DynamicWindowWorksheet = forwardRef<
           <Card>
             <CardHeader>
               <CardTitle>Select Treatment & Template</CardTitle>
+              <div className="flex gap-2 mt-2">
+                <Button
+                  variant={!isLayeredMode ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsLayeredMode(false)}
+                >
+                  Single Treatment
+                </Button>
+                <Button
+                  variant={isLayeredMode ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsLayeredMode(true)}
+                >
+                  Layered Treatments
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              <FixedWindowCoveringSelector
-                selectedCoveringId={selectedTemplate?.id || ""}
-                onCoveringSelect={(template) => {
-                  setSelectedTemplate(template);
-                }}
-                disabled={readOnly}
-              />
-              
-              {selectedTemplate && (
-                <div className="mt-6 p-4 bg-primary/5 rounded-lg">
-                  <h4 className="font-medium mb-2">Selected Template</h4>
-                  <p className="text-sm">{selectedTemplate.name}</p>
-                  <div className="flex gap-2 mt-2">
-                    <Badge variant="outline">{selectedTemplate.curtain_type || selectedTemplate.type}</Badge>
-                    {selectedTemplate.fullness_ratio && (
-                      <Badge variant="outline">Fullness: {selectedTemplate.fullness_ratio}x</Badge>
-                    )}
-                  </div>
+              {isLayeredMode ? (
+                /* Layered Treatment Manager */
+                <LayeredTreatmentManager
+                  treatments={layeredTreatments}
+                  onTreatmentsChange={setLayeredTreatments}
+                  availableTreatmentTypes={[
+                    { value: "curtains", label: "Curtains" },
+                    { value: "roman_blinds", label: "Roman Blinds" },
+                    { value: "venetian_blinds", label: "Venetian Blinds" },
+                    { value: "shutters", label: "Shutters" },
+                    { value: "blinds", label: "Blinds" },
+                    { value: "vertical_blinds", label: "Vertical Blinds" },
+                    { value: "roller_blinds", label: "Roller Blinds" }
+                  ]}
+                />
+              ) : (
+                /* Single Treatment Configuration */
+                <>
+                  <FixedWindowCoveringSelector
+                    selectedCoveringId={selectedTemplate?.id || ""}
+                    onCoveringSelect={(template) => {
+                      setSelectedTemplate(template);
+                    }}
+                    disabled={readOnly}
+                  />
                   
-                  <Button 
-                    className="mt-4" 
-                    onClick={() => setActiveTab("inventory")}
-                  >
-                    Continue to Inventory Selection
-                  </Button>
-                </div>
+                  {selectedTemplate && (
+                    <div className="mt-6 p-4 bg-primary/5 rounded-lg">
+                      <h4 className="font-medium mb-2">Selected Template</h4>
+                      <p className="text-sm">{selectedTemplate.name}</p>
+                      <div className="flex gap-2 mt-2">
+                        <Badge variant="outline">{selectedTemplate.curtain_type || selectedTemplate.type}</Badge>
+                        {selectedTemplate.fullness_ratio && (
+                          <Badge variant="outline">Fullness: {selectedTemplate.fullness_ratio}x</Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
+              
+              <div className="mt-6">
+                <Button 
+                  onClick={() => setActiveTab("inventory")}
+                  disabled={!isLayeredMode && !selectedTemplate}
+                >
+                  Continue to {isLayeredMode ? "Measurements" : "Inventory Selection"}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -378,6 +427,7 @@ export const DynamicWindowWorksheet = forwardRef<
                   template={selectedTemplate}
                   selectedItems={selectedItems}
                   className="min-h-[400px]"
+                  layeredTreatments={isLayeredMode ? layeredTreatments : []}
                 />
               </CardContent>
             </Card>
