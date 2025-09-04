@@ -114,7 +114,7 @@ export const HardwareStep: React.FC = () => {
         <div key={type}>
           <h4 className="text-md font-medium mb-3 capitalize">{type}s</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {items.map((item) => {
+            {(items as any[]).map((item) => {
               const selectedQty = getSelectedQuantity(item.id);
               return (
                 <Card key={item.id} className="relative">
