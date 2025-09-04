@@ -28,28 +28,42 @@ export const WindowTypeSelector = ({
   useEffect(() => {
     const fetchWindowTypes = async () => {
       try {
+        console.log('🔍 WindowTypeSelector: Fetching window types...');
+        
         const { data, error } = await supabase
           .from('window_types')
           .select('id, name, key, visual_key')
           .order('name', { ascending: true });
 
         if (error) {
-          console.error('Error fetching window types:', error);
+          console.error('🚨 WindowTypeSelector: Error fetching window types:', error);
+          console.error('🚨 WindowTypeSelector: Error details:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint
+          });
           setWindowTypes([]);
           return;
         }
 
-        if (data) {
+        console.log('✅ WindowTypeSelector: Raw data received:', data);
+
+        if (data && data.length > 0) {
           const simpleTypes: SimpleWindowType[] = data.map(item => ({
             id: item.id,
             name: item.name,
             key: item.key,
             visual_key: item.visual_key
           }));
+          console.log('✅ WindowTypeSelector: Processed window types:', simpleTypes);
           setWindowTypes(simpleTypes);
+        } else {
+          console.log('⚠️ WindowTypeSelector: No window types found in data');
+          setWindowTypes([]);
         }
       } catch (error) {
-        console.error('Error in fetchWindowTypes:', error);
+        console.error('🚨 WindowTypeSelector: Unexpected error in fetchWindowTypes:', error);
         setWindowTypes([]);
       } finally {
         setLoading(false);

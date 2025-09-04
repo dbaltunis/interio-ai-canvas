@@ -4676,15 +4676,7 @@ export type Database = {
           updated_at?: string | null
           visual_key?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "window_types_org_id_fkey"
-            columns: ["org_id"]
-            isOneToOne: false
-            referencedRelation: "orgs"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       windows_summary: {
         Row: {
