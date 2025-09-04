@@ -1,18 +1,36 @@
 import { useMemo } from "react";
+import { EnhancedWindowRenderer } from "./EnhancedWindowRenderer";
 
 interface DynamicWindowRendererProps {
   windowType: string;
   measurements: Record<string, any>;
   selectedTreatment?: any;
   className?: string;
+  enhanced?: boolean; // Toggle between enhanced and simple rendering
 }
 
 export const DynamicWindowRenderer = ({
   windowType,
   measurements,
   selectedTreatment,
-  className = ""
+  className = "",
+  enhanced = true // Default to enhanced rendering
 }: DynamicWindowRendererProps) => {
+  
+  // Use enhanced renderer by default
+  if (enhanced) {
+    return (
+      <EnhancedWindowRenderer
+        windowType={windowType}
+        measurements={measurements}
+        selectedTreatment={selectedTreatment}
+        className={className}
+        showDepth={true}
+        frameColor="#8B7355"
+        wallColor="#F5F5F0"
+      />
+    );
+  }
   
   const renderWindow = useMemo(() => {
     switch (windowType) {
