@@ -21,7 +21,7 @@ import { TreatmentVisualizer } from "./TreatmentVisualizer";
 import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
 import { LiningOptionsSection } from "./dynamic-options/LiningOptionsSection";
 import { FabricSelectionSection } from "./dynamic-options/FabricSelectionSection";
-import { WindowCoveringSelector } from "./WindowCoveringSelector";
+import { FixedWindowCoveringSelector } from "./FixedWindowCoveringSelector";
 import { CostCalculationSummary } from "./dynamic-options/CostCalculationSummary";
 import { useSaveWindowSummary, useWindowSummary } from "@/hooks/useWindowSummary";
 import { calculateTreatmentPricing } from "@/utils/pricing/calculateTreatmentPricing";
@@ -876,7 +876,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
             {/* Window Covering Selector */}
             <div>
               <Label htmlFor="windowCovering">Window Covering</Label>
-              <WindowCoveringSelector
+              <FixedWindowCoveringSelector
                 selectedCoveringId={selectedWindowCovering !== "no_covering" ? selectedWindowCovering : undefined}
                 onCoveringSelect={(covering) => {
                   const newCoveringId = covering?.id || "no_covering";
