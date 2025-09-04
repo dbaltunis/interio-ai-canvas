@@ -458,6 +458,102 @@ export type Database = {
           },
         ]
       }
+      assemblies: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          org_id: string
+          template_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          org_id: string
+          template_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          org_id?: string
+          template_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assemblies_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assemblies_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "product_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assembly_lines: {
+        Row: {
+          assembly_id: string
+          created_at: string | null
+          id: string
+          item_id: string | null
+          price_mode: string | null
+          qty_formula: string
+          role: string | null
+          show_if: Json | null
+          updated_at: string | null
+          wastage_pct: number | null
+        }
+        Insert: {
+          assembly_id: string
+          created_at?: string | null
+          id?: string
+          item_id?: string | null
+          price_mode?: string | null
+          qty_formula: string
+          role?: string | null
+          show_if?: Json | null
+          updated_at?: string | null
+          wastage_pct?: number | null
+        }
+        Update: {
+          assembly_id?: string
+          created_at?: string | null
+          id?: string
+          item_id?: string | null
+          price_mode?: string | null
+          qty_formula?: string
+          role?: string | null
+          show_if?: Json | null
+          updated_at?: string | null
+          wastage_pct?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assembly_lines_assembly_id_fkey"
+            columns: ["assembly_id"]
+            isOneToOne: false
+            referencedRelation: "assemblies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assembly_lines_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       automation_executions: {
         Row: {
           client_id: string | null
@@ -2244,6 +2340,59 @@ export type Database = {
           },
         ]
       }
+      inventory_items: {
+        Row: {
+          attributes: Json | null
+          cost: number | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          org_id: string
+          price: number | null
+          sku: string | null
+          type: string
+          uom: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          attributes?: Json | null
+          cost?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          org_id: string
+          price?: number | null
+          sku?: string | null
+          type: string
+          uom?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          attributes?: Json | null
+          cost?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          org_id?: string
+          price?: number | null
+          sku?: string | null
+          type?: string
+          uom?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_movements: {
         Row: {
           created_at: string
@@ -2333,6 +2482,77 @@ export type Database = {
         }
         Relationships: []
       }
+      job_windows: {
+        Row: {
+          bom: Json | null
+          created_at: string | null
+          id: string
+          job_id: string
+          org_id: string
+          price_breakdown: Json | null
+          price_total: number | null
+          state: Json
+          template_id: string | null
+          updated_at: string | null
+          window_type_id: string | null
+        }
+        Insert: {
+          bom?: Json | null
+          created_at?: string | null
+          id?: string
+          job_id: string
+          org_id: string
+          price_breakdown?: Json | null
+          price_total?: number | null
+          state?: Json
+          template_id?: string | null
+          updated_at?: string | null
+          window_type_id?: string | null
+        }
+        Update: {
+          bom?: Json | null
+          created_at?: string | null
+          id?: string
+          job_id?: string
+          org_id?: string
+          price_breakdown?: Json | null
+          price_total?: number | null
+          state?: Json
+          template_id?: string | null
+          updated_at?: string | null
+          window_type_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_windows_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "measurement_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_windows_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_windows_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "product_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_windows_window_type_id_fkey"
+            columns: ["window_type_id"]
+            isOneToOne: false
+            referencedRelation: "window_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_scoring_rules: {
         Row: {
           created_at: string
@@ -2365,6 +2585,79 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      measurement_fields: {
+        Row: {
+          created_at: string | null
+          id: string
+          key: string
+          label: string
+          org_id: string
+          unit: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          key: string
+          label: string
+          org_id: string
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          key?: string
+          label?: string
+          org_id?: string
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "measurement_fields_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      measurement_jobs: {
+        Row: {
+          client_id: string | null
+          created_at: string | null
+          id: string
+          org_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          org_id: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          org_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "measurement_jobs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       message_attachments: {
         Row: {
@@ -2518,6 +2811,27 @@ export type Database = {
         }
         Relationships: []
       }
+      orgs: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       permission_audit_log: {
         Row: {
           action: string
@@ -2623,6 +2937,48 @@ export type Database = {
         }
         Relationships: []
       }
+      pricing_rules: {
+        Row: {
+          created_at: string | null
+          id: string
+          org_id: string
+          rule: Json
+          template_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          org_id: string
+          rule: Json
+          template_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          org_id?: string
+          rule?: Json
+          template_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_rules_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_rules_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "product_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_orders: {
         Row: {
           actual_order_date: string | null
@@ -2678,6 +3034,50 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_templates: {
+        Row: {
+          created_at: string | null
+          default_mode: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          org_id: string
+          treatment_key: string
+          updated_at: string | null
+          visual_key: string
+        }
+        Insert: {
+          created_at?: string | null
+          default_mode?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          org_id: string
+          treatment_key: string
+          updated_at?: string | null
+          visual_key: string
+        }
+        Update: {
+          created_at?: string | null
+          default_mode?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          org_id?: string
+          treatment_key?: string
+          updated_at?: string | null
+          visual_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_templates_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
             referencedColumns: ["id"]
           },
         ]
@@ -3401,6 +3801,155 @@ export type Database = {
         }
         Relationships: []
       }
+      template_measurements: {
+        Row: {
+          field_id: string
+          required: boolean | null
+          show_if: Json | null
+          template_id: string
+        }
+        Insert: {
+          field_id: string
+          required?: boolean | null
+          show_if?: Json | null
+          template_id: string
+        }
+        Update: {
+          field_id?: string
+          required?: boolean | null
+          show_if?: Json | null
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_measurements_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "measurement_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "template_measurements_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "product_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      template_option_values: {
+        Row: {
+          created_at: string | null
+          id: string
+          label: string
+          option_id: string
+          price_delta_rule: Json | null
+          show_if: Json | null
+          sort_order: number | null
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          label: string
+          option_id: string
+          price_delta_rule?: Json | null
+          show_if?: Json | null
+          sort_order?: number | null
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          label?: string
+          option_id?: string
+          price_delta_rule?: Json | null
+          show_if?: Json | null
+          sort_order?: number | null
+          updated_at?: string | null
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_option_values_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "template_options"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      template_options: {
+        Row: {
+          created_at: string | null
+          default_value: Json | null
+          id: string
+          key: string
+          label: string
+          max_value: number | null
+          min_value: number | null
+          org_id: string
+          required: boolean | null
+          show_if: Json | null
+          step_value: number | null
+          template_id: string
+          type: string
+          unit: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_value?: Json | null
+          id?: string
+          key: string
+          label: string
+          max_value?: number | null
+          min_value?: number | null
+          org_id: string
+          required?: boolean | null
+          show_if?: Json | null
+          step_value?: number | null
+          template_id: string
+          type: string
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          default_value?: Json | null
+          id?: string
+          key?: string
+          label?: string
+          max_value?: number | null
+          min_value?: number | null
+          org_id?: string
+          required?: boolean | null
+          show_if?: Json | null
+          step_value?: number | null
+          template_id?: string
+          type?: string
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_options_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "template_options_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "product_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       todos: {
         Row: {
           id: number
@@ -3995,6 +4544,41 @@ export type Database = {
         }
         Relationships: []
       }
+      visual_templates: {
+        Row: {
+          created_at: string | null
+          id: string
+          key: string
+          org_id: string
+          template: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          key: string
+          org_id: string
+          template: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          key?: string
+          org_id?: string
+          template?: Json
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visual_templates_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       window_coverings: {
         Row: {
           active: boolean | null
@@ -4030,6 +4614,77 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      window_type_measurements: {
+        Row: {
+          field_id: string
+          required: boolean | null
+          window_type_id: string
+        }
+        Insert: {
+          field_id: string
+          required?: boolean | null
+          window_type_id: string
+        }
+        Update: {
+          field_id?: string
+          required?: boolean | null
+          window_type_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "window_type_measurements_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "measurement_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "window_type_measurements_window_type_id_fkey"
+            columns: ["window_type_id"]
+            isOneToOne: false
+            referencedRelation: "window_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      window_types: {
+        Row: {
+          created_at: string | null
+          id: string
+          key: string
+          name: string
+          org_id: string
+          updated_at: string | null
+          visual_key: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          key: string
+          name: string
+          org_id: string
+          updated_at?: string | null
+          visual_key: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          key?: string
+          name?: string
+          org_id?: string
+          updated_at?: string | null
+          visual_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "window_types_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       windows_summary: {
         Row: {
