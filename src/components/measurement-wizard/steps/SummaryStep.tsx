@@ -14,9 +14,11 @@ export const SummaryStep: React.FC<SummaryStepProps> = ({ onComplete }) => {
   const {
     selectedTemplate,
     selectedFabric,
+    selectedHardware,
     measurements,
     priceBreakdown,
     priceTotal,
+    bom,
     isCalculating,
     calculatePricing,
     saveToJob
@@ -49,6 +51,19 @@ export const SummaryStep: React.FC<SummaryStepProps> = ({ onComplete }) => {
             <h4 className="font-medium">Main Fabric</h4>
             <p className="text-sm text-muted-foreground">{selectedFabric?.name || 'Not selected'}</p>
           </div>
+
+          {selectedHardware.length > 0 && (
+            <div>
+              <h4 className="font-medium">Hardware</h4>
+              <div className="space-y-1">
+                {selectedHardware.map((item) => (
+                  <p key={item.id} className="text-sm text-muted-foreground">
+                    {item.name} x {item.quantity}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
           
           <div>
             <h4 className="font-medium">Key Measurements</h4>
@@ -99,6 +114,29 @@ export const SummaryStep: React.FC<SummaryStepProps> = ({ onComplete }) => {
           )}
         </CardContent>
       </Card>
+
+      {bom && bom.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Bill of Materials</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {bom.map((item, index) => (
+                <div key={index} className="flex justify-between items-center">
+                  <div>
+                    <span className="font-medium">{item.item_name}</span>
+                    <span className="text-sm text-muted-foreground ml-2">
+                      {item.quantity} {item.unit}
+                    </span>
+                  </div>
+                  <span className="text-sm">${item.total_price?.toFixed(2) || '0.00'}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex gap-4">
         <Button onClick={calculatePricing} variant="outline" className="flex-1">

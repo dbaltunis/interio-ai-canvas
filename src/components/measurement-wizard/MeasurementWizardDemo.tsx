@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { MeasurementWizard } from '@/components/measurement-wizard/MeasurementWizard';
 
-export const MeasurementWizardDemo: React.FC = () => {
+const MeasurementWizardDemo: React.FC = () => {
   const [wizardOpen, setWizardOpen] = useState(false);
 
   return (
@@ -33,3 +33,5 @@ export const MeasurementWizardDemo: React.FC = () => {
     </div>
   );
 };
+
+export default MeasurementWizardDemo;

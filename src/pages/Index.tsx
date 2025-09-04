@@ -29,9 +29,7 @@ const CalendarView = lazy(() =>
   import("@/components/calendar/CalendarView").catch(() => ({ default: () => <div>Error loading Calendar</div> }))
 );
 const MeasurementWizardDemo = lazy(() => 
-  import("@/components/measurement-wizard/MeasurementWizardDemo").then(module => ({
-    default: module.MeasurementWizardDemo
-  })).catch(() => ({ default: () => <div>Error loading Measurement Wizard</div> }))
+  import("@/components/measurement-wizard/MeasurementWizardDemo").catch(() => ({ default: () => <div>Error loading Measurement Wizard</div> }))
 );
 
 // Skeleton loading components

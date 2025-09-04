@@ -62,6 +62,9 @@ interface MeasurementActions {
   saveToJob: () => Promise<void>;
   loadFromJob: (jobId: string, windowId: string) => Promise<void>;
   
+  // Autosave
+  autosave: () => Promise<void>;
+  
   // Reset
   reset: () => void;
 }
@@ -101,11 +104,15 @@ export const useMeasurementWizardStore = create<MeasurementState & MeasurementAc
       selectedTemplate: template,
       mode: template?.default_mode || 'quick'
     });
+    get().autosave();
   },
   
   setWindowType: (windowType) => set({ selectedWindowType: windowType }),
   
-  setHardware: (hardware) => set({ selectedHardware: hardware }),
+  setHardware: (hardware) => {
+    set({ selectedHardware: hardware });
+    get().autosave();
+  },
   
   setPanelSetup: (setup) => set({ panelSetup: setup }),
   
@@ -114,9 +121,13 @@ export const useMeasurementWizardStore = create<MeasurementState & MeasurementAc
     set({ 
       measurements: { ...measurements, [key]: value }
     });
+    get().autosave();
   },
   
-  setFabric: (fabric) => set({ selectedFabric: fabric }),
+  setFabric: (fabric) => {
+    set({ selectedFabric: fabric });
+    get().autosave();
+  },
   
   setLining: (lining) => set({ selectedLining: lining }),
   
@@ -304,6 +315,72 @@ export const useMeasurementWizardStore = create<MeasurementState & MeasurementAc
     }
   },
   
+  autosave: async () => {
+    const state = get();
+    if (!state.selectedTemplate) return;
+
+    try {
+      // Save to job_windows (temporary job)
+      const { data: { session } } = await supabase.auth.getSession();
+      const orgId = session?.user?.user_metadata?.org_id;
+      
+      if (!orgId) return;
+
+      const jobData = {
+        org_id: orgId,
+        job_id: state.jobId || 'temp-autosave',
+        template_id: state.selectedTemplate.id,
+        window_type_id: state.selectedWindowType?.id || state.selectedTemplate.id,
+        state: {
+          selectedTemplate: state.selectedTemplate,
+          selectedHardware: state.selectedHardware,
+          selectedFabric: state.selectedFabric,
+          measurements: state.measurements,
+          priceBreakdown: state.priceBreakdown,
+          bom: state.bom
+        }
+      };
+
+      const { data, error } = await supabase
+        .from('job_windows')
+        .upsert(jobData, {
+          onConflict: 'org_id,template_id',
+          ignoreDuplicates: false
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Trigger BOM and pricing calculation
+      const calcResponse = await supabase.functions.invoke('calc_bom_and_price', {
+        body: {
+          org_id: orgId,
+          template_id: state.selectedTemplate.id,
+          window_type_id: state.selectedWindowType?.id || state.selectedTemplate.id,
+          state: {
+            rail_width_mm: state.measurements.rail_width || 1000,
+            drop_mm: state.measurements.drop || 2000,
+            panel_setup: state.panelSetup,
+            selected_fabric: state.selectedFabric,
+            selected_hardware: state.selectedHardware,
+            ...state.measurements
+          }
+        }
+      });
+
+      if (calcResponse.data) {
+        set({
+          priceBreakdown: calcResponse.data.price_breakdown,
+          bom: calcResponse.data.bom,
+          priceTotal: calcResponse.data.price_total
+        });
+      }
+    } catch (error) {
+      console.error('Autosave failed:', error);
+    }
+  },
+
   reset: () => {
     set({
       ...initialState,
