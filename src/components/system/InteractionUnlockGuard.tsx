@@ -7,11 +7,11 @@ export function InteractionUnlockGuard() {
 
     const hasOpenOverlays = () => {
       // Only consider true blocking overlays (dialogs, alert dialogs, drawers)
+      // Do NOT consider dropdowns, selects, or popovers as blocking overlays
       return Boolean(
         document.querySelector(
           [
-            '[role="dialog"][data-state="open"]',
-            '[data-radix-portal] [role="dialog"][data-state="open"]',
+            '[role="dialog"][data-state="open"]:not([data-radix-select-content]):not([data-radix-dropdown-menu-content])',
             '[role="alertdialog"][data-state="open"]',
             '[data-vaul-drawer][data-state="open"]',
             '.vaul-drawer[data-state="open"]',
