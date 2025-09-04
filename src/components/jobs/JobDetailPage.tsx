@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, FolderOpen, Home, Package, FileText, Wrench, Mail, Calendar, User, MapPin, DollarSign, Clock } from "lucide-react";
+import { ArrowLeft, FolderOpen, Home, Package, FileText, Wrench, Mail, Calendar, User, MapPin, DollarSign, Clock, Square } from "lucide-react";
 import { useProjects, useUpdateProject } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
 import { ProjectDetailsTab } from "./tabs/ProjectDetailsTab";
@@ -14,6 +14,7 @@ import { QuotationTab } from "./tabs/QuotationTab";
 import { WorkroomTab } from "./tabs/WorkroomTab";
 import { EmailsTab } from "./tabs/EmailsTab";
 import { CalendarTab } from "./tabs/CalendarTab";
+import { WindowsTab } from "./windows/WindowsTab";
 import { JobStatusDropdown } from "./JobStatusDropdown";
 
 interface JobDetailPageProps {
@@ -71,6 +72,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
 
   const tabs = [
     { id: "details", label: "Project Details", icon: Home },
+    { id: "windows", label: "Windows & Treatments", icon: Square },
     { id: "rooms", label: "Rooms & Treatments", icon: Package },
     { id: "quotation", label: "Quotation", icon: FileText },
     { id: "workroom", label: "Workroom", icon: Wrench },
@@ -178,6 +180,14 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               <TabsContent value="details" className="mt-0">
                 <div className="modern-card p-6">
                   <ProjectDetailsTab project={project} onUpdate={handleUpdateProject} />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="windows" className="mt-0">
+                <div className="modern-card">
+                  <div className="p-6">
+                    <WindowsTab projectId={jobId} />
+                  </div>
                 </div>
               </TabsContent>
 

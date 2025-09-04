@@ -21,6 +21,7 @@ interface MeasurementWizardProps {
   onOpenChange: (open: boolean) => void;
   jobId?: string;
   windowId?: string;
+  onComplete?: () => void;
 }
 
 const steps = [
@@ -38,7 +39,8 @@ export const MeasurementWizard: React.FC<MeasurementWizardProps> = ({
   open,
   onOpenChange,
   jobId,
-  windowId
+  windowId,
+  onComplete
 }) => {
   const {
     currentStep,
@@ -48,16 +50,25 @@ export const MeasurementWizard: React.FC<MeasurementWizardProps> = ({
     prevStep,
     toggleMode,
     loadFromJob,
-    reset
+    reset,
+    setJobId
   } = useMeasurementWizardStore();
 
   useEffect(() => {
-    if (open && jobId && windowId) {
-      loadFromJob(jobId, windowId);
-    } else if (open && !windowId) {
-      reset();
+    if (open) {
+      if (jobId && windowId) {
+        // Load existing window data
+        loadFromJob(jobId, windowId);
+      } else if (jobId) {
+        // Set job ID for new window
+        setJobId(jobId);
+        reset();
+      } else {
+        // Reset for demo mode
+        reset();
+      }
     }
-  }, [open, jobId, windowId, loadFromJob, reset]);
+  }, [open, jobId, windowId, loadFromJob, reset, setJobId]);
 
   const currentStepData = steps.find(step => step.id === currentStep);
   const progress = (currentStep / steps.length) * 100;
@@ -87,7 +98,7 @@ export const MeasurementWizard: React.FC<MeasurementWizardProps> = ({
       case 7:
         return <ExtrasStep />;
       case 8:
-        return <SummaryStep onComplete={() => onOpenChange(false)} />;
+        return <SummaryStep onComplete={onComplete || (() => onOpenChange(false))} />;
       default:
         return <TemplateStep />;
     }
