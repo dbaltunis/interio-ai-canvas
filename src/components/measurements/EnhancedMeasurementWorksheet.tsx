@@ -342,11 +342,18 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       }
     }
     
-    // Priority 3: Basic measurements
+    // Priority 3: Basic measurements - BUT PRESERVE USER SELECTIONS
     if (existingMeasurement?.measurements && Object.keys(measurements).length === 0) {
       console.log("✅ PRIORITY 3: Loading from basic measurements");
       measurements = { ...existingMeasurement.measurements };
-      windowCoveringId = existingMeasurement.window_covering_id || windowCoveringId;
+      // Don't override user selections with "no_covering" - preserve current state
+      const currentSelection = selectedWindowCovering || "";
+      if (currentSelection && currentSelection !== "no_covering") {
+        console.log("🔄 PRESERVING user selection:", currentSelection);
+        windowCoveringId = currentSelection;
+      } else {
+        windowCoveringId = existingMeasurement.window_covering_id || windowCoveringId;
+      }
     }
     
     // Apply all loaded data with explicit logging
@@ -360,12 +367,24 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     });
     
     setMeasurements(measurements);
-    // Only update if not currently in user interaction mode
-    if (!isUserInteractingRef.current) {
+    
+    // Enhanced user interaction protection
+    const isCurrentlyUserInteracting = isUserInteractingRef.current;
+    const hasUserSelection = selectedWindowCovering && selectedWindowCovering !== "no_covering";
+    
+    // Only update window covering if:
+    // 1. User is not currently interacting
+    // 2. User doesn't have an existing selection OR we have saved data that should override
+    if (!isCurrentlyUserInteracting && (!hasUserSelection || savedTreatment || savedSummary)) {
       setSelectedWindowCovering(windowCoveringId);
       console.log("🔄 DATA LOAD: Set selectedWindowCovering to:", windowCoveringId);
     } else {
-      console.log("🚫 DATA LOAD: Skipped setting selectedWindowCovering due to user interaction");
+      console.log("🚫 DATA LOAD: Preserved user selection:", selectedWindowCovering, "Reasons:", {
+        userInteracting: isCurrentlyUserInteracting,
+        hasUserSelection,
+        hasSavedTreatment: !!savedTreatment,
+        hasSavedSummary: !!savedSummary
+      });
     }
     
     // Set fabric and lining with explicit logging
@@ -880,34 +899,51 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                 selectedCoveringId={selectedWindowCovering !== "no_covering" ? selectedWindowCovering : undefined}
                 onCoveringSelect={(covering) => {
                   const newCoveringId = covering?.id || "no_covering";
-                  console.log("🎯 STEP 1: WindowCovering selected:", covering?.name, "ID:", newCoveringId);
-                  console.log("🎯 STEP 1: Current selectedWindowCovering:", selectedWindowCovering);
+                  console.log("🎯 USER SELECT: WindowCovering selected:", covering?.name, "ID:", newCoveringId);
+                  console.log("🎯 USER SELECT: Current selectedWindowCovering:", selectedWindowCovering);
                   
-                  // Set user interaction flag to prevent state override
+                  // CRITICAL: Set user interaction flag IMMEDIATELY to prevent state override
                   isUserInteractingRef.current = true;
-                  console.log("🎯 STEP 2: Set interaction flag to true");
+                  console.log("🎯 USER SELECT: Set interaction flag to true");
                   
                   // Immediate state update - ensure it's always a string
                   const safeNewCoveringId = typeof newCoveringId === 'string' ? newCoveringId : "no_covering";
+                  
+                  // Force update the state immediately with multiple calls to ensure persistence
                   setSelectedWindowCovering(safeNewCoveringId);
-                  console.log("🎯 STEP 3: Called setSelectedWindowCovering with:", safeNewCoveringId);
+                  console.log("🎯 USER SELECT: Called setSelectedWindowCovering with:", safeNewCoveringId);
+                  
+                  // Use flushSync to ensure immediate state update before any other effects run
+                  setTimeout(() => {
+                    setSelectedWindowCovering(safeNewCoveringId);
+                    console.log("🎯 USER SELECT: Reinforced setSelectedWindowCovering with:", safeNewCoveringId);
+                  }, 0);
                   
                   // Reset dependent selections when covering changes
                   if (newCoveringId !== selectedWindowCovering) {
-                    console.log("🎯 STEP 4: Resetting dependent selections");
+                    console.log("🎯 USER SELECT: Resetting dependent selections");
                     setSelectedFabric(null);
                     setSelectedHeading(null);
                     setSelectedLining(null);
                     setSelectedInventoryItem(null);
                   }
                   
-                  // Auto-save with protection against state override
+                  // Update treatment data to include template details
+                  if (covering) {
+                    setTreatmentData(prev => ({
+                      ...prev,
+                      treatment_type: covering.id,
+                      template_details: covering
+                    }));
+                  }
+                  
+                  // Extended protection against state override
                   setTimeout(() => {
-                    console.log("🎯 STEP 5: Starting auto-save");
+                    console.log("🎯 USER SELECT: Starting auto-save");
                     debouncedAutoSave();
-                    // Clear interaction flag after save completes
+                    // Keep interaction flag for longer to prevent state resets
                     setTimeout(() => {
-                      console.log("🎯 STEP 6: Clearing interaction flag");
+                      console.log("🎯 USER SELECT: Clearing interaction flag after extended delay");
                       isUserInteractingRef.current = false;
                     }, 500);
                   }, 100);
