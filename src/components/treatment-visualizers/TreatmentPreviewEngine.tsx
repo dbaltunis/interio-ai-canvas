@@ -1,5 +1,8 @@
 import { CurtainVisualizer } from "./CurtainVisualizer";
 import { BlindVisualizer } from "./BlindVisualizer";
+import { RomanBlindVisualizer } from "./RomanBlindVisualizer";
+import { VenetianBlindVisualizer } from "./VenetianBlindVisualizer";
+import { ShutterVisualizer } from "./ShutterVisualizer";
 import { DynamicWindowRenderer } from "../window-types/DynamicWindowRenderer";
 
 interface TreatmentPreviewEngineProps {
@@ -51,8 +54,50 @@ export const TreatmentPreviewEngine = ({
           />
         );
       
-      case "blinds":
+      case "roman_blinds":
+        return (
+          <RomanBlindVisualizer
+            windowType={windowType}
+            measurements={measurements}
+            template={template}
+            material={selectedItems.material}
+            className={className}
+            foldStyle={template?.fold_style || 'classic'}
+            mounted={template?.mount_type || 'outside'}
+          />
+        );
+      
       case "venetian_blinds":
+        return (
+          <VenetianBlindVisualizer
+            windowType={windowType}
+            measurements={measurements}
+            template={template}
+            material={selectedItems.material}
+            className={className}
+            slatSize={template?.slat_size || '25mm'}
+            slatAngle={template?.default_angle || 45}
+            mounted={template?.mount_type || 'inside'}
+          />
+        );
+      
+      case "shutters":
+      case "plantation_shutters":
+        return (
+          <ShutterVisualizer
+            windowType={windowType}
+            measurements={measurements}
+            template={template}
+            material={selectedItems.material}
+            className={className}
+            panelConfig={template?.panel_config || 'bifold'}
+            louverSize={template?.louver_size || '63mm'}
+            frameStyle={template?.frame_style || 'L-frame'}
+            mounted={template?.mount_type || 'inside'}
+          />
+        );
+      
+      case "blinds":
       case "vertical_blinds":
       case "roller_blinds":
         return (
@@ -72,6 +117,7 @@ export const TreatmentPreviewEngine = ({
             measurements={measurements}
             selectedTreatment={{ type: treatmentType, template, selectedItems }}
             className={className}
+            enhanced={true}
           />
         );
     }

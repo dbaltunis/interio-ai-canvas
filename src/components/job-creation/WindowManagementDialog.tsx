@@ -25,10 +25,15 @@ interface WindowManagementDialogProps {
   onSaveTreatment: (treatmentData: any) => void;
 }
 
+// Enhanced treatment types with more variety
 const TREATMENT_TYPES = [
-  { id: "curtains", name: "Curtains", icon: "🪟" },
-  { id: "blinds", name: "Blinds", icon: "📏" },
-  { id: "shutters", name: "Shutters", icon: "🚪" },
+  { id: "curtains", name: "Curtains", icon: "🪟", description: "Fabric panels with pleats & headings" },
+  { id: "roman_blinds", name: "Roman Blinds", icon: "📜", description: "Fabric blinds with horizontal folds" },
+  { id: "venetian_blinds", name: "Venetian Blinds", icon: "📋", description: "Adjustable horizontal slats" },
+  { id: "vertical_blinds", name: "Vertical Blinds", icon: "📏", description: "Adjustable vertical slats" },
+  { id: "roller_blinds", name: "Roller Blinds", icon: "🎞️", description: "Simple roll-up window covering" },
+  { id: "plantation_shutters", name: "Plantation Shutters", icon: "🚪", description: "Adjustable louver panels" },
+  { id: "shutters", name: "Traditional Shutters", icon: "🏠", description: "Solid or louvered panels" }
 ];
 
 export const WindowManagementDialog = ({
