@@ -357,7 +357,13 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     });
     
     setMeasurements(measurements);
-    setSelectedWindowCovering(windowCoveringId);
+    // Only update if not currently in user interaction mode
+    if (!isUserInteractingRef.current) {
+      setSelectedWindowCovering(windowCoveringId);
+      console.log("🔄 DATA LOAD: Set selectedWindowCovering to:", windowCoveringId);
+    } else {
+      console.log("🚫 DATA LOAD: Skipped setting selectedWindowCovering due to user interaction");
+    }
     
     // Set fabric and lining with explicit logging
     console.log("🎯 Setting selectedFabric to:", fabricId);
@@ -403,15 +409,21 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   useEffect(() => {
     // Don't reload data if user is actively making selections
     if (isUserInteractingRef.current) {
-      console.log("🚫 Skipping data reload - user is interacting");
+      console.log("🚫 CRITICAL: Skipping data reload - user is interacting");
       return;
     }
     
     // Only reload if we have new treatment data and it's not from user interaction
     if (allProjectTreatments?.length) {
-      console.log("📊 Processing treatment updates from server");
+      console.log("📊 CRITICAL: Processing treatment updates from server - this might override user selection!");
+      console.log("📊 Current selectedWindowCovering before potential override:", selectedWindowCovering);
     }
   }, [allProjectTreatments]);
+  
+  // Add effect to monitor selectedWindowCovering changes
+  useEffect(() => {
+    console.log("🔍 MONITOR: selectedWindowCovering changed to:", selectedWindowCovering);
+  }, [selectedWindowCovering]);
 
   const createMeasurement = useCreateClientMeasurement();
   const updateMeasurement = useUpdateClientMeasurement();
@@ -865,16 +877,20 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                 selectedCoveringId={selectedWindowCovering !== "no_covering" ? selectedWindowCovering : undefined}
                 onCoveringSelect={(covering) => {
                   const newCoveringId = covering?.id || "no_covering";
-                  console.log("🎯 WindowCovering selected:", covering?.name, "ID:", newCoveringId);
+                  console.log("🎯 STEP 1: WindowCovering selected:", covering?.name, "ID:", newCoveringId);
+                  console.log("🎯 STEP 1: Current selectedWindowCovering:", selectedWindowCovering);
                   
                   // Set user interaction flag to prevent state override
                   isUserInteractingRef.current = true;
+                  console.log("🎯 STEP 2: Set interaction flag to true");
                   
                   // Immediate state update
                   setSelectedWindowCovering(newCoveringId);
+                  console.log("🎯 STEP 3: Called setSelectedWindowCovering with:", newCoveringId);
                   
                   // Reset dependent selections when covering changes
                   if (newCoveringId !== selectedWindowCovering) {
+                    console.log("🎯 STEP 4: Resetting dependent selections");
                     setSelectedFabric(null);
                     setSelectedHeading(null);
                     setSelectedLining(null);
@@ -883,12 +899,20 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                   
                   // Auto-save with protection against state override
                   setTimeout(() => {
+                    console.log("🎯 STEP 5: Starting auto-save");
                     debouncedAutoSave();
                     // Clear interaction flag after save completes
                     setTimeout(() => {
+                      console.log("🎯 STEP 6: Clearing interaction flag");
                       isUserInteractingRef.current = false;
                     }, 500);
                   }, 100);
+                  
+                  // Verify state after a brief delay
+                  setTimeout(() => {
+                    console.log("🎯 STEP 7: Verification - selectedWindowCovering should be:", newCoveringId);
+                    console.log("🎯 STEP 7: Verification - interaction flag:", isUserInteractingRef.current);
+                  }, 200);
                 }}
                 disabled={readOnly}
               />
