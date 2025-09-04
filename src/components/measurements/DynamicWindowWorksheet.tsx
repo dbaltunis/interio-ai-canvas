@@ -56,6 +56,8 @@ export const DynamicWindowWorksheet = forwardRef<
   }>({});
   const [activeTab, setActiveTab] = useState("window-type");
   const [fabricCalculation, setFabricCalculation] = useState<any>(null);
+  const [selectedHeading, setSelectedHeading] = useState("standard");
+  const [selectedLining, setSelectedLining] = useState("none");
 
   // Hooks
   const { data: curtainTemplates = [] } = useCurtainTemplates();
@@ -307,6 +309,10 @@ export const DynamicWindowWorksheet = forwardRef<
                     windowType={selectedWindowType?.key || "standard"}
                     selectedTemplate={selectedTemplate}
                     selectedFabric={selectedItems.fabric?.id}
+                    selectedLining={selectedLining}
+                    onLiningChange={setSelectedLining}
+                    selectedHeading={selectedHeading}
+                    onHeadingChange={setSelectedHeading}
                     onFabricCalculationChange={setFabricCalculation}
                     readOnly={readOnly}
                   />
@@ -338,8 +344,8 @@ export const DynamicWindowWorksheet = forwardRef<
                     template={selectedTemplate}
                     measurements={measurements}
                     selectedFabric={selectedItems.fabric}
-                    selectedLining={selectedItems.material?.type || "none"}
-                    selectedHeading={selectedItems.hardware?.id || "standard"}
+                    selectedLining={selectedLining}
+                    selectedHeading={selectedHeading}
                     inventory={[]}
                     fabricCalculation={fabricCalculation}
                   />
