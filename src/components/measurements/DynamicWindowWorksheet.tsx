@@ -519,9 +519,14 @@ export const DynamicWindowWorksheet = forwardRef<
 
                 <div className="flex gap-2">
                   <Button 
-                    onClick={() => {
-                      onSave?.();
-                      onClose?.();
+                    onClick={async () => {
+                      try {
+                        await onSave?.();
+                        console.log("Configuration saved, closing dialog");
+                        setTimeout(() => onClose?.(), 100); // Small delay to ensure save completes
+                      } catch (error) {
+                        console.error("Save failed:", error);
+                      }
                     }}
                     disabled={readOnly}
                     className="flex-1"
@@ -533,15 +538,20 @@ export const DynamicWindowWorksheet = forwardRef<
                   {onSaveTreatment && (
                     <Button 
                       variant="outline"
-                      onClick={() => {
-                        onSaveTreatment?.({
-                          window_type: selectedWindowType,
-                          template: selectedTemplate,
-                          measurements,
-                          selected_items: selectedItems,
-                          fabric_calculation: fabricCalculation
-                        });
-                        onClose?.();
+                      onClick={async () => {
+                        try {
+                          await onSaveTreatment?.({
+                            window_type: selectedWindowType,
+                            template: selectedTemplate,
+                            measurements,
+                            selected_items: selectedItems,
+                            fabric_calculation: fabricCalculation
+                          });
+                          console.log("Treatment saved, closing dialog");
+                          setTimeout(() => onClose?.(), 100); // Small delay to ensure save completes
+                        } catch (error) {
+                          console.error("Treatment save failed:", error);
+                        }
                       }}
                       disabled={readOnly}
                     >
