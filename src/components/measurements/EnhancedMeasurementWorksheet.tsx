@@ -28,10 +28,6 @@ import { calculateTreatmentPricing } from "@/utils/pricing/calculateTreatmentPri
 import { useTreatments } from "@/hooks/useTreatments";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useSharedMeasurementState } from "@/hooks/useSharedMeasurementState";
-
-type SharedMeasurementState = ReturnType<typeof useSharedMeasurementState>[0];
-type SharedMeasurementActions = ReturnType<typeof useSharedMeasurementState>[1];
 
 interface EnhancedMeasurementWorksheetProps {
   clientId?: string; // Optional - measurements can exist without being assigned to a client
@@ -45,8 +41,6 @@ interface EnhancedMeasurementWorksheetProps {
   onClose?: () => void;
   onSaveTreatment?: (treatmentData: any) => void;
   readOnly?: boolean;
-  sharedState?: SharedMeasurementState;
-  sharedActions?: SharedMeasurementActions;
 }
 
 const WINDOW_TYPES = [
@@ -72,9 +66,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   onSave,
   onClose,
   onSaveTreatment,
-  readOnly = false,
-  sharedState,
-  sharedActions
+  readOnly = false
 }, ref) => {
   // Debug readOnly state
   console.log("🔍 EnhancedMeasurementWorksheet readOnly state:", readOnly);
@@ -202,48 +194,42 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const [calculatedCost, setCalculatedCost] = useState(0);
   const [fabricCalculation, setFabricCalculation] = useState(null);
   
-  // Use shared state consistently
-  const [internalSharedState, internalSharedActions] = useSharedMeasurementState(surfaceId);
-  
-  // Use provided shared state if available, otherwise use internal shared state
-  const currentState = sharedState || internalSharedState;
-  const currentActions = sharedActions || internalSharedActions;
-
-  // Use shared state values directly
-  const selectedHeading = currentState.selectedHeading;
-  const selectedLining = currentState.selectedLining;
-  const selectedFabric = currentState.selectedItems?.fabric?.id || "";
-
-  // Use shared state actions directly
-  const setSelectedHeading = currentActions.updateHeading;
-  const setSelectedLining = currentActions.updateLining;
-  const setSelectedFabric = (value: string) => {
-    const currentItems = currentState.selectedItems || {};
-    currentActions.updateSelectedItems({
-      ...currentItems,
-      fabric: { id: value }
-    });
-  };
+  // Dynamic options state - isolated per window
+  const [selectedHeading, setSelectedHeading] = useState(() => 
+    safeExistingTreatments?.[0]?.selected_heading || "standard"
+  );
+  const [selectedLining, setSelectedLining] = useState(() => 
+    safeExistingTreatments?.[0]?.selected_lining || "none"
+  );
+  const [selectedFabric, setSelectedFabric] = useState(() => 
+    safeExistingTreatments?.[0]?.fabric_details?.fabric_id || 
+    safeExistingMeasurement?.measurements?.selected_fabric || 
+    ""
+  );
 
   // Get treatments data early so it can be used in the effect
   const { data: allProjectTreatments = [] } = useTreatments(projectId);
 
-  // Sync with shared state when data loads
+  // Centralized data loading effect - SINGLE SOURCE OF TRUTH
   useEffect(() => {
-    if (!surfaceId || !currentActions) return;
+    if (!surfaceId) return;
     
-    console.log("🔄 Enhanced: Syncing with shared state for surface:", surfaceId);
+    console.log("🔄 LOADING: Loading data for surface:", surfaceId);
     
-    // Load data from various sources and update shared state
-    let fabricId = selectedFabric;
-    let headingValue = selectedHeading;
-    let liningValue = selectedLining;
+    // Create data loading priority system
+    let measurements = {};
+    let windowCoveringId = "no_covering";
+    let fabricId = "";
+    let headingValue = "standard";
+    let liningValue = "none";
+    let treatmentTypeValue = "";
     
-    // Check for saved treatment first (highest priority)
+    // Load from saved treatment first (highest priority)
     const savedTreatment = allProjectTreatments.find(t => t.window_id === surfaceId);
     if (savedTreatment) {
-      console.log("📦 Enhanced: Found saved treatment for surface:", surfaceId);
+      console.log("📦 Found saved treatment for surface:", surfaceId, savedTreatment);
       
+      // Parse fabric details and treatment details
       try {
         const fabricDetails = savedTreatment.fabric_details ? 
           (typeof savedTreatment.fabric_details === 'string' ? 
@@ -253,85 +239,230 @@ export const EnhancedMeasurementWorksheet = forwardRef<
           (typeof savedTreatment.treatment_details === 'string' ? 
            JSON.parse(savedTreatment.treatment_details) : savedTreatment.treatment_details) : {};
 
-        fabricId = fabricDetails.fabric_id || treatmentDetails.selected_fabric || fabricId;
-        headingValue = treatmentDetails.selected_heading || fabricDetails.selected_heading || headingValue;
-        liningValue = treatmentDetails.selected_lining || fabricDetails.selected_lining || liningValue;
+        const treatmentMeasurements = savedTreatment.measurements ? 
+          (typeof savedTreatment.measurements === 'string' ? 
+           JSON.parse(savedTreatment.measurements) : savedTreatment.measurements) : {};
         
-        // Update shared state
-        if (fabricId) {
-          currentActions.updateSelectedItems({
-            ...currentState.selectedItems,
-            fabric: { id: fabricId }
-          });
-        }
-        currentActions.updateHeading(headingValue);
-        currentActions.updateLining(liningValue);
+        // Priority order for fabric ID: fabric_details.fabric_id > treatment_details.selected_fabric > measurements.fabric_id
+        fabricId = fabricDetails.fabric_id || 
+                   treatmentDetails.selected_fabric || 
+                   treatmentMeasurements.fabric_id || 
+                   treatmentMeasurements.selected_fabric || "";
         
-        if (treatmentDetails.window_covering) {
-          currentActions.updateTemplate(treatmentDetails.window_covering);
-        }
+        // Priority order for heading: treatment_details > fabric_details > measurements
+        headingValue = treatmentDetails.selected_heading || 
+                       fabricDetails.selected_heading || 
+                       treatmentMeasurements.selected_heading || 
+                       treatmentMeasurements.heading_type || "standard";
+        
+        // Priority order for lining: treatment_details > fabric_details > measurements  
+        liningValue = treatmentDetails.selected_lining || 
+                      fabricDetails.selected_lining || 
+                      treatmentMeasurements.selected_lining || 
+                      treatmentMeasurements.lining_type || "none";
+        
+        windowCoveringId = treatmentDetails.window_covering?.id || savedTreatment.treatment_type || "no_covering";
+        treatmentTypeValue = savedTreatment.treatment_type || "";
+        
+        console.log("📦 Loaded from saved treatment:", {
+          fabricId, headingValue, liningValue, windowCoveringId, treatmentTypeValue,
+          sources: {
+            fabricDetails: Object.keys(fabricDetails),
+            treatmentDetails: Object.keys(treatmentDetails),
+            measurements: Object.keys(treatmentMeasurements)
+          }
+        });
       } catch (e) {
-        console.warn("Enhanced: Failed to parse saved treatment data:", e);
+        console.warn("Failed to parse saved treatment data:", e);
       }
     }
     
-    // Load from existing measurement/treatment data
-    if (existingMeasurement || existingTreatments.length > 0) {
-      console.log("📋 Enhanced: Loading from existing data");
+    // Load from measurements if no treatment data found
+    if (!savedTreatment && safeExistingMeasurement) {
+      const measurementData = safeExistingMeasurement.measurements || {};
+      fabricId = measurementData.selected_fabric || "";
+      headingValue = measurementData.selected_heading || "standard";
+      liningValue = measurementData.selected_lining || "none";
+      windowCoveringId = measurementData.window_covering_id || "no_covering";
       
-      if (existingMeasurement) {
-        const measurements = existingMeasurement.measurements || {};
-        currentActions.updateMeasurements(measurements);
+      console.log("📋 Loaded from measurements:", {
+        fabricId, headingValue, liningValue, windowCoveringId
+      });
+    }
+    
+    // Priority 1: Existing saved summary (only if no saved treatment exists)
+    if (shouldUseSavedData && savedSummary?.measurements_details && !savedTreatment) {
+      console.log("✅ PRIORITY 1: Loading from saved summary (no treatment found)");
+      measurements = {
+        ...savedSummary.measurements_details,
+        rail_width: savedSummary.measurements_details.rail_width_cm || savedSummary.measurements_details.rail_width || 0,
+        drop: savedSummary.measurements_details.drop_cm || savedSummary.measurements_details.drop || 0,
+        surface_id: surfaceId,
+        surface_name: surfaceData?.name
+      };
+      windowCoveringId = savedSummary.template_id || "no_covering";
+      // Only use saved summary fabric/lining if no treatment data exists
+      if (!fabricId) fabricId = savedSummary.fabric_details?.fabric_id || "";
+      if (headingValue === "standard") headingValue = savedSummary.heading_details?.heading_name || savedSummary.heading_details?.id || "standard";
+      if (liningValue === "none") liningValue = savedSummary.lining_type || "none";
+      treatmentTypeValue = savedSummary.template_details?.curtain_type || "";
+    } else if (shouldUseSavedData && savedSummary?.measurements_details && savedTreatment) {
+      console.log("✅ PRIORITY 1: Loading measurements from saved summary but keeping treatment fabric/lining");
+      // Use measurements from summary but preserve treatment fabric/lining selections
+      measurements = {
+        ...savedSummary.measurements_details,
+        rail_width: savedSummary.measurements_details.rail_width_cm || savedSummary.measurements_details.rail_width || 0,
+        drop: savedSummary.measurements_details.drop_cm || savedSummary.measurements_details.drop || 0,
+        surface_id: surfaceId,
+        surface_name: surfaceData?.name
+      };
+      windowCoveringId = savedSummary.template_id || "no_covering";
+      // Keep the treatment fabric/lining data that was loaded earlier
+    }
+    
+    // Priority 2: Existing treatments
+    const existingTreatment = existingTreatments?.[0];
+    if (existingTreatment && (!shouldUseSavedData || !savedSummary)) {
+      console.log("✅ PRIORITY 2: Loading from existing treatment");
+      try {
+        const treatmentMeasurements = typeof existingTreatment.measurements === 'string' 
+          ? JSON.parse(existingTreatment.measurements) : existingTreatment.measurements;
+        measurements = { ...measurements, ...treatmentMeasurements };
         
-        if (existingMeasurement.selected_heading) {
-          currentActions.updateHeading(existingMeasurement.selected_heading);
-        }
-        if (existingMeasurement.selected_lining) {
-          currentActions.updateLining(existingMeasurement.selected_lining);
-        }
-        if (existingMeasurement.measurements?.selected_fabric) {
-          currentActions.updateSelectedItems({
-            ...currentState.selectedItems,
-            fabric: { id: existingMeasurement.measurements.selected_fabric }
-          });
-        }
-      }
-      
-      // Load from treatment details
-      if (existingTreatments.length > 0) {
-        const treatment = existingTreatments[0];
-        try {
-          const details = typeof treatment.treatment_details === 'string' 
-            ? JSON.parse(treatment.treatment_details) 
-            : treatment.treatment_details;
-            
-          if (details) {
-            if (details.selected_heading) currentActions.updateHeading(details.selected_heading);
-            if (details.selected_lining) currentActions.updateLining(details.selected_lining);
-            if (details.window_covering) currentActions.updateTemplate(details.window_covering);
-          }
-        } catch (e) {
-          console.warn("Enhanced: Failed to parse treatment details:", e);
-        }
+        const treatmentDetails = typeof existingTreatment.treatment_details === 'string'
+          ? JSON.parse(existingTreatment.treatment_details) : existingTreatment.treatment_details;
+        
+        windowCoveringId = treatmentDetails?.window_covering?.id || existingTreatment.treatment_type || windowCoveringId;
+        fabricId = treatmentDetails?.selected_fabric || existingTreatment.fabric_details?.fabric_id || fabricId;
+        headingValue = treatmentDetails?.selected_heading || existingTreatment.selected_heading || headingValue;
+        liningValue = treatmentDetails?.selected_lining || existingTreatment.selected_lining || liningValue;
+        treatmentTypeValue = existingTreatment.treatment_type || treatmentTypeValue;
+      } catch (e) {
+        console.warn("Failed to parse treatment data:", e);
       }
     }
-  }, [surfaceId, allProjectTreatments, existingMeasurement, existingTreatments, currentActions]);
+    
+    // Priority 3: Basic measurements - BUT PRESERVE USER SELECTIONS
+    if (existingMeasurement?.measurements && Object.keys(measurements).length === 0) {
+      console.log("✅ PRIORITY 3: Loading from basic measurements");
+      measurements = { ...existingMeasurement.measurements };
+      // Don't override user selections with "no_covering" - preserve current state
+      const currentSelection = selectedWindowCovering || "";
+      if (currentSelection && currentSelection !== "no_covering") {
+        console.log("🔄 PRESERVING user selection:", currentSelection);
+        windowCoveringId = currentSelection;
+      } else {
+        windowCoveringId = existingMeasurement.window_covering_id || windowCoveringId;
+      }
+    }
+    
+    // Apply all loaded data with explicit logging
+    console.log("🎯 APPLYING: Final data before setting state:", {
+      measurements,
+      windowCoveringId,
+      fabricId,
+      headingValue,
+      liningValue,
+      treatmentTypeValue
+    });
+    
+    setMeasurements(measurements);
+    
+    // Enhanced user interaction protection
+    const isCurrentlyUserInteracting = isUserInteractingRef.current;
+    const hasUserSelection = selectedWindowCovering && selectedWindowCovering !== "no_covering";
+    
+    // Only update window covering if:
+    // 1. User is not currently interacting
+    // 2. User doesn't have an existing selection OR we have saved data that should override
+    if (!isCurrentlyUserInteracting && (!hasUserSelection || savedTreatment || savedSummary)) {
+      setSelectedWindowCovering(windowCoveringId);
+      console.log("🔄 DATA LOAD: Set selectedWindowCovering to:", windowCoveringId);
+    } else {
+      console.log("🚫 DATA LOAD: Preserved user selection:", selectedWindowCovering, "Reasons:", {
+        userInteracting: isCurrentlyUserInteracting,
+        hasUserSelection,
+        hasSavedTreatment: !!savedTreatment,
+        hasSavedSummary: !!savedSummary
+      });
+    }
+    
+    // Set fabric and lining with explicit logging
+    console.log("🎯 Setting selectedFabric to:", fabricId);
+    setSelectedFabric(fabricId);
+    
+    console.log("🎯 Setting selectedHeading to:", headingValue);  
+    setSelectedHeading(headingValue);
+    
+    console.log("🎯 Setting selectedLining to:", liningValue);
+    setSelectedLining(liningValue);
+    
+    // Set other form fields
+    setWindowType(existingMeasurement?.measurement_type || "standard");
+    setSelectedRoom(existingMeasurement?.room_id || surfaceData?.room_id || currentRoomId || "no_room");
+    setNotes(existingMeasurement?.notes || "");
+    setMeasuredBy(existingMeasurement?.measured_by || "");
+    setPhotos(existingMeasurement?.photos || []);
+    
+    // Update treatment data
+    setTreatmentData({
+      treatment_type: treatmentTypeValue,
+      measurements: measurements,
+      fabric_details: existingTreatment?.fabric_details || {},
+      treatment_details: existingTreatment?.treatment_details || {}
+    });
+    
+    console.log("✅ LOADING: Complete data load finished for surface:", surfaceId);
+    
+    // Add a small delay to ensure UI updates
+    setTimeout(() => {
+      console.log("🔍 VERIFICATION: Current state after load:", {
+        selectedFabric,
+        selectedLining,
+        selectedHeading,
+        selectedWindowCovering
+      });
+    }, 100);
+  }, [surfaceId, shouldUseSavedData, savedSummary, existingMeasurement, existingTreatments, currentRoomId, surfaceData]);
+  
+  // Separate effect for allProjectTreatments to prevent state override during user interactions
+  const isUserInteractingRef = useRef(false);
+  
+  useEffect(() => {
+    // Don't reload data if user is actively making selections
+    if (isUserInteractingRef.current) {
+      console.log("🚫 CRITICAL: Skipping data reload - user is interacting");
+      return;
+    }
+    
+    // Only reload if we have new treatment data and it's not from user interaction
+    if (allProjectTreatments?.length) {
+      console.log("📊 CRITICAL: Processing treatment updates from server - this might override user selection!");
+      console.log("📊 Current selectedWindowCovering before potential override:", selectedWindowCovering);
+    }
+  }, [allProjectTreatments]);
+  
+  // Add effect to monitor selectedWindowCovering changes
+  useEffect(() => {
+    console.log("🔍 MONITOR: selectedWindowCovering changed to:", selectedWindowCovering);
+  }, [selectedWindowCovering]);
 
-  // REMOVED the long centralized data loading effect since we're using shared state now
-
-  // Hooks
-  const { data: rooms = [] } = useRooms(projectId || "");
+  const createMeasurement = useCreateClientMeasurement();
+  const updateMeasurement = useUpdateClientMeasurement();
+  const queryClient = useQueryClient();
+  const { data: rooms = [] } = useRooms(projectId);
   const { data: curtainTemplates = [] } = useCurtainTemplates();
   const { data: inventoryItems = [] } = useInventory();
   const { data: windowCoverings = [] } = useWindowCoverings();
   const { units } = useMeasurementUnits();
-  const createMeasurement = useCreateClientMeasurement();
-  const updateMeasurement = useUpdateClientMeasurement();
+  const saveWindowSummary = useSaveWindowSummary();
   const createTreatment = useCreateTreatment();
   const updateTreatment = useUpdateTreatment();
-  const queryClient = useQueryClient();
-  const saveWindowSummary = useSaveWindowSummary();
-  const isUserInteractingRef = useRef(false);
+
+  // Now log rooms data after it's declared
+  console.log("🏠 Project ID:", projectId, "Rooms count:", rooms?.length || 0, "ReadOnly:", readOnly);
+
+  // Remove duplicate loading effect - handled by main effect above
 
   // Get selected curtain template details
   const selectedCovering = curtainTemplates.find(c => c.id === selectedWindowCovering);

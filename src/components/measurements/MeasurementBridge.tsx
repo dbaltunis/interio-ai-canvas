@@ -1,7 +1,6 @@
-import React, { forwardRef, useImperativeHandle, useEffect } from 'react';
+import React, { forwardRef, useImperativeHandle } from 'react';
 import { DynamicWindowWorksheet } from './DynamicWindowWorksheet';
 import { EnhancedMeasurementWorksheet } from './EnhancedMeasurementWorksheet';
-import { useSharedMeasurementState } from '@/hooks/useSharedMeasurementState';
 
 interface MeasurementBridgeProps {
   mode?: 'dynamic' | 'enhanced';
@@ -39,14 +38,6 @@ export const MeasurementBridge = forwardRef<
   onSaveTreatment,
   readOnly = false
 }, ref) => {
-  const [sharedState, sharedActions] = useSharedMeasurementState(surfaceId);
-
-  // Load existing data into shared state when component mounts
-  useEffect(() => {
-    if (existingMeasurement || existingTreatments.length > 0) {
-      sharedActions.loadFromExistingData(existingMeasurement, existingTreatments);
-    }
-  }, [existingMeasurement, existingTreatments, sharedActions]);
   
   // Forward the ref to the appropriate component
   useImperativeHandle(ref, () => ({
@@ -73,8 +64,6 @@ export const MeasurementBridge = forwardRef<
         onClose={onClose}
         onSaveTreatment={onSaveTreatment}
         readOnly={readOnly}
-        sharedState={sharedState}
-        sharedActions={sharedActions}
       />
     );
   }
@@ -92,8 +81,6 @@ export const MeasurementBridge = forwardRef<
       onClose={onClose}
       onSaveTreatment={onSaveTreatment}
       readOnly={readOnly}
-      sharedState={sharedState}
-      sharedActions={sharedActions}
     />
   );
 });

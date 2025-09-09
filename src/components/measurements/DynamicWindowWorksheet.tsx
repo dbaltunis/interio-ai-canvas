@@ -16,10 +16,6 @@ import { LayeredTreatmentManager } from "../job-creation/LayeredTreatmentManager
 import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
-import { useSharedMeasurementState } from "@/hooks/useSharedMeasurementState";
-
-type SharedMeasurementState = ReturnType<typeof useSharedMeasurementState>[0];
-type SharedMeasurementActions = ReturnType<typeof useSharedMeasurementState>[1];
 
 interface DynamicWindowWorksheetProps {
   clientId?: string;
@@ -32,8 +28,6 @@ interface DynamicWindowWorksheetProps {
   onClose?: () => void;
   onSaveTreatment?: (treatmentData: any) => void;
   readOnly?: boolean;
-  sharedState?: SharedMeasurementState;
-  sharedActions?: SharedMeasurementActions;
 }
 
 export const DynamicWindowWorksheet = forwardRef<
@@ -49,46 +43,32 @@ export const DynamicWindowWorksheet = forwardRef<
   onSave,
   onClose,
   onSaveTreatment,
-  readOnly = false,
-  sharedState,
-  sharedActions
+  readOnly = false
 }, ref) => {
-  // Use shared state consistently
-  const [internalSharedState, internalSharedActions] = useSharedMeasurementState(surfaceId);
-  
-  // Use provided shared state if available, otherwise use internal shared state
-  const currentState = sharedState || internalSharedState;
-  const currentActions = sharedActions || internalSharedActions;
-  
+  // State management
+  const [selectedWindowType, setSelectedWindowType] = useState<any>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const [selectedTreatmentType, setSelectedTreatmentType] = useState("curtains");
+  const [measurements, setMeasurements] = useState<Record<string, any>>({});
+  const [selectedItems, setSelectedItems] = useState<{
+    fabric?: any;
+    hardware?: any;
+    material?: any;
+  }>({});
   const [activeTab, setActiveTab] = useState("window-type");
-  
-  // Use shared state values directly
-  const selectedWindowType = currentState.selectedWindowType;
-  const selectedTemplate = currentState.selectedTemplate;
-  const selectedTreatmentType = currentState.selectedTreatmentType;
-  const measurements = currentState.measurements;
-  const selectedItems = currentState.selectedItems;
-  const fabricCalculation = currentState.fabricCalculation;
-  const selectedHeading = currentState.selectedHeading;
-  const selectedLining = currentState.selectedLining;
-  const layeredTreatments = currentState.layeredTreatments;
-  const isLayeredMode = currentState.isLayeredMode;
-
-  // Setters that use shared state actions directly
-  const setSelectedWindowType = currentActions.updateWindowType;
-  const setSelectedTemplate = currentActions.updateTemplate;
-  const setSelectedTreatmentType = currentActions.updateTreatmentType;
-
-  const setMeasurements = (value: Record<string, any> | ((prev: Record<string, any>) => Record<string, any>)) => {
-    const newValue = typeof value === 'function' ? value(measurements) : value;
-    currentActions.updateMeasurements(newValue);
-  };
-  const setSelectedItems = currentActions.updateSelectedItems;
-  const setFabricCalculation = currentActions.updateFabricCalculation;
-  const setSelectedHeading = currentActions.updateHeading;
-  const setSelectedLining = currentActions.updateLining;
-  const setLayeredTreatments = currentActions.updateLayeredTreatments;
-  const setIsLayeredMode = currentActions.updateLayeredMode;
+  const [fabricCalculation, setFabricCalculation] = useState<any>(null);
+  const [selectedHeading, setSelectedHeading] = useState("standard");
+  const [selectedLining, setSelectedLining] = useState("none");
+  const [layeredTreatments, setLayeredTreatments] = useState<Array<{
+    id: string;
+    type: string;
+    template?: any;
+    selectedItems?: any;
+    zIndex: number;
+    opacity: number;
+    name: string;
+  }>>([]);
+  const [isLayeredMode, setIsLayeredMode] = useState(false);
 
   // Hooks
   const { data: curtainTemplates = [] } = useCurtainTemplates();
@@ -100,78 +80,41 @@ export const DynamicWindowWorksheet = forwardRef<
     if (existingMeasurement) {
       console.log("Loading existing measurement data:", existingMeasurement);
       
-      // Update shared state if available
-      if (sharedActions) {
-        sharedActions.updateMeasurements(existingMeasurement.measurements || {});
-        
-        if (existingMeasurement.window_type) {
-          sharedActions.updateWindowType(existingMeasurement.window_type);
-        }
-        
-        if (existingMeasurement.template) {
-          sharedActions.updateTemplate(existingMeasurement.template);
-        }
-        
-        if (existingMeasurement.treatment_type) {
-          sharedActions.updateTreatmentType(existingMeasurement.treatment_type);
-        }
-        
-        if (existingMeasurement.selected_items) {
-          sharedActions.updateSelectedItems(existingMeasurement.selected_items);
-        }
-        
-        if (existingMeasurement.selected_heading) {
-          sharedActions.updateHeading(existingMeasurement.selected_heading);
-        }
-        
-        if (existingMeasurement.selected_lining) {
-          sharedActions.updateLining(existingMeasurement.selected_lining);
-        }
-        
-        if (existingMeasurement.layered_treatments) {
-          sharedActions.updateLayeredTreatments(existingMeasurement.layered_treatments);
-          sharedActions.updateLayeredMode(existingMeasurement.layered_treatments.length > 0);
-        }
-        
-        if (existingMeasurement.fabric_calculation) {
-          sharedActions.updateFabricCalculation(existingMeasurement.fabric_calculation);
-        }
-      } else {
-        // Use shared actions even as fallback
-        setMeasurements(existingMeasurement.measurements || {});
-        
-        if (existingMeasurement.window_type) {
-          setSelectedWindowType(existingMeasurement.window_type);
-        }
-        
-        if (existingMeasurement.template) {
-          setSelectedTemplate(existingMeasurement.template);
-        }
-        
-        if (existingMeasurement.treatment_type) {
-          setSelectedTreatmentType(existingMeasurement.treatment_type);
-        }
-        
-        if (existingMeasurement.selected_items) {
-          setSelectedItems(existingMeasurement.selected_items);
-        }
-        
-        if (existingMeasurement.selected_heading) {
-          setSelectedHeading(existingMeasurement.selected_heading);
-        }
-        
-        if (existingMeasurement.selected_lining) {
-          setSelectedLining(existingMeasurement.selected_lining);
-        }
-        
-        if (existingMeasurement.layered_treatments) {
-          setLayeredTreatments(existingMeasurement.layered_treatments);
-          setIsLayeredMode(existingMeasurement.layered_treatments.length > 0);
-        }
-        
-        if (existingMeasurement.fabric_calculation) {
-          setFabricCalculation(existingMeasurement.fabric_calculation);
-        }
+      setMeasurements(existingMeasurement.measurements || {});
+      
+      // Load window type if saved
+      if (existingMeasurement.window_type) {
+        setSelectedWindowType(existingMeasurement.window_type);
+      }
+      
+      // Load template if saved
+      if (existingMeasurement.template) {
+        setSelectedTemplate(existingMeasurement.template);
+      }
+      
+      // Load treatment type if saved
+      if (existingMeasurement.treatment_type) {
+        setSelectedTreatmentType(existingMeasurement.treatment_type);
+      }
+      
+      // Load selected items if saved
+      if (existingMeasurement.selected_items) {
+        setSelectedItems(existingMeasurement.selected_items);
+      }
+      
+      // Load enhanced mode specific fields
+      if (existingMeasurement.selected_heading) {
+        setSelectedHeading(existingMeasurement.selected_heading);
+      }
+      
+      if (existingMeasurement.selected_lining) {
+        setSelectedLining(existingMeasurement.selected_lining);
+      }
+      
+      // Load layered treatments if they exist
+      if (existingMeasurement.layered_treatments) {
+        setLayeredTreatments(existingMeasurement.layered_treatments);
+        setIsLayeredMode(existingMeasurement.layered_treatments.length > 0);
       }
     }
     
@@ -185,12 +128,7 @@ export const DynamicWindowWorksheet = forwardRef<
           ? JSON.parse(treatment.treatment_details) 
           : treatment.treatment_details;
           
-        if (details && sharedActions) {
-          if (details.selected_heading) sharedActions.updateHeading(details.selected_heading);
-          if (details.selected_lining) sharedActions.updateLining(details.selected_lining);
-          if (details.window_covering) sharedActions.updateTemplate(details.window_covering);
-        } else if (details) {
-          // Use shared actions even as fallback
+        if (details) {
           if (details.selected_heading) setSelectedHeading(details.selected_heading);
           if (details.selected_lining) setSelectedLining(details.selected_lining);
           if (details.window_covering) setSelectedTemplate(details.window_covering);
@@ -199,7 +137,7 @@ export const DynamicWindowWorksheet = forwardRef<
         console.warn("Failed to parse treatment details:", e);
       }
     }
-  }, [existingMeasurement, existingTreatments, sharedActions]);
+  }, [existingMeasurement, existingTreatments]);
 
   // Enhanced auto-save implementation with cross-mode data
   useImperativeHandle(ref, () => ({
@@ -239,27 +177,24 @@ export const DynamicWindowWorksheet = forwardRef<
   }));
 
   const handleMeasurementChange = (field: string, value: string) => {
-    const newMeasurements = {
-      ...measurements,
+    setMeasurements(prev => ({
+      ...prev,
       [field]: value
-    };
-    setMeasurements(newMeasurements);
+    }));
   };
 
   const handleItemSelect = (category: string, item: any) => {
-    const newItems = {
-      ...selectedItems,
+    setSelectedItems(prev => ({
+      ...prev,
       [category]: item
-    };
-    setSelectedItems(newItems);
+    }));
   };
 
   const handleItemDeselect = (category: string) => {
-    const newItems = {
-      ...selectedItems,
+    setSelectedItems(prev => ({
+      ...prev,
       [category]: undefined
-    };
-    setSelectedItems(newItems);
+    }));
   };
 
   const handleTemplateSelect = (template: any) => {

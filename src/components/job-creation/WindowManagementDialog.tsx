@@ -125,7 +125,7 @@ export const WindowManagementDialog = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleDialogClose}>
-        <DialogContent className="max-w-6xl max-h-[95vh] min-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Ruler className="h-5 w-5" />
@@ -161,6 +161,7 @@ export const WindowManagementDialog = ({
             </div>
 
             <MeasurementBridge
+              key={`${surface?.id}-${measurementMode}`} // Force remount on mode change
               ref={worksheetRef}
               mode={measurementMode}
               clientId={clientId || ""}
