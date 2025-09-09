@@ -75,7 +75,7 @@ export const DynamicWindowWorksheet = forwardRef<
   const { data: windowCoverings = [] } = useWindowCoverings();
   const { units } = useMeasurementUnits();
 
-  // Load existing data
+  // Load existing data and sync with Enhanced mode
   useEffect(() => {
     if (existingMeasurement) {
       console.log("Loading existing measurement data:", existingMeasurement);
@@ -101,16 +101,51 @@ export const DynamicWindowWorksheet = forwardRef<
       if (existingMeasurement.selected_items) {
         setSelectedItems(existingMeasurement.selected_items);
       }
+      
+      // Load enhanced mode specific fields
+      if (existingMeasurement.selected_heading) {
+        setSelectedHeading(existingMeasurement.selected_heading);
+      }
+      
+      if (existingMeasurement.selected_lining) {
+        setSelectedLining(existingMeasurement.selected_lining);
+      }
+      
+      // Load layered treatments if they exist
+      if (existingMeasurement.layered_treatments) {
+        setLayeredTreatments(existingMeasurement.layered_treatments);
+        setIsLayeredMode(existingMeasurement.layered_treatments.length > 0);
+      }
     }
-  }, [existingMeasurement]);
+    
+    // Load from existing treatments for cross-mode compatibility
+    if (existingTreatments && existingTreatments.length > 0) {
+      const treatment = existingTreatments[0];
+      
+      // Parse treatment details
+      try {
+        const details = typeof treatment.treatment_details === 'string' 
+          ? JSON.parse(treatment.treatment_details) 
+          : treatment.treatment_details;
+          
+        if (details) {
+          if (details.selected_heading) setSelectedHeading(details.selected_heading);
+          if (details.selected_lining) setSelectedLining(details.selected_lining);
+          if (details.window_covering) setSelectedTemplate(details.window_covering);
+        }
+      } catch (e) {
+        console.warn("Failed to parse treatment details:", e);
+      }
+    }
+  }, [existingMeasurement, existingTreatments]);
 
-  // Auto-save implementation
+  // Enhanced auto-save implementation with cross-mode data
   useImperativeHandle(ref, () => ({
     autoSave: async () => {
       try {
         console.log("Auto-saving dynamic worksheet data for surface:", surfaceId);
         
-        // Create comprehensive measurement data
+        // Create comprehensive measurement data including enhanced mode fields
         const measurementData = {
           measurements,
           window_type: selectedWindowType,
@@ -120,7 +155,12 @@ export const DynamicWindowWorksheet = forwardRef<
           fabric_calculation: fabricCalculation,
           surface_id: surfaceId,
           client_id: clientId,
-          project_id: projectId
+          project_id: projectId,
+          // Enhanced mode compatibility fields
+          selected_heading: selectedHeading,
+          selected_lining: selectedLining,
+          layered_treatments: layeredTreatments,
+          is_layered_mode: isLayeredMode
         };
 
         // Save the configuration if we have enough data
@@ -128,7 +168,7 @@ export const DynamicWindowWorksheet = forwardRef<
           await onSave();
         }
 
-        console.log("Dynamic worksheet auto-save completed");
+        console.log("Dynamic worksheet auto-save completed with enhanced data");
       } catch (error) {
         console.error("Dynamic worksheet auto-save failed:", error);
         throw error;
@@ -167,18 +207,41 @@ export const DynamicWindowWorksheet = forwardRef<
 
   return (
     <div className="space-y-6">
-      {/* Progress indicator */}
+      {/* Enhanced Progress indicator with clickable navigation */}
       <div className="flex items-center space-x-4">
-        {["window-type", "treatment", "inventory", "measurements", "preview"].map((step, index) => (
-          <div key={step} className="flex items-center">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-              activeTab === step ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-            }`}>
-              {index + 1}
+        {["window-type", "treatment", "inventory", "measurements", "preview"].map((step, index) => {
+          const stepNames = ["Window Type", "Treatment", "Inventory", "Measurements", "Preview"];
+          const isCompleted = (() => {
+            switch(step) {
+              case "window-type": return selectedWindowType;
+              case "treatment": return selectedTemplate || (isLayeredMode && layeredTreatments.length > 0);
+              case "inventory": return Object.values(selectedItems).some(item => item);
+              case "measurements": return measurements.rail_width && measurements.drop;
+              case "preview": return true;
+              default: return false;
+            }
+          })();
+          
+          return (
+            <div key={step} className="flex items-center">
+              <button
+                onClick={() => setActiveTab(step)}
+                disabled={readOnly}
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
+                  activeTab === step 
+                    ? 'bg-primary text-primary-foreground' 
+                    : isCompleted 
+                      ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                } ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`}
+                title={`${stepNames[index]} ${isCompleted ? '(Completed)' : ''}`}
+              >
+                {isCompleted ? '✓' : index + 1}
+              </button>
+              {index < 4 && <div className="w-8 h-px bg-border mx-2" />}
             </div>
-            {index < 4 && <div className="w-8 h-px bg-border mx-2" />}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -186,20 +249,24 @@ export const DynamicWindowWorksheet = forwardRef<
           <TabsTrigger value="window-type">
             <Ruler className="h-4 w-4 mr-2" />
             Window Type
+            {selectedWindowType && <span className="ml-1 text-xs">✓</span>}
           </TabsTrigger>
-          <TabsTrigger value="treatment" disabled={!selectedWindowType}>
+          <TabsTrigger value="treatment">
             <Package className="h-4 w-4 mr-2" />
             Treatment
+            {(selectedTemplate || (isLayeredMode && layeredTreatments.length > 0)) && <span className="ml-1 text-xs">✓</span>}
           </TabsTrigger>
-          <TabsTrigger value="inventory" disabled={!canProceedToMeasurements}>
+          <TabsTrigger value="inventory">
             <Package className="h-4 w-4 mr-2" />
             Inventory
+            {Object.values(selectedItems).some(item => item) && <span className="ml-1 text-xs">✓</span>}
           </TabsTrigger>
-          <TabsTrigger value="measurements" disabled={!canProceedToMeasurements}>
+          <TabsTrigger value="measurements">
             <Ruler className="h-4 w-4 mr-2" />
             Measurements
+            {(measurements.rail_width && measurements.drop) && <span className="ml-1 text-xs">✓</span>}
           </TabsTrigger>
-          <TabsTrigger value="preview" disabled={!canShowPreview}>
+          <TabsTrigger value="preview">
             <Eye className="h-4 w-4 mr-2" />
             Preview
           </TabsTrigger>

@@ -817,7 +817,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     if (readOnly) return;
     
     try {
-      // Silent save without notifications
+      // Enhanced measurement data with cross-mode compatibility
       const measurementData = {
         client_id: clientId || null,
         project_id: projectId,
@@ -829,12 +829,26 @@ export const EnhancedMeasurementWorksheet = forwardRef<
           fabric_type: selectedFabric ? inventoryItems.find(item => item.id === selectedFabric)?.name : undefined,
           fabric_id: selectedFabric,
           heading_type: selectedHeading,
-          lining_type: selectedLining
+          lining_type: selectedLining,
+          selected_fabric: selectedFabric,
+          selected_heading: selectedHeading,
+          selected_lining: selectedLining
         },
         notes,
         measured_by: measuredBy,
         measured_at: new Date().toISOString(),
-        photos
+        photos,
+        // Cross-mode compatibility fields for Dynamic mode
+        window_type: windowType,
+        template: windowCoverings.find(w => w.id === selectedWindowCovering),
+        treatment_type: selectedWindowCovering !== "no_covering" ? "curtains" : "",
+        selected_items: {
+          fabric: selectedFabric ? inventoryItems.find(item => item.id === selectedFabric) : null,
+          hardware: null,
+          material: null
+        },
+        selected_heading: selectedHeading,
+        selected_lining: selectedLining
       };
 
       // Silent update - no toast notifications for auto-save
@@ -851,11 +865,11 @@ export const EnhancedMeasurementWorksheet = forwardRef<
         await mutation;
       }
       
-      console.log("Auto-save completed silently");
+      console.log("Enhanced auto-save completed with cross-mode data");
     } catch (error) {
       console.error("Auto-save failed:", error);
     }
-  }, [readOnly, clientId, projectId, selectedRoom, selectedWindowCovering, windowType, measurements, notes, measuredBy, photos, selectedFabric, selectedHeading, selectedLining, inventoryItems, existingMeasurement, updateMeasurement, createMeasurement]);
+  }, [readOnly, clientId, projectId, selectedRoom, selectedWindowCovering, windowType, measurements, notes, measuredBy, photos, selectedFabric, selectedHeading, selectedLining, inventoryItems, existingMeasurement, updateMeasurement, createMeasurement, windowCoverings]);
 
   // Debounced auto-save on changes
   const debouncedAutoSave = useCallback(() => {
