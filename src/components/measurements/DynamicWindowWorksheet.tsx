@@ -530,13 +530,16 @@ export const DynamicWindowWorksheet = forwardRef<
                   {onSaveTreatment && (
                     <Button 
                       variant="outline"
-                      onClick={() => onSaveTreatment?.({
-                        window_type: selectedWindowType,
-                        template: selectedTemplate,
-                        measurements,
-                        selected_items: selectedItems,
-                        fabric_calculation: fabricCalculation
-                      })}
+                      onClick={() => {
+                        onSaveTreatment?.({
+                          window_type: selectedWindowType,
+                          template: selectedTemplate,
+                          measurements,
+                          selected_items: selectedItems,
+                          fabric_calculation: fabricCalculation
+                        });
+                        onClose?.();
+                      }}
                       disabled={readOnly}
                     >
                       Save as Treatment
