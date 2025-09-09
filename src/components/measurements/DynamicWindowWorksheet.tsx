@@ -519,7 +519,10 @@ export const DynamicWindowWorksheet = forwardRef<
 
                 <div className="flex gap-2">
                   <Button 
-                    onClick={onSave}
+                    onClick={() => {
+                      onSave?.();
+                      onClose?.();
+                    }}
                     disabled={readOnly}
                     className="flex-1"
                   >
