@@ -152,41 +152,78 @@ export const DynamicWindowWorksheet = forwardRef<
     if (existingMeasurement) {
       console.log("Loading existing measurement data:", existingMeasurement);
       
-      setMeasurements(existingMeasurement.measurements || {});
-      
-      // Load window type if saved
-      if (existingMeasurement.window_type) {
-        setSelectedWindowType(existingMeasurement.window_type);
-      }
-      
-      // Load template if saved
-      if (existingMeasurement.template) {
-        setSelectedTemplate(existingMeasurement.template);
-      }
-      
-      // Load treatment type if saved
-      if (existingMeasurement.treatment_type) {
-        setSelectedTreatmentType(existingMeasurement.treatment_type);
-      }
-      
-      // Load selected items if saved
-      if (existingMeasurement.selected_items) {
-        setSelectedItems(existingMeasurement.selected_items);
-      }
-      
-      // Load enhanced mode specific fields
-      if (existingMeasurement.selected_heading) {
-        setSelectedHeading(existingMeasurement.selected_heading);
-      }
-      
-      if (existingMeasurement.selected_lining) {
-        setSelectedLining(existingMeasurement.selected_lining);
-      }
-      
-      // Load layered treatments if they exist
-      if (existingMeasurement.layered_treatments) {
-        setLayeredTreatments(existingMeasurement.layered_treatments);
-        setIsLayeredMode(existingMeasurement.layered_treatments.length > 0);
+      // Update shared state if available
+      if (sharedActions) {
+        sharedActions.updateMeasurements(existingMeasurement.measurements || {});
+        
+        if (existingMeasurement.window_type) {
+          sharedActions.updateWindowType(existingMeasurement.window_type);
+        }
+        
+        if (existingMeasurement.template) {
+          sharedActions.updateTemplate(existingMeasurement.template);
+        }
+        
+        if (existingMeasurement.treatment_type) {
+          sharedActions.updateTreatmentType(existingMeasurement.treatment_type);
+        }
+        
+        if (existingMeasurement.selected_items) {
+          sharedActions.updateSelectedItems(existingMeasurement.selected_items);
+        }
+        
+        if (existingMeasurement.selected_heading) {
+          sharedActions.updateHeading(existingMeasurement.selected_heading);
+        }
+        
+        if (existingMeasurement.selected_lining) {
+          sharedActions.updateLining(existingMeasurement.selected_lining);
+        }
+        
+        if (existingMeasurement.layered_treatments) {
+          sharedActions.updateLayeredTreatments(existingMeasurement.layered_treatments);
+          sharedActions.updateLayeredMode(existingMeasurement.layered_treatments.length > 0);
+        }
+        
+        if (existingMeasurement.fabric_calculation) {
+          sharedActions.updateFabricCalculation(existingMeasurement.fabric_calculation);
+        }
+      } else {
+        // Fallback to local state
+        setLocalMeasurements(existingMeasurement.measurements || {});
+        
+        if (existingMeasurement.window_type) {
+          setLocalSelectedWindowType(existingMeasurement.window_type);
+        }
+        
+        if (existingMeasurement.template) {
+          setLocalSelectedTemplate(existingMeasurement.template);
+        }
+        
+        if (existingMeasurement.treatment_type) {
+          setLocalSelectedTreatmentType(existingMeasurement.treatment_type);
+        }
+        
+        if (existingMeasurement.selected_items) {
+          setLocalSelectedItems(existingMeasurement.selected_items);
+        }
+        
+        if (existingMeasurement.selected_heading) {
+          setLocalSelectedHeading(existingMeasurement.selected_heading);
+        }
+        
+        if (existingMeasurement.selected_lining) {
+          setLocalSelectedLining(existingMeasurement.selected_lining);
+        }
+        
+        if (existingMeasurement.layered_treatments) {
+          setLocalLayeredTreatments(existingMeasurement.layered_treatments);
+          setLocalIsLayeredMode(existingMeasurement.layered_treatments.length > 0);
+        }
+        
+        if (existingMeasurement.fabric_calculation) {
+          setLocalFabricCalculation(existingMeasurement.fabric_calculation);
+        }
       }
     }
     
@@ -200,16 +237,21 @@ export const DynamicWindowWorksheet = forwardRef<
           ? JSON.parse(treatment.treatment_details) 
           : treatment.treatment_details;
           
-        if (details) {
-          if (details.selected_heading) setSelectedHeading(details.selected_heading);
-          if (details.selected_lining) setSelectedLining(details.selected_lining);
-          if (details.window_covering) setSelectedTemplate(details.window_covering);
+        if (details && sharedActions) {
+          if (details.selected_heading) sharedActions.updateHeading(details.selected_heading);
+          if (details.selected_lining) sharedActions.updateLining(details.selected_lining);
+          if (details.window_covering) sharedActions.updateTemplate(details.window_covering);
+        } else if (details) {
+          // Fallback to local state
+          if (details.selected_heading) setLocalSelectedHeading(details.selected_heading);
+          if (details.selected_lining) setLocalSelectedLining(details.selected_lining);
+          if (details.window_covering) setLocalSelectedTemplate(details.window_covering);
         }
       } catch (e) {
         console.warn("Failed to parse treatment details:", e);
       }
     }
-  }, [existingMeasurement, existingTreatments]);
+  }, [existingMeasurement, existingTreatments, sharedActions]);
 
   // Enhanced auto-save implementation with cross-mode data
   useImperativeHandle(ref, () => ({
@@ -249,24 +291,27 @@ export const DynamicWindowWorksheet = forwardRef<
   }));
 
   const handleMeasurementChange = (field: string, value: string) => {
-    setMeasurements(prev => ({
-      ...prev,
+    const newMeasurements = {
+      ...measurements,
       [field]: value
-    }));
+    };
+    setMeasurements(newMeasurements);
   };
 
   const handleItemSelect = (category: string, item: any) => {
-    setSelectedItems(prev => ({
-      ...prev,
+    const newItems = {
+      ...selectedItems,
       [category]: item
-    }));
+    };
+    setSelectedItems(newItems);
   };
 
   const handleItemDeselect = (category: string) => {
-    setSelectedItems(prev => ({
-      ...prev,
+    const newItems = {
+      ...selectedItems,
       [category]: undefined
-    }));
+    };
+    setSelectedItems(newItems);
   };
 
   const handleTemplateSelect = (template: any) => {
