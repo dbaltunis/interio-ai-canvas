@@ -1,13 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Ruler, Package, Calculator, Save } from "lucide-react";
-import { MeasurementWorksheet } from "../measurements/MeasurementWorksheet";
-import { DynamicWindowWorksheet } from "../measurements/DynamicWindowWorksheet";
+import { Ruler } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { MeasurementBridge } from "../measurements/MeasurementBridge";
 import { convertLegacyToDynamic, validateMeasurement } from "../measurements/utils/measurementMigration";
 import { TreatmentPricingForm } from "./TreatmentPricingForm";
@@ -22,14 +18,13 @@ interface WindowManagementDialogProps {
   projectId: string;
   existingMeasurement?: any;
   existingTreatments?: any[];
-  onSaveTreatment: (treatmentData: any) => void;
+  onSaveTreatment?: (treatmentData: any) => void;
 }
 
-// Enhanced treatment types with more variety
 const TREATMENT_TYPES = [
-  { id: "curtains", name: "Curtains", icon: "🪟", description: "Fabric panels with pleats & headings" },
-  { id: "roman_blinds", name: "Roman Blinds", icon: "📜", description: "Fabric blinds with horizontal folds" },
-  { id: "venetian_blinds", name: "Venetian Blinds", icon: "📋", description: "Adjustable horizontal slats" },
+  { id: "curtains", name: "Curtains", icon: "🪟", description: "Custom made curtains and drapes" },
+  { id: "blinds", name: "Blinds", icon: "📏", description: "Horizontal or vertical blinds" },
+  { id: "roman_blinds", name: "Roman Blinds", icon: "📋", description: "Soft fold window coverings" },
   { id: "vertical_blinds", name: "Vertical Blinds", icon: "📏", description: "Adjustable vertical slats" },
   { id: "roller_blinds", name: "Roller Blinds", icon: "🎞️", description: "Simple roll-up window covering" },
   { id: "plantation_shutters", name: "Plantation Shutters", icon: "🚪", description: "Adjustable louver panels" },
@@ -107,6 +102,36 @@ export const WindowManagementDialog = ({
     onClose();
   };
 
+  // Actual save function that persists data to database
+  const handleSaveData = async () => {
+    try {
+      console.log("WindowManagementDialog: Starting database save...");
+      
+      // Get current data from the worksheet ref
+      if (worksheetRef.current && typeof worksheetRef.current.autoSave === 'function') {
+        await worksheetRef.current.autoSave();
+      }
+      
+      console.log("WindowManagementDialog: Data saved successfully");
+      
+      const { toast } = await import("@/hooks/use-toast");
+      toast({
+        title: "✅ Data Saved",
+        description: "Your measurements and selections have been saved successfully",
+      });
+      
+    } catch (error) {
+      console.error("WindowManagementDialog: Save failed:", error);
+      const { toast } = await import("@/hooks/use-toast");
+      toast({
+        title: "❌ Save Failed",
+        description: "There was an error saving your data. Please try again.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
   // Auto-save function when dialog closes
   const handleDialogClose = async (open: boolean) => {
     if (!open && worksheetRef.current && typeof worksheetRef.current.autoSave === 'function') {
@@ -171,7 +196,7 @@ export const WindowManagementDialog = ({
               currentRoomId={surface?.room_id}
               existingMeasurement={existingMeasurement}
               existingTreatments={existingTreatments}
-              onSave={() => console.log("Measurements saved")}
+              onSave={handleSaveData}
               onSaveTreatment={handleTreatmentSave}
               readOnly={false}
             />

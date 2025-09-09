@@ -521,11 +521,25 @@ export const DynamicWindowWorksheet = forwardRef<
                   <Button 
                     onClick={async () => {
                       try {
-                        await onSave?.();
-                        console.log("Configuration saved, closing dialog");
-                        setTimeout(() => onClose?.(), 100); // Small delay to ensure save completes
+                        console.log("DynamicWorksheet: Starting save process...");
+                        console.log("Current measurements:", measurements);
+                        console.log("Current selectedItems:", selectedItems);
+                        
+                        // Call the parent's onSave function which should handle the actual persistence
+                        if (onSave) {
+                          await onSave();
+                          console.log("DynamicWorksheet: Save completed successfully");
+                        } else {
+                          console.error("DynamicWorksheet: No onSave function provided!");
+                        }
+                        
+                        // Add a small delay before closing to ensure save completes
+                        setTimeout(() => {
+                          console.log("DynamicWorksheet: Closing dialog after save");
+                          onClose?.();
+                        }, 500);
                       } catch (error) {
-                        console.error("Save failed:", error);
+                        console.error("DynamicWorksheet: Save failed:", error);
                       }
                     }}
                     disabled={readOnly}
@@ -540,6 +554,7 @@ export const DynamicWindowWorksheet = forwardRef<
                       variant="outline"
                       onClick={async () => {
                         try {
+                          console.log("DynamicWorksheet: Starting treatment save...");
                           await onSaveTreatment?.({
                             window_type: selectedWindowType,
                             template: selectedTemplate,
@@ -547,10 +562,14 @@ export const DynamicWindowWorksheet = forwardRef<
                             selected_items: selectedItems,
                             fabric_calculation: fabricCalculation
                           });
-                          console.log("Treatment saved, closing dialog");
-                          setTimeout(() => onClose?.(), 100); // Small delay to ensure save completes
+                          console.log("DynamicWorksheet: Treatment saved successfully");
+                          
+                          setTimeout(() => {
+                            console.log("DynamicWorksheet: Closing dialog after treatment save");
+                            onClose?.();
+                          }, 500);
                         } catch (error) {
-                          console.error("Treatment save failed:", error);
+                          console.error("DynamicWorksheet: Treatment save failed:", error);
                         }
                       }}
                       disabled={readOnly}
