@@ -28,6 +28,10 @@ import { calculateTreatmentPricing } from "@/utils/pricing/calculateTreatmentPri
 import { useTreatments } from "@/hooks/useTreatments";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useSharedMeasurementState } from "@/hooks/useSharedMeasurementState";
+
+type SharedMeasurementState = ReturnType<typeof useSharedMeasurementState>[0];
+type SharedMeasurementActions = ReturnType<typeof useSharedMeasurementState>[1];
 
 interface EnhancedMeasurementWorksheetProps {
   clientId?: string; // Optional - measurements can exist without being assigned to a client
@@ -41,6 +45,8 @@ interface EnhancedMeasurementWorksheetProps {
   onClose?: () => void;
   onSaveTreatment?: (treatmentData: any) => void;
   readOnly?: boolean;
+  sharedState?: SharedMeasurementState;
+  sharedActions?: SharedMeasurementActions;
 }
 
 const WINDOW_TYPES = [
@@ -66,7 +72,9 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   onSave,
   onClose,
   onSaveTreatment,
-  readOnly = false
+  readOnly = false,
+  sharedState,
+  sharedActions
 }, ref) => {
   // Debug readOnly state
   console.log("🔍 EnhancedMeasurementWorksheet readOnly state:", readOnly);
@@ -194,18 +202,44 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const [calculatedCost, setCalculatedCost] = useState(0);
   const [fabricCalculation, setFabricCalculation] = useState(null);
   
-  // Dynamic options state - isolated per window
-  const [selectedHeading, setSelectedHeading] = useState(() => 
+  // Dynamic options state - use shared state if available, otherwise local state
+  const [localSelectedHeading, setLocalSelectedHeading] = useState(() => 
     safeExistingTreatments?.[0]?.selected_heading || "standard"
   );
-  const [selectedLining, setSelectedLining] = useState(() => 
+  const [localSelectedLining, setLocalSelectedLining] = useState(() => 
     safeExistingTreatments?.[0]?.selected_lining || "none"
   );
-  const [selectedFabric, setSelectedFabric] = useState(() => 
+  const [localSelectedFabric, setLocalSelectedFabric] = useState(() => 
     safeExistingTreatments?.[0]?.fabric_details?.fabric_id || 
     safeExistingMeasurement?.measurements?.selected_fabric || 
     ""
   );
+
+  // Use shared state if available, otherwise use local state
+  const selectedHeading = sharedState?.selectedHeading || localSelectedHeading;
+  const selectedLining = sharedState?.selectedLining || localSelectedLining;
+  const selectedFabric = sharedState?.selectedItems?.fabric?.id || localSelectedFabric;
+
+  // Wrapper functions that update both shared and local state
+  const setSelectedHeading = (value: string) => {
+    setLocalSelectedHeading(value);
+    sharedActions?.updateHeading(value);
+  };
+
+  const setSelectedLining = (value: string) => {
+    setLocalSelectedLining(value);
+    sharedActions?.updateLining(value);
+  };
+
+  const setSelectedFabric = (value: string) => {
+    setLocalSelectedFabric(value);
+    // Update the fabric in selectedItems
+    const currentItems = sharedState?.selectedItems || {};
+    sharedActions?.updateSelectedItems({
+      ...currentItems,
+      fabric: { id: value }
+    });
+  };
 
   // Get treatments data early so it can be used in the effect
   const { data: allProjectTreatments = [] } = useTreatments(projectId);

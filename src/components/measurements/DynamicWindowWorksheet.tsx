@@ -16,6 +16,10 @@ import { LayeredTreatmentManager } from "../job-creation/LayeredTreatmentManager
 import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { useSharedMeasurementState } from "@/hooks/useSharedMeasurementState";
+
+type SharedMeasurementState = ReturnType<typeof useSharedMeasurementState>[0];
+type SharedMeasurementActions = ReturnType<typeof useSharedMeasurementState>[1];
 
 interface DynamicWindowWorksheetProps {
   clientId?: string;
@@ -28,6 +32,8 @@ interface DynamicWindowWorksheetProps {
   onClose?: () => void;
   onSaveTreatment?: (treatmentData: any) => void;
   readOnly?: boolean;
+  sharedState?: SharedMeasurementState;
+  sharedActions?: SharedMeasurementActions;
 }
 
 export const DynamicWindowWorksheet = forwardRef<
@@ -43,23 +49,25 @@ export const DynamicWindowWorksheet = forwardRef<
   onSave,
   onClose,
   onSaveTreatment,
-  readOnly = false
+  readOnly = false,
+  sharedState,
+  sharedActions
 }, ref) => {
-  // State management
-  const [selectedWindowType, setSelectedWindowType] = useState<any>(null);
-  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
-  const [selectedTreatmentType, setSelectedTreatmentType] = useState("curtains");
-  const [measurements, setMeasurements] = useState<Record<string, any>>({});
-  const [selectedItems, setSelectedItems] = useState<{
+  // Use shared state if available, otherwise use local state
+  const [localSelectedWindowType, setLocalSelectedWindowType] = useState<any>(null);
+  const [localSelectedTemplate, setLocalSelectedTemplate] = useState<any>(null);
+  const [localSelectedTreatmentType, setLocalSelectedTreatmentType] = useState("curtains");
+  const [localMeasurements, setLocalMeasurements] = useState<Record<string, any>>({});
+  const [localSelectedItems, setLocalSelectedItems] = useState<{
     fabric?: any;
     hardware?: any;
     material?: any;
   }>({});
   const [activeTab, setActiveTab] = useState("window-type");
-  const [fabricCalculation, setFabricCalculation] = useState<any>(null);
-  const [selectedHeading, setSelectedHeading] = useState("standard");
-  const [selectedLining, setSelectedLining] = useState("none");
-  const [layeredTreatments, setLayeredTreatments] = useState<Array<{
+  const [localFabricCalculation, setLocalFabricCalculation] = useState<any>(null);
+  const [localSelectedHeading, setLocalSelectedHeading] = useState("standard");
+  const [localSelectedLining, setLocalSelectedLining] = useState("none");
+  const [localLayeredTreatments, setLocalLayeredTreatments] = useState<Array<{
     id: string;
     type: string;
     template?: any;
@@ -68,7 +76,71 @@ export const DynamicWindowWorksheet = forwardRef<
     opacity: number;
     name: string;
   }>>([]);
-  const [isLayeredMode, setIsLayeredMode] = useState(false);
+  const [localIsLayeredMode, setLocalIsLayeredMode] = useState(false);
+
+  // Use shared state if available, otherwise use local state
+  const selectedWindowType = sharedState?.selectedWindowType || localSelectedWindowType;
+  const selectedTemplate = sharedState?.selectedTemplate || localSelectedTemplate;
+  const selectedTreatmentType = sharedState?.selectedTreatmentType || localSelectedTreatmentType;
+  const measurements = sharedState?.measurements || localMeasurements;
+  const selectedItems = sharedState?.selectedItems || localSelectedItems;
+  const fabricCalculation = sharedState?.fabricCalculation || localFabricCalculation;
+  const selectedHeading = sharedState?.selectedHeading || localSelectedHeading;
+  const selectedLining = sharedState?.selectedLining || localSelectedLining;
+  const layeredTreatments = sharedState?.layeredTreatments || localLayeredTreatments;
+  const isLayeredMode = sharedState?.isLayeredMode || localIsLayeredMode;
+
+  // Wrapper functions that update both shared and local state
+  const setSelectedWindowType = (value: any) => {
+    setLocalSelectedWindowType(value);
+    sharedActions?.updateWindowType(value);
+  };
+
+  const setSelectedTemplate = (value: any) => {
+    setLocalSelectedTemplate(value);
+    sharedActions?.updateTemplate(value);
+  };
+
+  const setSelectedTreatmentType = (value: string) => {
+    setLocalSelectedTreatmentType(value);
+    sharedActions?.updateTreatmentType(value);
+  };
+
+  const setMeasurements = (value: Record<string, any> | ((prev: Record<string, any>) => Record<string, any>)) => {
+    const newValue = typeof value === 'function' ? value(measurements) : value;
+    setLocalMeasurements(newValue);
+    sharedActions?.updateMeasurements(newValue);
+  };
+
+  const setSelectedItems = (value: any) => {
+    setLocalSelectedItems(value);
+    sharedActions?.updateSelectedItems(value);
+  };
+
+  const setFabricCalculation = (value: any) => {
+    setLocalFabricCalculation(value);
+    sharedActions?.updateFabricCalculation(value);
+  };
+
+  const setSelectedHeading = (value: string) => {
+    setLocalSelectedHeading(value);
+    sharedActions?.updateHeading(value);
+  };
+
+  const setSelectedLining = (value: string) => {
+    setLocalSelectedLining(value);
+    sharedActions?.updateLining(value);
+  };
+
+  const setLayeredTreatments = (value: any[]) => {
+    setLocalLayeredTreatments(value);
+    sharedActions?.updateLayeredTreatments(value);
+  };
+
+  const setIsLayeredMode = (value: boolean) => {
+    setLocalIsLayeredMode(value);
+    sharedActions?.updateLayeredMode(value);
+  };
 
   // Hooks
   const { data: curtainTemplates = [] } = useCurtainTemplates();
