@@ -202,40 +202,24 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const [calculatedCost, setCalculatedCost] = useState(0);
   const [fabricCalculation, setFabricCalculation] = useState(null);
   
-  // Dynamic options state - use shared state if available, otherwise local state
-  const [localSelectedHeading, setLocalSelectedHeading] = useState(() => 
-    safeExistingTreatments?.[0]?.selected_heading || "standard"
-  );
-  const [localSelectedLining, setLocalSelectedLining] = useState(() => 
-    safeExistingTreatments?.[0]?.selected_lining || "none"
-  );
-  const [localSelectedFabric, setLocalSelectedFabric] = useState(() => 
-    safeExistingTreatments?.[0]?.fabric_details?.fabric_id || 
-    safeExistingMeasurement?.measurements?.selected_fabric || 
-    ""
-  );
+  // Use shared state consistently
+  const [internalSharedState, internalSharedActions] = useSharedMeasurementState(surfaceId);
+  
+  // Use provided shared state if available, otherwise use internal shared state
+  const currentState = sharedState || internalSharedState;
+  const currentActions = sharedActions || internalSharedActions;
 
-  // Use shared state if available, otherwise use local state
-  const selectedHeading = sharedState?.selectedHeading || localSelectedHeading;
-  const selectedLining = sharedState?.selectedLining || localSelectedLining;
-  const selectedFabric = sharedState?.selectedItems?.fabric?.id || localSelectedFabric;
+  // Use shared state values directly
+  const selectedHeading = currentState.selectedHeading;
+  const selectedLining = currentState.selectedLining;
+  const selectedFabric = currentState.selectedItems?.fabric?.id || "";
 
-  // Wrapper functions that update both shared and local state
-  const setSelectedHeading = (value: string) => {
-    setLocalSelectedHeading(value);
-    sharedActions?.updateHeading(value);
-  };
-
-  const setSelectedLining = (value: string) => {
-    setLocalSelectedLining(value);
-    sharedActions?.updateLining(value);
-  };
-
+  // Use shared state actions directly
+  const setSelectedHeading = currentActions.updateHeading;
+  const setSelectedLining = currentActions.updateLining;
   const setSelectedFabric = (value: string) => {
-    setLocalSelectedFabric(value);
-    // Update the fabric in selectedItems
-    const currentItems = sharedState?.selectedItems || {};
-    sharedActions?.updateSelectedItems({
+    const currentItems = currentState.selectedItems || {};
+    currentActions.updateSelectedItems({
       ...currentItems,
       fabric: { id: value }
     });
@@ -246,7 +230,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
 
   // Sync with shared state when data loads
   useEffect(() => {
-    if (!surfaceId || !sharedActions) return;
+    if (!surfaceId || !currentActions) return;
     
     console.log("🔄 Enhanced: Syncing with shared state for surface:", surfaceId);
     
@@ -275,16 +259,16 @@ export const EnhancedMeasurementWorksheet = forwardRef<
         
         // Update shared state
         if (fabricId) {
-          sharedActions.updateSelectedItems({
-            ...sharedState?.selectedItems,
+          currentActions.updateSelectedItems({
+            ...currentState.selectedItems,
             fabric: { id: fabricId }
           });
         }
-        sharedActions.updateHeading(headingValue);
-        sharedActions.updateLining(liningValue);
+        currentActions.updateHeading(headingValue);
+        currentActions.updateLining(liningValue);
         
         if (treatmentDetails.window_covering) {
-          sharedActions.updateTemplate(treatmentDetails.window_covering);
+          currentActions.updateTemplate(treatmentDetails.window_covering);
         }
       } catch (e) {
         console.warn("Enhanced: Failed to parse saved treatment data:", e);
@@ -297,17 +281,17 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       
       if (existingMeasurement) {
         const measurements = existingMeasurement.measurements || {};
-        sharedActions.updateMeasurements(measurements);
+        currentActions.updateMeasurements(measurements);
         
         if (existingMeasurement.selected_heading) {
-          sharedActions.updateHeading(existingMeasurement.selected_heading);
+          currentActions.updateHeading(existingMeasurement.selected_heading);
         }
         if (existingMeasurement.selected_lining) {
-          sharedActions.updateLining(existingMeasurement.selected_lining);
+          currentActions.updateLining(existingMeasurement.selected_lining);
         }
         if (existingMeasurement.measurements?.selected_fabric) {
-          sharedActions.updateSelectedItems({
-            ...sharedState?.selectedItems,
+          currentActions.updateSelectedItems({
+            ...currentState.selectedItems,
             fabric: { id: existingMeasurement.measurements.selected_fabric }
           });
         }
@@ -322,16 +306,16 @@ export const EnhancedMeasurementWorksheet = forwardRef<
             : treatment.treatment_details;
             
           if (details) {
-            if (details.selected_heading) sharedActions.updateHeading(details.selected_heading);
-            if (details.selected_lining) sharedActions.updateLining(details.selected_lining);
-            if (details.window_covering) sharedActions.updateTemplate(details.window_covering);
+            if (details.selected_heading) currentActions.updateHeading(details.selected_heading);
+            if (details.selected_lining) currentActions.updateLining(details.selected_lining);
+            if (details.window_covering) currentActions.updateTemplate(details.window_covering);
           }
         } catch (e) {
           console.warn("Enhanced: Failed to parse treatment details:", e);
         }
       }
     }
-  }, [surfaceId, allProjectTreatments, existingMeasurement, existingTreatments, sharedActions]);
+  }, [surfaceId, allProjectTreatments, existingMeasurement, existingTreatments, currentActions]);
 
   // REMOVED the long centralized data loading effect since we're using shared state now
 

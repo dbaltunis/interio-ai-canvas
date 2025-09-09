@@ -53,94 +53,42 @@ export const DynamicWindowWorksheet = forwardRef<
   sharedState,
   sharedActions
 }, ref) => {
-  // Use shared state if available, otherwise use local state
-  const [localSelectedWindowType, setLocalSelectedWindowType] = useState<any>(null);
-  const [localSelectedTemplate, setLocalSelectedTemplate] = useState<any>(null);
-  const [localSelectedTreatmentType, setLocalSelectedTreatmentType] = useState("curtains");
-  const [localMeasurements, setLocalMeasurements] = useState<Record<string, any>>({});
-  const [localSelectedItems, setLocalSelectedItems] = useState<{
-    fabric?: any;
-    hardware?: any;
-    material?: any;
-  }>({});
+  // Use shared state consistently
+  const [internalSharedState, internalSharedActions] = useSharedMeasurementState(surfaceId);
+  
+  // Use provided shared state if available, otherwise use internal shared state
+  const currentState = sharedState || internalSharedState;
+  const currentActions = sharedActions || internalSharedActions;
+  
   const [activeTab, setActiveTab] = useState("window-type");
-  const [localFabricCalculation, setLocalFabricCalculation] = useState<any>(null);
-  const [localSelectedHeading, setLocalSelectedHeading] = useState("standard");
-  const [localSelectedLining, setLocalSelectedLining] = useState("none");
-  const [localLayeredTreatments, setLocalLayeredTreatments] = useState<Array<{
-    id: string;
-    type: string;
-    template?: any;
-    selectedItems?: any;
-    zIndex: number;
-    opacity: number;
-    name: string;
-  }>>([]);
-  const [localIsLayeredMode, setLocalIsLayeredMode] = useState(false);
+  
+  // Use shared state values directly
+  const selectedWindowType = currentState.selectedWindowType;
+  const selectedTemplate = currentState.selectedTemplate;
+  const selectedTreatmentType = currentState.selectedTreatmentType;
+  const measurements = currentState.measurements;
+  const selectedItems = currentState.selectedItems;
+  const fabricCalculation = currentState.fabricCalculation;
+  const selectedHeading = currentState.selectedHeading;
+  const selectedLining = currentState.selectedLining;
+  const layeredTreatments = currentState.layeredTreatments;
+  const isLayeredMode = currentState.isLayeredMode;
 
-  // Use shared state if available, otherwise use local state
-  const selectedWindowType = sharedState?.selectedWindowType || localSelectedWindowType;
-  const selectedTemplate = sharedState?.selectedTemplate || localSelectedTemplate;
-  const selectedTreatmentType = sharedState?.selectedTreatmentType || localSelectedTreatmentType;
-  const measurements = sharedState?.measurements || localMeasurements;
-  const selectedItems = sharedState?.selectedItems || localSelectedItems;
-  const fabricCalculation = sharedState?.fabricCalculation || localFabricCalculation;
-  const selectedHeading = sharedState?.selectedHeading || localSelectedHeading;
-  const selectedLining = sharedState?.selectedLining || localSelectedLining;
-  const layeredTreatments = sharedState?.layeredTreatments || localLayeredTreatments;
-  const isLayeredMode = sharedState?.isLayeredMode || localIsLayeredMode;
-
-  // Wrapper functions that update both shared and local state
-  const setSelectedWindowType = (value: any) => {
-    setLocalSelectedWindowType(value);
-    sharedActions?.updateWindowType(value);
-  };
-
-  const setSelectedTemplate = (value: any) => {
-    setLocalSelectedTemplate(value);
-    sharedActions?.updateTemplate(value);
-  };
-
-  const setSelectedTreatmentType = (value: string) => {
-    setLocalSelectedTreatmentType(value);
-    sharedActions?.updateTreatmentType(value);
-  };
+  // Setters that use shared state actions directly
+  const setSelectedWindowType = currentActions.updateWindowType;
+  const setSelectedTemplate = currentActions.updateTemplate;
+  const setSelectedTreatmentType = currentActions.updateTreatmentType;
 
   const setMeasurements = (value: Record<string, any> | ((prev: Record<string, any>) => Record<string, any>)) => {
     const newValue = typeof value === 'function' ? value(measurements) : value;
-    setLocalMeasurements(newValue);
-    sharedActions?.updateMeasurements(newValue);
+    currentActions.updateMeasurements(newValue);
   };
-
-  const setSelectedItems = (value: any) => {
-    setLocalSelectedItems(value);
-    sharedActions?.updateSelectedItems(value);
-  };
-
-  const setFabricCalculation = (value: any) => {
-    setLocalFabricCalculation(value);
-    sharedActions?.updateFabricCalculation(value);
-  };
-
-  const setSelectedHeading = (value: string) => {
-    setLocalSelectedHeading(value);
-    sharedActions?.updateHeading(value);
-  };
-
-  const setSelectedLining = (value: string) => {
-    setLocalSelectedLining(value);
-    sharedActions?.updateLining(value);
-  };
-
-  const setLayeredTreatments = (value: any[]) => {
-    setLocalLayeredTreatments(value);
-    sharedActions?.updateLayeredTreatments(value);
-  };
-
-  const setIsLayeredMode = (value: boolean) => {
-    setLocalIsLayeredMode(value);
-    sharedActions?.updateLayeredMode(value);
-  };
+  const setSelectedItems = currentActions.updateSelectedItems;
+  const setFabricCalculation = currentActions.updateFabricCalculation;
+  const setSelectedHeading = currentActions.updateHeading;
+  const setSelectedLining = currentActions.updateLining;
+  const setLayeredTreatments = currentActions.updateLayeredTreatments;
+  const setIsLayeredMode = currentActions.updateLayeredMode;
 
   // Hooks
   const { data: curtainTemplates = [] } = useCurtainTemplates();
@@ -189,40 +137,40 @@ export const DynamicWindowWorksheet = forwardRef<
           sharedActions.updateFabricCalculation(existingMeasurement.fabric_calculation);
         }
       } else {
-        // Fallback to local state
-        setLocalMeasurements(existingMeasurement.measurements || {});
+        // Use shared actions even as fallback
+        setMeasurements(existingMeasurement.measurements || {});
         
         if (existingMeasurement.window_type) {
-          setLocalSelectedWindowType(existingMeasurement.window_type);
+          setSelectedWindowType(existingMeasurement.window_type);
         }
         
         if (existingMeasurement.template) {
-          setLocalSelectedTemplate(existingMeasurement.template);
+          setSelectedTemplate(existingMeasurement.template);
         }
         
         if (existingMeasurement.treatment_type) {
-          setLocalSelectedTreatmentType(existingMeasurement.treatment_type);
+          setSelectedTreatmentType(existingMeasurement.treatment_type);
         }
         
         if (existingMeasurement.selected_items) {
-          setLocalSelectedItems(existingMeasurement.selected_items);
+          setSelectedItems(existingMeasurement.selected_items);
         }
         
         if (existingMeasurement.selected_heading) {
-          setLocalSelectedHeading(existingMeasurement.selected_heading);
+          setSelectedHeading(existingMeasurement.selected_heading);
         }
         
         if (existingMeasurement.selected_lining) {
-          setLocalSelectedLining(existingMeasurement.selected_lining);
+          setSelectedLining(existingMeasurement.selected_lining);
         }
         
         if (existingMeasurement.layered_treatments) {
-          setLocalLayeredTreatments(existingMeasurement.layered_treatments);
-          setLocalIsLayeredMode(existingMeasurement.layered_treatments.length > 0);
+          setLayeredTreatments(existingMeasurement.layered_treatments);
+          setIsLayeredMode(existingMeasurement.layered_treatments.length > 0);
         }
         
         if (existingMeasurement.fabric_calculation) {
-          setLocalFabricCalculation(existingMeasurement.fabric_calculation);
+          setFabricCalculation(existingMeasurement.fabric_calculation);
         }
       }
     }
@@ -242,10 +190,10 @@ export const DynamicWindowWorksheet = forwardRef<
           if (details.selected_lining) sharedActions.updateLining(details.selected_lining);
           if (details.window_covering) sharedActions.updateTemplate(details.window_covering);
         } else if (details) {
-          // Fallback to local state
-          if (details.selected_heading) setLocalSelectedHeading(details.selected_heading);
-          if (details.selected_lining) setLocalSelectedLining(details.selected_lining);
-          if (details.window_covering) setLocalSelectedTemplate(details.window_covering);
+          // Use shared actions even as fallback
+          if (details.selected_heading) setSelectedHeading(details.selected_heading);
+          if (details.selected_lining) setSelectedLining(details.selected_lining);
+          if (details.window_covering) setSelectedTemplate(details.window_covering);
         }
       } catch (e) {
         console.warn("Failed to parse treatment details:", e);
