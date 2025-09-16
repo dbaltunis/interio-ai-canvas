@@ -646,12 +646,99 @@ export const DynamicWindowWorksheet = forwardRef<
                   </div>
                 </div>
 
-                {fabricCalculation && (
+                {(fabricCalculation || selectedItems.fabric || selectedTemplate) && (
                   <div className="p-4 bg-primary/5 rounded-lg">
-                    <h4 className="font-medium mb-2">Cost Summary</h4>
-                    <div className="text-sm space-y-1">
-                      <p>Linear Meters: {fabricCalculation.linearMeters?.toFixed(2)}m</p>
-                      <p>Total Cost: ${fabricCalculation.totalCost?.toFixed(2)}</p>
+                    <h4 className="font-medium mb-3">Configuration Summary</h4>
+                    <div className="space-y-3">
+                      
+                      {/* Window Details */}
+                      <div className="border-b pb-2">
+                        <h5 className="text-sm font-medium text-muted-foreground mb-1">Window Configuration</h5>
+                        <div className="text-sm space-y-1">
+                          <p><strong>Window Type:</strong> {selectedWindowType?.name || 'Standard Window'}</p>
+                          <p><strong>Dimensions:</strong> {measurements.rail_width || 0}cm (W) × {measurements.drop || 0}cm (H)</p>
+                          {selectedTemplate && (
+                            <p><strong>Treatment:</strong> {selectedTemplate.name} ({selectedTemplate.curtain_type})</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Fabric Details */}
+                      {selectedItems.fabric && (
+                        <div className="border-b pb-2">
+                          <h5 className="text-sm font-medium text-muted-foreground mb-1">Fabric Selection</h5>
+                          <div className="text-sm space-y-1">
+                            <p><strong>Fabric:</strong> {selectedItems.fabric.name}</p>
+                            <p><strong>Width:</strong> {selectedItems.fabric.fabric_width || 140}cm</p>
+                            <p><strong>Price per meter:</strong> ${(selectedItems.fabric.selling_price || selectedItems.fabric.unit_price || 0).toFixed(2)}</p>
+                            <p><strong>Color:</strong> {selectedItems.fabric.color || 'Not specified'}</p>
+                            {selectedItems.fabric.collection_name && (
+                              <p><strong>Collection:</strong> {selectedItems.fabric.collection_name}</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Treatment Options */}
+                      {(selectedHeading !== 'standard' || selectedLining !== 'none') && (
+                        <div className="border-b pb-2">
+                          <h5 className="text-sm font-medium text-muted-foreground mb-1">Treatment Options</h5>
+                          <div className="text-sm space-y-1">
+                            <p><strong>Heading Style:</strong> {selectedHeading === 'standard' ? 'Standard' : selectedHeading}</p>
+                            <p><strong>Lining:</strong> {selectedLining === 'none' ? 'No lining' : selectedLining}</p>
+                            {selectedTemplate?.fullness_ratio && (
+                              <p><strong>Fullness Ratio:</strong> {selectedTemplate.fullness_ratio}x</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Cost Breakdown */}
+                      {fabricCalculation && (
+                        <div>
+                          <h5 className="text-sm font-medium text-muted-foreground mb-1">Cost Breakdown</h5>
+                          <div className="text-sm space-y-1">
+                            <div className="flex justify-between">
+                              <span>Fabric required:</span>
+                              <span>{fabricCalculation.linearMeters?.toFixed(2)}m</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Widths needed:</span>
+                              <span>{fabricCalculation.widthsRequired || 0}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Fabric cost:</span>
+                              <span>${fabricCalculation.totalCost?.toFixed(2) || '0.00'}</span>
+                            </div>
+                            {fabricCalculation.returns && (
+                              <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>Returns (each side):</span>
+                                <span>{fabricCalculation.returns}cm</span>
+                              </div>
+                            )}
+                            {fabricCalculation.wastePercent && (
+                              <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>Waste allowance:</span>
+                                <span>{fabricCalculation.wastePercent}%</span>
+                              </div>
+                            )}
+                            <div className="border-t pt-1 mt-2">
+                              <div className="flex justify-between font-medium">
+                                <span>Total Cost:</span>
+                                <span>${fabricCalculation.totalCost?.toFixed(2) || '0.00'}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Show message if no calculations available */}
+                      {!fabricCalculation && selectedItems.fabric && (
+                        <div className="text-sm text-muted-foreground">
+                          <p>Complete measurements to see cost calculation</p>
+                        </div>
+                      )}
+
                     </div>
                   </div>
                 )}
