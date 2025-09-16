@@ -102,29 +102,29 @@ export const WindowManagementDialog = ({
     onClose();
   };
 
-  // Actual save function that persists data to database
+  // Simple save function that just triggers the worksheet's save
   const handleSaveData = async () => {
     try {
-      console.log("WindowManagementDialog: Starting database save...");
+      console.log("🔄 WindowManagementDialog: Triggering worksheet save...");
       
-      // Get current data from the worksheet ref
+      // The worksheet handles its own persistence now
       if (worksheetRef.current && typeof worksheetRef.current.autoSave === 'function') {
         await worksheetRef.current.autoSave();
       }
       
-      console.log("WindowManagementDialog: Data saved successfully");
+      console.log("✅ WindowManagementDialog: Save completed successfully");
       
       const { toast } = await import("@/hooks/use-toast");
       toast({
-        title: "✅ Data Saved",
+        title: "✅ Configuration Saved",
         description: "Your measurements and selections have been saved successfully",
       });
       
     } catch (error) {
-      console.error("WindowManagementDialog: Save failed:", error);
+      console.error("❌ WindowManagementDialog: Save failed:", error);
       const { toast } = await import("@/hooks/use-toast");
       toast({
-        title: "❌ Save Failed",
+        title: "❌ Save Failed", 
         description: "There was an error saving your data. Please try again.",
         variant: "destructive"
       });

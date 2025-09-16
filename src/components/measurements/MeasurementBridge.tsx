@@ -1,4 +1,4 @@
-import React, { forwardRef, useImperativeHandle } from 'react';
+import React, { forwardRef, useImperativeHandle, useRef } from 'react';
 import { DynamicWindowWorksheet } from './DynamicWindowWorksheet';
 import { EnhancedMeasurementWorksheet } from './EnhancedMeasurementWorksheet';
 
@@ -39,11 +39,28 @@ export const MeasurementBridge = forwardRef<
   readOnly = false
 }, ref) => {
   
+  // Create refs for both possible worksheet components
+  const dynamicWorksheetRef = useRef<{ autoSave: () => Promise<void> }>(null);
+  const enhancedWorksheetRef = useRef<{ autoSave: () => Promise<void> }>(null);
+  
   // Forward the ref to the appropriate component
   useImperativeHandle(ref, () => ({
     autoSave: async () => {
-      // This will be handled by the specific worksheet component
-      console.log(`Auto-save triggered for ${mode} mode`);
+      console.log(`🔄 MeasurementBridge: Auto-save triggered for ${mode} mode`);
+      
+      try {
+        if (mode === 'enhanced' && enhancedWorksheetRef.current) {
+          await enhancedWorksheetRef.current.autoSave();
+        } else if (mode === 'dynamic' && dynamicWorksheetRef.current) {
+          await dynamicWorksheetRef.current.autoSave();
+        } else {
+          console.warn(`MeasurementBridge: No ${mode} worksheet ref available for auto-save`);
+        }
+        console.log(`✅ MeasurementBridge: Auto-save completed for ${mode} mode`);
+      } catch (error) {
+        console.error(`❌ MeasurementBridge: Auto-save failed for ${mode} mode:`, error);
+        throw error;
+      }
     }
   }));
 
@@ -52,7 +69,7 @@ export const MeasurementBridge = forwardRef<
   if (mode === 'enhanced') {
     return (
       <EnhancedMeasurementWorksheet
-        ref={ref}
+        ref={enhancedWorksheetRef}
         clientId={clientId}
         projectId={projectId}
         surfaceId={surfaceId}
@@ -70,7 +87,7 @@ export const MeasurementBridge = forwardRef<
 
   return (
     <DynamicWindowWorksheet
-      ref={ref}
+      ref={dynamicWorksheetRef}
       clientId={clientId}
       projectId={projectId}
       surfaceId={surfaceId}

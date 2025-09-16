@@ -143,7 +143,7 @@ export const DynamicWindowWorksheet = forwardRef<
   useImperativeHandle(ref, () => ({
     autoSave: async () => {
       try {
-        console.log("Auto-saving dynamic worksheet data for surface:", surfaceId);
+        console.log("🔄 DynamicWindowWorksheet: Starting auto-save for surface:", surfaceId);
         
         // Create comprehensive measurement data including enhanced mode fields
         const measurementData = {
@@ -163,14 +163,50 @@ export const DynamicWindowWorksheet = forwardRef<
           is_layered_mode: isLayeredMode
         };
 
-        // Save the configuration if we have enough data
-        if (Object.keys(measurements).length > 0 && onSave) {
-          await onSave();
+        // Only save if we have meaningful data
+        if (Object.keys(measurements).length > 0 || selectedWindowType || selectedTemplate) {
+          console.log("🔄 DynamicWindowWorksheet: Saving measurement data:", measurementData);
+          
+          // Import supabase and save directly to database
+          const { supabase } = await import('@/integrations/supabase/client');
+          
+          // Get current user
+          const { data: { user } } = await supabase.auth.getUser();
+          
+          if (!user) {
+            throw new Error("User not authenticated");
+          }
+          
+          // Save to client_measurements table
+          const { data, error } = await supabase
+            .from('client_measurements')
+            .upsert({
+              user_id: user.id,
+              client_id: clientId,
+              project_id: projectId,
+              measurements: measurementData,
+              window_covering_id: selectedTemplate?.id || selectedTreatmentType,
+              measurement_type: 'dynamic_worksheet',
+              notes: `Window Type: ${selectedWindowType?.name || 'Unknown'}, Template: ${selectedTemplate?.name || 'Unknown'}`,
+              measured_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }, {
+              onConflict: 'user_id,client_id,project_id,window_covering_id'
+            });
+
+          if (error) {
+            console.error("❌ DynamicWindowWorksheet: Database save error:", error);
+            throw error;
+          }
+
+          console.log("✅ DynamicWindowWorksheet: Successfully saved to database:", data);
+        } else {
+          console.log("ℹ️ DynamicWindowWorksheet: No data to save yet");
         }
 
-        console.log("Dynamic worksheet auto-save completed with enhanced data");
+        console.log("✅ DynamicWindowWorksheet: Auto-save completed successfully");
       } catch (error) {
-        console.error("Dynamic worksheet auto-save failed:", error);
+        console.error("❌ DynamicWindowWorksheet: Auto-save failed:", error);
         throw error;
       }
     }
