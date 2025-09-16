@@ -243,18 +243,59 @@ export const DynamicWindowWorksheet = forwardRef<
             throw new Error("User not authenticated");
           }
 
+          // Calculate comprehensive costs including all components
+          const fabricCost = fabricCalculation?.totalCost || 0;
+          
+          // Calculate lining cost if selected
+          let liningCost = 0;
+          if (selectedLining && selectedLining !== 'none' && selectedTemplate) {
+            const liningTypes = selectedTemplate.lining_types || [];
+            const liningOption = liningTypes.find(l => l.type === selectedLining);
+            if (liningOption && fabricCalculation) {
+              const liningPricePerMeter = liningOption.material_cost || 0;
+              const liningLaborPerMeter = liningOption.labor_cost || 0;
+              liningCost = (liningPricePerMeter + liningLaborPerMeter) * fabricCalculation.linearMeters;
+            }
+          }
+          
+          // Calculate heading cost if selected
+          let headingCost = 0;
+          if (selectedHeading && selectedHeading !== 'standard' && selectedTemplate) {
+            // Check for heading upcharges in template
+            const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
+            const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
+            const linearMeters = fabricCalculation?.linearMeters || 0;
+            headingCost = headingUpchargePerCurtain + (headingUpchargePerMetre * linearMeters);
+          }
+          
+          // Calculate manufacturing cost
+          let manufacturingCost = 0;
+          if (selectedTemplate && fabricCalculation) {
+            const manufacturingType = selectedTemplate.manufacturing_type || 'machine';
+            const linearMeters = fabricCalculation.linearMeters || 0;
+            
+            if (manufacturingType === 'machine') {
+              manufacturingCost = (selectedTemplate.machine_price_per_metre || 0) * linearMeters;
+            } else if (manufacturingType === 'hand') {
+              manufacturingCost = (selectedTemplate.hand_price_per_metre || 0) * linearMeters;
+            }
+          }
+          
+          // Calculate total cost
+          const totalCost = fabricCost + liningCost + headingCost + manufacturingCost;
+
           // Create summary data for windows_summary table
           const summaryData = {
             window_id: surfaceId,
             linear_meters: fabricCalculation?.linearMeters || 0,
             widths_required: fabricCalculation?.widthsRequired || 0,
             price_per_meter: fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || 0,
-            fabric_cost: fabricCalculation?.totalCost || 0,
+            fabric_cost: fabricCost,
             lining_type: selectedLining || 'none',
-            lining_cost: 0,
+            lining_cost: liningCost,
             manufacturing_type: selectedTemplate?.manufacturing_type || 'machine',
-            manufacturing_cost: 0,
-            total_cost: fabricCalculation?.totalCost || 0,
+            manufacturing_cost: manufacturingCost,
+            total_cost: totalCost,
             template_id: selectedTemplate?.id,
             pricing_type: selectedTemplate?.pricing_type || 'per_metre',
             waste_percent: selectedTemplate?.waste_percent || 5,
@@ -698,18 +739,66 @@ export const DynamicWindowWorksheet = forwardRef<
                         <div>
                           <h5 className="text-sm font-medium text-muted-foreground mb-1">Cost Breakdown</h5>
                           <div className="text-sm space-y-1">
-                            <div className="flex justify-between">
-                              <span>Fabric required:</span>
+                            {/* Measurements */}
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                              <span>Linear meters required:</span>
                               <span>{fabricCalculation.linearMeters?.toFixed(2)}m</span>
                             </div>
-                            <div className="flex justify-between">
+                            <div className="flex justify-between text-xs text-muted-foreground">
                               <span>Widths needed:</span>
                               <span>{fabricCalculation.widthsRequired || 0}</span>
                             </div>
-                            <div className="flex justify-between">
-                              <span>Fabric cost:</span>
-                              <span>${fabricCalculation.totalCost?.toFixed(2) || '0.00'}</span>
+                            
+                            {/* Cost Components */}
+                            <div className="pt-2 border-t">
+                              <div className="flex justify-between">
+                                <span>🧵 Fabric:</span>
+                                <span>{fabricCalculation.linearMeters?.toFixed(2)}m × ${(selectedItems.fabric?.selling_price || 0).toFixed(2)}/m</span>
+                                <span>${fabricCalculation.totalCost?.toFixed(2) || '0.00'}</span>
+                              </div>
+                              
+                              {selectedLining && selectedLining !== 'none' && selectedTemplate && (() => {
+                                const liningTypes = selectedTemplate.lining_types || [];
+                                const liningOption = liningTypes.find(l => l.type === selectedLining);
+                                const liningCost = liningOption ? (liningOption.material_cost + liningOption.labor_cost) * fabricCalculation.linearMeters : 0;
+                                return (
+                                  <div className="flex justify-between">
+                                    <span>🛡️ Lining:</span>
+                                    <span>{selectedLining}</span>
+                                    <span>${liningCost.toFixed(2)}</span>
+                                  </div>
+                                );
+                              })()}
+                              
+                              {selectedHeading && selectedHeading !== 'standard' && selectedTemplate && (() => {
+                                const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
+                                const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
+                                const headingCost = headingUpchargePerCurtain + (headingUpchargePerMetre * fabricCalculation.linearMeters);
+                                return headingCost > 0 ? (
+                                  <div className="flex justify-between">
+                                    <span>📏 Heading:</span>
+                                    <span>{selectedHeading}</span>
+                                    <span>${headingCost.toFixed(2)}</span>
+                                  </div>
+                                ) : null;
+                              })()}
+                              
+                              {selectedTemplate && (() => {
+                                const manufacturingType = selectedTemplate.manufacturing_type || 'machine';
+                                const pricePerMetre = manufacturingType === 'machine' 
+                                  ? selectedTemplate.machine_price_per_metre || 0
+                                  : selectedTemplate.hand_price_per_metre || 0;
+                                const manufacturingCost = pricePerMetre * fabricCalculation.linearMeters;
+                                return manufacturingCost > 0 ? (
+                                  <div className="flex justify-between">
+                                    <span>🏭 Manufacturing:</span>
+                                    <span>{manufacturingType}</span>
+                                    <span>${manufacturingCost.toFixed(2)}</span>
+                                  </div>
+                                ) : null;
+                              })()}
                             </div>
+
                             {fabricCalculation.returns && (
                               <div className="flex justify-between text-xs text-muted-foreground">
                                 <span>Returns (each side):</span>
@@ -722,10 +811,40 @@ export const DynamicWindowWorksheet = forwardRef<
                                 <span>{fabricCalculation.wastePercent}%</span>
                               </div>
                             )}
-                            <div className="border-t pt-1 mt-2">
-                              <div className="flex justify-between font-medium">
+                            
+                            <div className="border-t pt-2 mt-2">
+                              <div className="flex justify-between font-medium text-base">
                                 <span>Total Cost:</span>
-                                <span>${fabricCalculation.totalCost?.toFixed(2) || '0.00'}</span>
+                                <span>${(() => {
+                                  const fabricCost = fabricCalculation.totalCost || 0;
+                                  let liningCost = 0;
+                                  let headingCost = 0;
+                                  let manufacturingCost = 0;
+                                  
+                                  if (selectedLining && selectedLining !== 'none' && selectedTemplate) {
+                                    const liningTypes = selectedTemplate.lining_types || [];
+                                    const liningOption = liningTypes.find(l => l.type === selectedLining);
+                                    if (liningOption) {
+                                      liningCost = (liningOption.material_cost + liningOption.labor_cost) * fabricCalculation.linearMeters;
+                                    }
+                                  }
+                                  
+                                  if (selectedHeading && selectedHeading !== 'standard' && selectedTemplate) {
+                                    const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
+                                    const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
+                                    headingCost = headingUpchargePerCurtain + (headingUpchargePerMetre * fabricCalculation.linearMeters);
+                                  }
+                                  
+                                  if (selectedTemplate) {
+                                    const manufacturingType = selectedTemplate.manufacturing_type || 'machine';
+                                    const pricePerMetre = manufacturingType === 'machine' 
+                                      ? selectedTemplate.machine_price_per_metre || 0
+                                      : selectedTemplate.hand_price_per_metre || 0;
+                                    manufacturingCost = pricePerMetre * fabricCalculation.linearMeters;
+                                  }
+                                  
+                                  return (fabricCost + liningCost + headingCost + manufacturingCost).toFixed(2);
+                                })()}</span>
                               </div>
                             </div>
                           </div>
