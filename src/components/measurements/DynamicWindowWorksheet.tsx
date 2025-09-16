@@ -561,21 +561,34 @@ export const DynamicWindowWorksheet = forwardRef<
                         console.log("Current measurements:", measurements);
                         console.log("Current selectedItems:", selectedItems);
                         
-                        // Call the parent's onSave function which should handle the actual persistence
-                        if (onSave) {
-                          await onSave();
-                          console.log("DynamicWorksheet: Save completed successfully");
+                        // Use the ref's autoSave method directly
+                        const currentRef = ref as React.MutableRefObject<{ autoSave: () => Promise<void> }>;
+                        if (currentRef?.current) {
+                          await currentRef.current.autoSave();
+                          console.log("DynamicWorksheet: AutoSave completed successfully");
                         } else {
-                          console.error("DynamicWorksheet: No onSave function provided!");
+                          console.error("DynamicWorksheet: No autoSave ref available!");
                         }
                         
-                        // Add a small delay before closing to ensure save completes
+                        const { toast } = await import("@/hooks/use-toast");
+                        toast({
+                          title: "✅ Configuration Saved",
+                          description: "Your window configuration has been saved successfully",
+                        });
+                        
+                        // Close the dialog after successful save
                         setTimeout(() => {
                           console.log("DynamicWorksheet: Closing dialog after save");
                           onClose?.();
                         }, 500);
                       } catch (error) {
                         console.error("DynamicWorksheet: Save failed:", error);
+                        const { toast } = await import("@/hooks/use-toast");
+                        toast({
+                          title: "❌ Save Failed",
+                          description: "There was an error saving your configuration. Please try again.",
+                          variant: "destructive"
+                        });
                       }
                     }}
                     disabled={readOnly}

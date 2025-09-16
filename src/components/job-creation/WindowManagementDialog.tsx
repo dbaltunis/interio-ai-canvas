@@ -46,8 +46,6 @@ export const WindowManagementDialog = ({
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<any>(null);
   const [showTreatmentForm, setShowTreatmentForm] = useState(false);
   const [calculatedCost, setCalculatedCost] = useState(0);
-  const [measurementMode, setMeasurementMode] = useState<'dynamic' | 'enhanced'>('dynamic');
-  
   // Reference to access worksheet's save function
   const worksheetRef = useRef<any>(null);
 
@@ -134,15 +132,17 @@ export const WindowManagementDialog = ({
 
   // Auto-save function when dialog closes
   const handleDialogClose = async (open: boolean) => {
-    if (!open && worksheetRef.current && typeof worksheetRef.current.autoSave === 'function') {
-      try {
-        await worksheetRef.current.autoSave();
-        console.log("Auto-saved measurements on dialog close");
-      } catch (error) {
-        console.error("Auto-save failed:", error);
+    if (!open) {
+      if (worksheetRef.current && typeof worksheetRef.current.autoSave === 'function') {
+        try {
+          await worksheetRef.current.autoSave();
+          console.log("Auto-saved measurements on dialog close");
+        } catch (error) {
+          console.error("Auto-save failed:", error);
+        }
       }
+      onClose();
     }
-    onClose();
   };
 
   const hasMeasurements = existingMeasurement && Object.keys(existingMeasurement.measurements || {}).length > 0;
@@ -159,36 +159,10 @@ export const WindowManagementDialog = ({
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto">
-            {/* Mode toggle for advanced users */}
-            <div className="mb-4 flex justify-end">
-              <div className="flex gap-2 text-xs">
-                <button
-                  onClick={() => setMeasurementMode('dynamic')}
-                  className={`px-3 py-1 rounded ${
-                    measurementMode === 'dynamic' 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  }`}
-                >
-                  Dynamic Mode
-                </button>
-                <button
-                  onClick={() => setMeasurementMode('enhanced')}
-                  className={`px-3 py-1 rounded ${
-                    measurementMode === 'enhanced' 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  }`}
-                >
-                  Enhanced Mode
-                </button>
-              </div>
-            </div>
-
             <MeasurementBridge
-              key={`${surface?.id}-${measurementMode}`} // Force remount on mode change
+              key={surface?.id} // Stable key for consistent state
               ref={worksheetRef}
-              mode={measurementMode}
+              mode="dynamic" // Always use dynamic mode
               clientId={clientId || ""}
               projectId={projectId}
               surfaceId={surface?.id}
@@ -198,6 +172,7 @@ export const WindowManagementDialog = ({
               existingTreatments={existingTreatments}
               onSave={handleSaveData}
               onSaveTreatment={handleTreatmentSave}
+              onClose={() => handleDialogClose(false)} // Ensure dialog closes after save
               readOnly={false}
             />
           </div>
