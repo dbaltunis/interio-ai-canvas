@@ -248,10 +248,10 @@ export const DynamicWindowWorksheet = forwardRef<
           
           // Calculate lining cost if selected
           let liningCost = 0;
-          if (selectedLining && selectedLining !== 'none' && selectedTemplate) {
+          if (selectedLining && selectedLining !== 'none' && selectedTemplate && fabricCalculation) {
             const liningTypes = selectedTemplate.lining_types || [];
             const liningOption = liningTypes.find(l => l.type === selectedLining);
-            if (liningOption && fabricCalculation) {
+            if (liningOption) {
               const liningPricePerMeter = liningOption.material_cost || 0;
               const liningLaborPerMeter = liningOption.labor_cost || 0;
               liningCost = (liningPricePerMeter + liningLaborPerMeter) * fabricCalculation.linearMeters;
@@ -260,12 +260,10 @@ export const DynamicWindowWorksheet = forwardRef<
           
           // Calculate heading cost if selected
           let headingCost = 0;
-          if (selectedHeading && selectedHeading !== 'standard' && selectedTemplate) {
-            // Check for heading upcharges in template
+          if (selectedHeading && selectedHeading !== 'standard' && selectedTemplate && fabricCalculation) {
             const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
             const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
-            const linearMeters = fabricCalculation?.linearMeters || 0;
-            headingCost = headingUpchargePerCurtain + (headingUpchargePerMetre * linearMeters);
+            headingCost = headingUpchargePerCurtain + (headingUpchargePerMetre * fabricCalculation.linearMeters);
           }
           
           // Calculate manufacturing cost
@@ -283,6 +281,15 @@ export const DynamicWindowWorksheet = forwardRef<
           
           // Calculate total cost
           const totalCost = fabricCost + liningCost + headingCost + manufacturingCost;
+          
+          // Create comprehensive calculation object for display consistency
+          const calculation = {
+            fabricCost,
+            liningCost,
+            headingCost,
+            manufacturingCost,
+            totalCost
+          };
 
           // Create summary data for windows_summary table
           const summaryData = {
@@ -711,7 +718,7 @@ export const DynamicWindowWorksheet = forwardRef<
                           <div className="text-sm space-y-1">
                             <p><strong>Fabric:</strong> {selectedItems.fabric.name}</p>
                             <p><strong>Width:</strong> {selectedItems.fabric.fabric_width || 140}cm</p>
-                            <p><strong>Price per meter:</strong> ${(selectedItems.fabric.selling_price || selectedItems.fabric.unit_price || 0).toFixed(2)}</p>
+                            <p><strong>Price per meter:</strong> £{(selectedItems.fabric.selling_price || selectedItems.fabric.unit_price || 0).toFixed(2)}</p>
                             <p><strong>Color:</strong> {selectedItems.fabric.color || 'Not specified'}</p>
                             {selectedItems.fabric.collection_name && (
                               <p><strong>Collection:</strong> {selectedItems.fabric.collection_name}</p>
@@ -752,9 +759,9 @@ export const DynamicWindowWorksheet = forwardRef<
                             {/* Cost Components */}
                             <div className="pt-2 border-t">
                               <div className="flex justify-between">
-                                <span>🧵 Fabric:</span>
-                                <span>{fabricCalculation.linearMeters?.toFixed(2)}m × ${(selectedItems.fabric?.selling_price || 0).toFixed(2)}/m</span>
-                                <span>${fabricCalculation.totalCost?.toFixed(2) || '0.00'}</span>
+                                 <span>🧵 Fabric:</span>
+                                 <span>{fabricCalculation.linearMeters?.toFixed(2)}m × £{(selectedItems.fabric?.selling_price || 0).toFixed(2)}/m</span>
+                                 <span>£{fabricCalculation.totalCost?.toFixed(2) || '0.00'}</span>
                               </div>
                               
                               {selectedLining && selectedLining !== 'none' && selectedTemplate && (() => {
@@ -762,11 +769,11 @@ export const DynamicWindowWorksheet = forwardRef<
                                 const liningOption = liningTypes.find(l => l.type === selectedLining);
                                 const liningCost = liningOption ? (liningOption.material_cost + liningOption.labor_cost) * fabricCalculation.linearMeters : 0;
                                 return (
-                                  <div className="flex justify-between">
-                                    <span>🛡️ Lining:</span>
-                                    <span>{selectedLining}</span>
-                                    <span>${liningCost.toFixed(2)}</span>
-                                  </div>
+                                   <div className="flex justify-between">
+                                     <span>🛡️ Lining:</span>
+                                     <span>{selectedLining}</span>
+                                     <span>£{isNaN(liningCost) ? '0.00' : liningCost.toFixed(2)}</span>
+                                   </div>
                                 );
                               })()}
                               
@@ -775,11 +782,11 @@ export const DynamicWindowWorksheet = forwardRef<
                                 const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
                                 const headingCost = headingUpchargePerCurtain + (headingUpchargePerMetre * fabricCalculation.linearMeters);
                                 return headingCost > 0 ? (
-                                  <div className="flex justify-between">
-                                    <span>📏 Heading:</span>
-                                    <span>{selectedHeading}</span>
-                                    <span>${headingCost.toFixed(2)}</span>
-                                  </div>
+                                   <div className="flex justify-between">
+                                     <span>📏 Heading:</span>
+                                     <span>{selectedHeading}</span>
+                                     <span>£{isNaN(headingCost) ? '0.00' : headingCost.toFixed(2)}</span>
+                                   </div>
                                 ) : null;
                               })()}
                               
@@ -790,11 +797,11 @@ export const DynamicWindowWorksheet = forwardRef<
                                   : selectedTemplate.hand_price_per_metre || 0;
                                 const manufacturingCost = pricePerMetre * fabricCalculation.linearMeters;
                                 return manufacturingCost > 0 ? (
-                                  <div className="flex justify-between">
-                                    <span>🏭 Manufacturing:</span>
-                                    <span>{manufacturingType}</span>
-                                    <span>${manufacturingCost.toFixed(2)}</span>
-                                  </div>
+                                   <div className="flex justify-between">
+                                     <span>🏭 Manufacturing:</span>
+                                     <span>{manufacturingType}</span>
+                                     <span>£{isNaN(manufacturingCost) ? '0.00' : manufacturingCost.toFixed(2)}</span>
+                                   </div>
                                 ) : null;
                               })()}
                             </div>
@@ -813,39 +820,40 @@ export const DynamicWindowWorksheet = forwardRef<
                             )}
                             
                             <div className="border-t pt-2 mt-2">
-                              <div className="flex justify-between font-medium text-base">
-                                <span>Total Cost:</span>
-                                <span>${(() => {
-                                  const fabricCost = fabricCalculation.totalCost || 0;
-                                  let liningCost = 0;
-                                  let headingCost = 0;
-                                  let manufacturingCost = 0;
-                                  
-                                  if (selectedLining && selectedLining !== 'none' && selectedTemplate) {
-                                    const liningTypes = selectedTemplate.lining_types || [];
-                                    const liningOption = liningTypes.find(l => l.type === selectedLining);
-                                    if (liningOption) {
-                                      liningCost = (liningOption.material_cost + liningOption.labor_cost) * fabricCalculation.linearMeters;
-                                    }
-                                  }
-                                  
-                                  if (selectedHeading && selectedHeading !== 'standard' && selectedTemplate) {
-                                    const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
-                                    const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
-                                    headingCost = headingUpchargePerCurtain + (headingUpchargePerMetre * fabricCalculation.linearMeters);
-                                  }
-                                  
-                                  if (selectedTemplate) {
-                                    const manufacturingType = selectedTemplate.manufacturing_type || 'machine';
-                                    const pricePerMetre = manufacturingType === 'machine' 
-                                      ? selectedTemplate.machine_price_per_metre || 0
-                                      : selectedTemplate.hand_price_per_metre || 0;
-                                    manufacturingCost = pricePerMetre * fabricCalculation.linearMeters;
-                                  }
-                                  
-                                  return (fabricCost + liningCost + headingCost + manufacturingCost).toFixed(2);
-                                })()}</span>
-                              </div>
+                               <div className="flex justify-between font-medium text-base">
+                                 <span>Total Cost:</span>
+                                 <span>£{(() => {
+                                   const fabricCost = fabricCalculation.totalCost || 0;
+                                   let liningCost = 0;
+                                   let headingCost = 0;
+                                   let manufacturingCost = 0;
+                                   
+                                   if (selectedLining && selectedLining !== 'none' && selectedTemplate) {
+                                     const liningTypes = selectedTemplate.lining_types || [];
+                                     const liningOption = liningTypes.find(l => l.type === selectedLining);
+                                     if (liningOption) {
+                                       liningCost = (liningOption.material_cost + liningOption.labor_cost) * fabricCalculation.linearMeters;
+                                     }
+                                   }
+                                   
+                                   if (selectedHeading && selectedHeading !== 'standard' && selectedTemplate) {
+                                     const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
+                                     const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
+                                     headingCost = headingUpchargePerCurtain + (headingUpchargePerMetre * fabricCalculation.linearMeters);
+                                   }
+                                   
+                                   if (selectedTemplate) {
+                                     const manufacturingType = selectedTemplate.manufacturing_type || 'machine';
+                                     const pricePerMetre = manufacturingType === 'machine' 
+                                       ? selectedTemplate.machine_price_per_metre || 0
+                                       : selectedTemplate.hand_price_per_metre || 0;
+                                     manufacturingCost = pricePerMetre * fabricCalculation.linearMeters;
+                                   }
+                                   
+                                   const totalCost = fabricCost + liningCost + headingCost + manufacturingCost;
+                                   return isNaN(totalCost) ? '0.00' : totalCost.toFixed(2);
+                                 })()}</span>
+                               </div>
                             </div>
                           </div>
                         </div>
