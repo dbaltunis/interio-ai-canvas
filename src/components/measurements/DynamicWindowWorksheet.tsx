@@ -16,6 +16,7 @@ import { LayeredTreatmentManager } from "../job-creation/LayeredTreatmentManager
 import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface DynamicWindowWorksheetProps {
   clientId?: string;
@@ -74,6 +75,7 @@ export const DynamicWindowWorksheet = forwardRef<
   const { data: curtainTemplates = [] } = useCurtainTemplates();
   const { data: windowCoverings = [] } = useWindowCoverings();
   const { units } = useMeasurementUnits();
+  const queryClient = useQueryClient();
 
   // Load existing data and sync with Enhanced mode
   useEffect(() => {
@@ -145,29 +147,16 @@ export const DynamicWindowWorksheet = forwardRef<
       try {
         console.log("🔄 DynamicWindowWorksheet: Starting auto-save for surface:", surfaceId);
         
-        // Create comprehensive measurement data including enhanced mode fields
-        const measurementData = {
-          measurements,
-          window_type: selectedWindowType,
-          template: selectedTemplate,
-          treatment_type: selectedTreatmentType,
-          selected_items: selectedItems,
-          fabric_calculation: fabricCalculation,
-          surface_id: surfaceId,
-          client_id: clientId,
-          project_id: projectId,
-          // Enhanced mode compatibility fields
-          selected_heading: selectedHeading,
-          selected_lining: selectedLining,
-          layered_treatments: layeredTreatments,
-          is_layered_mode: isLayeredMode
-        };
-
         // Only save if we have meaningful data
         if (Object.keys(measurements).length > 0 || selectedWindowType || selectedTemplate) {
-          console.log("🔄 DynamicWindowWorksheet: Saving measurement data:", measurementData);
+          console.log("🔄 DynamicWindowWorksheet: Saving measurement data:", {
+            measurements,
+            selectedTemplate,
+            selectedItems,
+            fabricCalculation
+          });
           
-          // Import supabase and save directly to database
+          // Import supabase and save to windows_summary table (where UI expects it)
           const { supabase } = await import('@/integrations/supabase/client');
           
           // Get current user
@@ -176,26 +165,65 @@ export const DynamicWindowWorksheet = forwardRef<
           if (!user) {
             throw new Error("User not authenticated");
           }
+
+          // Create summary data for windows_summary table
+          const summaryData = {
+            window_id: surfaceId,
+            linear_meters: fabricCalculation?.linearMeters || 0,
+            widths_required: fabricCalculation?.widthsRequired || 0,
+            price_per_meter: fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || 0,
+            fabric_cost: fabricCalculation?.totalCost || 0,
+            lining_type: selectedLining || 'none',
+            lining_cost: 0,
+            manufacturing_type: selectedTemplate?.manufacturing_type || 'machine',
+            manufacturing_cost: 0,
+            total_cost: fabricCalculation?.totalCost || 0,
+            template_id: selectedTemplate?.id,
+            pricing_type: selectedTemplate?.pricing_type || 'per_metre',
+            waste_percent: selectedTemplate?.waste_percent || 5,
+            currency: 'USD',
+            // Detailed breakdown fields
+            template_name: selectedTemplate?.name,
+            template_details: selectedTemplate,
+            fabric_details: {
+              ...selectedItems.fabric,
+              fabric_id: selectedItems.fabric?.id,
+              width_cm: selectedItems.fabric?.fabric_width || 140,
+              width: selectedItems.fabric?.fabric_width || 140
+            },
+            heading_details: {
+              heading_name: selectedHeading,
+              id: selectedHeading
+            },
+            measurements_details: {
+              ...measurements,
+              rail_width_cm: parseFloat(measurements.rail_width) || 0,
+              drop_cm: parseFloat(measurements.drop) || 0,
+              surface_id: surfaceId,
+              surface_name: surfaceData?.name,
+              curtain_type: selectedTemplate?.curtain_type || 'single',
+              fullness_ratio: selectedTemplate?.fullness_ratio || 2,
+              fabric_width_cm: selectedItems.fabric?.fabric_width || 140,
+              window_type: selectedWindowType?.name || 'Standard Window'
+            }
+          };
           
-          // Save to client_measurements table
+          // Save to windows_summary table
           const { data, error } = await supabase
-            .from('client_measurements')
-            .insert({
-              user_id: user.id,
-              client_id: clientId || null,
-              project_id: projectId,
-              measurements: measurementData,
-              window_covering_id: selectedTemplate?.id || selectedTreatmentType,
-              measurement_type: 'dynamic_worksheet',
-              notes: `Window Type: ${selectedWindowType?.name || 'Unknown'}, Template: ${selectedTemplate?.name || 'Unknown'}`,
-              measured_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
+            .from('windows_summary')
+            .upsert(summaryData, {
+              onConflict: 'window_id'
+            })
+            .select()
+            .single();
 
           if (error) {
             console.error("❌ DynamicWindowWorksheet: Database save error:", error);
             throw error;
           }
+
+          // Invalidate cache to refresh UI
+          await queryClient.invalidateQueries({ queryKey: ["window-summary", surfaceId] });
 
           console.log("✅ DynamicWindowWorksheet: Successfully saved to database:", data);
         } else {
