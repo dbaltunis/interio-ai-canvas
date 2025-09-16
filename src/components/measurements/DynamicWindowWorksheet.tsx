@@ -180,9 +180,9 @@ export const DynamicWindowWorksheet = forwardRef<
           // Save to client_measurements table
           const { data, error } = await supabase
             .from('client_measurements')
-            .upsert({
+            .insert({
               user_id: user.id,
-              client_id: clientId,
+              client_id: clientId || null,
               project_id: projectId,
               measurements: measurementData,
               window_covering_id: selectedTemplate?.id || selectedTreatmentType,
@@ -190,8 +190,6 @@ export const DynamicWindowWorksheet = forwardRef<
               notes: `Window Type: ${selectedWindowType?.name || 'Unknown'}, Template: ${selectedTemplate?.name || 'Unknown'}`,
               measured_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
-            }, {
-              onConflict: 'user_id,client_id,project_id,window_covering_id'
             });
 
           if (error) {
