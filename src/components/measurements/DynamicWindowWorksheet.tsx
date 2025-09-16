@@ -16,7 +16,7 @@ import { LayeredTreatmentManager } from "../job-creation/LayeredTreatmentManager
 import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface DynamicWindowWorksheetProps {
   clientId?: string;
@@ -77,10 +77,86 @@ export const DynamicWindowWorksheet = forwardRef<
   const { units } = useMeasurementUnits();
   const queryClient = useQueryClient();
 
+  // Load existing window summary data to populate the form
+  const { data: existingWindowSummary } = useQuery({
+    queryKey: ["window-summary", surfaceId],
+    queryFn: async () => {
+      if (!surfaceId) return null;
+      
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data, error } = await supabase
+        .from("windows_summary")
+        .select("*")
+        .eq("window_id", surfaceId)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error loading window summary:", error);
+        return null;
+      }
+      
+      console.log("✅ Loaded existing window summary:", data);
+      return data;
+    },
+    enabled: !!surfaceId,
+  });
+
   // Load existing data and sync with Enhanced mode
   useEffect(() => {
+    console.log("🔄 Loading existing data:", { existingMeasurement, existingWindowSummary, existingTreatments });
+    
+    // Priority 1: Load from windows_summary table if available
+    if (existingWindowSummary) {
+      console.log("📊 PRIORITY 1: Loading from windows_summary");
+      
+      const measurementsDetails = existingWindowSummary.measurements_details as any || {};
+      const templateDetails = existingWindowSummary.template_details as any;
+      const fabricDetails = existingWindowSummary.fabric_details as any;
+      
+      // Set measurements from saved summary
+      if (measurementsDetails && typeof measurementsDetails === 'object') {
+        const loadedMeasurements = {
+          rail_width: measurementsDetails.rail_width_cm?.toString() || measurementsDetails.rail_width?.toString() || "",
+          drop: measurementsDetails.drop_cm?.toString() || measurementsDetails.drop?.toString() || "",
+          ...measurementsDetails
+        };
+        setMeasurements(loadedMeasurements);
+        console.log("📊 Loaded measurements:", loadedMeasurements);
+      }
+      
+      // Set template from saved summary
+      if (templateDetails && typeof templateDetails === 'object') {
+        setSelectedTemplate(templateDetails);
+        setSelectedTreatmentType(templateDetails.curtain_type || "curtains");
+        console.log("📊 Loaded template:", templateDetails.name);
+      }
+      
+      // Set fabric from saved summary
+      if (fabricDetails && typeof fabricDetails === 'object') {
+        setSelectedItems(prev => ({
+          ...prev,
+          fabric: fabricDetails
+        }));
+        console.log("📊 Loaded fabric:", fabricDetails.name);
+      }
+      
+      // Set fabric calculation if available
+      if (existingWindowSummary.linear_meters && existingWindowSummary.total_cost) {
+        setFabricCalculation({
+          linearMeters: existingWindowSummary.linear_meters,
+          totalCost: existingWindowSummary.total_cost,
+          pricePerMeter: existingWindowSummary.price_per_meter,
+          widthsRequired: existingWindowSummary.widths_required
+        });
+        console.log("📊 Loaded fabric calculation");
+      }
+      
+      return; // Exit early if we loaded from windows_summary
+    }
+    
+    // Priority 2: Load from existingMeasurement (legacy support)
     if (existingMeasurement) {
-      console.log("Loading existing measurement data:", existingMeasurement);
+      console.log("📊 PRIORITY 2: Loading from existingMeasurement");
       
       setMeasurements(existingMeasurement.measurements || {});
       
@@ -120,8 +196,9 @@ export const DynamicWindowWorksheet = forwardRef<
       }
     }
     
-    // Load from existing treatments for cross-mode compatibility
+    // Priority 3: Load from existing treatments for cross-mode compatibility
     if (existingTreatments && existingTreatments.length > 0) {
+      console.log("📊 PRIORITY 3: Loading from existingTreatments");
       const treatment = existingTreatments[0];
       
       // Parse treatment details
@@ -139,7 +216,7 @@ export const DynamicWindowWorksheet = forwardRef<
         console.warn("Failed to parse treatment details:", e);
       }
     }
-  }, [existingMeasurement, existingTreatments]);
+  }, [existingMeasurement, existingTreatments, existingWindowSummary]);
 
   // Enhanced auto-save implementation with cross-mode data
   useImperativeHandle(ref, () => ({
