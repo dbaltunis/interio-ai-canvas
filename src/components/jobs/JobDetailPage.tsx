@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,8 +24,7 @@ interface JobDetailPageProps {
 }
 
 export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') || "details";
+  const [activeTab, setActiveTab] = useState("details");
   const { data: projects } = useProjects();
   const { data: clients } = useClients();
   const updateProject = useUpdateProject();
@@ -142,13 +140,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
 
       {/* Main Content Area */}
       <div className="w-full">
-        <Tabs value={activeTab} onValueChange={(value) => {
-          setSearchParams(prev => {
-            const newParams = new URLSearchParams(prev);
-            newParams.set('tab', value);
-            return newParams;
-          });
-        }} className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Standardized Tab Navigation */}
           <div className="bg-background border-b border-border/50">
             <div className="px-4">
@@ -160,13 +152,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                     <Button
                       key={tab.id}
                       variant="ghost"
-                      onClick={() => {
-                        setSearchParams(prev => {
-                          const newParams = new URLSearchParams(prev);
-                          newParams.set('tab', tab.id);
-                          return newParams;
-                        });
-                      }}
+                      onClick={() => setActiveTab(tab.id)}
                       className={`flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 rounded-none ${
                         isActive
                           ? "border-primary text-foreground bg-primary/5 font-semibold"
