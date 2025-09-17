@@ -106,17 +106,19 @@ export const useUserPresence = () => {
         }
       };
 
-      document.addEventListener('visibilitychange', onVisibilityChange);
+      // TEMPORARILY DISABLED FOR DEBUGGING - This might be causing page navigation issues
+      // document.addEventListener('visibilitychange', onVisibilityChange);
 
       // Attempt to mark user offline before unload (may not always complete)
       const handleBeforeUnload = () => {
+        console.warn('[PRESENCE] beforeunload - setting offline');
         updatePresenceMutation.mutate({ status: 'offline' });
       };
       window.addEventListener('beforeunload', handleBeforeUnload);
       
       return () => {
         clearInterval(activityInterval);
-        document.removeEventListener('visibilitychange', onVisibilityChange);
+        // document.removeEventListener('visibilitychange', onVisibilityChange); // DISABLED
         window.removeEventListener('beforeunload', handleBeforeUnload);
         updatePresenceMutation.mutate({ status: 'offline' });
       };

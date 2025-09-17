@@ -58,6 +58,7 @@ const Index = () => {
   useEffect(() => {
     const currentTab = searchParams.get('tab') || "projects";
     if (activeTab !== currentTab) {
+      console.warn('[NAV] Index: setSearchParams called - activeTab:', activeTab, 'currentTab:', currentTab, new Error().stack);
       setSearchParams({ tab: activeTab }, { replace: true });
     }
   }, [activeTab, setSearchParams]);
