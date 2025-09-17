@@ -255,9 +255,9 @@ export const VisualMeasurementSheet = ({
                 )}
               </div>
 
-              {/* 3D Window Visualization - Realistic and Interactive */}
+              {/* Dynamic Window Frame - Changes based on selected window type */}
               <div className="absolute top-24 left-16 right-16 bottom-16">
-                <Window3DRenderer
+                <DynamicWindowRenderer
                   windowType={windowType}
                   measurements={{
                     window_width: parseFloat(measurements.measurement_a || measurements.rail_width || "120"),
@@ -266,8 +266,7 @@ export const VisualMeasurementSheet = ({
                     drop: parseFloat(measurements.drop || "110")
                   }}
                   className="w-full h-full"
-                  autoRotate={false}
-                  showControls={true}
+                  enhanced={true}
                 />
               </div>
 
