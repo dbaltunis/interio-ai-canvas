@@ -257,16 +257,12 @@ export const VisualMeasurementSheet = ({
                   <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-32 right-32 flex items-center`}>
                     {hardwareType === "track" ? (
                       <div className="w-full h-3 bg-muted-foreground relative">
-                        <div className="absolute -left-1 -top-0.5 w-2 h-4 bg-foreground"></div>
-                        <div className="absolute -right-1 -top-0.5 w-2 h-4 bg-foreground"></div>
                         <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
                           Bay Curtain Track
                         </span>
                       </div>
                     ) : (
                       <div className="w-full h-2 bg-muted-foreground rounded-full relative">
-                        <div className="absolute -left-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
-                        <div className="absolute -right-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
                         <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
                           Bay Curtain Rod
                         </span>
@@ -328,7 +324,7 @@ export const VisualMeasurementSheet = ({
                   </div>
                   
                   {/* Center Window - Aligned with skewed side windows */}
-                  <div className="absolute top-24 left-32 right-32 bottom-16">
+                  <div className="absolute top-23 left-32 right-32 bottom-16">
                     <div className="w-full h-full border-4 border-muted-foreground bg-background relative">
                       <div className="grid grid-cols-2 grid-rows-3 h-full gap-1 p-2">
                         {Array.from({ length: 6 }).map((_, i) => (
