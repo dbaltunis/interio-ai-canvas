@@ -47,6 +47,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setLoading(false);
 
         if (event === 'SIGNED_IN') {
+          // Only navigate to home on initial sign-in, not on session refresh
+          const currentPath = window.location.pathname;
+          const isAuthPage = currentPath === '/auth' || currentPath === '/reset-password';
+          
           try {
             // Load theme from user profile or use saved theme
             if (session?.user?.id) {
@@ -148,9 +152,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 queryClient.invalidateQueries({ queryKey: ['user-permissions'] });
                 queryClient.invalidateQueries({ queryKey: ['team-presence'] });
               } catch {}
-              navigate('/');
+              
+              // Only navigate to home if user is on auth/login pages, not on session refresh
+              if (isAuthPage) {
+                navigate('/');
+              }
             } catch {
-              window.location.href = '/';
+              // Only redirect to home from auth pages
+              if (isAuthPage) {
+                window.location.href = '/';
+              }
             }
           }, 0);
         }
