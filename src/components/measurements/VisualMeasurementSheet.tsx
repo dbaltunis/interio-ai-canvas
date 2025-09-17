@@ -12,6 +12,7 @@ import { LiningOptionsSection } from "./dynamic-options/LiningOptionsSection";
 import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
 import { calculateFabricUsage } from "../job-creation/treatment-pricing/fabric-calculation/fabricUsageCalculator";
 import { WorksheetVisual } from "../worksheet/WorksheetVisual";
+import { DynamicWindowRenderer } from "../window-types/DynamicWindowRenderer";
 
 interface VisualMeasurementSheetProps {
   measurements: Record<string, any>;
@@ -253,16 +254,19 @@ export const VisualMeasurementSheet = ({
                 )}
               </div>
 
-              {/* Window Frame */}
+              {/* Dynamic Window Frame - Changes based on selected window type */}
               <div className="absolute top-24 left-16 right-16 bottom-16">
-                <div className="w-full h-full border-4 border-muted-foreground bg-background relative">
-                  {/* Window Panes */}
-                  <div className="grid grid-cols-2 grid-rows-3 h-full gap-1 p-2">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <div key={i} className="bg-muted border border-border"></div>
-                    ))}
-                  </div>
-                </div>
+                <DynamicWindowRenderer
+                  windowType={windowType}
+                  measurements={{
+                    window_width: parseFloat(measurements.measurement_a || measurements.rail_width || "120"),
+                    window_height: parseFloat(measurements.drop || "100"),
+                    rail_width: parseFloat(measurements.rail_width || "140"),
+                    drop: parseFloat(measurements.drop || "110")
+                  }}
+                  className="w-full h-full"
+                  enhanced={true}
+                />
               </div>
 
               {/* Curtain Panels - Dynamic based on curtain type, hardware type, and pooling */}
