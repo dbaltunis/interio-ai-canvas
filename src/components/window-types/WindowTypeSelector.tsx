@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getWindowVisual } from "./WindowVisuals";
+import { DynamicWindowRenderer } from "./DynamicWindowRenderer";
 
 interface SimpleWindowType {
   id: string;
@@ -25,6 +25,14 @@ export const WindowTypeSelector = ({
 }: WindowTypeSelectorProps) => {
   const [windowTypes, setWindowTypes] = useState<SimpleWindowType[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Set default selection to standard window after loading
+  useEffect(() => {
+    if (windowTypes.length > 0 && !selectedWindowType) {
+      const standardWindow = windowTypes.find(wt => wt.visual_key === 'standard') || windowTypes[0];
+      onWindowTypeChange(standardWindow);
+    }
+  }, [windowTypes, selectedWindowType, onWindowTypeChange]);
 
   useEffect(() => {
     const fetchWindowTypes = async () => {
@@ -74,8 +82,30 @@ export const WindowTypeSelector = ({
     fetchWindowTypes();
   }, []);
 
-  const getWindowVisualComponent = (visualKey: string) => {
-    return getWindowVisual(visualKey);
+  // Sample measurements for preview
+  const getPreviewMeasurements = (windowType: string) => {
+    const baseMeasurements = {
+      window_width: 120,
+      window_height: 100,
+      rail_width: 140,
+      drop: 110
+    };
+
+    // Adjust measurements based on window type for more realistic previews
+    switch (windowType) {
+      case 'bay':
+        return { ...baseMeasurements, window_width: 160, rail_width: 180 };
+      case 'french_doors':
+      case 'sliding_doors':
+      case 'terrace_doors':
+        return { ...baseMeasurements, window_height: 180, drop: 200 };
+      case 'large_window':
+        return { ...baseMeasurements, window_width: 200, rail_width: 220 };
+      case 'skylight':
+        return { ...baseMeasurements, window_width: 100, window_height: 60 };
+      default:
+        return baseMeasurements;
+    }
   };
 
   if (loading) {
@@ -104,19 +134,23 @@ export const WindowTypeSelector = ({
             } ${readOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
             onClick={() => !readOnly && onWindowTypeChange(windowType)}
           >
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex-shrink-0">
-                  {React.createElement(getWindowVisualComponent(windowType.visual_key), {
-                    size: 60,
-                    className: "drop-shadow-sm"
-                  })}
-                </div>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between mb-2">
+                <CardTitle className="text-base">{windowType.name}</CardTitle>
                 {selectedWindowType?.id === windowType.id && (
                   <Badge variant="default" className="text-xs">Selected</Badge>
                 )}
               </div>
-              <CardTitle className="text-base mt-2">{windowType.name}</CardTitle>
+              
+              {/* Live window preview */}
+              <div className="h-24 mb-2">
+                <DynamicWindowRenderer
+                  windowType={windowType.visual_key}
+                  measurements={getPreviewMeasurements(windowType.visual_key)}
+                  className="h-full w-full"
+                  enhanced={true}
+                />
+              </div>
             </CardHeader>
             
             <CardContent>
