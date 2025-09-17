@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,7 +31,19 @@ const JobsPage = () => {
   const updateQuote = useUpdateQuote();
   const { toast } = useToast();
 
+  // Debug logging for component lifecycle
+  useEffect(() => {
+    console.warn('[JOBS] JobsPage MOUNTED');
+    return () => {
+      console.warn('[JOBS] JobsPage UNMOUNTING - selectedJobId was:', selectedJobId);
+    };
+  }, []);
+
+  // Debug logging for state changes
+  console.warn('[JOBS] JobsPage render - selectedJobId:', selectedJobId, 'canViewJobs:', canViewJobs, 'timestamp:', Date.now());
+
   const handleBackFromJob = () => {
+    console.warn('[JOBS] handleBackFromJob called');
     setSelectedJobId(null);
     // Refresh the quotes when coming back to ensure we see any updates
     refetchQuotes();
@@ -39,6 +51,7 @@ const JobsPage = () => {
 
   // Show loading only on initial load, preserve navigation state during refetch
   if (canViewJobs === undefined) {
+    console.warn('[JOBS] canViewJobs undefined - selectedJobId:', selectedJobId);
     // If we have a selectedJobId, keep showing the detail page during permission refetch
     if (selectedJobId) {
       return <JobDetailPage jobId={selectedJobId} onBack={handleBackFromJob} />;
@@ -124,11 +137,12 @@ const JobsPage = () => {
   };
 
   const handleJobSelect = async (quote: any) => {
-    console.log("Job selected:", quote);
+    console.warn('[JOBS] handleJobSelect called with:', quote);
     
     // Check if quote already has a project_id
     const existingProjectId = quote.project_id || quote.projects?.id;
     if (existingProjectId) {
+      console.warn('[JOBS] Setting selectedJobId to:', existingProjectId);
       setSelectedJobId(existingProjectId);
       return;
     }
