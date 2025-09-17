@@ -72,10 +72,15 @@ export function InteractionUnlockGuard() {
       attributeFilter: ["aria-hidden", "inert", "class", "data-state"],
     });
 
-    // Also attempt unlock on visibility and route changes
-    const onVisibility = () => unlock();
+    // Also attempt unlock on route changes (commenting out visibilitychange to prevent navigation issues)
+    const onVisibility = () => {
+      // Only unlock if document is visible and no overlays are open
+      if (document.visibilityState === 'visible' && !hasOpenOverlays()) {
+        unlock();
+      }
+    };
     const onPointerDown = () => unlock();
-    document.addEventListener("visibilitychange", onVisibility);
+    // Temporarily disabled to prevent navigation issues: document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("pointerdown", onPointerDown, true);
 
     // Try an initial unlock just in case we mounted in a bad state
@@ -83,7 +88,7 @@ export function InteractionUnlockGuard() {
 
     return () => {
       observer.disconnect();
-      document.removeEventListener("visibilitychange", onVisibility);
+      // document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pointerdown", onPointerDown, true);
     };
   }, []);
