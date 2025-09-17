@@ -389,73 +389,81 @@ export const VisualMeasurementSheet = ({
 
               {/* Curtain Panels - Dynamic based on curtain type, hardware type, and pooling */}
               {windowType === 'bay' ? (
-                // Bay Window Curtains - Following window angles
+                // Bay Window Curtains - Following window angles exactly
                 <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-8 right-8 ${getCurtainBottomPosition()}`}>
                   <svg viewBox="0 0 500 280" className="w-full h-full">
-                    {/* Left angled curtain panel */}
+                    {/* Left angled curtain panel - follows the left window angle */}
                     <g fill="hsl(var(--primary) / 0.8)" stroke="hsl(var(--primary) / 0.6)" strokeWidth="1">
-                      <path d="M 25 5 L 115 5 L 135 275 L 30 275 Z"/>
-                      {/* Curtain fold lines */}
-                      <line x1="35" y1="10" x2="40" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="45" y1="10" x2="50" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="55" y1="10" x2="60" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="65" y1="10" x2="70" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="75" y1="10" x2="80" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="85" y1="10" x2="90" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="95" y1="10" x2="100" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="105" y1="10" x2="110" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <path d={`M 30 ${hardwareType === "track" ? "20" : "30"} L 115 ${hardwareType === "track" ? "20" : "30"} L 125 40 L 125 270 L 105 275 L 35 275 Z`}/>
+                      {/* Curtain fold lines that follow the angle */}
+                      <line x1="40" y1={hardwareType === "track" ? "25" : "35"} x2="45" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="50" y1={hardwareType === "track" ? "25" : "35"} x2="55" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="60" y1={hardwareType === "track" ? "25" : "35"} x2="65" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="70" y1={hardwareType === "track" ? "25" : "35"} x2="75" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="80" y1={hardwareType === "track" ? "25" : "35"} x2="85" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="90" y1={hardwareType === "track" ? "25" : "35"} x2="95" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="100" y1={hardwareType === "track" ? "25" : "35"} x2="105" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="110" y1={hardwareType === "track" ? "25" : "35"} x2="115" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
                     </g>
                     
-                    {/* Center curtain panels */}
+                    {/* Center curtain panels - straight */}
                     {curtainType === "pair" ? (
                       <>
                         {/* Left center panel */}
-                        <rect x="150" y="5" width="75" height="270" fill="hsl(var(--primary) / 0.8)" stroke="hsl(var(--primary) / 0.6)" strokeWidth="1"/>
+                        <rect x="125" y={hardwareType === "track" ? "20" : "30"} width="110" height="250" fill="hsl(var(--primary) / 0.8)" stroke="hsl(var(--primary) / 0.6)" strokeWidth="1"/>
                         <g stroke="hsl(var(--primary) / 0.4)" strokeWidth="1">
-                          <line x1="160" y1="10" x2="160" y2="270"/>
-                          <line x1="170" y1="10" x2="170" y2="270"/>
-                          <line x1="180" y1="10" x2="180" y2="270"/>
-                          <line x1="190" y1="10" x2="190" y2="270"/>
-                          <line x1="200" y1="10" x2="200" y2="270"/>
-                          <line x1="210" y1="10" x2="210" y2="270"/>
+                          <line x1="135" y1={hardwareType === "track" ? "25" : "35"} x2="135" y2="275"/>
+                          <line x1="145" y1={hardwareType === "track" ? "25" : "35"} x2="145" y2="275"/>
+                          <line x1="155" y1={hardwareType === "track" ? "25" : "35"} x2="155" y2="275"/>
+                          <line x1="165" y1={hardwareType === "track" ? "25" : "35"} x2="165" y2="275"/>
+                          <line x1="175" y1={hardwareType === "track" ? "25" : "35"} x2="175" y2="275"/>
+                          <line x1="185" y1={hardwareType === "track" ? "25" : "35"} x2="185" y2="275"/>
+                          <line x1="195" y1={hardwareType === "track" ? "25" : "35"} x2="195" y2="275"/>
+                          <line x1="205" y1={hardwareType === "track" ? "25" : "35"} x2="205" y2="275"/>
+                          <line x1="215" y1={hardwareType === "track" ? "25" : "35"} x2="215" y2="275"/>
+                          <line x1="225" y1={hardwareType === "track" ? "25" : "35"} x2="225" y2="275"/>
                         </g>
                         
                         {/* Right center panel */}
-                        <rect x="275" y="5" width="75" height="270" fill="hsl(var(--primary) / 0.8)" stroke="hsl(var(--primary) / 0.6)" strokeWidth="1"/>
+                        <rect x="265" y={hardwareType === "track" ? "20" : "30"} width="110" height="250" fill="hsl(var(--primary) / 0.8)" stroke="hsl(var(--primary) / 0.6)" strokeWidth="1"/>
                         <g stroke="hsl(var(--primary) / 0.4)" strokeWidth="1">
-                          <line x1="285" y1="10" x2="285" y2="270"/>
-                          <line x1="295" y1="10" x2="295" y2="270"/>
-                          <line x1="305" y1="10" x2="305" y2="270"/>
-                          <line x1="315" y1="10" x2="315" y2="270"/>
-                          <line x1="325" y1="10" x2="325" y2="270"/>
-                          <line x1="335" y1="10" x2="335" y2="270"/>
+                          <line x1="275" y1={hardwareType === "track" ? "25" : "35"} x2="275" y2="275"/>
+                          <line x1="285" y1={hardwareType === "track" ? "25" : "35"} x2="285" y2="275"/>
+                          <line x1="295" y1={hardwareType === "track" ? "25" : "35"} x2="295" y2="275"/>
+                          <line x1="305" y1={hardwareType === "track" ? "25" : "35"} x2="305" y2="275"/>
+                          <line x1="315" y1={hardwareType === "track" ? "25" : "35"} x2="315" y2="275"/>
+                          <line x1="325" y1={hardwareType === "track" ? "25" : "35"} x2="325" y2="275"/>
+                          <line x1="335" y1={hardwareType === "track" ? "25" : "35"} x2="335" y2="275"/>
+                          <line x1="345" y1={hardwareType === "track" ? "25" : "35"} x2="345" y2="275"/>
+                          <line x1="355" y1={hardwareType === "track" ? "25" : "35"} x2="355" y2="275"/>
+                          <line x1="365" y1={hardwareType === "track" ? "25" : "35"} x2="365" y2="275"/>
                         </g>
                       </>
                     ) : (
                       /* Single center panel */
-                      <rect x="150" y="5" width="200" height="270" fill="hsl(var(--primary) / 0.8)" stroke="hsl(var(--primary) / 0.6)" strokeWidth="1"/>
+                      <rect x="125" y={hardwareType === "track" ? "20" : "30"} width="250" height="250" fill="hsl(var(--primary) / 0.8)" stroke="hsl(var(--primary) / 0.6)" strokeWidth="1"/>
                     )}
                     
-                    {/* Right angled curtain panel */}
+                    {/* Right angled curtain panel - follows the right window angle */}
                     <g fill="hsl(var(--primary) / 0.8)" stroke="hsl(var(--primary) / 0.6)" strokeWidth="1">
-                      <path d="M 365 5 L 470 5 L 475 275 L 365 275 Z"/>
-                      {/* Curtain fold lines */}
-                      <line x1="375" y1="10" x2="375" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="385" y1="10" x2="385" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="395" y1="10" x2="395" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="405" y1="10" x2="405" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="415" y1="10" x2="415" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="425" y1="10" x2="425" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="435" y1="10" x2="435" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="445" y1="10" x2="445" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <path d={`M 375 40 L 385 ${hardwareType === "track" ? "20" : "30"} L 470 ${hardwareType === "track" ? "20" : "30"} L 465 275 L 395 275 L 375 270 Z`}/>
+                      {/* Curtain fold lines that follow the angle */}
+                      <line x1="385" y1={hardwareType === "track" ? "25" : "35"} x2="385" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="395" y1={hardwareType === "track" ? "25" : "35"} x2="395" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="405" y1={hardwareType === "track" ? "25" : "35"} x2="405" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="415" y1={hardwareType === "track" ? "25" : "35"} x2="415" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="425" y1={hardwareType === "track" ? "25" : "35"} x2="425" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="435" y1={hardwareType === "track" ? "25" : "35"} x2="435" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="445" y1={hardwareType === "track" ? "25" : "35"} x2="445" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="455" y1={hardwareType === "track" ? "25" : "35"} x2="455" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
                     </g>
                     
                     {/* Pooling visual effect for bay window */}
                     {poolingOption === "below_floor" && hasValue(poolingAmount) && (
                       <g fill="hsl(var(--primary) / 0.6)">
-                        <path d="M 25 275 L 135 275 L 140 295 L 30 295 Z"/>
-                        <rect x="150" y="275" width="200" height="20"/>
-                        <path d="M 365 275 L 475 275 L 470 295 L 365 295 Z"/>
+                        <path d="M 30 275 L 125 275 L 125 295 L 35 295 Z"/>
+                        <rect x="125" y="275" width="250" height="20"/>
+                        <path d="M 375 275 L 465 275 L 465 295 L 375 295 Z"/>
                       </g>
                     )}
                   </svg>
