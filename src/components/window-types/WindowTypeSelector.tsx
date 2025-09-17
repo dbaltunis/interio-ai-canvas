@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getWindowVisual } from "./WindowVisuals";
 
 interface SimpleWindowType {
   id: string;
@@ -73,19 +74,8 @@ export const WindowTypeSelector = ({
     fetchWindowTypes();
   }, []);
 
-  const getWindowIcon = (visualKey: string): string => {
-    const icons: { [key: string]: string } = {
-      'standard': '🪟',
-      'bay': '🏠',
-      'french_doors': '🚪',
-      'sliding_doors': '↔️',
-      'large_window': '🖼️',
-      'corner_window': '📐',
-      'terrace_doors': '🌅',
-      'arched_window': '⛪',
-      'skylight': '☀️'
-    };
-    return icons[visualKey] || '🪟';
+  const getWindowVisualComponent = (visualKey: string) => {
+    return getWindowVisual(visualKey);
   };
 
   if (loading) {
@@ -116,12 +106,17 @@ export const WindowTypeSelector = ({
           >
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <div className="text-2xl">{getWindowIcon(windowType.visual_key)}</div>
+                <div className="flex-shrink-0">
+                  {React.createElement(getWindowVisualComponent(windowType.visual_key), {
+                    size: 60,
+                    className: "drop-shadow-sm"
+                  })}
+                </div>
                 {selectedWindowType?.id === windowType.id && (
                   <Badge variant="default" className="text-xs">Selected</Badge>
                 )}
               </div>
-              <CardTitle className="text-base">{windowType.name}</CardTitle>
+              <CardTitle className="text-base mt-2">{windowType.name}</CardTitle>
             </CardHeader>
             
             <CardContent>
