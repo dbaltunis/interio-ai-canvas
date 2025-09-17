@@ -56,48 +56,53 @@ export const DynamicWindowRenderer = ({
   }, [windowType, measurements, selectedTreatment]);
 
   const renderStandardWindow = () => (
-    <div className="relative w-full h-full">
-      {/* Window Frame */}
-      <div className="absolute inset-4 border-4 border-muted-foreground bg-background/50">
+    <div className="relative w-full h-full flex items-center justify-center">
+      {/* Window Frame - Much larger and clearer */}
+      <div className="w-16 h-12 border-2 border-gray-600 bg-blue-50 relative">
         {/* Window Panes */}
-        <div className="grid grid-cols-2 grid-rows-2 h-full gap-1 p-2">
+        <div className="grid grid-cols-2 grid-rows-2 h-full gap-0.5 p-0.5">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-sky-100/30 border border-border"></div>
+            <div key={i} className="bg-sky-200/60 border border-gray-400"></div>
           ))}
         </div>
-        {/* Cross bars */}
-        <div className="absolute top-1/2 left-0 right-0 h-1 bg-muted-foreground transform -translate-y-1/2"></div>
-        <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-muted-foreground transform -translate-x-1/2"></div>
+        {/* Cross bars - more visible */}
+        <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gray-600 transform -translate-y-1/2"></div>
+        <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-gray-600 transform -translate-x-1/2"></div>
       </div>
     </div>
   );
 
   const renderBayWindow = () => (
-    <div className="relative w-full h-full">
-      {/* Left angled window */}
-      <div className="absolute left-2 top-4 bottom-4 w-16 border-4 border-muted-foreground bg-background/50 transform -skew-y-12 origin-bottom">
-        <div className="grid grid-cols-1 grid-rows-3 h-full gap-1 p-1">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="bg-sky-100/30 border border-border"></div>
-          ))}
+    <div className="relative w-full h-full flex items-center justify-center">
+      {/* Bay Window - Three distinct panels */}
+      <div className="relative w-20 h-12">
+        {/* Left angled panel */}
+        <div className="absolute left-0 top-0 w-6 h-12 border-2 border-gray-600 bg-blue-50 transform -rotate-12 origin-bottom-right">
+          <div className="grid grid-rows-3 h-full gap-0.5 p-0.5">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="bg-sky-200/60 border border-gray-400"></div>
+            ))}
+          </div>
         </div>
-      </div>
-      
-      {/* Center window */}
-      <div className="absolute left-16 right-16 top-4 bottom-4 border-4 border-muted-foreground bg-background/50">
-        <div className="grid grid-cols-2 grid-rows-3 h-full gap-1 p-2">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-sky-100/30 border border-border"></div>
-          ))}
+        
+        {/* Center panel */}
+        <div className="absolute left-5 top-0 w-10 h-12 border-2 border-gray-600 bg-blue-50">
+          <div className="grid grid-cols-2 grid-rows-3 h-full gap-0.5 p-0.5">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="bg-sky-200/60 border border-gray-400"></div>
+            ))}
+          </div>
+          {/* Center vertical bar */}
+          <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-gray-600 transform -translate-x-1/2"></div>
         </div>
-      </div>
-      
-      {/* Right angled window */}
-      <div className="absolute right-2 top-4 bottom-4 w-16 border-4 border-muted-foreground bg-background/50 transform skew-y-12 origin-bottom">
-        <div className="grid grid-cols-1 grid-rows-3 h-full gap-1 p-1">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="bg-sky-100/30 border border-border"></div>
-          ))}
+        
+        {/* Right angled panel */}
+        <div className="absolute right-0 top-0 w-6 h-12 border-2 border-gray-600 bg-blue-50 transform rotate-12 origin-bottom-left">
+          <div className="grid grid-rows-3 h-full gap-0.5 p-0.5">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="bg-sky-200/60 border border-gray-400"></div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
