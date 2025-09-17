@@ -146,26 +146,26 @@ export const WindowTypeSelector = ({
             } ${readOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
             onClick={() => !readOnly && onWindowTypeChange(windowType)}
           >
-            <CardContent className="p-2">
-              <div className="flex flex-col items-center space-y-1.5">
-                {/* Compact measurement-focused preview */}
-                <div className="h-8 w-full flex items-center justify-center bg-muted/30 border rounded-sm">
+            <CardContent className="p-4">
+              <div className="flex flex-col items-center space-y-3">
+                {/* Enhanced visual preview with larger size */}
+                <div className="h-16 w-full flex items-center justify-center bg-muted/20 border-2 rounded-md">
                   <DynamicWindowRenderer
                     windowType={windowType.visual_key}
                     measurements={getPreviewMeasurements(windowType.visual_key)}
-                    className="h-6 w-full opacity-80"
+                    className="h-12 w-full opacity-90"
                     enhanced={true}
                   />
                 </div>
                 
                 <div className="text-center w-full">
-                  <div className="flex items-center justify-center gap-1">
-                    <h4 className="text-xs font-medium truncate">{windowType.name}</h4>
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <h4 className="text-sm font-semibold truncate">{windowType.name}</h4>
                     {selectedWindowType?.id === windowType.id && (
-                      <div className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0" />
+                      <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
                     )}
                   </div>
-                  <Badge variant="outline" className="text-xs mt-1 h-4 px-1">
+                  <Badge variant="outline" className="text-xs h-5 px-2">
                     {windowType.key}
                   </Badge>
                 </div>
