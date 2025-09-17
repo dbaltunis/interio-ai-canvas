@@ -236,48 +236,59 @@ export const VisualMeasurementSheet = ({
 
               {/* Hardware - Track/Rod that follows window shape */}
               {windowType === 'bay' ? (
-                // Bay Window Hardware - Smooth curved track/rod matching window angles
-                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-8 right-8`}>
-                  {hardwareType === "track" ? (
-                    <svg viewBox="0 0 500 40" className="w-full h-4">
-                      <path 
-                        d="M 20 20 L 120 20 L 140 15 L 360 15 L 380 20 L 480 20" 
-                        stroke="hsl(var(--muted-foreground))" 
-                        strokeWidth="12" 
-                        fill="none"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      {/* Track brackets */}
-                      <rect x="15" y="14" width="8" height="16" fill="hsl(var(--foreground))" rx="2"/>
-                      <rect x="135" y="9" width="8" height="16" fill="hsl(var(--foreground))" rx="2"/>
-                      <rect x="355" y="9" width="8" height="16" fill="hsl(var(--foreground))" rx="2"/>
-                      <rect x="477" y="14" width="8" height="16" fill="hsl(var(--foreground))" rx="2"/>
-                      <text x="250" y="-5" textAnchor="middle" className="text-xs font-semibold fill-card-foreground">
-                        Bay Curtain Track
-                      </text>
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 500 30" className="w-full h-3">
-                      <path 
-                        d="M 20 15 L 120 15 L 140 12 L 360 12 L 380 15 L 480 15" 
-                        stroke="hsl(var(--muted-foreground))" 
-                        strokeWidth="8" 
-                        fill="none"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      {/* Rod brackets */}
-                      <circle cx="25" cy="15" r="6" fill="hsl(var(--foreground))"/>
-                      <circle cx="140" cy="12" r="4" fill="hsl(var(--foreground))"/>
-                      <circle cx="360" cy="12" r="4" fill="hsl(var(--foreground))"/>
-                      <circle cx="475" cy="15" r="6" fill="hsl(var(--foreground))"/>
-                      <text x="250" y="-5" textAnchor="middle" className="text-xs font-semibold fill-card-foreground">
-                        Bay Curtain Rod
-                      </text>
-                    </svg>
-                  )}
-                </div>
+                // Bay Window Hardware - Three angled sections
+                <>
+                  {/* Left Angled Hardware */}
+                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-12 w-20 transform -skew-y-12 origin-bottom`}>
+                    {hardwareType === "track" ? (
+                      <div className="w-full h-3 bg-muted-foreground relative">
+                        <div className="absolute -left-1 -top-0.5 w-2 h-4 bg-foreground"></div>
+                        <div className="absolute -right-1 -top-0.5 w-2 h-4 bg-foreground"></div>
+                      </div>
+                    ) : (
+                      <div className="w-full h-2 bg-muted-foreground rounded-full relative">
+                        <div className="absolute -left-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
+                        <div className="absolute -right-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Center Hardware */}
+                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-32 right-32 flex items-center`}>
+                    {hardwareType === "track" ? (
+                      <div className="w-full h-3 bg-muted-foreground relative">
+                        <div className="absolute -left-1 -top-0.5 w-2 h-4 bg-foreground"></div>
+                        <div className="absolute -right-1 -top-0.5 w-2 h-4 bg-foreground"></div>
+                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
+                          Bay Curtain Track
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="w-full h-2 bg-muted-foreground rounded-full relative">
+                        <div className="absolute -left-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
+                        <div className="absolute -right-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
+                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
+                          Bay Curtain Rod
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Right Angled Hardware */}
+                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} right-12 w-20 transform skew-y-12 origin-bottom`}>
+                    {hardwareType === "track" ? (
+                      <div className="w-full h-3 bg-muted-foreground relative">
+                        <div className="absolute -left-1 -top-0.5 w-2 h-4 bg-foreground"></div>
+                        <div className="absolute -right-1 -top-0.5 w-2 h-4 bg-foreground"></div>
+                      </div>
+                    ) : (
+                      <div className="w-full h-2 bg-muted-foreground rounded-full relative">
+                        <div className="absolute -left-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
+                        <div className="absolute -right-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
+                      </div>
+                    )}
+                  </div>
+                </>
               ) : (
                 // Standard Hardware - Original design
                 <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-12 right-12 flex items-center`}>
@@ -303,76 +314,41 @@ export const VisualMeasurementSheet = ({
 
               {/* Dynamic Window Frame - Changes shape based on selected window type */}
               {windowType === 'bay' ? (
-                // Bay Window - Three panels extending outward like the reference image
-                <div className="absolute top-24 left-8 right-8 bottom-16">
-                  <svg viewBox="0 0 500 300" className="w-full h-full">
-                    {/* Bay window sill/base - extends outward */}
-                    <path 
-                      d="M 0 295 L 80 295 L 100 270 L 400 270 L 420 295 L 500 295" 
-                      fill="hsl(var(--muted-foreground))" 
-                      stroke="hsl(var(--foreground))" 
-                      strokeWidth="2"
-                    />
-                    
-                    {/* Left angled panel - angles inward toward center */}
-                    <g>
-                      <path 
-                        d="M 20 10 L 100 10 L 120 40 L 120 270 L 100 295 L 20 290 Z" 
-                        fill="hsl(var(--background))" 
-                        stroke="hsl(var(--muted-foreground))" 
-                        strokeWidth="4"
-                      />
-                      {/* Left panel window grids */}
-                      <g fill="hsl(var(--muted))" stroke="hsl(var(--border))">
-                        <path d="M 30 25 L 95 25 L 110 50 L 30 50 Z"/>
-                        <path d="M 30 60 L 110 60 L 115 120 L 30 120 Z"/>
-                        <path d="M 30 130 L 115 130 L 118 190 L 30 190 Z"/>
-                        <path d="M 30 200 L 118 200 L 120 260 L 30 260 Z"/>
-                      </g>
-                      {/* Window frame dividers */}
-                      <line x1="60" y1="25" x2="68" y2="260" stroke="hsl(var(--border))" strokeWidth="2"/>
-                      <line x1="30" y1="95" x2="112" y2="95" stroke="hsl(var(--border))" strokeWidth="2"/>
-                      <line x1="30" y1="165" x2="116" y2="165" stroke="hsl(var(--border))" strokeWidth="2"/>
-                    </g>
-                    
-                    {/* Center panel - straight, larger main window */}
-                    <rect x="120" y="10" width="260" height="280" fill="hsl(var(--background))" stroke="hsl(var(--muted-foreground))" strokeWidth="4"/>
-                    <g fill="hsl(var(--muted))" stroke="hsl(var(--border))">
-                      <rect x="135" y="25" width="105" height="90"/>
-                      <rect x="260" y="25" width="105" height="90"/>
-                      <rect x="135" y="130" width="105" height="90"/>
-                      <rect x="260" y="130" width="105" height="90"/>
-                      <rect x="135" y="235" width="105" height="45"/>
-                      <rect x="260" y="235" width="105" height="45"/>
-                    </g>
-                    {/* Center window vertical divider */}
-                    <line x1="250" y1="25" x2="250" y2="280" stroke="hsl(var(--border))" strokeWidth="3"/>
-                    {/* Center window horizontal dividers */}
-                    <line x1="135" y1="125" x2="365" y2="125" stroke="hsl(var(--border))" strokeWidth="2"/>
-                    <line x1="135" y1="225" x2="365" y2="225" stroke="hsl(var(--border))" strokeWidth="2"/>
-                    
-                    {/* Right angled panel - mirrors left panel */}
-                    <g>
-                      <path 
-                        d="M 380 40 L 400 10 L 480 10 L 480 290 L 400 295 L 380 270 Z" 
-                        fill="hsl(var(--background))" 
-                        stroke="hsl(var(--muted-foreground))" 
-                        strokeWidth="4"
-                      />
-                      {/* Right panel window grids */}
-                      <g fill="hsl(var(--muted))" stroke="hsl(var(--border))">
-                        <path d="M 390 50 L 470 25 L 470 50 L 405 60 Z"/>
-                        <path d="M 385 120 L 470 60 L 470 120 L 395 130 Z"/>
-                        <path d="M 382 190 L 470 130 L 470 190 L 385 200 Z"/>
-                        <path d="M 380 260 L 470 200 L 470 260 L 382 270 Z"/>
-                      </g>
-                      {/* Window frame dividers */}
-                      <line x1="432" y1="25" x2="425" y2="260" stroke="hsl(var(--border))" strokeWidth="2"/>
-                      <line x1="388" y1="95" x2="470" y2="95" stroke="hsl(var(--border))" strokeWidth="2"/>
-                      <line x1="384" y1="165" x2="470" y2="165" stroke="hsl(var(--border))" strokeWidth="2"/>
-                    </g>
-                  </svg>
-                </div>
+                // Bay Window - Three angled sections
+                <>
+                  {/* Left Angled Window */}
+                  <div className="absolute top-24 left-12 w-20 bottom-16 transform -skew-y-12 origin-bottom">
+                    <div className="w-full h-full border-4 border-muted-foreground bg-background relative">
+                      <div className="grid grid-cols-1 grid-rows-3 h-full gap-1 p-2">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <div key={i} className="bg-muted border border-border"></div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Center Window */}
+                  <div className="absolute top-24 left-32 right-32 bottom-16">
+                    <div className="w-full h-full border-4 border-muted-foreground bg-background relative">
+                      <div className="grid grid-cols-2 grid-rows-3 h-full gap-1 p-2">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <div key={i} className="bg-muted border border-border"></div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Right Angled Window */}
+                  <div className="absolute top-24 right-12 w-20 bottom-16 transform skew-y-12 origin-bottom">
+                    <div className="w-full h-full border-4 border-muted-foreground bg-background relative">
+                      <div className="grid grid-cols-1 grid-rows-3 h-full gap-1 p-2">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <div key={i} className="bg-muted border border-border"></div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </>
               ) : (
                 // Standard Window - Original design
                 <div className="absolute top-24 left-16 right-16 bottom-16">
@@ -388,143 +364,58 @@ export const VisualMeasurementSheet = ({
               )}
 
               {/* Curtain Panels - Dynamic based on curtain type, hardware type, and pooling */}
-              {windowType === 'bay' ? (
-                // Bay Window Curtains - Following window angles exactly
-                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-8 right-8 ${getCurtainBottomPosition()}`}>
-                  <svg viewBox="0 0 500 280" className="w-full h-full">
-                    {/* Left angled curtain panel - follows the left window angle */}
-                    <g fill="hsl(var(--primary) / 0.8)" stroke="hsl(var(--primary) / 0.6)" strokeWidth="1">
-                      <path d={`M 30 ${hardwareType === "track" ? "20" : "30"} L 115 ${hardwareType === "track" ? "20" : "30"} L 125 40 L 125 270 L 105 275 L 35 275 Z`}/>
-                      {/* Curtain fold lines that follow the angle */}
-                      <line x1="40" y1={hardwareType === "track" ? "25" : "35"} x2="45" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="50" y1={hardwareType === "track" ? "25" : "35"} x2="55" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="60" y1={hardwareType === "track" ? "25" : "35"} x2="65" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="70" y1={hardwareType === "track" ? "25" : "35"} x2="75" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="80" y1={hardwareType === "track" ? "25" : "35"} x2="85" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="90" y1={hardwareType === "track" ? "25" : "35"} x2="95" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="100" y1={hardwareType === "track" ? "25" : "35"} x2="105" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="110" y1={hardwareType === "track" ? "25" : "35"} x2="115" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                    </g>
-                    
-                    {/* Center curtain panels - straight */}
-                    {curtainType === "pair" ? (
-                      <>
-                        {/* Left center panel */}
-                        <rect x="125" y={hardwareType === "track" ? "20" : "30"} width="110" height="250" fill="hsl(var(--primary) / 0.8)" stroke="hsl(var(--primary) / 0.6)" strokeWidth="1"/>
-                        <g stroke="hsl(var(--primary) / 0.4)" strokeWidth="1">
-                          <line x1="135" y1={hardwareType === "track" ? "25" : "35"} x2="135" y2="275"/>
-                          <line x1="145" y1={hardwareType === "track" ? "25" : "35"} x2="145" y2="275"/>
-                          <line x1="155" y1={hardwareType === "track" ? "25" : "35"} x2="155" y2="275"/>
-                          <line x1="165" y1={hardwareType === "track" ? "25" : "35"} x2="165" y2="275"/>
-                          <line x1="175" y1={hardwareType === "track" ? "25" : "35"} x2="175" y2="275"/>
-                          <line x1="185" y1={hardwareType === "track" ? "25" : "35"} x2="185" y2="275"/>
-                          <line x1="195" y1={hardwareType === "track" ? "25" : "35"} x2="195" y2="275"/>
-                          <line x1="205" y1={hardwareType === "track" ? "25" : "35"} x2="205" y2="275"/>
-                          <line x1="215" y1={hardwareType === "track" ? "25" : "35"} x2="215" y2="275"/>
-                          <line x1="225" y1={hardwareType === "track" ? "25" : "35"} x2="225" y2="275"/>
-                        </g>
-                        
-                        {/* Right center panel */}
-                        <rect x="265" y={hardwareType === "track" ? "20" : "30"} width="110" height="250" fill="hsl(var(--primary) / 0.8)" stroke="hsl(var(--primary) / 0.6)" strokeWidth="1"/>
-                        <g stroke="hsl(var(--primary) / 0.4)" strokeWidth="1">
-                          <line x1="275" y1={hardwareType === "track" ? "25" : "35"} x2="275" y2="275"/>
-                          <line x1="285" y1={hardwareType === "track" ? "25" : "35"} x2="285" y2="275"/>
-                          <line x1="295" y1={hardwareType === "track" ? "25" : "35"} x2="295" y2="275"/>
-                          <line x1="305" y1={hardwareType === "track" ? "25" : "35"} x2="305" y2="275"/>
-                          <line x1="315" y1={hardwareType === "track" ? "25" : "35"} x2="315" y2="275"/>
-                          <line x1="325" y1={hardwareType === "track" ? "25" : "35"} x2="325" y2="275"/>
-                          <line x1="335" y1={hardwareType === "track" ? "25" : "35"} x2="335" y2="275"/>
-                          <line x1="345" y1={hardwareType === "track" ? "25" : "35"} x2="345" y2="275"/>
-                          <line x1="355" y1={hardwareType === "track" ? "25" : "35"} x2="355" y2="275"/>
-                          <line x1="365" y1={hardwareType === "track" ? "25" : "35"} x2="365" y2="275"/>
-                        </g>
-                      </>
-                    ) : (
-                      /* Single center panel */
-                      <rect x="125" y={hardwareType === "track" ? "20" : "30"} width="250" height="250" fill="hsl(var(--primary) / 0.8)" stroke="hsl(var(--primary) / 0.6)" strokeWidth="1"/>
-                    )}
-                    
-                    {/* Right angled curtain panel - follows the right window angle */}
-                    <g fill="hsl(var(--primary) / 0.8)" stroke="hsl(var(--primary) / 0.6)" strokeWidth="1">
-                      <path d={`M 375 40 L 385 ${hardwareType === "track" ? "20" : "30"} L 470 ${hardwareType === "track" ? "20" : "30"} L 465 275 L 395 275 L 375 270 Z`}/>
-                      {/* Curtain fold lines that follow the angle */}
-                      <line x1="385" y1={hardwareType === "track" ? "25" : "35"} x2="385" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="395" y1={hardwareType === "track" ? "25" : "35"} x2="395" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="405" y1={hardwareType === "track" ? "25" : "35"} x2="405" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="415" y1={hardwareType === "track" ? "25" : "35"} x2="415" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="425" y1={hardwareType === "track" ? "25" : "35"} x2="425" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="435" y1={hardwareType === "track" ? "25" : "35"} x2="435" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="445" y1={hardwareType === "track" ? "25" : "35"} x2="445" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                      <line x1="455" y1={hardwareType === "track" ? "25" : "35"} x2="455" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
-                    </g>
-                    
-                    {/* Pooling visual effect for bay window */}
-                    {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                      <g fill="hsl(var(--primary) / 0.6)">
-                        <path d="M 30 275 L 125 275 L 125 295 L 35 295 Z"/>
-                        <rect x="125" y="275" width="250" height="20"/>
-                        <path d="M 375 275 L 465 275 L 465 295 L 375 295 Z"/>
-                      </g>
-                    )}
-                  </svg>
-                </div>
-              ) : (
-                // Standard Window Curtains - Original design
+              {curtainType === "pair" ? (
                 <>
-                  {curtainType === "pair" ? (
-                    <>
-                      {/* Left Panel */}
-                      <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-14 w-8 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
-                        <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
-                        <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
-                        <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
-                        <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-primary/50"></div>
-                        <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
-                        <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
-                        <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
-                        
-                        {/* Pooling visual effect */}
-                        {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                          <div className="absolute -bottom-4 left-0 w-full h-4 bg-primary/60 rounded-b-lg"></div>
-                        )}
-                      </div>
-                      
-                      {/* Right Panel */}
-                      <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} right-14 w-8 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
-                        <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
-                        <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
-                        <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
-                        <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-primary/50"></div>
-                        <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
-                        <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
-                        <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
-                        
-                        {/* Pooling visual effect */}
-                        {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                          <div className="absolute -bottom-4 left-0 w-full h-4 bg-primary/60 rounded-b-lg"></div>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    /* Single Panel */
-                    <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} ${curtainSide === "left" ? "left-14" : "right-14"} w-12 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
-                      <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
-                      <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
-                      <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
-                      <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-primary/50"></div>
-                      <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
-                      <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
-                      <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
-                      <div className="absolute top-2 bottom-2 left-7 w-0.5 bg-primary/15"></div>
-                      <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-primary/10"></div>
-                      
-                      {/* Pooling visual effect */}
-                      {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                        <div className="absolute -bottom-4 left-0 w-full h-4 bg-primary/60 rounded-b-lg"></div>
-                      )}
-                    </div>
-                  )}
+                  {/* Left Panel */}
+                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-14 w-8 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
+                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
+                    <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
+                    <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
+                    <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-primary/50"></div>
+                    <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
+                    <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
+                    <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
+                    
+                    {/* Pooling visual effect */}
+                    {poolingOption === "below_floor" && hasValue(poolingAmount) && (
+                      <div className="absolute -bottom-4 left-0 w-full h-4 bg-primary/60 rounded-b-lg"></div>
+                    )}
+                  </div>
+                  
+                  {/* Right Panel */}
+                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} right-14 w-8 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
+                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
+                    <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
+                    <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
+                    <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-primary/50"></div>
+                    <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
+                    <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
+                    <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
+                    
+                    {/* Pooling visual effect */}
+                    {poolingOption === "below_floor" && hasValue(poolingAmount) && (
+                      <div className="absolute -bottom-4 left-0 w-full h-4 bg-primary/60 rounded-b-lg"></div>
+                    )}
+                  </div>
                 </>
+              ) : (
+                /* Single Panel */
+                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} ${curtainSide === "left" ? "left-14" : "right-14"} w-12 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
+                  <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
+                  <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
+                  <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
+                  <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-primary/50"></div>
+                  <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
+                  <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
+                  <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
+                  <div className="absolute top-2 bottom-2 left-7 w-0.5 bg-primary/15"></div>
+                  <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-primary/10"></div>
+                  
+                  {/* Pooling visual effect */}
+                  {poolingOption === "below_floor" && hasValue(poolingAmount) && (
+                    <div className="absolute -bottom-4 left-0 w-full h-4 bg-primary/60 rounded-b-lg"></div>
+                  )}
+                </div>
               )}
 
               {/* Rail Width measurement - positioned near the hardware */}
@@ -993,210 +884,71 @@ export const VisualMeasurementSheet = ({
                 </div>
               </div>
 
-              {windowType === 'bay' ? (
-                // Bay Window Specific Measurements
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">L</span>
-                        <Label htmlFor="bay_left_width" className="text-sm font-bold text-card-foreground">Left Panel Width</Label>
-                      </div>
-                      <div className="relative">
-                        <Input
-                          id="bay_left_width"
-                          type="number"
-                          step="0.25"
-                          value={measurements.bay_left_width || ""}
-                          onChange={(e) => handleInputChange("bay_left_width", e.target.value)}
-                          placeholder="0.00"
-                          readOnly={readOnly}
-                          className="h-10 pr-12 text-center container-level-2 border-2"
-                        />
-                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs font-medium bg-muted px-1 rounded">
-                          {units.length}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">C</span>
-                        <Label htmlFor="bay_center_width" className="text-sm font-bold text-card-foreground">Center Panel Width</Label>
-                      </div>
-                      <div className="relative">
-                        <Input
-                          id="bay_center_width"
-                          type="number"
-                          step="0.25"
-                          value={measurements.bay_center_width || ""}
-                          onChange={(e) => handleInputChange("bay_center_width", e.target.value)}
-                          placeholder="0.00"
-                          readOnly={readOnly}
-                          className="h-10 pr-12 text-center container-level-2 border-2"
-                        />
-                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs font-medium bg-muted px-1 rounded">
-                          {units.length}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="w-7 h-7 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm">R</span>
-                        <Label htmlFor="bay_right_width" className="text-sm font-bold text-card-foreground">Right Panel Width</Label>
-                      </div>
-                      <div className="relative">
-                        <Input
-                          id="bay_right_width"
-                          type="number"
-                          step="0.25"
-                          value={measurements.bay_right_width || ""}
-                          onChange={(e) => handleInputChange("bay_right_width", e.target.value)}
-                          placeholder="0.00"
-                          readOnly={readOnly}
-                          className="h-10 pr-12 text-center container-level-2 border-2"
-                        />
-                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs font-medium bg-muted px-1 rounded">
-                          {units.length}
-                        </span>
-                      </div>
-                    </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">W</span>
+                    <Label htmlFor="rail_width" className="text-base font-bold text-card-foreground">
+                      {hardwareType === "track" ? "Track" : "Rail"} Width
+                    </Label>
                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="w-7 h-7 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">A</span>
-                        <Label htmlFor="bay_left_angle" className="text-sm font-bold text-card-foreground">Left Angle (degrees)</Label>
-                      </div>
-                      <div className="relative">
-                        <Input
-                          id="bay_left_angle"
-                          type="number"
-                          step="1"
-                          value={measurements.bay_left_angle || ""}
-                          onChange={(e) => handleInputChange("bay_left_angle", e.target.value)}
-                          placeholder="30"
-                          readOnly={readOnly}
-                          className="h-10 pr-8 text-center container-level-2 border-2"
-                        />
-                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs font-medium">°</span>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="w-7 h-7 bg-red-500 rounded-full flex items-center justify-center text-white font-bold text-sm">B</span>
-                        <Label htmlFor="bay_right_angle" className="text-sm font-bold text-card-foreground">Right Angle (degrees)</Label>
-                      </div>
-                      <div className="relative">
-                        <Input
-                          id="bay_right_angle"
-                          type="number"
-                          step="1"
-                          value={measurements.bay_right_angle || ""}
-                          onChange={(e) => handleInputChange("bay_right_angle", e.target.value)}
-                          placeholder="30"
-                          readOnly={readOnly}
-                          className="h-10 pr-8 text-center container-level-2 border-2"
-                        />
-                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs font-medium">°</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="w-7 h-7 bg-teal-500 rounded-full flex items-center justify-center text-white font-bold text-sm">H</span>
-                      <Label htmlFor="drop" className="text-sm font-bold text-card-foreground">Curtain Drop (All Panels)</Label>
-                    </div>
-                    <div className="relative">
+                  <div className="relative">
                       <Input
-                        id="drop"
-                        type="number"
-                        step="0.25"
-                        value={measurements.drop || ""}
-                        onChange={(e) => handleInputChange("drop", e.target.value)}
-                        placeholder="0.00"
-                        readOnly={readOnly}
-                        className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary"
-                      />
-                      <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-sm bg-muted px-2 py-1 rounded">
-                        {units.length}
-                      </span>
-                    </div>
-                    <p className="text-sm text-card-foreground font-medium">Height from track/rod to curtain bottom</p>
+                       id="rail_width"
+                       type="number"
+                       inputMode="decimal"
+                       step="0.25"
+                       value={measurements.rail_width || ""}
+                       onChange={(e) => {
+                         console.log("🔧 Rail width input change:", e.target.value, "Current measurements:", measurements);
+                         handleInputChange("rail_width", e.target.value);
+                       }}
+                       onFocus={(e) => {
+                         e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                       }}
+                       placeholder="0.00"
+                       readOnly={readOnly}
+                       className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground"
+                     />
+                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-sm bg-muted px-2 py-1 rounded">
+                       {units.length}
+                    </span>
                   </div>
+                  <p className="text-sm text-card-foreground font-medium">Total {hardwareType === "track" ? "track" : "rail"} length</p>
                 </div>
-              ) : (
-                // Standard Window Measurements
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">W</span>
-                      <Label htmlFor="rail_width" className="text-base font-bold text-card-foreground">
-                        {hardwareType === "track" ? "Track" : "Rail"} Width
-                      </Label>
-                    </div>
-                    <div className="relative">
-                        <Input
-                         id="rail_width"
-                         type="number"
-                         inputMode="decimal"
-                         step="0.25"
-                         value={measurements.rail_width || ""}
-                         onChange={(e) => {
-                           console.log("🔧 Rail width input change:", e.target.value, "Current measurements:", measurements);
-                           handleInputChange("rail_width", e.target.value);
-                         }}
-                         onFocus={(e) => {
-                           e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                         }}
-                         placeholder="0.00"
-                         readOnly={readOnly}
-                         className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground"
-                       />
-                      <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-sm bg-muted px-2 py-1 rounded">
-                         {units.length}
-                      </span>
-                    </div>
-                    <p className="text-sm text-card-foreground font-medium">Total {hardwareType === "track" ? "track" : "rail"} length</p>
-                  </div>
 
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center text-secondary-foreground font-bold text-sm">H</span>
-                      <Label htmlFor="drop" className="text-base font-bold text-card-foreground">
-                        Curtain Drop
-                      </Label>
-                    </div>
-                    <div className="relative">
-                        <Input
-                         id="drop"
-                         type="number"
-                         inputMode="decimal"
-                         step="0.25"
-                         value={measurements.drop || ""}
-                         onChange={(e) => {
-                           console.log("🔧 Drop input change:", e.target.value, "Current measurements:", measurements);
-                           handleInputChange("drop", e.target.value);
-                         }}
-                         onFocus={(e) => {
-                           e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                         }}
-                         placeholder="0.00"
-                         readOnly={readOnly}
-                         className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground"
-                       />
-                      <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-sm bg-muted px-2 py-1 rounded">
-                        {units.length}
-                      </span>
-                    </div>
-                    <p className="text-sm text-card-foreground font-medium">Length to curtain bottom</p>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center text-secondary-foreground font-bold text-sm">H</span>
+                    <Label htmlFor="drop" className="text-base font-bold text-card-foreground">
+                      Curtain Drop
+                    </Label>
                   </div>
+                  <div className="relative">
+                      <Input
+                       id="drop"
+                       type="number"
+                       inputMode="decimal"
+                       step="0.25"
+                       value={measurements.drop || ""}
+                       onChange={(e) => {
+                         console.log("🔧 Drop input change:", e.target.value, "Current measurements:", measurements);
+                         handleInputChange("drop", e.target.value);
+                       }}
+                       onFocus={(e) => {
+                         e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                       }}
+                       placeholder="0.00"
+                       readOnly={readOnly}
+                       className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground"
+                     />
+                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-sm bg-muted px-2 py-1 rounded">
+                      {units.length}
+                    </span>
+                  </div>
+                  <p className="text-sm text-card-foreground font-medium">Length to curtain bottom</p>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Pooling Configuration - Collapsible */}
