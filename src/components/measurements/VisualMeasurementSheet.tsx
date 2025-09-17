@@ -13,6 +13,7 @@ import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
 import { calculateFabricUsage } from "../job-creation/treatment-pricing/fabric-calculation/fabricUsageCalculator";
 import { WorksheetVisual } from "../worksheet/WorksheetVisual";
 import { DynamicWindowRenderer } from "../window-types/DynamicWindowRenderer";
+import { Window3DRenderer } from "../window-types/3d-windows/Window3DRenderer";
 
 interface VisualMeasurementSheetProps {
   measurements: Record<string, any>;
@@ -254,9 +255,9 @@ export const VisualMeasurementSheet = ({
                 )}
               </div>
 
-              {/* Dynamic Window Frame - Changes based on selected window type */}
+              {/* 3D Window Visualization - Realistic and Interactive */}
               <div className="absolute top-24 left-16 right-16 bottom-16">
-                <DynamicWindowRenderer
+                <Window3DRenderer
                   windowType={windowType}
                   measurements={{
                     window_width: parseFloat(measurements.measurement_a || measurements.rail_width || "120"),
@@ -265,7 +266,8 @@ export const VisualMeasurementSheet = ({
                     drop: parseFloat(measurements.drop || "110")
                   }}
                   className="w-full h-full"
-                  enhanced={true}
+                  autoRotate={false}
+                  showControls={true}
                 />
               </div>
 
