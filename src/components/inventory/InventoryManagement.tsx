@@ -16,13 +16,25 @@ export const InventoryManagement = () => {
   const { data: inventory, isLoading } = useInventory();
   const { data: lowStockItems } = useLowStockItems();
 
+  // Handle permission loading with proper loading check
+  if (canViewInventory === undefined) {
+    return (
+      <div className="min-h-screen flex items-center justify-center animate-fade-in">
+        <div className="flex items-center gap-3">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <div className="text-lg text-muted-foreground">Loading inventory...</div>
+        </div>
+      </div>
+    );
+  }
+
   // If user doesn't have permission to view inventory, show access denied
   if (!canViewInventory) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600">You don't have permission to view inventory.</p>
+          <h2 className="text-2xl font-semibold text-foreground mb-2">Access Denied</h2>
+          <p className="text-muted-foreground">You don't have permission to view inventory.</p>
         </div>
       </div>
     );
