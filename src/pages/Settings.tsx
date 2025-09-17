@@ -6,14 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Settings as SettingsIcon } from "lucide-react";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { useNavigate } from "react-router-dom";
 
 const Settings = () => {
+  const navigate = useNavigate();
   const hasViewSettings = useHasPermission('view_settings');
   const hasViewProfile = useHasPermission('view_profile');
   const canAccessSettings = hasViewSettings || hasViewProfile;
   
   const handleBackToApp = () => {
-    window.location.href = "/";
+    navigate('/', { replace: true });
   };
 
   // Show loading while permissions are being checked
