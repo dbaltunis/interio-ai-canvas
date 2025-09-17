@@ -234,41 +234,134 @@ export const VisualMeasurementSheet = ({
                 </span>
               </div>
 
-              {/* Hardware - Track (on ceiling) or Rod (below ceiling) */}
-              <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-12 right-12 flex items-center`}>
-                {hardwareType === "track" ? (
-                  <div className="w-full h-3 bg-muted-foreground relative">
-                    <div className="absolute -left-1 -top-0.5 w-2 h-4 bg-foreground"></div>
-                    <div className="absolute -right-1 -top-0.5 w-2 h-4 bg-foreground"></div>
-                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
-                      Curtain Track
-                    </span>
+              {/* Hardware - Track/Rod that follows window shape */}
+              {windowType === 'bay' ? (
+                // Bay Window Hardware - Three angled sections
+                <>
+                  {/* Left Angled Hardware */}
+                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-12 w-20 transform -skew-y-12 origin-bottom`}>
+                    {hardwareType === "track" ? (
+                      <div className="w-full h-3 bg-muted-foreground relative">
+                        <div className="absolute -left-1 -top-0.5 w-2 h-4 bg-foreground"></div>
+                        <div className="absolute -right-1 -top-0.5 w-2 h-4 bg-foreground"></div>
+                      </div>
+                    ) : (
+                      <div className="w-full h-2 bg-muted-foreground rounded-full relative">
+                        <div className="absolute -left-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
+                        <div className="absolute -right-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="w-full h-2 bg-muted-foreground rounded-full relative">
-                    <div className="absolute -left-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
-                    <div className="absolute -right-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
-                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
-                      Curtain Rod
-                    </span>
+                  
+                  {/* Center Hardware */}
+                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-32 right-32 flex items-center`}>
+                    {hardwareType === "track" ? (
+                      <div className="w-full h-3 bg-muted-foreground relative">
+                        <div className="absolute -left-1 -top-0.5 w-2 h-4 bg-foreground"></div>
+                        <div className="absolute -right-1 -top-0.5 w-2 h-4 bg-foreground"></div>
+                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
+                          Bay Curtain Track
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="w-full h-2 bg-muted-foreground rounded-full relative">
+                        <div className="absolute -left-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
+                        <div className="absolute -right-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
+                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
+                          Bay Curtain Rod
+                        </span>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                  
+                  {/* Right Angled Hardware */}
+                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} right-12 w-20 transform skew-y-12 origin-bottom`}>
+                    {hardwareType === "track" ? (
+                      <div className="w-full h-3 bg-muted-foreground relative">
+                        <div className="absolute -left-1 -top-0.5 w-2 h-4 bg-foreground"></div>
+                        <div className="absolute -right-1 -top-0.5 w-2 h-4 bg-foreground"></div>
+                      </div>
+                    ) : (
+                      <div className="w-full h-2 bg-muted-foreground rounded-full relative">
+                        <div className="absolute -left-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
+                        <div className="absolute -right-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                // Standard Hardware - Original design
+                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-12 right-12 flex items-center`}>
+                  {hardwareType === "track" ? (
+                    <div className="w-full h-3 bg-muted-foreground relative">
+                      <div className="absolute -left-1 -top-0.5 w-2 h-4 bg-foreground"></div>
+                      <div className="absolute -right-1 -top-0.5 w-2 h-4 bg-foreground"></div>
+                      <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
+                        Curtain Track
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="w-full h-2 bg-muted-foreground rounded-full relative">
+                      <div className="absolute -left-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
+                      <div className="absolute -right-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
+                      <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
+                        Curtain Rod
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
 
-              {/* Dynamic Window Frame - Changes based on selected window type */}
-              <div className="absolute top-24 left-16 right-16 bottom-16">
-                <DynamicWindowRenderer
-                  windowType={windowType}
-                  measurements={{
-                    window_width: parseFloat(measurements.measurement_a || measurements.rail_width || "120"),
-                    window_height: parseFloat(measurements.drop || "100"),
-                    rail_width: parseFloat(measurements.rail_width || "140"),
-                    drop: parseFloat(measurements.drop || "110")
-                  }}
-                  className="w-full h-full"
-                  enhanced={true}
-                />
-              </div>
+              {/* Dynamic Window Frame - Changes shape based on selected window type */}
+              {windowType === 'bay' ? (
+                // Bay Window - Three angled sections
+                <>
+                  {/* Left Angled Window */}
+                  <div className="absolute top-24 left-12 w-20 bottom-16 transform -skew-y-12 origin-bottom">
+                    <div className="w-full h-full border-4 border-muted-foreground bg-background relative">
+                      <div className="grid grid-cols-1 grid-rows-3 h-full gap-1 p-2">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <div key={i} className="bg-muted border border-border"></div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Center Window */}
+                  <div className="absolute top-24 left-32 right-32 bottom-16">
+                    <div className="w-full h-full border-4 border-muted-foreground bg-background relative">
+                      <div className="grid grid-cols-2 grid-rows-3 h-full gap-1 p-2">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <div key={i} className="bg-muted border border-border"></div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Right Angled Window */}
+                  <div className="absolute top-24 right-12 w-20 bottom-16 transform skew-y-12 origin-bottom">
+                    <div className="w-full h-full border-4 border-muted-foreground bg-background relative">
+                      <div className="grid grid-cols-1 grid-rows-3 h-full gap-1 p-2">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <div key={i} className="bg-muted border border-border"></div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                // Standard Window - Original design
+                <div className="absolute top-24 left-16 right-16 bottom-16">
+                  <div className="w-full h-full border-4 border-muted-foreground bg-background relative">
+                    {/* Window Panes */}
+                    <div className="grid grid-cols-2 grid-rows-3 h-full gap-1 p-2">
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="bg-muted border border-border"></div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Curtain Panels - Dynamic based on curtain type, hardware type, and pooling */}
               {curtainType === "pair" ? (
