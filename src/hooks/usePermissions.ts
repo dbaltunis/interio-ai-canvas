@@ -112,18 +112,18 @@ export const useUserPermissions = () => {
 };
 
 export const useHasPermission = (permission: string) => {
-  const { data: permissions, isLoading, isFetching } = useUserPermissions();
+  const { data: permissions, isLoading } = useUserPermissions();
   
-  // Only show loading state on initial load, not during background refetch
-  // This prevents navigation disruption when returning to the tab
-  if (isLoading && !isFetching) return undefined;
+  // Only show loading state on initial load when no cached data exists
+  // This prevents navigation disruption during background refetches
+  if (isLoading && permissions === undefined) return undefined;
   
   return permissions?.some(p => p.permission_name === permission) || false;
 };
 
 export const useHasAnyPermission = (permissionList: string[]) => {
   const { data: permissions, isLoading } = useUserPermissions();
-  if (isLoading) return undefined;
+  if (isLoading && permissions === undefined) return undefined;
   return permissionList.some(permission => 
     permissions?.some(p => p.permission_name === permission)
   ) || false;
@@ -131,7 +131,7 @@ export const useHasAnyPermission = (permissionList: string[]) => {
 
 export const useHasAllPermissions = (permissionList: string[]) => {
   const { data: permissions, isLoading } = useUserPermissions();
-  if (isLoading) return undefined;
+  if (isLoading && permissions === undefined) return undefined;
   return permissionList.every(permission => 
     permissions?.some(p => p.permission_name === permission)
   );

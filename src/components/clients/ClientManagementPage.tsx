@@ -49,6 +49,35 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
   const { data: clients, isLoading } = useClients();
   const { data: clientStats, isLoading: isLoadingStats } = useClientStats();
 
+  // Handle permission loading and preserve navigation state
+  if (canViewClients === undefined) {
+    // If we're showing client profile, keep showing it during permission refetch
+    if (showClientProfile && selectedClient) {
+      return (
+        <ClientProfilePage
+          clientId={selectedClient.id}
+          onBack={() => {
+            setShowClientProfile(false);
+            setSelectedClient(null);
+          }}
+          onEdit={() => {
+            console.log("Edit client:", selectedClient);
+          }}
+          onTabChange={onTabChange}
+        />
+      );
+    }
+    
+    return (
+      <div className="min-h-screen flex items-center justify-center animate-fade-in">
+        <div className="flex items-center gap-3">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <div className="text-lg text-muted-foreground">Loading clients...</div>
+        </div>
+      </div>
+    );
+  }
+
   // If user doesn't have permission to view clients, show access denied
   if (!canViewClients) {
     return (

@@ -30,8 +30,19 @@ const JobsPage = () => {
   const updateQuote = useUpdateQuote();
   const { toast } = useToast();
 
-  // Show loading while permissions are being checked
+  const handleBackFromJob = () => {
+    setSelectedJobId(null);
+    // Refresh the quotes when coming back to ensure we see any updates
+    refetchQuotes();
+  };
+
+  // Show loading only on initial load, preserve navigation state during refetch
   if (canViewJobs === undefined) {
+    // If we have a selectedJobId, keep showing the detail page during permission refetch
+    if (selectedJobId) {
+      return <JobDetailPage jobId={selectedJobId} onBack={handleBackFromJob} />;
+    }
+    
     return (
       <div className="min-h-screen flex items-center justify-center animate-fade-in">
         <div className="flex items-center gap-3">
@@ -161,11 +172,6 @@ const JobsPage = () => {
     }
   };
 
-  const handleBackFromJob = () => {
-    setSelectedJobId(null);
-    // Refresh the quotes when coming back to ensure we see any updates
-    refetchQuotes();
-  };
 
   const handleClearFilters = () => {
     setSearchTerm("");
