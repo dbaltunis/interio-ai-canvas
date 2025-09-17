@@ -236,41 +236,43 @@ export const VisualMeasurementSheet = ({
 
               {/* Hardware - Track/Rod that follows window shape */}
               {windowType === 'bay' ? (
-                // Bay Window Hardware - Smooth curved track/rod
-                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-12 right-12`}>
+                // Bay Window Hardware - Smooth curved track/rod matching window angles
+                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-8 right-8`}>
                   {hardwareType === "track" ? (
-                    <svg viewBox="0 0 400 40" className="w-full h-4">
+                    <svg viewBox="0 0 500 40" className="w-full h-4">
                       <path 
-                        d="M 0 20 Q 60 5 120 20 L 280 20 Q 340 5 400 20" 
+                        d="M 20 20 L 120 20 L 140 15 L 360 15 L 380 20 L 480 20" 
                         stroke="hsl(var(--muted-foreground))" 
                         strokeWidth="12" 
                         fill="none"
                         strokeLinecap="round"
+                        strokeLinejoin="round"
                       />
                       {/* Track brackets */}
-                      <rect x="5" y="14" width="8" height="16" fill="hsl(var(--foreground))" rx="2"/>
-                      <rect x="120" y="16" width="8" height="12" fill="hsl(var(--foreground))" rx="2"/>
-                      <rect x="272" y="16" width="8" height="12" fill="hsl(var(--foreground))" rx="2"/>
-                      <rect x="387" y="14" width="8" height="16" fill="hsl(var(--foreground))" rx="2"/>
-                      <text x="200" y="-5" textAnchor="middle" className="text-xs font-semibold fill-card-foreground">
+                      <rect x="15" y="14" width="8" height="16" fill="hsl(var(--foreground))" rx="2"/>
+                      <rect x="135" y="9" width="8" height="16" fill="hsl(var(--foreground))" rx="2"/>
+                      <rect x="355" y="9" width="8" height="16" fill="hsl(var(--foreground))" rx="2"/>
+                      <rect x="477" y="14" width="8" height="16" fill="hsl(var(--foreground))" rx="2"/>
+                      <text x="250" y="-5" textAnchor="middle" className="text-xs font-semibold fill-card-foreground">
                         Bay Curtain Track
                       </text>
                     </svg>
                   ) : (
-                    <svg viewBox="0 0 400 30" className="w-full h-3">
+                    <svg viewBox="0 0 500 30" className="w-full h-3">
                       <path 
-                        d="M 0 15 Q 60 5 120 15 L 280 15 Q 340 5 400 15" 
+                        d="M 20 15 L 120 15 L 140 12 L 360 12 L 380 15 L 480 15" 
                         stroke="hsl(var(--muted-foreground))" 
                         strokeWidth="8" 
                         fill="none"
                         strokeLinecap="round"
+                        strokeLinejoin="round"
                       />
                       {/* Rod brackets */}
-                      <circle cx="10" cy="15" r="6" fill="hsl(var(--foreground))"/>
-                      <circle cx="125" cy="15" r="4" fill="hsl(var(--foreground))"/>
-                      <circle cx="275" cy="15" r="4" fill="hsl(var(--foreground))"/>
-                      <circle cx="390" cy="15" r="6" fill="hsl(var(--foreground))"/>
-                      <text x="200" y="-5" textAnchor="middle" className="text-xs font-semibold fill-card-foreground">
+                      <circle cx="25" cy="15" r="6" fill="hsl(var(--foreground))"/>
+                      <circle cx="140" cy="12" r="4" fill="hsl(var(--foreground))"/>
+                      <circle cx="360" cy="12" r="4" fill="hsl(var(--foreground))"/>
+                      <circle cx="475" cy="15" r="6" fill="hsl(var(--foreground))"/>
+                      <text x="250" y="-5" textAnchor="middle" className="text-xs font-semibold fill-card-foreground">
                         Bay Curtain Rod
                       </text>
                     </svg>
@@ -301,37 +303,47 @@ export const VisualMeasurementSheet = ({
 
               {/* Dynamic Window Frame - Changes shape based on selected window type */}
               {windowType === 'bay' ? (
-                // Bay Window - Properly aligned three sections
-                <div className="absolute top-24 left-12 right-12 bottom-16">
-                  <svg viewBox="0 0 400 300" className="w-full h-full">
+                // Bay Window - Properly angled three sections matching reference
+                <div className="absolute top-24 left-8 right-8 bottom-16">
+                  <svg viewBox="0 0 500 300" className="w-full h-full">
                     {/* Left angled panel */}
-                    <g transform="translate(0,0) skewX(-15)">
-                      <rect x="10" y="10" width="80" height="280" fill="hsl(var(--background))" stroke="hsl(var(--muted-foreground))" strokeWidth="4"/>
+                    <g>
+                      <path 
+                        d="M 20 10 L 120 10 L 140 290 L 20 290 Z" 
+                        fill="hsl(var(--background))" 
+                        stroke="hsl(var(--muted-foreground))" 
+                        strokeWidth="4"
+                      />
                       <g fill="hsl(var(--muted))" stroke="hsl(var(--border))">
-                        <rect x="15" y="20" width="70" height="85"/>
-                        <rect x="15" y="110" width="70" height="85"/>
-                        <rect x="15" y="200" width="70" height="85"/>
+                        <path d="M 25 20 L 110 20 L 125 110 L 25 110 Z"/>
+                        <path d="M 25 120 L 125 120 L 130 210 L 25 210 Z"/>
+                        <path d="M 25 220 L 130 220 L 135 280 L 25 280 Z"/>
                       </g>
                     </g>
                     
-                    {/* Center panel */}
-                    <rect x="120" y="10" width="160" height="280" fill="hsl(var(--background))" stroke="hsl(var(--muted-foreground))" strokeWidth="4"/>
+                    {/* Center panel - straight */}
+                    <rect x="140" y="10" width="220" height="280" fill="hsl(var(--background))" stroke="hsl(var(--muted-foreground))" strokeWidth="4"/>
                     <g fill="hsl(var(--muted))" stroke="hsl(var(--border))">
-                      <rect x="130" y="20" width="70" height="85"/>
-                      <rect x="210" y="20" width="70" height="85"/>
-                      <rect x="130" y="110" width="70" height="85"/>
-                      <rect x="210" y="110" width="70" height="85"/>
-                      <rect x="130" y="200" width="70" height="85"/>
-                      <rect x="210" y="200" width="70" height="85"/>
+                      <rect x="150" y="20" width="95" height="85"/>
+                      <rect x="255" y="20" width="95" height="85"/>
+                      <rect x="150" y="115" width="95" height="85"/>
+                      <rect x="255" y="115" width="95" height="85"/>
+                      <rect x="150" y="210" width="95" height="70"/>
+                      <rect x="255" y="210" width="95" height="70"/>
                     </g>
                     
                     {/* Right angled panel */}
-                    <g transform="translate(310,0) skewX(15)">
-                      <rect x="10" y="10" width="80" height="280" fill="hsl(var(--background))" stroke="hsl(var(--muted-foreground))" strokeWidth="4"/>
+                    <g>
+                      <path 
+                        d="M 360 10 L 480 10 L 480 290 L 360 290 Z" 
+                        fill="hsl(var(--background))" 
+                        stroke="hsl(var(--muted-foreground))" 
+                        strokeWidth="4"
+                      />
                       <g fill="hsl(var(--muted))" stroke="hsl(var(--border))">
-                        <rect x="15" y="20" width="70" height="85"/>
-                        <rect x="15" y="110" width="70" height="85"/>
-                        <rect x="15" y="200" width="70" height="85"/>
+                        <path d="M 370 20 L 475 20 L 475 110 L 385 110 Z"/>
+                        <path d="M 375 120 L 475 120 L 475 210 L 380 210 Z"/>
+                        <path d="M 375 220 L 475 220 L 475 280 L 380 280 Z"/>
                       </g>
                     </g>
                   </svg>
@@ -351,58 +363,135 @@ export const VisualMeasurementSheet = ({
               )}
 
               {/* Curtain Panels - Dynamic based on curtain type, hardware type, and pooling */}
-              {curtainType === "pair" ? (
-                <>
-                  {/* Left Panel */}
-                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-14 w-8 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
-                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
-                    <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
-                    <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
-                    <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-primary/50"></div>
-                    <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
-                    <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
-                    <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
+              {windowType === 'bay' ? (
+                // Bay Window Curtains - Following window angles
+                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-8 right-8 ${getCurtainBottomPosition()}`}>
+                  <svg viewBox="0 0 500 280" className="w-full h-full">
+                    {/* Left angled curtain panel */}
+                    <g fill="hsl(var(--primary) / 0.8)" stroke="hsl(var(--primary) / 0.6)" strokeWidth="1">
+                      <path d="M 25 5 L 115 5 L 135 275 L 30 275 Z"/>
+                      {/* Curtain fold lines */}
+                      <line x1="35" y1="10" x2="40" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="45" y1="10" x2="50" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="55" y1="10" x2="60" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="65" y1="10" x2="70" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="75" y1="10" x2="80" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="85" y1="10" x2="90" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="95" y1="10" x2="100" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="105" y1="10" x2="110" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                    </g>
                     
-                    {/* Pooling visual effect */}
-                    {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                      <div className="absolute -bottom-4 left-0 w-full h-4 bg-primary/60 rounded-b-lg"></div>
+                    {/* Center curtain panels */}
+                    {curtainType === "pair" ? (
+                      <>
+                        {/* Left center panel */}
+                        <rect x="150" y="5" width="75" height="270" fill="hsl(var(--primary) / 0.8)" stroke="hsl(var(--primary) / 0.6)" strokeWidth="1"/>
+                        <g stroke="hsl(var(--primary) / 0.4)" strokeWidth="1">
+                          <line x1="160" y1="10" x2="160" y2="270"/>
+                          <line x1="170" y1="10" x2="170" y2="270"/>
+                          <line x1="180" y1="10" x2="180" y2="270"/>
+                          <line x1="190" y1="10" x2="190" y2="270"/>
+                          <line x1="200" y1="10" x2="200" y2="270"/>
+                          <line x1="210" y1="10" x2="210" y2="270"/>
+                        </g>
+                        
+                        {/* Right center panel */}
+                        <rect x="275" y="5" width="75" height="270" fill="hsl(var(--primary) / 0.8)" stroke="hsl(var(--primary) / 0.6)" strokeWidth="1"/>
+                        <g stroke="hsl(var(--primary) / 0.4)" strokeWidth="1">
+                          <line x1="285" y1="10" x2="285" y2="270"/>
+                          <line x1="295" y1="10" x2="295" y2="270"/>
+                          <line x1="305" y1="10" x2="305" y2="270"/>
+                          <line x1="315" y1="10" x2="315" y2="270"/>
+                          <line x1="325" y1="10" x2="325" y2="270"/>
+                          <line x1="335" y1="10" x2="335" y2="270"/>
+                        </g>
+                      </>
+                    ) : (
+                      /* Single center panel */
+                      <rect x="150" y="5" width="200" height="270" fill="hsl(var(--primary) / 0.8)" stroke="hsl(var(--primary) / 0.6)" strokeWidth="1"/>
                     )}
-                  </div>
-                  
-                  {/* Right Panel */}
-                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} right-14 w-8 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
-                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
-                    <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
-                    <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
-                    <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-primary/50"></div>
-                    <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
-                    <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
-                    <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
                     
-                    {/* Pooling visual effect */}
+                    {/* Right angled curtain panel */}
+                    <g fill="hsl(var(--primary) / 0.8)" stroke="hsl(var(--primary) / 0.6)" strokeWidth="1">
+                      <path d="M 365 5 L 470 5 L 475 275 L 365 275 Z"/>
+                      {/* Curtain fold lines */}
+                      <line x1="375" y1="10" x2="375" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="385" y1="10" x2="385" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="395" y1="10" x2="395" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="405" y1="10" x2="405" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="415" y1="10" x2="415" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="425" y1="10" x2="425" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="435" y1="10" x2="435" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                      <line x1="445" y1="10" x2="445" y2="270" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1"/>
+                    </g>
+                    
+                    {/* Pooling visual effect for bay window */}
                     {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                      <div className="absolute -bottom-4 left-0 w-full h-4 bg-primary/60 rounded-b-lg"></div>
+                      <g fill="hsl(var(--primary) / 0.6)">
+                        <path d="M 25 275 L 135 275 L 140 295 L 30 295 Z"/>
+                        <rect x="150" y="275" width="200" height="20"/>
+                        <path d="M 365 275 L 475 275 L 470 295 L 365 295 Z"/>
+                      </g>
                     )}
-                  </div>
-                </>
-              ) : (
-                /* Single Panel */
-                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} ${curtainSide === "left" ? "left-14" : "right-14"} w-12 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
-                  <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
-                  <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
-                  <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
-                  <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-primary/50"></div>
-                  <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
-                  <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
-                  <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
-                  <div className="absolute top-2 bottom-2 left-7 w-0.5 bg-primary/15"></div>
-                  <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-primary/10"></div>
-                  
-                  {/* Pooling visual effect */}
-                  {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                    <div className="absolute -bottom-4 left-0 w-full h-4 bg-primary/60 rounded-b-lg"></div>
-                  )}
+                  </svg>
                 </div>
+              ) : (
+                // Standard Window Curtains - Original design
+                <>
+                  {curtainType === "pair" ? (
+                    <>
+                      {/* Left Panel */}
+                      <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-14 w-8 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
+                        <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
+                        <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
+                        <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
+                        <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-primary/50"></div>
+                        <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
+                        <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
+                        <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
+                        
+                        {/* Pooling visual effect */}
+                        {poolingOption === "below_floor" && hasValue(poolingAmount) && (
+                          <div className="absolute -bottom-4 left-0 w-full h-4 bg-primary/60 rounded-b-lg"></div>
+                        )}
+                      </div>
+                      
+                      {/* Right Panel */}
+                      <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} right-14 w-8 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
+                        <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
+                        <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
+                        <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
+                        <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-primary/50"></div>
+                        <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
+                        <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
+                        <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
+                        
+                        {/* Pooling visual effect */}
+                        {poolingOption === "below_floor" && hasValue(poolingAmount) && (
+                          <div className="absolute -bottom-4 left-0 w-full h-4 bg-primary/60 rounded-b-lg"></div>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    /* Single Panel */
+                    <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} ${curtainSide === "left" ? "left-14" : "right-14"} w-12 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
+                      <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
+                      <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
+                      <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
+                      <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-primary/50"></div>
+                      <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
+                      <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
+                      <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
+                      <div className="absolute top-2 bottom-2 left-7 w-0.5 bg-primary/15"></div>
+                      <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-primary/10"></div>
+                      
+                      {/* Pooling visual effect */}
+                      {poolingOption === "below_floor" && hasValue(poolingAmount) && (
+                        <div className="absolute -bottom-4 left-0 w-full h-4 bg-primary/60 rounded-b-lg"></div>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
 
               {/* Rail Width measurement - positioned near the hardware */}
