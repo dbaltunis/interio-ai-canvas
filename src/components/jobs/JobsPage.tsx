@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,7 +17,8 @@ import { HelpIcon } from "@/components/ui/help-icon";
 import { JobsFocusHandler } from "./JobsFocusHandler";
 
 const JobsPage = () => {
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedJobId = searchParams.get('jobId');
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showHelp, setShowHelp] = useState(false);
@@ -44,7 +46,11 @@ const JobsPage = () => {
 
   const handleBackFromJob = () => {
     console.warn('[JOBS] handleBackFromJob called');
-    setSelectedJobId(null);
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
+      newParams.delete('jobId');
+      return newParams;
+    });
     // Refresh the quotes when coming back to ensure we see any updates
     refetchQuotes();
   };
@@ -120,7 +126,11 @@ const JobsPage = () => {
       await refetchQuotes();
 
       // Navigate directly to the project detail page using the PROJECT ID
-      setSelectedJobId(newProject.id);
+      setSearchParams(prev => {
+        const newParams = new URLSearchParams(prev);
+        newParams.set('jobId', newProject.id);
+        return newParams;
+      });
 
       toast({
         title: "Success",
@@ -143,7 +153,11 @@ const JobsPage = () => {
     const existingProjectId = quote.project_id || quote.projects?.id;
     if (existingProjectId) {
       console.warn('[JOBS] Setting selectedJobId to:', existingProjectId);
-      setSelectedJobId(existingProjectId);
+      setSearchParams(prev => {
+        const newParams = new URLSearchParams(prev);
+        newParams.set('jobId', existingProjectId);
+        return newParams;
+      });
       return;
     }
 
@@ -171,7 +185,11 @@ const JobsPage = () => {
       await refetchQuotes();
 
       // Navigate to the job detail page
-      setSelectedJobId(newProject.id);
+      setSearchParams(prev => {
+        const newParams = new URLSearchParams(prev);
+        newParams.set('jobId', newProject.id);
+        return newParams;
+      });
 
       toast({
         title: "Success",
