@@ -171,12 +171,8 @@ export const AuthPage = () => {
                 description: "Check your email to confirm your account"
               });
             } else {
-              // Successful sign-in: navigate to the app immediately
-              try {
-                navigate('/');
-              } catch {
-                window.location.href = '/';
-              }
+              // Let AuthProvider handle navigation to preserve current route
+              // Don't navigate here as it might interfere with route preservation
             }
           }
         }
