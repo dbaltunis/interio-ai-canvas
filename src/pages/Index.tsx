@@ -87,7 +87,7 @@ const Index = () => {
         return (
           <Suspense fallback={<JobsPageSkeleton />}>
             <ComponentWrapper>
-              <JobsPage />
+              <JobsPage key="jobs-persistent" />
             </ComponentWrapper>
           </Suspense>
         );
@@ -135,7 +135,7 @@ const Index = () => {
         return (
           <Suspense fallback={<JobsPageSkeleton />}>
             <ComponentWrapper>
-              <JobsPage />
+              <JobsPage key="jobs-persistent" />
             </ComponentWrapper>
           </Suspense>
         );

@@ -58,10 +58,6 @@ const JobsPage = () => {
   // Show loading only on initial load, preserve navigation state during refetch
   if (canViewJobs === undefined) {
     console.warn('[JOBS] canViewJobs undefined - selectedJobId:', selectedJobId);
-    // If we have a selectedJobId, keep showing the detail page during permission refetch
-    if (selectedJobId) {
-      return <JobDetailPage jobId={selectedJobId} onBack={handleBackFromJob} />;
-    }
     
     return (
       <div className="min-h-screen flex items-center justify-center animate-fade-in">
