@@ -118,50 +118,48 @@ export const WindowTypeSelector = ({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="text-sm text-muted-foreground mb-4">
-        Select the window type to customize measurements and visualization
+    <div className="space-y-3">
+      <div>
+        <h3 className="text-base font-medium mb-1">Select Window Type</h3>
+        <p className="text-sm text-muted-foreground">
+          Choose window type for accurate measurements
+        </p>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
         {windowTypes.map((windowType) => (
           <Card
             key={windowType.id}
-            className={`cursor-pointer transition-all hover:shadow-md ${
+            className={`cursor-pointer transition-all duration-200 hover:shadow-sm ${
               selectedWindowType?.id === windowType.id 
-                ? 'ring-2 ring-primary bg-primary/5' 
-                : 'hover:bg-muted/50'
+                ? 'border-primary bg-primary/5 shadow-sm' 
+                : 'border-border hover:border-primary/30'
             } ${readOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
             onClick={() => !readOnly && onWindowTypeChange(windowType)}
           >
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between mb-2">
-                <CardTitle className="text-base">{windowType.name}</CardTitle>
-                {selectedWindowType?.id === windowType.id && (
-                  <Badge variant="default" className="text-xs">Selected</Badge>
-                )}
-              </div>
-              
-              {/* Live window preview */}
-              <div className="h-24 mb-2">
-                <DynamicWindowRenderer
-                  windowType={windowType.visual_key}
-                  measurements={getPreviewMeasurements(windowType.visual_key)}
-                  className="h-full w-full"
-                  enhanced={true}
-                />
-              </div>
-            </CardHeader>
-            
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-3">
-                Window configuration for {windowType.key}
-              </p>
-              
-              <div className="flex items-center justify-between">
-                <Badge variant="secondary" className="text-xs">
-                  {windowType.key}
-                </Badge>
+            <CardContent className="p-2">
+              <div className="flex flex-col items-center space-y-1.5">
+                {/* Compact measurement-focused preview */}
+                <div className="h-8 w-full flex items-center justify-center bg-muted/30 border rounded-sm">
+                  <DynamicWindowRenderer
+                    windowType={windowType.visual_key}
+                    measurements={getPreviewMeasurements(windowType.visual_key)}
+                    className="h-6 w-full opacity-80"
+                    enhanced={true}
+                  />
+                </div>
+                
+                <div className="text-center w-full">
+                  <div className="flex items-center justify-center gap-1">
+                    <h4 className="text-xs font-medium truncate">{windowType.name}</h4>
+                    {selectedWindowType?.id === windowType.id && (
+                      <div className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0" />
+                    )}
+                  </div>
+                  <Badge variant="outline" className="text-xs mt-1 h-4 px-1">
+                    {windowType.key}
+                  </Badge>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -169,9 +167,8 @@ export const WindowTypeSelector = ({
       </div>
 
       {windowTypes.length === 0 && !loading && (
-        <div className="text-center py-8 text-muted-foreground">
-          <p>No window types available</p>
-          <p className="text-sm">Please configure window types in settings</p>
+        <div className="text-center py-6">
+          <p className="text-sm text-muted-foreground">No window types available</p>
         </div>
       )}
     </div>
