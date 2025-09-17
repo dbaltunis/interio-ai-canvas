@@ -87,7 +87,12 @@ export const EmailIntegrationStatus = () => {
                 <Button 
                   size="sm" 
                   className="mt-2"
-                  onClick={() => { window.location.href = '/settings'; }}
+                  onClick={() => { 
+                    const url = new URL(window.location.href);
+                    url.pathname = '/settings';
+                    url.search = '';
+                    window.location.href = url.toString();
+                  }}
                 >
                   Configure Email Settings Now
                 </Button>
@@ -101,7 +106,12 @@ export const EmailIntegrationStatus = () => {
           <Button 
             variant="outline" 
             className="flex items-center gap-2"
-            onClick={() => { window.location.href = '/?tab=settings&subtab=email'; }}
+            onClick={() => { 
+              const url = new URL(window.location.href);
+              url.pathname = '/';
+              url.search = 'tab=settings&subtab=email';
+              window.location.href = url.toString();
+            }}
           >
             <Settings className="h-4 w-4" />
             Email Settings
@@ -109,7 +119,12 @@ export const EmailIntegrationStatus = () => {
           {!hasSendGridIntegration && (
             <Button 
               className="flex items-center gap-2"
-              onClick={() => { window.location.href = '/?tab=settings&subtab=integrations'; }}
+              onClick={() => { 
+                const url = new URL(window.location.href);
+                url.pathname = '/';
+                url.search = 'tab=settings&subtab=integrations';
+                window.location.href = url.toString();
+              }}
             >
               <Mail className="h-4 w-4" />
               Configure SendGrid

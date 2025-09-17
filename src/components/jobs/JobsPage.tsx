@@ -13,6 +13,7 @@ import { JobDetailPage } from "./JobDetailPage";
 import { JobsFilter } from "./JobsFilter";
 import { HelpDrawer } from "@/components/ui/help-drawer";
 import { HelpIcon } from "@/components/ui/help-icon";
+import { JobsFocusHandler } from "./JobsFocusHandler";
 
 const JobsPage = () => {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -184,7 +185,9 @@ const JobsPage = () => {
   }
 
   return (
-    <div className="bg-background min-h-screen animate-fade-in">
+    <>
+      <JobsFocusHandler />
+      <div className="bg-background min-h-screen animate-fade-in">
       <div className="space-y-6 p-6">
         {/* Enhanced Header with Design System */}
         <div className="flex items-center justify-between">
@@ -256,7 +259,8 @@ const JobsPage = () => {
           ]
         }}
       />
-    </div>
+      </div>
+    </>
   );
 };
 

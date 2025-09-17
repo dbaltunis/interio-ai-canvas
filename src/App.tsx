@@ -1,4 +1,6 @@
 
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +17,7 @@ import Settings from "./pages/Settings";
 import { ThemeProvider } from "next-themes";
 import { ThemeDarkSync } from "./components/system/ThemeDarkSync";
 import { InteractionUnlockGuard } from "./components/system/InteractionUnlockGuard";
+import { installNavLogger } from "./debug/navLogger";
 // Ensure theme variables and custom classes are loaded globally
 import "@/styles/theme.css";
 
@@ -39,31 +42,47 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => (
-  <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <EmailRealtimeProvider>
-        <TooltipProvider>
-          {/* Ensure custom themes also apply the dark class */}
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="light"
-            enableSystem={false}
-            themes={['light','dark','apple-graphite']}
-            value={{
-              light: 'light',
-              dark: 'dark',
-              midnight: 'midnight',
-              'apple-graphite': 'apple-graphite',
-            }}
-          >
-            <ThemeDarkSync />
-            <InteractionUnlockGuard />
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-            <AuthProvider>
-              <Routes>
+// Navigation observer component
+function NavObserver() {
+  const location = useLocation();
+  useEffect(() => {
+    console.warn('[NAV] location changed ->', location.pathname + location.search + location.hash);
+  }, [location]);
+  return null;
+}
+
+const App = () => {
+  // Install navigation logging on app start
+  useEffect(() => { 
+    installNavLogger(); 
+  }, []);
+
+  return (
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <EmailRealtimeProvider>
+          <TooltipProvider>
+            {/* Ensure custom themes also apply the dark class */}
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="light"
+              enableSystem={false}
+              themes={['light','dark','apple-graphite']}
+              value={{
+                light: 'light',
+                dark: 'dark',
+                midnight: 'midnight',
+                'apple-graphite': 'apple-graphite',
+              }}
+            >
+              <ThemeDarkSync />
+              <InteractionUnlockGuard />
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <NavObserver />
+                <AuthProvider>
+                  <Routes>
                 {/* Public booking routes */}
                 <Route path="/book/:slug" element={
                   <ErrorBoundary>
@@ -113,13 +132,14 @@ const App = () => (
                 {/* Catch all other routes */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </AuthProvider>
-          </BrowserRouter>
-          </ThemeProvider>
-        </TooltipProvider>
-      </EmailRealtimeProvider>
-    </QueryClientProvider>
-  </ErrorBoundary>
-);
+                  </AuthProvider>
+                </BrowserRouter>
+              </ThemeProvider>
+            </TooltipProvider>
+          </EmailRealtimeProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
+    );
+  };
 
 export default App;

@@ -218,7 +218,12 @@ export const EmailSettings = () => {
             />
             <Button 
               variant="outline"
-              onClick={() => { window.location.href = '/settings?tab=email'; }}
+              onClick={() => { 
+                const url = new URL(window.location.href);
+                url.pathname = '/settings';
+                url.search = 'tab=email';
+                window.location.href = url.toString();
+              }}
               className="w-full md:w-auto"
             >
               Go to Full Email Settings

@@ -15,6 +15,8 @@ import { WorkroomTab } from "./tabs/WorkroomTab";
 import { EmailsTab } from "./tabs/EmailsTab";
 import { CalendarTab } from "./tabs/CalendarTab";
 import { JobStatusDropdown } from "./JobStatusDropdown";
+import { JobSkeleton } from "./JobSkeleton";
+import { JobNotFound } from "./JobNotFound";
 
 interface JobDetailPageProps {
   jobId: string;
@@ -27,23 +29,18 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const { data: clients } = useClients();
   const updateProject = useUpdateProject();
 
+  // Use defensive loading and state management
   const project = projects?.find(p => p.id === jobId);
   const client = project?.client_id ? clients?.find(c => c.id === project.client_id) : null;
+  
+  // Show loading skeleton while data is being fetched
+  if (!projects || projects.length === 0) {
+    return <JobSkeleton />;
+  }
 
+  // Only show 404 if we've confirmed the project doesn't exist after loading
   if (!project) {
-    return (
-      <div className="min-h-screen bg-background w-full flex items-center justify-center">
-        <Card className="w-96">
-          <CardContent className="p-6 text-center space-y-4">
-            <div className="text-muted-foreground">Job not found</div>
-            <Button onClick={onBack} variant="outline">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Jobs
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <JobNotFound onBack={onBack} />;
   }
 
   const handleUpdateProject = async (projectData: any) => {
