@@ -42,6 +42,7 @@ export const WindowTypeSelector = ({
         const { data, error } = await supabase
           .from('window_types')
           .select('id, name, key, visual_key')
+          .in('visual_key', ['standard', 'bay'])
           .order('name', { ascending: true });
 
         if (error) {
@@ -65,8 +66,16 @@ export const WindowTypeSelector = ({
             key: item.key,
             visual_key: item.visual_key
           }));
-          console.log('✅ WindowTypeSelector: Processed window types:', simpleTypes);
-          setWindowTypes(simpleTypes);
+          
+          // Sort to ensure standard comes first, then bay
+          const sortedTypes = simpleTypes.sort((a, b) => {
+            if (a.visual_key === 'standard') return -1;
+            if (b.visual_key === 'standard') return 1;
+            return 0;
+          });
+          
+          console.log('✅ WindowTypeSelector: Processed window types:', sortedTypes);
+          setWindowTypes(sortedTypes);
         } else {
           console.log('⚠️ WindowTypeSelector: No window types found in data');
           setWindowTypes([]);
