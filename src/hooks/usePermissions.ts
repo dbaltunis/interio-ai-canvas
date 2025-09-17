@@ -106,15 +106,17 @@ export const useUserPermissions = () => {
     gcTime: 5 * 60 * 1000, // 5 minutes
     retry: 3,
     refetchOnWindowFocus: true,
+    // Prevent loading states during background refetch to maintain current permissions
+    notifyOnChangeProps: ['data', 'error'],
   });
 };
 
 export const useHasPermission = (permission: string) => {
-  const { data: permissions, isLoading } = useUserPermissions();
+  const { data: permissions, isLoading, isFetching } = useUserPermissions();
   
-  // Return false only if we're done loading and don't have the permission
-  // While loading, return undefined to prevent premature denials
-  if (isLoading) return undefined;
+  // Only show loading state on initial load, not during background refetch
+  // This prevents navigation disruption when returning to the tab
+  if (isLoading && !isFetching) return undefined;
   
   return permissions?.some(p => p.permission_name === permission) || false;
 };
