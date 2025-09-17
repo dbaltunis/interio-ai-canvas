@@ -327,8 +327,8 @@ export const VisualMeasurementSheet = ({
                     </div>
                   </div>
                   
-                  {/* Center Window - Made taller than side panels as in real bay windows */}
-                  <div className="absolute top-24 left-32 right-32 bottom-16">
+                  {/* Center Window - Aligned with skewed side windows */}
+                  <div className="absolute top-20 left-32 right-32 bottom-16">
                     <div className="w-full h-full border-4 border-muted-foreground bg-background relative">
                       <div className="grid grid-cols-2 grid-rows-3 h-full gap-1 p-2">
                         {Array.from({ length: 6 }).map((_, i) => (
