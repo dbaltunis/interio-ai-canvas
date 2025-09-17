@@ -303,48 +303,73 @@ export const VisualMeasurementSheet = ({
 
               {/* Dynamic Window Frame - Changes shape based on selected window type */}
               {windowType === 'bay' ? (
-                // Bay Window - Properly angled three sections matching reference
+                // Bay Window - Three panels extending outward like the reference image
                 <div className="absolute top-24 left-8 right-8 bottom-16">
                   <svg viewBox="0 0 500 300" className="w-full h-full">
-                    {/* Left angled panel */}
+                    {/* Bay window sill/base - extends outward */}
+                    <path 
+                      d="M 0 295 L 80 295 L 100 270 L 400 270 L 420 295 L 500 295" 
+                      fill="hsl(var(--muted-foreground))" 
+                      stroke="hsl(var(--foreground))" 
+                      strokeWidth="2"
+                    />
+                    
+                    {/* Left angled panel - angles inward toward center */}
                     <g>
                       <path 
-                        d="M 20 10 L 120 10 L 140 290 L 20 290 Z" 
+                        d="M 20 10 L 100 10 L 120 40 L 120 270 L 100 295 L 20 290 Z" 
                         fill="hsl(var(--background))" 
                         stroke="hsl(var(--muted-foreground))" 
                         strokeWidth="4"
                       />
+                      {/* Left panel window grids */}
                       <g fill="hsl(var(--muted))" stroke="hsl(var(--border))">
-                        <path d="M 25 20 L 110 20 L 125 110 L 25 110 Z"/>
-                        <path d="M 25 120 L 125 120 L 130 210 L 25 210 Z"/>
-                        <path d="M 25 220 L 130 220 L 135 280 L 25 280 Z"/>
+                        <path d="M 30 25 L 95 25 L 110 50 L 30 50 Z"/>
+                        <path d="M 30 60 L 110 60 L 115 120 L 30 120 Z"/>
+                        <path d="M 30 130 L 115 130 L 118 190 L 30 190 Z"/>
+                        <path d="M 30 200 L 118 200 L 120 260 L 30 260 Z"/>
                       </g>
+                      {/* Window frame dividers */}
+                      <line x1="60" y1="25" x2="68" y2="260" stroke="hsl(var(--border))" strokeWidth="2"/>
+                      <line x1="30" y1="95" x2="112" y2="95" stroke="hsl(var(--border))" strokeWidth="2"/>
+                      <line x1="30" y1="165" x2="116" y2="165" stroke="hsl(var(--border))" strokeWidth="2"/>
                     </g>
                     
-                    {/* Center panel - straight */}
-                    <rect x="140" y="10" width="220" height="280" fill="hsl(var(--background))" stroke="hsl(var(--muted-foreground))" strokeWidth="4"/>
+                    {/* Center panel - straight, larger main window */}
+                    <rect x="120" y="10" width="260" height="280" fill="hsl(var(--background))" stroke="hsl(var(--muted-foreground))" strokeWidth="4"/>
                     <g fill="hsl(var(--muted))" stroke="hsl(var(--border))">
-                      <rect x="150" y="20" width="95" height="85"/>
-                      <rect x="255" y="20" width="95" height="85"/>
-                      <rect x="150" y="115" width="95" height="85"/>
-                      <rect x="255" y="115" width="95" height="85"/>
-                      <rect x="150" y="210" width="95" height="70"/>
-                      <rect x="255" y="210" width="95" height="70"/>
+                      <rect x="135" y="25" width="105" height="90"/>
+                      <rect x="260" y="25" width="105" height="90"/>
+                      <rect x="135" y="130" width="105" height="90"/>
+                      <rect x="260" y="130" width="105" height="90"/>
+                      <rect x="135" y="235" width="105" height="45"/>
+                      <rect x="260" y="235" width="105" height="45"/>
                     </g>
+                    {/* Center window vertical divider */}
+                    <line x1="250" y1="25" x2="250" y2="280" stroke="hsl(var(--border))" strokeWidth="3"/>
+                    {/* Center window horizontal dividers */}
+                    <line x1="135" y1="125" x2="365" y2="125" stroke="hsl(var(--border))" strokeWidth="2"/>
+                    <line x1="135" y1="225" x2="365" y2="225" stroke="hsl(var(--border))" strokeWidth="2"/>
                     
-                    {/* Right angled panel */}
+                    {/* Right angled panel - mirrors left panel */}
                     <g>
                       <path 
-                        d="M 360 10 L 480 10 L 480 290 L 360 290 Z" 
+                        d="M 380 40 L 400 10 L 480 10 L 480 290 L 400 295 L 380 270 Z" 
                         fill="hsl(var(--background))" 
                         stroke="hsl(var(--muted-foreground))" 
                         strokeWidth="4"
                       />
+                      {/* Right panel window grids */}
                       <g fill="hsl(var(--muted))" stroke="hsl(var(--border))">
-                        <path d="M 370 20 L 475 20 L 475 110 L 385 110 Z"/>
-                        <path d="M 375 120 L 475 120 L 475 210 L 380 210 Z"/>
-                        <path d="M 375 220 L 475 220 L 475 280 L 380 280 Z"/>
+                        <path d="M 390 50 L 470 25 L 470 50 L 405 60 Z"/>
+                        <path d="M 385 120 L 470 60 L 470 120 L 395 130 Z"/>
+                        <path d="M 382 190 L 470 130 L 470 190 L 385 200 Z"/>
+                        <path d="M 380 260 L 470 200 L 470 260 L 382 270 Z"/>
                       </g>
+                      {/* Window frame dividers */}
+                      <line x1="432" y1="25" x2="425" y2="260" stroke="hsl(var(--border))" strokeWidth="2"/>
+                      <line x1="388" y1="95" x2="470" y2="95" stroke="hsl(var(--border))" strokeWidth="2"/>
+                      <line x1="384" y1="165" x2="470" y2="165" stroke="hsl(var(--border))" strokeWidth="2"/>
                     </g>
                   </svg>
                 </div>
