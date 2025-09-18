@@ -300,7 +300,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
             Project Details
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-0">
+        <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Rooms */}
             <div className="bg-primary/5 dark:bg-primary/10 p-4 rounded-lg border border-primary/20 dark:border-primary/30">
