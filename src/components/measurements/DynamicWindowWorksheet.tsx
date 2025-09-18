@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Ruler, Eye, Package, Calculator, Save } from "lucide-react";
+
 import { WindowTypeSelector } from "../window-types/WindowTypeSelector";
 import { TreatmentPreviewEngine } from "../treatment-visualizers/TreatmentPreviewEngine";
 import { InventorySelectionPanel } from "../inventory/InventorySelectionPanel";
@@ -11,10 +12,12 @@ import { FixedWindowCoveringSelector } from "./FixedWindowCoveringSelector";
 import { VisualMeasurementSheet } from "./VisualMeasurementSheet";
 import { CostCalculationSummary } from "./dynamic-options/CostCalculationSummary";
 import { LayeredTreatmentManager } from "../job-creation/LayeredTreatmentManager";
+
 import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+
 interface DynamicWindowWorksheetProps {
   clientId?: string;
   projectId?: string;
@@ -27,9 +30,11 @@ interface DynamicWindowWorksheetProps {
   onSaveTreatment?: (treatmentData: any) => void;
   readOnly?: boolean;
 }
-export const DynamicWindowWorksheet = forwardRef<{
-  autoSave: () => Promise<void>;
-}, DynamicWindowWorksheetProps>(({
+
+export const DynamicWindowWorksheet = forwardRef<
+  { autoSave: () => Promise<void> },
+  DynamicWindowWorksheetProps
+>(({
   clientId,
   projectId,
   surfaceId,
@@ -67,56 +72,47 @@ export const DynamicWindowWorksheet = forwardRef<{
   const [isLayeredMode, setIsLayeredMode] = useState(false);
 
   // Hooks
-  const {
-    data: curtainTemplates = []
-  } = useCurtainTemplates();
-  const {
-    data: windowCoverings = []
-  } = useWindowCoverings();
-  const {
-    units
-  } = useMeasurementUnits();
+  const { data: curtainTemplates = [] } = useCurtainTemplates();
+  const { data: windowCoverings = [] } = useWindowCoverings();
+  const { units } = useMeasurementUnits();
   const queryClient = useQueryClient();
 
   // Load existing window summary data to populate the form
-  const {
-    data: existingWindowSummary
-  } = useQuery({
+  const { data: existingWindowSummary } = useQuery({
     queryKey: ["window-summary", surfaceId],
     queryFn: async () => {
       if (!surfaceId) return null;
-      const {
-        supabase
-      } = await import('@/integrations/supabase/client');
-      const {
-        data,
-        error
-      } = await supabase.from("windows_summary").select("*").eq("window_id", surfaceId).maybeSingle();
+      
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data, error } = await supabase
+        .from("windows_summary")
+        .select("*")
+        .eq("window_id", surfaceId)
+        .maybeSingle();
+
       if (error) {
         console.error("Error loading window summary:", error);
         return null;
       }
+      
       console.log("✅ Loaded existing window summary:", data);
       return data;
     },
-    enabled: !!surfaceId
+    enabled: !!surfaceId,
   });
 
   // Load existing data and sync with Enhanced mode
   useEffect(() => {
-    console.log("🔄 Loading existing data:", {
-      existingMeasurement,
-      existingWindowSummary,
-      existingTreatments
-    });
-
+    console.log("🔄 Loading existing data:", { existingMeasurement, existingWindowSummary, existingTreatments });
+    
     // Priority 1: Load from windows_summary table if available
     if (existingWindowSummary) {
       console.log("📊 PRIORITY 1: Loading from windows_summary");
+      
       const measurementsDetails = existingWindowSummary.measurements_details as any || {};
       const templateDetails = existingWindowSummary.template_details as any;
       const fabricDetails = existingWindowSummary.fabric_details as any;
-
+      
       // Set measurements from saved summary
       if (measurementsDetails && typeof measurementsDetails === 'object') {
         const loadedMeasurements = {
@@ -127,14 +123,14 @@ export const DynamicWindowWorksheet = forwardRef<{
         setMeasurements(loadedMeasurements);
         console.log("📊 Loaded measurements:", loadedMeasurements);
       }
-
+      
       // Set template from saved summary
       if (templateDetails && typeof templateDetails === 'object') {
         setSelectedTemplate(templateDetails);
         setSelectedTreatmentType(templateDetails.curtain_type || "curtains");
         console.log("📊 Loaded template:", templateDetails.name);
       }
-
+      
       // Set fabric from saved summary
       if (fabricDetails && typeof fabricDetails === 'object') {
         setSelectedItems(prev => ({
@@ -143,7 +139,7 @@ export const DynamicWindowWorksheet = forwardRef<{
         }));
         console.log("📊 Loaded fabric:", fabricDetails.name);
       }
-
+      
       // Set fabric calculation if available
       if (existingWindowSummary.linear_meters && existingWindowSummary.total_cost) {
         setFabricCalculation({
@@ -154,57 +150,63 @@ export const DynamicWindowWorksheet = forwardRef<{
         });
         console.log("📊 Loaded fabric calculation");
       }
+      
       return; // Exit early if we loaded from windows_summary
     }
-
+    
     // Priority 2: Load from existingMeasurement (legacy support)
     if (existingMeasurement) {
       console.log("📊 PRIORITY 2: Loading from existingMeasurement");
+      
       setMeasurements(existingMeasurement.measurements || {});
-
+      
       // Load window type if saved
       if (existingMeasurement.window_type) {
         setSelectedWindowType(existingMeasurement.window_type);
       }
-
+      
       // Load template if saved
       if (existingMeasurement.template) {
         setSelectedTemplate(existingMeasurement.template);
       }
-
+      
       // Load treatment type if saved
       if (existingMeasurement.treatment_type) {
         setSelectedTreatmentType(existingMeasurement.treatment_type);
       }
-
+      
       // Load selected items if saved
       if (existingMeasurement.selected_items) {
         setSelectedItems(existingMeasurement.selected_items);
       }
-
+      
       // Load enhanced mode specific fields
       if (existingMeasurement.selected_heading) {
         setSelectedHeading(existingMeasurement.selected_heading);
       }
+      
       if (existingMeasurement.selected_lining) {
         setSelectedLining(existingMeasurement.selected_lining);
       }
-
+      
       // Load layered treatments if they exist
       if (existingMeasurement.layered_treatments) {
         setLayeredTreatments(existingMeasurement.layered_treatments);
         setIsLayeredMode(existingMeasurement.layered_treatments.length > 0);
       }
     }
-
+    
     // Priority 3: Load from existing treatments for cross-mode compatibility
     if (existingTreatments && existingTreatments.length > 0) {
       console.log("📊 PRIORITY 3: Loading from existingTreatments");
       const treatment = existingTreatments[0];
-
+      
       // Parse treatment details
       try {
-        const details = typeof treatment.treatment_details === 'string' ? JSON.parse(treatment.treatment_details) : treatment.treatment_details;
+        const details = typeof treatment.treatment_details === 'string' 
+          ? JSON.parse(treatment.treatment_details) 
+          : treatment.treatment_details;
+          
         if (details) {
           if (details.selected_heading) setSelectedHeading(details.selected_heading);
           if (details.selected_lining) setSelectedLining(details.selected_lining);
@@ -221,7 +223,7 @@ export const DynamicWindowWorksheet = forwardRef<{
     autoSave: async () => {
       try {
         console.log("🔄 DynamicWindowWorksheet: Starting auto-save for surface:", surfaceId);
-
+        
         // Only save if we have meaningful data
         if (Object.keys(measurements).length > 0 || selectedWindowType || selectedTemplate) {
           console.log("🔄 DynamicWindowWorksheet: Saving measurement data:", {
@@ -230,25 +232,20 @@ export const DynamicWindowWorksheet = forwardRef<{
             selectedItems,
             fabricCalculation
           });
-
+          
           // Import supabase and save to windows_summary table (where UI expects it)
-          const {
-            supabase
-          } = await import('@/integrations/supabase/client');
-
+          const { supabase } = await import('@/integrations/supabase/client');
+          
           // Get current user
-          const {
-            data: {
-              user
-            }
-          } = await supabase.auth.getUser();
+          const { data: { user } } = await supabase.auth.getUser();
+          
           if (!user) {
             throw new Error("User not authenticated");
           }
 
           // Calculate comprehensive costs including all components
           const fabricCost = fabricCalculation?.totalCost || 0;
-
+          
           // Calculate lining cost if selected
           let liningCost = 0;
           if (selectedLining && selectedLining !== 'none' && selectedTemplate && fabricCalculation) {
@@ -260,30 +257,31 @@ export const DynamicWindowWorksheet = forwardRef<{
               liningCost = (liningPricePerMeter + liningLaborPerMeter) * fabricCalculation.linearMeters;
             }
           }
-
+          
           // Calculate heading cost if selected
           let headingCost = 0;
           if (selectedHeading && selectedHeading !== 'standard' && selectedTemplate && fabricCalculation) {
             const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
             const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
-            headingCost = headingUpchargePerCurtain + headingUpchargePerMetre * fabricCalculation.linearMeters;
+            headingCost = headingUpchargePerCurtain + (headingUpchargePerMetre * fabricCalculation.linearMeters);
           }
-
+          
           // Calculate manufacturing cost
           let manufacturingCost = 0;
           if (selectedTemplate && fabricCalculation) {
             const manufacturingType = selectedTemplate.manufacturing_type || 'machine';
             const linearMeters = fabricCalculation.linearMeters || 0;
+            
             if (manufacturingType === 'machine') {
               manufacturingCost = (selectedTemplate.machine_price_per_metre || 0) * linearMeters;
             } else if (manufacturingType === 'hand') {
               manufacturingCost = (selectedTemplate.hand_price_per_metre || 0) * linearMeters;
             }
           }
-
+          
           // Calculate total cost
           const totalCost = fabricCost + liningCost + headingCost + manufacturingCost;
-
+          
           // Create comprehensive calculation object for display consistency
           const calculation = {
             fabricCost,
@@ -334,27 +332,29 @@ export const DynamicWindowWorksheet = forwardRef<{
               window_type: selectedWindowType?.name || 'Standard Window'
             }
           };
-
+          
           // Save to windows_summary table
-          const {
-            data,
-            error
-          } = await supabase.from('windows_summary').upsert(summaryData, {
-            onConflict: 'window_id'
-          }).select().single();
+          const { data, error } = await supabase
+            .from('windows_summary')
+            .upsert(summaryData, {
+              onConflict: 'window_id'
+            })
+            .select()
+            .single();
+
           if (error) {
             console.error("❌ DynamicWindowWorksheet: Database save error:", error);
             throw error;
           }
 
           // Invalidate cache to refresh UI
-          await queryClient.invalidateQueries({
-            queryKey: ["window-summary", surfaceId]
-          });
+          await queryClient.invalidateQueries({ queryKey: ["window-summary", surfaceId] });
+
           console.log("✅ DynamicWindowWorksheet: Successfully saved to database:", data);
         } else {
           console.log("ℹ️ DynamicWindowWorksheet: No data to save yet");
         }
+
         console.log("✅ DynamicWindowWorksheet: Auto-save completed successfully");
       } catch (error) {
         console.error("❌ DynamicWindowWorksheet: Auto-save failed:", error);
@@ -362,58 +362,73 @@ export const DynamicWindowWorksheet = forwardRef<{
       }
     }
   }));
+
   const handleMeasurementChange = (field: string, value: string) => {
     setMeasurements(prev => ({
       ...prev,
       [field]: value
     }));
   };
+
   const handleItemSelect = (category: string, item: any) => {
     setSelectedItems(prev => ({
       ...prev,
       [category]: item
     }));
   };
+
   const handleItemDeselect = (category: string) => {
     setSelectedItems(prev => ({
       ...prev,
       [category]: undefined
     }));
   };
+
   const handleTemplateSelect = (template: any) => {
     setSelectedTemplate(template);
     setSelectedTreatmentType("curtains"); // Templates are typically for curtains
   };
+
   const canProceedToMeasurements = selectedWindowType && (selectedTemplate || selectedTreatmentType);
   const canShowPreview = canProceedToMeasurements && Object.keys(measurements).length > 0;
-  return <div className="space-y-6">
+
+  return (
+    <div className="space-y-6">
       {/* Enhanced Progress indicator with clickable navigation */}
       <div className="flex items-center space-x-4">
         {["window-type", "treatment", "inventory", "measurements", "preview"].map((step, index) => {
-        const stepNames = ["Window Type", "Treatment", "Inventory", "Measurements", "Preview"];
-        const isCompleted = (() => {
-          switch (step) {
-            case "window-type":
-              return selectedWindowType;
-            case "treatment":
-              return selectedTemplate || isLayeredMode && layeredTreatments.length > 0;
-            case "inventory":
-              return Object.values(selectedItems).some(item => item);
-            case "measurements":
-              return measurements.rail_width && measurements.drop;
-            case "preview":
-              return true;
-            default:
-              return false;
-          }
-        })();
-        return <div key={step} className="flex items-center">
-              <button onClick={() => setActiveTab(step)} disabled={readOnly} className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${activeTab === step ? 'bg-primary text-primary-foreground' : isCompleted ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-muted text-muted-foreground hover:bg-muted/80'} ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`} title={`${stepNames[index]} ${isCompleted ? '(Completed)' : ''}`}>
+          const stepNames = ["Window Type", "Treatment", "Inventory", "Measurements", "Preview"];
+          const isCompleted = (() => {
+            switch(step) {
+              case "window-type": return selectedWindowType;
+              case "treatment": return selectedTemplate || (isLayeredMode && layeredTreatments.length > 0);
+              case "inventory": return Object.values(selectedItems).some(item => item);
+              case "measurements": return measurements.rail_width && measurements.drop;
+              case "preview": return true;
+              default: return false;
+            }
+          })();
+          
+          return (
+            <div key={step} className="flex items-center">
+              <button
+                onClick={() => setActiveTab(step)}
+                disabled={readOnly}
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
+                  activeTab === step 
+                    ? 'bg-primary text-primary-foreground' 
+                    : isCompleted 
+                      ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                } ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`}
+                title={`${stepNames[index]} ${isCompleted ? '(Completed)' : ''}`}
+              >
                 {isCompleted ? '✓' : index + 1}
               </button>
               {index < 4 && <div className="w-8 h-px bg-border mx-2" />}
-            </div>;
-      })}
+            </div>
+          );
+        })}
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -426,7 +441,7 @@ export const DynamicWindowWorksheet = forwardRef<{
           <TabsTrigger value="treatment">
             <Package className="h-4 w-4 mr-2" />
             Treatment
-            {(selectedTemplate || isLayeredMode && layeredTreatments.length > 0) && <span className="ml-1 text-xs">✓</span>}
+            {(selectedTemplate || (isLayeredMode && layeredTreatments.length > 0)) && <span className="ml-1 text-xs">✓</span>}
           </TabsTrigger>
           <TabsTrigger value="inventory">
             <Package className="h-4 w-4 mr-2" />
@@ -436,7 +451,7 @@ export const DynamicWindowWorksheet = forwardRef<{
           <TabsTrigger value="measurements">
             <Ruler className="h-4 w-4 mr-2" />
             Measurements
-            {measurements.rail_width && measurements.drop && <span className="ml-1 text-xs">✓</span>}
+            {(measurements.rail_width && measurements.drop) && <span className="ml-1 text-xs">✓</span>}
           </TabsTrigger>
           <TabsTrigger value="preview">
             <Eye className="h-4 w-4 mr-2" />
@@ -448,9 +463,28 @@ export const DynamicWindowWorksheet = forwardRef<{
         <TabsContent value="window-type" className="space-y-4">
           <Card>
             <CardContent className="pt-6">
-              <WindowTypeSelector selectedWindowType={selectedWindowType} onWindowTypeChange={setSelectedWindowType} readOnly={readOnly} />
+              <WindowTypeSelector
+                selectedWindowType={selectedWindowType}
+                onWindowTypeChange={setSelectedWindowType}
+                readOnly={readOnly}
+              />
               
-              {selectedWindowType}
+              {selectedWindowType && (
+                <div className="mt-6 p-4 bg-primary/5 rounded-lg border">
+                  <h4 className="font-medium mb-2 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    Selected: {selectedWindowType.name}
+                  </h4>
+                  <p className="text-xs text-muted-foreground mb-3">{selectedWindowType.description}</p>
+                  
+                  <Button 
+                    className="w-full" 
+                    onClick={() => setActiveTab("treatment")}
+                  >
+                    Continue to Treatment Selection
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -461,34 +495,60 @@ export const DynamicWindowWorksheet = forwardRef<{
             <CardHeader>
               <CardTitle>Select Treatment & Template</CardTitle>
               <div className="flex gap-2 mt-2">
-                <Button variant={!isLayeredMode ? "default" : "outline"} size="sm" onClick={() => setIsLayeredMode(false)}>
+                <Button
+                  variant={!isLayeredMode ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsLayeredMode(false)}
+                >
                   Single Treatment
                 </Button>
-                <Button variant={isLayeredMode ? "default" : "outline"} size="sm" onClick={() => setIsLayeredMode(true)}>
+                <Button
+                  variant={isLayeredMode ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsLayeredMode(true)}
+                >
                   Layered Treatments
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
-              {isLayeredMode ? (/* Layered Treatment Manager */
-            <LayeredTreatmentManager treatments={layeredTreatments} onTreatmentsChange={setLayeredTreatments} />) : (/* Single Treatment Configuration */
-            <>
-                  <FixedWindowCoveringSelector selectedCoveringId={selectedTemplate?.id || ""} onCoveringSelect={template => {
-                setSelectedTemplate(template);
-              }} disabled={readOnly} />
+              {isLayeredMode ? (
+                /* Layered Treatment Manager */
+                <LayeredTreatmentManager
+                  treatments={layeredTreatments}
+                  onTreatmentsChange={setLayeredTreatments}
+                />
+              ) : (
+                /* Single Treatment Configuration */
+                <>
+                  <FixedWindowCoveringSelector
+                    selectedCoveringId={selectedTemplate?.id || ""}
+                    onCoveringSelect={(template) => {
+                      setSelectedTemplate(template);
+                    }}
+                    disabled={readOnly}
+                  />
                   
-                  {selectedTemplate && <div className="mt-6 p-4 bg-primary/5 rounded-lg">
+                  {selectedTemplate && (
+                    <div className="mt-6 p-4 bg-primary/5 rounded-lg">
                       <h4 className="font-medium mb-2">Selected Template</h4>
                       <p className="text-sm">{selectedTemplate.name}</p>
                       <div className="flex gap-2 mt-2">
                         <Badge variant="outline">{selectedTemplate.curtain_type || selectedTemplate.type}</Badge>
-                        {selectedTemplate.fullness_ratio && <Badge variant="outline">Fullness: {selectedTemplate.fullness_ratio}x</Badge>}
+                        {selectedTemplate.fullness_ratio && (
+                          <Badge variant="outline">Fullness: {selectedTemplate.fullness_ratio}x</Badge>
+                        )}
                       </div>
-                    </div>}
-                </>)}
+                    </div>
+                  )}
+                </>
+              )}
               
               <div className="mt-6">
-                <Button onClick={() => setActiveTab("inventory")} disabled={!isLayeredMode && !selectedTemplate}>
+                <Button 
+                  onClick={() => setActiveTab("inventory")}
+                  disabled={!isLayeredMode && !selectedTemplate}
+                >
                   Continue to {isLayeredMode ? "Measurements" : "Inventory Selection"}
                 </Button>
               </div>
@@ -503,10 +563,19 @@ export const DynamicWindowWorksheet = forwardRef<{
               <CardTitle>Select Materials & Hardware</CardTitle>
             </CardHeader>
             <CardContent>
-              <InventorySelectionPanel treatmentType={selectedTreatmentType} selectedItems={selectedItems} onItemSelect={handleItemSelect} onItemDeselect={handleItemDeselect} measurements={measurements} />
+              <InventorySelectionPanel
+                treatmentType={selectedTreatmentType}
+                selectedItems={selectedItems}
+                onItemSelect={handleItemSelect}
+                onItemDeselect={handleItemDeselect}
+                measurements={measurements}
+              />
               
               <div className="mt-6">
-                <Button onClick={() => setActiveTab("measurements")} disabled={!Object.values(selectedItems).some(item => item)}>
+                <Button 
+                  onClick={() => setActiveTab("measurements")}
+                  disabled={!Object.values(selectedItems).some(item => item)}
+                >
                   Continue to Measurements
                 </Button>
               </div>
@@ -527,7 +596,19 @@ export const DynamicWindowWorksheet = forwardRef<{
               <div className="grid grid-cols-1 2xl:grid-cols-5 gap-6">
                 {/* Left Side - Live Visual Worksheet */}
                 <div className="2xl:col-span-3">
-                  <VisualMeasurementSheet measurements={measurements} onMeasurementChange={handleMeasurementChange} windowType={selectedWindowType?.key || "standard"} selectedTemplate={selectedTemplate} selectedFabric={selectedItems.fabric?.id} selectedLining={selectedLining} onLiningChange={setSelectedLining} selectedHeading={selectedHeading} onHeadingChange={setSelectedHeading} onFabricCalculationChange={setFabricCalculation} readOnly={readOnly} />
+                  <VisualMeasurementSheet
+                    measurements={measurements}
+                    onMeasurementChange={handleMeasurementChange}
+                    windowType={selectedWindowType?.key || "standard"}
+                    selectedTemplate={selectedTemplate}
+                    selectedFabric={selectedItems.fabric?.id}
+                    selectedLining={selectedLining}
+                    onLiningChange={setSelectedLining}
+                    selectedHeading={selectedHeading}
+                    onHeadingChange={setSelectedHeading}
+                    onFabricCalculationChange={setFabricCalculation}
+                    readOnly={readOnly}
+                  />
                 </div>
 
                 {/* Right Side - Treatment Options & Cost */}
@@ -543,16 +624,30 @@ export const DynamicWindowWorksheet = forwardRef<{
                         <span className="text-muted-foreground">Treatment:</span>
                         <span className="font-medium">{selectedTemplate?.name || selectedTreatmentType}</span>
                       </div>
-                      {selectedItems.fabric && <div className="flex justify-between">
+                      {selectedItems.fabric && (
+                        <div className="flex justify-between">
                           <span className="text-muted-foreground">Fabric:</span>
                           <span className="font-medium">{selectedItems.fabric.name}</span>
-                        </div>}
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  <CostCalculationSummary template={selectedTemplate} measurements={measurements} selectedFabric={selectedItems.fabric} selectedLining={selectedLining} selectedHeading={selectedHeading} inventory={[]} fabricCalculation={fabricCalculation} />
+                  <CostCalculationSummary
+                    template={selectedTemplate}
+                    measurements={measurements}
+                    selectedFabric={selectedItems.fabric}
+                    selectedLining={selectedLining}
+                    selectedHeading={selectedHeading}
+                    inventory={[]}
+                    fabricCalculation={fabricCalculation}
+                  />
                   
-                  <Button onClick={() => setActiveTab("preview")} disabled={!measurements.rail_width || !measurements.drop} className="w-full">
+                  <Button 
+                    onClick={() => setActiveTab("preview")}
+                    disabled={!measurements.rail_width || !measurements.drop}
+                    className="w-full"
+                  >
                     Continue to Preview
                   </Button>
                 </div>
@@ -569,7 +664,15 @@ export const DynamicWindowWorksheet = forwardRef<{
                 <CardTitle>Treatment Preview</CardTitle>
               </CardHeader>
               <CardContent>
-                <TreatmentPreviewEngine windowType={selectedWindowType?.key || "standard"} treatmentType={selectedTreatmentType} measurements={measurements} template={selectedTemplate} selectedItems={selectedItems} className="min-h-[400px]" layeredTreatments={isLayeredMode ? layeredTreatments : []} />
+                <TreatmentPreviewEngine
+                  windowType={selectedWindowType?.key || "standard"}
+                  treatmentType={selectedTreatmentType}
+                  measurements={measurements}
+                  template={selectedTemplate}
+                  selectedItems={selectedItems}
+                  className="min-h-[400px]"
+                  layeredTreatments={isLayeredMode ? layeredTreatments : []}
+                />
               </CardContent>
             </Card>
 
@@ -584,11 +687,14 @@ export const DynamicWindowWorksheet = forwardRef<{
                     <p><strong>Window:</strong> {selectedWindowType?.name}</p>
                     <p><strong>Treatment:</strong> {selectedTemplate?.name}</p>
                     <p><strong>Dimensions:</strong> {measurements.rail_width}cm × {measurements.drop}cm</p>
-                    {selectedItems.fabric && <p><strong>Fabric:</strong> {selectedItems.fabric.name}</p>}
+                    {selectedItems.fabric && (
+                      <p><strong>Fabric:</strong> {selectedItems.fabric.name}</p>
+                    )}
                   </div>
                 </div>
 
-                {(fabricCalculation || selectedItems.fabric || selectedTemplate) && <div className="p-4 bg-primary/5 rounded-lg">
+                {(fabricCalculation || selectedItems.fabric || selectedTemplate) && (
+                  <div className="p-4 bg-primary/5 rounded-lg">
                     <h4 className="font-medium mb-3">Configuration Summary</h4>
                     <div className="space-y-3">
                       
@@ -598,34 +704,45 @@ export const DynamicWindowWorksheet = forwardRef<{
                         <div className="text-sm space-y-1">
                           <p><strong>Window Type:</strong> {selectedWindowType?.name || 'Standard Window'}</p>
                           <p><strong>Dimensions:</strong> {measurements.rail_width || 0}cm (W) × {measurements.drop || 0}cm (H)</p>
-                          {selectedTemplate && <p><strong>Treatment:</strong> {selectedTemplate.name} ({selectedTemplate.curtain_type})</p>}
+                          {selectedTemplate && (
+                            <p><strong>Treatment:</strong> {selectedTemplate.name} ({selectedTemplate.curtain_type})</p>
+                          )}
                         </div>
                       </div>
 
                       {/* Fabric Details */}
-                      {selectedItems.fabric && <div className="border-b pb-2">
+                      {selectedItems.fabric && (
+                        <div className="border-b pb-2">
                           <h5 className="text-sm font-medium text-muted-foreground mb-1">Fabric Selection</h5>
                           <div className="text-sm space-y-1">
                             <p><strong>Fabric:</strong> {selectedItems.fabric.name}</p>
                             <p><strong>Width:</strong> {selectedItems.fabric.fabric_width || 140}cm</p>
                             <p><strong>Price per meter:</strong> £{(selectedItems.fabric.selling_price || selectedItems.fabric.unit_price || 0).toFixed(2)}</p>
                             <p><strong>Color:</strong> {selectedItems.fabric.color || 'Not specified'}</p>
-                            {selectedItems.fabric.collection_name && <p><strong>Collection:</strong> {selectedItems.fabric.collection_name}</p>}
+                            {selectedItems.fabric.collection_name && (
+                              <p><strong>Collection:</strong> {selectedItems.fabric.collection_name}</p>
+                            )}
                           </div>
-                        </div>}
+                        </div>
+                      )}
 
                       {/* Treatment Options */}
-                      {(selectedHeading !== 'standard' || selectedLining !== 'none') && <div className="border-b pb-2">
+                      {(selectedHeading !== 'standard' || selectedLining !== 'none') && (
+                        <div className="border-b pb-2">
                           <h5 className="text-sm font-medium text-muted-foreground mb-1">Treatment Options</h5>
                           <div className="text-sm space-y-1">
                             <p><strong>Heading Style:</strong> {selectedHeading === 'standard' ? 'Standard' : selectedHeading}</p>
                             <p><strong>Lining:</strong> {selectedLining === 'none' ? 'No lining' : selectedLining}</p>
-                            {selectedTemplate?.fullness_ratio && <p><strong>Fullness Ratio:</strong> {selectedTemplate.fullness_ratio}x</p>}
+                            {selectedTemplate?.fullness_ratio && (
+                              <p><strong>Fullness Ratio:</strong> {selectedTemplate.fullness_ratio}x</p>
+                            )}
                           </div>
-                        </div>}
+                        </div>
+                      )}
 
                       {/* Cost Breakdown */}
-                      {fabricCalculation && <div>
+                      {fabricCalculation && (
+                        <div>
                           <h5 className="text-sm font-medium text-muted-foreground mb-1">Cost Breakdown</h5>
                           <div className="text-sm space-y-1">
                             {/* Measurements */}
@@ -647,161 +764,190 @@ export const DynamicWindowWorksheet = forwardRef<{
                               </div>
                               
                               {selectedLining && selectedLining !== 'none' && selectedTemplate && (() => {
-                          const liningTypes = selectedTemplate.lining_types || [];
-                          const liningOption = liningTypes.find(l => l.type === selectedLining);
-                          const liningCost = liningOption ? (liningOption.material_cost + liningOption.labor_cost) * fabricCalculation.linearMeters : 0;
-                          return <div className="flex justify-between">
+                                const liningTypes = selectedTemplate.lining_types || [];
+                                const liningOption = liningTypes.find(l => l.type === selectedLining);
+                                const liningCost = liningOption ? (liningOption.material_cost + liningOption.labor_cost) * fabricCalculation.linearMeters : 0;
+                                return (
+                                   <div className="flex justify-between">
                                      <span>🛡️ Lining:</span>
                                      <span>{selectedLining}</span>
                                      <span>£{isNaN(liningCost) ? '0.00' : liningCost.toFixed(2)}</span>
-                                   </div>;
-                        })()}
+                                   </div>
+                                );
+                              })()}
                               
                               {selectedHeading && selectedHeading !== 'standard' && selectedTemplate && (() => {
-                          const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
-                          const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
-                          const headingCost = headingUpchargePerCurtain + headingUpchargePerMetre * fabricCalculation.linearMeters;
-                          return headingCost > 0 ? <div className="flex justify-between">
+                                const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
+                                const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
+                                const headingCost = headingUpchargePerCurtain + (headingUpchargePerMetre * fabricCalculation.linearMeters);
+                                return headingCost > 0 ? (
+                                   <div className="flex justify-between">
                                      <span>📏 Heading:</span>
                                      <span>{selectedHeading}</span>
                                      <span>£{isNaN(headingCost) ? '0.00' : headingCost.toFixed(2)}</span>
-                                   </div> : null;
-                        })()}
+                                   </div>
+                                ) : null;
+                              })()}
                               
                               {selectedTemplate && (() => {
-                          const manufacturingType = selectedTemplate.manufacturing_type || 'machine';
-                          const pricePerMetre = manufacturingType === 'machine' ? selectedTemplate.machine_price_per_metre || 0 : selectedTemplate.hand_price_per_metre || 0;
-                          const manufacturingCost = pricePerMetre * fabricCalculation.linearMeters;
-                          return manufacturingCost > 0 ? <div className="flex justify-between">
+                                const manufacturingType = selectedTemplate.manufacturing_type || 'machine';
+                                const pricePerMetre = manufacturingType === 'machine' 
+                                  ? selectedTemplate.machine_price_per_metre || 0
+                                  : selectedTemplate.hand_price_per_metre || 0;
+                                const manufacturingCost = pricePerMetre * fabricCalculation.linearMeters;
+                                return manufacturingCost > 0 ? (
+                                   <div className="flex justify-between">
                                      <span>🏭 Manufacturing:</span>
                                      <span>{manufacturingType}</span>
                                      <span>£{isNaN(manufacturingCost) ? '0.00' : manufacturingCost.toFixed(2)}</span>
-                                   </div> : null;
-                        })()}
+                                   </div>
+                                ) : null;
+                              })()}
                             </div>
 
-                            {fabricCalculation.returns && <div className="flex justify-between text-xs text-muted-foreground">
+                            {fabricCalculation.returns && (
+                              <div className="flex justify-between text-xs text-muted-foreground">
                                 <span>Returns (each side):</span>
                                 <span>{fabricCalculation.returns}cm</span>
-                              </div>}
-                            {fabricCalculation.wastePercent && <div className="flex justify-between text-xs text-muted-foreground">
+                              </div>
+                            )}
+                            {fabricCalculation.wastePercent && (
+                              <div className="flex justify-between text-xs text-muted-foreground">
                                 <span>Waste allowance:</span>
                                 <span>{fabricCalculation.wastePercent}%</span>
-                              </div>}
+                              </div>
+                            )}
                             
                             <div className="border-t pt-2 mt-2">
                                <div className="flex justify-between font-medium text-base">
                                  <span>Total Cost:</span>
                                  <span>£{(() => {
-                              const fabricCost = fabricCalculation.totalCost || 0;
-                              let liningCost = 0;
-                              let headingCost = 0;
-                              let manufacturingCost = 0;
-                              if (selectedLining && selectedLining !== 'none' && selectedTemplate) {
-                                const liningTypes = selectedTemplate.lining_types || [];
-                                const liningOption = liningTypes.find(l => l.type === selectedLining);
-                                if (liningOption) {
-                                  liningCost = (liningOption.material_cost + liningOption.labor_cost) * fabricCalculation.linearMeters;
-                                }
-                              }
-                              if (selectedHeading && selectedHeading !== 'standard' && selectedTemplate) {
-                                const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
-                                const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
-                                headingCost = headingUpchargePerCurtain + headingUpchargePerMetre * fabricCalculation.linearMeters;
-                              }
-                              if (selectedTemplate) {
-                                const manufacturingType = selectedTemplate.manufacturing_type || 'machine';
-                                const pricePerMetre = manufacturingType === 'machine' ? selectedTemplate.machine_price_per_metre || 0 : selectedTemplate.hand_price_per_metre || 0;
-                                manufacturingCost = pricePerMetre * fabricCalculation.linearMeters;
-                              }
-                              const totalCost = fabricCost + liningCost + headingCost + manufacturingCost;
-                              return isNaN(totalCost) ? '0.00' : totalCost.toFixed(2);
-                            })()}</span>
+                                   const fabricCost = fabricCalculation.totalCost || 0;
+                                   let liningCost = 0;
+                                   let headingCost = 0;
+                                   let manufacturingCost = 0;
+                                   
+                                   if (selectedLining && selectedLining !== 'none' && selectedTemplate) {
+                                     const liningTypes = selectedTemplate.lining_types || [];
+                                     const liningOption = liningTypes.find(l => l.type === selectedLining);
+                                     if (liningOption) {
+                                       liningCost = (liningOption.material_cost + liningOption.labor_cost) * fabricCalculation.linearMeters;
+                                     }
+                                   }
+                                   
+                                   if (selectedHeading && selectedHeading !== 'standard' && selectedTemplate) {
+                                     const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
+                                     const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
+                                     headingCost = headingUpchargePerCurtain + (headingUpchargePerMetre * fabricCalculation.linearMeters);
+                                   }
+                                   
+                                   if (selectedTemplate) {
+                                     const manufacturingType = selectedTemplate.manufacturing_type || 'machine';
+                                     const pricePerMetre = manufacturingType === 'machine' 
+                                       ? selectedTemplate.machine_price_per_metre || 0
+                                       : selectedTemplate.hand_price_per_metre || 0;
+                                     manufacturingCost = pricePerMetre * fabricCalculation.linearMeters;
+                                   }
+                                   
+                                   const totalCost = fabricCost + liningCost + headingCost + manufacturingCost;
+                                   return isNaN(totalCost) ? '0.00' : totalCost.toFixed(2);
+                                 })()}</span>
                                </div>
                             </div>
                           </div>
-                        </div>}
+                        </div>
+                      )}
 
                       {/* Show message if no calculations available */}
-                      {!fabricCalculation && selectedItems.fabric && <div className="text-sm text-muted-foreground">
+                      {!fabricCalculation && selectedItems.fabric && (
+                        <div className="text-sm text-muted-foreground">
                           <p>Complete measurements to see cost calculation</p>
-                        </div>}
+                        </div>
+                      )}
 
                     </div>
-                  </div>}
+                  </div>
+                )}
 
                 <div className="flex gap-2">
-                  <Button onClick={async () => {
-                  try {
-                    console.log("DynamicWorksheet: Starting save process...");
-                    console.log("Current measurements:", measurements);
-                    console.log("Current selectedItems:", selectedItems);
-
-                    // Use the ref's autoSave method directly
-                    const currentRef = ref as React.MutableRefObject<{
-                      autoSave: () => Promise<void>;
-                    }>;
-                    if (currentRef?.current) {
-                      await currentRef.current.autoSave();
-                      console.log("DynamicWorksheet: AutoSave completed successfully");
-                    } else {
-                      console.error("DynamicWorksheet: No autoSave ref available!");
-                    }
-                    const {
-                      toast
-                    } = await import("@/hooks/use-toast");
-                    toast({
-                      title: "✅ Configuration Saved",
-                      description: "Your window configuration has been saved successfully"
-                    });
-
-                    // Close the dialog after successful save
-                    setTimeout(() => {
-                      console.log("DynamicWorksheet: Closing dialog after save");
-                      onClose?.();
-                    }, 500);
-                  } catch (error) {
-                    console.error("DynamicWorksheet: Save failed:", error);
-                    const {
-                      toast
-                    } = await import("@/hooks/use-toast");
-                    toast({
-                      title: "❌ Save Failed",
-                      description: "There was an error saving your configuration. Please try again.",
-                      variant: "destructive"
-                    });
-                  }
-                }} disabled={readOnly} className="flex-1">
+                  <Button 
+                    onClick={async () => {
+                      try {
+                        console.log("DynamicWorksheet: Starting save process...");
+                        console.log("Current measurements:", measurements);
+                        console.log("Current selectedItems:", selectedItems);
+                        
+                        // Use the ref's autoSave method directly
+                        const currentRef = ref as React.MutableRefObject<{ autoSave: () => Promise<void> }>;
+                        if (currentRef?.current) {
+                          await currentRef.current.autoSave();
+                          console.log("DynamicWorksheet: AutoSave completed successfully");
+                        } else {
+                          console.error("DynamicWorksheet: No autoSave ref available!");
+                        }
+                        
+                        const { toast } = await import("@/hooks/use-toast");
+                        toast({
+                          title: "✅ Configuration Saved",
+                          description: "Your window configuration has been saved successfully",
+                        });
+                        
+                        // Close the dialog after successful save
+                        setTimeout(() => {
+                          console.log("DynamicWorksheet: Closing dialog after save");
+                          onClose?.();
+                        }, 500);
+                      } catch (error) {
+                        console.error("DynamicWorksheet: Save failed:", error);
+                        const { toast } = await import("@/hooks/use-toast");
+                        toast({
+                          title: "❌ Save Failed",
+                          description: "There was an error saving your configuration. Please try again.",
+                          variant: "destructive"
+                        });
+                      }
+                    }}
+                    disabled={readOnly}
+                    className="flex-1"
+                  >
                     <Save className="h-4 w-4 mr-2" />
                     Save Configuration
                   </Button>
                   
-                  {onSaveTreatment && <Button variant="outline" onClick={async () => {
-                  try {
-                    console.log("DynamicWorksheet: Starting treatment save...");
-                    await onSaveTreatment?.({
-                      window_type: selectedWindowType,
-                      template: selectedTemplate,
-                      measurements,
-                      selected_items: selectedItems,
-                      fabric_calculation: fabricCalculation
-                    });
-                    console.log("DynamicWorksheet: Treatment saved successfully");
-                    setTimeout(() => {
-                      console.log("DynamicWorksheet: Closing dialog after treatment save");
-                      onClose?.();
-                    }, 500);
-                  } catch (error) {
-                    console.error("DynamicWorksheet: Treatment save failed:", error);
-                  }
-                }} disabled={readOnly}>
+                  {onSaveTreatment && (
+                    <Button 
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          console.log("DynamicWorksheet: Starting treatment save...");
+                          await onSaveTreatment?.({
+                            window_type: selectedWindowType,
+                            template: selectedTemplate,
+                            measurements,
+                            selected_items: selectedItems,
+                            fabric_calculation: fabricCalculation
+                          });
+                          console.log("DynamicWorksheet: Treatment saved successfully");
+                          
+                          setTimeout(() => {
+                            console.log("DynamicWorksheet: Closing dialog after treatment save");
+                            onClose?.();
+                          }, 500);
+                        } catch (error) {
+                          console.error("DynamicWorksheet: Treatment save failed:", error);
+                        }
+                      }}
+                      disabled={readOnly}
+                    >
                       Save as Treatment
-                    </Button>}
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
           </div>
         </TabsContent>
       </Tabs>
-    </div>;
+    </div>
+  );
 });
