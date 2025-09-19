@@ -105,7 +105,6 @@ export const useCurtainTemplates = () => {
         user_id_param: user.id 
       });
 
-      // Query templates that belong to the account (either created by account owner or current user)
       const { data, error } = await supabase
         .from("curtain_templates" as any)
         .select("*")

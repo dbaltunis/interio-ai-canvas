@@ -3,7 +3,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { CurtainTemplatesManager } from "./products/CurtainTemplatesManager";
 import { HeadingInventoryManager } from "./components/HeadingInventoryManager";
-import { TreatmentCategoriesManager } from "./products/TreatmentCategoriesManager";
 import { Settings, Layers, DollarSign, Wrench } from "lucide-react";
 
 export const WindowCoveringsTab = () => {
@@ -17,12 +16,8 @@ export const WindowCoveringsTab = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="categories" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="categories" className="flex items-center gap-2">
-                <Layers className="h-4 w-4" />
-                Categories
-              </TabsTrigger>
+          <Tabs defaultValue="templates" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="templates" className="flex items-center gap-2">
                 <Layers className="h-4 w-4" />
                 Templates
@@ -40,10 +35,6 @@ export const WindowCoveringsTab = () => {
                 Settings
               </TabsTrigger>
             </TabsList>
-
-            <TabsContent value="categories" className="space-y-6">
-              <TreatmentCategoriesManager />
-            </TabsContent>
 
             <TabsContent value="templates" className="space-y-6">
               <CurtainTemplatesManager />

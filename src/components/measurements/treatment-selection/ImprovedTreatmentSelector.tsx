@@ -12,44 +12,17 @@ interface ImprovedTreatmentSelectorProps {
   selectedCoveringId?: string;
   onCoveringSelect: (covering: CurtainTemplate | null) => void;
   disabled?: boolean;
-  windowType?: any; // Add window type to filter treatments
 }
 
 export const ImprovedTreatmentSelector = ({
   selectedCoveringId,
   onCoveringSelect,
-  disabled,
-  windowType
+  disabled
 }: ImprovedTreatmentSelectorProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const { data: curtainTemplates = [], isLoading } = useCurtainTemplates();
   
-  // Filter treatments based on window type if available
-  const filteredTemplates = curtainTemplates.filter(template => {
-    if (!windowType) return true; // Show all if no window type selected
-    
-    // Define compatibility mapping between window types and treatment types
-    const windowTypeTreatmentMap: Record<string, string[]> = {
-      'standard': ['Curtains', 'Roman Blinds', 'Roller Blinds', 'Vertical Blinds'],
-      'bay': ['Curtains', 'Roman Blinds', 'Track Curtains'],
-      'bow': ['Curtains', 'Track Curtains'],
-      'casement': ['Curtains', 'Roman Blinds', 'Roller Blinds'],
-      'sash': ['Curtains', 'Roman Blinds', 'Plantation Shutters'],
-      'sliding': ['Vertical Blinds', 'Panel Blinds', 'Curtains'],
-      'french': ['Curtains', 'Roman Blinds', 'Plantation Shutters'],
-      'bi_fold': ['Vertical Blinds', 'Panel Blinds'],
-      'awning': ['Roller Blinds', 'Roman Blinds'],
-      'hopper': ['Roller Blinds', 'Roman Blinds']
-    };
-    
-    const compatibleTreatments = windowTypeTreatmentMap[windowType.key] || [];
-    return compatibleTreatments.some(treatment => 
-      template.curtain_type.toLowerCase().includes(treatment.toLowerCase()) ||
-      template.name.toLowerCase().includes(treatment.toLowerCase())
-    );
-  });
-  
-  const selectedCovering = filteredTemplates.find(c => c.id === selectedCoveringId);
+  const selectedCovering = curtainTemplates.find(c => c.id === selectedCoveringId);
 
   const handleTreatmentSelect = (treatment: CurtainTemplate) => {
     onCoveringSelect(treatment);
@@ -84,11 +57,6 @@ export const ImprovedTreatmentSelector = ({
           <CardTitle className="text-base flex items-center gap-2">
             <Layers className="h-4 w-4" />
             Select Treatment Type
-            {windowType && (
-              <Badge variant="outline" className="text-xs ml-2">
-                Optimized for {windowType.name}
-              </Badge>
-            )}
           </CardTitle>
           {selectedCovering && (
             <Button
@@ -120,12 +88,6 @@ export const ImprovedTreatmentSelector = ({
       </CardHeader>
       
       <CardContent className="space-y-4">
-        {windowType && (
-          <div className="text-xs text-muted-foreground mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-            💡 <strong>Smart Filter:</strong> Showing treatments optimized for {windowType.name} windows
-          </div>
-        )}
-        
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -144,27 +106,11 @@ export const ImprovedTreatmentSelector = ({
           </div>
         )}
 
-        {/* No Results */}
-        {!isLoading && filteredTemplates.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <Layers className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">
-              {windowType ? `No treatments found for ${windowType.name}` : "No treatments available"}
-            </h3>
-            <p className="text-muted-foreground max-w-md">
-              {windowType 
-                ? `The selected window type may not have compatible treatment options yet.`
-                : "Create curtain templates in Settings → Window Coverings Management to get started"
-              }
-            </p>
-          </div>
-        )}
-
         {/* Treatment Grid */}
-        {!isLoading && filteredTemplates.length > 0 && (
+        {!isLoading && (
           <ScrollArea className="h-[400px] pr-2">
             <TreatmentTypeGrid
-              treatments={filteredTemplates}
+              treatments={curtainTemplates}
               selectedId={selectedCoveringId}
               onSelect={handleTreatmentSelect}
               searchQuery={searchQuery}
