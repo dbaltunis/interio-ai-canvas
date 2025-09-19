@@ -24,6 +24,10 @@ export const ImprovedTreatmentSelector = ({
   const [searchQuery, setSearchQuery] = useState("");
   const { data: curtainTemplates = [], isLoading } = useCurtainTemplates();
   
+  console.log("🔍 ImprovedTreatmentSelector - curtainTemplates:", curtainTemplates);
+  console.log("🔍 ImprovedTreatmentSelector - isLoading:", isLoading);
+  console.log("🔍 ImprovedTreatmentSelector - windowType:", windowType);
+  
   // Filter treatments based on window type if available
   const filteredTemplates = curtainTemplates.filter(template => {
     if (!windowType) return true; // Show all if no window type selected
@@ -48,6 +52,9 @@ export const ImprovedTreatmentSelector = ({
       template.name.toLowerCase().includes(treatment.toLowerCase())
     );
   });
+  
+  console.log("🔍 ImprovedTreatmentSelector - filteredTemplates:", filteredTemplates);
+  
   
   const selectedCovering = filteredTemplates.find(c => c.id === selectedCoveringId);
 

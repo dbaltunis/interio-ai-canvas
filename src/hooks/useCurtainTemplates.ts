@@ -97,20 +97,29 @@ export const useCurtainTemplates = () => {
   return useQuery({
     queryKey: ["curtain-templates"],
     queryFn: async () => {
+      console.log("🔍 useCurtainTemplates: Starting fetch...");
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
+      
+      console.log("🔍 useCurtainTemplates: Current user ID:", user.id);
 
       // Get account owner to fetch account-level templates
       const { data: accountOwnerId } = await supabase.rpc('get_account_owner', { 
         user_id_param: user.id 
       });
+      
+      console.log("🔍 useCurtainTemplates: Account owner ID:", accountOwnerId);
 
+      // Temporarily fetch all active templates to debug
       const { data, error } = await supabase
         .from("curtain_templates" as any)
         .select("*")
         .eq("active", true)
-        .eq("user_id", accountOwnerId || user.id)
         .order("name");
+
+      console.log("🔍 useCurtainTemplates: Query result:", { data, error });
+      console.log("🔍 useCurtainTemplates: Data length:", data?.length || 0);
 
       if (error) throw error;
       return (data as unknown) as CurtainTemplate[];
