@@ -8,7 +8,7 @@ import { Ruler, Eye, Package, Calculator, Save } from "lucide-react";
 import { WindowTypeSelector } from "../window-types/WindowTypeSelector";
 import { TreatmentPreviewEngine } from "../treatment-visualizers/TreatmentPreviewEngine";
 import { InventorySelectionPanel } from "../inventory/InventorySelectionPanel";
-import { FixedWindowCoveringSelector } from "./FixedWindowCoveringSelector";
+import { ImprovedTreatmentSelector } from "./treatment-selection/ImprovedTreatmentSelector";
 import { VisualMeasurementSheet } from "./VisualMeasurementSheet";
 import { CostCalculationSummary } from "./dynamic-options/CostCalculationSummary";
 import { LayeredTreatmentManager } from "../job-creation/LayeredTreatmentManager";
@@ -521,7 +521,7 @@ export const DynamicWindowWorksheet = forwardRef<
               ) : (
                 /* Single Treatment Configuration */
                 <>
-                  <FixedWindowCoveringSelector
+                  <ImprovedTreatmentSelector
                     selectedCoveringId={selectedTemplate?.id || ""}
                     onCoveringSelect={(template) => {
                       setSelectedTemplate(template);
