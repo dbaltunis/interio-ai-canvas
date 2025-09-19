@@ -527,6 +527,7 @@ export const DynamicWindowWorksheet = forwardRef<
                       setSelectedTemplate(template);
                     }}
                     disabled={readOnly}
+                    windowType={selectedWindowType}
                   />
                   
                   {selectedTemplate && (
