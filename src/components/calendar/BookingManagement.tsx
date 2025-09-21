@@ -5,8 +5,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { formatUserDate } from "@/utils/dateFormatUtils";
 import { Calendar, Clock, User, Mail, Phone, MapPin, MessageSquare, Trash2, Check, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -42,6 +43,7 @@ export const BookingManagement = () => {
   const [selectedBooking, setSelectedBooking] = useState<BookingWithScheduler | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [formattedDates, setFormattedDates] = useState<Record<string, string>>({});
 
   // Fetch all bookings with scheduler details
   const { data: bookings, isLoading } = useQuery({
@@ -60,6 +62,24 @@ export const BookingManagement = () => {
       return data as BookingWithScheduler[];
     },
   });
+
+  // Format dates using user preferences
+  useEffect(() => {
+    const formatDates = async () => {
+      if (!bookings) return;
+      
+      const dateMap: Record<string, string> = {};
+      
+      for (const booking of bookings) {
+        const dateTime = new Date(`${booking.appointment_date}T${booking.appointment_time}`);
+        dateMap[booking.id] = await formatUserDate(dateTime, true);
+      }
+      
+      setFormattedDates(dateMap);
+    };
+    
+    formatDates();
+  }, [bookings]);
 
   // Update booking status
   const updateBookingStatus = useMutation({
@@ -221,7 +241,7 @@ export const BookingManagement = () => {
                     <div className="text-sm text-muted-foreground space-y-1">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
-                        {format(new Date(`${booking.appointment_date}T${booking.appointment_time}`), 'PPP p')}
+                        {formattedDates[booking.id] || 'Loading...'}
                       </div>
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4" />

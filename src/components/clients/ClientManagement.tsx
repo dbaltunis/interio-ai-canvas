@@ -6,10 +6,18 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Mail, Phone, MapPin, Users, Building2, User } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
+import { useFormattedDates } from "@/hooks/useFormattedDate";
 import { ClientCreateForm } from "./ClientCreateForm";
 
 export const ClientManagement = () => {
   const { data: clients, isLoading } = useClients();
+
+  // Format creation dates using user preferences
+  const { formattedDates } = useFormattedDates(
+    clients,
+    (client) => client.created_at,
+    false
+  );
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   const getTypeColor = (type: string) => {
@@ -163,7 +171,7 @@ export const ClientManagement = () => {
                       {client.city && client.state ? `${client.city}, ${client.state}` : "Not specified"}
                     </TableCell>
                     <TableCell>
-                      {new Date(client.created_at).toLocaleDateString()}
+                      {formattedDates[client.id] || 'Loading...'}
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">

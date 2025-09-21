@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Plus, Search, MoreHorizontal, Eye, Edit, Copy, Calendar, DollarSign, User } from "lucide-react";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
+import { formatUserDate } from "@/utils/dateFormatUtils";
 
 interface QuotesListViewProps {
   onNewQuote: () => void;
@@ -19,6 +20,7 @@ interface QuotesListViewProps {
 export const QuotesListView = ({ onNewQuote, onQuoteSelect, onQuoteEdit }: QuotesListViewProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [formattedDates, setFormattedDates] = useState<Record<string, string>>({});
 
   const { data: quotes, isLoading: quotesLoading } = useQuotes();
   const { data: clients } = useClients();
@@ -68,14 +70,27 @@ export const QuotesListView = ({ onNewQuote, onQuoteSelect, onQuoteEdit }: Quote
     }).format(amount);
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return 'No date';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
+  // Format dates using user preferences
+  useEffect(() => {
+    const formatDates = async () => {
+      if (!quotes) return;
+      
+      const dateMap: Record<string, string> = {};
+      
+      for (const quote of quotes) {
+        if (quote.created_at) {
+          dateMap[`created_${quote.id}`] = await formatUserDate(quote.created_at);
+        }
+        if (quote.valid_until) {
+          dateMap[`valid_${quote.id}`] = await formatUserDate(quote.valid_until);
+        }
+      }
+      
+      setFormattedDates(dateMap);
+    };
+    
+    formatDates();
+  }, [quotes]);
 
   if (quotesLoading) {
     return (
@@ -201,7 +216,7 @@ export const QuotesListView = ({ onNewQuote, onQuoteSelect, onQuoteEdit }: Quote
                     <TableCell className="text-gray-600">
                       <div className="flex items-center space-x-1">
                         <Calendar className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm">{formatDate(quote.created_at)}</span>
+                        <span className="text-sm">{formattedDates[`created_${quote.id}`] || 'Loading...'}</span>
                       </div>
                     </TableCell>
                     
@@ -209,7 +224,7 @@ export const QuotesListView = ({ onNewQuote, onQuoteSelect, onQuoteEdit }: Quote
                       {quote.valid_until ? (
                         <div className="flex items-center space-x-1">
                           <Calendar className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm">{formatDate(quote.valid_until)}</span>
+                          <span className="text-sm">{formattedDates[`valid_${quote.id}`] || 'Loading...'}</span>
                         </div>
                       ) : (
                         <span className="text-gray-400 text-sm">No expiry</span>

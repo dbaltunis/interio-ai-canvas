@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CalendarIcon, Clock, MapPin, Users, UserPlus, Briefcase, Palette } from "lucide-react";
 import { format } from "date-fns";
+import { formatUserDate, formatUserTime } from "@/utils/dateFormatUtils";
 import { useUpdateAppointment, useDeleteAppointment } from "@/hooks/useAppointments";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useClients } from "@/hooks/useClients";
@@ -50,6 +51,9 @@ export const EventDetailsModal = ({ isOpen, onClose, appointment }: EventDetails
   const [selectedJobClient, setSelectedJobClient] = useState("");
   const [jobClientSearch, setJobClientSearch] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [formattedDate, setFormattedDate] = useState('');
+  const [formattedStartTime, setFormattedStartTime] = useState('');
+  const [formattedEndTime, setFormattedEndTime] = useState('');
 
   const { data: teamMembers } = useTeamMembers();
   const { data: clients } = useClients();
@@ -88,6 +92,23 @@ export const EventDetailsModal = ({ isOpen, onClose, appointment }: EventDetails
     { name: 'Red', value: '#EF4444', bg: 'bg-red-500' },
     { name: 'Indigo', value: '#6366F1', bg: 'bg-indigo-500' },
   ];
+
+  // Format dates using user preferences
+  useEffect(() => {
+    const formatDates = async () => {
+      if (!appointment) return;
+      
+      const date = await formatUserDate(appointment.start_time);
+      const startTime = await formatUserTime(appointment.start_time);
+      const endTime = await formatUserTime(appointment.end_time);
+      
+      setFormattedDate(date);
+      setFormattedStartTime(startTime);
+      setFormattedEndTime(endTime);
+    };
+    
+    formatDates();
+  }, [appointment]);
 
   if (!appointment) return null;
 
@@ -259,13 +280,13 @@ export const EventDetailsModal = ({ isOpen, onClose, appointment }: EventDetails
               <div className="flex items-center gap-2">
                 <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm">
-                  {format(new Date(appointment.start_time), 'PPP')}
+                  {formattedDate || 'Loading...'}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm">
-                  {format(new Date(appointment.start_time), 'HH:mm')} - {format(new Date(appointment.end_time), 'HH:mm')}
+                  {formattedStartTime || 'Loading...'} - {formattedEndTime || 'Loading...'}
                 </span>
               </div>
             </div>
