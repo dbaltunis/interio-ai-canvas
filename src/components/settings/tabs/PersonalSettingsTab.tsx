@@ -58,6 +58,15 @@ export const PersonalSettingsTab = () => {
   const [savedSuccessfully, setSavedSuccessfully] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   
+  // Email change state
+  const [emailData, setEmailData] = useState({
+    current_email: "",
+    new_email: "",
+  });
+  const [isEmailEditing, setIsEmailEditing] = useState(false);
+  const [isEmailSaving, setIsEmailSaving] = useState(false);
+  const [emailChangeRequested, setEmailChangeRequested] = useState(false);
+  
   // Password change state
   const [passwordData, setPasswordData] = useState({
     current_password: "",
@@ -319,6 +328,67 @@ export const PersonalSettingsTab = () => {
     }
   };
 
+  const handleEmailChange = async () => {
+    if (!emailData.new_email || emailData.new_email === emailData.current_email) {
+      toast({
+        title: "Error",
+        description: "Please enter a new email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailData.new_email)) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsEmailSaving(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        email: emailData.new_email
+      });
+
+      if (error) throw error;
+
+      setEmailChangeRequested(true);
+      setIsEmailEditing(false);
+      
+      toast({
+        title: "Email Change Requested",
+        description: "A verification email has been sent to your new email address. Please check your inbox and click the confirmation link.",
+      });
+    } catch (error) {
+      console.error("Error updating email:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update email. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsEmailSaving(false);
+    }
+  };
+
+  const handleEmailEdit = () => {
+    setIsEmailEditing(true);
+    setEmailChangeRequested(false);
+  };
+
+  const handleEmailCancel = () => {
+    setIsEmailEditing(false);
+    setEmailData(prev => ({
+      ...prev,
+      new_email: ""
+    }));
+  };
+
   const handlePasswordChange = async () => {
     if (!passwordData.current_password || !passwordData.new_password) {
       toast({
@@ -512,13 +582,58 @@ export const PersonalSettingsTab = () => {
 
         <FormFieldGroup 
           label="Email Address" 
-          description="Email cannot be changed here. Contact support if needed."
+          description={emailChangeRequested ? "Email change pending - check your inbox for verification" : "Your account email address"}
         >
-          <Input
-            value={user?.email || ""}
-            disabled
-            className="bg-muted"
-          />
+          {!isEmailEditing ? (
+            <div className="flex items-center gap-2">
+              <Input
+                value={user?.email || ""}
+                disabled
+                className="bg-muted flex-1"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleEmailEdit}
+                className="hover:bg-primary hover:text-primary-foreground"
+              >
+                Change Email
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <Input
+                value={emailData.current_email}
+                disabled
+                className="bg-muted"
+                placeholder="Current email"
+              />
+              <Input
+                value={emailData.new_email}
+                onChange={(e) => setEmailData(prev => ({ ...prev, new_email: e.target.value }))}
+                placeholder="Enter new email address"
+                type="email"
+              />
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEmailCancel}
+                  disabled={isEmailSaving}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleEmailChange}
+                  disabled={isEmailSaving}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  {isEmailSaving ? "Sending..." : "Send Verification"}
+                </Button>
+              </div>
+            </div>
+          )}
         </FormFieldGroup>
 
         <div className="bg-muted/50 rounded-lg p-4">
