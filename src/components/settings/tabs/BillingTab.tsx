@@ -247,28 +247,47 @@ export const BillingTab = () => {
             </div>
           ) : (
             <div className="text-center py-8">
-              <FolderOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <Crown className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No Active Subscription</h3>
-              <p className="text-muted-foreground mb-4">
-                You're currently on the free plan with limited features.
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                {invoices.length > 0 
+                  ? "Your subscription has expired or been cancelled. You can reactivate anytime to restore full access to premium features."
+                  : "You're currently on the free plan. Upgrade to unlock advanced features and remove limitations."
+                }
               </p>
-              <Button onClick={handleManageBilling} disabled={managingBilling}>
-                {managingBilling ? 'Loading...' : 'Manage Billing'}
-              </Button>
+              <div className="space-y-3">
+                <Button 
+                  onClick={handleManageBilling} 
+                  disabled={managingBilling}
+                  className="flex items-center gap-2"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  {managingBilling ? 'Loading...' : invoices.length > 0 ? 'Reactivate Subscription' : 'Subscribe Now'}
+                </Button>
+                {invoices.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    View your billing history below and manage your subscription anytime
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Billing History */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Billing History
-          </CardTitle>
-          <CardDescription>
-            Download your invoices and view payment history
+      {/* Billing History - Show even without active subscription if invoices exist */}
+      {(subscription || invoices.length > 0) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Billing History
+            </CardTitle>
+            <CardDescription>
+            {subscription 
+              ? "Download your invoices and view payment history"
+              : "Access your previous invoices and billing records"
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -327,49 +346,78 @@ export const BillingTab = () => {
           ) : (
             <div className="text-center py-8">
               <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Invoices</h3>
+              <h3 className="text-lg font-semibold mb-2">No Billing History</h3>
               <p className="text-muted-foreground">
-                Your billing history will appear here once you have a subscription.
+                Your billing history will appear here once you subscribe to a plan.
               </p>
             </div>
           )}
         </CardContent>
       </Card>
+      )}
 
-      {/* Account Actions */}
+      {/* Account Actions - Show different content based on subscription status */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
-            Account Management
+            {subscription ? <AlertTriangle className="h-5 w-5" /> : <CreditCard className="h-5 w-5" />}
+            {subscription ? 'Account Management' : 'Subscription Options'}
           </CardTitle>
           <CardDescription>
-            Manage your subscription and billing settings
+            {subscription 
+              ? 'Manage your subscription and billing settings'
+              : 'Start your subscription or manage your account'
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="p-4 border border-orange-200 bg-orange-50 rounded-lg">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5" />
-                <div>
-                  <h4 className="font-medium text-orange-900">Cancel Subscription</h4>
-                  <p className="text-sm text-orange-700 mt-1">
-                    You can cancel your subscription at any time through the billing portal. 
-                    Your access will continue until the end of your current billing period.
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleManageBilling}
-                    disabled={managingBilling}
-                    className="mt-3 border-orange-300 text-orange-700 hover:bg-orange-100"
-                  >
-                    {managingBilling ? 'Opening...' : 'Manage Subscription'}
-                  </Button>
+            {subscription ? (
+              <div className="p-4 border border-orange-200 bg-orange-50 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-orange-900">Cancel Subscription</h4>
+                    <p className="text-sm text-orange-700 mt-1">
+                      You can cancel your subscription at any time through the billing portal. 
+                      Your access will continue until the end of your current billing period.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleManageBilling}
+                      disabled={managingBilling}
+                      className="mt-3 border-orange-300 text-orange-700 hover:bg-orange-100"
+                    >
+                      {managingBilling ? 'Opening...' : 'Manage Subscription'}
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-4 border border-primary/20 bg-primary/5 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <Star className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-primary">Upgrade to Premium</h4>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {invoices.length > 0 
+                        ? "Reactivate your subscription to regain access to all premium features."
+                        : "Unlock advanced features, remove limitations, and access priority support."
+                      }
+                    </p>
+                    <Button
+                      size="sm"
+                      onClick={handleManageBilling}
+                      disabled={managingBilling}
+                      className="mt-3"
+                    >
+                      {managingBilling ? 'Loading...' : invoices.length > 0 ? 'Reactivate Now' : 'Start Subscription'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <div className="flex gap-2">
               <Button 
