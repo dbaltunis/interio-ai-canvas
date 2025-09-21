@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useUserDisplay } from "@/hooks/useUserDisplay";
 import { useNavigate } from "react-router-dom";
-import { QuickStatusUpdate } from "./QuickStatusUpdate";
+
 
 interface UserProfileProps {
   onOpenTeamHub?: () => void;
@@ -45,8 +45,6 @@ export const UserProfile = ({ onOpenTeamHub, showCollaborationIndicator = false,
 
   return (
     <div className="relative flex items-center gap-2">
-      <QuickStatusUpdate />
-      
       <button
         onClick={onOpenTeamHub}
         className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer relative group"

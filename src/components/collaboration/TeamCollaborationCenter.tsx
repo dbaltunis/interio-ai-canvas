@@ -24,6 +24,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { formatDisplayName, formatLastSeen, getInitials } from '@/utils/userDisplay';
+import { Clock, Coffee, Briefcase } from 'lucide-react';
 
 interface TeamCollaborationCenterProps {
   isOpen: boolean;
@@ -46,6 +47,13 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
   const { compact, toggleCompact } = useCompactMode();
   const [isEditingStatus, setIsEditingStatus] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
+
+  const quickStatusOptions = [
+    { icon: Clock, text: "Available", color: "bg-green-500" },
+    { icon: Briefcase, text: "In a meeting", color: "bg-red-500" },
+    { icon: Coffee, text: "On break", color: "bg-yellow-500" },
+    { icon: MessageCircle, text: "Focus time", color: "bg-blue-500" },
+  ];
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -114,6 +122,16 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
       setIsEditingStatus(false);
     } catch (error) {
       console.error('Failed to update status message:', error);
+    }
+  };
+
+  const handleQuickStatusUpdate = async (statusText: string) => {
+    try {
+      await updateUserProfile.mutateAsync({ status_message: statusText });
+      setStatusMessage(statusText);
+      setIsEditingStatus(false);
+    } catch (error) {
+      console.error('Failed to update status:', error);
     }
   };
 
@@ -249,37 +267,59 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                           {/* Editable Status Message */}
                           <div className="mt-0.5">
                             {isEditingStatus ? (
-                              <div className="flex items-center gap-2">
-                                <Input
-                                  value={statusMessage}
-                                  onChange={(e) => setStatusMessage(e.target.value)}
-                                  placeholder="How are you feeling?"
-                                  className="h-6 text-xs flex-1"
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                      handleStatusMessageSave();
-                                    } else if (e.key === 'Escape') {
-                                      setIsEditingStatus(false);
-                                      setStatusMessage(currentUserProfile?.status_message || '');
-                                    }
-                                  }}
-                                  autoFocus
-                                />
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={handleStatusMessageSave}
-                                  className="h-6 w-6 p-0"
-                                >
-                                  <Check className="h-3 w-3" />
-                                </Button>
+                              <div className="space-y-2">
+                                {/* Quick status options */}
+                                <div className="grid grid-cols-2 gap-1">
+                                  {quickStatusOptions.map((option) => {
+                                    const Icon = option.icon;
+                                    return (
+                                      <Button
+                                        key={option.text}
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleQuickStatusUpdate(option.text)}
+                                        className="h-6 justify-start text-xs px-2"
+                                      >
+                                        <div className={`w-2 h-2 rounded-full ${option.color} mr-1`} />
+                                        <Icon className="h-3 w-3 mr-1" />
+                                        {option.text}
+                                      </Button>
+                                    );
+                                  })}
+                                </div>
+                                
+                                {/* Custom status input */}
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    value={statusMessage}
+                                    onChange={(e) => setStatusMessage(e.target.value)}
+                                    placeholder="Custom status..."
+                                    className="h-6 text-xs flex-1"
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        handleStatusMessageSave();
+                                      } else if (e.key === 'Escape') {
+                                        setIsEditingStatus(false);
+                                        setStatusMessage(currentUserProfile?.status_message || '');
+                                      }
+                                    }}
+                                  />
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={handleStatusMessageSave}
+                                    className="h-6 w-6 p-0"
+                                  >
+                                    <Check className="h-3 w-3" />
+                                  </Button>
+                                </div>
                               </div>
                             ) : (
                               <button
                                 onClick={() => setIsEditingStatus(true)}
                                 className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 truncate"
                               >
-                                {currentUserProfile.status_message || 'Add status...'}
+                                {currentUserProfile.status_message || 'Set your status...'}
                                 <Edit className="h-3 w-3 shrink-0" />
                               </button>
                             )}
