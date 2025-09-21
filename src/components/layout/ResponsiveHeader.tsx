@@ -27,7 +27,6 @@ interface ResponsiveHeaderProps {
 }
 
 const navItems = [
-  { id: "dashboard", label: "Home", icon: LayoutDashboard },
   { id: "projects", label: "Jobs", icon: FolderOpen },
   { id: "clients", label: "CRM", icon: Users },
   { id: "quotes", label: "Emails", icon: FileText },
