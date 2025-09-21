@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { useCurrentUserProfile, useUpdateUserProfile } from "@/hooks/useUserProfile";
 import { useUserPreferences, useUpdateUserPreferences } from "@/hooks/useUserPreferences";
 import { useUserSecuritySettings, useUpdateUserSecuritySettings } from "@/hooks/useUserSecuritySettings";
+import { useUserNotificationSettings, useCreateOrUpdateNotificationSettings } from "@/hooks/useUserNotificationSettings";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,9 +22,11 @@ export const PersonalSettingsTab = () => {
   const { data: userProfile, isLoading } = useCurrentUserProfile();
   const { data: userPreferences } = useUserPreferences();
   const { data: securitySettings } = useUserSecuritySettings();
+  const { data: notificationSettings } = useUserNotificationSettings();
   const updateProfile = useUpdateUserProfile();
   const updatePreferences = useUpdateUserPreferences();
   const updateSecuritySettings = useUpdateUserSecuritySettings();
+  const updateNotificationSettings = useCreateOrUpdateNotificationSettings();
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -33,10 +36,12 @@ export const PersonalSettingsTab = () => {
     last_name: "",
     phone_number: "",
     status: "available",
-    email_notifications: true,
-    sms_notifications: false,
-    default_notification_minutes: 15,
     avatar_url: "",
+  });
+  
+  const [notificationData, setNotificationData] = useState({
+    email_notifications_enabled: true,
+    sms_notifications_enabled: false,
   });
   
   const [preferencesData, setPreferencesData] = useState({
@@ -89,13 +94,19 @@ export const PersonalSettingsTab = () => {
         last_name: userProfile.last_name || "",
         phone_number: userProfile.phone_number || "",
         status: userProfile.status || "available",
-        email_notifications: userProfile.email_notifications ?? true,
-        sms_notifications: userProfile.sms_notifications ?? false,
-        default_notification_minutes: userProfile.default_notification_minutes ?? 15,
         avatar_url: userProfile.avatar_url || "",
       });
     }
   }, [userProfile]);
+
+  useEffect(() => {
+    if (notificationSettings) {
+      setNotificationData({
+        email_notifications_enabled: notificationSettings.email_notifications_enabled ?? true,
+        sms_notifications_enabled: notificationSettings.sms_notifications_enabled ?? false,
+      });
+    }
+  }, [notificationSettings]);
 
   useEffect(() => {
     if (user?.email) {
@@ -163,10 +174,13 @@ export const PersonalSettingsTab = () => {
         last_name: userProfile.last_name || "",
         phone_number: userProfile.phone_number || "",
         status: userProfile.status || "available",
-        email_notifications: userProfile.email_notifications ?? true,
-        sms_notifications: userProfile.sms_notifications ?? false,
-        default_notification_minutes: userProfile.default_notification_minutes ?? 15,
         avatar_url: userProfile.avatar_url || "",
+      });
+    }
+    if (notificationSettings) {
+      setNotificationData({
+        email_notifications_enabled: notificationSettings.email_notifications_enabled ?? true,
+        sms_notifications_enabled: notificationSettings.sms_notifications_enabled ?? false,
       });
     }
   };
@@ -176,6 +190,14 @@ export const PersonalSettingsTab = () => {
       await updatePreferences.mutateAsync(preferencesData);
     } catch (error) {
       console.error("Error saving preferences:", error);
+    }
+  };
+
+  const handleSaveNotificationSettings = async () => {
+    try {
+      await updateNotificationSettings.mutateAsync(notificationData);
+    } catch (error) {
+      console.error("Error saving notification settings:", error);
     }
   };
 
@@ -660,38 +682,18 @@ export const PersonalSettingsTab = () => {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <div className="relative">
-                  <Switch
-                    checked={profileData.email_notifications}
-                    onCheckedChange={(checked) => {
-                      if (!isEditing) {
-                        toast({
-                          title: "Edit mode required",
-                          description: "Please click 'Edit' in the Profile Information section to make changes.",
-                          variant: "default",
-                        });
-                        return;
-                      }
-                      handleInputChange("email_notifications", checked);
-                    }}
-                    disabled={!isEditing}
-                    className={!isEditing ? "opacity-50 cursor-not-allowed" : ""}
-                  />
-                  {!isEditing && (
-                    <div className="absolute inset-0 bg-transparent cursor-pointer" 
-                         onClick={() => toast({
-                           title: "Edit mode required",
-                           description: "Please click 'Edit' in the Profile Information section to make changes.",
-                           variant: "default",
-                         })} 
-                    />
-                  )}
-                </div>
+                <Switch
+                  checked={notificationData.email_notifications_enabled}
+                  onCheckedChange={async (checked) => {
+                    setNotificationData(prev => ({ ...prev, email_notifications_enabled: checked }));
+                    await handleSaveNotificationSettings();
+                  }}
+                />
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleTestEmail}
-                  disabled={!profileData.email_notifications}
+                  disabled={!notificationData.email_notifications_enabled}
                   className="ml-2"
                 >
                   Test Email
@@ -707,38 +709,18 @@ export const PersonalSettingsTab = () => {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <div className="relative">
-                  <Switch
-                    checked={profileData.sms_notifications}
-                    onCheckedChange={(checked) => {
-                      if (!isEditing) {
-                        toast({
-                          title: "Edit mode required", 
-                          description: "Please click 'Edit' in the Profile Information section to make changes.",
-                          variant: "default",
-                        });
-                        return;
-                      }
-                      handleInputChange("sms_notifications", checked);
-                    }}
-                    disabled={!isEditing}
-                    className={!isEditing ? "opacity-50 cursor-not-allowed" : ""}
-                  />
-                  {!isEditing && (
-                    <div className="absolute inset-0 bg-transparent cursor-pointer"
-                         onClick={() => toast({
-                           title: "Edit mode required",
-                           description: "Please click 'Edit' in the Profile Information section to make changes.",
-                           variant: "default",
-                         })}
-                    />
-                  )}
-                </div>
+                <Switch
+                  checked={notificationData.sms_notifications_enabled}
+                  onCheckedChange={async (checked) => {
+                    setNotificationData(prev => ({ ...prev, sms_notifications_enabled: checked }));
+                    await handleSaveNotificationSettings();
+                  }}
+                />
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleTestSMS}
-                  disabled={!profileData.sms_notifications || !profileData.phone_number}
+                  disabled={!notificationData.sms_notifications_enabled || !profileData.phone_number}
                   className="ml-2"
                 >
                   Test SMS
@@ -753,12 +735,14 @@ export const PersonalSettingsTab = () => {
               <div className="flex items-center space-x-2">
                 <Input
                   type="number"
-                  value={profileData.default_notification_minutes}
-                  onChange={(e) => handleInputChange("default_notification_minutes", parseInt(e.target.value) || 15)}
+                  value={userProfile?.default_notification_minutes || 15}
+                  onChange={(e) => {
+                    const minutes = parseInt(e.target.value) || 15;
+                    updateProfile.mutateAsync({ default_notification_minutes: minutes });
+                  }}
                   min="0"
                   max="1440"
                   className="w-32"
-                  disabled={!isEditing}
                 />
                 <span className="text-sm text-muted-foreground">minutes</span>
               </div>
