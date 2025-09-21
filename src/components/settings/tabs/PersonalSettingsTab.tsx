@@ -11,7 +11,7 @@ import { useUserSecuritySettings, useUpdateUserSecuritySettings } from "@/hooks/
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, User, Bell, Globe, Shield } from "lucide-react";
+import { Upload, User, Bell, Globe, Shield, Lock, Eye, EyeOff } from "lucide-react";
 import { LoadingFallback } from "@/components/ui/loading-fallback";
 import { FormSection } from "@/components/ui/form-section";
 import { FormFieldGroup } from "@/components/ui/form-field-group";
@@ -57,6 +57,21 @@ export const PersonalSettingsTab = () => {
   
   const [savedSuccessfully, setSavedSuccessfully] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  
+  // Password change state
+  const [passwordData, setPasswordData] = useState({
+    current_password: "",
+    new_password: "",
+    confirm_password: "",
+  });
+  const [isPasswordEditing, setIsPasswordEditing] = useState(false);
+  const [isPasswordSaving, setIsPasswordSaving] = useState(false);
+  const [passwordSavedSuccessfully, setPasswordSavedSuccessfully] = useState(false);
+  const [showPassword, setShowPassword] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
 
   useEffect(() => {
     if (userProfile) {
@@ -302,6 +317,81 @@ export const PersonalSettingsTab = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handlePasswordChange = async () => {
+    if (!passwordData.current_password || !passwordData.new_password) {
+      toast({
+        title: "Error",
+        description: "Please fill in all password fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (passwordData.new_password !== passwordData.confirm_password) {
+      toast({
+        title: "Error",
+        description: "New passwords do not match.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (passwordData.new_password.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsPasswordSaving(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.new_password
+      });
+
+      if (error) throw error;
+
+      setPasswordSavedSuccessfully(true);
+      setIsPasswordEditing(false);
+      setPasswordData({
+        current_password: "",
+        new_password: "",
+        confirm_password: "",
+      });
+      setTimeout(() => setPasswordSavedSuccessfully(false), 3000);
+      
+      toast({
+        title: "Success",
+        description: "Password updated successfully.",
+      });
+    } catch (error) {
+      console.error("Error updating password:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update password. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPasswordSaving(false);
+    }
+  };
+
+  const handlePasswordEdit = () => {
+    setIsPasswordEditing(true);
+    setPasswordSavedSuccessfully(false);
+  };
+
+  const handlePasswordCancel = () => {
+    setIsPasswordEditing(false);
+    setPasswordData({
+      current_password: "",
+      new_password: "",
+      confirm_password: "",
+    });
   };
 
   const getInitials = (name: string) => {
@@ -563,6 +653,121 @@ export const PersonalSettingsTab = () => {
                 <span className="text-sm text-muted-foreground">minutes</span>
               </div>
             </FormFieldGroup>
+          </div>
+        </div>
+      </FormSection>
+
+      {/* Password & Security */}
+      <FormSection
+        title="Password & Security"
+        description="Update your password and security settings"
+        icon={<Lock className="h-5 w-5" />}
+        isEditing={isPasswordEditing}
+        onEdit={handlePasswordEdit}
+        onSave={handlePasswordChange}
+        onCancel={handlePasswordCancel}
+        isSaving={isPasswordSaving}
+        savedSuccessfully={passwordSavedSuccessfully}
+      >
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-6">
+            <FormFieldGroup label="Current Password" description="Enter your current password to confirm identity">
+              <div className="relative">
+                <Input
+                  type={showPassword.current ? "text" : "password"}
+                  value={passwordData.current_password}
+                  onChange={(e) => setPasswordData(prev => ({ ...prev, current_password: e.target.value }))}
+                  placeholder="Enter current password"
+                  disabled={!isPasswordEditing}
+                />
+                {isPasswordEditing && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowPassword(prev => ({ ...prev, current: !prev.current }))}
+                  >
+                    {showPassword.current ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
+              </div>
+            </FormFieldGroup>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormFieldGroup label="New Password" description="Must be at least 6 characters">
+              <div className="relative">
+                <Input
+                  type={showPassword.new ? "text" : "password"}
+                  value={passwordData.new_password}
+                  onChange={(e) => setPasswordData(prev => ({ ...prev, new_password: e.target.value }))}
+                  placeholder="Enter new password"
+                  disabled={!isPasswordEditing}
+                />
+                {isPasswordEditing && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowPassword(prev => ({ ...prev, new: !prev.new }))}
+                  >
+                    {showPassword.new ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
+              </div>
+            </FormFieldGroup>
+
+            <FormFieldGroup label="Confirm New Password" description="Re-enter your new password">
+              <div className="relative">
+                <Input
+                  type={showPassword.confirm ? "text" : "password"}
+                  value={passwordData.confirm_password}
+                  onChange={(e) => setPasswordData(prev => ({ ...prev, confirm_password: e.target.value }))}
+                  placeholder="Confirm new password"
+                  disabled={!isPasswordEditing}
+                />
+                {isPasswordEditing && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowPassword(prev => ({ ...prev, confirm: !prev.confirm }))}
+                  >
+                    {showPassword.confirm ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
+              </div>
+            </FormFieldGroup>
+          </div>
+
+          {/* Password Requirements */}
+          <div className="bg-muted/50 rounded-lg p-4">
+            <h4 className="font-medium text-sm mb-2">Password Requirements</h4>
+            <ul className="text-xs text-muted-foreground space-y-1">
+              <li className={`flex items-center gap-2 ${passwordData.new_password.length >= 6 ? 'text-green-600' : ''}`}>
+                <div className={`w-2 h-2 rounded-full ${passwordData.new_password.length >= 6 ? 'bg-green-500' : 'bg-muted-foreground'}`} />
+                At least 6 characters long
+              </li>
+              <li className={`flex items-center gap-2 ${passwordData.new_password === passwordData.confirm_password && passwordData.new_password ? 'text-green-600' : ''}`}>
+                <div className={`w-2 h-2 rounded-full ${passwordData.new_password === passwordData.confirm_password && passwordData.new_password ? 'bg-green-500' : 'bg-muted-foreground'}`} />
+                Passwords match
+              </li>
+            </ul>
           </div>
         </div>
       </FormSection>
