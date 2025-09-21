@@ -53,7 +53,6 @@ export const PersonalSettingsTab = () => {
   
   const [securityData, setSecurityData] = useState({
     two_factor_enabled: false,
-    session_timeout_minutes: 480,
     login_notifications: true,
     security_alerts: true,
   });
@@ -131,7 +130,6 @@ export const PersonalSettingsTab = () => {
     if (securitySettings) {
       setSecurityData({
         two_factor_enabled: securitySettings.two_factor_enabled || false,
-        session_timeout_minutes: securitySettings.session_timeout_minutes || 480,
         login_notifications: securitySettings.login_notifications ?? true,
         security_alerts: securitySettings.security_alerts ?? true,
       });
@@ -995,22 +993,6 @@ export const PersonalSettingsTab = () => {
             />
           </div>
 
-          <FormFieldGroup 
-            label="Session Timeout" 
-            description="Automatically sign out after this many minutes of inactivity"
-          >
-            <div className="flex items-center space-x-2">
-              <Input
-                type="number"
-                value={securityData.session_timeout_minutes}
-                onChange={(e) => setSecurityData({...securityData, session_timeout_minutes: parseInt(e.target.value) || 480})}
-                min="15"
-                max="1440"
-                className="w-32"
-              />
-              <span className="text-sm text-muted-foreground">minutes</span>
-            </div>
-          </FormFieldGroup>
         </div>
       </FormSection>
     </div>
