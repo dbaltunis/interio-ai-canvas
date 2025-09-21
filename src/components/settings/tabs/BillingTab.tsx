@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
@@ -107,9 +108,11 @@ export const BillingTab = () => {
       }
     } catch (error) {
       console.error('Error opening customer portal:', error);
+      
+      // Show user-friendly error message with Stripe setup instructions
       toast({
-        title: "Error",
-        description: "Failed to open billing portal. Please try again.",
+        title: "Billing Portal Unavailable",
+        description: "Please contact support to manage your subscription. Our billing system is being configured.",
         variant: "destructive",
       });
     } finally {
@@ -182,6 +185,23 @@ export const BillingTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Stripe Setup Notice for Owners */}
+      <Alert className="border-blue-200 bg-blue-50">
+        <AlertDescription className="text-blue-800">
+          <strong>Setup Required:</strong> To enable subscription management, you need to activate the Stripe Customer Portal in your Stripe dashboard. 
+          This allows users to manage subscriptions, update payment methods, and download invoices.
+          <br />
+          <a 
+            href="https://docs.stripe.com/customer-management/activate-no-code-customer-portal" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="underline hover:no-underline mt-1 inline-block"
+          >
+            View Stripe Setup Guide →
+          </a>
+        </AlertDescription>
+      </Alert>
+
       {/* Current Subscription */}
       <Card>
         <CardHeader>
