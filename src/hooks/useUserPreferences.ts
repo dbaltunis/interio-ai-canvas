@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { invalidatePreferencesCache } from "@/utils/dateFormatUtils";
 
 export interface UserPreferences {
   id: string;
@@ -57,6 +58,7 @@ export const useUpdateUserPreferences = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["userPreferences"] });
+      invalidatePreferencesCache(); // Clear the date formatting cache
       toast({
         title: "Preferences updated",
         description: "Your preferences have been updated successfully.",

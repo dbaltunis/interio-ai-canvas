@@ -49,7 +49,6 @@ export const PersonalSettingsTab = () => {
     language: "en",
     date_format: "MM/dd/yyyy",
     time_format: "12h",
-    currency: "USD",
   });
   
   const [securityData, setSecurityData] = useState({
@@ -124,7 +123,6 @@ export const PersonalSettingsTab = () => {
         language: userPreferences.language || "en",
         date_format: userPreferences.date_format || "MM/dd/yyyy",
         time_format: userPreferences.time_format || "12h",
-        currency: userPreferences.currency || "USD",
       });
     }
   }, [userPreferences]);
@@ -853,15 +851,18 @@ export const PersonalSettingsTab = () => {
         icon={<Globe className="h-5 w-5" />}
         isEditing={false}
         onEdit={() => {}}
-        onSave={handleSavePreferences}
+        onSave={() => {}}
         onCancel={() => {}}
-        isSaving={updatePreferences.isPending}
+        isSaving={false}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormFieldGroup label="Timezone">
             <Select 
               value={preferencesData.timezone} 
-              onValueChange={(value) => setPreferencesData({...preferencesData, timezone: value})}
+              onValueChange={async (value) => {
+                setPreferencesData({...preferencesData, timezone: value});
+                await updatePreferences.mutateAsync({...preferencesData, timezone: value});
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select timezone" />
@@ -882,7 +883,10 @@ export const PersonalSettingsTab = () => {
           <FormFieldGroup label="Language">
             <Select 
               value={preferencesData.language} 
-              onValueChange={(value) => setPreferencesData({...preferencesData, language: value})}
+              onValueChange={async (value) => {
+                setPreferencesData({...preferencesData, language: value});
+                await updatePreferences.mutateAsync({...preferencesData, language: value});
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select language" />
@@ -899,11 +903,14 @@ export const PersonalSettingsTab = () => {
           </FormFieldGroup>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormFieldGroup label="Date Format">
             <Select 
               value={preferencesData.date_format} 
-              onValueChange={(value) => setPreferencesData({...preferencesData, date_format: value})}
+              onValueChange={async (value) => {
+                setPreferencesData({...preferencesData, date_format: value});
+                await updatePreferences.mutateAsync({...preferencesData, date_format: value});
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select format" />
@@ -920,7 +927,10 @@ export const PersonalSettingsTab = () => {
           <FormFieldGroup label="Time Format">
             <Select 
               value={preferencesData.time_format} 
-              onValueChange={(value) => setPreferencesData({...preferencesData, time_format: value})}
+              onValueChange={async (value) => {
+                setPreferencesData({...preferencesData, time_format: value});
+                await updatePreferences.mutateAsync({...preferencesData, time_format: value});
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select format" />
@@ -928,25 +938,6 @@ export const PersonalSettingsTab = () => {
               <SelectContent>
                 <SelectItem value="12h">12 Hour (AM/PM)</SelectItem>
                 <SelectItem value="24h">24 Hour</SelectItem>
-              </SelectContent>
-            </Select>
-          </FormFieldGroup>
-
-          <FormFieldGroup label="Currency">
-            <Select 
-              value={preferencesData.currency} 
-              onValueChange={(value) => setPreferencesData({...preferencesData, currency: value})}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select currency" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="USD">USD ($)</SelectItem>
-                <SelectItem value="EUR">EUR (€)</SelectItem>
-                <SelectItem value="GBP">GBP (£)</SelectItem>
-                <SelectItem value="AUD">AUD (A$)</SelectItem>
-                <SelectItem value="CAD">CAD (C$)</SelectItem>
-                <SelectItem value="NZD">NZD (NZ$)</SelectItem>
               </SelectContent>
             </Select>
           </FormFieldGroup>
