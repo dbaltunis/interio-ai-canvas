@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SettingsCard, SettingsSection, SettingsToggle, SettingsInput, SettingsAction } from '@/components/ui/settings-components';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
+import { useUserSecuritySettings, useUpdateUserSecuritySettings } from "@/hooks/useUserSecuritySettings";
 import { 
   Shield, 
   Key, 
@@ -28,9 +29,11 @@ import {
 
 export const SecurityPrivacyTab = () => {
   const { toast } = useToast();
+  const { data: securitySettings, isLoading } = useUserSecuritySettings();
+  const updateSecuritySettings = useUpdateUserSecuritySettings();
+  
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [biometricsEnabled, setBiometricsEnabled] = useState(false);
-  const [sessionTimeout, setSessionTimeout] = useState('480');
   const [loginNotifications, setLoginNotifications] = useState(true);
   const [securityAlerts, setSecurityAlerts] = useState(true);
   const [dataSharing, setDataSharing] = useState(false);
@@ -39,6 +42,15 @@ export const SecurityPrivacyTab = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Load security settings from database
+  useEffect(() => {
+    if (securitySettings) {
+      setTwoFactorEnabled(securitySettings.two_factor_enabled);
+      setLoginNotifications(securitySettings.login_notifications);
+      setSecurityAlerts(securitySettings.security_alerts);
+    }
+  }, [securitySettings]);
 
   const handlePasswordChange = async () => {
     if (newPassword !== confirmPassword) {
@@ -72,19 +84,25 @@ export const SecurityPrivacyTab = () => {
   };
 
   const handleEnable2FA = async () => {
-    setTwoFactorEnabled(true);
-    toast({
-      title: "2FA Enabled",
-      description: "Two-factor authentication has been enabled for your account"
-    });
+    const newValue = true;
+    setTwoFactorEnabled(newValue);
+    updateSecuritySettings.mutate({ two_factor_enabled: newValue });
   };
 
   const handleDisable2FA = async () => {
-    setTwoFactorEnabled(false);
-    toast({
-      title: "2FA Disabled", 
-      description: "Two-factor authentication has been disabled"
-    });
+    const newValue = false;
+    setTwoFactorEnabled(newValue);
+    updateSecuritySettings.mutate({ two_factor_enabled: newValue });
+  };
+
+  const handleLoginNotificationsChange = (checked: boolean) => {
+    setLoginNotifications(checked);
+    updateSecuritySettings.mutate({ login_notifications: checked });
+  };
+
+  const handleSecurityAlertsChange = (checked: boolean) => {
+    setSecurityAlerts(checked);
+    updateSecuritySettings.mutate({ security_alerts: checked });
   };
 
   const downloadDataArchive = () => {
@@ -181,6 +199,7 @@ export const SecurityPrivacyTab = () => {
                 onAction={handleEnable2FA}
                 icon={<Shield className="h-4 w-4" />}
                 variant="success"
+                loading={updateSecuritySettings.isPending}
               />
             ) : (
               <SettingsAction
@@ -190,6 +209,7 @@ export const SecurityPrivacyTab = () => {
                 onAction={handleDisable2FA}
                 icon={<AlertTriangle className="h-4 w-4" />}
                 variant="destructive"
+                loading={updateSecuritySettings.isPending}
               />
             )}
           </div>
@@ -210,31 +230,7 @@ export const SecurityPrivacyTab = () => {
         </SettingsCard>
       </SettingsSection>
 
-      <SettingsSection title="Session Management" description="Control how long you stay logged in and monitor active sessions">
-        <SettingsCard
-          title="Session Timeout"
-          description="Automatically log out after a period of inactivity"
-          icon={<Clock className="h-5 w-5 text-primary" />}
-        >
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Timeout Duration</label>
-              <Select value={sessionTimeout} onValueChange={setSessionTimeout}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="60">1 hour</SelectItem>
-                  <SelectItem value="240">4 hours</SelectItem>
-                  <SelectItem value="480">8 hours</SelectItem>
-                  <SelectItem value="1440">24 hours</SelectItem>
-                  <SelectItem value="never">Never</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </SettingsCard>
-
+      <SettingsSection title="Session Management" description="Monitor and manage your active login sessions">
         <SettingsCard
           title="Active Sessions"
           description="Monitor and manage your active login sessions"
@@ -281,14 +277,16 @@ export const SecurityPrivacyTab = () => {
               label="Login Notifications"
               description="Email notifications for new login attempts"
               checked={loginNotifications}
-              onCheckedChange={setLoginNotifications}
+              onCheckedChange={handleLoginNotificationsChange}
+              disabled={isLoading || updateSecuritySettings.isPending}
             />
             
             <SettingsToggle
               label="Security Alerts"
               description="Notifications for suspicious account activity"
               checked={securityAlerts}
-              onCheckedChange={setSecurityAlerts}
+              onCheckedChange={handleSecurityAlertsChange}
+              disabled={isLoading || updateSecuritySettings.isPending}
             />
           </div>
         </SettingsCard>
