@@ -33,7 +33,6 @@ export const PersonalSettingsTab = () => {
     last_name: "",
     phone_number: "",
     status: "available",
-    status_message: "",
     email_notifications: true,
     sms_notifications: false,
     default_notification_minutes: 15,
@@ -90,7 +89,6 @@ export const PersonalSettingsTab = () => {
         last_name: userProfile.last_name || "",
         phone_number: userProfile.phone_number || "",
         status: userProfile.status || "available",
-        status_message: userProfile.status_message || "",
         email_notifications: userProfile.email_notifications ?? true,
         sms_notifications: userProfile.sms_notifications ?? false,
         default_notification_minutes: userProfile.default_notification_minutes ?? 15,
@@ -165,7 +163,6 @@ export const PersonalSettingsTab = () => {
         last_name: userProfile.last_name || "",
         phone_number: userProfile.phone_number || "",
         status: userProfile.status || "available",
-        status_message: userProfile.status_message || "",
         email_notifications: userProfile.email_notifications ?? true,
         sms_notifications: userProfile.sms_notifications ?? false,
         default_notification_minutes: userProfile.default_notification_minutes ?? 15,
@@ -577,17 +574,6 @@ export const PersonalSettingsTab = () => {
           </FormFieldGroup>
         </div>
 
-        <FormFieldGroup 
-          label="Status Message" 
-          description="Let others know your current availability"
-        >
-          <Input
-            value={profileData.status_message}
-            onChange={(e) => handleInputChange("status_message", e.target.value)}
-            placeholder="Available, In a meeting, etc."
-            disabled={!isEditing}
-          />
-        </FormFieldGroup>
 
         <FormFieldGroup 
           label="Email Address" 
