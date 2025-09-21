@@ -727,26 +727,6 @@ export const PersonalSettingsTab = () => {
                 </Button>
               </div>
             </div>
-
-            <FormFieldGroup 
-              label="Default Notification Timing" 
-              description="Minutes before appointments to send notifications"
-            >
-              <div className="flex items-center space-x-2">
-                <Input
-                  type="number"
-                  value={userProfile?.default_notification_minutes || 15}
-                  onChange={(e) => {
-                    const minutes = parseInt(e.target.value) || 15;
-                    updateProfile.mutateAsync({ default_notification_minutes: minutes });
-                  }}
-                  min="0"
-                  max="1440"
-                  className="w-32"
-                />
-                <span className="text-sm text-muted-foreground">minutes</span>
-              </div>
-            </FormFieldGroup>
           </div>
         </div>
       </FormSection>
