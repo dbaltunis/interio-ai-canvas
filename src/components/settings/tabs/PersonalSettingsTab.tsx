@@ -100,6 +100,15 @@ export const PersonalSettingsTab = () => {
   }, [userProfile]);
 
   useEffect(() => {
+    if (user?.email) {
+      setEmailData(prev => ({
+        ...prev,
+        current_email: user.email
+      }));
+    }
+  }, [user?.email]);
+
+  useEffect(() => {
     if (userPreferences) {
       setPreferencesData({
         timezone: userPreferences.timezone || "UTC",
