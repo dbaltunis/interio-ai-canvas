@@ -13,7 +13,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useCurrentUserProfile, useUpdateUserProfile } from '@/hooks/useUserProfile';
 import { useTheme } from 'next-themes';
 import { useCompactMode } from '@/hooks/useCompactMode';
-import { Users, MessageCircle, Zap, Circle, Send, X, Edit, Check, Settings, LogOut, Sun, Moon, Palette, LayoutDashboard } from 'lucide-react';
+import { Users, MessageCircle, Zap, Circle, Send, X, Edit, Check, Settings, LogOut, Sun, Moon, Palette } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useNavigate } from 'react-router-dom';
 import { DirectMessageDialog } from './DirectMessageDialog';
@@ -334,24 +334,6 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                           </Tooltip>
                           
                           <div className="h-4 w-px bg-border mx-1" />
-                          
-                          {/* Dashboard */}
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  navigate('/');
-                                  onToggle();
-                                }}
-                                className="h-8 w-8 p-0"
-                              >
-                                <LayoutDashboard className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Dashboard</TooltipContent>
-                          </Tooltip>
                           
                           {/* Settings */}
                           <Tooltip>
