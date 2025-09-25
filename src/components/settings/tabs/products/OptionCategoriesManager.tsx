@@ -48,7 +48,11 @@ export const OptionCategoriesManager = () => {
                 Create and manage dynamic option categories for linings, hardware, and other window covering options
               </CardDescription>
             </div>
-            <Button>
+            <Button
+              onClick={() => console.log("Create Category button clicked")}
+              className="pointer-events-auto z-50"
+              type="button"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Create Category
             </Button>
@@ -61,7 +65,11 @@ export const OptionCategoriesManager = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Create your first option category to define dynamic options like lining types, hardware selections, or fabric categories
               </p>
-              <Button>
+              <Button
+                onClick={() => console.log("Create Your First Category button clicked")}
+                className="pointer-events-auto z-50"
+                type="button"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Create Your First Category
               </Button>
