@@ -11,6 +11,7 @@ export const CurtainTemplatesManager = () => {
   const [editingTemplate, setEditingTemplate] = useState<CurtainTemplate | null>(null);
 
   const handleAddTemplate = () => {
+    console.log("Add Template button clicked");
     setEditingTemplate(null);
     setIsFormOpen(true);
   };
@@ -34,7 +35,11 @@ export const CurtainTemplatesManager = () => {
             Create and manage your curtain templates with predefined measurements and configurations
           </p>
         </div>
-        <Button onClick={handleAddTemplate} className="flex items-center gap-2">
+        <Button 
+          onClick={handleAddTemplate} 
+          className="flex items-center gap-2 pointer-events-auto z-50"
+          type="button"
+        >
           <Plus className="h-4 w-4" />
           Add Curtain Template
         </Button>

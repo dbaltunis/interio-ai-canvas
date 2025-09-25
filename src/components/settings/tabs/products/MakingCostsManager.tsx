@@ -67,8 +67,12 @@ export const MakingCostsManager = () => {
               This replaces manual option selection with pre-configured bundles. Create configurations like "Standard Pleated Curtains" with all options, pricing, and measurements pre-set.
             </p>
             <Button 
-              onClick={() => setIsCreating(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={() => {
+                console.log("Create Configuration button clicked");
+                setIsCreating(true);
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white pointer-events-auto z-50"
+              type="button"
             >
               <Plus className="h-4 w-4 mr-2" />
               Create Configuration
