@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useCreateMakingCost, useUpdateMakingCost } from "@/hooks/useMakingCosts";
+import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { useToast } from "@/hooks/use-toast";
 
 interface MakingCostOption {
@@ -27,18 +28,21 @@ interface MakingCostsFormProps {
 export const MakingCostsForm = ({ initialData, onSave, onCancel }: MakingCostsFormProps) => {
   const createMakingCost = useCreateMakingCost();
   const updateMakingCost = useUpdateMakingCost();
+  const { data: templates = [] } = useCurtainTemplates();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     description: initialData?.description || '',
-    product_type: initialData?.product_type || '',
+    product_type: initialData?.product_type || 'curtains',
+    template_id: initialData?.template_id || '',
     pricing_method: initialData?.pricing_method || 'per_metre',
     measurement_type: initialData?.measurement_type || 'standard',
     base_price: initialData?.base_price || 0,
     labor_cost: initialData?.labor_cost || 0,
     waste_factor: initialData?.waste_factor || 5,
     minimum_charge: initialData?.minimum_charge || 0,
+    markup_percentage: initialData?.markup_percentage || 50,
     options: initialData?.options || {},
     active: initialData?.active !== undefined ? initialData.active : true
   });
@@ -83,12 +87,12 @@ export const MakingCostsForm = ({ initialData, onSave, onCancel }: MakingCostsFo
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
           <div>
-            <Label htmlFor="name">Product Name *</Label>
+            <Label htmlFor="name">Making Cost Name *</Label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
-              placeholder="e.g., Curtains, Romans, Rollers"
+              placeholder="e.g., Premium Curtains, Budget Romans"
               required
             />
           </div>
@@ -99,61 +103,69 @@ export const MakingCostsForm = ({ initialData, onSave, onCancel }: MakingCostsFo
               id="description"
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder="Optional description for this product type"
+              placeholder="Brief description of this making cost configuration"
               rows={3}
             />
           </div>
 
           <div>
-            <Label htmlFor="pricing_method">Pricing Method</Label>
+            <Label htmlFor="template_id">Base Template *</Label>
             <Select
-              value={formData.pricing_method}
-              onValueChange={(value) => handleInputChange('pricing_method', value)}
+              value={formData.template_id}
+              onValueChange={(value) => handleInputChange('template_id', value)}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Select a template" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="per-linear-meter">Per Linear Meter</SelectItem>
-                <SelectItem value="per-linear-yard">Per Linear Yard</SelectItem>
-                <SelectItem value="per-sqm">Per Square Meter</SelectItem>
-                <SelectItem value="per-unit">Per Unit</SelectItem>
-                <SelectItem value="fixed-price">Fixed Price</SelectItem>
-                <SelectItem value="custom-grid">Custom Pricing Grid</SelectItem>
+                {templates.map((template) => (
+                  <SelectItem key={template.id} value={template.id}>
+                    {template.name} - {template.heading_name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              This will inherit structure and manufacturing settings from the selected template
+            </p>
           </div>
         </div>
 
         <div className="space-y-4">
           <div>
-            <Label htmlFor="measurement_type">Measurement Type</Label>
-            <Select
-              value={formData.measurement_type}
-              onValueChange={(value) => handleInputChange('measurement_type', value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="fabric-drop-required">Fabric Drop Required</SelectItem>
-                <SelectItem value="width-height-only">Width & Height Only</SelectItem>
-                <SelectItem value="custom-measurements">Custom Measurements</SelectItem>
-                <SelectItem value="area-based">Area Based</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="base_price">Base Material Price</Label>
+            <Input
+              id="base_price"
+              type="number"
+              step="0.01"
+              value={formData.base_price}
+              onChange={(e) => handleInputChange('base_price', parseFloat(e.target.value) || 0)}
+              placeholder="0.00"
+            />
           </div>
 
-          <div className="flex items-center space-x-2">
-            <div>
-              <Label htmlFor="product_type">Product Type</Label>
-              <Input
-                id="product_type"
-                value={formData.product_type}
-                onChange={(e) => handleInputChange('product_type', e.target.value)}
-                placeholder="e.g., curtains, roman_blinds, roller_blinds"
-              />
-            </div>
+          <div>
+            <Label htmlFor="labor_cost">Labor Cost</Label>
+            <Input
+              id="labor_cost"
+              type="number"
+              step="0.01"
+              value={formData.labor_cost}
+              onChange={(e) => handleInputChange('labor_cost', parseFloat(e.target.value) || 0)}
+              placeholder="0.00"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="markup_percentage">Markup Percentage (%)</Label>
+            <Input
+              id="markup_percentage"
+              type="number"
+              step="5"
+              value={formData.markup_percentage}
+              onChange={(e) => handleInputChange('markup_percentage', parseFloat(e.target.value) || 0)}
+              placeholder="50"
+            />
           </div>
 
           <div className="flex items-center space-x-2">
@@ -170,10 +182,10 @@ export const MakingCostsForm = ({ initialData, onSave, onCancel }: MakingCostsFo
       <Separator />
 
       <div className="bg-muted/50 p-4 rounded-lg">
-        <h4 className="font-medium mb-2">Option Configuration</h4>
+        <h4 className="font-medium mb-2">How It Works</h4>
         <p className="text-sm text-muted-foreground">
-          After creating this product, you'll be able to configure specific option categories (heading styles, operations, materials, etc.) 
-          using the "Manage Bundled Options" button.
+          This making cost will combine the selected template's structure (measurements, allowances) with your pricing (materials + labor + markup). 
+          After creation, you can configure which option categories are included using "Manage Bundled Options".
         </p>
       </div>
 

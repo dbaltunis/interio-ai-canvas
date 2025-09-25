@@ -1,11 +1,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { CurtainTemplatesManager } from "./products/CurtainTemplatesManager";
 import { HeadingInventoryManager } from "./components/HeadingInventoryManager";
 import { OptionCategoriesManager } from "./products/OptionCategoriesManager";
 import { MakingCostsManager } from "./products/MakingCostsManager";
-import { Settings, Layers, DollarSign, Wrench, Package, Tags } from "lucide-react";
+import { ManufacturingDefaults } from "./products/ManufacturingDefaults";
+import { Layers, Package, Tags, Settings, Wrench } from "lucide-react";
 
 export const WindowCoveringsTab = () => {
   return (
@@ -19,7 +19,7 @@ export const WindowCoveringsTab = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="templates" className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="templates" className="flex items-center gap-2">
                 <Layers className="h-4 w-4" />
                 Templates
@@ -36,13 +36,9 @@ export const WindowCoveringsTab = () => {
                 <Package className="h-4 w-4" />
                 Making Costs
               </TabsTrigger>
-              <TabsTrigger value="manufacturing" className="flex items-center gap-2">
-                <Wrench className="h-4 w-4" />
-                Manufacturing
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="flex items-center gap-2">
+              <TabsTrigger value="defaults" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
-                Settings
+                Manufacturing Defaults
               </TabsTrigger>
             </TabsList>
 
@@ -62,82 +58,8 @@ export const WindowCoveringsTab = () => {
               <MakingCostsManager />
             </TabsContent>
 
-            <TabsContent value="manufacturing" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Manufacturing Configuration</CardTitle>
-                  <CardDescription>
-                    Fabric usage rules and manufacturing settings overview
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="font-medium mb-3">Standard Allowances</h4>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span>Returns (L/R):</span>
-                            <span>7.5cm each</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Overlap:</span>
-                            <span>10cm</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Header Allowance:</span>
-                            <span>8cm</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Bottom Hem:</span>
-                            <span>15cm</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Waste %:</span>
-                            <span>5%</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="font-medium mb-3">Advanced Options</h4>
-                        <div className="space-y-2">
-                          <Badge variant="outline">Railroading Support</Badge>
-                          <Badge variant="outline">Pattern Matching</Badge>
-                          <Badge variant="outline">Custom Hems</Badge>
-                          <Badge variant="outline">Fullness Ratios</Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="settings" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>System Settings</CardTitle>
-                  <CardDescription>
-                    Global configuration and preferences
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium mb-2">Measurement Units</h4>
-                      <p className="text-sm text-muted-foreground">Currently using centimetres (cm) for all measurements</p>
-                    </div>
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium mb-2">Default Values</h4>
-                      <p className="text-sm text-muted-foreground">Configure default hem allowances, waste percentages, and other manufacturing defaults</p>
-                    </div>
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium mb-2">Integration Settings</h4>
-                      <p className="text-sm text-muted-foreground">Inventory integration, hardware compatibility, and project workflow settings</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <TabsContent value="defaults" className="space-y-6">
+              <ManufacturingDefaults />
             </TabsContent>
           </Tabs>
         </CardContent>
