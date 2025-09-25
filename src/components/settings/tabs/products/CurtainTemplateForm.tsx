@@ -19,6 +19,7 @@ import { LiningTypeManager } from "./LiningTypeManager";
 import { PricingGridUploader } from "./PricingGridUploader";
 import { HardwareCompatibilityManager } from "./HardwareCompatibilityManager";
 import { useHeadingInventory } from "@/hooks/useHeadingInventory";
+import { useOptionCategories } from "@/hooks/useOptionCategories";
 
 // Import pricing components
 import { HandFinishedToggle } from "./pricing/HandFinishedToggle";
@@ -39,6 +40,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   const createTemplate = useCreateCurtainTemplate();
   const updateTemplate = useUpdateCurtainTemplate();
   const { data: headingStyles = [] } = useHeadingInventory();
+  const { data: optionCategories = [] } = useOptionCategories();
 
   // State for eyelet ring library
   const [eyeletRings] = useState([
@@ -110,7 +112,10 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     // Height-based drop pricing
     drop_height_ranges: template?.drop_height_ranges || [],
     machine_drop_height_prices: template?.machine_drop_height_prices || [],
-    hand_drop_height_prices: template?.hand_drop_height_prices || []
+    hand_drop_height_prices: template?.hand_drop_height_prices || [],
+    
+    // Option Categories Integration
+    selected_option_categories: template?.compatible_hardware || []  // Temporarily use this field
   });
 
   const handleInputChange = (field: string, value: string | any) => {
@@ -166,7 +171,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         side_hems: parseFloat(formData.side_hems.toString()) || 7.5,
         seam_hems: parseFloat(formData.seam_hems.toString()) || 1.5,
         lining_types: formData.lining_types,
-        compatible_hardware: formData.compatible_hardware,
+        compatible_hardware: formData.selected_option_categories, // Store option categories here for now
         pricing_type: formData.pricing_type as 'per_metre' | 'per_drop' | 'per_panel' | 'pricing_grid',
         offers_hand_finished: formData.offers_hand_finished,
         machine_price_per_metre: formData.machine_price_per_metre ? parseFloat(formData.machine_price_per_metre.toString()) : undefined,
@@ -253,14 +258,23 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                   />
                 </div>
                 <div>
-                  <Label htmlFor="curtain_type">Curtain Type</Label>
+                  <Label htmlFor="window_covering_type">Window Covering Type</Label>
                   <Select value={formData.curtain_type} onValueChange={(value) => handleInputChange("curtain_type", value)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select curtain type" />
+                      <SelectValue placeholder="Select window covering type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="single">Single Curtain</SelectItem>
                       <SelectItem value="pair">Pair of Curtains</SelectItem>
+                      <SelectItem value="roller_blind">Roller Blind</SelectItem>
+                      <SelectItem value="venetian_blind">Venetian Blind</SelectItem>
+                      <SelectItem value="vertical_blind">Vertical Blind</SelectItem>
+                      <SelectItem value="cellular_blind">Cellular Blind</SelectItem>
+                      <SelectItem value="roman_blind">Roman Blind</SelectItem>
+                      <SelectItem value="plantation_shutter">Plantation Shutter</SelectItem>
+                      <SelectItem value="cafe_shutter">Cafe Shutter</SelectItem>
+                      <SelectItem value="awning">Awning</SelectItem>
+                      <SelectItem value="panel_glide">Panel Glide</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -311,6 +325,50 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                                 ` (${(heading as any).fullness_ratios.length} options)`
                               }
                             </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Option Categories Integration */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Available Option Categories</CardTitle>
+                <CardDescription>Select which option categories customers can choose from</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {optionCategories.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      No option categories found. Create option categories first in the "Option Categories" tab.
+                    </p>
+                  ) : (
+                    optionCategories.map((category) => (
+                      <div key={category.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                        <Checkbox
+                          id={`option-category-${category.id}`}
+                          checked={formData.selected_option_categories.includes(category.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              handleInputChange("selected_option_categories", [...formData.selected_option_categories, category.id]);
+                            } else {
+                              handleInputChange("selected_option_categories", formData.selected_option_categories.filter(id => id !== category.id));
+                            }
+                          }}
+                        />
+                        <div className="flex-1">
+                          <Label htmlFor={`option-category-${category.id}`} className="font-medium cursor-pointer">
+                            {category.name}
+                          </Label>
+                          <div className="text-sm text-muted-foreground">
+                            {category.description || "No description"}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Type: {category.category_type} | Subcategories: {category.subcategories?.length || 0}
                           </div>
                         </div>
                       </div>

@@ -50,21 +50,21 @@ export const MakingCostsManager = () => {
             <div className="flex items-center gap-3">
               <Settings className="h-6 w-6 text-blue-600" />
               <div>
-                <CardTitle className="text-blue-800">Making Costs Configurations</CardTitle>
+                <CardTitle className="text-blue-800">Labor & Manufacturing Costs</CardTitle>
                 <CardDescription className="text-blue-600">
-                  Create complete window covering configurations with bundled options, pricing methods, and automatic calculations
+                  Set up labor rates, manufacturing costs, and pricing calculations for different product types
                 </CardDescription>
               </div>
             </div>
             <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-300">
-              NEW SYSTEM
+              PRICING
             </Badge>
           </div>
         </CardHeader>
         <CardContent>
           <div className="flex justify-between items-center">
             <p className="text-sm text-blue-700">
-              This replaces manual option selection with pre-configured bundles. Create configurations like "Standard Pleated Curtains" with all options, pricing, and measurements pre-set.
+              Define labor costs, waste factors, and pricing calculations for curtains, blinds, shutters, etc. This sets the base costs used in your templates.
             </p>
             <Button 
               onClick={() => {
@@ -75,7 +75,7 @@ export const MakingCostsManager = () => {
               type="button"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Create Configuration
+              Add Labor Cost
             </Button>
           </div>
         </CardContent>
@@ -86,7 +86,7 @@ export const MakingCostsManager = () => {
         <Card className="border-2 border-blue-200">
           <CardHeader className="bg-blue-50">
             <CardTitle className="text-blue-800">
-              {editingCost ? 'Edit Making Cost Configuration' : 'Create New Making Cost Configuration'}
+              {editingCost ? 'Edit Labor Cost' : 'Add Labor Cost'}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
