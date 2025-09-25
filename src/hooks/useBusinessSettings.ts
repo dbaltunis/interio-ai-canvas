@@ -45,11 +45,13 @@ export const useBusinessSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      // First try to get user's own business settings
+      // First try to get user's own business settings, prioritizing the latest one with measurement_units
       let { data, error } = await supabase
         .from('business_settings')
         .select('*')
         .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       // If no settings found, try to get account owner's settings
