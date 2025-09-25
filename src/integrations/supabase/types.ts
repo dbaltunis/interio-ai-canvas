@@ -2639,12 +2639,14 @@ export type Database = {
           description: string | null
           id: string
           labor_cost: number | null
+          markup_percentage: number | null
           measurement_type: string | null
           minimum_charge: number | null
           name: string
           options: Json | null
           pricing_method: string | null
           product_type: string
+          template_id: string | null
           updated_at: string
           user_id: string
           waste_factor: number | null
@@ -2656,12 +2658,14 @@ export type Database = {
           description?: string | null
           id?: string
           labor_cost?: number | null
+          markup_percentage?: number | null
           measurement_type?: string | null
           minimum_charge?: number | null
           name: string
           options?: Json | null
           pricing_method?: string | null
           product_type: string
+          template_id?: string | null
           updated_at?: string
           user_id: string
           waste_factor?: number | null
@@ -2673,17 +2677,27 @@ export type Database = {
           description?: string | null
           id?: string
           labor_cost?: number | null
+          markup_percentage?: number | null
           measurement_type?: string | null
           minimum_charge?: number | null
           name?: string
           options?: Json | null
           pricing_method?: string | null
           product_type?: string
+          template_id?: string | null
           updated_at?: string
           user_id?: string
           waste_factor?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "making_costs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "curtain_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       measurement_fields: {
         Row: {
