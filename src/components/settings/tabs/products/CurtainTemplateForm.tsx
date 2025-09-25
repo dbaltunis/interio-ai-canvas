@@ -221,8 +221,9 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   return (
     <TooltipProvider>
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="basic">Basic</TabsTrigger>
+          <TabsTrigger value="options">Options</TabsTrigger>
           <TabsTrigger value="heading">Heading</TabsTrigger>
           <TabsTrigger value="manufacturing">Manufacturing</TabsTrigger>
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
@@ -243,7 +244,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                     id="name"
                     value={formData.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
-                    placeholder="e.g., Wave Heading - Premium"
+                    placeholder="e.g., Premium Roller Blind, Plantation Shutters"
                   />
                   <p className="text-xs text-muted-foreground mt-1">Each heading style should be a separate template</p>
                 </div>
@@ -273,10 +274,57 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                       <SelectItem value="roman_blind">Roman Blind</SelectItem>
                       <SelectItem value="plantation_shutter">Plantation Shutter</SelectItem>
                       <SelectItem value="cafe_shutter">Cafe Shutter</SelectItem>
-                      <SelectItem value="awning">Awning</SelectItem>
-                      <SelectItem value="panel_glide">Panel Glide</SelectItem>
+                       <SelectItem value="awning">Awning</SelectItem>
+                       <SelectItem value="panel_glide">Panel Glide</SelectItem>
+                       <SelectItem value="custom">Custom Window Covering</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="options" className="space-y-6">
+            {/* Option Categories Integration */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Available Option Categories</CardTitle>
+                <CardDescription>Select which option categories customers can choose from</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {optionCategories.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      No option categories found. Create option categories first in the "Option Categories" tab.
+                    </p>
+                  ) : (
+                    optionCategories.map((category) => (
+                      <div key={category.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                        <Checkbox
+                          id={`option-category-${category.id}`}
+                          checked={formData.selected_option_categories.includes(category.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              handleInputChange("selected_option_categories", [...formData.selected_option_categories, category.id]);
+                            } else {
+                              handleInputChange("selected_option_categories", formData.selected_option_categories.filter(id => id !== category.id));
+                            }
+                          }}
+                        />
+                        <div className="flex-1">
+                          <Label htmlFor={`option-category-${category.id}`} className="font-medium cursor-pointer">
+                            {category.name}
+                          </Label>
+                          <div className="text-sm text-muted-foreground">
+                            {category.description || "No description"}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Type: {category.category_type} | Subcategories: {category.subcategories?.length || 0}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -325,50 +373,6 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                                 ` (${(heading as any).fullness_ratios.length} options)`
                               }
                             </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Option Categories Integration */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Available Option Categories</CardTitle>
-                <CardDescription>Select which option categories customers can choose from</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {optionCategories.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      No option categories found. Create option categories first in the "Option Categories" tab.
-                    </p>
-                  ) : (
-                    optionCategories.map((category) => (
-                      <div key={category.id} className="flex items-center space-x-3 p-3 border rounded-lg">
-                        <Checkbox
-                          id={`option-category-${category.id}`}
-                          checked={formData.selected_option_categories.includes(category.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              handleInputChange("selected_option_categories", [...formData.selected_option_categories, category.id]);
-                            } else {
-                              handleInputChange("selected_option_categories", formData.selected_option_categories.filter(id => id !== category.id));
-                            }
-                          }}
-                        />
-                        <div className="flex-1">
-                          <Label htmlFor={`option-category-${category.id}`} className="font-medium cursor-pointer">
-                            {category.name}
-                          </Label>
-                          <div className="text-sm text-muted-foreground">
-                            {category.description || "No description"}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            Type: {category.category_type} | Subcategories: {category.subcategories?.length || 0}
                           </div>
                         </div>
                       </div>
