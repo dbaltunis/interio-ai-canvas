@@ -140,6 +140,30 @@ export const useCreateOptionCategory = () => {
   });
 };
 
+export const useCreateOptionSubcategory = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (subcategory: Omit<OptionSubcategory, "id" | "created_at" | "updated_at">) => {
+      const { data, error } = await supabase
+        .from('option_subcategories')
+        .insert([subcategory])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating option subcategory:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["option-categories"] });
+      toast.success("Option subcategory created");
+    },
+  });
+};
 export const useUpdateOptionCategory = () => {
   const queryClient = useQueryClient();
 

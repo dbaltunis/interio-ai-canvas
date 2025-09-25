@@ -7,11 +7,13 @@ import { useOptionCategories } from "@/hooks/useOptionCategories";
 import { useDeleteOptionCategory } from "@/hooks/useOptionCategories";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
+import { OptionCategoryForm } from "./option-categories/OptionCategoryForm";
 
 export const OptionCategoriesManager = () => {
   const { data: optionCategories, isLoading } = useOptionCategories();
   const deleteOptionCategory = useDeleteOptionCategory();
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   const toggleCategory = (categoryId: string) => {
     const newExpanded = new Set(expandedCategories);
@@ -49,7 +51,10 @@ export const OptionCategoriesManager = () => {
               </CardDescription>
             </div>
             <Button
-              onClick={() => console.log("Create Category button clicked")}
+              onClick={() => {
+                console.log("Create Category button clicked");
+                setIsFormOpen(true);
+              }}
               className="pointer-events-auto z-50"
               type="button"
             >
@@ -66,7 +71,10 @@ export const OptionCategoriesManager = () => {
                 Create your first option category to define dynamic options like lining types, hardware selections, or fabric categories
               </p>
               <Button
-                onClick={() => console.log("Create Your First Category button clicked")}
+                onClick={() => {
+                  console.log("Create Your First Category button clicked");
+                  setIsFormOpen(true);
+                }}
                 className="pointer-events-auto z-50"
                 type="button"
               >
@@ -161,6 +169,11 @@ export const OptionCategoriesManager = () => {
           )}
         </CardContent>
       </Card>
+
+      <OptionCategoryForm 
+        open={isFormOpen} 
+        onOpenChange={setIsFormOpen} 
+      />
     </div>
   );
 };
