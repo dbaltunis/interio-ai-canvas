@@ -1,11 +1,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CurtainTemplatesManager } from "./products/CurtainTemplatesManager";
 import { HeadingInventoryManager } from "./components/HeadingInventoryManager";
 import { OptionCategoriesManager } from "./products/OptionCategoriesManager";
 import { MakingCostsManager } from "./products/MakingCostsManager";
 import { ManufacturingDefaults } from "./products/ManufacturingDefaults";
-import { Layers, Package, Tags, Settings, Wrench } from "lucide-react";
+import { CurtainTemplatesManager } from "./products/CurtainTemplatesManager";
+import { Layers, Package, Tags, Settings } from "lucide-react";
 
 export const WindowCoveringsTab = () => {
   return (
