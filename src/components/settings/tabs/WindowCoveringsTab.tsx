@@ -3,7 +3,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { CurtainTemplatesManager } from "./products/CurtainTemplatesManager";
 import { HeadingInventoryManager } from "./components/HeadingInventoryManager";
-import { Settings, Layers, DollarSign, Wrench } from "lucide-react";
+import { OptionCategoriesManager } from "./products/OptionCategoriesManager";
+import { MakingCostsManager } from "./products/MakingCostsManager";
+import { Settings, Layers, DollarSign, Wrench, Package, Tags } from "lucide-react";
 
 export const WindowCoveringsTab = () => {
   return (
@@ -17,7 +19,7 @@ export const WindowCoveringsTab = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="templates" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="templates" className="flex items-center gap-2">
                 <Layers className="h-4 w-4" />
                 Templates
@@ -25,6 +27,14 @@ export const WindowCoveringsTab = () => {
               <TabsTrigger value="headings" className="flex items-center gap-2">
                 <Layers className="h-4 w-4" />
                 Heading Library
+              </TabsTrigger>
+              <TabsTrigger value="options" className="flex items-center gap-2">
+                <Tags className="h-4 w-4" />
+                Option Categories
+              </TabsTrigger>
+              <TabsTrigger value="making-costs" className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Making Costs
               </TabsTrigger>
               <TabsTrigger value="manufacturing" className="flex items-center gap-2">
                 <Wrench className="h-4 w-4" />
@@ -42,6 +52,14 @@ export const WindowCoveringsTab = () => {
 
             <TabsContent value="headings" className="space-y-6">
               <HeadingInventoryManager />
+            </TabsContent>
+
+            <TabsContent value="options" className="space-y-6">
+              <OptionCategoriesManager />
+            </TabsContent>
+
+            <TabsContent value="making-costs" className="space-y-6">
+              <MakingCostsManager />
             </TabsContent>
 
             <TabsContent value="manufacturing" className="space-y-6">

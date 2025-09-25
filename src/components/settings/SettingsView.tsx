@@ -6,7 +6,7 @@ import { PersonalSettingsTab } from "./tabs/PersonalSettingsTab";
 import { BusinessSettingsTab } from "./tabs/BusinessSettingsTab";
 import { BillingTab } from "./tabs/BillingTab";
 import { WindowCoveringsTab } from "./tabs/WindowCoveringsTab";
-import { ProductCatalogTab } from "./tabs/ProductCatalogTab";
+
 import { MeasurementUnitsTab } from "./tabs/MeasurementUnitsTab";
 import { IntegrationsTab } from "./tabs/IntegrationsTab";
 import { UserManagementTab } from "./tabs/UserManagementTab";
@@ -214,7 +214,7 @@ export const SettingsView = () => {
           <TabsContent value="window-coverings" className="animate-fade-in">
             <Card className="hover:shadow-md transition-all duration-300">
               <CardContent className="p-6">
-                <ProductCatalogTab />
+                <WindowCoveringsTab />
               </CardContent>
             </Card>
           </TabsContent>
