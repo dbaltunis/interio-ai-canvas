@@ -8,6 +8,7 @@ import { useDeleteOptionCategory } from "@/hooks/useOptionCategories";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { OptionCategoryForm } from "./option-categories/OptionCategoryForm";
+import { RollerBlindOptionsSeeder } from "./RollerBlindOptionsSeeder";
 
 export const OptionCategoriesManager = () => {
   const { data: optionCategories, isLoading } = useOptionCategories();
@@ -41,6 +42,8 @@ export const OptionCategoriesManager = () => {
 
   return (
     <div className="space-y-6">
+      <RollerBlindOptionsSeeder />
+      
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
