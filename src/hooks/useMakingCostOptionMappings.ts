@@ -1,12 +1,13 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export interface MakingCostOptionMapping {
   id: string;
   making_cost_id: string;
   option_category_id: string;
-  option_type: 'heading' | 'hardware' | 'lining';
+  option_type: 'heading' | 'hardware' | 'lining' | 'operation' | 'material';
   is_included: boolean;
   option_category?: {
     id: string;
@@ -17,31 +18,33 @@ export interface MakingCostOptionMapping {
   updated_at: string;
 }
 
-// Mock data
-const mockMappings: MakingCostOptionMapping[] = [
-  {
-    id: "1",
-    making_cost_id: "1",
-    option_category_id: "1", 
-    option_type: "heading",
-    is_included: true,
-    option_category: {
-      id: "1",
-      name: "Standard Heading",
-      description: "Basic heading option"
-    },
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }
-];
-
 export const useMakingCostOptionMappings = (makingCostId?: string) => {
   return useQuery({
     queryKey: ["making-cost-option-mappings", makingCostId],
     queryFn: async () => {
-      return mockMappings.filter(mapping => 
-        !makingCostId || mapping.making_cost_id === makingCostId
-      );
+      let query = supabase
+        .from('making_cost_option_mappings')
+        .select(`
+          *,
+          option_category:option_categories(
+            id,
+            name,
+            description
+          )
+        `);
+
+      if (makingCostId) {
+        query = query.eq('making_cost_id', makingCostId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching making cost option mappings:', error);
+        throw error;
+      }
+
+      return data || [];
     },
   });
 };
@@ -51,13 +54,18 @@ export const useCreateMakingCostOptionMapping = () => {
 
   return useMutation({
     mutationFn: async (mapping: Omit<MakingCostOptionMapping, "id" | "created_at" | "updated_at">) => {
-      const newMapping = {
-        ...mapping,
-        id: Date.now().toString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      return newMapping;
+      const { data, error } = await supabase
+        .from('making_cost_option_mappings')
+        .insert([mapping])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating making cost option mapping:', error);
+        throw error;
+      }
+
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["making-cost-option-mappings"] });
@@ -71,7 +79,19 @@ export const useUpdateMakingCostOptionMapping = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<MakingCostOptionMapping> & { id: string }) => {
-      return { id, ...updates, updated_at: new Date().toISOString() };
+      const { data, error } = await supabase
+        .from('making_cost_option_mappings')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating making cost option mapping:', error);
+        throw error;
+      }
+
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["making-cost-option-mappings"] });
@@ -85,7 +105,15 @@ export const useDeleteMakingCostOptionMapping = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      return Promise.resolve();
+      const { error } = await supabase
+        .from('making_cost_option_mappings')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting making cost option mapping:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["making-cost-option-mappings"] });

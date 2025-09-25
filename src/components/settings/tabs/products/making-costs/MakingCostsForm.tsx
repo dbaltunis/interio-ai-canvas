@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { useMakingCosts } from "@/hooks/useMakingCosts";
+import { useCreateMakingCost, useUpdateMakingCost } from "@/hooks/useMakingCosts";
 import { useToast } from "@/hooks/use-toast";
 
 interface MakingCostOption {
@@ -25,20 +25,22 @@ interface MakingCostsFormProps {
 }
 
 export const MakingCostsForm = ({ initialData, onSave, onCancel }: MakingCostsFormProps) => {
-  const { createMakingCost, updateMakingCost } = useMakingCosts();
+  const createMakingCost = useCreateMakingCost();
+  const updateMakingCost = useUpdateMakingCost();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     description: initialData?.description || '',
-    pricing_method: initialData?.pricing_method || 'per-linear-meter',
-    measurement_type: initialData?.measurement_type || 'fabric-drop-required',
-    include_fabric_selection: initialData?.include_fabric_selection || true,
-    active: initialData?.active !== undefined ? initialData.active : true,
-    heading_options: initialData?.heading_options || [],
-    hardware_options: initialData?.hardware_options || [],
-    lining_options: initialData?.lining_options || [],
-    drop_ranges: initialData?.drop_ranges || []
+    product_type: initialData?.product_type || '',
+    pricing_method: initialData?.pricing_method || 'per_metre',
+    measurement_type: initialData?.measurement_type || 'standard',
+    base_price: initialData?.base_price || 0,
+    labor_cost: initialData?.labor_cost || 0,
+    waste_factor: initialData?.waste_factor || 5,
+    minimum_charge: initialData?.minimum_charge || 0,
+    options: initialData?.options || {},
+    active: initialData?.active !== undefined ? initialData.active : true
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,10 +59,7 @@ export const MakingCostsForm = ({ initialData, onSave, onCancel }: MakingCostsFo
     setIsSubmitting(true);
     try {
       if (initialData?.id) {
-        await updateMakingCost.mutateAsync({
-          id: initialData.id,
-          updates: formData
-        });
+        await updateMakingCost.mutateAsync({ id: initialData.id, ...formData });
       } else {
         await createMakingCost.mutateAsync(formData);
       }
@@ -146,12 +145,15 @@ export const MakingCostsForm = ({ initialData, onSave, onCancel }: MakingCostsFo
           </div>
 
           <div className="flex items-center space-x-2">
-            <Switch
-              id="include_fabric_selection"
-              checked={formData.include_fabric_selection}
-              onCheckedChange={(checked) => handleInputChange('include_fabric_selection', checked)}
-            />
-            <Label htmlFor="include_fabric_selection">Include Fabric Selection</Label>
+            <div>
+              <Label htmlFor="product_type">Product Type</Label>
+              <Input
+                id="product_type"
+                value={formData.product_type}
+                onChange={(e) => handleInputChange('product_type', e.target.value)}
+                placeholder="e.g., curtains, roman_blinds, roller_blinds"
+              />
+            </div>
           </div>
 
           <div className="flex items-center space-x-2">

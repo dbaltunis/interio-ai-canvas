@@ -33,7 +33,7 @@ interface WindowCoveringFormProps {
 
 export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing }: WindowCoveringFormProps) => {
   const { toast } = useToast();
-  const { makingCosts, isLoading: makingCostsLoading } = useMakingCosts();
+  const { data: makingCosts = [], isLoading: makingCostsLoading } = useMakingCosts();
   
   const [formData, setFormData] = useState({
     name: windowCovering?.name || '',
@@ -199,7 +199,7 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="no-making-cost">No making cost</SelectItem>
-              {makingCosts?.map((cost) => (
+              {makingCosts.map((cost) => (
                 <SelectItem key={cost.id} value={cost.id}>
                   {cost.name}
                 </SelectItem>

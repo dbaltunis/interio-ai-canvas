@@ -1,228 +1,118 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-import { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
-
-// Mock interface for making costs
+// Define the interface for making cost configurations
 export interface MakingCost {
   id: string;
+  user_id: string;
   name: string;
   description?: string;
+  product_type: string;
   pricing_method: string;
   measurement_type: string;
-  include_fabric_selection: boolean;
+  base_price: number;
+  labor_cost: number;
+  waste_factor: number;
+  minimum_charge: number;
+  options: any;
   active: boolean;
-  heading_options: any[];
-  hardware_options: any[];
-  lining_options: any[];
-  drop_ranges: any[];
-  user_id: string;
   created_at: string;
   updated_at: string;
 }
 
-// Mock data store with 7 main product types
-let mockMakingCosts: MakingCost[] = [
-  {
-    id: 'mc-1',
-    name: 'Curtains',
-    description: 'Traditional and modern curtain configurations with heading styles and lining options',
-    pricing_method: 'per-linear-meter',
-    measurement_type: 'fabric-drop-required',
-    include_fabric_selection: true,
-    active: true,
-    heading_options: [],
-    hardware_options: [],
-    lining_options: [],
-    drop_ranges: [],
-    user_id: 'mock-user',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: 'mc-2',
-    name: 'Roman Blinds',
-    description: 'Soft fabric roman blind configurations with manual and motorised options',
-    pricing_method: 'per-sqm',
-    measurement_type: 'width-height-only',
-    include_fabric_selection: true,
-    active: true,
-    heading_options: [],
-    hardware_options: [],
-    lining_options: [],
-    drop_ranges: [],
-    user_id: 'mock-user',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: 'mc-3',
-    name: 'Roller Blinds',
-    description: 'Single and double roller configurations with operation controls',
-    pricing_method: 'per-sqm',
-    measurement_type: 'width-height-only',
-    include_fabric_selection: true,
-    active: true,
-    heading_options: [],
-    hardware_options: [],
-    lining_options: [],
-    drop_ranges: [],
-    user_id: 'mock-user',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: 'mc-4',
-    name: 'Venetian Blinds',
-    description: 'Aluminium and faux wood venetians with material and slat size options',
-    pricing_method: 'per-sqm',
-    measurement_type: 'width-height-only',
-    include_fabric_selection: false,
-    active: true,
-    heading_options: [],
-    hardware_options: [],
-    lining_options: [],
-    drop_ranges: [],
-    user_id: 'mock-user',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: 'mc-5',
-    name: 'Vertical Blinds',
-    description: 'Fabric vertical blind configurations with track and operation options',
-    pricing_method: 'per-sqm',
-    measurement_type: 'width-height-only',
-    include_fabric_selection: true,
-    active: true,
-    heading_options: [],
-    hardware_options: [],
-    lining_options: [],
-    drop_ranges: [],
-    user_id: 'mock-user',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: 'mc-6',
-    name: 'Honeycomb/Cellular',
-    description: 'Pleated honeycomb blind configurations with cell sizes and operation types',
-    pricing_method: 'per-sqm',
-    measurement_type: 'width-height-only',
-    include_fabric_selection: false,
-    active: true,
-    heading_options: [],
-    hardware_options: [],
-    lining_options: [],
-    drop_ranges: [],
-    user_id: 'mock-user',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: 'mc-7',
-    name: 'Shutters',
-    description: 'Timber, PVC and aluminium shutters with material and operation configurations',
-    pricing_method: 'per-sqm',
-    measurement_type: 'custom-measurements',
-    include_fabric_selection: false,
-    active: true,
-    heading_options: [],
-    hardware_options: [],
-    lining_options: [],
-    drop_ranges: [],
-    user_id: 'mock-user',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }
-];
-
 export const useMakingCosts = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+  return useQuery({
+    queryKey: ["making-costs"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('making_costs')
+        .select('*')
+        .eq('active', true)
+        .order('created_at', { ascending: false });
 
-  const fetchMakingCosts = async () => {
-    setIsLoading(true);
-    try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return mockMakingCosts;
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch making costs",
-        variant: "destructive"
-      });
-      return [];
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const createMakingCost = {
-    mutateAsync: async (data: Omit<MakingCost, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-      const newMakingCost: MakingCost = {
-        ...data,
-        id: `mc-${Date.now()}`,
-        user_id: 'mock-user',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      mockMakingCosts.push(newMakingCost);
-      
-      toast({
-        title: "Success",
-        description: "Making cost configuration created successfully"
-      });
-      
-      return newMakingCost;
-    },
-    isPending: isLoading
-  };
-
-  const updateMakingCost = {
-    mutateAsync: async ({ id, updates }: { id: string; updates: Partial<MakingCost> }) => {
-      const index = mockMakingCosts.findIndex(mc => mc.id === id);
-      if (index === -1) {
-        throw new Error('Making cost not found');
+      if (error) {
+        console.error('Error fetching making costs:', error);
+        throw error;
       }
 
-      mockMakingCosts[index] = {
-        ...mockMakingCosts[index],
-        ...updates,
-        updated_at: new Date().toISOString()
-      };
-
-      toast({
-        title: "Success",
-        description: "Making cost configuration updated successfully"
-      });
-
-      return mockMakingCosts[index];
+      return data || [];
     },
-    isPending: isLoading
-  };
+  });
+};
 
-  const deleteMakingCost = {
-    mutateAsync: async (id: string) => {
-      const index = mockMakingCosts.findIndex(mc => mc.id === id);
-      if (index !== -1) {
-        mockMakingCosts.splice(index, 1);
-        toast({
-          title: "Success",
-          description: "Making cost configuration deleted successfully"
-        });
+export const useCreateMakingCost = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (makingCost: Omit<MakingCost, "id" | "user_id" | "created_at" | "updated_at">) => {
+      const { data, error } = await supabase
+        .from('making_costs')
+        .insert([{
+          ...makingCost,
+          user_id: (await supabase.auth.getUser()).data.user?.id
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating making cost:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["making-costs"] });
+      toast.success("Making cost created successfully");
+    },
+  });
+};
+
+export const useUpdateMakingCost = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<MakingCost> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('making_costs')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating making cost:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["making-costs"] });
+      toast.success("Making cost updated successfully");
+    },
+  });
+};
+
+export const useDeleteMakingCost = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('making_costs')
+        .update({ active: false })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting making cost:', error);
+        throw error;
       }
     },
-    isPending: isLoading
-  };
-
-  return {
-    makingCosts: mockMakingCosts,
-    isLoading,
-    fetchMakingCosts,
-    createMakingCost,
-    updateMakingCost,
-    deleteMakingCost
-  };
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["making-costs"] });
+      toast.success("Making cost deleted successfully");
+    },
+  });
 };

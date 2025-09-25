@@ -5,13 +5,14 @@ import { Plus, Settings, Edit, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { MakingCostsForm } from "./making-costs/MakingCostsForm";
 import { MakingCostOptionMappingManager } from "./making-costs/MakingCostOptionMappingManager";
-import { useMakingCosts } from "@/hooks/useMakingCosts";
+import { useMakingCosts, useDeleteMakingCost } from "@/hooks/useMakingCosts";
 
 export const MakingCostsManager = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [editingCost, setEditingCost] = useState<any>(null);
   const [managingOptionsId, setManagingOptionsId] = useState<string | null>(null);
-  const { makingCosts, isLoading, deleteMakingCost } = useMakingCosts();
+  const { data: makingCosts = [], isLoading } = useMakingCosts();
+  const deleteMakingCost = useDeleteMakingCost();
 
   const handleEdit = (cost: any) => {
     setEditingCost(cost);
@@ -121,14 +122,14 @@ export const MakingCostsManager = () => {
                     </div>
                     <div>
                       <CardTitle className="text-lg">{cost.name}</CardTitle>
-                      <CardDescription>
-                        {cost.pricing_method} • {cost.heading_options?.length || 0} heading options
+                       <CardDescription>
+                        {cost.pricing_method} • {cost.product_type}
                       </CardDescription>
                     </div>
                   </div>
                    <div className="flex items-center gap-2">
-                     <Badge variant={cost.include_fabric_selection ? "default" : "secondary"}>
-                       {cost.include_fabric_selection ? "With Fabric" : "No Fabric"}
+                     <Badge variant={cost.active ? "default" : "secondary"}>
+                       {cost.active ? "Active" : "Inactive"}
                      </Badge>
                      <Button
                        variant="ghost"
@@ -166,34 +167,28 @@ export const MakingCostsManager = () => {
                     <p className="text-sm font-medium text-gray-600">Measurement</p>
                     <p className="text-sm">{cost.measurement_type}</p>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Heading Options</p>
-                    <p className="text-sm">{cost.heading_options?.length || 0} configured</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Hardware Options</p>
-                    <p className="text-sm">{cost.hardware_options?.length || 0} configured</p>
-                  </div>
+                   <div>
+                     <p className="text-sm font-medium text-gray-600">Base Price</p>
+                     <p className="text-sm">£{cost.base_price}</p>
+                   </div>
+                   <div>
+                     <p className="text-sm font-medium text-gray-600">Labor Cost</p>
+                     <p className="text-sm">£{cost.labor_cost}</p>
+                   </div>
                 </div>
                 
-                {/* Preview of heading options */}
-                {cost.heading_options && cost.heading_options.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-sm font-medium text-gray-600 mb-2">Heading Options:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {cost.heading_options.slice(0, 3).map((option: any, index: number) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {option.name} ({option.fullness}x)
-                        </Badge>
-                      ))}
-                      {cost.heading_options.length > 3 && (
-                        <Badge variant="secondary" className="text-xs">
-                          +{cost.heading_options.length - 3} more
-                        </Badge>
-                      )}
-                    </div>
+                {/* Additional details */}
+                <div className="mt-4">
+                  <p className="text-sm font-medium text-gray-600 mb-2">Configuration:</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline" className="text-xs">
+                      Waste: {cost.waste_factor}%
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      Min Charge: £{cost.minimum_charge}
+                    </Badge>
                   </div>
-                )}
+                </div>
               </CardContent>
             </Card>
           ))

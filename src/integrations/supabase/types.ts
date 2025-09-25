@@ -2586,6 +2586,105 @@ export type Database = {
         }
         Relationships: []
       }
+      making_cost_option_mappings: {
+        Row: {
+          created_at: string
+          id: string
+          is_included: boolean | null
+          making_cost_id: string
+          option_category_id: string
+          option_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_included?: boolean | null
+          making_cost_id: string
+          option_category_id: string
+          option_type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_included?: boolean | null
+          making_cost_id?: string
+          option_category_id?: string
+          option_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "making_cost_option_mappings_making_cost_id_fkey"
+            columns: ["making_cost_id"]
+            isOneToOne: false
+            referencedRelation: "making_costs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "making_cost_option_mappings_option_category_id_fkey"
+            columns: ["option_category_id"]
+            isOneToOne: false
+            referencedRelation: "option_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      making_costs: {
+        Row: {
+          active: boolean | null
+          base_price: number | null
+          created_at: string
+          description: string | null
+          id: string
+          labor_cost: number | null
+          measurement_type: string | null
+          minimum_charge: number | null
+          name: string
+          options: Json | null
+          pricing_method: string | null
+          product_type: string
+          updated_at: string
+          user_id: string
+          waste_factor: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          base_price?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          labor_cost?: number | null
+          measurement_type?: string | null
+          minimum_charge?: number | null
+          name: string
+          options?: Json | null
+          pricing_method?: string | null
+          product_type: string
+          updated_at?: string
+          user_id: string
+          waste_factor?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          base_price?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          labor_cost?: number | null
+          measurement_type?: string | null
+          minimum_charge?: number | null
+          name?: string
+          options?: Json | null
+          pricing_method?: string | null
+          product_type?: string
+          updated_at?: string
+          user_id?: string
+          waste_factor?: number | null
+        }
+        Relationships: []
+      }
       measurement_fields: {
         Row: {
           created_at: string | null
@@ -2810,6 +2909,243 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      option_categories: {
+        Row: {
+          active: boolean | null
+          affects_fabric_calculation: boolean | null
+          affects_labor_calculation: boolean | null
+          calculation_method: string | null
+          category_type: string
+          created_at: string
+          description: string | null
+          fullness_ratio: number | null
+          has_fullness_ratio: boolean | null
+          id: string
+          image_url: string | null
+          is_required: boolean | null
+          name: string
+          sort_order: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          affects_fabric_calculation?: boolean | null
+          affects_labor_calculation?: boolean | null
+          calculation_method?: string | null
+          category_type?: string
+          created_at?: string
+          description?: string | null
+          fullness_ratio?: number | null
+          has_fullness_ratio?: boolean | null
+          id?: string
+          image_url?: string | null
+          is_required?: boolean | null
+          name: string
+          sort_order?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          affects_fabric_calculation?: boolean | null
+          affects_labor_calculation?: boolean | null
+          calculation_method?: string | null
+          category_type?: string
+          created_at?: string
+          description?: string | null
+          fullness_ratio?: number | null
+          has_fullness_ratio?: boolean | null
+          id?: string
+          image_url?: string | null
+          is_required?: boolean | null
+          name?: string
+          sort_order?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      option_extras: {
+        Row: {
+          active: boolean | null
+          base_price: number | null
+          calculation_method: string | null
+          created_at: string
+          description: string | null
+          fullness_ratio: number | null
+          id: string
+          image_url: string | null
+          is_default: boolean | null
+          is_required: boolean | null
+          name: string
+          pricing_method: string
+          sort_order: number | null
+          sub_subcategory_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          base_price?: number | null
+          calculation_method?: string | null
+          created_at?: string
+          description?: string | null
+          fullness_ratio?: number | null
+          id?: string
+          image_url?: string | null
+          is_default?: boolean | null
+          is_required?: boolean | null
+          name: string
+          pricing_method?: string
+          sort_order?: number | null
+          sub_subcategory_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          base_price?: number | null
+          calculation_method?: string | null
+          created_at?: string
+          description?: string | null
+          fullness_ratio?: number | null
+          id?: string
+          image_url?: string | null
+          is_default?: boolean | null
+          is_required?: boolean | null
+          name?: string
+          pricing_method?: string
+          sort_order?: number | null
+          sub_subcategory_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "option_extras_sub_subcategory_id_fkey"
+            columns: ["sub_subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "option_sub_subcategories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      option_sub_subcategories: {
+        Row: {
+          active: boolean | null
+          base_price: number | null
+          calculation_method: string | null
+          created_at: string
+          description: string | null
+          extra_fabric_percentage: number | null
+          fullness_ratio: number | null
+          id: string
+          image_url: string | null
+          name: string
+          pricing_method: string
+          sort_order: number | null
+          subcategory_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          base_price?: number | null
+          calculation_method?: string | null
+          created_at?: string
+          description?: string | null
+          extra_fabric_percentage?: number | null
+          fullness_ratio?: number | null
+          id?: string
+          image_url?: string | null
+          name: string
+          pricing_method?: string
+          sort_order?: number | null
+          subcategory_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          base_price?: number | null
+          calculation_method?: string | null
+          created_at?: string
+          description?: string | null
+          extra_fabric_percentage?: number | null
+          fullness_ratio?: number | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          pricing_method?: string
+          sort_order?: number | null
+          subcategory_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "option_sub_subcategories_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "option_subcategories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      option_subcategories: {
+        Row: {
+          active: boolean | null
+          base_price: number | null
+          calculation_method: string | null
+          category_id: string
+          created_at: string
+          description: string | null
+          extra_fabric_percentage: number | null
+          fullness_ratio: number | null
+          id: string
+          image_url: string | null
+          name: string
+          pricing_method: string
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          base_price?: number | null
+          calculation_method?: string | null
+          category_id: string
+          created_at?: string
+          description?: string | null
+          extra_fabric_percentage?: number | null
+          fullness_ratio?: number | null
+          id?: string
+          image_url?: string | null
+          name: string
+          pricing_method?: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          base_price?: number | null
+          calculation_method?: string | null
+          category_id?: string
+          created_at?: string
+          description?: string | null
+          extra_fabric_percentage?: number | null
+          fullness_ratio?: number | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          pricing_method?: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "option_subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "option_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       orgs: {
         Row: {
