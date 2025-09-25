@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-// import { WindowCoveringsManagement } from "./products/WindowCoveringsManagement";
+import { WindowCoveringsManagement } from "./products/WindowCoveringsManagement";
 import { MakingCostsManager } from "./products/MakingCostsManager";
 import { ComprehensiveCalculator } from "@/components/calculator/ComprehensiveCalculator";
 
@@ -25,9 +25,7 @@ export const ProductCatalogTab = () => {
         </TabsContent>
         
         <TabsContent value="window-coverings">
-          <div className="p-4 text-center text-muted-foreground">
-            Window coverings management coming soon...
-          </div>
+          <WindowCoveringsManagement />
         </TabsContent>
 
         <TabsContent value="calculator">
