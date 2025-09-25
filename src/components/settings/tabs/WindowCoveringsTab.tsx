@@ -14,7 +14,8 @@ export const WindowCoveringsTab = () => {
         <CardHeader>
           <CardTitle>Window Coverings Management</CardTitle>
           <CardDescription>
-            Comprehensive management system for curtain templates, pricing, and manufacturing configurations
+            Comprehensive management system for window covering templates, pricing, and manufacturing configurations. 
+            Create templates for curtains, blinds, shutters, and more with integrated option categories.
           </CardDescription>
         </CardHeader>
         <CardContent>

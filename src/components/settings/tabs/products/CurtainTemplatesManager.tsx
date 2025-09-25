@@ -30,9 +30,9 @@ export const CurtainTemplatesManager = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Curtain Templates</h3>
+          <h3 className="text-lg font-semibold">Window Covering Templates</h3>
           <p className="text-sm text-muted-foreground">
-            Create and manage your curtain templates with predefined measurements and configurations
+            Create and manage templates for curtains, blinds, shutters and other window coverings with predefined measurements and configurations
           </p>
         </div>
         <Button 
@@ -41,7 +41,7 @@ export const CurtainTemplatesManager = () => {
           type="button"
         >
           <Plus className="h-4 w-4" />
-          Add Curtain Template
+          Add Template
         </Button>
       </div>
 
@@ -51,12 +51,12 @@ export const CurtainTemplatesManager = () => {
         <SheetContent className="w-full sm:max-w-6xl">
           <SheetHeader>
             <SheetTitle>
-              {editingTemplate ? "Edit Curtain Template" : "Add Curtain Template"}
+              {editingTemplate ? "Edit Window Covering Template" : "Add Window Covering Template"}
             </SheetTitle>
             <SheetDescription>
               {editingTemplate 
-                ? "Update the curtain template configuration"
-                : "Create a new curtain template with measurements and options"
+                ? "Update the window covering template configuration"
+                : "Create a new template for curtains, blinds, shutters or other window coverings"
               }
             </SheetDescription>
           </SheetHeader>
