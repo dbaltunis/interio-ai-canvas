@@ -196,11 +196,11 @@ export const VisualMeasurementSheet = ({
     return value && value !== "" && value !== "0" && parseFloat(value) > 0;
   };
 
-  // Helper function to display measurement values
+  // Helper function to display measurement values using proper unit formatting
+  const { getLengthUnitLabel } = useMeasurementUnits();
   const displayValue = (value: any) => {
     if (!hasValue(value)) return "";
-    const unitSymbol = units.length === 'cm' ? 'cm' : '"';
-    return `${value}${unitSymbol}`;
+    return `${value} ${getLengthUnitLabel()}`;
   };
 
   // Calculate curtain bottom position based on pooling
@@ -222,338 +222,83 @@ export const VisualMeasurementSheet = ({
       </div>
       <div className="p-6">
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Visual Diagram - Always visible on large screens */}
-          <div className="lg:w-1/2 lg:flex-shrink-0 lg:sticky lg:top-4 lg:h-fit lg:max-h-[calc(100vh-120px)] lg:overflow-visible">
-            <div className="relative container-level-2 rounded-lg p-8 min-h-[400px] overflow-visible">
-              {/* Ceiling Line */}
-              <div className="absolute top-4 left-8 right-8 border-t-4 border-card-foreground">
-                <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-base font-bold text-card-foreground">
-                  Ceiling Line
-                </span>
-              </div>
-
-              {/* Hardware - Track/Rod that follows window shape */}
-              {windowType === 'bay' ? (
-                // Bay Window Hardware - Three angled sections
-                <>
-                  {/* Left Angled Hardware */}
-                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-12 w-20 transform -skew-y-12 origin-bottom`}>
-                    {hardwareType === "track" ? (
-                      <div className="w-full h-3 bg-muted-foreground relative">
-                        <div className="absolute -left-1 -top-0.5 w-2 h-4 bg-foreground"></div>
-                      </div>
-                    ) : (
-                      <div className="w-full h-2 bg-muted-foreground rounded-full relative">
-                        <div className="absolute -left-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Center Hardware - Extended to connect seamlessly */}
-                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-30 right-30 flex items-center`}>
-                    {hardwareType === "track" ? (
-                      <div className="w-full h-3 bg-muted-foreground relative">
-                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
-                          Bay Curtain Track
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="w-full h-2 bg-muted-foreground rounded-full relative">
-                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
-                          Bay Curtain Rod
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Right Angled Hardware */}
-                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} right-12 w-20 transform skew-y-12 origin-bottom`}>
-                    {hardwareType === "track" ? (
-                      <div className="w-full h-3 bg-muted-foreground relative">
-                        <div className="absolute -right-1 -top-0.5 w-2 h-4 bg-foreground"></div>
-                      </div>
-                    ) : (
-                      <div className="w-full h-2 bg-muted-foreground rounded-full relative">
-                        <div className="absolute -right-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
-                      </div>
-                    )}
-                  </div>
-                </>
-              ) : (
-                // Standard Hardware - Original design
-                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-12 right-12 flex items-center`}>
-                  {hardwareType === "track" ? (
-                    <div className="w-full h-3 bg-muted-foreground relative">
-                      <div className="absolute -left-1 -top-0.5 w-2 h-4 bg-foreground"></div>
-                      <div className="absolute -right-1 -top-0.5 w-2 h-4 bg-foreground"></div>
-                      <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
-                        Curtain Track
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="w-full h-2 bg-muted-foreground rounded-full relative">
-                      <div className="absolute -left-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
-                      <div className="absolute -right-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
-                      <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
-                        Curtain Rod
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Dynamic Window Frame - Changes shape based on selected window type */}
-              {windowType === 'bay' ? (
-                // Bay Window - Three angled sections
-                <>
-                  {/* Left Angled Window */}
-                  <div className="absolute top-24 left-12 w-20 bottom-16 transform -skew-y-12 origin-bottom">
-                    <div className="w-full h-full border-4 border-muted-foreground bg-background relative">
-                      <div className="grid grid-cols-1 grid-rows-3 h-full gap-1 p-2">
-                        {Array.from({ length: 3 }).map((_, i) => (
-                          <div key={i} className="bg-muted border border-border"></div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Center Window - Aligned with skewed side windows */}
-                  <div className="absolute top-20 left-32 right-32 bottom-20">
-                    <div className="w-full h-full border-4 border-muted-foreground bg-background relative">
-                      <div className="grid grid-cols-2 grid-rows-3 h-full gap-1 p-2">
-                        {Array.from({ length: 6 }).map((_, i) => (
-                          <div key={i} className="bg-muted border border-border"></div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Right Angled Window */}
-                  <div className="absolute top-24 right-12 w-20 bottom-16 transform skew-y-12 origin-bottom">
-                    <div className="w-full h-full border-4 border-muted-foreground bg-background relative">
-                      <div className="grid grid-cols-1 grid-rows-3 h-full gap-1 p-2">
-                        {Array.from({ length: 3 }).map((_, i) => (
-                          <div key={i} className="bg-muted border border-border"></div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                // Standard Window - Original design
-                <div className="absolute top-24 left-16 right-16 bottom-16">
-                  <div className="w-full h-full border-4 border-muted-foreground bg-background relative">
-                    {/* Window Panes */}
-                    <div className="grid grid-cols-2 grid-rows-3 h-full gap-1 p-2">
-                      {Array.from({ length: 6 }).map((_, i) => (
-                        <div key={i} className="bg-muted border border-border"></div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Curtain Panels - Dynamic based on curtain type, hardware type, and pooling */}
-              {curtainType === "pair" ? (
-                <>
-                  {/* Left Panel */}
-                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-14 w-8 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
-                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
-                    <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
-                    <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
-                    <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-primary/50"></div>
-                    <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
-                    <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
-                    <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
-                    
-                    {/* Pooling visual effect */}
-                    {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                      <div className="absolute -bottom-4 left-0 w-full h-4 bg-primary/60 rounded-b-lg"></div>
-                    )}
-                  </div>
-                  
-                  {/* Right Panel */}
-                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} right-14 w-8 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
-                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
-                    <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
-                    <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
-                    <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-primary/50"></div>
-                    <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
-                    <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
-                    <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
-                    
-                    {/* Pooling visual effect */}
-                    {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                      <div className="absolute -bottom-4 left-0 w-full h-4 bg-primary/60 rounded-b-lg"></div>
-                    )}
-                  </div>
-                </>
-              ) : (
-                /* Single Panel */
-                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} ${curtainSide === "left" ? "left-14" : "right-14"} w-12 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
-                  <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
-                  <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
-                  <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
-                  <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-primary/50"></div>
-                  <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
-                  <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
-                  <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
-                  <div className="absolute top-2 bottom-2 left-7 w-0.5 bg-primary/15"></div>
-                  <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-primary/10"></div>
-                  
-                  {/* Pooling visual effect */}
-                  {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                    <div className="absolute -bottom-4 left-0 w-full h-4 bg-primary/60 rounded-b-lg"></div>
-                  )}
-                </div>
-              )}
-
-              {/* Rail Width measurement - positioned near the hardware */}
-              {hasValue(measurements.rail_width) && (
-                <div className={`absolute ${hardwareType === "track" ? "-top-4" : "top-8"} left-12 right-12 flex items-center z-10`}>
-                  <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-blue-600"></div>
-                  <div className="flex-1 border-t-2 border-blue-600 relative">
-                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold shadow-lg z-20 whitespace-nowrap">
-                      Rail Width: {displayValue(measurements.rail_width)}
-                    </span>
-                  </div>
-                  <div className="w-0 h-0 border-t-2 border-b-2 border-l-4 border-transparent border-l-blue-600"></div>
-                </div>
-              )}
-              
-              {/* Rail Width placeholder when empty */}
-              {!hasValue(measurements.rail_width) && (
-                <div className={`absolute ${hardwareType === "track" ? "-top-4" : "top-8"} left-12 right-12 flex items-center opacity-50 z-10`}>
-                  <div className="flex-1 border-t-2 border-dashed border-muted-foreground relative">
-                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-medium z-20 whitespace-nowrap">
-                      Enter Rail Width →
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Window Width Measurement (A) */}
-              {hasValue(measurements.measurement_a) && (
-                <div className="absolute top-16 left-16 right-16 flex items-center z-15">
-                  <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-green-600"></div>
-                  <div className="flex-1 border-t-2 border-green-600 relative">
-                    <span className="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs font-bold shadow-lg z-30 whitespace-nowrap">
-                      A: {displayValue(measurements.measurement_a)}
-                    </span>
-                  </div>
-                  <div className="w-0 h-0 border-t-2 border-b-2 border-l-4 border-transparent border-l-green-600"></div>
-                </div>
-              )}
-
-              {/* Curtain Drop measurement - from hardware to bottom of curtain */}
-              {hasValue(measurements.drop) && (
-                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-2 flex flex-col items-center z-15`}>
-                  <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-primary"></div>
-                  <div className={`${hardwareType === "track" ? "h-72" : "h-64"} border-l-2 border-primary relative`}>
-                    <span className="absolute -left-20 top-1/2 transform -translate-y-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold whitespace-nowrap shadow-lg z-30">
-                      Drop: {displayValue(measurements.drop)}
-                    </span>
-                  </div>
-                  <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-primary"></div>
-                </div>
-              )}
-              
-              {/* Drop placeholder when empty */}
-              {!hasValue(measurements.drop) && (
-                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-2 flex flex-col items-center opacity-50 z-15`}>
-                  <div className={`${hardwareType === "track" ? "h-72" : "h-64"} border-l-2 border-dashed border-muted-foreground relative`}>
-                    <span className="absolute -left-20 top-1/2 transform -translate-y-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-medium whitespace-nowrap z-30">
-                      Enter Drop Height ↓
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Window Height Measurement (B) */}
-              {hasValue(measurements.measurement_b) && (
-                <div className="absolute top-24 left-6 bottom-16 flex flex-col items-center z-15">
-                  <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-orange-600"></div>
-                  <div className="flex-1 border-l-2 border-orange-600 relative">
-                    <span className="absolute -left-16 top-1/2 transform -translate-y-1/2 bg-orange-600 text-white px-2 py-1 rounded text-xs font-bold whitespace-nowrap shadow-lg z-30">
-                      B: {displayValue(measurements.measurement_b)}
-                    </span>
-                  </div>
-                  <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-orange-600"></div>
-                </div>
-              )}
-
-              {/* Rod to Ceiling measurement (C) - only for rod, not track */}
-              {hasValue(measurements.measurement_c) && hardwareType === "rod" && (
-                <div className="absolute top-4 right-4 flex flex-col items-center">
-                  <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-red-600"></div>
-                  <div className="h-12 border-l-2 border-primary relative">
-                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
-                      C: {displayValue(measurements.measurement_c)}
-                    </span>
-                  </div>
-                  <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-red-600"></div>
-                </div>
-              )}
-
-              {/* Floor Line */}
-              <div className="absolute bottom-4 left-8 right-8 border-t-2 border-foreground">
-                <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-sm font-semibold">
-                  Floor
-                </span>
-              </div>
-
-              {/* Pooling measurement indicator */}
-              {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                <div className="absolute bottom-0 left-6 flex flex-col items-center">
-                  <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-amber-600"></div>
-                  <div className="h-4 border-l-2 border-amber-600 relative">
-                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-amber-600 text-white px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
-                      Pooling: {displayValue(poolingAmount)}
-                    </span>
-                  </div>
-                  <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-amber-600"></div>
-                </div>
-              )}
-
-              {/* Window to Floor measurement (D) */}
-              {hasValue(measurements.measurement_d) && (
-                <div className="absolute bottom-4 right-8 flex flex-col items-center">
-                  <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-indigo-600"></div>
-                  <div className="h-12 border-l-2 border-indigo-600 relative">
-                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
-                      D: {displayValue(measurements.measurement_d)}
-                    </span>
-                  </div>
-                  <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-indigo-600"></div>
-                </div>
-              )}
-
-              {/* Total Height measurement (E) - from hardware to floor */}
-              {hasValue(measurements.measurement_e) && (
-                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} right-0 bottom-4 flex flex-col items-center`}>
-                  <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-secondary"></div>
-                  <div className="flex-1 border-l-2 border-secondary relative">
-                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
-                      E: {displayValue(measurements.measurement_e)}
-                    </span>
-                  </div>
-                  <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-secondary"></div>
-                </div>
-              )}
-
-              {/* Total Width measurement (F) - from extension to extension */}
-              {hasValue(measurements.measurement_f) && (
-                <div className="absolute bottom-0 left-4 right-4 flex items-center">
-                  <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-teal-600"></div>
-                  <div className="flex-1 border-t-2 border-teal-600 relative">
-                    <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-teal-600 text-white px-2 py-1 rounded text-xs font-bold">
-                      F: {displayValue(measurements.measurement_f)}
-                    </span>
-                  </div>
-                  <div className="w-0 h-0 border-t-2 border-b-2 border-l-4 border-transparent border-l-teal-600"></div>
-                </div>
-              )}
-            </div>
+           {/* Visual Preview - Using same engine as preview section */}
+           <div className="lg:w-1/2 lg:flex-shrink-0 lg:sticky lg:top-4 lg:h-fit lg:max-h-[calc(100vh-120px)] lg:overflow-visible">
+             <div className="relative container-level-2 rounded-lg overflow-hidden min-h-[400px]">
+               {/* Treatment Preview with measurement overlays */}
+               <div className="relative">
+                 <TreatmentPreviewEngine
+                   windowType={windowType}
+                   treatmentType="Curtains"
+                   measurements={measurements}
+                   template={selectedTemplate}
+                   className="w-full h-[400px]"
+                 />
+                 
+                 {/* Measurement overlays on top of the preview */}
+                 <div className="absolute inset-0 pointer-events-none">
+                   {/* Rail Width measurement overlay */}
+                   {hasValue(measurements.rail_width) && (
+                     <div className="absolute top-4 left-8 right-8 flex items-center z-20">
+                       <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-blue-600"></div>
+                       <div className="flex-1 border-t-2 border-blue-600 relative">
+                         <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold shadow-lg whitespace-nowrap">
+                           Rail Width: {displayValue(measurements.rail_width)}
+                         </span>
+                       </div>
+                       <div className="w-0 h-0 border-t-2 border-b-2 border-l-4 border-transparent border-l-blue-600"></div>
+                     </div>
+                   )}
+                   
+                   {/* Drop measurement overlay */}
+                   {hasValue(measurements.drop) && (
+                     <div className="absolute top-16 left-4 bottom-8 flex flex-col items-center z-20">
+                       <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-primary"></div>
+                       <div className="flex-1 border-l-2 border-primary relative">
+                         <span className="absolute -left-20 top-1/2 transform -translate-y-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold whitespace-nowrap shadow-lg">
+                           Drop: {displayValue(measurements.drop)}
+                         </span>
+                       </div>
+                       <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-primary"></div>
+                     </div>
+                   )}
+                   
+                   {/* Pooling measurement overlay */}
+                   {poolingOption === "below_floor" && hasValue(poolingAmount) && (
+                     <div className="absolute bottom-4 left-8 flex flex-col items-center z-20">
+                       <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-amber-600"></div>
+                       <div className="h-4 border-l-2 border-amber-600 relative">
+                         <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-amber-600 text-white px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
+                           Pooling: {displayValue(poolingAmount)}
+                         </span>
+                       </div>
+                       <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-amber-600"></div>
+                     </div>
+                   )}
+                   
+                   {/* Placeholder overlays when measurements are empty */}
+                   {!hasValue(measurements.rail_width) && (
+                     <div className="absolute top-4 left-8 right-8 flex items-center opacity-50 z-20">
+                       <div className="flex-1 border-t-2 border-dashed border-muted-foreground relative">
+                         <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-medium whitespace-nowrap">
+                           Enter Rail Width →
+                         </span>
+                       </div>
+                     </div>
+                   )}
+                   
+                   {!hasValue(measurements.drop) && (
+                     <div className="absolute top-16 left-4 bottom-8 flex flex-col items-center opacity-50 z-20">
+                       <div className="flex-1 border-l-2 border-dashed border-muted-foreground relative">
+                         <span className="absolute -left-20 top-1/2 transform -translate-y-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-medium whitespace-nowrap">
+                           Enter Drop Height ↓
+                         </span>
+                       </div>
+                     </div>
+                   )}
+                 </div>
+               </div>
+             </div>
 
             {/* Measurement Guide - More User-Friendly */}
             <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
@@ -900,9 +645,9 @@ export const VisualMeasurementSheet = ({
                        readOnly={readOnly}
                        className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground"
                      />
-                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-sm bg-muted px-2 py-1 rounded">
-                       {units.length}
-                    </span>
+                     <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-sm bg-muted px-2 py-1 rounded">
+                        {getLengthUnitLabel()}
+                     </span>
                   </div>
                   <p className="text-sm text-card-foreground font-medium">Total {hardwareType === "track" ? "track" : "rail"} length</p>
                 </div>
@@ -932,9 +677,9 @@ export const VisualMeasurementSheet = ({
                        readOnly={readOnly}
                        className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground"
                      />
-                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-sm bg-muted px-2 py-1 rounded">
-                      {units.length}
-                    </span>
+                     <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-sm bg-muted px-2 py-1 rounded">
+                       {getLengthUnitLabel()}
+                     </span>
                   </div>
                   <p className="text-sm text-card-foreground font-medium">Length to curtain bottom</p>
                 </div>
