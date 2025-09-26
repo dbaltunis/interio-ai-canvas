@@ -302,6 +302,14 @@ export const DynamicWindowWorksheet = forwardRef<
           // Calculate heading cost if selected
           let headingCost = 0;
           let headingName = 'Standard';
+          
+          console.log("🎯 AutoSave heading calculation:", {
+            selectedHeading,
+            headingOptionsFromSettings: headingOptionsFromSettings.length,
+            headingInventory: headingInventory?.length,
+            railWidth: measurements.rail_width
+          });
+          
           if (selectedHeading && selectedHeading !== 'standard' && selectedTemplate && fabricCalculation) {
             const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
             const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
@@ -309,20 +317,32 @@ export const DynamicWindowWorksheet = forwardRef<
             
             // Add additional heading costs from settings/inventory
             const headingOptionFromSettings = headingOptionsFromSettings.find(h => h.id === selectedHeading);
+            console.log("🎯 Found heading in settings:", headingOptionFromSettings);
+            
             if (headingOptionFromSettings) {
               const width = parseFloat(measurements.rail_width) || 0;
-              headingCost += headingOptionFromSettings.price * width / 100; // Convert cm to m
+              const additionalCost = headingOptionFromSettings.price * width / 100; // Convert cm to m
+              headingCost += additionalCost;
               headingName = headingOptionFromSettings.name;
+              console.log("🎯 Settings heading cost:", additionalCost, "name:", headingName);
             } else {
               const headingItem = headingInventory?.find(item => item.id === selectedHeading);
+              console.log("🎯 Found heading in inventory:", headingItem);
+              
               if (headingItem) {
                 const width = parseFloat(measurements.rail_width) || 0;
-                headingCost += (headingItem.price_per_meter || headingItem.unit_price || 0) * width / 100;
+                const additionalCost = (headingItem.price_per_meter || headingItem.unit_price || 0) * width / 100;
+                headingCost += additionalCost;
                 headingName = headingItem.name;
+                console.log("🎯 Inventory heading cost:", additionalCost, "name:", headingName);
               } else {
-                headingName = selectedHeading; // Fallback to ID if not found
+                // Use getHeadingName helper as fallback
+                headingName = getHeadingName(selectedHeading);
+                console.log("🎯 Fallback heading name:", headingName);
               }
             }
+            
+            console.log("🎯 Final heading calculation:", { headingCost, headingName, selectedHeading });
           }
           
           // Calculate manufacturing cost
@@ -361,9 +381,12 @@ export const DynamicWindowWorksheet = forwardRef<
             }
           }
 
-          // Use existing calculated heading cost and add proper details storage
-          const finalHeadingCost = headingCost; // Already calculated above
+          // Create proper heading details with correct name and cost
+          const finalHeadingCost = headingCost;
           let headingDetails = {};
+          
+          console.log("🎯 Creating heading details:", { selectedHeading, headingName, finalHeadingCost });
+          
           if (selectedHeading && selectedHeading !== 'standard') {
             headingDetails = {
               heading_name: headingName,
@@ -377,6 +400,8 @@ export const DynamicWindowWorksheet = forwardRef<
               cost: 0
             };
           }
+          
+          console.log("🎯 Final heading details for save:", headingDetails);
 
           // Recalculate total cost with proper lining and heading costs
           const finalTotalCost = fabricCost + finalLiningCost + finalHeadingCost + manufacturingCost;
