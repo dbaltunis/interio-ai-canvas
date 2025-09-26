@@ -394,8 +394,27 @@ export const CostCalculationSummary = ({
   let finalLinearMeters = fabricUsage.linearMeters;
   
   if (fabricCalculation) {
-    console.log('Using enhanced fabric calculation from VisualMeasurementSheet:', fabricCalculation);
-    finalFabricCost = fabricCalculation.totalCost || effectiveFabricCost;
+    console.log('🎯 FABRIC COST DEBUG - CostCalculationSummary:', {
+      fabricCalculationTotalCost: fabricCalculation.totalCost,
+      fabricCalculationLinearMeters: fabricCalculation.linearMeters,
+      effectiveFabricCost,
+      fabricUsageLinearMeters: fabricUsage.linearMeters,
+      fabricPriceDisplay,
+      calculatedCost: fabricUsage.linearMeters * fabricPriceDisplay
+    });
+    
+    // IMPORTANT: Only use fabricCalculation.totalCost if it seems reasonable
+    // If fabricCalculation.totalCost seems too high, recalculate it
+    const expectedCost = fabricUsage.linearMeters * fabricPriceDisplay;
+    const costRatio = fabricCalculation.totalCost / expectedCost;
+    
+    if (costRatio > 2) {
+      console.log('🚨 FABRIC COST WARNING: fabricCalculation.totalCost seems too high, using recalculated cost');
+      finalFabricCost = expectedCost;
+    } else {
+      finalFabricCost = fabricCalculation.totalCost || effectiveFabricCost;
+    }
+    
     finalLinearMeters = fabricCalculation.linearMeters || fabricUsage.linearMeters;
   }
 

@@ -178,14 +178,18 @@ export const DynamicWindowWorksheet = forwardRef<
       }
       
       // Set fabric calculation if available
-      if (existingWindowSummary.linear_meters && existingWindowSummary.total_cost) {
+      if (existingWindowSummary.linear_meters && existingWindowSummary.fabric_cost) {
         setFabricCalculation({
           linearMeters: existingWindowSummary.linear_meters,
-          totalCost: existingWindowSummary.total_cost,
+          totalCost: existingWindowSummary.fabric_cost, // Use fabric_cost, not total_cost!
           pricePerMeter: existingWindowSummary.price_per_meter,
           widthsRequired: existingWindowSummary.widths_required
         });
-        console.log("📊 Loaded fabric calculation");
+        console.log("📊 Loaded fabric calculation with correct fabric cost:", {
+          linearMeters: existingWindowSummary.linear_meters,
+          fabricCost: existingWindowSummary.fabric_cost,
+          totalCost: existingWindowSummary.total_cost
+        });
       }
       
       return; // Exit early if we loaded from windows_summary
