@@ -301,10 +301,28 @@ export const DynamicWindowWorksheet = forwardRef<
           
           // Calculate heading cost if selected
           let headingCost = 0;
+          let headingName = 'Standard';
           if (selectedHeading && selectedHeading !== 'standard' && selectedTemplate && fabricCalculation) {
             const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
             const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
             headingCost = headingUpchargePerCurtain + (headingUpchargePerMetre * fabricCalculation.linearMeters);
+            
+            // Add additional heading costs from settings/inventory
+            const headingOptionFromSettings = headingOptionsFromSettings.find(h => h.id === selectedHeading);
+            if (headingOptionFromSettings) {
+              const width = parseFloat(measurements.rail_width) || 0;
+              headingCost += headingOptionFromSettings.price * width / 100; // Convert cm to m
+              headingName = headingOptionFromSettings.name;
+            } else {
+              const headingItem = headingInventory?.find(item => item.id === selectedHeading);
+              if (headingItem) {
+                const width = parseFloat(measurements.rail_width) || 0;
+                headingCost += (headingItem.price_per_meter || headingItem.unit_price || 0) * width / 100;
+                headingName = headingItem.name;
+              } else {
+                headingName = selectedHeading; // Fallback to ID if not found
+              }
+            }
           }
           
           // Calculate manufacturing cost
@@ -348,9 +366,15 @@ export const DynamicWindowWorksheet = forwardRef<
           let headingDetails = {};
           if (selectedHeading && selectedHeading !== 'standard') {
             headingDetails = {
-              heading_name: selectedHeading === 'standard' ? 'Standard' : selectedHeading,
+              heading_name: headingName,
               id: selectedHeading,
               cost: finalHeadingCost
+            };
+          } else {
+            headingDetails = {
+              heading_name: 'Standard',
+              id: 'standard',
+              cost: 0
             };
           }
 
