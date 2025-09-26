@@ -1,11 +1,10 @@
-
 import React, { useState, useMemo } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, ChevronDown, ChevronRight, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useWindowSummary } from "@/hooks/useWindowSummary";
-import { formatCurrency } from "@/utils/unitConversion";
+import { useUserCurrency, formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
 import { useCompactMode } from "@/hooks/useCompactMode";
 import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
@@ -48,6 +47,7 @@ export function WindowSummaryCard({
   const { data: summary, isLoading, error } = useWindowSummary(windowId);
   const [showBreakdown, setShowBreakdown] = useState(false);
   const { compact } = useCompactMode();
+  const userCurrency = useUserCurrency();
 
   // Unit helpers
   const { convertToUserUnit, formatFabric } = useMeasurementUnits();
@@ -225,141 +225,82 @@ export function WindowSummaryCard({
         )}
 
         {summary && (
-          <div className="space-y-4">
-            {/* Summary Header */}
+          <div className="space-y-3">
+            {/* Summary Header - Compact */}
             <div className="rounded-lg border p-3">
-              <div className="flex items-baseline justify-between mb-3">
+              <div className="flex items-center justify-between mb-2">
                 <div>
                   <div className="text-sm text-muted-foreground">Total Cost</div>
                   <div className="text-2xl font-semibold">
                     {(() => {
-                      // Recalculate total to ensure all components are included
+                      // Calculate total including heading cost
                       const fabricCost = Number(summary.fabric_cost) || 0;
                       const liningCost = Number(summary.lining_cost) || 0;
                       const manufacturingCost = Number(summary.manufacturing_cost) || 0;
                       const headingCost = summary.heading_details?.cost ? Number(summary.heading_details.cost) : 0;
                       const calculatedTotal = fabricCost + liningCost + manufacturingCost + headingCost;
                       
-                      // Use calculated total if it's significantly different from stored total
-                      const storedTotal = Number(summary.total_cost) || 0;
-                      const totalToDisplay = Math.abs(calculatedTotal - storedTotal) > 1 ? calculatedTotal : storedTotal;
-                      
-                      return formatCurrency(totalToDisplay, summary.currency);
+                      return formatCurrency(calculatedTotal, userCurrency);
                     })()}
                   </div>
-                  <div className="text-xs space-y-1">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <span className="font-medium text-foreground">
-                        {treatmentType || surface.treatment_type || 'Curtains'}
-                      </span>
-                       {summary.fabric_details?.name && (
-                         <span className="text-muted-foreground">
-                           Fabric: {summary.fabric_details.name}
-                         </span>
-                       )}
-                    </div>
-                    <div className="flex items-center gap-4 flex-wrap text-muted-foreground">
-                      {(summary as any).rail_width && (
-                        <span>Rail: {fmtFabric((summary as any).rail_width)}</span>
-                      )}
-                      {(summary as any).drop_measurement && (
-                        <span>Drop: {fmtFabric((summary as any).drop_measurement)}</span>
-                      )}
-                      {(summary.fabric_details?.fabric_width || summary.fabric_details?.width_cm || summary.fabric_details?.width) && (
-                        <span>
-                          {Math.round(summary.fabric_details?.fabric_width || summary.fabric_details?.width_cm || summary.fabric_details?.width || 137)}cm
-                          {summary.price_per_meter && (
-                            <span className="ml-1">@ £{Number(summary.price_per_meter).toFixed(2)}/m</span>
-                          )}
-                        </span>
-                      )}
-                      {summary.fabric_details?.pattern_repeat_vertical && Number(summary.fabric_details.pattern_repeat_vertical) > 0 && (
-                        <span>V.Repeat: {Math.round(Number(summary.fabric_details.pattern_repeat_vertical))}cm</span>
-                      )}
-                      {summary.fabric_details?.pattern_repeat_horizontal && Number(summary.fabric_details.pattern_repeat_horizontal) > 0 && (
-                        <span>H.Repeat: {Math.round(Number(summary.fabric_details.pattern_repeat_horizontal))}cm</span>
-                      )}
-                      {summary.widths_required && (
-                        <span>{summary.widths_required} width(s)</span>
-                      )}
-                    </div>
-                  </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <div className="flex-1"></div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowBreakdown(!showBreakdown);
-                    }}
-                    className="text-secondary hover:text-secondary/80 hover:bg-secondary/10 border-secondary/20"
-                  >
-                    {showBreakdown ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                    Details
-                  </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowBreakdown(!showBreakdown)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <span className="text-xs mr-1">Details</span>
+                  {showBreakdown ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                </Button>
+              </div>
+              
+              {/* Essential info only */}
+              <div className="text-xs text-muted-foreground space-y-1">
+                <div className="flex items-center gap-3">
+                  <span className="font-medium">{treatmentType || 'Curtains'}</span>
+                  {summary.fabric_details?.name && (
+                    <span>Fabric: {summary.fabric_details.name}</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <span>{Math.round(summary.fabric_details?.fabric_width || summary.fabric_details?.width_cm || summary.fabric_details?.width || 137)}cm @ {formatCurrency(summary.fabric_details?.selling_price || 45, userCurrency)}/m</span>
+                  <span>{summary.widths_required || 1} width(s)</span>
                 </div>
               </div>
+            </div>
 
-              {/* Quick Summary Grid */}
-              <div className="grid gap-2 md:grid-cols-3">
+            {/* Cost Breakdown - Only show when expanded */}
+            {showBreakdown && (
+              <div className="grid grid-cols-4 gap-3 text-sm border rounded-lg p-3">
                 <SummaryItem
                   title="Fabric"
-                  main={formatCurrency(summary.fabric_cost, summary.currency)}
-                  sub={summary.fabric_details?.name ? 
-                    `${summary.fabric_details.name} • ${fmtFabric(summary.linear_meters) || ''} • ${summary.widths_required} width(s)` :
-                    `${fmtFabric(summary.linear_meters) || ''} • ${summary.widths_required} width(s)`
-                  }
+                  main={formatCurrency(summary.fabric_cost, userCurrency)}
+                  sub={`${summary.linear_meters?.toFixed(1) || '0'} m • ${summary.widths_required || 1} widths`}
                 />
                 
-                {Number(summary.lining_cost) > 0 && (
-                  <SummaryItem
-                    title="Lining"
-                    main={formatCurrency(summary.lining_cost, summary.currency)}
-                    sub={summary.lining_details?.type || summary.lining_type}
-                  />
-                )}
-                
-                {/* Add heading cost display */}
-                {summary.heading_details && summary.heading_details.cost && Number(summary.heading_details.cost) > 0 && (
-                  <SummaryItem
-                    title="Heading"
-                    main={formatCurrency(summary.heading_details.cost, summary.currency)}
-                    sub={summary.heading_details.heading_name || 'Custom heading'}
-                  />
-                )}
+                <SummaryItem
+                  title="Lining"
+                  main={formatCurrency(summary.lining_cost, userCurrency)}
+                  sub={summary.lining_details?.type || 'Interlining'}
+                />
+
+                <SummaryItem
+                  title="Heading"
+                  main={formatCurrency(summary.heading_details?.cost || 0, userCurrency)}
+                  sub={summary.heading_details?.heading_name || '0'}
+                />
                 
                 <SummaryItem
                   title="Manufacturing"
-                  main={formatCurrency(summary.manufacturing_cost, summary.currency)}
-                  sub={summary.manufacturing_type}
+                  main={formatCurrency(summary.manufacturing_cost, userCurrency)}
+                  sub="machine"
                 />
               </div>
-
-              {/* Unified embedded breakdown (no extra container) */}
-              {showBreakdown && (
-                <div className="mt-3">
-                  <div className="text-xs text-muted-foreground mb-2">
-                    Measurement and cost breakdown (saved from worksheet):
-                  </div>
-                  <CalculationBreakdown
-                    summary={summary}
-                    surface={surface}
-                    compact={true}
-                    costBreakdown={enrichedBreakdown}
-                    currency={summary.currency}
-                    totalCost={summary.total_cost}
-                    embedded
-                  />
-                </div>
-              )}
-            </div>
-
+            )}
           </div>
         )}
       </CardContent>
-
     </Card>
   );
 }
