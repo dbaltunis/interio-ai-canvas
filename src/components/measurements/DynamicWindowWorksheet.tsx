@@ -15,6 +15,8 @@ import { LayeredTreatmentManager } from "../job-creation/LayeredTreatmentManager
 
 import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
+import { useHeadingInventory } from "@/hooks/useHeadingInventory";
+import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { convertLength } from "@/hooks/useBusinessSettings";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -76,7 +78,26 @@ export const DynamicWindowWorksheet = forwardRef<
   const { data: curtainTemplates = [] } = useCurtainTemplates();
   const { data: windowCoverings = [] } = useWindowCoverings();
   const { units } = useMeasurementUnits();
+  const { data: headingInventory = [] } = useHeadingInventory();
+  const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
   const queryClient = useQueryClient();
+
+  // Helper function to get heading name from ID
+  const getHeadingName = (headingId: string) => {
+    if (headingId === 'standard') return 'Standard';
+    if (headingId === 'no-heading') return 'No heading';
+    
+    // Try heading options from settings first
+    const settingsHeading = headingOptionsFromSettings.find(h => h.id === headingId);
+    if (settingsHeading) return settingsHeading.name;
+    
+    // Try heading inventory
+    const inventoryHeading = headingInventory.find(h => h.id === headingId);
+    if (inventoryHeading) return inventoryHeading.name;
+    
+    // Fallback to the ID if not found
+    return headingId;
+  };
 
   // Load existing window summary data to populate the form
   const { data: existingWindowSummary } = useQuery({
@@ -757,7 +778,7 @@ export const DynamicWindowWorksheet = forwardRef<
                         <div className="border-b pb-2">
                           <h5 className="text-sm font-medium text-muted-foreground mb-1">Treatment Options</h5>
                           <div className="text-sm space-y-1">
-                            <p><strong>Heading Style:</strong> {selectedHeading === 'standard' ? 'Standard' : selectedHeading}</p>
+                            <p><strong>Heading Style:</strong> {getHeadingName(selectedHeading)}</p>
                             <p><strong>Lining:</strong> {selectedLining === 'none' ? 'No lining' : selectedLining}</p>
                             {selectedTemplate?.fullness_ratio && (
                               <p><strong>Fullness Ratio:</strong> {selectedTemplate.fullness_ratio}x</p>
@@ -812,7 +833,7 @@ export const DynamicWindowWorksheet = forwardRef<
                                 return headingCost > 0 ? (
                                    <div className="flex justify-between">
                                      <span>📏 Heading:</span>
-                                     <span>{selectedHeading}</span>
+                                     <span>{getHeadingName(selectedHeading)}</span>
                                      <span>£{isNaN(headingCost) ? '0.00' : headingCost.toFixed(2)}</span>
                                    </div>
                                 ) : null;
