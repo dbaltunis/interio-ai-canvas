@@ -692,17 +692,7 @@ export const DynamicWindowWorksheet = forwardRef<
                 <CardTitle>Summary & Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <h4 className="font-medium">Configuration Summary</h4>
-                  <div className="text-sm space-y-1">
-                    <p><strong>Window:</strong> {selectedWindowType?.name}</p>
-                    <p><strong>Treatment:</strong> {selectedTemplate?.name}</p>
-                    <p><strong>Dimensions:</strong> {measurements.rail_width}cm × {measurements.drop}cm</p>
-                    {selectedItems.fabric && (
-                      <p><strong>Fabric:</strong> {selectedItems.fabric.name}</p>
-                    )}
-                  </div>
-                </div>
+                {/* Remove duplicate summary - the detailed one below has all the cost information */}
 
                 {(fabricCalculation || selectedItems.fabric || selectedTemplate) && (
                   <div className="p-4 bg-primary/5 rounded-lg">
