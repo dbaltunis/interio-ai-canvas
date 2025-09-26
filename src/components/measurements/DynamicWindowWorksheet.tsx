@@ -258,9 +258,9 @@ export const DynamicWindowWorksheet = forwardRef<
             const liningTypes = selectedTemplate.lining_types || [];
             const liningOption = liningTypes.find(l => l.type === selectedLining);
             if (liningOption) {
-              const liningPricePerMeter = liningOption.material_cost || 0;
-              const liningLaborPerMeter = liningOption.labor_cost || 0;
-              liningCost = (liningPricePerMeter + liningLaborPerMeter) * fabricCalculation.linearMeters;
+              const liningPricePerMeter = liningOption.price_per_metre || 0;
+              const liningLaborPerCurtain = liningOption.labour_per_curtain || 0;
+              liningCost = (liningPricePerMeter * fabricCalculation.linearMeters) + liningLaborPerCurtain;
             }
           }
           
@@ -789,10 +789,13 @@ export const DynamicWindowWorksheet = forwardRef<
                                  <span>£{fabricCalculation.totalCost?.toFixed(2) || '0.00'}</span>
                               </div>
                               
-                              {selectedLining && selectedLining !== 'none' && selectedTemplate && (() => {
+                              {selectedLining && selectedLining !== 'none' && selectedTemplate && fabricCalculation && (() => {
                                 const liningTypes = selectedTemplate.lining_types || [];
                                 const liningOption = liningTypes.find(l => l.type === selectedLining);
-                                const liningCost = liningOption ? (liningOption.material_cost + liningOption.labor_cost) * fabricCalculation.linearMeters : 0;
+                                const liningCost = liningOption ? (
+                                  (liningOption.price_per_metre || 0) * fabricCalculation.linearMeters + 
+                                  (liningOption.labour_per_curtain || 0)
+                                ) : 0;
                                 return (
                                    <div className="flex justify-between">
                                      <span>🛡️ Lining:</span>
@@ -853,13 +856,14 @@ export const DynamicWindowWorksheet = forwardRef<
                                    let headingCost = 0;
                                    let manufacturingCost = 0;
                                    
-                                   if (selectedLining && selectedLining !== 'none' && selectedTemplate) {
-                                     const liningTypes = selectedTemplate.lining_types || [];
-                                     const liningOption = liningTypes.find(l => l.type === selectedLining);
-                                     if (liningOption) {
-                                       liningCost = (liningOption.material_cost + liningOption.labor_cost) * fabricCalculation.linearMeters;
-                                     }
-                                   }
+                                    if (selectedLining && selectedLining !== 'none' && selectedTemplate && fabricCalculation) {
+                                      const liningTypes = selectedTemplate.lining_types || [];
+                                      const liningOption = liningTypes.find(l => l.type === selectedLining);
+                                      if (liningOption) {
+                                        liningCost = (liningOption.price_per_metre || 0) * fabricCalculation.linearMeters + 
+                                                    (liningOption.labour_per_curtain || 0);
+                                      }
+                                    }
                                    
                                    if (selectedHeading && selectedHeading !== 'standard' && selectedTemplate) {
                                      const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
