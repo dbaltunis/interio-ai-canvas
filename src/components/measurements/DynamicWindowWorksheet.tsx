@@ -837,16 +837,38 @@ export const DynamicWindowWorksheet = forwardRef<
                               })()}
                               
                               {selectedHeading && selectedHeading !== 'standard' && selectedTemplate && fabricCalculation && (() => {
-                                const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
-                                const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
-                                const headingCost = headingUpchargePerCurtain + (headingUpchargePerMetre * fabricCalculation.linearMeters);
-                                return headingCost > 0 ? (
+                                let headingCost = 0;
+                                
+                                // Template base heading upcharges
+                                if (selectedTemplate.heading_upcharge_per_metre) {
+                                  headingCost += selectedTemplate.heading_upcharge_per_metre * fabricCalculation.linearMeters;
+                                }
+                                if (selectedTemplate.heading_upcharge_per_curtain) {
+                                  headingCost += selectedTemplate.heading_upcharge_per_curtain * (selectedTemplate.curtain_type === 'pair' ? 2 : 1);
+                                }
+                                
+                                // Selected heading from settings (THIS WAS MISSING!)
+                                const headingOptionFromSettings = headingOptionsFromSettings.find(h => h.id === selectedHeading);
+                                if (headingOptionFromSettings) {
+                                  const width = parseFloat(measurements.rail_width) || 0;
+                                  headingCost += headingOptionFromSettings.price * width / 100; // Convert cm to m
+                                } else {
+                                  // Fall back to inventory items
+                                  const headingItem = headingInventory.find(item => item.id === selectedHeading);
+                                  if (headingItem) {
+                                    const width = parseFloat(measurements.rail_width) || 0;
+                                    headingCost += (headingItem.price_per_meter || headingItem.unit_price || 0) * width / 100;
+                                  }
+                                }
+                                
+                                // Always show heading section if one is selected
+                                return (
                                    <div className="flex justify-between">
                                      <span>📏 Heading:</span>
                                      <span>{getHeadingName(selectedHeading)}</span>
                                      <span>£{isNaN(headingCost) ? '0.00' : headingCost.toFixed(2)}</span>
                                    </div>
-                                ) : null;
+                                );
                               })()}
                               
                               {selectedTemplate && (() => {
@@ -897,9 +919,27 @@ export const DynamicWindowWorksheet = forwardRef<
                                     }
                                    
                                     if (selectedHeading && selectedHeading !== 'standard' && selectedTemplate && fabricCalculation) {
-                                      const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
-                                      const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
-                                      headingCost = headingUpchargePerCurtain + (headingUpchargePerMetre * fabricCalculation.linearMeters);
+                                      // Template base heading upcharges
+                                      if (selectedTemplate.heading_upcharge_per_metre) {
+                                        headingCost += selectedTemplate.heading_upcharge_per_metre * fabricCalculation.linearMeters;
+                                      }
+                                      if (selectedTemplate.heading_upcharge_per_curtain) {
+                                        headingCost += selectedTemplate.heading_upcharge_per_curtain * (selectedTemplate.curtain_type === 'pair' ? 2 : 1);
+                                      }
+                                      
+                                      // Selected heading from settings
+                                      const headingOptionFromSettings = headingOptionsFromSettings.find(h => h.id === selectedHeading);
+                                      if (headingOptionFromSettings) {
+                                        const width = parseFloat(measurements.rail_width) || 0;
+                                        headingCost += headingOptionFromSettings.price * width / 100; // Convert cm to m
+                                      } else {
+                                        // Fall back to inventory items
+                                        const headingItem = headingInventory.find(item => item.id === selectedHeading);
+                                        if (headingItem) {
+                                          const width = parseFloat(measurements.rail_width) || 0;
+                                          headingCost += (headingItem.price_per_meter || headingItem.unit_price || 0) * width / 100;
+                                        }
+                                      }
                                     }
                                    
                                    if (selectedTemplate) {
