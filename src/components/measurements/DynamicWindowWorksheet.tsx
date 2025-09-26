@@ -297,6 +297,31 @@ export const DynamicWindowWorksheet = forwardRef<
             totalCost
           };
 
+          // Use existing calculated costs and add proper details storage
+          const finalLiningCost = liningCost; // Already calculated above
+          let liningDetails = {};
+          if (selectedLining && selectedLining !== 'none' && selectedTemplate) {
+            const liningTypes = selectedTemplate.lining_types || [];
+            const liningOption = liningTypes.find(l => l.type === selectedLining);
+            if (liningOption) {
+              liningDetails = liningOption;
+            }
+          }
+
+          // Use existing calculated heading cost and add proper details storage
+          const finalHeadingCost = headingCost; // Already calculated above
+          let headingDetails = {};
+          if (selectedHeading && selectedHeading !== 'standard') {
+            headingDetails = {
+              heading_name: selectedHeading === 'standard' ? 'Standard' : selectedHeading,
+              id: selectedHeading,
+              cost: finalHeadingCost
+            };
+          }
+
+          // Recalculate total cost with proper lining and heading costs
+          const finalTotalCost = fabricCost + finalLiningCost + finalHeadingCost + manufacturingCost;
+
           // Create summary data for windows_summary table
           const summaryData = {
             window_id: surfaceId,
@@ -305,10 +330,11 @@ export const DynamicWindowWorksheet = forwardRef<
             price_per_meter: fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || 0,
             fabric_cost: fabricCost,
             lining_type: selectedLining || 'none',
-            lining_cost: liningCost,
+            lining_cost: finalLiningCost,
+            lining_details: liningDetails,
             manufacturing_type: selectedTemplate?.manufacturing_type || 'machine',
             manufacturing_cost: manufacturingCost,
-            total_cost: totalCost,
+            total_cost: finalTotalCost,
             template_id: selectedTemplate?.id,
             pricing_type: selectedTemplate?.pricing_type || 'per_metre',
             waste_percent: selectedTemplate?.waste_percent || 5,
@@ -322,10 +348,7 @@ export const DynamicWindowWorksheet = forwardRef<
               width_cm: selectedItems.fabric?.fabric_width || 140,
               width: selectedItems.fabric?.fabric_width || 140
             },
-            heading_details: {
-              heading_name: selectedHeading,
-              id: selectedHeading
-            },
+            heading_details: headingDetails,
             measurements_details: {
               ...measurements,
               // Convert user input to centimeters for storage (always store in cm)
@@ -340,7 +363,9 @@ export const DynamicWindowWorksheet = forwardRef<
               curtain_type: selectedTemplate?.curtain_type || 'single',
               fullness_ratio: selectedTemplate?.fullness_ratio || 2,
               fabric_width_cm: selectedItems.fabric?.fabric_width || 140,
-              window_type: selectedWindowType?.name || 'Standard Window'
+              window_type: selectedWindowType?.name || 'Standard Window',
+              selected_heading: selectedHeading,
+              selected_lining: selectedLining
             }
           };
           
