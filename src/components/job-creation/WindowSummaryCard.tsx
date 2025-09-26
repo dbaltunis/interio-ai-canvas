@@ -61,12 +61,16 @@ export function WindowSummaryCard({
     error: error?.message,
     hasSummary: !!summary,
     fabricDetails: summary?.fabric_details,
+    headingDetails: summary?.heading_details,
+    liningDetails: summary?.lining_details,
     summary: summary ? {
       window_id: summary.window_id,
       total_cost: summary.total_cost,
+      fabric_cost: summary.fabric_cost,
+      lining_cost: summary.lining_cost,
+      manufacturing_cost: summary.manufacturing_cost,
       linear_meters: summary.linear_meters,
       widths_required: summary.widths_required,
-      fabric_cost: summary.fabric_cost,
       updated_at: summary.updated_at
     } : null
   });
@@ -110,6 +114,21 @@ export function WindowSummaryCard({
         category: 'lining',
         details: summary.lining_details || undefined,
       });
+    }
+
+    // Add heading cost if available
+    if (summary.heading_details && Object.keys(summary.heading_details).length > 0) {
+      const headingCost = summary.heading_details.cost || 0;
+      if (headingCost > 0) {
+        items.push({
+          id: 'heading',
+          name: 'Heading',
+          description: summary.heading_details.heading_name || 'Custom heading',
+          total_cost: Number(headingCost) || 0,
+          category: 'heading',
+          details: summary.heading_details,
+        });
+      }
     }
 
     items.push({
@@ -213,7 +232,20 @@ export function WindowSummaryCard({
                 <div>
                   <div className="text-sm text-muted-foreground">Total Cost</div>
                   <div className="text-2xl font-semibold">
-                    {formatCurrency(summary.total_cost, summary.currency)}
+                    {(() => {
+                      // Recalculate total to ensure all components are included
+                      const fabricCost = Number(summary.fabric_cost) || 0;
+                      const liningCost = Number(summary.lining_cost) || 0;
+                      const manufacturingCost = Number(summary.manufacturing_cost) || 0;
+                      const headingCost = summary.heading_details?.cost ? Number(summary.heading_details.cost) : 0;
+                      const calculatedTotal = fabricCost + liningCost + manufacturingCost + headingCost;
+                      
+                      // Use calculated total if it's significantly different from stored total
+                      const storedTotal = Number(summary.total_cost) || 0;
+                      const totalToDisplay = Math.abs(calculatedTotal - storedTotal) > 1 ? calculatedTotal : storedTotal;
+                      
+                      return formatCurrency(totalToDisplay, summary.currency);
+                    })()}
                   </div>
                   <div className="text-xs space-y-1">
                     <div className="flex items-center gap-3 flex-wrap">
@@ -286,6 +318,15 @@ export function WindowSummaryCard({
                     title="Lining"
                     main={formatCurrency(summary.lining_cost, summary.currency)}
                     sub={summary.lining_details?.type || summary.lining_type}
+                  />
+                )}
+                
+                {/* Add heading cost display */}
+                {summary.heading_details && summary.heading_details.cost && Number(summary.heading_details.cost) > 0 && (
+                  <SummaryItem
+                    title="Heading"
+                    main={formatCurrency(summary.heading_details.cost, summary.currency)}
+                    sub={summary.heading_details.heading_name || 'Custom heading'}
                   />
                 )}
                 
