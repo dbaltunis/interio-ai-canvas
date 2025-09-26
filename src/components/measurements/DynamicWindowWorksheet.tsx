@@ -16,6 +16,7 @@ import { LayeredTreatmentManager } from "../job-creation/LayeredTreatmentManager
 import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { convertLength } from "@/hooks/useBusinessSettings";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface DynamicWindowWorksheetProps {
@@ -116,12 +117,17 @@ export const DynamicWindowWorksheet = forwardRef<
       // Set measurements from saved summary
       if (measurementsDetails && typeof measurementsDetails === 'object') {
         const loadedMeasurements = {
-          rail_width: measurementsDetails.rail_width_cm?.toString() || measurementsDetails.rail_width?.toString() || "",
-          drop: measurementsDetails.drop_cm?.toString() || measurementsDetails.drop?.toString() || "",
+          // Convert stored cm values back to user's preferred unit
+          rail_width: measurementsDetails.rail_width_cm 
+            ? convertLength(measurementsDetails.rail_width_cm, 'cm', units.length).toString()
+            : measurementsDetails.rail_width?.toString() || "",
+          drop: measurementsDetails.drop_cm 
+            ? convertLength(measurementsDetails.drop_cm, 'cm', units.length).toString()
+            : measurementsDetails.drop?.toString() || "",
           ...measurementsDetails
         };
         setMeasurements(loadedMeasurements);
-        console.log("📊 Loaded measurements:", loadedMeasurements);
+        console.log("📊 Loaded measurements (converted to user units):", loadedMeasurements);
       }
       
       // Set template from saved summary
@@ -322,8 +328,13 @@ export const DynamicWindowWorksheet = forwardRef<
             },
             measurements_details: {
               ...measurements,
-              rail_width_cm: parseFloat(measurements.rail_width) || 0,
-              drop_cm: parseFloat(measurements.drop) || 0,
+              // Convert user input to centimeters for storage (always store in cm)
+              rail_width_cm: measurements.rail_width ? convertLength(parseFloat(measurements.rail_width), units.length, 'cm') : 0,
+              drop_cm: measurements.drop ? convertLength(parseFloat(measurements.drop), units.length, 'cm') : 0,
+              // Store original values with unit for reference
+              rail_width: measurements.rail_width,
+              drop: measurements.drop,
+              unit: units.length,
               surface_id: surfaceId,
               surface_name: surfaceData?.name,
               curtain_type: selectedTemplate?.curtain_type || 'single',
