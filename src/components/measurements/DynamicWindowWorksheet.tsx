@@ -149,6 +149,16 @@ export const DynamicWindowWorksheet = forwardRef<
         };
         setMeasurements(loadedMeasurements);
         console.log("📊 Loaded measurements (converted to user units):", loadedMeasurements);
+        
+        // Load heading and lining selections from measurements_details
+        if (measurementsDetails.selected_heading) {
+          setSelectedHeading(measurementsDetails.selected_heading);
+          console.log("📊 Loaded heading:", measurementsDetails.selected_heading);
+        }
+        if (measurementsDetails.selected_lining) {
+          setSelectedLining(measurementsDetails.selected_lining);
+          console.log("📊 Loaded lining:", measurementsDetails.selected_lining);
+        }
       }
       
       // Set template from saved summary
@@ -826,7 +836,7 @@ export const DynamicWindowWorksheet = forwardRef<
                                 );
                               })()}
                               
-                              {selectedHeading && selectedHeading !== 'standard' && selectedTemplate && (() => {
+                              {selectedHeading && selectedHeading !== 'standard' && selectedTemplate && fabricCalculation && (() => {
                                 const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
                                 const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
                                 const headingCost = headingUpchargePerCurtain + (headingUpchargePerMetre * fabricCalculation.linearMeters);
@@ -886,11 +896,11 @@ export const DynamicWindowWorksheet = forwardRef<
                                       }
                                     }
                                    
-                                   if (selectedHeading && selectedHeading !== 'standard' && selectedTemplate) {
-                                     const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
-                                     const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
-                                     headingCost = headingUpchargePerCurtain + (headingUpchargePerMetre * fabricCalculation.linearMeters);
-                                   }
+                                    if (selectedHeading && selectedHeading !== 'standard' && selectedTemplate && fabricCalculation) {
+                                      const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
+                                      const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
+                                      headingCost = headingUpchargePerCurtain + (headingUpchargePerMetre * fabricCalculation.linearMeters);
+                                    }
                                    
                                    if (selectedTemplate) {
                                      const manufacturingType = selectedTemplate.manufacturing_type || 'machine';
