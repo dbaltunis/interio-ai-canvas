@@ -11,9 +11,7 @@ import { FabricSelectionSection } from "./dynamic-options/FabricSelectionSection
 import { LiningOptionsSection } from "./dynamic-options/LiningOptionsSection";
 import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
 import { calculateFabricUsage } from "../job-creation/treatment-pricing/fabric-calculation/fabricUsageCalculator";
-import { WorksheetVisual } from "../worksheet/WorksheetVisual";
-import { DynamicWindowRenderer } from "../window-types/DynamicWindowRenderer";
-import { Window3DRenderer } from "../window-types/3d-windows/Window3DRenderer";
+import { TreatmentPreviewEngine } from "../treatment-visualizers/TreatmentPreviewEngine";
 
 interface VisualMeasurementSheetProps {
   measurements: Record<string, any>;
