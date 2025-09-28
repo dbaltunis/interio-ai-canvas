@@ -168,6 +168,35 @@ export const useSendEmail = () => {
 
         console.log("Email sent successfully:", sendResponse);
 
+        // Schedule a status check to ensure the webhook doesn't miss updates
+        setTimeout(async () => {
+          try {
+            const { data: currentEmail } = await supabase
+              .from('emails')
+              .select('status')
+              .eq('id', emailRecord.id)
+              .single();
+            
+            // If still queued after 30 seconds, assume it was at least processed
+            if (currentEmail && currentEmail.status === 'queued') {
+              console.log('Email still queued after 30s, updating to processed');
+              await supabase
+                .from('emails')
+                .update({ 
+                  status: 'processed',
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', emailRecord.id);
+              
+              // Refresh queries after update
+              queryClient.invalidateQueries({ queryKey: ['emails'] });
+              queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
+            }
+          } catch (statusCheckError) {
+            console.warn('Failed to verify email status:', statusCheckError);
+          }
+        }, 30000); // Check after 30 seconds
+
         // Final refresh to show updated status
         await queryClient.invalidateQueries({ queryKey: ['emails'] });
         await queryClient.invalidateQueries({ queryKey: ['email-kpis'] });

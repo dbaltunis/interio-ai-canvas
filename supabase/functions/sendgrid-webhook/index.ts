@@ -118,53 +118,114 @@ const handler = async (req: Request): Promise<Response> => {
           continue;
       }
 
-      // Handle standard status updates
+      // Handle standard status updates with better reliability
       let updateData: any = {
         updated_at: new Date().toISOString()
       };
 
+      // Map SendGrid events to status with priority handling
+      const statusPriority = {
+        'queued': 1,
+        'processed': 2, 
+        'sent': 3,
+        'delivered': 4,
+        'opened': 5,
+        'clicked': 6,
+        'bounced': 7,
+        'dropped': 7,
+        'spam_reported': 7,
+        'unsubscribed': 7,
+        'deferred': 2,
+        'failed': 7
+      };
+
+      let newStatus: string;
       switch (eventType) {
         case 'processed':
-          updateData.status = 'processed';
+          newStatus = 'processed';
           break;
         case 'delivered':
-          updateData.status = 'delivered';
+          newStatus = 'delivered';
           break;
         case 'deferred':
-          updateData.status = 'deferred';
+          newStatus = 'deferred';
           break;
         case 'bounce':
-          updateData.status = 'bounced';
+          newStatus = 'bounced';
           updateData.bounce_reason = event.reason || 'Email bounced';
           break;
         case 'dropped':
-          updateData.status = 'dropped';
+          newStatus = 'dropped';
           updateData.bounce_reason = event.reason || 'Dropped by SendGrid (likely spam)';
           break;
         case 'spamreport':
-          updateData.status = 'spam_reported';
+          newStatus = 'spam_reported';
           break;
         case 'unsubscribe':
         case 'group_unsubscribe':
-          updateData.status = 'unsubscribed';
+          newStatus = 'unsubscribed';
           break;
         default:
           console.log(`Unhandled event type: ${eventType}`);
           continue;
       }
 
-      // Update email record with safer update strategy
-      const { error: updateError } = await supabase
+      // Get current email status to check if update should proceed
+      console.log(`Processing ${eventType} event for email ${email_id}`);
+      
+      const { data: currentEmail, error: fetchError } = await supabase
         .from('emails')
-        .update(updateData)
-        .eq('id', email_id);
+        .select('status')
+        .eq('id', email_id)
+        .single();
 
-      if (updateError) {
-        console.error(`Failed to update email ${email_id}:`, updateError);
+      if (fetchError) {
+        console.error(`Failed to fetch current email status for ${email_id}:`, fetchError);
+        // Still try to update even if fetch fails
       }
 
-      // Record analytics event for all events
-      await supabase
+      // Only update if new status has higher or equal priority
+      const currentPriority = currentEmail?.status ? statusPriority[currentEmail.status] || 0 : 0;
+      const newPriority = statusPriority[newStatus] || 0;
+
+      if (newPriority >= currentPriority) {
+        updateData.status = newStatus;
+        
+        // Update email record with retry mechanism
+        let updateAttempts = 0;
+        const maxAttempts = 3;
+        let updateSuccess = false;
+
+        while (updateAttempts < maxAttempts && !updateSuccess) {
+          updateAttempts++;
+          console.log(`Attempting to update email ${email_id} status to ${newStatus} (attempt ${updateAttempts})`);
+          
+          const { error: updateError } = await supabase
+            .from('emails')
+            .update(updateData)
+            .eq('id', email_id);
+
+          if (updateError) {
+            console.error(`Failed to update email ${email_id} (attempt ${updateAttempts}):`, updateError);
+            if (updateAttempts < maxAttempts) {
+              // Wait before retry
+              await new Promise(resolve => setTimeout(resolve, 1000 * updateAttempts));
+            }
+          } else {
+            updateSuccess = true;
+            console.log(`Successfully updated email ${email_id} status to ${newStatus}`);
+          }
+        }
+
+        if (!updateSuccess) {
+          console.error(`Failed to update email ${email_id} after ${maxAttempts} attempts`);
+        }
+      } else {
+        console.log(`Skipping status update for email ${email_id}: current status '${currentEmail?.status}' has higher priority than '${newStatus}'`);
+      }
+
+      // Always record analytics event regardless of status update success
+      const { error: analyticsError } = await supabase
         .from('email_analytics')
         .insert({
           email_id: email_id,
@@ -175,7 +236,11 @@ const handler = async (req: Request): Promise<Response> => {
           created_at: new Date(timestamp * 1000).toISOString()
         });
       
-      console.log(`Updated email ${email_id} status to ${updateData.status}`);
+      if (analyticsError) {
+        console.error(`Failed to insert analytics for email ${email_id}:`, analyticsError);
+      } else {
+        console.log(`Recorded ${eventType} analytics for email ${email_id}`);
+      }
     }
 
     return new Response(

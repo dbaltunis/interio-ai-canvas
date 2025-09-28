@@ -36,13 +36,43 @@ export const EmailRealtimeProvider = ({ children }: { children: React.ReactNode 
           queryClient.refetchQueries({ queryKey: ["email-kpis"] });
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'email_analytics'
+        },
+        (payload) => {
+          console.log('Real-time email analytics change detected:', payload);
+          // Invalidate and refetch on analytics changes too
+          queryClient.invalidateQueries({ queryKey: ["emails"] });
+          queryClient.invalidateQueries({ queryKey: ["email-kpis"] });
+          queryClient.invalidateQueries({ queryKey: ["email-analytics"] });
+          queryClient.refetchQueries({ queryKey: ["emails"] });
+        }
+      )
       .subscribe();
+
+    // Periodic status checker - run every 5 minutes
+    const statusCheckerInterval = setInterval(async () => {
+      try {
+        console.log('Running periodic email status check...');
+        await supabase.functions.invoke('email-status-checker');
+      } catch (error) {
+        console.warn('Failed to run email status checker:', error);
+      }
+    }, 5 * 60 * 1000); // 5 minutes
 
     return () => {
       try {
         supabase.removeChannel(subscription);
+        clearInterval(statusCheckerInterval);
       } catch {
-        try { subscription.unsubscribe(); } catch {}
+        try { 
+          subscription.unsubscribe(); 
+          clearInterval(statusCheckerInterval);
+        } catch {}
       }
     };
   }, [queryClient]);
