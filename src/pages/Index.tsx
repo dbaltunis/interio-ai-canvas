@@ -5,7 +5,7 @@ import { ResponsiveHeader } from "@/components/layout/ResponsiveHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { motion } from "framer-motion";
 import { AIBackground } from "@/components/common/AIBackground";
-import { FeatureFlagHelper } from "@/components/dev/FeatureFlagHelper";
+
 
 // Lazy load heavy components with proper error handling
 const Dashboard = lazy(() => 
@@ -156,7 +156,7 @@ const Index = () => {
           {renderActiveComponent()}
         </motion.main>
         
-        <FeatureFlagHelper />
+        
       </div>
     </AIBackground>
   );
