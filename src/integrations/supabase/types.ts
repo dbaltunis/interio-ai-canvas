@@ -5325,6 +5325,14 @@ export type Database = {
         Args: { permission_name: string }
         Returns: boolean
       }
+      increment_email_open_count: {
+        Args: { email_id_param: string }
+        Returns: {
+          id: string
+          open_count: number
+          status: string
+        }[]
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
