@@ -105,7 +105,7 @@ const handler = async (req: Request): Promise<Response> => {
         }
       } catch (error) {
         console.error("Error sending email:", error);
-        results.errors.push(`Email error: ${error.message}`);
+        results.errors.push(`Email error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`);
       }
     }
 
@@ -145,7 +145,7 @@ const handler = async (req: Request): Promise<Response> => {
         }
       } catch (error) {
         console.error("Error with SMS:", error);
-        results.errors.push(`SMS error: ${error.message}`);
+        results.errors.push(`SMS error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`);
       }
     }
 
@@ -171,7 +171,7 @@ const handler = async (req: Request): Promise<Response> => {
         }
       } catch (error) {
         console.error("Error creating in-app notification:", error);
-        results.errors.push(`In-app notification error: ${error.message}`);
+        results.errors.push(`In-app notification error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`);
       }
     }
 

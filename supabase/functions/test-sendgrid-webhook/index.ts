@@ -132,7 +132,7 @@ const handler = async (req: Request): Promise<Response> => {
           sendgrid_webhook_settings: webhookSettings,
           recent_emails: recentEmails || [],
           recent_analytics: analyticsEvents || [],
-          recommendations: generateRecommendations(webhookStatus, sendgridApiStatus, webhookSettings, recentEmails, analyticsEvents)
+          recommendations: generateRecommendations(webhookStatus, sendgridApiStatus, webhookSettings, recentEmails || [], analyticsEvents || [])
         }
       }),
       {
@@ -145,7 +145,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("Error in test-sendgrid-webhook function:", error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
         success: false 
       }),
       {

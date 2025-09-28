@@ -134,11 +134,11 @@ function returnTrackingPixel() {
 
   return new Response(pixelData, {
     headers: {
+      ...corsHeaders,
       "Content-Type": "image/gif",
       "Cache-Control": "no-cache, no-store, must-revalidate",
       "Pragma": "no-cache",
-      "Expires": "0",
-      ...corsHeaders,
+      "Expires": "0"
     },
   });
 }

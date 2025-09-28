@@ -181,7 +181,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("Error in setup-sendgrid-webhook function:", error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
         success: false 
       }),
       {

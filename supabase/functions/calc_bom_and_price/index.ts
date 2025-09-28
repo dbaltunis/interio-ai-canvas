@@ -120,18 +120,22 @@ serve(async (req) => {
       );
     }
 
-    // Fetch template options and assemblies
+    // Fetch assemblies first
+    const { data: assemblies } = await supabase
+      .from('assemblies')
+      .select('*')
+      .eq('template_id', template_id);
+
+    if (!assemblies || assemblies.length === 0) {
+      throw new Error('No assemblies found for this template');
+    }
+
+    // Then fetch assembly lines and other data
     const [
-      { data: assemblies },
       { data: assemblyLines },
       { data: inventoryItems },
       { data: pricingRules }
     ] = await Promise.all([
-      supabase
-        .from('assemblies')
-        .select('*')
-        .eq('template_id', template_id),
-      
       supabase
         .from('assembly_lines')
         .select(`
@@ -140,7 +144,7 @@ serve(async (req) => {
             id, name, type, sku, price, cost, uom, attributes
           )
         `)
-        .in('assembly_id', assemblies?.map(a => a.id) || []),
+        .in('assembly_id', assemblies.map((a: any) => a.id)),
       
       supabase
         .from('inventory_items')
@@ -231,7 +235,7 @@ serve(async (req) => {
         } else if (rule.rule?.type === 'fixed_fee') {
           additionalFees += rule.rule.amount;
         } else if (rule.rule?.type === 'per_panel') {
-          additionalFees += rule.rule.amount * context.panel_count;
+          additionalFees += rule.rule.amount * (context.panel_count || 1);
         } else if (rule.rule?.type === 'ladder') {
           // Apply ladder pricing based on width and drop
           const ladders = rule.rule.ladders || [];
@@ -277,7 +281,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error calculating BOM and price:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error occurred' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

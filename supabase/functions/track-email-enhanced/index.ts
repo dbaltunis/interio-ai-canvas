@@ -115,8 +115,9 @@ async function trackEvent(event: TrackingEvent) {
         break;
       
       case 'time_spent':
-        if (timeSpent) {
-          const timeSpentNumber = parseInt(timeSpent);
+        const timeSpentParam = eventData?.timeSpent;
+        if (timeSpentParam) {
+          const timeSpentNumber = parseInt(timeSpentParam);
           updateData.time_spent_seconds = (emailData.time_spent_seconds || 0) + timeSpentNumber;
           console.log(`Updating time spent: adding ${timeSpentNumber}s to existing ${emailData.time_spent_seconds || 0}s`);
         }
@@ -215,11 +216,11 @@ function returnTrackingPixel() {
 
   return new Response(pixelData, {
     headers: {
+      ...corsHeaders,
       "Content-Type": "image/gif",
       "Cache-Control": "no-cache, no-store, must-revalidate",
       "Pragma": "no-cache",
-      "Expires": "0",
-      ...corsHeaders,
+      "Expires": "0"
     },
   });
 }

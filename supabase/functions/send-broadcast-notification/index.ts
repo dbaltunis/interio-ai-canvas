@@ -112,7 +112,7 @@ const handler = async (req: Request): Promise<Response> => {
           }
         } catch (error) {
           failedCount++;
-          results.push({ email, status: 'failed', error: error.message });
+          results.push({ email, status: 'failed', error: error instanceof Error ? error.message : 'Unknown error occurred' });
         }
       }
     }
@@ -176,7 +176,7 @@ const handler = async (req: Request): Promise<Response> => {
     
     return new Response(
       JSON.stringify({
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
         success: false,
       }),
       {

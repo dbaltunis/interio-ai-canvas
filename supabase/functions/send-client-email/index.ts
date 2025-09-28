@@ -140,7 +140,7 @@ const handler = async (req: Request): Promise<Response> => {
         period_start: startOfMonth.toISOString(),
         period_end: new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0).toISOString(),
         email_count: currentUsage + 1,
-        sms_count: usage?.sms_count || 0,
+        sms_count: (usage as any)?.sms_count || 0,
       });
 
     console.log("Email sent successfully via SendGrid");

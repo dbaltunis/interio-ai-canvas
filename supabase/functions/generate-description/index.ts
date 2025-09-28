@@ -42,7 +42,7 @@ Formula Name: ${name || 'Not specified'}`;
       hardware_calculation: "Generate a description for a hardware calculation formula that determines hardware requirements"
     };
 
-    const prompt = categoryPrompts[category] || "Generate a description for this calculation formula";
+    const prompt = categoryPrompts[category as keyof typeof categoryPrompts] || "Generate a description for this calculation formula";
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -82,7 +82,7 @@ Formula Name: ${name || 'Not specified'}`;
     });
   } catch (error) {
     console.error('Error in generate-description function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error occurred' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

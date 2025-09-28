@@ -68,11 +68,11 @@ serve(async (req) => {
         };
 
         let highestStatus = email.status;
-        let highestPriority = statusPriority[email.status] || 0;
+        let highestPriority = statusPriority[email.status as keyof typeof statusPriority] || 0;
 
         if (analytics && analytics.length > 0) {
           for (const event of analytics) {
-            const eventPriority = statusPriority[event.event_type] || 0;
+            const eventPriority = statusPriority[event.event_type as keyof typeof statusPriority] || 0;
             if (eventPriority > highestPriority) {
               highestPriority = eventPriority;
               highestStatus = event.event_type;
@@ -143,7 +143,7 @@ serve(async (req) => {
     
     return new Response(JSON.stringify({
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
       timestamp: new Date().toISOString()
     }), {
       status: 500,

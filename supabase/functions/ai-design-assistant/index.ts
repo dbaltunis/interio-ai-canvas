@@ -89,7 +89,7 @@ Provide specific, implementable recommendations that can be applied immediately.
   } catch (error) {
     console.error('Error in AI Design Assistant:', error);
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
       designRecommendations: generateFallbackRecommendations()
     }), {
       status: 200, // Return 200 with fallback recommendations

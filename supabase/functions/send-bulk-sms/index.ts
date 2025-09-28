@@ -50,7 +50,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.log('No active subscription found, checking usage limits');
     }
 
-    const smsLimit = subscription?.subscription_plans?.notification_limits?.sms_monthly || 0;
+    const smsLimit = (subscription?.subscription_plans as any)?.notification_limits?.sms_monthly || 0;
     
     // Check current month usage
     const startOfMonth = new Date();
@@ -103,7 +103,7 @@ const handler = async (req: Request): Promise<Response> => {
         }
       } catch (error) {
         failedCount++;
-        results.push({ phoneNumber, status: 'failed', error: error.message });
+        results.push({ phoneNumber, status: 'failed', error: error instanceof Error ? error.message : 'Unknown error occurred' });
       }
     }
 
@@ -116,7 +116,7 @@ const handler = async (req: Request): Promise<Response> => {
           period_start: startOfMonth.toISOString(),
           period_end: new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0).toISOString(),
           sms_count: currentUsage + successCount,
-          email_count: usage?.email_count || 0,
+          email_count: (usage as any)?.email_count || 0,
         });
     }
 
@@ -144,7 +144,7 @@ const handler = async (req: Request): Promise<Response> => {
     
     return new Response(
       JSON.stringify({
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
         success: false,
       }),
       {

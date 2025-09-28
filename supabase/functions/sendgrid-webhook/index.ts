@@ -185,8 +185,8 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       // Only update if new status has higher or equal priority
-      const currentPriority = currentEmail?.status ? statusPriority[currentEmail.status] || 0 : 0;
-      const newPriority = statusPriority[newStatus] || 0;
+      const currentPriority = currentEmail?.status ? statusPriority[currentEmail.status as keyof typeof statusPriority] || 0 : 0;
+      const newPriority = statusPriority[newStatus as keyof typeof statusPriority] || 0;
 
       if (newPriority >= currentPriority) {
         updateData.status = newStatus;
@@ -255,7 +255,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("Error in sendgrid-webhook function:", error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
         success: false 
       }),
       {

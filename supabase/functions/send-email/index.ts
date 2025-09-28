@@ -284,18 +284,18 @@ const handler = async (req: Request): Promise<Response> => {
       let processedContent = emailContent;
       
       // Check if content contains HTML tags
-      const isHtml = /<[a-z][\s\S]*>/i.test(emailContent);
+      const isHtml = /<[a-z][\s\S]*>/i.test(emailContent || '');
       
       if (!isHtml) {
         // Convert plain text to HTML, preserving line breaks
-        processedContent = emailContent.replace(/\n/g, '<br>');
+        processedContent = (emailContent || '').replace(/\n/g, '<br>');
         // Wrap the content in basic HTML structure
         processedContent = `<html><head>${enhancedTrackingScript}</head><body>${processedContent}</body></html>`;
       } else {
         // Insert tracking script into existing HTML
-        if (processedContent.includes('</head>')) {
+        if (processedContent && processedContent.includes('</head>')) {
           processedContent = processedContent.replace('</head>', `${enhancedTrackingScript}</head>`);
-        } else if (processedContent.includes('<body>')) {
+        } else if (processedContent && processedContent.includes('<body>')) {
           processedContent = processedContent.replace('<body>', `<body>${enhancedTrackingScript}`);
         } else {
           processedContent = `${enhancedTrackingScript}${processedContent}`;
@@ -435,7 +435,7 @@ const handler = async (req: Request): Promise<Response> => {
         </div>
       `;
       
-      if (contentWithSignature.includes('</body>')) {
+      if (contentWithSignature && contentWithSignature.includes('</body>')) {
         contentWithSignature = contentWithSignature.replace('</body>', `${formattedSignature}</body>`);
       } else {
         contentWithSignature += formattedSignature;

@@ -178,7 +178,7 @@ serve(async (req) => {
             }
             setTimeout(() => window.close(), 1000);
           </script>
-          <p>Authentication failed: ${error.message}</p>
+          <p>Authentication failed: ${error instanceof Error ? error.message : 'Unknown error occurred'}</p>
         </body>
       </html>`,
       { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
