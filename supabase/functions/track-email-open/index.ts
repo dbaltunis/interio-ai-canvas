@@ -39,46 +39,62 @@ serve(async (req: Request) => {
 
     console.log("Tracking email open for ID:", emailId);
 
-    // First, get the current email data
-    const { data: emailData, error: fetchError } = await supabase
-      .from("emails")
-      .select("open_count, status")
-      .eq("id", emailId)
-      .single();
+    // Get user agent and IP for deduplication
+    const userAgent = req.headers.get("user-agent") || "unknown";
+    const ipAddress = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+    
+    // Check for recent identical opens (within 5 seconds) to prevent double-counting
+    const fiveSecondsAgo = new Date(Date.now() - 5000).toISOString();
+    const { data: recentOpens } = await supabase
+      .from("email_analytics")
+      .select("id")
+      .eq("email_id", emailId)
+      .eq("event_type", "opened")
+      .eq("ip_address", ipAddress)
+      .eq("user_agent", userAgent)
+      .gte("created_at", fiveSecondsAgo);
 
-    if (fetchError) {
-      console.error("Error fetching email:", fetchError);
-      // Still return pixel to avoid broken images
+    if (recentOpens && recentOpens.length > 0) {
+      console.log("Duplicate open detected within 5 seconds, returning pixel without counting");
       return returnTrackingPixel();
     }
 
-    console.log("Current email data:", emailData);
-
-    // Increment open count
-    const newOpenCount = (emailData.open_count || 0) + 1;
-    let newStatus = emailData.status;
-
-    // Update status to 'opened' if it was 'sent' or 'delivered'
-    if (['sent', 'delivered'].includes(emailData.status)) {
-      newStatus = 'opened';
-    }
-
-    console.log("Updating email with open count:", newOpenCount, "status:", newStatus);
-
-    // Update email with new open count and status
-    const { error: updateError } = await supabase
-      .from("emails")
-      .update({
-        open_count: newOpenCount,
-        status: newStatus,
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", emailId);
+    // Use atomic increment to avoid race conditions
+    const { data: updatedEmail, error: updateError } = await supabase
+      .rpc('increment_email_open_count', { 
+        email_id_param: emailId 
+      });
 
     if (updateError) {
-      console.error("Error updating email open count:", updateError);
+      console.error("Error incrementing email open count:", updateError);
+      // Fallback to manual method
+      const { data: emailData, error: fetchError } = await supabase
+        .from("emails")
+        .select("open_count, status")
+        .eq("id", emailId)
+        .single();
+
+      if (!fetchError && emailData) {
+        const newOpenCount = (emailData.open_count || 0) + 1;
+        let newStatus = emailData.status;
+
+        if (['sent', 'delivered', 'processed'].includes(emailData.status)) {
+          newStatus = 'opened';
+        }
+
+        await supabase
+          .from("emails")
+          .update({
+            open_count: newOpenCount,
+            status: newStatus,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", emailId);
+        
+        console.log("Fallback: Updated email open count to:", newOpenCount);
+      }
     } else {
-      console.log("Successfully updated email open count to:", newOpenCount);
+      console.log("Successfully incremented email open count using atomic function");
     }
 
     // Insert analytics record
@@ -87,11 +103,11 @@ serve(async (req: Request) => {
       .insert({
         email_id: emailId,
         event_type: "opened",
-        ip_address: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown",
-        user_agent: req.headers.get("user-agent") || "unknown",
+        ip_address: ipAddress,
+        user_agent: userAgent,
         event_data: {
           timestamp: new Date().toISOString(),
-          open_count: newOpenCount
+          source: "tracking_pixel"
         }
       });
 
