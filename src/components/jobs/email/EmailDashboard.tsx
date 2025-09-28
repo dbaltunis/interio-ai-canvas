@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Search, Filter, Eye, Archive, Download, MousePointer, TrendingUp, Users, CheckCircle, XCircle, Trash2 } from "lucide-react";
+import { Mail, Search, Filter, Eye, Archive, Download, MousePointer, TrendingUp, Users, CheckCircle, XCircle, Trash2, RefreshCw } from "lucide-react";
 import { useEmails, useEmailKPIs } from "@/hooks/useEmails";
 import { useClients } from "@/hooks/useClients";
 import { useProjects } from "@/hooks/useProjects";
@@ -34,8 +34,14 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
   const [showEmailDetail, setShowEmailDetail] = useState(false);
   const [followUpEmailId, setFollowUpEmailId] = useState<string | null>(null);
 
-  const { data: emails = [], isLoading: emailsLoading } = useEmails();
-  const { data: kpis, isLoading: kpiLoading } = useEmailKPIs();
+  const { data: emails = [], isLoading: emailsLoading, refetch: refetchEmails } = useEmails();
+  const { data: kpis, isLoading: kpiLoading, refetch: refetchKpis } = useEmailKPIs();
+
+  // Add manual refresh functionality
+  const handleRefresh = async () => {
+    console.log('Manually refreshing email data...');
+    await Promise.all([refetchEmails(), refetchKpis()]);
+  };
   const { data: clients = [], isLoading: clientsLoading } = useClients();
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const sendEmailMutation = useSendEmail();
@@ -86,31 +92,31 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'queued':
-        return "bg-muted/30 text-muted-foreground";
+        return "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border-yellow-500/20";
       case 'sent':
-        return "bg-primary/10 text-primary";
+        return "bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/20";
       case 'processed':
-        return "bg-secondary/10 text-secondary";
+        return "bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/20";
       case 'delivered':
-        return "bg-accent/10 text-accent";
+        return "bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/20";
       case 'opened':
-        return "bg-primary/10 text-primary";
+        return "bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-500/20";
       case 'clicked':
-        return "bg-primary/10 text-primary";
+        return "bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border-cyan-500/20";
       case 'bounced':
-        return "bg-destructive/10 text-destructive";
+        return "bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/20";
       case 'dropped':
-        return "bg-secondary/10 text-secondary";
+        return "bg-gray-500/20 text-gray-700 dark:text-gray-300 border-gray-500/20";
       case 'spam_reported':
-        return "bg-secondary/10 text-secondary";
+        return "bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/20";
       case 'unsubscribed':
-        return "bg-secondary/10 text-secondary";
+        return "bg-slate-500/20 text-slate-700 dark:text-slate-300 border-slate-500/20";
       case 'deferred':
-        return "bg-muted/30 text-muted-foreground";
+        return "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/20";
       case 'failed':
-        return "bg-destructive/10 text-destructive";
+        return "bg-red-600/20 text-red-800 dark:text-red-200 border-red-600/20";
       default:
-        return "bg-muted/30 text-muted-foreground";
+        return "bg-gray-400/20 text-gray-700 dark:text-gray-300 border-gray-400/20";
     }
   };
 
@@ -216,7 +222,18 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
   return (
     <div className="space-y-6">
       {/* KPI Dashboard - Compact View */}
-      <Card className="liquid-glass p-2 rounded-xl border">{/* reduced from p-4 to p-2 */}
+      <Card className="liquid-glass p-2 rounded-xl border">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm font-medium text-muted-foreground">Email Statistics</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRefresh}
+            className="h-8 w-8 p-0 hover:bg-muted"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
           <div 
             className="flex flex-col items-center text-center p-1.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
@@ -404,7 +421,7 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
                       </button>
                     </TableCell>
                      <TableCell>
-                    <Badge className={`${getStatusColor(email.status)} border-0`} variant="secondary">
+                    <Badge className={`${getStatusColor(email.status)} border`} variant="outline">
                       {email.status}
                     </Badge>
                      </TableCell>

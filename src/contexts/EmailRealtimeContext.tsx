@@ -24,10 +24,16 @@ export const EmailRealtimeProvider = ({ children }: { children: React.ReactNode 
           schema: 'public',
           table: 'emails'
         },
-        () => {
-          // Invalidate and refetch emails when any email changes
+        (payload) => {
+          console.log('Real-time email change detected:', payload);
+          // Force refresh queries immediately
           queryClient.invalidateQueries({ queryKey: ["emails"] });
           queryClient.invalidateQueries({ queryKey: ["email-kpis"] });
+          queryClient.invalidateQueries({ queryKey: ["email-analytics"] });
+          
+          // Also force refetch to ensure immediate data update
+          queryClient.refetchQueries({ queryKey: ["emails"] });
+          queryClient.refetchQueries({ queryKey: ["email-kpis"] });
         }
       )
       .subscribe();
