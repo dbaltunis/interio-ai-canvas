@@ -153,11 +153,15 @@ const handler = async (req: Request): Promise<Response> => {
           continue;
       }
 
-      // Update email record
-      await supabase
+      // Update email record with safer update strategy
+      const { error: updateError } = await supabase
         .from('emails')
         .update(updateData)
         .eq('id', email_id);
+
+      if (updateError) {
+        console.error(`Failed to update email ${email_id}:`, updateError);
+      }
 
       // Record analytics event for all events
       await supabase
