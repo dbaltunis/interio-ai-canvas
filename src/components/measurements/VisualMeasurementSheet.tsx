@@ -492,10 +492,10 @@ export const VisualMeasurementSheet = ({
 
               {/* Pooling measurement indicator - VERTICAL to measure pooled fabric height */}
               {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                <div className="absolute bottom-4 left-8 flex flex-col items-center z-20">
+                <div className="absolute -bottom-2 left-20 flex flex-col items-center z-30">
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-orange-600"></div>
-                  <div className="h-4 border-l-2 border-orange-600 relative">
-                    <span className="absolute -left-14 top-1/2 transform -translate-y-1/2 bg-orange-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg z-30 whitespace-nowrap">
+                  <div className="h-8 border-l-2 border-orange-600 relative">
+                    <span className="absolute -left-16 top-1/2 transform -translate-y-1/2 bg-orange-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg z-40 whitespace-nowrap">
                       Pooling: {displayValue(poolingAmount)}
                     </span>
                   </div>
