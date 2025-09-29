@@ -22,7 +22,6 @@ export const MeasurementInputs = ({
 
   const handleInputChange = (field: string, value: string) => {
     if (!readOnly && onMeasurementChange) {
-      console.log(`🔧 Dynamic MeasurementInputs: ${field} changed to:`, value);
       onMeasurementChange(field, value);
     }
   };
@@ -77,21 +76,15 @@ export const MeasurementInputs = ({
               <Input
                 id={key}
                 type="number"
-                step="0.25"
                 value={measurements[key] || ""}
                 onChange={(e) => handleInputChange(key, e.target.value)}
-                placeholder="0.00"
+                placeholder="0"
                 readOnly={readOnly}
-                className="pr-12 transition-all duration-200 focus:ring-2 focus:ring-primary/20"
+                className="pr-12"
               />
               <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
                 {unitSymbol}
               </span>
-              {measurements[key] && measurements[key] !== "" && measurements[key] !== "0" && (
-                <div className="text-xs text-green-600 font-medium mt-1">
-                  ✓ {measurements[key]}{unitSymbol} entered
-                </div>
-              )}
             </div>
           </div>
         ))}
@@ -159,65 +152,26 @@ export const MeasurementInputs = ({
         </div>
 
         <div className="space-y-3">
-          <Label className="text-sm font-medium">Pooling Option (Dynamic)</Label>
+          <Label className="text-sm font-medium">Pooling Option</Label>
           <RadioGroup
             value={measurements.pooling_option || "above_floor"}
-            onValueChange={(value) => {
-              handleInputChange('pooling_option', value);
-              // Auto-set default pooling amount for below_floor
-              if (value === "below_floor" && (!measurements.pooling_amount || measurements.pooling_amount === "0")) {
-                const defaultValue = unitSymbol === 'cm' ? "2" : "1";
-                handleInputChange('pooling_amount', defaultValue);
-              }
-              // Clear pooling amount when not below floor
-              if (value !== "below_floor") {
-                handleInputChange('pooling_amount', "");
-              }
-            }}
+            onValueChange={(value) => handleInputChange('pooling_option', value)}
             disabled={readOnly}
             className="flex flex-col space-y-2"
           >
-            <div className="flex items-center space-x-2 p-2 rounded hover:bg-muted/50 transition-colors">
+            <div className="flex items-center space-x-2">
               <RadioGroupItem value="above_floor" id="pooling-above" />
-              <Label htmlFor="pooling-above" className="text-sm cursor-pointer">Above Floor</Label>
+              <Label htmlFor="pooling-above" className="text-sm">Above Floor</Label>
             </div>
-            <div className="flex items-center space-x-2 p-2 rounded hover:bg-muted/50 transition-colors">
+            <div className="flex items-center space-x-2">
               <RadioGroupItem value="touching_floor" id="pooling-touching" />
-              <Label htmlFor="pooling-touching" className="text-sm cursor-pointer">Touching Floor</Label>
+              <Label htmlFor="pooling-touching" className="text-sm">Touching Floor</Label>
             </div>
-            <div className="flex items-center space-x-2 p-2 rounded hover:bg-muted/50 transition-colors">
+            <div className="flex items-center space-x-2">
               <RadioGroupItem value="below_floor" id="pooling-below" />
-              <Label htmlFor="pooling-below" className="text-sm cursor-pointer">Below Floor (Pooling)</Label>
+              <Label htmlFor="pooling-below" className="text-sm">Below Floor (Pooling)</Label>
             </div>
           </RadioGroup>
-          
-          {measurements.pooling_option === "below_floor" && (
-            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-              <Label htmlFor="pooling_amount" className="text-sm font-medium">
-                Pooling Amount (Dynamic)
-              </Label>
-              <div className="relative mt-1">
-                <Input
-                  id="pooling_amount"
-                  type="number"
-                  step="0.25"
-                  value={measurements.pooling_amount || ""}
-                  onChange={(e) => handleInputChange('pooling_amount', e.target.value)}
-                  placeholder="2.00"
-                  readOnly={readOnly}
-                  className="pr-12 transition-all duration-200"
-                />
-                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
-                  {unitSymbol}
-                </span>
-              </div>
-              {measurements.pooling_amount && measurements.pooling_amount !== "" && measurements.pooling_amount !== "0" && (
-                <div className="text-xs text-green-600 font-medium mt-1">
-                  ✓ {measurements.pooling_amount}{unitSymbol} pooling will be saved
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </div>
     </div>
