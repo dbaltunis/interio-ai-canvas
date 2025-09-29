@@ -98,11 +98,11 @@ export const FabricSelectionSection = ({
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-sm">{fabric.name}</span>
                     <Badge variant="outline" className="text-xs">
-                      {formatPrice(fabric.price_per_meter || fabric.unit_price || 0)}/m
+                      {formatPrice(fabric.price_per_meter || fabric.unit_price || 0)}/{units.fabric === 'yards' ? 'yd' : 'm'}
                     </Badge>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {fabric.fabric_width && `${fabric.fabric_width}cm wide`}
+                    {fabric.fabric_width && `${fabric.fabric_width}${units.fabric} wide`}
                     {fabric.fabric_composition && ` • ${fabric.fabric_composition}`}
                   </div>
                 </div>
@@ -122,7 +122,7 @@ export const FabricSelectionSection = ({
           {/* Compact Fabric Info */}
           <div className="grid grid-cols-3 gap-2 text-xs">
             <div className="text-center p-1 bg-muted/50 rounded">
-              <div className="font-medium">{selectedFabricItem.fabric_width || 137}cm</div>
+              <div className="font-medium">{selectedFabricItem.fabric_width || 137}{units.fabric}</div>
               <div className="text-muted-foreground">Width</div>
             </div>
             <div className="text-center p-1 bg-muted/50 rounded">
@@ -136,7 +136,7 @@ export const FabricSelectionSection = ({
             </div>
             <div className="text-center p-1 bg-muted/50 rounded">
               <div className="font-medium">{formatPrice(selectedFabricItem.price_per_meter || selectedFabricItem.unit_price || 0)}</div>
-              <div className="text-muted-foreground">Per Meter</div>
+              <div className="text-muted-foreground">Per {units.fabric === 'yards' ? 'Yard' : 'Meter'}</div>
             </div>
           </div>
 
@@ -161,8 +161,8 @@ export const FabricSelectionSection = ({
               {/* Main calculation results in compact grid */}
               <div className="grid grid-cols-2 gap-2 mb-2">
                 <div className="flex justify-between">
-                  <span>Linear Metres:</span>
-                  <span className="font-medium">{fabricCalculation.linearMeters.toFixed(2)}m</span>
+                  <span>Linear {units.fabric === 'yards' ? 'Yards' : 'Metres'}:</span>
+                  <span className="font-medium">{fabricCalculation.linearMeters.toFixed(2)}{units.fabric === 'yards' ? 'yd' : 'm'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Widths Needed:</span>

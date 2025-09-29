@@ -438,7 +438,7 @@ export const CostCalculationSummary = ({
             <CurtainIcon className="h-4 w-4 text-primary" />
             <span className="text-card-foreground font-medium">Fabric</span>
             <span className="text-muted-foreground">
-              {finalLinearMeters.toFixed(2)}m × {formatPrice(fabricPriceDisplay)}/m
+              {finalLinearMeters.toFixed(2)}{units.fabric === 'yards' ? 'yd' : 'm'} × {formatPrice(fabricPriceDisplay)}/{units.fabric === 'yards' ? 'yd' : 'm'}
             </span>
           </div>
           <span className="font-medium text-card-foreground">{formatPrice(finalFabricCost)}</span>
