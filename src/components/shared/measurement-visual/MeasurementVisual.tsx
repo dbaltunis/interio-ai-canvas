@@ -67,11 +67,8 @@ export const MeasurementVisual = ({
       {/* Header */}
       {!hideHeader && (
         <div className="container-level-2 border-b-2 border-border px-6 py-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-card-foreground">{title}</h2>
-            {projectData && (
-              <ProjectInfoDisplay projectData={projectData} />
-            )}
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-card-foreground">{title}</h2>
           </div>
         </div>
       )}
