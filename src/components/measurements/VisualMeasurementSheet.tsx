@@ -379,8 +379,8 @@ export const VisualMeasurementSheet = ({
                   </div>
                 </>
               ) : (
-                /* Single Panel */
-                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} ${curtainSide === "left" ? "left-14" : "right-14"} w-12 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
+                /* Single Panel - Consistent with pair styling */
+                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} ${curtainSide === "left" ? "left-14" : "right-14"} w-8 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
                   <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
                   <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
                   <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
@@ -388,8 +388,6 @@ export const VisualMeasurementSheet = ({
                   <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
                   <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
                   <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
-                  <div className="absolute top-2 bottom-2 left-7 w-0.5 bg-primary/15"></div>
-                  <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-primary/10"></div>
                   
                   {/* Pooling visual effect */}
                   {poolingOption === "below_floor" && hasValue(poolingAmount) && (
@@ -492,16 +490,16 @@ export const VisualMeasurementSheet = ({
                 </span>
               </div>
 
-              {/* Pooling measurement indicator - HORIZONTAL AT BOTTOM */}
+              {/* Pooling measurement indicator - VERTICAL to measure pooled fabric height */}
               {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                <div className="absolute bottom-0 left-16 right-16 flex items-center z-10">
-                  <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-orange-600"></div>
-                  <div className="flex-1 border-t-2 border-orange-600 relative">
-                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-orange-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg z-20 whitespace-nowrap">
+                <div className="absolute bottom-4 left-8 flex flex-col items-center z-20">
+                  <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-orange-600"></div>
+                  <div className="h-4 border-l-2 border-orange-600 relative">
+                    <span className="absolute -left-14 top-1/2 transform -translate-y-1/2 bg-orange-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg z-30 whitespace-nowrap">
                       Pooling: {displayValue(poolingAmount)}
                     </span>
                   </div>
-                  <div className="w-0 h-0 border-t-2 border-b-2 border-l-4 border-transparent border-l-orange-600"></div>
+                  <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-orange-600"></div>
                 </div>
               )}
 
