@@ -48,15 +48,10 @@ export const MeasurementVisualCore = ({
 
   const visualHeight = config.compact ? "min-h-[300px]" : "min-h-[400px]";
 
+  const hardwareName = hardwareType === "track" ? "Track" : "Rod";
+
   return (
     <div className={`relative container-level-2 rounded-lg p-8 ${visualHeight} overflow-visible ${className}`}>
-      {/* Ceiling Line */}
-      <div className="absolute top-4 left-8 right-8 border-t-4 border-card-foreground">
-        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-base font-bold text-card-foreground">
-          Ceiling Line
-        </span>
-      </div>
-
       {/* Hardware - Track/Rod */}
       {windowType === 'bay' ? (
         // Bay Window Hardware - Three angled sections
@@ -77,17 +72,9 @@ export const MeasurementVisualCore = ({
           {/* Center Hardware */}
           <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-30 right-30 flex items-center`}>
             {hardwareType === "track" ? (
-              <div className="w-full h-3 bg-muted-foreground relative">
-                <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
-                  Bay Curtain Track
-                </span>
-              </div>
+              <div className="w-full h-3 bg-muted-foreground relative"></div>
             ) : (
-              <div className="w-full h-2 bg-muted-foreground rounded-full relative">
-                <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
-                  Bay Curtain Rod
-                </span>
-              </div>
+              <div className="w-full h-2 bg-muted-foreground rounded-full relative"></div>
             )}
           </div>
           
@@ -111,17 +98,11 @@ export const MeasurementVisualCore = ({
             <div className="w-full h-3 bg-muted-foreground relative">
               <div className="absolute -left-1 -top-0.5 w-2 h-4 bg-foreground"></div>
               <div className="absolute -right-1 -top-0.5 w-2 h-4 bg-foreground"></div>
-              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
-                Curtain Track
-              </span>
             </div>
           ) : (
             <div className="w-full h-2 bg-muted-foreground rounded-full relative">
               <div className="absolute -left-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
               <div className="absolute -right-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
-              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
-                Curtain Rod
-              </span>
             </div>
           )}
         </div>
@@ -239,7 +220,7 @@ export const MeasurementVisualCore = ({
           {/* Measurement line */}
           <div className="flex-1 border-t-2 border-blue-600 relative">
             <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg z-20 whitespace-nowrap">
-              Rail Width: {displayValue(measurements.rail_width)}
+              {hardwareName} Width: {displayValue(measurements.rail_width)}
             </span>
           </div>
           {/* Right arrow */}
@@ -249,7 +230,7 @@ export const MeasurementVisualCore = ({
 
       {/* Drop Measurement - Height of curtain */}
       {hasValue(measurements.drop) && (
-        <div className={`absolute right-0 ${hardwareType === "track" ? "top-6" : "top-18"} ${getCurtainBottomPosition() === "bottom-0" ? "bottom-0" : getCurtainBottomPosition() === "bottom-4" ? "bottom-4" : "bottom-12"} flex flex-col items-center z-10`}>
+        <div className={`absolute right-0 ${hardwareType === "track" ? "top-6" : "top-18"} ${poolingOption === "below_floor" && hasValue(poolingAmount) ? "bottom-8" : getCurtainBottomPosition() === "bottom-4" ? "bottom-4" : "bottom-12"} flex flex-col items-center z-10`}>
           {/* Top arrow */}
           <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-green-600"></div>
           {/* Measurement line */}
@@ -265,7 +246,7 @@ export const MeasurementVisualCore = ({
 
       {/* Pooling Measurement - When curtains pool on floor */}
       {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-        <div className="absolute bottom-8 left-16 right-16 flex items-center z-10">
+        <div className="absolute bottom-0 left-16 right-16 flex items-center z-10">
           {/* Left arrow */}
           <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-orange-600"></div>
           {/* Measurement line */}
