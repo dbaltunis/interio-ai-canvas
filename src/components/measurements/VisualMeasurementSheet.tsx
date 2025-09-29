@@ -842,7 +842,7 @@ export const VisualMeasurementSheet = ({
               </div>
             </div>
 
-            {/* Main Measurements - Compact Design */}
+            {/* Main Measurements - Dynamic Compact Design */}
             <div className="container-level-1 rounded-lg p-4">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
@@ -851,8 +851,8 @@ export const VisualMeasurementSheet = ({
                   </svg>
                 </div>
                 <div>
-                  <h4 className="text-lg font-bold text-card-foreground">Essential Measurements</h4>
-                  <p className="text-sm text-card-foreground">Required for accurate calculations</p>
+                  <h4 className="text-lg font-bold text-card-foreground">Dynamic Measurements</h4>
+                  <p className="text-sm text-card-foreground">Live updates - changes reflect immediately</p>
                 </div>
               </div>
 
@@ -872,21 +872,27 @@ export const VisualMeasurementSheet = ({
                        step="0.25"
                        value={measurements.rail_width || ""}
                        onChange={(e) => {
-                         console.log("🔧 Rail width input change:", e.target.value, "Current measurements:", measurements);
-                         handleInputChange("rail_width", e.target.value);
+                         const value = e.target.value;
+                         console.log("🔧 Dynamic rail width input change:", value, "Current measurements:", measurements);
+                         handleInputChange("rail_width", value);
                        }}
                        onFocus={(e) => {
                          e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
                        }}
                        placeholder="0.00"
                        readOnly={readOnly}
-                       className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground"
+                       className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground transition-all duration-200"
                      />
                     <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-sm bg-muted px-2 py-1 rounded">
                        {units.length}
                     </span>
                   </div>
                   <p className="text-sm text-card-foreground font-medium">Total {hardwareType === "track" ? "track" : "rail"} length</p>
+                  {hasValue(measurements.rail_width) && (
+                    <div className="text-xs text-green-600 font-semibold bg-green-50 px-2 py-1 rounded">
+                      ✓ Dynamic: {displayValue(measurements.rail_width)}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-4">
@@ -904,34 +910,42 @@ export const VisualMeasurementSheet = ({
                        step="0.25"
                        value={measurements.drop || ""}
                        onChange={(e) => {
-                         console.log("🔧 Drop input change:", e.target.value, "Current measurements:", measurements);
-                         handleInputChange("drop", e.target.value);
+                         const value = e.target.value;
+                         console.log("🔧 Dynamic drop input change:", value, "Current measurements:", measurements);
+                         handleInputChange("drop", value);
                        }}
                        onFocus={(e) => {
                          e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
                        }}
                        placeholder="0.00"
                        readOnly={readOnly}
-                       className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground"
+                       className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground transition-all duration-200"
                      />
                     <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-sm bg-muted px-2 py-1 rounded">
                       {units.length}
                     </span>
                   </div>
                   <p className="text-sm text-card-foreground font-medium">Length to curtain bottom</p>
+                  {hasValue(measurements.drop) && (
+                    <div className="text-xs text-green-600 font-semibold bg-green-50 px-2 py-1 rounded">
+                      ✓ Dynamic: {displayValue(measurements.drop)}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Pooling Configuration - Collapsible */}
+            {/* Pooling Configuration - Enhanced with Dynamic Saving */}
             <div className="space-y-2">
-              <details className="group">
-                <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-amber-700 hover:text-amber-900 transition-colors">
+              <details className="group" open={poolingOption === "below_floor"}>
+                <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-amber-700 hover:text-amber-900 transition-colors p-3 bg-amber-50 rounded-lg border border-amber-200">
                   <svg className="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                   Pooling Configuration
-                  <span className="text-xs text-amber-600 ml-auto">Optional - Click to configure</span>
+                  <span className="text-xs text-amber-600 ml-auto">
+                    {poolingOption === "below_floor" ? `${displayValue(poolingAmount)} pooling` : "Optional - Click to configure"}
+                  </span>
                 </summary>
                 <div className="mt-3 p-4 bg-amber-50/50 rounded-lg border border-amber-200">
                   <div className="space-y-4">
@@ -940,59 +954,78 @@ export const VisualMeasurementSheet = ({
                       <RadioGroup 
                         value={poolingOption} 
                         onValueChange={(value) => {
-                          console.log("Pooling option changed to:", value);
+                          console.log("🔧 Dynamic pooling option changed to:", value);
                           handleInputChange("pooling_option", value);
                           
                           // Set default pooling amount when "below_floor" is selected
                           if (value === "below_floor" && (!poolingAmount || poolingAmount === "0")) {
                             const defaultValue = units.system === "imperial" ? "1" : "2"; // 1 inch or 2 cm
+                            console.log("🔧 Setting default pooling amount:", defaultValue);
                             handleInputChange("pooling_amount", defaultValue);
                           }
                           // Clear pooling amount when not below floor
                           if (value !== "below_floor") {
+                            console.log("🔧 Clearing pooling amount for option:", value);
                             handleInputChange("pooling_amount", "");
                           }
                         }}
                         disabled={readOnly}
                         className="space-y-2"
                       >
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 p-2 rounded hover:bg-amber-100/50 transition-colors">
                           <RadioGroupItem value="above_floor" id="above_floor" />
-                          <Label htmlFor="above_floor">Above floor (hanging)</Label>
+                          <Label htmlFor="above_floor" className="cursor-pointer">Above floor (hanging)</Label>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 p-2 rounded hover:bg-amber-100/50 transition-colors">
                           <RadioGroupItem value="touching_floor" id="touching_floor" />
-                          <Label htmlFor="touching_floor">Touching floor</Label>
+                          <Label htmlFor="touching_floor" className="cursor-pointer">Touching floor</Label>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 p-2 rounded hover:bg-amber-100/50 transition-colors">
                           <RadioGroupItem value="below_floor" id="below_floor" />
-                          <Label htmlFor="below_floor">Below floor (pooling)</Label>
+                          <Label htmlFor="below_floor" className="cursor-pointer">Below floor (pooling)</Label>
                         </div>
                       </RadioGroup>
                     </div>
 
                     {poolingOption === "below_floor" && (
-                      <div className="space-y-3">
+                      <div className="space-y-3 border-t border-amber-200 pt-3">
                         <div>
-                          <Label htmlFor="pooling_amount" className="text-sm font-medium">Pooling Amount</Label>
-                          <p className="text-xs text-muted-foreground mb-1">How much fabric pools on the floor</p>
-                          <Input
-                            id="pooling_amount"
-                            type="number"
-                            step="0.25"
-                            value={poolingAmount}
-                            onChange={(e) => handleInputChange("pooling_amount", e.target.value)}
-                            placeholder="2.00"
-                            readOnly={readOnly}
-                            className="font-semibold"
-                          />
+                          <Label htmlFor="pooling_amount" className="text-sm font-medium flex items-center gap-2">
+                            Pooling Amount
+                            <span className="text-xs text-amber-600 bg-amber-100 px-2 py-0.5 rounded">Dynamic</span>
+                          </Label>
+                          <p className="text-xs text-muted-foreground mb-2">How much fabric pools on the floor</p>
+                          <div className="relative">
+                            <Input
+                              id="pooling_amount"
+                              type="number"
+                              step="0.25"
+                              value={poolingAmount}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                console.log("🔧 Dynamic pooling amount change:", value);
+                                handleInputChange("pooling_amount", value);
+                              }}
+                              placeholder="2.00"
+                              readOnly={readOnly}
+                              className="font-semibold pr-12 transition-all duration-200"
+                            />
+                            <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                              {units.length}
+                            </span>
+                          </div>
+                          {hasValue(poolingAmount) && (
+                            <div className="text-xs text-green-600 font-medium mt-1">
+                              ✓ {displayValue(poolingAmount)} pooling will be saved
+                            </div>
+                          )}
                         </div>
                         
                         {/* Fabric Usage Impact Indicator */}
                         {hasValue(poolingAmount) && selectedFabric && fabricCalculation && (
-                          <div className="p-2 bg-amber-100/50 border border-amber-300 rounded text-xs">
-                            <div className="font-medium text-amber-800 mb-1">
-                              ✓ Pooling included in fabric calculation
+                          <div className="p-3 bg-amber-100/50 border border-amber-300 rounded text-xs">
+                            <div className="font-medium text-amber-800 mb-2">
+                              ✓ Pooling dynamically included in fabric calculation
                             </div>
                             <div className="text-amber-700 space-y-1">
                               <div>• Pooling amount: {displayValue(poolingAmount)} added to drop</div>

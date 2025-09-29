@@ -440,6 +440,10 @@ export const DynamicWindowWorksheet = forwardRef<
               // Convert user input to centimeters for storage (always store in cm)
               rail_width_cm: measurements.rail_width ? convertLength(parseFloat(measurements.rail_width), units.length, 'cm') : 0,
               drop_cm: measurements.drop ? convertLength(parseFloat(measurements.drop), units.length, 'cm') : 0,
+              // Ensure pooling data is properly saved with dynamic updates
+              pooling_option: measurements.pooling_option || 'above_floor',
+              pooling_amount: measurements.pooling_amount || '',
+              pooling_amount_cm: measurements.pooling_amount ? convertLength(parseFloat(measurements.pooling_amount), units.length, 'cm') : 0,
               // Store original values with unit for reference
               rail_width: measurements.rail_width,
               drop: measurements.drop,
