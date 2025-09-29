@@ -708,12 +708,6 @@ export const DynamicWindowWorksheet = forwardRef<
         {/* Measurements - Full Interactive Visual Experience */}
         <TabsContent value="measurements" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Interactive Window Measurement Worksheet</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Live visual measurement system with dynamic updates - measurements affect the visualization in real-time
-              </p>
-            </CardHeader>
             <CardContent className="p-0">
               <div className="grid grid-cols-1 2xl:grid-cols-5 gap-6">
                 {/* Left Side - Live Visual Worksheet */}
