@@ -225,12 +225,6 @@ export const VisualMeasurementSheet = ({
           {/* Visual Diagram - Always visible on large screens */}
           <div className="lg:w-1/2 lg:flex-shrink-0 lg:sticky lg:top-4 lg:h-fit lg:max-h-[calc(100vh-120px)] lg:overflow-visible">
             <div className="relative container-level-2 rounded-lg p-8 min-h-[400px] overflow-visible">
-              {/* Ceiling Line */}
-              <div className="absolute top-4 left-8 right-8 border-t-4 border-card-foreground">
-                <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-base font-bold text-card-foreground">
-                  Ceiling Line
-                </span>
-              </div>
 
               {/* Hardware - Track/Rod that follows window shape */}
               {windowType === 'bay' ? (
@@ -253,15 +247,9 @@ export const VisualMeasurementSheet = ({
                   <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-30 right-30 flex items-center`}>
                     {hardwareType === "track" ? (
                       <div className="w-full h-3 bg-muted-foreground relative">
-                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
-                          Bay Curtain Track
-                        </span>
                       </div>
                     ) : (
                       <div className="w-full h-2 bg-muted-foreground rounded-full relative">
-                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
-                          Bay Curtain Rod
-                        </span>
                       </div>
                     )}
                   </div>
@@ -286,17 +274,11 @@ export const VisualMeasurementSheet = ({
                     <div className="w-full h-3 bg-muted-foreground relative">
                       <div className="absolute -left-1 -top-0.5 w-2 h-4 bg-foreground"></div>
                       <div className="absolute -right-1 -top-0.5 w-2 h-4 bg-foreground"></div>
-                      <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
-                        Curtain Track
-                      </span>
                     </div>
                   ) : (
                     <div className="w-full h-2 bg-muted-foreground rounded-full relative">
                       <div className="absolute -left-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
                       <div className="absolute -right-2 -top-1 w-4 h-4 bg-foreground rounded-full"></div>
-                      <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-semibold">
-                        Curtain Rod
-                      </span>
                     </div>
                   )}
                 </div>
@@ -414,7 +396,7 @@ export const VisualMeasurementSheet = ({
                   <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-blue-600"></div>
                   <div className="flex-1 border-t-2 border-blue-600 relative">
                     <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold shadow-lg z-20 whitespace-nowrap">
-                      Rail Width: {displayValue(measurements.rail_width)}
+                      {hardwareType === "track" ? "Track Width" : "Rod Width"}: {displayValue(measurements.rail_width)}
                     </span>
                   </div>
                   <div className="w-0 h-0 border-t-2 border-b-2 border-l-4 border-transparent border-l-blue-600"></div>
