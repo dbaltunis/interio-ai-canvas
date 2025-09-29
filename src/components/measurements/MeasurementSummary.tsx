@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Ruler, Calendar, MapPin, Layers, User } from "lucide-react";
 import { format } from "date-fns";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface MeasurementSummaryProps {
   measurements: Record<string, any>;
@@ -23,11 +24,13 @@ export const MeasurementSummary = ({
   measuredAt,
   notes
 }: MeasurementSummaryProps) => {
+  const { units } = useMeasurementUnits();
+  
   const keyMeasurements = [
-    { key: 'measurement_a', label: 'Window Width', unit: 'inches' },
-    { key: 'measurement_b', label: 'Window Height', unit: 'inches' },
-    { key: 'measurement_e', label: 'Total Height', unit: 'inches' },
-    { key: 'measurement_f', label: 'Total Width', unit: 'inches' }
+    { key: 'measurement_a', label: 'Window Width', unit: units.length },
+    { key: 'measurement_b', label: 'Window Height', unit: units.length },
+    { key: 'measurement_e', label: 'Total Height', unit: units.length },
+    { key: 'measurement_f', label: 'Total Width', unit: units.length }
   ];
 
   return (
