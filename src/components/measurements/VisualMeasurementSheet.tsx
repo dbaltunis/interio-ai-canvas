@@ -222,8 +222,21 @@ export const VisualMeasurementSheet = ({
     }
   };
 
+  const formatPrice = (price: number) => {
+    const currencySymbols: Record<string, string> = {
+      'NZD': 'NZ$',
+      'AUD': 'A$',
+      'USD': '$',
+      'GBP': '£',
+      'EUR': '€',
+      'ZAR': 'R'
+    };
+    const symbol = currencySymbols[units.currency] || units.currency;
+    return `${symbol}${price.toFixed(2)}`;
+  };
+
   return (
-    <div className="w-full container-level-1 rounded-lg overflow-hidden">
+    <div key={`${windowType}-${curtainType}-${hardwareType}-${poolingOption}`} className="w-full container-level-1 rounded-lg overflow-hidden">
       {/* Header */}
       <div className="container-level-2 border-b-2 border-border px-6 py-4">
         <h2 className="text-2xl font-bold text-card-foreground text-center">Window Measurement Worksheet</h2>
@@ -435,7 +448,7 @@ export const VisualMeasurementSheet = ({
 
               {/* Curtain Drop measurement - RIGHT SIDE from hardware to bottom of curtain */}
               {hasValue(measurements.drop) && (
-                <div className={`absolute right-0 ${hardwareType === "track" ? "top-6" : "top-16"} ${poolingOption === "below_floor" && hasValue(poolingAmount) ? "bottom-8" : getCurtainBottomPosition() === "bottom-4" ? "bottom-4" : "bottom-12"} flex flex-col items-center z-20`}>
+                <div className={`absolute right-0 ${hardwareType === "track" ? "top-6" : "top-18"} ${poolingOption === "below_floor" && hasValue(poolingAmount) ? "bottom-8" : getCurtainBottomPosition() === "bottom-4" ? "bottom-4" : "bottom-12"} flex flex-col items-center z-20`}>
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-green-600"></div>
                   <div className="flex-1 border-r-2 border-green-600 relative">
                      <span className="absolute top-1/2 -right-4 transform -translate-y-1/2 bg-green-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg whitespace-nowrap z-30">
@@ -492,10 +505,10 @@ export const VisualMeasurementSheet = ({
 
               {/* Pooling measurement indicator - VERTICAL to measure pooled fabric height */}
               {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                <div className="absolute bottom-2 left-16 flex flex-col items-center z-30">
+                <div className={`absolute -bottom-6 ${curtainType === "pair" ? "left-20" : curtainSide === "left" ? "left-20" : "right-20"} flex flex-col items-center z-30`}>
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-orange-600"></div>
-                  <div className="h-6 border-l-2 border-orange-600 relative">
-                    <span className="absolute -left-20 top-1/2 transform -translate-y-1/2 bg-orange-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg z-40 whitespace-nowrap">
+                  <div className="h-8 border-l-2 border-orange-600 relative">
+                    <span className="absolute -left-24 top-1/2 transform -translate-y-1/2 bg-orange-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg z-40 whitespace-nowrap">
                       Pooling: {displayValue(poolingAmount)}
                     </span>
                   </div>
