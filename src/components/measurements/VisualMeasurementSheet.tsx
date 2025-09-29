@@ -220,7 +220,7 @@ export const VisualMeasurementSheet = ({
       <div className="container-level-2 border-b-2 border-border px-6 py-4">
         <h2 className="text-2xl font-bold text-card-foreground text-center">Window Measurement Worksheet</h2>
       </div>
-      <div className="p-6">
+      <div className="p-2">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Visual Diagram - Always visible on large screens */}
           <div className="lg:w-1/2 lg:flex-shrink-0 lg:sticky lg:top-4 lg:h-fit lg:max-h-[calc(100vh-120px)] lg:overflow-visible">

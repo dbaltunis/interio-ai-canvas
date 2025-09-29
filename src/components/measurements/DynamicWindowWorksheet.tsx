@@ -714,7 +714,7 @@ export const DynamicWindowWorksheet = forwardRef<
                 Live visual measurement system with dynamic updates - measurements affect the visualization in real-time
               </p>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <div className="grid grid-cols-1 2xl:grid-cols-5 gap-6">
                 {/* Left Side - Live Visual Worksheet */}
                 <div className="2xl:col-span-3">
