@@ -97,10 +97,16 @@ export const CostCalculationSummary = ({
   const totalSeamAllowance = widthsRequired > 1 ? (widthsRequired - 1) * seamHems * 2 : 0;
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: units.currency
-    }).format(price);
+    const currencySymbols: Record<string, string> = {
+      'NZD': 'NZ$',
+      'AUD': 'A$',
+      'USD': '$',
+      'GBP': '£',
+      'EUR': '€',
+      'ZAR': 'R'
+    };
+    const symbol = currencySymbols[units.currency] || units.currency;
+    return `${symbol}${price.toFixed(2)}`;
   };
 
   // Calculate fabric usage per running linear metre

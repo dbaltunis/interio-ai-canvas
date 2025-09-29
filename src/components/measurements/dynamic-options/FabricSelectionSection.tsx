@@ -59,10 +59,16 @@ export const FabricSelectionSection = ({
   const selectedFabricItem = fabricItems.find(item => item.id === selectedFabric);
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: units.currency
-    }).format(price);
+    const currencySymbols: Record<string, string> = {
+      'NZD': 'NZ$',
+      'AUD': 'A$',
+      'USD': '$',
+      'GBP': '£',
+      'EUR': '€',
+      'ZAR': 'R'
+    };
+    const symbol = currencySymbols[units.currency] || units.currency;
+    return `${symbol}${price.toFixed(2)}`;
   };
 
   return (
