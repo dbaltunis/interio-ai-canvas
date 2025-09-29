@@ -883,9 +883,9 @@ export const VisualMeasurementSheet = ({
                        readOnly={readOnly}
                        className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground transition-all duration-200"
                      />
-                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-sm bg-muted px-2 py-1 rounded">
-                       {units.length}
-                    </span>
+                     <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-sm bg-muted px-2 py-1 rounded">
+                       {units.length === 'cm' ? 'cm' : 'inches'}
+                     </span>
                   </div>
                   <p className="text-sm text-card-foreground font-medium">Total {hardwareType === "track" ? "track" : "rail"} length</p>
                   {hasValue(measurements.rail_width) && (
@@ -921,9 +921,9 @@ export const VisualMeasurementSheet = ({
                        readOnly={readOnly}
                        className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground transition-all duration-200"
                      />
-                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-sm bg-muted px-2 py-1 rounded">
-                      {units.length}
-                    </span>
+                     <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-sm bg-muted px-2 py-1 rounded">
+                       {units.length === 'cm' ? 'cm' : 'inches'}
+                     </span>
                   </div>
                   <p className="text-sm text-card-foreground font-medium">Length to curtain bottom</p>
                   {hasValue(measurements.drop) && (
