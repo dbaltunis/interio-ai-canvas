@@ -199,7 +199,14 @@ export const VisualMeasurementSheet = ({
   // Helper function to display measurement values
   const displayValue = (value: any) => {
     if (!hasValue(value)) return "";
-    const unitSymbol = units.length === 'cm' ? 'cm' : '"';
+    const unitLabels: Record<string, string> = {
+      'mm': 'mm',
+      'cm': 'cm', 
+      'm': 'm',
+      'inches': '"',
+      'feet': "'"
+    };
+    const unitSymbol = unitLabels[units.length] || units.length;
     return `${value}${unitSymbol}`;
   };
 
