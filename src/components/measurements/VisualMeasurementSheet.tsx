@@ -68,6 +68,7 @@ export const VisualMeasurementSheet = ({
 
   const { data: curtainTemplates = [] } = useCurtainTemplates();
   const { units } = useMeasurementUnits();
+  console.log("🎯 Current measurement units from settings:", units);
   const { data: inventory = [] } = useEnhancedInventory();
 
   // Calculate fabric usage when measurements and fabric change
