@@ -395,7 +395,7 @@ export const VisualMeasurementSheet = ({
                 <div className={`absolute ${hardwareType === "track" ? "-top-4" : "top-8"} left-12 right-12 flex items-center z-10`}>
                   <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-blue-600"></div>
                   <div className="flex-1 border-t-2 border-blue-600 relative">
-                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold shadow-lg z-20 whitespace-nowrap">
+                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg z-20 whitespace-nowrap">
                       {hardwareType === "track" ? "Track Width" : "Rod Width"}: {displayValue(measurements.rail_width)}
                     </span>
                   </div>
@@ -427,16 +427,16 @@ export const VisualMeasurementSheet = ({
                 </div>
               )}
 
-              {/* Curtain Drop measurement - from hardware to bottom of curtain */}
+              {/* Curtain Drop measurement - RIGHT SIDE from hardware to bottom of curtain */}
               {hasValue(measurements.drop) && (
-                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-2 flex flex-col items-center z-15`}>
-                  <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-primary"></div>
-                  <div className={`${hardwareType === "track" ? "h-72" : "h-64"} border-l-2 border-primary relative`}>
-                    <span className="absolute -left-20 top-1/2 transform -translate-y-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold whitespace-nowrap shadow-lg z-30">
+                <div className={`absolute right-0 ${hardwareType === "track" ? "top-6" : "top-18"} ${poolingOption === "below_floor" && hasValue(poolingAmount) ? "bottom-8" : getCurtainBottomPosition() === "bottom-4" ? "bottom-4" : "bottom-12"} flex flex-col items-center z-10`}>
+                  <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-green-600"></div>
+                  <div className="flex-1 border-r-2 border-green-600 relative">
+                    <span className="absolute top-1/2 -right-16 transform -translate-y-1/2 bg-green-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg whitespace-nowrap">
                       Drop: {displayValue(measurements.drop)}
                     </span>
                   </div>
-                  <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-primary"></div>
+                  <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-green-600"></div>
                 </div>
               )}
               
@@ -478,22 +478,22 @@ export const VisualMeasurementSheet = ({
               )}
 
               {/* Floor Line */}
-              <div className="absolute bottom-4 left-8 right-8 border-t-2 border-foreground">
-                <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-sm font-semibold">
-                  Floor
+              <div className="absolute bottom-4 left-8 right-8 border-t-4 border-muted-foreground">
+                <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-base font-bold text-muted-foreground">
+                  Floor Line
                 </span>
               </div>
 
-              {/* Pooling measurement indicator */}
+              {/* Pooling measurement indicator - HORIZONTAL AT BOTTOM */}
               {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                <div className="absolute bottom-0 left-6 flex flex-col items-center">
-                  <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-amber-600"></div>
-                  <div className="h-4 border-l-2 border-amber-600 relative">
-                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-amber-600 text-white px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
+                <div className="absolute bottom-0 left-16 right-16 flex items-center z-10">
+                  <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-orange-600"></div>
+                  <div className="flex-1 border-t-2 border-orange-600 relative">
+                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-orange-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg z-20 whitespace-nowrap">
                       Pooling: {displayValue(poolingAmount)}
                     </span>
                   </div>
-                  <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-amber-600"></div>
+                  <div className="w-0 h-0 border-t-2 border-b-2 border-l-4 border-transparent border-l-orange-600"></div>
                 </div>
               )}
 
