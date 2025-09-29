@@ -492,10 +492,10 @@ export const VisualMeasurementSheet = ({
 
               {/* Pooling measurement indicator - VERTICAL to measure pooled fabric height */}
               {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                <div className="absolute -bottom-2 left-20 flex flex-col items-center z-30">
+                <div className="absolute bottom-2 left-16 flex flex-col items-center z-30">
                   <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-orange-600"></div>
-                  <div className="h-8 border-l-2 border-orange-600 relative">
-                    <span className="absolute -left-16 top-1/2 transform -translate-y-1/2 bg-orange-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg z-40 whitespace-nowrap">
+                  <div className="h-6 border-l-2 border-orange-600 relative">
+                    <span className="absolute -left-20 top-1/2 transform -translate-y-1/2 bg-orange-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg z-40 whitespace-nowrap">
                       Pooling: {displayValue(poolingAmount)}
                     </span>
                   </div>
@@ -1002,8 +1002,8 @@ export const VisualMeasurementSheet = ({
                             </div>
                             <div className="text-amber-700 space-y-1">
                               <div>• Pooling amount: {displayValue(poolingAmount)} added to drop</div>
-                              <div>• Extra fabric: ~{((parseFloat(poolingAmount) / 100) * fabricCalculation.widthsRequired).toFixed(2)}m</div>
-                              <div>• Total fabric: {fabricCalculation.linearMeters.toFixed(2)}m (includes pooling)</div>
+                              <div>• Extra fabric: ~{((parseFloat(poolingAmount) / 100) * fabricCalculation.widthsRequired).toFixed(2)}{units.fabric}</div>
+                              <div>• Total fabric: {fabricCalculation.linearMeters.toFixed(2)}{units.fabric} (includes pooling)</div>
                             </div>
                           </div>
                         )}

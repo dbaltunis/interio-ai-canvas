@@ -27,7 +27,9 @@ export const MeasurementVisual = ({
 
   // Notify parent when calculation changes
   useEffect(() => {
-    onCalculationChange?.(fabricCalculation);
+    if (onCalculationChange) {
+      onCalculationChange(fabricCalculation);
+    }
   }, [fabricCalculation, onCalculationChange]);
 
   const {
