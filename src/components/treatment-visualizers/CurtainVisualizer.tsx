@@ -111,29 +111,51 @@ export const CurtainVisualizer = ({
 
   const renderMeasurementIndicators = () => (
     <>
-      {/* Rail width indicator */}
+      {/* Rail width indicator - curtain measurement */}
       {measurements.rail_width && (
         <div className={`absolute ${hardwareType === "track" ? "-top-4" : "top-8"} left-8 right-8 flex items-center z-10`}>
+          {/* Left arrow */}
           <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-blue-600"></div>
+          {/* Measurement line */}
           <div className="flex-1 border-t-2 border-blue-600 relative">
-            <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold shadow-lg z-20 whitespace-nowrap">
+            <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg z-20 whitespace-nowrap">
               Rail Width: {measurements.rail_width}cm
             </span>
           </div>
+          {/* Right arrow */}
           <div className="w-0 h-0 border-t-2 border-b-2 border-l-4 border-transparent border-l-blue-600"></div>
         </div>
       )}
       
-      {/* Drop indicator */}
+      {/* Drop indicator - curtain height measurement */}
       {measurements.drop && (
-        <div className="absolute right-0 top-16 bottom-4 flex flex-col items-center z-10">
+        <div className={`absolute right-0 ${hardwareType === "track" ? "top-6" : "top-18"} ${hasPooling ? "bottom-0" : "bottom-4"} flex flex-col items-center z-10`}>
+          {/* Top arrow */}
           <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-green-600"></div>
+          {/* Measurement line */}
           <div className="flex-1 border-r-2 border-green-600 relative">
-            <span className="absolute top-1/2 -right-16 transform -translate-y-1/2 bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs font-bold shadow-lg whitespace-nowrap">
+            <span className="absolute top-1/2 -right-16 transform -translate-y-1/2 bg-green-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg whitespace-nowrap">
               Drop: {measurements.drop}cm
             </span>
           </div>
+          {/* Bottom arrow */}
           <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-green-600"></div>
+        </div>
+      )}
+
+      {/* Pooling measurement - when curtains pool on floor */}
+      {hasPooling && (
+        <div className="absolute bottom-8 left-8 right-8 flex items-center z-10">
+          {/* Left arrow */}
+          <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-orange-600"></div>
+          {/* Measurement line */}
+          <div className="flex-1 border-t-2 border-orange-600 relative">
+            <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-orange-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg z-20 whitespace-nowrap">
+              Pooling: {poolingAmount}cm
+            </span>
+          </div>
+          {/* Right arrow */}
+          <div className="w-0 h-0 border-t-2 border-b-2 border-l-4 border-transparent border-l-orange-600"></div>
         </div>
       )}
     </>

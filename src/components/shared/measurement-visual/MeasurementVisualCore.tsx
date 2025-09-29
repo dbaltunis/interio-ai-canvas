@@ -231,24 +231,51 @@ export const MeasurementVisualCore = ({
         </div>
       )}
 
-      {/* Measurement Labels with Values */}
+      {/* Rail Width Measurement - Top of curtain track/rod */}
       {hasValue(measurements.rail_width) && (
-        <div className="absolute top-20 left-12 right-12">
-          <div className="flex justify-between items-center">
-            <div className="text-xs font-semibold bg-background px-2 py-1 rounded border shadow-sm">
-              Width: {displayValue(measurements.rail_width)}
-            </div>
+        <div className={`absolute ${hardwareType === "track" ? "-top-4" : "top-8"} left-12 right-12 flex items-center z-10`}>
+          {/* Left arrow */}
+          <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-blue-600"></div>
+          {/* Measurement line */}
+          <div className="flex-1 border-t-2 border-blue-600 relative">
+            <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg z-20 whitespace-nowrap">
+              Rail Width: {displayValue(measurements.rail_width)}
+            </span>
           </div>
-          <div className="border-t-2 border-dashed border-muted-foreground mt-2"></div>
+          {/* Right arrow */}
+          <div className="w-0 h-0 border-t-2 border-b-2 border-l-4 border-transparent border-l-blue-600"></div>
         </div>
       )}
 
+      {/* Drop Measurement - Height of curtain */}
       {hasValue(measurements.drop) && (
-        <div className="absolute top-32 left-4 bottom-20 flex flex-col justify-center">
-          <div className="transform -rotate-90 text-xs font-semibold bg-background px-2 py-1 rounded border shadow-sm whitespace-nowrap">
-            Drop: {displayValue(measurements.drop)}
+        <div className={`absolute right-0 ${hardwareType === "track" ? "top-6" : "top-18"} ${getCurtainBottomPosition() === "bottom-0" ? "bottom-0" : getCurtainBottomPosition() === "bottom-4" ? "bottom-4" : "bottom-12"} flex flex-col items-center z-10`}>
+          {/* Top arrow */}
+          <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-green-600"></div>
+          {/* Measurement line */}
+          <div className="flex-1 border-r-2 border-green-600 relative">
+            <span className="absolute top-1/2 -right-16 transform -translate-y-1/2 bg-green-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg whitespace-nowrap">
+              Drop: {displayValue(measurements.drop)}
+            </span>
           </div>
-          <div className="border-l-2 border-dashed border-muted-foreground ml-8 h-full"></div>
+          {/* Bottom arrow */}
+          <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-green-600"></div>
+        </div>
+      )}
+
+      {/* Pooling Measurement - When curtains pool on floor */}
+      {poolingOption === "below_floor" && hasValue(poolingAmount) && (
+        <div className="absolute bottom-8 left-16 right-16 flex items-center z-10">
+          {/* Left arrow */}
+          <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-orange-600"></div>
+          {/* Measurement line */}
+          <div className="flex-1 border-t-2 border-orange-600 relative">
+            <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-orange-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg z-20 whitespace-nowrap">
+              Pooling: {displayValue(poolingAmount)}
+            </span>
+          </div>
+          {/* Right arrow */}
+          <div className="w-0 h-0 border-t-2 border-b-2 border-l-4 border-transparent border-l-orange-600"></div>
         </div>
       )}
 
