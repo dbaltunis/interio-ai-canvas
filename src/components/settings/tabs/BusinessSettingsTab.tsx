@@ -225,18 +225,46 @@ export const BusinessSettingsTab = () => {
 
         <FormFieldGroup 
           label="Company Logo" 
-          description="Upload your company logo (will be cropped to fit standards)"
+          description="Upload your company logo (will be used in documents and quotes)"
         >
           <div className="space-y-3">
-            {formData.company_logo_url && (
+            {formData.company_logo_url ? (
               <div className="flex items-center gap-3 p-3 border border-border rounded-lg bg-muted/50">
+                <div className="flex items-center gap-3 flex-1">
+                  <Image className="h-5 w-5 text-muted-foreground" />
+                  <img 
+                    src={formData.company_logo_url} 
+                    alt="Company Logo Preview" 
+                    className="h-12 w-auto max-w-32 object-contain border rounded"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                    }}
+                    onLoad={(e) => {
+                      e.currentTarget.nextElementSibling?.classList.add('hidden');
+                    }}
+                  />
+                  <div className="hidden text-sm text-destructive">Failed to load image</div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">Logo uploaded</span>
+                    <span className="text-xs text-muted-foreground">Ready for use in documents</span>
+                  </div>
+                </div>
+                {isEditing && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleInputChange("company_logo_url", "")}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 p-3 border border-dashed border-muted-foreground/25 rounded-lg bg-muted/25">
                 <Image className="h-5 w-5 text-muted-foreground" />
-                <img 
-                  src={formData.company_logo_url} 
-                  alt="Company Logo Preview" 
-                  className="h-8 w-auto object-contain"
-                />
-                <span className="text-sm text-muted-foreground">Current logo</span>
+                <span className="text-sm text-muted-foreground">No logo uploaded</span>
               </div>
             )}
             
@@ -244,11 +272,11 @@ export const BusinessSettingsTab = () => {
               type="button"
               variant="outline"
               onClick={() => setShowSimpleLogoUpload(true)}
-              disabled={!isEditing}
+              disabled={!isEditing || uploadFile.isPending}
               className="w-full"
             >
               <Upload className="h-4 w-4 mr-2" />
-              {formData.company_logo_url ? 'Change Logo' : 'Upload Logo'}
+              {uploadFile.isPending ? 'Uploading...' : (formData.company_logo_url ? 'Change Logo' : 'Upload Logo')}
             </Button>
           </div>
         </FormFieldGroup>
