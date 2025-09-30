@@ -360,7 +360,7 @@ export const VisualMeasurementSheet = ({
               {curtainType === "pair" ? (
                 <>
                   {/* Left Panel */}
-                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-14 w-8 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
+                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-12 w-12 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
                     <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
                     <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
                     <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
@@ -368,6 +368,10 @@ export const VisualMeasurementSheet = ({
                     <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
                     <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
                     <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
+                    <div className="absolute top-2 bottom-2 left-7 w-0.5 bg-primary/80"></div>
+                    <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-primary/60"></div>
+                    <div className="absolute top-2 bottom-2 left-9 w-0.5 bg-primary/50"></div>
+                    <div className="absolute top-2 bottom-2 left-10 w-0.5 bg-primary/40"></div>
                     
                     {/* Pooling visual effect */}
                     {poolingOption === "below_floor" && hasValue(poolingAmount) && (
@@ -376,7 +380,7 @@ export const VisualMeasurementSheet = ({
                   </div>
                   
                   {/* Right Panel */}
-                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} right-14 w-8 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
+                  <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} right-12 w-12 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
                     <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
                     <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
                     <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
@@ -384,6 +388,10 @@ export const VisualMeasurementSheet = ({
                     <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
                     <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
                     <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
+                    <div className="absolute top-2 bottom-2 left-7 w-0.5 bg-primary/80"></div>
+                    <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-primary/60"></div>
+                    <div className="absolute top-2 bottom-2 left-9 w-0.5 bg-primary/50"></div>
+                    <div className="absolute top-2 bottom-2 left-10 w-0.5 bg-primary/40"></div>
                     
                     {/* Pooling visual effect */}
                     {poolingOption === "below_floor" && hasValue(poolingAmount) && (
@@ -393,7 +401,7 @@ export const VisualMeasurementSheet = ({
                 </>
               ) : (
                 /* Single Panel - Consistent with pair styling */
-                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} ${curtainSide === "left" ? "left-14" : "right-14"} w-8 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
+                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} ${curtainSide === "left" ? "left-12" : "right-12"} w-12 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
                   <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
                   <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
                   <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
@@ -401,6 +409,10 @@ export const VisualMeasurementSheet = ({
                   <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
                   <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
                   <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
+                  <div className="absolute top-2 bottom-2 left-7 w-0.5 bg-primary/80"></div>
+                  <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-primary/60"></div>
+                  <div className="absolute top-2 bottom-2 left-9 w-0.5 bg-primary/50"></div>
+                  <div className="absolute top-2 bottom-2 left-10 w-0.5 bg-primary/40"></div>
                   
                   {/* Pooling visual effect */}
                   {poolingOption === "below_floor" && hasValue(poolingAmount) && (
