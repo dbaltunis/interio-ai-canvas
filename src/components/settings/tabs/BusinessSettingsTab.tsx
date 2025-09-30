@@ -9,8 +9,7 @@ import { Building2, Mail, Phone, MapPin, Globe, Upload, Image } from "lucide-rea
 import { LoadingFallback } from "@/components/ui/loading-fallback";
 import { FormSection } from "@/components/ui/form-section";
 import { FormFieldGroup } from "@/components/ui/form-field-group";
-import { LogoCropDialog } from "@/components/settings/tabs/LogoCropDialog";
-import { SmartLogoCropDialog } from "@/components/settings/tabs/SmartLogoCropDialog";
+import { SimpleLogoUpload } from "./SimpleLogoUpload";
 import { useUploadFile, useGetFileUrl } from "@/hooks/useFileStorage";
 
 export const BusinessSettingsTab = () => {
@@ -20,7 +19,7 @@ export const BusinessSettingsTab = () => {
   const { toast } = useToast();
   const [savedSuccessfully, setSavedSuccessfully] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [showSmartLogoCropDialog, setShowSmartLogoCropDialog] = useState(false);
+  const [showSimpleLogoUpload, setShowSimpleLogoUpload] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const uploadFile = useUploadFile();
   const getFileUrl = useGetFileUrl();
@@ -65,13 +64,13 @@ export const BusinessSettingsTab = () => {
     }));
   };
 
-  const handleLogoCrop = async (croppedFile: File) => {
+  const handleLogoUpload = async (file: File) => {
     try {
-      setLogoFile(croppedFile);
+      setLogoFile(file);
       
-      // Upload the cropped logo
+      // Upload the logo file
       const uploadResult = await uploadFile.mutateAsync({
-        file: croppedFile,
+        file: file,
         projectId: 'business-logos',
         bucketName: 'business-assets'
       });
@@ -87,8 +86,6 @@ export const BusinessSettingsTab = () => {
         ...prev,
         company_logo_url: fileUrlResult
       }));
-      
-      setShowSmartLogoCropDialog(false);
       
       toast({
         title: "Success",
@@ -246,7 +243,7 @@ export const BusinessSettingsTab = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setShowSmartLogoCropDialog(true)}
+              onClick={() => setShowSimpleLogoUpload(true)}
               disabled={!isEditing}
               className="w-full"
             >
@@ -348,10 +345,10 @@ export const BusinessSettingsTab = () => {
         </FormFieldGroup>
       </FormSection>
 
-      <SmartLogoCropDialog
-        open={showSmartLogoCropDialog}
-        onOpenChange={setShowSmartLogoCropDialog}
-        onCropComplete={handleLogoCrop}
+      <SimpleLogoUpload
+        open={showSimpleLogoUpload}
+        onOpenChange={setShowSimpleLogoUpload}
+        onUploadComplete={handleLogoUpload}
       />
     </div>
   );
