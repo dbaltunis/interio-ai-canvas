@@ -584,32 +584,32 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                 <tr className="bg-gray-50">
                   <th className="border border-gray-300 p-3 text-left">
                     <EditableText
-                      value="Description"
-                      onChange={() => {}}
+                      value={content.headerDescription || "Description"}
+                      onChange={(value) => updateBlockContent({ headerDescription: value })}
                       className="font-medium"
                       placeholder="Description"
                     />
                   </th>
                   <th className="border border-gray-300 p-3 text-center w-24">
                     <EditableText
-                      value="Qty"
-                      onChange={() => {}}
+                      value={content.headerQty || "Qty"}
+                      onChange={(value) => updateBlockContent({ headerQty: value })}
                       className="font-medium"
                       placeholder="Qty"
                     />
                   </th>
                   <th className="border border-gray-300 p-3 text-right w-32">
                     <EditableText
-                      value="Unit Price"
-                      onChange={() => {}}
+                      value={content.headerUnitPrice || "Unit Price"}
+                      onChange={(value) => updateBlockContent({ headerUnitPrice: value })}
                       className="font-medium"
                       placeholder="Unit Price"
                     />
                   </th>
                   <th className="border border-gray-300 p-3 text-right w-32">
                     <EditableText
-                      value="Total"
-                      onChange={() => {}}
+                      value={content.headerTotal || "Total"}
+                      onChange={(value) => updateBlockContent({ headerTotal: value })}
                       className="font-medium"
                       placeholder="Total"
                     />
@@ -620,29 +620,29 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                 <tr>
                   <td className="border border-gray-300 p-3">
                     <EditableText
-                      value="Custom Drapery Installation"
-                      onChange={() => {}}
+                      value={content.item1Description || "Custom Drapery Installation"}
+                      onChange={(value) => updateBlockContent({ item1Description: value })}
                       placeholder="Item description"
                     />
                   </td>
                   <td className="border border-gray-300 p-3 text-center">
                     <EditableText
-                      value="1"
-                      onChange={() => {}}
+                      value={content.item1Qty || "1"}
+                      onChange={(value) => updateBlockContent({ item1Qty: value })}
                       placeholder="1"
                     />
                   </td>
                   <td className="border border-gray-300 p-3 text-right">
                     <EditableText
-                      value="$1,250.00"
-                      onChange={() => {}}
+                      value={content.item1UnitPrice || "$1,250.00"}
+                      onChange={(value) => updateBlockContent({ item1UnitPrice: value })}
                       placeholder="$0.00"
                     />
                   </td>
                   <td className="border border-gray-300 p-3 text-right font-medium">
                     <EditableText
-                      value="$1,250.00"
-                      onChange={() => {}}
+                      value={content.item1Total || "$1,250.00"}
+                      onChange={(value) => updateBlockContent({ item1Total: value })}
                       placeholder="$0.00"
                     />
                   </td>
@@ -691,32 +691,32 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
           <div className="text-sm space-y-3">
             <div>
               <EditableText
-                value="1. Payment Terms: 50% deposit required upon acceptance of this quote. Remaining balance due upon completion."
-                onChange={() => {}}
+                value={content.term1 || "1. Payment Terms: 50% deposit required upon acceptance of this quote. Remaining balance due upon completion."}
+                onChange={(value) => updateBlockContent({ term1: value })}
                 multiline
                 placeholder="Payment terms..."
               />
             </div>
             <div>
               <EditableText
-                value="2. Timeline: Project completion is estimated at 2-3 weeks from deposit receipt and final measurements."
-                onChange={() => {}}
+                value={content.term2 || "2. Timeline: Project completion is estimated at 2-3 weeks from deposit receipt and final measurements."}
+                onChange={(value) => updateBlockContent({ term2: value })}
                 multiline
                 placeholder="Timeline information..."
               />
             </div>
             <div>
               <EditableText
-                value="3. Warranty: All work comes with a 1-year warranty against defects in workmanship."
-                onChange={() => {}}
+                value={content.term3 || "3. Warranty: All work comes with a 1-year warranty against defects in workmanship."}
+                onChange={(value) => updateBlockContent({ term3: value })}
                 multiline
                 placeholder="Warranty details..."
               />
             </div>
             <div>
               <EditableText
-                value="4. Cancellation: This quote is valid for 30 days. Cancellation after work begins subject to materials and labor charges."
-                onChange={() => {}}
+                value={content.term4 || "4. Cancellation: This quote is valid for 30 days. Cancellation after work begins subject to materials and labor charges."}
+                onChange={(value) => updateBlockContent({ term4: value })}
                 multiline
                 placeholder="Cancellation policy..."
               />
@@ -750,18 +750,18 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
               </h4>
               <div className="text-sm space-y-1">
                 <EditableText
-                  value="• Cash, Check, or Credit Card"
-                  onChange={() => {}}
+                  value={content.paymentMethod1 || "• Cash, Check, or Credit Card"}
+                  onChange={(value) => updateBlockContent({ paymentMethod1: value })}
                   placeholder="Payment method 1"
                 />
                 <EditableText
-                  value="• Bank Transfer (ACH)"
-                  onChange={() => {}}
+                  value={content.paymentMethod2 || "• Bank Transfer (ACH)"}
+                  onChange={(value) => updateBlockContent({ paymentMethod2: value })}
                   placeholder="Payment method 2"
                 />
                 <EditableText
-                  value="• Financing Available"
-                  onChange={() => {}}
+                  value={content.paymentMethod3 || "• Financing Available"}
+                  onChange={(value) => updateBlockContent({ paymentMethod3: value })}
                   placeholder="Payment method 3"
                 />
               </div>
@@ -770,18 +770,18 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
               <h4 className="font-medium mb-2">Payment Schedule</h4>
               <div className="text-sm space-y-1">
                 <EditableText
-                  value="Deposit: 50% upon signing"
-                  onChange={() => {}}
+                  value={content.paymentSchedule1 || "Deposit: 50% upon signing"}
+                  onChange={(value) => updateBlockContent({ paymentSchedule1: value })}
                   placeholder="Payment schedule item"
                 />
                 <EditableText
-                  value="Progress: 25% at midpoint"
-                  onChange={() => {}}
+                  value={content.paymentSchedule2 || "Progress: 25% at midpoint"}
+                  onChange={(value) => updateBlockContent({ paymentSchedule2: value })}
                   placeholder="Payment schedule item"
                 />
                 <EditableText
-                  value="Final: 25% upon completion"
-                  onChange={() => {}}
+                  value={content.paymentSchedule3 || "Final: 25% upon completion"}
+                  onChange={(value) => updateBlockContent({ paymentSchedule3: value })}
                   placeholder="Payment schedule item"
                 />
               </div>
@@ -812,23 +812,23 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
               <h4 className="font-medium mb-2">Included:</h4>
               <div className="text-sm space-y-1 pl-4">
                 <EditableText
-                  value="✓ Professional measurement and consultation"
-                  onChange={() => {}}
+                  value={content.included1 || "✓ Professional measurement and consultation"}
+                  onChange={(value) => updateBlockContent({ included1: value })}
                   placeholder="Included item"
                 />
                 <EditableText
-                  value="✓ Custom fabrication of drapery"
-                  onChange={() => {}}
+                  value={content.included2 || "✓ Custom fabrication of drapery"}
+                  onChange={(value) => updateBlockContent({ included2: value })}
                   placeholder="Included item"
                 />
                 <EditableText
-                  value="✓ Hardware installation and mounting"
-                  onChange={() => {}}
+                  value={content.included3 || "✓ Hardware installation and mounting"}
+                  onChange={(value) => updateBlockContent({ included3: value })}
                   placeholder="Included item"
                 />
                 <EditableText
-                  value="✓ Final styling and adjustments"
-                  onChange={() => {}}
+                  value={content.included4 || "✓ Final styling and adjustments"}
+                  onChange={(value) => updateBlockContent({ included4: value })}
                   placeholder="Included item"
                 />
               </div>
@@ -837,18 +837,18 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
               <h4 className="font-medium mb-2">Not Included:</h4>
               <div className="text-sm space-y-1 pl-4">
                 <EditableText
-                  value="• Wall repairs or painting"
-                  onChange={() => {}}
+                  value={content.excluded1 || "• Wall repairs or painting"}
+                  onChange={(value) => updateBlockContent({ excluded1: value })}
                   placeholder="Excluded item"
                 />
                 <EditableText
-                  value="• Removal of existing treatments"
-                  onChange={() => {}}
+                  value={content.excluded2 || "• Removal of existing treatments"}
+                  onChange={(value) => updateBlockContent({ excluded2: value })}
                   placeholder="Excluded item"
                 />
                 <EditableText
-                  value="• Electrical work for motorization"
-                  onChange={() => {}}
+                  value={content.excluded3 || "• Electrical work for motorization"}
+                  onChange={(value) => updateBlockContent({ excluded3: value })}
                   placeholder="Excluded item"
                 />
               </div>
@@ -877,10 +877,11 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
           <div className="grid md:grid-cols-2 gap-8">
             <div>
               <EditableText
-                value="By signing below, you authorize us to proceed with this work as described:"
-                onChange={() => {}}
+                value={content.authorizationText || "By signing below, you authorize us to proceed with this work as described:"}
+                onChange={(value) => updateBlockContent({ authorizationText: value })}
                 className="text-sm mb-4"
                 placeholder="Authorization text"
+                multiline
               />
               <div className="border-t border-gray-400 pt-2 mt-12">
                 <div className="text-sm">
@@ -892,10 +893,11 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
             </div>
             <div>
               <EditableText
-                value="Thank you for choosing us for your project!"
-                onChange={() => {}}
+                value={content.thankYouMessage || "Thank you for choosing us for your project!"}
+                onChange={(value) => updateBlockContent({ thankYouMessage: value })}
                 className="text-sm mb-4"
                 placeholder="Thank you message"
+                multiline
               />
               <div className="border-t border-gray-400 pt-2 mt-12">
                 <div className="text-sm">
