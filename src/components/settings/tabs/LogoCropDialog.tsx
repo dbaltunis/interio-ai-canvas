@@ -15,7 +15,7 @@ interface LogoCropDialogProps {
 export const LogoCropDialog = ({ open, onOpenChange, onCropComplete }: LogoCropDialogProps) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
-  const [cropArea, setCropArea] = useState({ x: 0, y: 0, width: 200, height: 60 });
+  const [cropArea, setCropArea] = useState({ x: 0, y: 0, width: 200, height: 80 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -46,7 +46,7 @@ export const LogoCropDialog = ({ open, onOpenChange, onCropComplete }: LogoCropD
     if (!imageRef.current) return;
     
     const img = imageRef.current;
-    const aspectRatio = 200 / 60; // Target aspect ratio
+    const aspectRatio = 200 / 80; // Target aspect ratio
     
     // Center the crop area and maintain aspect ratio
     const maxWidth = Math.min(img.naturalWidth, img.naturalHeight * aspectRatio);
@@ -108,15 +108,15 @@ export const LogoCropDialog = ({ open, onOpenChange, onCropComplete }: LogoCropD
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas to target size (200x60)
+    // Set canvas to target size (200x80)
     canvas.width = 200;
-    canvas.height = 60;
+    canvas.height = 80;
 
     // Draw the cropped portion
     ctx.drawImage(
       imageRef.current,
       cropArea.x, cropArea.y, cropArea.width, cropArea.height,
-      0, 0, 200, 60
+      0, 0, 200, 80
     );
 
     // Convert to blob with reduced quality
@@ -132,7 +132,7 @@ export const LogoCropDialog = ({ open, onOpenChange, onCropComplete }: LogoCropD
       
       toast({
         title: "Logo Cropped",
-        description: `Logo has been resized to 200x60px and optimized for documents.`,
+        description: `Logo has been resized to 200x80px and optimized for documents.`,
       });
     }, 'image/png', 0.7); // Reduced quality to 70%
   };
@@ -140,7 +140,7 @@ export const LogoCropDialog = ({ open, onOpenChange, onCropComplete }: LogoCropD
   const handleClose = () => {
     setSelectedFile(null);
     setPreviewUrl("");
-    setCropArea({ x: 0, y: 0, width: 200, height: 60 });
+    setCropArea({ x: 0, y: 0, width: 200, height: 80 });
     onOpenChange(false);
   };
 
@@ -153,7 +153,7 @@ export const LogoCropDialog = ({ open, onOpenChange, onCropComplete }: LogoCropD
             Logo Cropper - Professional Standards
           </DialogTitle>
           <DialogDescription>
-            Upload and crop your logo to exactly 200x60 pixels for professional documents
+            Upload and crop your logo to exactly 200x80 pixels for professional documents
           </DialogDescription>
         </DialogHeader>
 
@@ -163,7 +163,7 @@ export const LogoCropDialog = ({ open, onOpenChange, onCropComplete }: LogoCropD
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>Important:</strong> Your logo will be automatically resized to 200x60 pixels and optimized for quotes and documents. Quality will be reduced to ensure fast loading.
+                  <strong>Important:</strong> Your logo will be automatically resized to 200x80 pixels and optimized for quotes and documents. Quality will be reduced to ensure fast loading.
                 </AlertDescription>
               </Alert>
 
@@ -194,7 +194,7 @@ export const LogoCropDialog = ({ open, onOpenChange, onCropComplete }: LogoCropD
               <Alert>
                 <Crop className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>Crop Instructions:</strong> Drag the blue frame to position your logo. The selected area will be resized to 200x60 pixels.
+                  <strong>Crop Instructions:</strong> Drag the blue frame to position your logo. The selected area will be resized to 200x80 pixels.
                 </AlertDescription>
               </Alert>
 
@@ -221,7 +221,7 @@ export const LogoCropDialog = ({ open, onOpenChange, onCropComplete }: LogoCropD
                   >
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-blue-700 font-medium text-sm bg-white px-2 py-1 rounded">
-                        200x60px
+                        200x80px
                       </span>
                     </div>
                   </div>
@@ -235,11 +235,11 @@ export const LogoCropDialog = ({ open, onOpenChange, onCropComplete }: LogoCropD
                   <canvas
                     ref={canvasRef}
                     className="block border"
-                    style={{ width: '200px', height: '60px' }}
+                    style={{ width: '200px', height: '80px' }}
                   />
                 </div>
                 <p className="text-sm text-gray-500 mt-2">
-                  This is how your logo will appear in documents (200x60px, optimized quality)
+                  This is how your logo will appear in documents (200x80px, optimized quality)
                 </p>
               </div>
 
