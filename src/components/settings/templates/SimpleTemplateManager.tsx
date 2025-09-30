@@ -265,9 +265,45 @@ export const SimpleTemplateManager: React.FC = () => {
     loadTemplates();
   }, []);
 
+  const initializeDefaultTemplates = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Check if default templates already exist for this user
+      const { data: existingTemplates } = await supabase
+        .from('quote_templates')
+        .select('id, name')
+        .eq('user_id', user.id);
+
+      const existingNames = existingTemplates?.map(t => t.name) || [];
+
+      // Insert missing default templates
+      for (const defaultTemplate of defaultTemplates) {
+        if (!existingNames.includes(defaultTemplate.name)) {
+          await supabase
+            .from('quote_templates')
+            .insert({
+              name: defaultTemplate.name,
+              description: defaultTemplate.description,
+              blocks: defaultTemplate.blocks,
+              template_style: defaultTemplate.category,
+              user_id: user.id
+            });
+        }
+      }
+    } catch (error) {
+      console.error('Error initializing default templates:', error);
+    }
+  };
+
   const loadTemplates = async () => {
     setLoading(true);
     try {
+      // First, ensure default templates exist in database
+      await initializeDefaultTemplates();
+
+      // Then load all templates from database
       const { data, error } = await supabase
         .from('quote_templates')
         .select('*')
@@ -281,10 +317,11 @@ export const SimpleTemplateManager: React.FC = () => {
         description: template.description,
         blocks: Array.isArray(template.blocks) ? template.blocks : [],
         category: template.template_style || 'quote',
-        created_at: template.created_at
+        created_at: template.created_at,
+        is_default: defaultTemplates.some(dt => dt.name === template.name)
       })) || [];
 
-      setTemplates([...defaultTemplates, ...userTemplates]);
+      setTemplates(userTemplates);
     } catch (error) {
       console.error('Error loading templates:', error);
       setTemplates(defaultTemplates);
@@ -335,7 +372,9 @@ export const SimpleTemplateManager: React.FC = () => {
   };
 
   const deleteTemplate = async (templateId: string) => {
-    if (defaultTemplates.find(t => t.id === templateId)) {
+    const template = templates.find(t => t.id === templateId);
+    
+    if (template?.is_default) {
       toast.error('Cannot delete default templates');
       return;
     }
@@ -395,31 +434,77 @@ export const SimpleTemplateManager: React.FC = () => {
   };
 
   const saveTemplateChanges = async (updatedBlocks: any[]) => {
-    if (!selectedTemplate || selectedTemplate.is_default) return;
+    if (!selectedTemplate) return;
 
     try {
-      const { error } = await supabase
-        .from('quote_templates')
-        .update({
-          blocks: updatedBlocks
-        })
-        .eq('id', selectedTemplate.id);
+      // Check if this is a database record or a hardcoded template
+      const isHardcodedTemplate = defaultTemplates.some(dt => dt.id === selectedTemplate.id);
+      
+      if (isHardcodedTemplate) {
+        // For hardcoded templates, create a new database record
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
 
-      if (error) throw error;
+        const { data, error } = await supabase
+          .from('quote_templates')
+          .insert({
+            name: selectedTemplate.name,
+            description: selectedTemplate.description,
+            blocks: updatedBlocks,
+            template_style: selectedTemplate.category,
+            user_id: user.id
+          })
+          .select()
+          .single();
 
-      setTemplates(prev => 
-        prev.map(t => 
-          t.id === selectedTemplate.id 
-            ? { ...t, blocks: updatedBlocks }
-            : t
-        )
-      );
+        if (error) throw error;
 
-      setSelectedTemplate(prev => prev ? { ...prev, blocks: updatedBlocks } : null);
+        // Update local state with new database record
+        const newTemplate: Template = {
+          id: data.id,
+          name: data.name,
+          description: data.description,
+          blocks: updatedBlocks,
+          category: data.template_style,
+          created_at: data.created_at,
+          is_default: true
+        };
+
+        setTemplates(prev => 
+          prev.map(t => 
+            t.id === selectedTemplate.id 
+              ? newTemplate
+              : t
+          )
+        );
+        setSelectedTemplate(newTemplate);
+      } else {
+        // For existing database records, update normally
+        const { error } = await supabase
+          .from('quote_templates')
+          .update({
+            blocks: updatedBlocks
+          })
+          .eq('id', selectedTemplate.id);
+
+        if (error) throw error;
+
+        setTemplates(prev => 
+          prev.map(t => 
+            t.id === selectedTemplate.id 
+              ? { ...t, blocks: updatedBlocks }
+              : t
+          )
+        );
+
+        setSelectedTemplate(prev => prev ? { ...prev, blocks: updatedBlocks } : null);
+      }
+
       toast.success('Template saved!');
     } catch (error) {
       console.error('Error saving template:', error);
-      toast.error('Failed to save template');
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      toast.error(`Failed to save template: ${error.message}`);
     }
   };
 
@@ -523,8 +608,8 @@ export const SimpleTemplateManager: React.FC = () => {
                     onClick={() => openEditor(template)}
                     className="flex-1"
                   >
-                    <Eye className="h-4 w-4 mr-2" />
-                    {template.is_default ? 'Preview' : 'Edit'}
+                    <Edit3 className="h-4 w-4 mr-2" />
+                    Edit
                   </Button>
                   <Button
                     variant="outline"
@@ -610,9 +695,6 @@ export const SimpleTemplateManager: React.FC = () => {
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
               {selectedTemplate?.name}
-              {selectedTemplate?.is_default && (
-                <Badge variant="outline">Read Only</Badge>
-              )}
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-auto">
@@ -620,8 +702,8 @@ export const SimpleTemplateManager: React.FC = () => {
               <LivePreview
                 blocks={selectedTemplate.blocks}
                 projectData={displayProjectData}
-                isEditable={!selectedTemplate.is_default}
-                onBlocksChange={selectedTemplate.is_default ? undefined : saveTemplateChanges}
+                isEditable={true}
+                onBlocksChange={saveTemplateChanges}
               />
             )}
           </div>
