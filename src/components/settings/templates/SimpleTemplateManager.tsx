@@ -19,7 +19,8 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { LivePreview } from "./visual-editor/LivePreview";
-import { useProjectData } from "@/hooks/useProjectData";
+import { useTemplateData } from "@/hooks/useTemplateData";
+import { ProjectDataSelector } from "./ProjectDataSelector";
 
 interface Template {
   id: string;
@@ -35,9 +36,9 @@ const defaultTemplates: Template[] = [
   {
     id: 'modern-quote',
     name: 'Modern Quote',
-    description: 'Clean, professional quote template',
+    description: 'Clean, professional quote template with dynamic data support',
     category: 'quote',
-    is_default: true,
+    is_default: false, // Make it editable
     blocks: [
       {
         id: 'header-1',
@@ -161,44 +162,104 @@ export const SimpleTemplateManager: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('quote');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [useRealData, setUseRealData] = useState(false);
   
-  const { data: projectData } = useProjectData();
+  const { data: templateData } = useTemplateData(selectedProjectId, useRealData);
   
-  // Create mock project data for template preview
+  // Create mock project data for template preview with comprehensive real data simulation
   const mockProjectData = {
     project: {
+      id: 'sample-project-id',
       quote_number: 'QT-2024-001',
-      name: 'Sample Project',
+      job_number: 'JOB-2024-001',
+      name: 'Living Room & Bedroom Window Treatments',
       created_at: new Date().toISOString(),
+      status: 'quoted',
       client: {
+        id: 'sample-client-id',
         name: 'John Smith',
-        email: 'client@example.com',
+        email: 'john.smith@example.com',
         phone: '(555) 987-6543',
         address: '456 Residential Street',
         city: 'Anytown',
         state: 'ST',
         zip_code: '12345',
-        company_name: 'Client Company LLC'
+        company_name: 'Smith Family Residence',
+        country: 'United States'
       }
     },
     businessSettings: {
-      company_name: 'Your Company Name',
+      company_name: 'Premium Window Treatments Co.',
       address: '123 Business Ave, Suite 100',
       city: 'Business City',
       state: 'BC',
       zip_code: '54321',
       business_phone: '(555) 123-4567',
-      business_email: 'info@company.com',
-      company_logo_url: null // This will show the icon placeholder
+      business_email: 'info@premiumwindowtreatments.com',
+      website: 'www.premiumwindowtreatments.com',
+      company_logo_url: null, // This will show the building icon placeholder
+      abn: 'ABN 12 345 678 901',
+      country: 'Australia'
     },
-    subtotal: 1250.00,
-    taxRate: 0.085,
-    taxAmount: 106.25,
-    total: 1356.25
+    treatments: [
+      {
+        id: 'treatment-1',
+        room_name: 'Living Room',
+        treatment_name: 'Motorized Roller Blinds',
+        description: 'Premium blackout fabric with Somfy motor',
+        quantity: 3,
+        unit_price: 450.00,
+        total: 1350.00,
+        fabric_type: 'Blackout',
+        color: 'Charcoal Grey',
+        width: '1200mm',
+        drop: '1800mm'
+      },
+      {
+        id: 'treatment-2', 
+        room_name: 'Master Bedroom',
+        treatment_name: 'Roman Shades',
+        description: 'Custom linen blend with chain operation',
+        quantity: 2,
+        unit_price: 320.00,
+        total: 640.00,
+        fabric_type: 'Linen Blend',
+        color: 'Natural Beige',
+        width: '900mm',
+        drop: '1600mm'
+      },
+      {
+        id: 'treatment-3',
+        room_name: 'Kitchen',
+        treatment_name: 'Venetian Blinds',
+        description: '25mm aluminum slats with cord control',
+        quantity: 2,
+        unit_price: 180.00,
+        total: 360.00,
+        fabric_type: 'Aluminum',
+        color: 'White',
+        width: '600mm',
+        drop: '1200mm'
+      }
+    ],
+    items: [
+      { id: 'item-1', description: 'Living Room - Motorized Roller Blinds (3 units)', quantity: 3, unit_price: 450.00, total: 1350.00, room: 'Living Room' },
+      { id: 'item-2', description: 'Master Bedroom - Roman Shades (2 units)', quantity: 2, unit_price: 320.00, total: 640.00, room: 'Master Bedroom' },
+      { id: 'item-3', description: 'Kitchen - Venetian Blinds (2 units)', quantity: 2, unit_price: 180.00, total: 360.00, room: 'Kitchen' }
+    ],
+    subtotal: 2350.00,
+    taxRate: 0.10,
+    taxAmount: 235.00,
+    total: 2585.00,
+    currency: 'AUD',
+    terms: 'Payment due within 30 days. 50% deposit required upon acceptance.',
+    validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    notes: 'Installation scheduled within 2-3 weeks of order confirmation. Includes 5-year warranty on all motorized components.'
   };
   
-  // Use real project data if available, otherwise use mock data
-  const displayProjectData = projectData || mockProjectData;
+  // Use template data for consistent preview experience
+  const displayProjectData = templateData || mockProjectData;
 
   useEffect(() => {
     loadTemplates();
@@ -374,13 +435,21 @@ export const SimpleTemplateManager: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Document Templates</h2>
-          <p className="text-muted-foreground">Create and manage your quote and invoice templates</p>
+          <p className="text-muted-foreground">Create and manage fully dynamic quote and invoice templates</p>
         </div>
         <Button onClick={() => setIsCreating(true)} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
           New Template
         </Button>
       </div>
+
+      {/* Project Data Selector */}
+      <ProjectDataSelector
+        useRealData={useRealData}
+        onUseRealDataChange={setUseRealData}
+        selectedProjectId={selectedProjectId}
+        onProjectIdChange={setSelectedProjectId}
+      />
 
       {/* Filters */}
       <div className="flex items-center gap-4">
@@ -431,6 +500,12 @@ export const SimpleTemplateManager: React.FC = () => {
                     <Badge variant={template.is_default ? "default" : "secondary"}>
                       {template.category}
                     </Badge>
+                    {template.id === 'modern-quote' && (
+                      <Badge variant="outline" className="ml-1">
+                        <Sparkles className="h-3 w-3 mr-1" />
+                        Dynamic
+                      </Badge>
+                    )}
                     {template.is_default && (
                       <Badge variant="outline" className="ml-1">
                         <Building2 className="h-3 w-3 mr-1" />

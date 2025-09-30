@@ -43,12 +43,18 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
     const businessSettings = projectData?.businessSettings || {};
     
     const tokens = {
+      // Company information from business settings
       company_name: businessSettings.company_name || 'Your Company Name',
       company_address: businessSettings.address ? 
         `${businessSettings.address}${businessSettings.city ? ', ' + businessSettings.city : ''}${businessSettings.state ? ', ' + businessSettings.state : ''}${businessSettings.zip_code ? ' ' + businessSettings.zip_code : ''}` 
         : '123 Business Ave, Suite 100',
       company_phone: businessSettings.business_phone || '(555) 123-4567',
       company_email: businessSettings.business_email || 'info@company.com',
+      company_website: businessSettings.website || 'www.company.com',
+      company_abn: businessSettings.abn || '',
+      company_country: businessSettings.country || 'Australia',
+      
+      // Client information from project
       client_name: client.name || 'John Smith',
       client_email: client.email || 'client@example.com', 
       client_phone: client.phone || '(555) 987-6543',
@@ -56,14 +62,30 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
         `${client.address}${client.city ? ', ' + client.city : ''}${client.state ? ', ' + client.state : ''}${client.zip_code ? ' ' + client.zip_code : ''}` 
         : '456 Residential Street, Anytown, ST 12345',
       client_company: client.company_name || '',
+      
+      // Project information
       quote_number: project.quote_number || project.job_number || 'QT-2024-001',
-      project_name: project.name || 'Project',
+      job_number: project.job_number || project.quote_number || 'JOB-2024-001',
+      project_name: project.name || 'Window Treatment Project',
+      project_id: project.id || '',
+      
+      // Dates
       date: project.created_at ? new Date(project.created_at).toLocaleDateString() : new Date().toLocaleDateString(),
-      valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
-      subtotal: projectData?.subtotal ? `$${projectData.subtotal.toFixed(2)}` : '$0.00',
-      tax_amount: projectData?.taxAmount ? `$${projectData.taxAmount.toFixed(2)}` : '$0.00',
+      quote_date: project.created_at ? new Date(project.created_at).toLocaleDateString() : new Date().toLocaleDateString(),
+      valid_until: projectData?.validUntil ? new Date(projectData.validUntil).toLocaleDateString() : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+      
+      // Financial information with currency support
+      currency: projectData?.currency || 'USD',
+      currency_symbol: projectData?.currency === 'AUD' ? 'A$' : projectData?.currency === 'NZD' ? 'NZ$' : '$',
+      subtotal: projectData?.subtotal ? `${projectData.currency === 'AUD' ? 'A$' : projectData.currency === 'NZD' ? 'NZ$' : '$'}${projectData.subtotal.toFixed(2)}` : '$0.00',
+      tax_amount: projectData?.taxAmount ? `${projectData.currency === 'AUD' ? 'A$' : projectData.currency === 'NZD' ? 'NZ$' : '$'}${projectData.taxAmount.toFixed(2)}` : '$0.00',
       tax_rate: projectData?.taxRate ? `${(projectData.taxRate * 100).toFixed(1)}%` : '8.5%',
-      total: projectData?.total ? `$${projectData.total.toFixed(2)}` : '$0.00',
+      total: projectData?.total ? `${projectData.currency === 'AUD' ? 'A$' : projectData.currency === 'NZD' ? 'NZ$' : '$'}${projectData.total.toFixed(2)}` : '$0.00',
+      
+      // Additional project details
+      terms: projectData?.terms || 'Payment due within 30 days of invoice date.',
+      notes: projectData?.notes || '',
+      project_status: project.status || 'draft'
     };
     return tokens[token as keyof typeof tokens] || token;
   };
