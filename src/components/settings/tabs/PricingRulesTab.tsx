@@ -8,12 +8,12 @@ import { Switch } from "@/components/ui/switch";
 import { Calculator, Percent, Shield } from "lucide-react";
 import { PricingRulesSection } from "../pricing/PricingRulesSection";
 import { useMarkupSettings, useUpdateMarkupSettings, MarkupSettings } from "@/hooks/useMarkupSettings";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const PricingRulesTab = () => {
   const { data: markupSettings, isLoading } = useMarkupSettings();
-  const { data: userRole } = useUserRole();
+  const canManageSettings = useHasPermission('manage_settings');
   const updateMarkupSettings = useUpdateMarkupSettings();
   
   const [formData, setFormData] = useState<MarkupSettings | null>(null);
@@ -46,7 +46,13 @@ export const PricingRulesTab = () => {
     });
   };
 
-  if (!userRole?.canManageMarkup) {
+  // Show loading state while permissions or data are being checked
+  if (canManageSettings === undefined || isLoading) {
+    return <div>Loading pricing settings...</div>;
+  }
+
+  // Check permissions after loading is complete
+  if (!canManageSettings) {
     return (
       <Alert>
         <Shield className="h-4 w-4" />
@@ -57,7 +63,7 @@ export const PricingRulesTab = () => {
     );
   }
 
-  if (isLoading || !formData) {
+  if (!formData) {
     return <div>Loading pricing settings...</div>;
   }
 
