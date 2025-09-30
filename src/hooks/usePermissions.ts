@@ -1,12 +1,14 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export const useUserPermissions = () => {
+  const { user, loading: authLoading } = useAuth();
+  
   return useQuery({
-    queryKey: ["user-permissions"],
+    queryKey: ["user-permissions", user?.id],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.log('[useUserPermissions] No user found');
         return [];
@@ -102,6 +104,7 @@ export const useUserPermissions = () => {
       console.log(`[useUserPermissions] Using role-based permissions for ${userRole}:`, permissions);
       return permissions.map(permission => ({ permission_name: permission }));
     },
+    enabled: !!user && !authLoading, // Only run when user is available and not loading
     staleTime: 30 * 1000, // 30 seconds - shorter for more frequent updates
     gcTime: 5 * 60 * 1000, // 5 minutes
     retry: 3,
