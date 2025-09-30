@@ -68,6 +68,8 @@ export const BusinessSettingsTab = () => {
     try {
       setLogoFile(file);
       
+      console.log('Starting logo upload...', file.name);
+      
       // Upload the logo file
       const uploadResult = await uploadFile.mutateAsync({
         file: file,
@@ -75,11 +77,15 @@ export const BusinessSettingsTab = () => {
         bucketName: 'business-assets'
       });
       
+      console.log('Upload result:', uploadResult);
+      
       // Get the file URL
       const fileUrlResult = await getFileUrl.mutateAsync({
         bucketName: 'business-assets',
         filePath: uploadResult.fileName
       });
+      
+      console.log('Generated URL:', fileUrlResult);
       
       // Update the form data with the new logo URL
       setFormData(prev => ({
@@ -92,6 +98,7 @@ export const BusinessSettingsTab = () => {
         description: "Logo uploaded successfully",
       });
     } catch (error) {
+      console.error('Logo upload failed:', error);
       toast({
         title: "Error",
         description: "Failed to upload logo",

@@ -48,16 +48,24 @@ export const useUploadFile = () => {
   
   return useMutation({
     mutationFn: async ({ file, projectId, bucketName = 'business-assets' }: { file: File; projectId: string; bucketName?: string }) => {
-      const fileName = `${projectId}/${Date.now()}-${file.name}`;
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${projectId}/${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
+      
+      console.log('Uploading file:', { fileName, bucketName, fileSize: file.size, fileType: file.type });
       
       const { data, error } = await supabase.storage
         .from(bucketName)
         .upload(fileName, file, {
-          upsert: false
+          upsert: false,
+          cacheControl: '3600'
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Upload error:', error);
+        throw error;
+      }
 
+      console.log('Upload successful:', data);
       return { fileName: data.path, bucketName };
     },
     onSuccess: () => {
@@ -88,9 +96,24 @@ export const useDeleteFile = () => {
 export const useGetFileUrl = () => {
   return useMutation({
     mutationFn: async ({ bucketName, filePath }: { bucketName: string; filePath: string }) => {
+      console.log('Getting public URL for:', { bucketName, filePath });
+      
       const { data } = supabase.storage
         .from(bucketName)
         .getPublicUrl(filePath);
+
+      console.log('Generated public URL:', data.publicUrl);
+      
+      // Test if the URL is accessible
+      try {
+        const response = await fetch(data.publicUrl, { method: 'HEAD' });
+        console.log('URL accessibility test:', response.status);
+        if (!response.ok) {
+          console.error('URL not accessible:', response.status, response.statusText);
+        }
+      } catch (error) {
+        console.error('Error testing URL accessibility:', error);
+      }
 
       return data.publicUrl;
     },
