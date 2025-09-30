@@ -105,13 +105,31 @@ export const BusinessSettingsTab = () => {
 
   const handleSave = async () => {
     try {
+      let savedData;
       if (businessSettings?.id) {
-        await updateBusinessSettings.mutateAsync({
+        savedData = await updateBusinessSettings.mutateAsync({
           id: businessSettings.id,
           ...formData
         });
       } else {
-        await createBusinessSettings.mutateAsync(formData);
+        savedData = await createBusinessSettings.mutateAsync(formData);
+      }
+      
+      // Update form data with the saved data to ensure all fields show the correct values
+      if (savedData) {
+        setFormData({
+          company_name: savedData.company_name || "",
+          abn: savedData.abn || "",
+          business_email: savedData.business_email || "",
+          business_phone: savedData.business_phone || "",
+          address: savedData.address || "",
+          city: savedData.city || "",
+          state: savedData.state || "",
+          zip_code: savedData.zip_code || "",
+          country: savedData.country || "Australia",
+          website: savedData.website || "",
+          company_logo_url: savedData.company_logo_url || ""
+        });
       }
       
       setSavedSuccessfully(true);
