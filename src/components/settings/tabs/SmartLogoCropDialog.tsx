@@ -5,6 +5,7 @@ import { Upload, Download, Wand2, Square, Circle, RectangleHorizontal, X, Info, 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Canvas as FabricCanvas, FabricImage } from "fabric";
+import { pipeline, env } from '@huggingface/transformers';
 
 interface SmartLogoCropDialogProps {
   open: boolean;
@@ -33,9 +34,16 @@ export const SmartLogoCropDialog = ({ open, onOpenChange, onCropComplete }: Smar
   const [isProcessing, setIsProcessing] = useState(false);
   const [processedImageUrl, setProcessedImageUrl] = useState<string>("");
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
+  const [previewDataUrl, setPreviewDataUrl] = useState<string>("");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Configure transformers.js
+  useEffect(() => {
+    env.allowLocalModels = false;
+    env.useBrowserCache = false;
+  }, []);
 
   // Initialize Fabric.js canvas
   useEffect(() => {
@@ -102,6 +110,9 @@ export const SmartLogoCropDialog = ({ open, onOpenChange, onCropComplete }: Smar
       fabricCanvas.clear();
       fabricCanvas.add(img);
       fabricCanvas.renderAll();
+      
+      // Update preview
+      updatePreview();
     } catch (error) {
       console.error('Error loading image to canvas:', error);
       toast({
@@ -112,26 +123,110 @@ export const SmartLogoCropDialog = ({ open, onOpenChange, onCropComplete }: Smar
     }
   };
 
+  const loadImage = (file: Blob): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const removeBackground = async () => {
     if (!selectedFile) return;
 
     setIsProcessing(true);
     try {
-      // This is a simplified version - in a real implementation, you'd use @huggingface/transformers
-      // For now, we'll just load the original image
-      const processedUrl = URL.createObjectURL(selectedFile);
+      // Load image
+      const imageElement = await loadImage(selectedFile);
+      
+      // Create a canvas to resize if needed
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Could not get canvas context');
+
+      const MAX_DIMENSION = 1024;
+      let { width, height } = imageElement;
+      
+      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        if (width > height) {
+          height = Math.round((height * MAX_DIMENSION) / width);
+          width = MAX_DIMENSION;
+        } else {
+          width = Math.round((width * MAX_DIMENSION) / height);
+          height = MAX_DIMENSION;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(imageElement, 0, 0, width, height);
+
+      // Convert to base64
+      const imageData = canvas.toDataURL('image/jpeg', 0.8);
+      
+      // Load the segmentation model
+      const segmenter = await pipeline(
+        'image-segmentation', 
+        'Xenova/segformer-b0-finetuned-ade-512-512',
+        { device: 'webgpu' }
+      );
+      
+      const result = await segmenter(imageData);
+      
+      if (!result || !Array.isArray(result) || result.length === 0 || !result[0].mask) {
+        throw new Error('Invalid segmentation result');
+      }
+      
+      // Create output canvas with transparent background
+      const outputCanvas = document.createElement('canvas');
+      outputCanvas.width = width;
+      outputCanvas.height = height;
+      const outputCtx = outputCanvas.getContext('2d');
+      
+      if (!outputCtx) throw new Error('Could not get output canvas context');
+      
+      // Draw original image
+      outputCtx.drawImage(canvas, 0, 0);
+      
+      // Apply the mask
+      const outputImageData = outputCtx.getImageData(0, 0, width, height);
+      const data = outputImageData.data;
+      
+      // Apply inverted mask to alpha channel (keep subject, remove background)
+      for (let i = 0; i < result[0].mask.data.length; i++) {
+        const alpha = Math.round((1 - result[0].mask.data[i]) * 255);
+        data[i * 4 + 3] = alpha;
+      }
+      
+      outputCtx.putImageData(outputImageData, 0, 0);
+      
+      // Convert to blob and create URL
+      const blob = await new Promise<Blob>((resolve) => {
+        outputCanvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+        }, 'image/png', 1.0);
+      });
+      
+      const processedUrl = URL.createObjectURL(blob);
       setProcessedImageUrl(processedUrl);
       await loadImageToCanvas(processedUrl);
       
       toast({
         title: "Background Removed",
-        description: "Logo is ready for cropping",
+        description: "Logo is ready for cropping and positioning",
       });
     } catch (error) {
+      console.error('Background removal error:', error);
+      // Fallback to original image
+      const fallbackUrl = URL.createObjectURL(selectedFile);
+      setProcessedImageUrl(fallbackUrl);
+      await loadImageToCanvas(fallbackUrl);
+      
       toast({
-        title: "Error",
-        description: "Failed to process image",
-        variant: "destructive",
+        title: "Loaded Original",
+        description: "Background removal is not available, but you can still crop and position your logo",
+        variant: "default",
       });
     } finally {
       setIsProcessing(false);
@@ -168,6 +263,7 @@ export const SmartLogoCropDialog = ({ open, onOpenChange, onCropComplete }: Smar
     obj.top = canvasCenter.y - (obj.height! * obj.scaleY!) / 2;
     
     fabricCanvas.renderAll();
+    updatePreview();
 
     toast({
       title: "Auto-Fit Applied",
@@ -230,10 +326,40 @@ export const SmartLogoCropDialog = ({ open, onOpenChange, onCropComplete }: Smar
     }
   };
 
+  const updatePreview = useCallback(() => {
+    if (!fabricCanvas) return;
+    
+    // Generate preview with current canvas state
+    const previewCanvas = document.createElement('canvas');
+    previewCanvas.width = selectedFormat.width;
+    previewCanvas.height = selectedFormat.height;
+    const previewCtx = previewCanvas.getContext('2d');
+    
+    if (!previewCtx) return;
+    
+    // White background for preview
+    previewCtx.fillStyle = '#ffffff';
+    previewCtx.fillRect(0, 0, selectedFormat.width, selectedFormat.height);
+    
+    // Get current canvas content and scale to preview size
+    const canvasDataUrl = fabricCanvas.toDataURL({ 
+      format: 'png', 
+      quality: 0.8, 
+      multiplier: 1 
+    });
+    const img = new Image();
+    img.onload = () => {
+      previewCtx.drawImage(img, 0, 0, selectedFormat.width, selectedFormat.height);
+      setPreviewDataUrl(previewCanvas.toDataURL());
+    };
+    img.src = canvasDataUrl;
+  }, [fabricCanvas, selectedFormat]);
+
   const handleClose = () => {
     setSelectedFile(null);
     setPreviewUrl("");
     setProcessedImageUrl("");
+    setPreviewDataUrl("");
     setFabricCanvas(null);
     onOpenChange(false);
   };
@@ -244,6 +370,30 @@ export const SmartLogoCropDialog = ({ open, onOpenChange, onCropComplete }: Smar
       loadImageToCanvas(processedImageUrl);
     }
   }, [processedImageUrl, fabricCanvas]);
+
+  // Update preview when format changes
+  useEffect(() => {
+    updatePreview();
+  }, [selectedFormat, updatePreview]);
+
+  // Add canvas event listeners for real-time preview updates
+  useEffect(() => {
+    if (!fabricCanvas) return;
+
+    const handleObjectModified = () => {
+      updatePreview();
+    };
+
+    fabricCanvas.on('object:modified', handleObjectModified);
+    fabricCanvas.on('object:moving', handleObjectModified);
+    fabricCanvas.on('object:scaling', handleObjectModified);
+
+    return () => {
+      fabricCanvas.off('object:modified', handleObjectModified);
+      fabricCanvas.off('object:moving', handleObjectModified);
+      fabricCanvas.off('object:scaling', handleObjectModified);
+    };
+  }, [fabricCanvas, updatePreview]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -395,13 +545,23 @@ export const SmartLogoCropDialog = ({ open, onOpenChange, onCropComplete }: Smar
                     Preview - {selectedFormat.name} ({selectedFormat.width}x{selectedFormat.height}px)
                   </h4>
                   <div 
-                    className="border border-gray-200 bg-gray-50 rounded mx-auto"
+                    className="border border-gray-200 bg-gray-50 rounded mx-auto flex items-center justify-center"
                     style={{ 
                       width: Math.min(selectedFormat.width, 200), 
                       height: Math.min(selectedFormat.height, 200 * (selectedFormat.height / selectedFormat.width))
                     }}
                   >
-                    {/* Preview will be generated from canvas */}
+                    {previewDataUrl ? (
+                      <img 
+                        src={previewDataUrl} 
+                        alt="Logo preview"
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <div className="text-gray-400 text-sm">
+                        Live preview
+                      </div>
+                    )}
                   </div>
                   <p className="text-sm text-gray-500 mt-2 text-center">
                     Final output preview
