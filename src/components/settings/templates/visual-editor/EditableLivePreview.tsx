@@ -47,7 +47,13 @@ const EditableText = ({ value, onChange, className, style, multiline, placeholde
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value);
 
+  // Sync local state when value prop changes (important for reloaded templates)
+  React.useEffect(() => {
+    setEditValue(value);
+  }, [value]);
+
   const handleSave = () => {
+    console.log('EditableText saving:', editValue);
     onChange(editValue);
     setIsEditing(false);
   };
@@ -314,13 +320,16 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
   const style = content.style || {};
 
   const updateBlockContent = (updates: any) => {
-    onBlockUpdate(block.id, {
+    console.log('updateBlockContent called for block:', block.id, 'with updates:', updates);
+    const updatedBlock = {
       ...block,
       content: {
         ...content,
         ...updates
       }
-    });
+    };
+    console.log('Updated block:', updatedBlock);
+    onBlockUpdate(block.id, updatedBlock);
   };
 
   const updateBlockStyle = (styleUpdates: any) => {
@@ -400,7 +409,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                 </div>
               )}
               <EditableText
-                value={renderTokenValue('company_name')}
+                value={content.companyName || renderTokenValue('company_name')}
                 onChange={(value) => updateBlockContent({ companyName: value })}
                 className="text-3xl font-bold mb-2"
                 placeholder="Company Name"
@@ -409,7 +418,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
                   <EditableText
-                    value={renderTokenValue('company_address')}
+                    value={content.companyAddress || renderTokenValue('company_address')}
                     onChange={(value) => updateBlockContent({ companyAddress: value })}
                     placeholder="Company Address"
                   />
@@ -417,7 +426,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4" />
                   <EditableText
-                    value={renderTokenValue('company_phone')}
+                    value={content.companyPhone || renderTokenValue('company_phone')}
                     onChange={(value) => updateBlockContent({ companyPhone: value })}
                     placeholder="Company Phone"
                   />
@@ -425,7 +434,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4" />
                   <EditableText
-                    value={renderTokenValue('company_email')}
+                    value={content.companyEmail || renderTokenValue('company_email')}
                     onChange={(value) => updateBlockContent({ companyEmail: value })}
                     placeholder="Company Email"
                   />
@@ -478,14 +487,14 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="space-y-1">
               <EditableText
-                value={renderTokenValue('client_name')}
+                value={content.clientName || renderTokenValue('client_name')}
                 onChange={(value) => updateBlockContent({ clientName: value })}
                 className="font-medium"
                 placeholder="Client Name"
               />
-              {content.showCompany && renderTokenValue('client_company') && (
+              {content.showCompany && (content.clientCompany || renderTokenValue('client_company')) && (
                 <EditableText
-                  value={renderTokenValue('client_company')}
+                  value={content.clientCompany || renderTokenValue('client_company')}
                   onChange={(value) => updateBlockContent({ clientCompany: value })}
                   className="text-gray-600"
                   placeholder="Client Company"
@@ -493,7 +502,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
               )}
               {content.showClientEmail && (
                 <EditableText
-                  value={renderTokenValue('client_email')}
+                  value={content.clientEmail || renderTokenValue('client_email')}
                   onChange={(value) => updateBlockContent({ clientEmail: value })}
                   className="text-gray-600"
                   placeholder="Client Email"
@@ -501,7 +510,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
               )}
               {content.showClientPhone && (
                 <EditableText
-                  value={renderTokenValue('client_phone')}
+                  value={content.clientPhone || renderTokenValue('client_phone')}
                   onChange={(value) => updateBlockContent({ clientPhone: value })}
                   className="text-gray-600"
                   placeholder="Client Phone"
@@ -509,7 +518,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
               )}
               {content.showClientAddress && (
                 <EditableText
-                  value={renderTokenValue('client_address')}
+                  value={content.clientAddress || renderTokenValue('client_address')}
                   onChange={(value) => updateBlockContent({ clientAddress: value })}
                   className="text-gray-600"
                   placeholder="Client Address"
