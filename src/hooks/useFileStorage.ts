@@ -1,5 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProjectFile {
   id: string;
@@ -13,15 +14,30 @@ interface ProjectFile {
   user_id: string;
 }
 
-// Mock data store
-let mockProjectFiles: ProjectFile[] = [];
-
 export const useProjectFiles = (projectId: string) => {
   return useQuery({
     queryKey: ["project-files", projectId],
     queryFn: async () => {
-      // Mock implementation
-      return mockProjectFiles.filter(file => file.project_id === projectId);
+      const { data, error } = await supabase.storage
+        .from('business-assets')
+        .list(`${projectId}/`, {
+          limit: 100,
+          offset: 0,
+        });
+
+      if (error) throw error;
+
+      return data?.map(file => ({
+        id: file.id || crypto.randomUUID(),
+        created_at: file.created_at,
+        file_name: file.name,
+        file_path: `${projectId}/${file.name}`,
+        file_size: file.metadata?.size || 0,
+        file_type: file.metadata?.mimetype || '',
+        bucket_name: 'business-assets',
+        project_id: projectId,
+        user_id: '',
+      })) || [];
     },
     enabled: !!projectId,
   });
@@ -31,27 +47,18 @@ export const useUploadFile = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ file, projectId, bucketName }: { file: File; projectId: string; bucketName: string }) => {
-      // Mock implementation
+    mutationFn: async ({ file, projectId, bucketName = 'business-assets' }: { file: File; projectId: string; bucketName?: string }) => {
       const fileName = `${projectId}/${Date.now()}-${file.name}`;
       
-      const mockFile: ProjectFile = {
-        id: `file-${Date.now()}`,
-        created_at: new Date().toISOString(),
-        file_name: file.name,
-        file_path: fileName,
-        file_size: file.size,
-        file_type: file.type,
-        bucket_name: bucketName,
-        project_id: projectId,
-        user_id: 'mock-user'
-      };
+      const { data, error } = await supabase.storage
+        .from(bucketName)
+        .upload(fileName, file, {
+          upsert: false
+        });
 
-      mockProjectFiles.push(mockFile);
-      
-      console.log('Mock file uploaded:', fileName);
-      
-      return { fileName, bucketName };
+      if (error) throw error;
+
+      return { fileName: data.path, bucketName };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["project-files"] });
@@ -64,11 +71,11 @@ export const useDeleteFile = () => {
   
   return useMutation({
     mutationFn: async (file: ProjectFile) => {
-      // Mock implementation
-      const index = mockProjectFiles.findIndex(f => f.id === file.id);
-      if (index !== -1) {
-        mockProjectFiles.splice(index, 1);
-      }
+      const { error } = await supabase.storage
+        .from(file.bucket_name)
+        .remove([file.file_path]);
+
+      if (error) throw error;
       
       return file;
     },
@@ -81,8 +88,11 @@ export const useDeleteFile = () => {
 export const useGetFileUrl = () => {
   return useMutation({
     mutationFn: async ({ bucketName, filePath }: { bucketName: string; filePath: string }) => {
-      // Mock implementation
-      return `https://mock-storage.com/${bucketName}/${filePath}`;
+      const { data } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
     },
   });
 };
