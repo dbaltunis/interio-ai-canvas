@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -433,8 +433,13 @@ export const SimpleTemplateManager: React.FC = () => {
     setIsPreviewOpen(true);
   };
 
-  const saveTemplateChanges = async (updatedBlocks: any[]) => {
+  const saveTemplateChanges = useCallback(async (updatedBlocks: any[]) => {
     if (!selectedTemplate) return;
+
+    console.log('saveTemplateChanges called with blocks:', updatedBlocks);
+
+    // Update local state immediately for responsive UI
+    setSelectedTemplate(prev => prev ? { ...prev, blocks: updatedBlocks } : null);
 
     try {
       // Check if this is a database record or a hardcoded template
@@ -496,17 +501,16 @@ export const SimpleTemplateManager: React.FC = () => {
               : t
           )
         );
-
-        setSelectedTemplate(prev => prev ? { ...prev, blocks: updatedBlocks } : null);
       }
 
+      console.log('Template saved successfully');
       toast.success('Template saved!');
     } catch (error) {
       console.error('Error saving template:', error);
       console.error('Error details:', JSON.stringify(error, null, 2));
       toast.error(`Failed to save template: ${error.message}`);
     }
-  };
+  }, [selectedTemplate]);
 
   const filteredTemplates = templates.filter(template => {
     const matchesSearch = template.name.toLowerCase().includes(searchTerm.toLowerCase());
