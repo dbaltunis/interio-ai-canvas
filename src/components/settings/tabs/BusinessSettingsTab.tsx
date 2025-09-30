@@ -5,10 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useBusinessSettings, useCreateBusinessSettings, useUpdateBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, Mail, Phone, MapPin, Globe } from "lucide-react";
+import { Building2, Mail, Phone, MapPin, Globe, Upload, Image } from "lucide-react";
 import { LoadingFallback } from "@/components/ui/loading-fallback";
 import { FormSection } from "@/components/ui/form-section";
 import { FormFieldGroup } from "@/components/ui/form-field-group";
+import { LogoCropDialog } from "@/components/settings/tabs/LogoCropDialog";
+import { useUploadFile, useGetFileUrl } from "@/hooks/useFileStorage";
 
 export const BusinessSettingsTab = () => {
   const { data: businessSettings, isLoading } = useBusinessSettings();
@@ -17,6 +19,10 @@ export const BusinessSettingsTab = () => {
   const { toast } = useToast();
   const [savedSuccessfully, setSavedSuccessfully] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [showLogoCropDialog, setShowLogoCropDialog] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const uploadFile = useUploadFile();
+  const getFileUrl = useGetFileUrl();
 
   const [formData, setFormData] = useState({
     company_name: "",
@@ -56,6 +62,44 @@ export const BusinessSettingsTab = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleLogoCrop = async (croppedFile: File) => {
+    try {
+      setLogoFile(croppedFile);
+      
+      // Upload the cropped logo
+      const uploadResult = await uploadFile.mutateAsync({
+        file: croppedFile,
+        projectId: 'business-logos',
+        bucketName: 'business-assets'
+      });
+      
+      // Get the file URL
+      const fileUrlResult = await getFileUrl.mutateAsync({
+        bucketName: 'business-assets',
+        filePath: uploadResult.fileName
+      });
+      
+      // Update the form data with the new logo URL
+      setFormData(prev => ({
+        ...prev,
+        company_logo_url: fileUrlResult
+      }));
+      
+      setShowLogoCropDialog(false);
+      
+      toast({
+        title: "Success",
+        description: "Logo uploaded successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to upload logo",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSave = async () => {
@@ -164,15 +208,33 @@ export const BusinessSettingsTab = () => {
         </FormFieldGroup>
 
         <FormFieldGroup 
-          label="Company Logo URL" 
-          description="URL to your company logo image"
+          label="Company Logo" 
+          description="Upload your company logo (will be cropped to fit standards)"
         >
-          <Input
-            value={formData.company_logo_url}
-            onChange={(e) => handleInputChange("company_logo_url", e.target.value)}
-            placeholder="https://example.com/logo.png"
-            disabled={!isEditing}
-          />
+          <div className="space-y-3">
+            {formData.company_logo_url && (
+              <div className="flex items-center gap-3 p-3 border border-border rounded-lg bg-muted/50">
+                <Image className="h-5 w-5 text-muted-foreground" />
+                <img 
+                  src={formData.company_logo_url} 
+                  alt="Company Logo Preview" 
+                  className="h-8 w-auto object-contain"
+                />
+                <span className="text-sm text-muted-foreground">Current logo</span>
+              </div>
+            )}
+            
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowLogoCropDialog(true)}
+              disabled={!isEditing}
+              className="w-full"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              {formData.company_logo_url ? 'Change Logo' : 'Upload Logo'}
+            </Button>
+          </div>
         </FormFieldGroup>
       </FormSection>
 
@@ -266,6 +328,12 @@ export const BusinessSettingsTab = () => {
           />
         </FormFieldGroup>
       </FormSection>
+
+      <LogoCropDialog
+        open={showLogoCropDialog}
+        onOpenChange={setShowLogoCropDialog}
+        onCropComplete={handleLogoCrop}
+      />
     </div>
   );
 };
