@@ -13,13 +13,11 @@ import { UserManagementTab } from "./tabs/UserManagementTab";
 import { DocumentTemplatesTab } from "./tabs/DocumentTemplatesTab";
 import { SystemSettingsTab } from "./tabs/SystemSettingsTab";
 import { PricingRulesTab } from "./tabs/PricingRulesTab";
-import { AccountManagementTab } from "./tabs/AccountManagementTab";
 import { TutorialOverlay } from "./TutorialOverlay";
 import { InteractiveOnboarding } from "./InteractiveOnboarding";
 import { NotificationManagementTab } from "./tabs/NotificationManagementTab";
 import { EnhancedPersonalizationTab } from "./tabs/EnhancedPersonalizationTab";
 import { SecurityPrivacyTab } from "./tabs/SecurityPrivacyTab";
-import { SettingsOverviewTab } from "./tabs/SettingsOverviewTab";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useHasPermission } from "@/hooks/usePermissions";
@@ -27,7 +25,7 @@ import { useHasPermission } from "@/hooks/usePermissions";
 export const SettingsView = () => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [showInteractiveDemo, setShowInteractiveDemo] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("personal");
 
   // Permission checks
   const canViewSettings = useHasPermission('view_settings');
@@ -71,12 +69,7 @@ export const SettingsView = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-        <TabsList className="modern-card p-1 h-auto bg-muted/30 backdrop-blur-sm grid grid-cols-12 gap-1">
-          <TabsTrigger value="overview" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            <Settings className="h-4 w-4" />
-            <span className="hidden sm:inline font-medium">Overview</span>
-          </TabsTrigger>
-          
+        <TabsList className="modern-card p-1 h-auto bg-muted/30 backdrop-blur-sm grid grid-cols-10 gap-1">
           <TabsTrigger value="personal" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <User className="h-4 w-4" />
             <span className="hidden sm:inline font-medium">Personal</span>
@@ -94,12 +87,6 @@ export const SettingsView = () => {
             </TabsTrigger>
           )}
 
-          {canManageUsers && (
-            <TabsTrigger value="account" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              <Shield className="h-4 w-4" />
-              <span className="hidden sm:inline font-medium">Account</span>
-            </TabsTrigger>
-          )}
           
           {canViewSettings && (
             <TabsTrigger value="units" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
@@ -156,14 +143,6 @@ export const SettingsView = () => {
           )}
         </TabsList>
 
-        <TabsContent value="overview" className="animate-fade-in">
-          <Card className="hover:shadow-md transition-all duration-300">
-            <CardContent className="p-6">
-              <SettingsOverviewTab />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         <TabsContent value="personal" className="animate-fade-in">
           <Card className="hover:shadow-md transition-all duration-300">
             <CardContent className="p-6">
@@ -190,15 +169,6 @@ export const SettingsView = () => {
           </TabsContent>
         )}
 
-        {canManageUsers && (
-          <TabsContent value="account" className="animate-fade-in">
-            <Card className="hover:shadow-md transition-all duration-300">
-              <CardContent className="p-6">
-                <AccountManagementTab />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
 
         {canViewSettings && (
           <TabsContent value="units" className="animate-fade-in">
