@@ -54,8 +54,14 @@ const EditableText = ({ value, onChange, className, style, multiline, placeholde
 
   const handleSave = () => {
     console.log('EditableText saving:', editValue);
-    onChange(editValue);
-    setIsEditing(false);
+    // Call onChange first before changing state
+    if (onChange && editValue !== value) {
+      onChange(editValue);
+    }
+    // Use setTimeout to ensure onChange completes before state change
+    setTimeout(() => {
+      setIsEditing(false);
+    }, 0);
   };
 
   const handleCancel = () => {
