@@ -10,6 +10,7 @@ import { LoadingFallback } from "@/components/ui/loading-fallback";
 import { FormSection } from "@/components/ui/form-section";
 import { FormFieldGroup } from "@/components/ui/form-field-group";
 import { LogoCropDialog } from "@/components/settings/tabs/LogoCropDialog";
+import { SmartLogoCropDialog } from "@/components/settings/tabs/SmartLogoCropDialog";
 import { useUploadFile, useGetFileUrl } from "@/hooks/useFileStorage";
 
 export const BusinessSettingsTab = () => {
@@ -19,7 +20,7 @@ export const BusinessSettingsTab = () => {
   const { toast } = useToast();
   const [savedSuccessfully, setSavedSuccessfully] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [showLogoCropDialog, setShowLogoCropDialog] = useState(false);
+  const [showSmartLogoCropDialog, setShowSmartLogoCropDialog] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const uploadFile = useUploadFile();
   const getFileUrl = useGetFileUrl();
@@ -87,7 +88,7 @@ export const BusinessSettingsTab = () => {
         company_logo_url: fileUrlResult
       }));
       
-      setShowLogoCropDialog(false);
+      setShowSmartLogoCropDialog(false);
       
       toast({
         title: "Success",
@@ -227,7 +228,7 @@ export const BusinessSettingsTab = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setShowLogoCropDialog(true)}
+              onClick={() => setShowSmartLogoCropDialog(true)}
               disabled={!isEditing}
               className="w-full"
             >
@@ -329,9 +330,9 @@ export const BusinessSettingsTab = () => {
         </FormFieldGroup>
       </FormSection>
 
-      <LogoCropDialog
-        open={showLogoCropDialog}
-        onOpenChange={setShowLogoCropDialog}
+      <SmartLogoCropDialog
+        open={showSmartLogoCropDialog}
+        onOpenChange={setShowSmartLogoCropDialog}
         onCropComplete={handleLogoCrop}
       />
     </div>
