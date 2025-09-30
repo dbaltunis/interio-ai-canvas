@@ -79,6 +79,13 @@ export const SmartLogoCropDialog = ({ open, onOpenChange, onCropComplete }: Smar
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
     setProcessedImageUrl("");
+    
+    // Auto-load original image to canvas after a brief delay to ensure canvas is ready
+    setTimeout(() => {
+      if (fabricCanvas) {
+        loadImageToCanvas(url);
+      }
+    }, 100);
   };
 
   const loadImageToCanvas = async (imageUrl: string) => {
@@ -272,7 +279,7 @@ export const SmartLogoCropDialog = ({ open, onOpenChange, onCropComplete }: Smar
   };
 
   const generateLogo = async () => {
-    if (!fabricCanvas) return;
+    if (!fabricCanvas && !previewUrl) return;
 
     try {
       // Create a temporary canvas for the final output
@@ -287,17 +294,42 @@ export const SmartLogoCropDialog = ({ open, onOpenChange, onCropComplete }: Smar
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, selectedFormat.width, selectedFormat.height);
 
-      // Get the current canvas content
-      const canvasDataUrl = fabricCanvas.toDataURL({
-        format: 'png',
-        quality: 1.0,
-        multiplier: 1
-      });
+      let imageSource = '';
+      
+      // If canvas has objects, use canvas content, otherwise use original/processed image
+      if (fabricCanvas && fabricCanvas.getObjects().length > 0) {
+        imageSource = fabricCanvas.toDataURL({
+          format: 'png',
+          quality: 1.0,
+          multiplier: 1
+        });
+      } else {
+        // Use processed image if available, otherwise use original
+        imageSource = processedImageUrl || previewUrl;
+      }
 
       const img = new Image();
       img.onload = () => {
-        // Draw the canvas content to the output canvas
-        ctx.drawImage(img, 0, 0, selectedFormat.width, selectedFormat.height);
+        // Calculate scaling to fit the format while maintaining aspect ratio
+        const imgAspect = img.width / img.height;
+        const formatAspect = selectedFormat.width / selectedFormat.height;
+        
+        let drawWidth, drawHeight, drawX, drawY;
+        
+        if (imgAspect > formatAspect) {
+          drawWidth = selectedFormat.width * 0.9; // Leave some padding
+          drawHeight = drawWidth / imgAspect;
+          drawX = selectedFormat.width * 0.05;
+          drawY = (selectedFormat.height - drawHeight) / 2;
+        } else {
+          drawHeight = selectedFormat.height * 0.9; // Leave some padding
+          drawWidth = drawHeight * imgAspect;
+          drawY = selectedFormat.height * 0.05;
+          drawX = (selectedFormat.width - drawWidth) / 2;
+        }
+        
+        // Draw the image centered and scaled
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
         
         // Convert to blob
         outputCanvas.toBlob((blob) => {
@@ -316,7 +348,7 @@ export const SmartLogoCropDialog = ({ open, onOpenChange, onCropComplete }: Smar
           });
         }, 'image/png', 0.9);
       };
-      img.src = canvasDataUrl;
+      img.src = imageSource;
     } catch (error) {
       toast({
         title: "Error",
@@ -404,7 +436,7 @@ export const SmartLogoCropDialog = ({ open, onOpenChange, onCropComplete }: Smar
             Smart Logo Editor - No External Tools Needed
           </DialogTitle>
           <DialogDescription>
-            Upload any logo and we'll automatically optimize it for your needs
+            Upload any logo and we'll automatically optimize it for your needs. After upload, use "Smart Process" for background removal or "Load Original" to start editing immediately.
           </DialogDescription>
         </DialogHeader>
 
@@ -517,6 +549,11 @@ export const SmartLogoCropDialog = ({ open, onOpenChange, onCropComplete }: Smar
                 <div className="bg-white border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-medium">Logo Editor</h4>
+                    {fabricCanvas && fabricCanvas.getObjects().length === 0 && (
+                      <span className="text-sm text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                        Click "Load Original" to start editing
+                      </span>
+                    )}
                     <Button
                       onClick={autoFitLogo}
                       size="sm"
@@ -593,7 +630,7 @@ export const SmartLogoCropDialog = ({ open, onOpenChange, onCropComplete }: Smar
               <Button 
                 onClick={generateLogo}
                 className="bg-brand-primary hover:bg-brand-accent"
-                disabled={!fabricCanvas}
+                disabled={!fabricCanvas || (!fabricCanvas.getObjects().length && !previewUrl)}
               >
                 <Download className="h-4 w-4 mr-2" />
                 Generate {selectedFormat.name} Logo
