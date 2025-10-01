@@ -242,11 +242,12 @@ export const VisualMeasurementSheet = ({
       <div className="container-level-2 border-b-2 border-border px-6 py-4">
         <h2 className="text-2xl font-bold text-card-foreground text-center">Window Measurement Worksheet</h2>
       </div>
-      <div className="p-4">
-        <ResizablePanelGroup direction="horizontal" className="min-h-[600px] rounded-lg">
+      <div className="p-6">
+        <ResizablePanelGroup direction="horizontal" className="h-[calc(100vh-280px)] min-h-[500px] rounded-lg gap-4">
           {/* Visual Diagram Panel */}
-          <ResizablePanel defaultSize={40} minSize={30} maxSize={60}>
-            <div className="relative container-level-2 rounded-lg p-8 min-h-[400px] overflow-visible">
+          <ResizablePanel defaultSize={45} minSize={35} maxSize={60} className="min-w-0">
+            <div className="h-full flex flex-col gap-4">
+              <div className="relative container-level-2 rounded-lg p-8 flex-1 min-h-[400px] overflow-visible">
 
               {/* Hardware - Track/Rod that follows window shape */}
               {windowType === 'bay' ? (
@@ -567,24 +568,50 @@ export const VisualMeasurementSheet = ({
                   <div className="w-0 h-0 border-t-2 border-b-2 border-l-4 border-transparent border-l-teal-600"></div>
                 </div>
               )}
-            </div>
+              </div>
 
-            {/* Measurement Guide - More User-Friendly */}
-            <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
-              <h5 className="font-medium text-primary mb-2 text-sm">What to Measure</h5>
-              <div className="text-sm text-foreground space-y-1">
-                <p><strong>Width (W):</strong> {hardwareType === "track" ? "Track" : "Rail"} width - how wide your curtain needs to be</p>
-                <p><strong>Drop (H):</strong> Height from {hardwareType === "track" ? "track" : "rod"} to where curtain should end</p>
-                {hasValue(measurements.rail_width) && hasValue(measurements.drop) && (
-                  <div className="mt-2 p-2 bg-secondary/20 border border-secondary/30 rounded text-foreground">
-                    ✓ Great! These measurements will update the visual above as you type
-                  </div>
-                )}
+              {/* Measurement Guide - More User-Friendly */}
+              <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg flex-shrink-0">
+                <h5 className="font-medium text-primary mb-2 text-sm">What to Measure</h5>
+                <div className="text-sm text-foreground space-y-1">
+                  <p><strong>Width (W):</strong> {hardwareType === "track" ? "Track" : "Rail"} width - how wide your curtain needs to be</p>
+                  <p><strong>Drop (H):</strong> Height from {hardwareType === "track" ? "track" : "rod"} to where curtain should end</p>
+                  {hasValue(measurements.rail_width) && hasValue(measurements.drop) && (
+                    <div className="mt-2 p-2 bg-secondary/20 border border-secondary/30 rounded text-foreground">
+                      ✓ Great! These measurements will update the visual above as you type
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
+          </ResizablePanel>
 
-            {/* Additional Measurements for Curtain Makers - Collapsible */}
-            <div className="mt-4">
+          <ResizableHandle withHandle className="w-2 bg-border hover:bg-primary/20 transition-colors" />
+
+          {/* Measurement Inputs Panel */}
+          <ResizablePanel defaultSize={55} minSize={40} className="min-w-0">
+            <div className="h-full overflow-y-auto pr-2 space-y-4 scroll-smooth [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-thumb]:rounded-full">
+              {/* Hardware Type */}
+              <div className="bg-muted/20 border border-border rounded-lg p-4">
+                <h4 className="font-medium mb-3 text-foreground">Hardware Type</h4>
+                <RadioGroup 
+                  value={hardwareType} 
+                  onValueChange={(value) => handleInputChange("hardware_type", value)}
+                  disabled={readOnly}
+                  className="flex flex-row space-x-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="rod" id="rod" />
+                    <Label htmlFor="rod">Rod</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="track" id="track" />
+                    <Label htmlFor="track">Track</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {/* Additional Measurements for Curtain Makers - Collapsible */}
               <details className="group">
                 <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-foreground hover:text-muted-foreground transition-colors p-2 bg-muted rounded border">
                   <svg className="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
