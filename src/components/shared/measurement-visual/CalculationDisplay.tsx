@@ -1,4 +1,5 @@
 import { FabricCalculation } from "./types";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface CalculationDisplayProps {
   calculation: FabricCalculation;
@@ -6,8 +7,33 @@ interface CalculationDisplayProps {
 }
 
 export const CalculationDisplay = ({ calculation, compact = false }: CalculationDisplayProps) => {
-  const formatCurrency = (amount: number) => `$${amount.toFixed(2)}`;
-  const formatMeasurement = (value: number, unit: string = 'm') => `${value.toFixed(2)}${unit}`;
+  const { units } = useMeasurementUnits();
+  
+  const formatCurrency = (amount: number) => {
+    const currencySymbols: Record<string, string> = {
+      'NZD': 'NZ$',
+      'AUD': 'A$',
+      'USD': '$',
+      'GBP': '£',
+      'EUR': '€',
+      'ZAR': 'R'
+    };
+    const symbol = currencySymbols[units.currency] || units.currency;
+    return `${symbol}${amount.toFixed(2)}`;
+  };
+  
+  const formatMeasurement = (value: number, unit: string = units.length) => {
+    const unitLabels: Record<string, string> = {
+      'mm': 'mm',
+      'cm': 'cm',
+      'm': 'm',
+      'inches': '"',
+      'feet': "'",
+      'yards': 'yd'
+    };
+    const label = unitLabels[unit] || unit;
+    return `${value.toFixed(2)}${label}`;
+  };
 
   if (compact) {
     return (
