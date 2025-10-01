@@ -12,6 +12,7 @@ import { LiningOptionsSection } from "./dynamic-options/LiningOptionsSection";
 import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
 import { calculateFabricUsage } from "../job-creation/treatment-pricing/fabric-calculation/fabricUsageCalculator";
 import { TreatmentPreviewEngine } from "../treatment-visualizers/TreatmentPreviewEngine";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
 interface VisualMeasurementSheetProps {
   measurements: Record<string, any>;
@@ -241,10 +242,10 @@ export const VisualMeasurementSheet = ({
       <div className="container-level-2 border-b-2 border-border px-6 py-4">
         <h2 className="text-2xl font-bold text-card-foreground text-center">Window Measurement Worksheet</h2>
       </div>
-      <div className="p-2">
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Visual Diagram - Always visible on large screens */}
-          <div className="lg:w-1/2 lg:flex-shrink-0 lg:sticky lg:top-4 lg:h-fit lg:max-h-[calc(100vh-120px)] lg:overflow-visible">
+      <div className="p-4">
+        <ResizablePanelGroup direction="horizontal" className="min-h-[600px] rounded-lg">
+          {/* Visual Diagram Panel */}
+          <ResizablePanel defaultSize={40} minSize={30} maxSize={60}>
             <div className="relative container-level-2 rounded-lg p-8 min-h-[400px] overflow-visible">
 
               {/* Hardware - Track/Rod that follows window shape */}
@@ -788,10 +789,13 @@ export const VisualMeasurementSheet = ({
                 </div>
               </details>
             </div>
-          </div>
+          </ResizablePanel>
 
-          {/* Measurement Inputs - Fixed scroll behavior */}
-          <div className="lg:w-1/2 lg:flex-shrink-0 lg:max-h-[calc(100vh-120px)] lg:overflow-y-auto lg:pr-2 space-y-4 scroll-smooth">
+          <ResizableHandle withHandle />
+
+          {/* Measurement Inputs Panel */}
+          <ResizablePanel defaultSize={60} minSize={40}>
+            <div className="h-full overflow-y-auto px-4 space-y-4 scroll-smooth">
             {/* Hardware Type */}
             <div className="bg-muted/20 border border-border rounded-lg p-4">
               <h4 className="font-medium mb-3 text-foreground">Hardware Type</h4>
@@ -1119,10 +1123,9 @@ export const VisualMeasurementSheet = ({
                 </div>
               </div>
             )}
-
-
           </div>
-        </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     </div>
   );
