@@ -29,7 +29,7 @@ export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId 
         .from('quote_templates')
         .select('blocks')
         .eq('id', templateId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setTemplateBlocks(Array.isArray(templateData?.blocks) ? templateData.blocks : []);
@@ -66,6 +66,7 @@ export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId 
           template={template} 
           data={data}
           blocks={templateBlocks}
+          projectId={projectId}
         />
       </section>
     </main>
