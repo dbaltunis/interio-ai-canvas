@@ -811,30 +811,9 @@ export const VisualMeasurementSheet = ({
                   </div>
                 </div>
               </details>
-            </div>
 
-            {/* Hardware Type */}
-            <div className="bg-muted/20 border border-border rounded-lg p-4">
-              <h4 className="font-medium mb-3 text-foreground">Hardware Type</h4>
-              <RadioGroup 
-                value={hardwareType} 
-                onValueChange={(value) => handleInputChange("hardware_type", value)}
-                disabled={readOnly}
-                className="flex flex-row space-x-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="rod" id="rod" />
-                  <Label htmlFor="rod">Rod</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="track" id="track" />
-                  <Label htmlFor="track">Track</Label>
-                </div>
-              </RadioGroup>
-            </div>
-
-            {/* Curtain Configuration - Professional Design */}
-            <div className="container-level-1 rounded-lg p-4">
+              {/* Curtain Configuration - Professional Design */}
+              <div className="container-level-1 rounded-lg p-4">
               <h4 className="text-lg font-bold text-card-foreground mb-4">Curtain Configuration</h4>
               
               <div className="space-y-3">
