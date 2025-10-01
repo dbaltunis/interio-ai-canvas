@@ -12,7 +12,6 @@ import { LiningOptionsSection } from "./dynamic-options/LiningOptionsSection";
 import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
 import { calculateFabricUsage } from "../job-creation/treatment-pricing/fabric-calculation/fabricUsageCalculator";
 import { TreatmentPreviewEngine } from "../treatment-visualizers/TreatmentPreviewEngine";
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
 interface VisualMeasurementSheetProps {
   measurements: Record<string, any>;
@@ -242,12 +241,13 @@ export const VisualMeasurementSheet = ({
       <div className="container-level-2 border-b-2 border-border px-6 py-4">
         <h2 className="text-2xl font-bold text-card-foreground text-center">Window Measurement Worksheet</h2>
       </div>
-      <div className="p-6">
-        <ResizablePanelGroup direction="horizontal" className="h-[700px] rounded-lg gap-4">
-          {/* Visual Diagram Panel */}
-          <ResizablePanel defaultSize={45} minSize={35} maxSize={60} className="min-w-0">
-            <div className="h-full flex flex-col gap-4">
-              <div className="relative container-level-2 rounded-lg p-8 flex-1 min-h-[400px] overflow-visible">
+      <div className="p-6 space-y-6">
+        {/* Visual Diagram Section */}
+        <div className="w-full">
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Visual Diagram */}
+            <div className="lg:w-2/5 flex-shrink-0">
+              <div className="relative container-level-2 rounded-lg p-8 min-h-[400px] overflow-visible">
 
               {/* Hardware - Track/Rod that follows window shape */}
               {windowType === 'bay' ? (
@@ -570,8 +570,8 @@ export const VisualMeasurementSheet = ({
               )}
               </div>
 
-              {/* Measurement Guide - More User-Friendly */}
-              <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg flex-shrink-0">
+              {/* Measurement Guide */}
+              <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
                 <h5 className="font-medium text-primary mb-2 text-sm">What to Measure</h5>
                 <div className="text-sm text-foreground space-y-1">
                   <p><strong>Width (W):</strong> {hardwareType === "track" ? "Track" : "Rail"} width - how wide your curtain needs to be</p>
@@ -584,13 +584,9 @@ export const VisualMeasurementSheet = ({
                 </div>
               </div>
             </div>
-          </ResizablePanel>
 
-          <ResizableHandle withHandle className="w-2 bg-border hover:bg-primary/20 transition-colors" />
-
-          {/* Measurement Inputs Panel */}
-          <ResizablePanel defaultSize={55} minSize={40} className="min-w-0">
-            <div className="h-full overflow-y-auto pr-2 space-y-4 scroll-smooth [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-thumb]:rounded-full">
+            {/* Measurement Inputs Section */}
+            <div className="lg:w-3/5 space-y-4">
               {/* Hardware Type */}
               <div className="bg-muted/20 border border-border rounded-lg p-4">
                 <h4 className="font-medium mb-3 text-foreground">Hardware Type</h4>
@@ -816,13 +812,7 @@ export const VisualMeasurementSheet = ({
                 </div>
               </details>
             </div>
-          </ResizablePanel>
 
-          <ResizableHandle withHandle />
-
-          {/* Measurement Inputs Panel */}
-          <ResizablePanel defaultSize={60} minSize={40}>
-            <div className="h-full overflow-y-auto px-4 space-y-4 scroll-smooth">
             {/* Hardware Type */}
             <div className="bg-muted/20 border border-border rounded-lg p-4">
               <h4 className="font-medium mb-3 text-foreground">Hardware Type</h4>
@@ -1127,8 +1117,6 @@ export const VisualMeasurementSheet = ({
                 )}
 
                 {/* Heading Options - Compact */}
-
-                {/* Heading Options - Compact */}
                 <div className="container-level-2 border-2 border-orange-200 rounded-lg p-4 shadow-sm">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -1151,8 +1139,7 @@ export const VisualMeasurementSheet = ({
               </div>
             )}
           </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
+        </div>
       </div>
     </div>
   );
