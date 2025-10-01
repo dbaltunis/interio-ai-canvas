@@ -709,9 +709,9 @@ export const DynamicWindowWorksheet = forwardRef<
         <TabsContent value="measurements" className="space-y-4">
           <Card>
             <CardContent className="p-0">
-              <div className="grid grid-cols-1 2xl:grid-cols-5 gap-6">
-                {/* Left Side - Live Visual Worksheet */}
-                <div className="2xl:col-span-3">
+              <div className="space-y-6">
+                {/* Full Width Visual Worksheet */}
+                <div className="w-full">
                   <VisualMeasurementSheet
                     measurements={measurements}
                     onMeasurementChange={handleMeasurementChange}
@@ -727,8 +727,8 @@ export const DynamicWindowWorksheet = forwardRef<
                   />
                 </div>
 
-                {/* Right Side - Treatment Options & Cost */}
-                <div className="2xl:col-span-2 space-y-4">
+                {/* Bottom Section - Configuration & Cost */}
+                <div className="px-6 pb-6 space-y-4">
                   <div className="p-4 bg-primary/5 rounded-lg">
                     <h4 className="font-medium mb-3">Selected Configuration</h4>
                     <div className="space-y-2 text-sm">
