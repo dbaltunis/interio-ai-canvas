@@ -150,7 +150,7 @@ export const WindowManagementDialog = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleDialogClose}>
-        <DialogContent className="max-w-7xl h-[95vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-7xl max-h-[95vh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Ruler className="h-5 w-5" />
@@ -158,7 +158,7 @@ export const WindowManagementDialog = ({
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto">
             <MeasurementBridge
               key={surface?.id} // Stable key for consistent state
               ref={worksheetRef}
