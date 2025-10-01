@@ -1121,5 +1121,6 @@ export const VisualMeasurementSheet = ({
         </div>
       </div>
     </div>
+    </div>
   );
 };
