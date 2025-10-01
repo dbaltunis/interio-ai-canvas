@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Download, Printer, Settings2 } from "lucide-react";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface WorkroomToolbarProps {
   selectedTemplate: string;
@@ -11,6 +12,12 @@ interface WorkroomToolbarProps {
   onPrint: () => void;
 }
 
+interface Template {
+  id: string;
+  name: string;
+  template_style: string;
+}
+
 export const WorkroomToolbar: React.FC<WorkroomToolbarProps> = ({
   selectedTemplate,
   onTemplateChange,
@@ -18,6 +25,29 @@ export const WorkroomToolbar: React.FC<WorkroomToolbarProps> = ({
   onToggleGroupBy,
   onPrint,
 }) => {
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadTemplates();
+  }, []);
+
+  const loadTemplates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('quote_templates')
+        .select('id, name, template_style')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setTemplates(data || []);
+    } catch (error) {
+      console.error('Error loading templates:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Card className="no-print p-3 flex items-center justify-between gap-3">
       <div className="flex items-center gap-3">
@@ -27,17 +57,29 @@ export const WorkroomToolbar: React.FC<WorkroomToolbarProps> = ({
           value={selectedTemplate}
           onChange={(e) => onTemplateChange(e.target.value)}
           className="h-9 rounded-md border bg-background px-3 text-sm"
+          disabled={loading}
         >
-          <option value="workshop-info">Workshop Information</option>
-          <option value="packing-slip" disabled>
-            Packing Slip (soon)
-          </option>
-          <option value="box-label" disabled>
-            Box Label (soon)
-          </option>
-          <option value="wraps" disabled>
-            Wraps (soon)
-          </option>
+          <option value="workshop-info">Workshop Information (Classic)</option>
+          {templates.length > 0 && (
+            <optgroup label="Your Custom Templates">
+              {templates.map((template) => (
+                <option key={template.id} value={template.id}>
+                  {template.name}
+                </option>
+              ))}
+            </optgroup>
+          )}
+          <optgroup label="Coming Soon">
+            <option value="packing-slip" disabled>
+              Packing Slip (soon)
+            </option>
+            <option value="box-label" disabled>
+              Box Label (soon)
+            </option>
+            <option value="wraps" disabled>
+              Wraps (soon)
+            </option>
+          </optgroup>
         </select>
 
         <div className="flex items-center gap-2 pl-2">
