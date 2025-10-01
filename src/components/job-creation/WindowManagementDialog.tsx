@@ -150,15 +150,15 @@ export const WindowManagementDialog = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleDialogClose}>
-        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-7xl h-[95vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Ruler className="h-5 w-5" />
               Enhanced Window Management: {surface?.name}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-hidden">
             <MeasurementBridge
               key={surface?.id} // Stable key for consistent state
               ref={worksheetRef}

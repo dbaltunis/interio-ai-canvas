@@ -243,7 +243,7 @@ export const VisualMeasurementSheet = ({
         <h2 className="text-2xl font-bold text-card-foreground text-center">Window Measurement Worksheet</h2>
       </div>
       <div className="p-6">
-        <ResizablePanelGroup direction="horizontal" className="h-[calc(100vh-280px)] min-h-[500px] rounded-lg gap-4">
+        <ResizablePanelGroup direction="horizontal" className="h-[700px] rounded-lg gap-4">
           {/* Visual Diagram Panel */}
           <ResizablePanel defaultSize={45} minSize={35} maxSize={60} className="min-w-0">
             <div className="h-full flex flex-col gap-4">
