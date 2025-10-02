@@ -78,4 +78,54 @@
   .document-surface [class*="border-b"] {
     border-bottom: none !important;
   }
+  
+  /* A4 Container Print Styling */
+  .bg-muted\/20 {
+    background: white !important;
+    padding: 0 !important;
+  }
+  
+  /* Remove A4 container visual styling in print */
+  .shadow-lg {
+    box-shadow: none !important;
+    border: none !important;
+  }
+  
+  /* Ensure A4 page takes full width in print */
+  [style*="210mm"] {
+    width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+  }
+  
+  /* Remove padding from content wrapper in print - margins controlled by @page */
+  [style*="210mm"] > div {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+  
+  /* Better page breaks for summary sections */
+  .space-y-2,
+  .flex.justify-between,
+  [class*="total"],
+  [class*="subtotal"],
+  [class*="tax"] {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  
+  /* Avoid orphaned labels */
+  h1, h2, h3, h4, h5, h6,
+  .font-semibold,
+  .font-bold {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
+  
+  /* Update @page margins to match visual guides */
+  @page {
+    margin: 15mm;
+    border: none;
+  }
 }

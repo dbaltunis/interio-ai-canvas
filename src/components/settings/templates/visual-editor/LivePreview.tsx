@@ -1242,7 +1242,7 @@ export const LivePreview = ({
         >
           {/* Print cut line indicator at top */}
           <div 
-            className="absolute top-0 left-0 right-0 h-px border-t-2 border-dashed border-primary/30"
+            className="no-print absolute top-0 left-0 right-0 h-px border-t-2 border-dashed border-primary/30"
             style={{ borderTopWidth: '1px' }}
           >
             <span className="absolute -top-4 left-4 text-xs text-muted-foreground bg-white px-2">
@@ -1252,7 +1252,7 @@ export const LivePreview = ({
           
           {/* Print cut line indicator at bottom */}
           <div 
-            className="absolute bottom-0 left-0 right-0 h-px border-b-2 border-dashed border-primary/30"
+            className="no-print absolute bottom-0 left-0 right-0 h-px border-b-2 border-dashed border-primary/30"
             style={{ borderBottomWidth: '1px' }}
           >
             <span className="absolute -bottom-4 left-4 text-xs text-muted-foreground bg-white px-2">
@@ -1262,7 +1262,7 @@ export const LivePreview = ({
           
           {/* Side cut lines */}
           <div 
-            className="absolute top-0 bottom-0 left-0 w-px border-l-2 border-dashed border-primary/20"
+            className="no-print absolute top-0 bottom-0 left-0 w-px border-l-2 border-dashed border-primary/20"
             style={{ borderLeftWidth: '1px', left: '15mm' }}
           >
             <span className="absolute top-4 -left-12 text-xs text-muted-foreground bg-white px-1 -rotate-90 origin-left">
@@ -1271,7 +1271,7 @@ export const LivePreview = ({
           </div>
           
           <div 
-            className="absolute top-0 bottom-0 right-0 w-px border-r-2 border-dashed border-primary/20"
+            className="no-print absolute top-0 bottom-0 right-0 w-px border-r-2 border-dashed border-primary/20"
             style={{ borderRightWidth: '1px', right: '15mm' }}
           >
             <span className="absolute top-4 -right-12 text-xs text-muted-foreground bg-white px-1 rotate-90 origin-right">
@@ -1296,7 +1296,7 @@ export const LivePreview = ({
           
           {/* Page break indicator every 297mm */}
           <div 
-            className="absolute left-0 right-0 border-t-2 border-dashed border-destructive/40 pointer-events-none"
+            className="no-print absolute left-0 right-0 border-t-2 border-dashed border-destructive/40 pointer-events-none"
             style={{ 
               top: '297mm',
               borderTopWidth: '2px'
