@@ -70,12 +70,12 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
       company_country: businessSettings.country || 'Australia',
       
       // Client information from project
-      client_name: client.name || 'John Smith',
-      client_email: client.email || 'client@example.com', 
-      client_phone: client.phone || '(555) 987-6543',
+      client_name: client.name || '',
+      client_email: client.email || '', 
+      client_phone: client.phone || '',
       client_address: client.address ? 
         `${client.address}${client.city ? ', ' + client.city : ''}${client.state ? ', ' + client.state : ''}${client.zip_code ? ' ' + client.zip_code : ''}` 
-        : '456 Residential Street, Anytown, ST 12345',
+        : '',
       client_company: client.company_name || '',
       
       // Project information
