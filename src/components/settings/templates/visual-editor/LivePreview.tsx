@@ -81,6 +81,10 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
         `${client.address}${client.city ? ', ' + client.city : ''}${client.state ? ', ' + client.state : ''}${client.zip_code ? ' ' + client.zip_code : ''}` 
         : '',
       client_company: client.company_name || '',
+      client_type: client.client_type || 'B2C',
+      client_abn: client.abn || '',
+      client_business_email: client.business_email || '',
+      client_business_phone: client.business_phone || '',
       
       // Project information
       quote_number: project.quote_number || project.job_number || 'QT-2024-001',

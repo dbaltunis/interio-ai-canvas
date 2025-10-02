@@ -291,7 +291,7 @@ export const ClientSearchStep = ({ formData, updateFormData }: ClientSearchStepP
       </div>
 
       {selectedClient && !isChangingClient ? (
-        <Card className="bg-green-50 border-green-200">
+        <Card className="bg-green-50 border-green-200 relative z-0">
           <CardContent className="pt-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
