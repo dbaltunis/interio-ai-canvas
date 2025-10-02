@@ -50,11 +50,15 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
     const client = project.client || projectData?.client || {};
     const businessSettings = projectData?.businessSettings || {};
     
-    console.log('🔍 Token Replacement Debug:', {
+    console.log('🔍 Client Data Debug:', {
       token,
-      businessSettings,
-      hasBusinessSettings: !!projectData?.businessSettings,
-      businessSettingsKeys: Object.keys(businessSettings)
+      projectData: projectData,
+      project: project,
+      client: client,
+      hasClient: !!client,
+      clientKeys: Object.keys(client),
+      clientName: client?.name,
+      projectClientId: project?.client_id
     });
     
     const tokens = {
@@ -185,6 +189,18 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
       const clientEmail = renderTokenValue('client_email');
       const clientPhone = renderTokenValue('client_phone');
       const clientAddress = renderTokenValue('client_address');
+      
+      console.log('📋 Client Info Block - Rendered Values:', {
+        clientName,
+        clientCompany,
+        clientEmail,
+        clientPhone,
+        clientAddress,
+        showCompany: content.showCompany,
+        showClientEmail: content.showClientEmail,
+        showClientPhone: content.showClientPhone,
+        showClientAddress: content.showClientAddress
+      });
       
       return (
         <div className="mb-6">
