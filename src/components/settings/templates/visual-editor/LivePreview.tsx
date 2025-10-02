@@ -1,4 +1,5 @@
 import React, { Suspense } from 'react';
+import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -233,11 +234,11 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
                     </div>
                     <div>
                       <span className="text-muted-foreground">Date: </span>
-                      <span>{renderTokenValue('date')}</span>
+                      <span>{content.customDate ? format(new Date(content.customDate), 'M/d/yyyy') : renderTokenValue('date')}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Valid Until: </span>
-                      <span>{renderTokenValue('valid_until')}</span>
+                      <span>{content.customValidUntil ? format(new Date(content.customValidUntil), 'M/d/yyyy') : renderTokenValue('valid_until')}</span>
                     </div>
                   </div>
                 </div>

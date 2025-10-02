@@ -4,12 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
 import { 
   Building2,
   MapPin,
   Phone,
   Mail,
-  Calendar,
+  Calendar as CalendarIcon,
   DollarSign,
   Hash,
   FileText,
@@ -648,13 +651,53 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                       />
                       <span className="font-semibold ml-1">{renderTokenValue('quote_number')}</span>
                     </div>
-                    <div>
+                    <div className="flex items-center gap-2 justify-end">
                       <span className="text-muted-foreground">Date: </span>
-                      <span>{renderTokenValue('date')}</span>
+                      <span>{content.customDate ? format(new Date(content.customDate), 'M/d/yyyy') : renderTokenValue('date')}</span>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                            <CalendarIcon className="h-3 w-3" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                          <Calendar
+                            mode="single"
+                            selected={content.customDate ? new Date(content.customDate) : new Date()}
+                            onSelect={(date) => {
+                              if (date) {
+                                updateBlockContent({ customDate: date.toISOString() });
+                              }
+                            }}
+                            initialFocus
+                            className="p-3 pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
-                    <div>
+                    <div className="flex items-center gap-2 justify-end">
                       <span className="text-muted-foreground">Valid Until: </span>
-                      <span>{renderTokenValue('valid_until')}</span>
+                      <span>{content.customValidUntil ? format(new Date(content.customValidUntil), 'M/d/yyyy') : renderTokenValue('valid_until')}</span>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                            <CalendarIcon className="h-3 w-3" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                          <Calendar
+                            mode="single"
+                            selected={content.customValidUntil ? new Date(content.customValidUntil) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)}
+                            onSelect={(date) => {
+                              if (date) {
+                                updateBlockContent({ customValidUntil: date.toISOString() });
+                              }
+                            }}
+                            initialFocus
+                            className="p-3 pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   </div>
                 </div>
