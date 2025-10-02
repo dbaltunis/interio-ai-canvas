@@ -1493,10 +1493,21 @@ export const EditableLivePreview = ({
   };
 
   const handleBlockUpdate = useCallback((blockId: string, updatedBlock: any) => {
+    // Preserve scroll position
+    const scrollContainer = document.querySelector('.overflow-auto');
+    const scrollTop = scrollContainer?.scrollTop || 0;
+    
     const newBlocks = blocks.map(block => 
       block.id === blockId ? updatedBlock : block
     );
     onBlocksChange(newBlocks);
+    
+    // Restore scroll position after state update
+    requestAnimationFrame(() => {
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollTop;
+      }
+    });
   }, [blocks, onBlocksChange]);
 
   const updatePageStyles = (styleUpdates: any) => {

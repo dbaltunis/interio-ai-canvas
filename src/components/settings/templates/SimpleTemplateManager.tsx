@@ -438,7 +438,7 @@ export const SimpleTemplateManager: React.FC = () => {
 
     console.log('saveTemplateChanges called with blocks:', updatedBlocks);
 
-    // Update local state immediately for responsive UI
+    // Update local state immediately for responsive UI (without scroll disruption)
     setSelectedTemplate(prev => prev ? { ...prev, blocks: updatedBlocks } : null);
 
     try {
@@ -504,7 +504,8 @@ export const SimpleTemplateManager: React.FC = () => {
       }
 
       console.log('Template saved successfully');
-      toast.success('Template saved!');
+      // Only show toast for manual saves, not auto-saves
+      // toast.success('Template saved!');
     } catch (error) {
       console.error('Error saving template:', error);
       console.error('Error details:', JSON.stringify(error, null, 2));
