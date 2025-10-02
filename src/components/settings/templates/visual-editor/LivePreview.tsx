@@ -517,63 +517,53 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
       const getItemizedBreakdown = (item: any) => {
         const components = [];
         
-        // Extract fabric details - use actual fabric name and cost from item
-        const fabricName = item.fabric_name || item.fabric_details?.name || 'Fabric';
-        const fabricWidth = parseFloat(item.fabric_width || item.fabric_details?.width || 0);
-        const linearMeters = parseFloat(item.linear_meters || item.fabric_quantity || 0);
-        const fabricPricePerMeter = parseFloat(item.fabric_price_per_meter || item.fabric_details?.price_per_meter || item.fabric_cost || 0);
-        const fabricTotalCost = linearMeters * fabricPricePerMeter;
-        
-        if (linearMeters > 0 && fabricPricePerMeter > 0) {
+        // Extract fabric details
+        if (item.fabric_details) {
+          const fabricCost = parseFloat(item.linear_meters || 0) * parseFloat(item.fabric_details.price_per_meter || 0);
           components.push({
             type: 'Fabric',
-            description: `${fabricName}${fabricWidth > 0 ? ` | ${fabricWidth.toFixed(2)} m` : ''}`,
-            quantity: linearMeters.toFixed(2),
+            description: `${item.fabric_details.name || 'Fabric'} | ${parseFloat(item.fabric_details.width || 0).toFixed(2)} m`,
+            quantity: parseFloat(item.linear_meters || 0).toFixed(2),
             unit: 'm',
-            rate: fabricPricePerMeter.toFixed(2),
-            total: fabricTotalCost.toFixed(2)
+            rate: parseFloat(item.fabric_details.price_per_meter || 0).toFixed(2),
+            total: fabricCost.toFixed(2)
           });
         }
 
-        // Extract manufacturing details - use actual manufacturing cost
-        const manufacturingCost = parseFloat(item.manufacturing_cost || item.manufacturing_details?.cost || item.make_cost || 0);
-        if (manufacturingCost > 0) {
+        // Extract manufacturing details
+        if (item.manufacturing_details && item.manufacturing_details.cost > 0) {
           components.push({
             type: 'Manufacturing price',
-            description: item.manufacturing_type || 'Standard',
+            description: '-',
             quantity: '1',
             unit: '',
-            rate: manufacturingCost.toFixed(2),
-            total: manufacturingCost.toFixed(2)
+            rate: parseFloat(item.manufacturing_details.cost || 0).toFixed(2),
+            total: parseFloat(item.manufacturing_details.cost || 0).toFixed(2)
           });
         }
 
-        // Extract lining if present - use actual lining cost
-        const liningType = item.lining_type || item.manufacturing_details?.lining_type;
-        const liningCost = parseFloat(item.lining_cost || 0);
-        if (liningType && liningCost > 0) {
+        // Extract lining if present
+        if (item.manufacturing_details?.lining_type) {
+          const liningCost = parseFloat(item.linear_meters || 0) * 10; // Standard lining cost
           components.push({
             type: 'Lining',
-            description: liningType,
-            quantity: linearMeters.toFixed(2),
+            description: item.manufacturing_details.lining_type || 'Blackout',
+            quantity: parseFloat(item.linear_meters || 0).toFixed(2),
             unit: 'm',
-            rate: (liningCost / linearMeters).toFixed(2),
+            rate: '10.00',
             total: liningCost.toFixed(2)
           });
         }
 
-        // Add heading/hardware if present
-        const hardwareCost = parseFloat(item.hardware_cost || item.heading_cost || 0);
-        if (hardwareCost > 0) {
-          components.push({
-            type: 'Heading',
-            description: item.heading_type || 'Regular Headrail',
-            quantity: '1',
-            unit: '',
-            rate: hardwareCost.toFixed(2),
-            total: hardwareCost.toFixed(2)
-          });
-        }
+        // Add heading row (can be 0.00)
+        components.push({
+          type: 'Heading',
+          description: 'Regular Headrail',
+          quantity: Math.round((item.measurements?.rail_width || 200)),
+          unit: 'cm',
+          rate: '0.00',
+          total: '0.00'
+        });
 
         return components;
       };
