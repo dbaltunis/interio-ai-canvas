@@ -782,20 +782,20 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
           </h3>
           <div className="grid md:grid-cols-2 gap-8">
             <div>
-              <p className="text-sm mb-4">By signing below, you authorize us to proceed with this work as described:</p>
+              <p className="text-sm mb-4">{content.authorizationText || "By signing below, you authorize us to proceed with this work as described:"}</p>
               <div className="border-t border-gray-400 pt-2 mt-12">
                 <div className="text-sm">
-                  <div className="font-medium">Client Signature</div>
+                  <div className="font-medium">{content.clientSignatureLabel || "Client Signature"}</div>
                   <div className="text-gray-600">Print Name: {renderTokenValue('client_name')}</div>
                   <div className="text-gray-600">Date: _________________</div>
                 </div>
               </div>
             </div>
             <div>
-              <p className="text-sm mb-4">Thank you for choosing us for your project!</p>
+              <p className="text-sm mb-4">{content.thankYouText || "Thank you for choosing us for your project!"}</p>
               <div className="border-t border-gray-400 pt-2 mt-12">
                 <div className="text-sm">
-                  <div className="font-medium">Company Representative</div>
+                  <div className="font-medium">{content.companySignatureLabel || "Company Representative"}</div>
                   <div className="text-gray-600">Print Name: _________________</div>
                   <div className="text-gray-600">Date: _________________</div>
                 </div>
