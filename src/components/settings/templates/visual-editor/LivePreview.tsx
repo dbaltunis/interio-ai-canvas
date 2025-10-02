@@ -584,30 +584,34 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
           });
         }
 
-        // Extract lining with EXACT values from database
-        if (item.lining_details && item.lining_cost) {
+        // Extract lining with EXACT values from database  
+        if (item.lining_details || item.lining_cost) {
           const liningCost = parseFloat(item.lining_cost || 0);
           const linearMeters = parseFloat(item.linear_meters || 0);
-          const liningRate = linearMeters > 0 ? liningCost / linearMeters : parseFloat(item.lining_details.price_per_metre || 0);
+          const liningRate = linearMeters > 0 ? liningCost / linearMeters : parseFloat(item.lining_details?.price_per_metre || 0);
           
-          components.push({
-            type: 'Lining',
-            description: item.lining_details.type || 'Standard',
-            quantity: linearMeters.toFixed(2),
-            unit: 'm',
-            rate: liningRate.toFixed(2),
-            total: liningCost.toFixed(2)
-          });
+          // Only show if there's actual lining cost
+          if (liningCost > 0) {
+            components.push({
+              type: 'Lining',
+              description: item.lining_details?.type || 'Standard',
+              quantity: linearMeters.toFixed(2),
+              unit: 'm',
+              rate: liningRate.toFixed(2),
+              total: liningCost.toFixed(2)
+            });
+          }
         }
 
         // Extract heading with EXACT cost from database
-        if (item.heading_details) {
-          const headingCost = parseFloat(item.heading_details.cost || 0);
+        if (item.heading_details || (item.measurements && item.measurements.rail_width)) {
+          const headingCost = parseFloat(item.heading_details?.cost || 0);
           const railWidthCm = Math.round(item.measurements?.rail_width || 200);
           
+          // Show heading even if cost is 0
           components.push({
             type: 'Heading',
-            description: item.heading_details.heading_name || item.heading_details.name || 'Regular Headrail',
+            description: item.heading_details?.heading_name || item.heading_details?.name || 'Regular Headrail',
             quantity: railWidthCm,
             unit: 'cm',
             rate: headingCost.toFixed(2),
