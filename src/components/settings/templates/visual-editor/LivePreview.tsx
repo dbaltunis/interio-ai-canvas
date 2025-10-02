@@ -36,7 +36,13 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
   const content = block.content || {};
   const style = content.style || {};
   
-  console.log('LivePreviewBlock rendering:', { type: block.type, blockData: block });
+  // Trim and normalize block type to prevent matching issues
+  const blockType = (block.type || '').toString().trim().toLowerCase();
+  console.log('LivePreviewBlock rendering:', { 
+    originalType: block.type, 
+    normalizedType: blockType,
+    blockData: block 
+  });
 
   const renderTokenValue = (token: string) => {
     // Use real project data or fallback to defaults
@@ -97,7 +103,7 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
     return text.replace(/\{\{(\w+)\}\}/g, (match, token) => renderTokenValue(token));
   };
 
-  switch (block.type) {
+  switch (blockType) {
     case 'header':
       return (
         <div 
@@ -746,11 +752,16 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
       );
 
     default:
-      console.error('Unknown block type encountered:', block.type, 'Block data:', block);
+      console.error('Unknown block type encountered:', {
+        originalType: block.type,
+        normalizedType: blockType,
+        blockData: block
+      });
       return (
         <div className="mb-6 p-4 border border-dashed border-gray-300 rounded-lg text-center text-gray-500">
           <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
           <p>Unknown block type: {block.type}</p>
+          <p className="text-xs mt-2">Normalized: {blockType}</p>
           <p className="text-xs mt-2">Check console for details</p>
         </div>
       );
