@@ -178,6 +178,12 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
       );
 
     case 'client-info':
+      const clientName = renderTokenValue('client_name');
+      const clientCompany = renderTokenValue('client_company');
+      const clientEmail = renderTokenValue('client_email');
+      const clientPhone = renderTokenValue('client_phone');
+      const clientAddress = renderTokenValue('client_address');
+      
       return (
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-3 text-brand-primary flex items-center gap-2">
@@ -186,18 +192,18 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
           </h3>
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="space-y-1">
-              <p className="font-medium">{renderTokenValue('client_name')}</p>
-              {content.showCompany && renderTokenValue('client_company') && (
-                <p className="text-gray-600">{renderTokenValue('client_company')}</p>
+              <p className="font-medium">{clientName || '—'}</p>
+              {content.showCompany && (
+                <p className="text-gray-600">{clientCompany || '—'}</p>
               )}
               {content.showClientEmail && (
-                <p className="text-gray-600">{renderTokenValue('client_email')}</p>
+                <p className="text-gray-600">{clientEmail || '—'}</p>
               )}
               {content.showClientPhone && (
-                <p className="text-gray-600">{renderTokenValue('client_phone')}</p>
+                <p className="text-gray-600">{clientPhone || '—'}</p>
               )}
               {content.showClientAddress && (
-                <p className="text-gray-600">{renderTokenValue('client_address')}</p>
+                <p className="text-gray-600">{clientAddress || '—'}</p>
               )}
             </div>
           </div>
