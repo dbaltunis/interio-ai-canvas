@@ -1227,23 +1227,85 @@ export const LivePreview = ({
   }
 
   return (
-    <ScrollArea className="h-full w-full">
-      <div 
-        className="bg-white min-h-full"
-        style={{ backgroundColor: containerStyles?.backgroundColor || '#ffffff' }}
-      >
+    <ScrollArea className="h-full w-full bg-muted/20">
+      <div className="flex justify-center py-8 px-4">
+        {/* A4 Page Container with visible borders */}
         <div 
-          className={`mx-auto ${containerStyles?.maxWidth === 'full' ? 'w-full' : `max-w-${containerStyles?.maxWidth || '4xl'}`}`}
-          style={{ padding: containerStyles?.padding || '32px' }}
+          className="relative bg-white shadow-lg"
+          style={{
+            width: '210mm',
+            minHeight: '297mm',
+            backgroundColor: containerStyles?.backgroundColor || '#ffffff',
+            border: '2px solid hsl(var(--border))',
+            boxShadow: '0 0 20px rgba(0, 0, 0, 0.1)'
+          }}
         >
-          {blocks.map((block, index) => (
-            <LivePreviewBlock 
-              key={block.id || index} 
-              block={block} 
-              projectData={projectData}
-              isEditable={isEditable}
-            />
-          ))}
+          {/* Print cut line indicator at top */}
+          <div 
+            className="absolute top-0 left-0 right-0 h-px border-t-2 border-dashed border-primary/30"
+            style={{ borderTopWidth: '1px' }}
+          >
+            <span className="absolute -top-4 left-4 text-xs text-muted-foreground bg-white px-2">
+              Cut line (top margin)
+            </span>
+          </div>
+          
+          {/* Print cut line indicator at bottom */}
+          <div 
+            className="absolute bottom-0 left-0 right-0 h-px border-b-2 border-dashed border-primary/30"
+            style={{ borderBottomWidth: '1px' }}
+          >
+            <span className="absolute -bottom-4 left-4 text-xs text-muted-foreground bg-white px-2">
+              Cut line (bottom margin)
+            </span>
+          </div>
+          
+          {/* Side cut lines */}
+          <div 
+            className="absolute top-0 bottom-0 left-0 w-px border-l-2 border-dashed border-primary/20"
+            style={{ borderLeftWidth: '1px', left: '15mm' }}
+          >
+            <span className="absolute top-4 -left-12 text-xs text-muted-foreground bg-white px-1 -rotate-90 origin-left">
+              Left margin
+            </span>
+          </div>
+          
+          <div 
+            className="absolute top-0 bottom-0 right-0 w-px border-r-2 border-dashed border-primary/20"
+            style={{ borderRightWidth: '1px', right: '15mm' }}
+          >
+            <span className="absolute top-4 -right-12 text-xs text-muted-foreground bg-white px-1 rotate-90 origin-right">
+              Right margin
+            </span>
+          </div>
+          
+          {/* Content area */}
+          <div 
+            className={`mx-auto ${containerStyles?.maxWidth === 'full' ? 'w-full' : `max-w-${containerStyles?.maxWidth || '4xl'}`}`}
+            style={{ padding: containerStyles?.padding || '32px' }}
+          >
+            {blocks.map((block, index) => (
+              <LivePreviewBlock 
+                key={block.id || index} 
+                block={block} 
+                projectData={projectData}
+                isEditable={isEditable}
+              />
+            ))}
+          </div>
+          
+          {/* Page break indicator every 297mm */}
+          <div 
+            className="absolute left-0 right-0 border-t-2 border-dashed border-destructive/40 pointer-events-none"
+            style={{ 
+              top: '297mm',
+              borderTopWidth: '2px'
+            }}
+          >
+            <div className="absolute left-1/2 -translate-x-1/2 -top-3 bg-white px-3 py-1 text-xs font-medium text-destructive border border-destructive/40 rounded">
+              Page break - Content continues on next page
+            </div>
+          </div>
         </div>
       </div>
     </ScrollArea>
