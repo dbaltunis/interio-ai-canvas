@@ -694,17 +694,6 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
                     })}
                   </React.Fragment>
                 ))}
-                
-                {!hasRealData && (
-                  <tr className="border-t">
-                    <td className="p-3">1</td>
-                    <td className="p-3">Sample Window Treatment</td>
-                    <td className="p-3 text-sm text-gray-600">Custom drapery installation</td>
-                    <td className="p-3 text-center">1</td>
-                    <td className="p-3 text-right">$1,250.00</td>
-                    <td className="p-3 text-right font-medium">$1,250.00</td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </div>
