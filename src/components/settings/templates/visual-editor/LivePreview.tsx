@@ -180,16 +180,47 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
               <div className="flex items-center justify-between pt-6 mt-6 border-t">
                 {/* Client Info - Left */}
                 <div className="text-left">
-                  <div className="text-xs font-semibold uppercase text-muted-foreground mb-1">
+                  <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">
                     {content.clientLabel || "Sold to"}
                   </div>
-                  <div className="text-sm space-y-0.5">
+                  <div className="text-sm space-y-1">
+                    {/* Name - Always visible */}
                     <div className="font-medium">{renderTokenValue('client_name') || 'Client Name'}</div>
-                    <div className="text-muted-foreground">{renderTokenValue('client_email') || 'client@email.com'}</div>
-                    {renderTokenValue('client_phone') && (
-                      <div className="text-muted-foreground">{renderTokenValue('client_phone')}</div>
+                    
+                    {/* Company */}
+                    {content.showClientCompany !== false && renderTokenValue('client_company') && (
+                      <div className="text-muted-foreground">{renderTokenValue('client_company')}</div>
                     )}
-                    <div className="text-muted-foreground">{renderTokenValue('client_address') || 'Client Address'}</div>
+                    
+                    {/* ABN */}
+                    {content.showClientABN !== false && renderTokenValue('client_abn') && (
+                      <div className="text-muted-foreground">ABN: {renderTokenValue('client_abn')}</div>
+                    )}
+                    
+                    {/* Business Email */}
+                    {content.showClientBusinessEmail !== false && renderTokenValue('client_business_email') && (
+                      <div className="text-muted-foreground">Business: {renderTokenValue('client_business_email')}</div>
+                    )}
+                    
+                    {/* Business Phone */}
+                    {content.showClientBusinessPhone !== false && renderTokenValue('client_business_phone') && (
+                      <div className="text-muted-foreground">Business Phone: {renderTokenValue('client_business_phone')}</div>
+                    )}
+                    
+                    {/* Contact Email */}
+                    {content.showClientEmail !== false && renderTokenValue('client_email') && (
+                      <div className="text-muted-foreground">Contact: {renderTokenValue('client_email')}</div>
+                    )}
+                    
+                    {/* Contact Phone */}
+                    {content.showClientPhone !== false && renderTokenValue('client_phone') && (
+                      <div className="text-muted-foreground">Contact Phone: {renderTokenValue('client_phone')}</div>
+                    )}
+                    
+                    {/* Address */}
+                    {content.showClientAddress !== false && renderTokenValue('client_address') && (
+                      <div className="text-muted-foreground">{renderTokenValue('client_address')}</div>
+                    )}
                   </div>
                 </div>
 

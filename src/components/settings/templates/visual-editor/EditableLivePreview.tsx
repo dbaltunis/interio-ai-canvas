@@ -486,34 +486,175 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
               {/* Metadata Row */}
               <div className="flex items-center justify-between pt-6 mt-6 border-t">
                 {/* Client Info - Left */}
-                <div className="text-left">
+                <div className="text-left space-y-2">
                   <EditableText
                     value={content.clientLabel || "Sold to"}
                     onChange={(value) => updateBlockContent({ clientLabel: value })}
-                    className="text-xs font-semibold uppercase text-muted-foreground mb-1"
+                    className="text-xs font-semibold uppercase text-muted-foreground mb-2 block"
                     placeholder="Client Label"
                   />
-                  <div className="text-sm space-y-0.5">
-                    <div className="font-medium">{renderTokenValue('client_name') || 'Client Name'}</div>
-                    <div className="text-muted-foreground">{renderTokenValue('client_email') || 'client@email.com'}</div>
-                    <div className="text-muted-foreground">{renderTokenValue('client_address') || 'Client Address'}</div>
+                  
+                  {/* Client Fields with Toggle */}
+                  <div className="text-sm space-y-1">
+                    {/* Name - Always visible */}
+                    <div className="font-medium group relative pr-6">
+                      {renderTokenValue('client_name') || 'Client Name'}
+                    </div>
+                    
+                    {/* Company */}
+                    {content.showClientCompany !== false && renderTokenValue('client_company') && (
+                      <div className="text-muted-foreground group relative pr-6 hover:bg-red-50">
+                        {renderTokenValue('client_company')}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="absolute right-0 top-0 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 hover:bg-red-100"
+                          onClick={() => {
+                            if (confirm('Remove company name from quote?')) {
+                              updateBlockContent({ showClientCompany: false });
+                            }
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {/* ABN */}
+                    {content.showClientABN !== false && renderTokenValue('client_abn') && (
+                      <div className="text-muted-foreground group relative pr-6 hover:bg-red-50">
+                        ABN: {renderTokenValue('client_abn')}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="absolute right-0 top-0 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 hover:bg-red-100"
+                          onClick={() => {
+                            if (confirm('Remove ABN from quote?')) {
+                              updateBlockContent({ showClientABN: false });
+                            }
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {/* Business Email */}
+                    {content.showClientBusinessEmail !== false && renderTokenValue('client_business_email') && (
+                      <div className="text-muted-foreground group relative pr-6 hover:bg-red-50">
+                        Business: {renderTokenValue('client_business_email')}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="absolute right-0 top-0 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 hover:bg-red-100"
+                          onClick={() => {
+                            if (confirm('Remove business email from quote?')) {
+                              updateBlockContent({ showClientBusinessEmail: false });
+                            }
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {/* Business Phone */}
+                    {content.showClientBusinessPhone !== false && renderTokenValue('client_business_phone') && (
+                      <div className="text-muted-foreground group relative pr-6 hover:bg-red-50">
+                        Business Phone: {renderTokenValue('client_business_phone')}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="absolute right-0 top-0 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 hover:bg-red-100"
+                          onClick={() => {
+                            if (confirm('Remove business phone from quote?')) {
+                              updateBlockContent({ showClientBusinessPhone: false });
+                            }
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {/* Contact Email */}
+                    {content.showClientEmail !== false && renderTokenValue('client_email') && (
+                      <div className="text-muted-foreground group relative pr-6 hover:bg-red-50">
+                        Contact: {renderTokenValue('client_email')}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="absolute right-0 top-0 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 hover:bg-red-100"
+                          onClick={() => {
+                            if (confirm('Remove contact email from quote?')) {
+                              updateBlockContent({ showClientEmail: false });
+                            }
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {/* Contact Phone */}
+                    {content.showClientPhone !== false && renderTokenValue('client_phone') && (
+                      <div className="text-muted-foreground group relative pr-6 hover:bg-red-50">
+                        Contact Phone: {renderTokenValue('client_phone')}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="absolute right-0 top-0 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 hover:bg-red-100"
+                          onClick={() => {
+                            if (confirm('Remove contact phone from quote?')) {
+                              updateBlockContent({ showClientPhone: false });
+                            }
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {/* Address */}
+                    {content.showClientAddress !== false && renderTokenValue('client_address') && (
+                      <div className="text-muted-foreground group relative pr-6 hover:bg-red-50">
+                        {renderTokenValue('client_address')}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="absolute right-0 top-0 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 hover:bg-red-100"
+                          onClick={() => {
+                            if (confirm('Remove address from quote?')) {
+                              updateBlockContent({ showClientAddress: false });
+                            }
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Quote Details - Right */}
                 <div className="text-right">
                   <div className="text-sm space-y-1">
-                    <div className="flex items-center gap-2 justify-end">
-                      <span className="text-muted-foreground">{renderTokenValue('date')}</span>
-                    </div>
-                    <div className="flex items-center gap-2 justify-end">
+                    <div>
                       <EditableText
                         value={content.quoteNumberLabel || "Order number:"}
                         onChange={(value) => updateBlockContent({ quoteNumberLabel: value })}
-                        className="text-muted-foreground"
+                        className="text-muted-foreground inline"
                         placeholder="Order number:"
                       />
-                      <span className="font-semibold">{renderTokenValue('quote_number')}</span>
+                      <span className="font-semibold ml-1">{renderTokenValue('quote_number')}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Date: </span>
+                      <span>{renderTokenValue('date')}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Valid Until: </span>
+                      <span>{renderTokenValue('valid_until')}</span>
                     </div>
                   </div>
                 </div>
