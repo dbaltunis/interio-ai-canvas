@@ -519,13 +519,20 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
         
         // Extract fabric details
         if (item.fabric_details) {
-          const fabricCost = parseFloat(item.linear_meters || 0) * parseFloat(item.fabric_details.price_per_meter || 0);
+          // Use correct price field: unit_price, selling_price, or price_per_meter
+          const fabricPricePerMeter = parseFloat(
+            item.fabric_details.unit_price || 
+            item.fabric_details.selling_price || 
+            item.fabric_details.price_per_meter || 
+            0
+          );
+          const fabricCost = parseFloat(item.linear_meters || 0) * fabricPricePerMeter;
           components.push({
             type: 'Fabric',
             description: `${item.fabric_details.name || 'Fabric'} | ${parseFloat(item.fabric_details.width || 0).toFixed(2)} m`,
             quantity: parseFloat(item.linear_meters || 0).toFixed(2),
             unit: 'm',
-            rate: parseFloat(item.fabric_details.price_per_meter || 0).toFixed(2),
+            rate: fabricPricePerMeter.toFixed(2),
             total: fabricCost.toFixed(2)
           });
         }
@@ -648,9 +655,8 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
                             <tr className="border-t">
                               <td className="p-3 font-medium">{itemNumber}</td>
                               <td className="p-3 font-medium">
-                                {item.window_number 
-                                  ? `${item.treatment_name || item.name || 'Window Treatment'} - ${item.window_number}`
-                                  : (item.treatment_name || item.name || 'Window Treatment')}
+                                {item.fabric_details?.name || item.treatment_name || item.name || 'Window Treatment'}
+                                {item.window_number && ` - ${item.window_number}`}
                               </td>
                               <td className="p-3">
                                 {item.description || item.notes || item.room_name || 'Custom Treatment'}
@@ -682,9 +688,8 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
                           <tr key={`${roomName}-${itemIndex}`} className="border-t">
                             <td className="p-3">{itemNumber}</td>
                             <td className="p-3">
-                              {item.window_number 
-                                ? `${item.treatment_name || item.name || 'Window Treatment'} - ${item.window_number}`
-                                : (item.treatment_name || item.name || 'Window Treatment')}
+                              {item.fabric_details?.name || item.treatment_name || item.name || 'Window Treatment'}
+                              {item.window_number && ` - ${item.window_number}`}
                             </td>
                             <td className="p-3 text-sm text-gray-600">
                               {item.description || item.notes || item.room_name || `${item.width || 0}" x ${item.height || 0}"`}
