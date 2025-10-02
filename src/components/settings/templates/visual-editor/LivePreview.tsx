@@ -47,8 +47,15 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
   const renderTokenValue = (token: string) => {
     // Use real project data or fallback to defaults
     const project = projectData?.project || {};
-    const client = project.client || {};
+    const client = project.client || projectData?.client || {};
     const businessSettings = projectData?.businessSettings || {};
+    
+    console.log('🔍 Token Replacement Debug:', {
+      token,
+      businessSettings,
+      hasBusinessSettings: !!projectData?.businessSettings,
+      businessSettingsKeys: Object.keys(businessSettings)
+    });
     
     const tokens = {
       // Company information from business settings
