@@ -1132,8 +1132,11 @@ export type Database = {
       }
       clients: {
         Row: {
+          abn: string | null
           address: string | null
           assigned_to: string | null
+          business_email: string | null
+          business_phone: string | null
           city: string | null
           client_type: string | null
           company_name: string | null
@@ -1166,8 +1169,11 @@ export type Database = {
           zip_code: string | null
         }
         Insert: {
+          abn?: string | null
           address?: string | null
           assigned_to?: string | null
+          business_email?: string | null
+          business_phone?: string | null
           city?: string | null
           client_type?: string | null
           company_name?: string | null
@@ -1200,8 +1206,11 @@ export type Database = {
           zip_code?: string | null
         }
         Update: {
+          abn?: string | null
           address?: string | null
           assigned_to?: string | null
+          business_email?: string | null
+          business_phone?: string | null
           city?: string | null
           client_type?: string | null
           company_name?: string | null
