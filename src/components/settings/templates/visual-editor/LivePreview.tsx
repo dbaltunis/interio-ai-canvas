@@ -546,70 +546,91 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
       
       const hasRealData = workshopItems.length > 0;
 
-      // Function to get itemized breakdown for a workshop item
+      // Enrich workshop item with windows_summary data for accurate breakdown
+      const enrichWorkshopItemWithSummary = (item: any) => {
+        if (!item?.window_id) return item;
+        
+        // Find the matching window summary from projectData
+        const windowSummary = (projectData?.windowSummaries || []).find(
+          (ws: any) => ws.window_id === item.window_id
+        );
+        
+        if (!windowSummary?.summary) return item;
+        
+        const summary = windowSummary.summary;
+        
+        // Merge exact values from windows_summary into item
+        return {
+          ...item,
+          fabric_cost: summary.fabric_cost || item.fabric_cost || 0,
+          lining_cost: summary.lining_cost || item.lining_cost || 0,
+          manufacturing_cost: summary.manufacturing_cost || item.manufacturing_cost || 0,
+          heading_cost: summary.heading_cost || item.heading_cost || 0,
+          heading_details: summary.heading_details || item.heading_details || null,
+          lining_details: summary.lining_details || item.lining_details || null,
+          fabric_name: summary.fabric_name || item.fabric_name,
+          lining_name: summary.lining_name || item.lining_name,
+          linear_meters: summary.linear_meters || item.linear_meters || 0,
+          fabric_metres: summary.fabric_metres || item.fabric_metres || 0,
+        };
+      };
+
+      // Function to get itemized breakdown for a workshop item - USING EXACT DATABASE VALUES
       const getItemizedBreakdown = (item: any) => {
+        // Enrich item with windows_summary data first
+        const enrichedItem = enrichWorkshopItemWithSummary(item);
         const components = [];
         
-        // Extract fabric details
-        if (item.fabric_details) {
-          // Use correct price field: unit_price, selling_price, or price_per_meter
-          const fabricPricePerMeter = parseFloat(
-            item.fabric_details.unit_price || 
-            item.fabric_details.selling_price || 
-            item.fabric_details.price_per_meter || 
-            0
-          );
-          const fabricCost = parseFloat(item.linear_meters || 0) * fabricPricePerMeter;
+        const linearMeters = parseFloat(enrichedItem.linear_meters || enrichedItem.fabric_metres || 0);
+        
+        // Fabric - Use EXACT fabric_cost from windows_summary
+        const fabricCost = parseFloat(enrichedItem.fabric_cost || 0);
+        if (fabricCost > 0 && linearMeters > 0) {
+          const fabricPricePerMeter = fabricCost / linearMeters;
           components.push({
             type: 'Fabric',
-            description: `${item.fabric_details.name || 'Fabric'} | ${parseFloat(item.fabric_details.width || 0).toFixed(2)} m`,
-            quantity: parseFloat(item.linear_meters || 0).toFixed(2),
+            description: enrichedItem.fabric_name || enrichedItem.fabric_details?.name || 'Fabric',
+            quantity: linearMeters.toFixed(2),
             unit: 'm',
             rate: fabricPricePerMeter.toFixed(2),
             total: fabricCost.toFixed(2)
           });
         }
 
-        // Extract manufacturing details
-        if (item.manufacturing_details && item.manufacturing_details.cost > 0) {
+        // Manufacturing - Use EXACT manufacturing_cost from windows_summary
+        const manufacturingCost = parseFloat(enrichedItem.manufacturing_cost || 0);
+        if (manufacturingCost > 0) {
           components.push({
             type: 'Manufacturing price',
             description: '-',
             quantity: '1',
             unit: '',
-            rate: parseFloat(item.manufacturing_details.cost || 0).toFixed(2),
-            total: parseFloat(item.manufacturing_details.cost || 0).toFixed(2)
+            rate: manufacturingCost.toFixed(2),
+            total: manufacturingCost.toFixed(2)
           });
         }
 
-        // Extract lining if present with actual pricing
-        if (item.lining_details || item.manufacturing_details?.lining_type) {
-          const liningRate = parseFloat(
-            item.lining_details?.price_per_metre || 
-            item.lining_details?.labour_per_curtain || 
-            10
-          );
-          const liningQuantity = parseFloat(item.linear_meters || 0);
-          const liningCost = liningQuantity * liningRate;
-          
+        // Lining - Use EXACT lining_cost from windows_summary
+        const liningCost = parseFloat(enrichedItem.lining_cost || 0);
+        if (liningCost > 0 && linearMeters > 0) {
+          const liningPricePerMetre = enrichedItem.lining_details?.price_per_metre || (liningCost / linearMeters);
           components.push({
             type: 'Lining',
-            description: item.lining_details?.type || item.manufacturing_details?.lining_type || 'Standard',
-            quantity: liningQuantity.toFixed(2),
+            description: enrichedItem.lining_name || enrichedItem.lining_details?.lining_name || enrichedItem.lining_details?.type || 'Standard',
+            quantity: linearMeters.toFixed(2),
             unit: 'm',
-            rate: liningRate.toFixed(2),
+            rate: liningPricePerMetre.toFixed(2),
             total: liningCost.toFixed(2)
           });
         }
 
-        // Extract heading with actual pricing
-        if (item.heading_details) {
-          const headingCost = parseFloat(item.heading_details.cost || 0);
-          const headingQuantity = Math.round((item.measurements?.rail_width || 200));
-          
+        // Heading - Use EXACT heading_cost from windows_summary
+        const headingCost = parseFloat(enrichedItem.heading_details?.cost || enrichedItem.heading_cost || 0);
+        if (headingCost > 0) {
+          const headingQuantity = Math.round((enrichedItem.measurements?.rail_width || 200));
           components.push({
             type: 'Heading',
-            description: item.heading_details.heading_name || item.heading_details.name || 'Regular Headrail',
+            description: enrichedItem.heading_details?.heading_name || enrichedItem.heading_details?.name || 'Regular Headrail',
             quantity: headingQuantity,
             unit: 'cm',
             rate: headingCost.toFixed(2),
