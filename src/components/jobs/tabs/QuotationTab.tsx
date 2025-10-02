@@ -9,6 +9,7 @@ import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useQuotes, useCreateQuote, useUpdateQuote } from "@/hooks/useQuotes";
@@ -51,6 +52,31 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const { data: rooms } = useRooms(projectId);
   const { data: surfaces } = useSurfaces(projectId);
   const { data: projectSummaries } = useProjectWindowSummaries(projectId);
+  const { data: businessSettings } = useBusinessSettings();
+  
+  // Fetch client data for the project
+  const { data: client } = useQuery({
+    queryKey: ["project-client", projectId],
+    queryFn: async () => {
+      if (!projectId) return null;
+      const project = projects?.find(p => p.id === projectId);
+      if (!project?.client_id) return null;
+      
+      const { data, error } = await supabase
+        .from("clients")
+        .select("*")
+        .eq("id", project.client_id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching client:', error);
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!projectId && !!projects,
+  });
   
   // Fetch workshop items for detailed breakdown
   const { data: workshopItems } = useQuery({
@@ -365,7 +391,12 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
           <LivePreview
             blocks={templateBlocks}
             projectData={{
-              project,
+              project: {
+                ...project,
+                client: client
+              },
+              client: client,
+              businessSettings: businessSettings || {},
               treatments: sourceTreatments,
               rooms: rooms || [],
               surfaces: surfaces || [],
@@ -374,6 +405,7 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
               taxAmount: quotationData.taxAmount || 0,
               total: quotationData.total || 0,
               markupPercentage: 25,
+              currency: (businessSettings?.measurement_units as any)?.currency || 'USD',
               windowSummaries: projectSummaries?.windows || [],
               workshopItems: workshopItems || []
             }}
