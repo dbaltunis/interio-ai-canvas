@@ -129,6 +129,7 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
 
   const [showItemsEditor, setShowItemsEditor] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  const [editedTemplateBlocks, setEditedTemplateBlocks] = useState<any[] | null>(null);
   const project = projects?.find(p => p.id === projectId);
   const [notesOpen, setNotesOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<any | null>(null);
@@ -303,9 +304,9 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   }
 
 // Use template blocks as-is to mirror Settings preview precisely, but guard against duplicate products blocks
-const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTemplate.blocks)) 
-  ? removeDuplicateProductsBlocks(selectedTemplate.blocks)
-  : [];
+// Use edited blocks if available, otherwise use template blocks
+const baseBlocks = editedTemplateBlocks || (selectedTemplate?.blocks && Array.isArray(selectedTemplate.blocks) ? selectedTemplate.blocks : []);
+const templateBlocks = removeDuplicateProductsBlocks(baseBlocks);
 
   return (
     <div className="space-y-6">
@@ -410,6 +411,10 @@ const templateBlocks = (selectedTemplate?.blocks && Array.isArray(selectedTempla
               workshopItems: workshopItems || []
             }}
             isEditable={true}
+            onBlocksChange={(updatedBlocks) => {
+              // Update edited template blocks when user makes changes (like date selection)
+              setEditedTemplateBlocks(updatedBlocks);
+            }}
           />
         </section>
       )}
