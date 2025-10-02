@@ -42,7 +42,6 @@ export const WindowTypeSelector = ({
         const { data, error } = await supabase
           .from('window_types')
           .select('id, name, key, visual_key')
-          .in('visual_key', ['standard', 'bay'])
           .order('name', { ascending: true });
 
         if (error) {
