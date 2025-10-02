@@ -15,6 +15,7 @@ interface TemplateQuotePreviewProps {
   markupPercentage: number;
   templateId: string;
   isFullScreen?: boolean;
+  workshopItems?: any[];
 }
 
 interface QuoteItem {
@@ -38,7 +39,8 @@ export const TemplateQuotePreview = ({
   total,
   markupPercentage,
   templateId,
-  isFullScreen = false
+  isFullScreen = false,
+  workshopItems = []
 }: TemplateQuotePreviewProps) => {
   const { data: clients } = useClients();
   const { data: businessSettings } = useBusinessSettings();
@@ -55,6 +57,7 @@ export const TemplateQuotePreview = ({
       client, // Add actual client data
       businessSettings, // Add business settings for company info
       treatments,
+      workshopItems, // Add workshop items for detailed breakdown
       rooms: [], // Add rooms data if available
       surfaces: [], // Add surfaces data if available
       subtotal,

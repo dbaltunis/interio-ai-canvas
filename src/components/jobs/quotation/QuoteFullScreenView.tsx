@@ -19,6 +19,7 @@ interface QuoteFullScreenViewProps {
   total: number;
   markupPercentage: number;
   templateId: string;
+  workshopItems?: any[];
 }
 
 export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
@@ -33,7 +34,8 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
   taxAmount,
   total,
   markupPercentage,
-  templateId
+  templateId,
+  workshopItems = []
 }) => {
   const handleDownloadPDF = async () => {
     // Try to find LivePreview content first, then fallback to pdf-document-content
@@ -124,6 +126,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
           <TemplateQuotePreview
             project={project}
             treatments={treatments}
+            workshopItems={workshopItems}
             subtotal={subtotal}
             taxRate={taxRate}
             taxAmount={taxAmount}

@@ -438,6 +438,7 @@ const templateBlocks = removeDuplicateProductsBlocks(baseBlocks);
         total={total}
         markupPercentage={markupPercentage}
         templateId={selectedTemplateId || 'standard'}
+        workshopItems={workshopItems || []}
       />
     </div>
   );
