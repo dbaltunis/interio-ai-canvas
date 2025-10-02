@@ -909,8 +909,24 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                     className="font-medium"
                     placeholder="Client Signature Label"
                   />
-                  <div className="text-gray-600">Print Name: {renderTokenValue('client_name')}</div>
-                  <div className="text-gray-600">Date: _________________</div>
+                  <div className="text-gray-600">
+                    <EditableText
+                      value={content.printNameLabel || "Print Name"}
+                      onChange={(value) => updateBlockContent({ printNameLabel: value })}
+                      className="inline"
+                      placeholder="Print Name Label"
+                    />
+                    : {renderTokenValue('client_name')}
+                  </div>
+                  <div className="text-gray-600">
+                    <EditableText
+                      value={content.signatureDateLabel || "Date"}
+                      onChange={(value) => updateBlockContent({ signatureDateLabel: value })}
+                      className="inline"
+                      placeholder="Date Label"
+                    />
+                    : _________________
+                  </div>
                 </div>
               </div>
             </div>
@@ -930,8 +946,24 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                     className="font-medium"
                     placeholder="Company Representative Label"
                   />
-                  <div className="text-gray-600">Print Name: _________________</div>
-                  <div className="text-gray-600">Date: _________________</div>
+                  <div className="text-gray-600">
+                    <EditableText
+                      value={content.printNameLabel || "Print Name"}
+                      onChange={(value) => updateBlockContent({ printNameLabel: value })}
+                      className="inline"
+                      placeholder="Print Name Label"
+                    />
+                    : _________________
+                  </div>
+                  <div className="text-gray-600">
+                    <EditableText
+                      value={content.signatureDateLabel || "Date"}
+                      onChange={(value) => updateBlockContent({ signatureDateLabel: value })}
+                      className="inline"
+                      placeholder="Date Label"
+                    />
+                    : _________________
+                  </div>
                 </div>
               </div>
             </div>

@@ -786,8 +786,8 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
               <div className="border-t border-gray-400 pt-2 mt-12">
                 <div className="text-sm">
                   <div className="font-medium">{content.clientSignatureLabel || "Client Signature"}</div>
-                  <div className="text-gray-600">Print Name: {renderTokenValue('client_name')}</div>
-                  <div className="text-gray-600">Date: _________________</div>
+                  <div className="text-gray-600">{content.printNameLabel || "Print Name"}: {renderTokenValue('client_name')}</div>
+                  <div className="text-gray-600">{content.dateLabel || "Date"}: _________________</div>
                 </div>
               </div>
             </div>
@@ -796,8 +796,8 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
               <div className="border-t border-gray-400 pt-2 mt-12">
                 <div className="text-sm">
                   <div className="font-medium">{content.companySignatureLabel || "Company Representative"}</div>
-                  <div className="text-gray-600">Print Name: _________________</div>
-                  <div className="text-gray-600">Date: _________________</div>
+                  <div className="text-gray-600">{content.printNameLabel || "Print Name"}: _________________</div>
+                  <div className="text-gray-600">{content.dateLabel || "Date"}: _________________</div>
                 </div>
               </div>
             </div>
