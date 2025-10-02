@@ -29,7 +29,9 @@ import {
   Eye,
   EyeOff,
   Layout,
-  X
+  X,
+  ChevronUp,
+  ChevronDown
 } from "lucide-react";
 import { SignatureCanvas } from './SignatureCanvas';
 import { cn } from "@/lib/utils";
@@ -1413,6 +1415,20 @@ export const EditableLivePreview = ({
     onBlocksChange(newBlocks);
   };
 
+  const moveBlockUp = (index: number) => {
+    if (index === 0) return; // Can't move first block up
+    const newBlocks = [...blocks];
+    [newBlocks[index - 1], newBlocks[index]] = [newBlocks[index], newBlocks[index - 1]];
+    onBlocksChange(newBlocks);
+  };
+
+  const moveBlockDown = (index: number) => {
+    if (index === blocks.length - 1) return; // Can't move last block down
+    const newBlocks = [...blocks];
+    [newBlocks[index], newBlocks[index + 1]] = [newBlocks[index + 1], newBlocks[index]];
+    onBlocksChange(newBlocks);
+  };
+
   const getDefaultContentForType = (type: string) => {
     switch (type) {
       case 'header':
@@ -1645,13 +1661,39 @@ export const EditableLivePreview = ({
         >
           {blocks.map((block, index) => (
             <div key={block.id || index} className="relative group">
-              {/* Block Delete Button */}
-              <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity z-30">
+              {/* Block Controls */}
+              <div className="absolute -top-3 -right-3 opacity-0 group-hover:opacity-100 transition-opacity z-30 flex gap-1">
+                {/* Move Up Button */}
+                {index > 0 && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => moveBlockUp(index)}
+                    className="rounded-full w-8 h-8 p-0 shadow-lg"
+                    title="Move up"
+                  >
+                    <ChevronUp className="h-4 w-4" />
+                  </Button>
+                )}
+                {/* Move Down Button */}
+                {index < blocks.length - 1 && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => moveBlockDown(index)}
+                    className="rounded-full w-8 h-8 p-0 shadow-lg"
+                    title="Move down"
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                )}
+                {/* Delete Button */}
                 <Button
                   size="sm"
                   variant="destructive"
                   onClick={() => removeBlock(block.id)}
-                  className="rounded-full w-8 h-8 p-0"
+                  className="rounded-full w-8 h-8 p-0 shadow-lg"
+                  title="Delete block"
                 >
                   <X className="h-4 w-4" />
                 </Button>
