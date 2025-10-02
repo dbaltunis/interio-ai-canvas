@@ -1,6 +1,15 @@
 /* Hide elements marked as no-print in print output */
 @media print {
-  .no-print { display: none !important; }
+  .no-print,
+  .no-print *,
+  .no-print span,
+  .no-print label,
+  .no-print button,
+  .no-print input { 
+    display: none !important; 
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
   
   /* Avoid breaking cards across pages */
   .break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
@@ -97,12 +106,18 @@
     box-shadow: none !important;
     border: none !important;
     margin: 0 !important;
+    overflow: hidden !important;
   }
   
   /* Remove padding from content wrapper in print - margins controlled by @page */
   [style*="210mm"] > div {
     padding: 0 !important;
     max-width: 100% !important;
+  }
+  
+  /* Ensure content respects 15mm margins */
+  [style*="210mm"] > div > div {
+    padding: 0 !important;
   }
   
   /* Better page breaks for summary sections */

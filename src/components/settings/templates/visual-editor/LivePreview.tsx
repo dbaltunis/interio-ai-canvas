@@ -658,7 +658,7 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
               <ShoppingCart className="h-5 w-5" />
               {content.title || 'Quote Items'}
             </h3>
-            <div className="flex items-center gap-3">
+            <div className="no-print flex items-center gap-3">
               {hasRealData && (
                 <label className="flex items-center gap-2 text-sm text-gray-600">
                   <input
@@ -1240,44 +1240,28 @@ export const LivePreview = ({
             boxShadow: '0 0 20px rgba(0, 0, 0, 0.1)'
           }}
         >
-          {/* Print cut line indicator at top */}
+          {/* Print cut line indicator at top - barely visible */}
           <div 
-            className="no-print absolute top-0 left-0 right-0 h-px border-t-2 border-dashed border-primary/30"
+            className="no-print absolute top-0 left-0 right-0 h-px border-t border-dashed border-primary/5"
             style={{ borderTopWidth: '1px' }}
-          >
-            <span className="absolute -top-4 left-4 text-xs text-muted-foreground bg-white px-2">
-              Cut line (top margin)
-            </span>
-          </div>
+          />
           
-          {/* Print cut line indicator at bottom */}
+          {/* Print cut line indicator at bottom - more visible for cutting reference */}
           <div 
-            className="no-print absolute bottom-0 left-0 right-0 h-px border-b-2 border-dashed border-primary/30"
-            style={{ borderBottomWidth: '1px' }}
-          >
-            <span className="absolute -bottom-4 left-4 text-xs text-muted-foreground bg-white px-2">
-              Cut line (bottom margin)
-            </span>
-          </div>
+            className="no-print absolute bottom-0 left-0 right-0 h-px border-b-2 border-dashed border-destructive/20"
+            style={{ borderBottomWidth: '2px' }}
+          />
           
-          {/* Side cut lines */}
+          {/* Side cut lines - barely visible */}
           <div 
-            className="no-print absolute top-0 bottom-0 left-0 w-px border-l-2 border-dashed border-primary/20"
+            className="no-print absolute top-0 bottom-0 left-0 w-px border-l border-dashed border-primary/5"
             style={{ borderLeftWidth: '1px', left: '15mm' }}
-          >
-            <span className="absolute top-4 -left-12 text-xs text-muted-foreground bg-white px-1 -rotate-90 origin-left">
-              Left margin
-            </span>
-          </div>
+          />
           
           <div 
-            className="no-print absolute top-0 bottom-0 right-0 w-px border-r-2 border-dashed border-primary/20"
+            className="no-print absolute top-0 bottom-0 right-0 w-px border-r border-dashed border-primary/5"
             style={{ borderRightWidth: '1px', right: '15mm' }}
-          >
-            <span className="absolute top-4 -right-12 text-xs text-muted-foreground bg-white px-1 rotate-90 origin-right">
-              Right margin
-            </span>
-          </div>
+          />
           
           {/* Content area */}
           <div 
@@ -1294,18 +1278,14 @@ export const LivePreview = ({
             ))}
           </div>
           
-          {/* Page break indicator every 297mm */}
+          {/* Page break indicator every 297mm - subtle */}
           <div 
-            className="no-print absolute left-0 right-0 border-t-2 border-dashed border-destructive/40 pointer-events-none"
+            className="no-print absolute left-0 right-0 border-t border-dashed border-destructive/10 pointer-events-none"
             style={{ 
               top: '297mm',
-              borderTopWidth: '2px'
+              borderTopWidth: '1px'
             }}
-          >
-            <div className="absolute left-1/2 -translate-x-1/2 -top-3 bg-white px-3 py-1 text-xs font-medium text-destructive border border-destructive/40 rounded">
-              Page break - Content continues on next page
-            </div>
-          </div>
+          />
         </div>
       </div>
     </ScrollArea>
