@@ -167,7 +167,7 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
               </div>
             </div>
             <div className="text-right">
-              <h2 className="text-2xl font-semibold mb-2">Quote</h2>
+              <h2 className="text-2xl font-semibold mb-2">{content.documentTitle || 'Quote'}</h2>
               <div className="text-sm space-y-1">
                 <div className="flex items-center gap-2">
                   <Hash className="h-3 w-3" />

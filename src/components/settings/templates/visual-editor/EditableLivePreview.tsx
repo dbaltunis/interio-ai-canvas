@@ -449,7 +449,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
             </div>
             <div className="text-right">
               <EditableText
-                value="Quote"
+                value={content.documentTitle || "Quote"}
                 onChange={(value) => updateBlockContent({ documentTitle: value })}
                 className="text-2xl font-semibold mb-2"
                 placeholder="Document Title"
