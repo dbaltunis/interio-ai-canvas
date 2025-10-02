@@ -1,10 +1,13 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, X } from "lucide-react";
+import { Download } from "lucide-react";
 import { TemplateQuotePreview } from "./TemplateQuotePreview";
-import html2canvas from "html2canvas";
-import { jsPDF } from "jspdf";
+import { PrintableQuote } from "./PrintableQuote";
+import { useReactToPrint } from "react-to-print";
+import { useQuoteTemplates } from "@/hooks/useQuoteTemplates";
+import { useClients } from "@/hooks/useClients";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 interface QuoteFullScreenViewProps {
   isOpen: boolean;
@@ -37,71 +40,34 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
   templateId,
   workshopItems = []
 }) => {
-  const handleDownloadPDF = async () => {
-    // Try to find LivePreview content first, then fallback to pdf-document-content
-    let element = document.querySelector('.document-surface') as HTMLElement;
-    if (!element) {
-      element = document.querySelector('.pdf-document-content') as HTMLElement;
-    }
-    if (!element) return;
+  const printRef = useRef<HTMLDivElement>(null);
+  const { data: clients } = useClients();
+  const { data: businessSettings } = useBusinessSettings();
+  const { data: templates } = useQuoteTemplates();
+  
+  const selectedTemplate = templates?.find(t => t.id === templateId);
+  const client = clients?.find(c => c.id === project?.client_id);
 
-    try {
-      // Create a clean clone for PDF generation
-      const clone = element.cloneNode(true) as HTMLElement;
-      clone.className = 'pdf-document-content bg-white text-black p-8 max-w-none mx-0';
-      
-      // Temporarily add to body for capture
-      clone.style.position = 'absolute';
-      clone.style.left = '-9999px';
-      clone.style.top = '0';
-      clone.style.width = '794px'; // A4 width in pixels at 96dpi
-      clone.style.background = 'white';
-      document.body.appendChild(clone);
-
-      const canvas = await html2canvas(clone, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        removeContainer: true,
-        logging: false,
-        width: 794,
-        height: clone.scrollHeight,
-        ignoreElements: (element) => {
-          return element.classList.contains('no-print') || 
-                 element.closest('.no-print') !== null;
-        }
-      });
-
-      // Remove the clone
-      document.body.removeChild(clone);
-
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      
-      const imgWidth = 210;
-      const pageHeight = 295;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-
-      let position = 0;
-
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      const quoteNumber = `QT-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
-      pdf.save(`quote-${quoteNumber}.pdf`);
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-    }
+  const projectData = {
+    project,
+    client,
+    businessSettings,
+    treatments,
+    workshopItems,
+    rooms,
+    surfaces,
+    subtotal,
+    taxRate,
+    taxAmount,
+    total,
+    markupPercentage,
+    validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
   };
+
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `quote-QT-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -112,11 +78,11 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={handleDownloadPDF}
+              onClick={handlePrint}
               className="flex items-center space-x-2"
             >
               <Download className="h-4 w-4" />
-              <span>Download PDF</span>
+              <span>Print / Save PDF</span>
             </Button>
           </div>
         </DialogHeader>
@@ -137,6 +103,17 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
             templateId={templateId}
             isFullScreen={true}
           />
+        </div>
+
+        {/* Hidden printable component */}
+        <div className="hidden">
+          {selectedTemplate?.blocks && (
+            <PrintableQuote 
+              ref={printRef}
+              blocks={selectedTemplate.blocks}
+              projectData={projectData}
+            />
+          )}
         </div>
       </DialogContent>
     </Dialog>
