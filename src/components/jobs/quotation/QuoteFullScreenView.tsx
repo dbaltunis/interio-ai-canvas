@@ -103,7 +103,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden p-0 bg-background text-foreground">
+      <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0 bg-background text-foreground">
         <DialogHeader className="px-6 py-4 border-b bg-background flex-shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle>Quote Full View</DialogTitle>
@@ -119,20 +119,19 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
           </div>
         </DialogHeader>
         
-        <div className="flex-1 overflow-hidden bg-white">
-          <div className="h-full overflow-y-auto">
-            <TemplateQuotePreview
-          project={project}
-          treatments={treatments}
-          subtotal={subtotal}
-          taxRate={taxRate}
-          taxAmount={taxAmount}
-          total={total}
-          markupPercentage={markupPercentage}
-          templateId={templateId}
-          isFullScreen={true}
-            />
-          </div>
+        {/* Scrollable content area */}
+        <div className="flex-1 overflow-y-auto bg-white">
+          <TemplateQuotePreview
+            project={project}
+            treatments={treatments}
+            subtotal={subtotal}
+            taxRate={taxRate}
+            taxAmount={taxAmount}
+            total={total}
+            markupPercentage={markupPercentage}
+            templateId={templateId}
+            isFullScreen={true}
+          />
         </div>
       </DialogContent>
     </Dialog>

@@ -47,8 +47,13 @@ export const TemplateQuotePreview = ({
   
   // Use LivePreview for visual templates or if blocks exist
   if (selectedTemplate?.blocks && Array.isArray(selectedTemplate.blocks)) {
+    // Get client data
+    const client = clients?.find(c => c.id === project?.client_id);
+    
     const projectData = {
       project,
+      client, // Add actual client data
+      businessSettings, // Add business settings for company info
       treatments,
       rooms: [], // Add rooms data if available
       surfaces: [], // Add surfaces data if available
@@ -56,7 +61,8 @@ export const TemplateQuotePreview = ({
       taxRate,
       taxAmount,
       total,
-      markupPercentage
+      markupPercentage,
+      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     };
 
     if (isFullScreen) {
