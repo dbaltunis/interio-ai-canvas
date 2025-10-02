@@ -56,14 +56,23 @@ const EditableText = ({ value, onChange, className, style, multiline, placeholde
 
   const handleSave = () => {
     console.log('EditableText saving:', editValue);
+    
+    // Preserve scroll position before save
+    const scrollContainer = document.querySelector('.overflow-auto');
+    const scrollTop = scrollContainer?.scrollTop || 0;
+    
     // Call onChange first before changing state
     if (onChange && editValue !== value) {
       onChange(editValue);
     }
-    // Use setTimeout to ensure onChange completes before state change
-    setTimeout(() => {
+    
+    // Restore scroll and exit edit mode
+    requestAnimationFrame(() => {
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollTop;
+      }
       setIsEditing(false);
-    }, 0);
+    });
   };
 
   const handleCancel = () => {
@@ -1401,6 +1410,10 @@ export const EditableLivePreview = ({
   ];
 
   const addBlock = (type: string) => {
+    // Preserve scroll position
+    const scrollContainer = document.querySelector('.overflow-auto');
+    const scrollTop = scrollContainer?.scrollTop || 0;
+    
     const newBlock = {
       id: `block_${Date.now()}`,
       type,
@@ -1408,25 +1421,67 @@ export const EditableLivePreview = ({
     };
     onBlocksChange([...blocks, newBlock]);
     setShowComponentLibrary(false);
+    
+    // Restore scroll position
+    requestAnimationFrame(() => {
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollTop;
+      }
+    });
   };
 
   const removeBlock = (blockId: string) => {
+    // Preserve scroll position
+    const scrollContainer = document.querySelector('.overflow-auto');
+    const scrollTop = scrollContainer?.scrollTop || 0;
+    
     const newBlocks = blocks.filter(block => block.id !== blockId);
     onBlocksChange(newBlocks);
+    
+    // Restore scroll position
+    requestAnimationFrame(() => {
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollTop;
+      }
+    });
   };
 
   const moveBlockUp = (index: number) => {
     if (index === 0) return; // Can't move first block up
+    
+    // Preserve scroll position
+    const scrollContainer = document.querySelector('.overflow-auto');
+    const scrollTop = scrollContainer?.scrollTop || 0;
+    
     const newBlocks = [...blocks];
     [newBlocks[index - 1], newBlocks[index]] = [newBlocks[index], newBlocks[index - 1]];
     onBlocksChange(newBlocks);
+    
+    // Restore scroll position
+    requestAnimationFrame(() => {
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollTop;
+      }
+    });
   };
 
   const moveBlockDown = (index: number) => {
     if (index === blocks.length - 1) return; // Can't move last block down
+    
+    // Preserve scroll position
+    const scrollContainer = document.querySelector('.overflow-auto');
+    const scrollTop = scrollContainer?.scrollTop || 0;
+    
     const newBlocks = [...blocks];
     [newBlocks[index], newBlocks[index + 1]] = [newBlocks[index + 1], newBlocks[index]];
     onBlocksChange(newBlocks);
+    
+    // Restore scroll position
+    requestAnimationFrame(() => {
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollTop;
+      }
+    });
   };
 
   const getDefaultContentForType = (type: string) => {
