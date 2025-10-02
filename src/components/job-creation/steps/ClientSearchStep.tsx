@@ -28,7 +28,10 @@ export const ClientSearchStep = ({ formData, updateFormData }: ClientSearchStepP
     address: "",
     city: "",
     state: "",
-    zip_code: ""
+    zip_code: "",
+    abn: "",
+    business_email: "",
+    business_phone: ""
   });
   const [editClientData, setEditClientData] = useState({
     name: "",
@@ -39,7 +42,10 @@ export const ClientSearchStep = ({ formData, updateFormData }: ClientSearchStepP
     address: "",
     city: "",
     state: "",
-    zip_code: ""
+    zip_code: "",
+    abn: "",
+    business_email: "",
+    business_phone: ""
   });
 
   const { data: clients, isLoading } = useClients();
@@ -64,7 +70,8 @@ export const ClientSearchStep = ({ formData, updateFormData }: ClientSearchStepP
       setIsChangingClient(false);
       setNewClientData({ 
         name: "", email: "", phone: "", company_name: "", 
-        client_type: "B2C", address: "", city: "", state: "", zip_code: "" 
+        client_type: "B2C", address: "", city: "", state: "", zip_code: "",
+        abn: "", business_email: "", business_phone: ""
       });
       setSearchTerm("");
     } catch (error) {
@@ -97,7 +104,10 @@ export const ClientSearchStep = ({ formData, updateFormData }: ClientSearchStepP
         address: selectedClient.address || "",
         city: selectedClient.city || "",
         state: selectedClient.state || "",
-        zip_code: selectedClient.zip_code || ""
+        zip_code: selectedClient.zip_code || "",
+        abn: selectedClient.abn || "",
+        business_email: selectedClient.business_email || "",
+        business_phone: selectedClient.business_phone || ""
       });
       setShowEditDialog(true);
     }
