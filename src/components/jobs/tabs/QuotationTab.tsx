@@ -410,7 +410,7 @@ const templateBlocks = removeDuplicateProductsBlocks(baseBlocks);
               windowSummaries: projectSummaries?.windows || [],
               workshopItems: workshopItems || []
             }}
-            isEditable={true}
+            isEditable={false}
             onBlocksChange={(updatedBlocks) => {
               // Update edited template blocks when user makes changes (like date selection)
               setEditedTemplateBlocks(updatedBlocks);
