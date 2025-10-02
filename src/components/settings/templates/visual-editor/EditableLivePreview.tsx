@@ -1013,6 +1013,66 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
           />
         </EditableContainer>
       );
+
+    case 'footer':
+      const footerBusinessSettings = projectData?.businessSettings || {};
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={style}
+          className="mb-6"
+        >
+          <div className="mt-8 pt-6 border-t border-gray-300 bg-muted/30 rounded-lg p-6">
+            <div className="text-center space-y-3">
+              <EditableText
+                value={content.footerText || "Thank you for choosing us for your project!"}
+                onChange={(value) => updateBlockContent({ footerText: value })}
+                className="text-sm text-muted-foreground italic"
+                placeholder="Footer message"
+                multiline
+              />
+              
+              <div className="flex items-center justify-center gap-2 my-3">
+                <input
+                  type="checkbox"
+                  checked={content.showCompanyInfo !== false}
+                  onChange={(e) => updateBlockContent({ showCompanyInfo: e.target.checked })}
+                  className="rounded"
+                />
+                <label className="text-xs text-muted-foreground">Show company information</label>
+              </div>
+
+              {content.showCompanyInfo !== false && (
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p className="font-semibold">{renderTokenValue('company_name')}</p>
+                  {footerBusinessSettings?.address && (
+                    <p>{renderTokenValue('company_address')}</p>
+                  )}
+                  <div className="flex justify-center gap-4 flex-wrap">
+                    {footerBusinessSettings?.business_phone && (
+                      <span>📞 {renderTokenValue('company_phone')}</span>
+                    )}
+                    {footerBusinessSettings?.business_email && (
+                      <span>✉️ {renderTokenValue('company_email')}</span>
+                    )}
+                    {footerBusinessSettings?.website && (
+                      <span>🌐 {footerBusinessSettings.website}</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <EditableText
+                value={content.additionalText || ""}
+                onChange={(value) => updateBlockContent({ additionalText: value })}
+                className="text-xs text-muted-foreground mt-2"
+                placeholder="Additional footer text (optional)"
+                multiline
+              />
+            </div>
+          </div>
+        </EditableContainer>
+      );
     default:
       return (
         <EditableContainer 

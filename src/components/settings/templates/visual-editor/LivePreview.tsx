@@ -805,6 +805,44 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
         </div>
       );
 
+    case 'footer':
+      const businessSettings = projectData?.businessSettings || {};
+      return (
+        <div className="mt-8 pt-6 border-t border-gray-300 bg-muted/30 rounded-lg p-6">
+          <div className="text-center space-y-3">
+            {content.footerText && (
+              <p className="text-sm text-muted-foreground italic">
+                {content.footerText}
+              </p>
+            )}
+            {content.showCompanyInfo !== false && (
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p className="font-semibold">{renderTokenValue('company_name')}</p>
+                {businessSettings?.address && (
+                  <p>{renderTokenValue('company_address')}</p>
+                )}
+                <div className="flex justify-center gap-4 flex-wrap">
+                  {businessSettings?.business_phone && (
+                    <span>📞 {renderTokenValue('company_phone')}</span>
+                  )}
+                  {businessSettings?.business_email && (
+                    <span>✉️ {renderTokenValue('company_email')}</span>
+                  )}
+                  {businessSettings?.website && (
+                    <span>🌐 {businessSettings.website}</span>
+                  )}
+                </div>
+              </div>
+            )}
+            {content.additionalText && (
+              <p className="text-xs text-muted-foreground mt-2">
+                {content.additionalText}
+              </p>
+            )}
+          </div>
+        </div>
+      );
+
     default:
       console.error('Unknown block type encountered:', {
         originalType: block.type,
