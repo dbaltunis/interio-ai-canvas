@@ -16,6 +16,7 @@ interface ClientSearchStepProps {
 export const ClientSearchStep = ({ formData, updateFormData }: ClientSearchStepProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [isChangingClient, setIsChangingClient] = useState(false);
   const [newClientData, setNewClientData] = useState({
     name: "",
     email: "",
@@ -46,6 +47,7 @@ export const ClientSearchStep = ({ formData, updateFormData }: ClientSearchStepP
       const client = await createClient.mutateAsync(newClientData);
       updateFormData("client_id", client.id);
       setShowCreateForm(false);
+      setIsChangingClient(false);
       setNewClientData({ 
         name: "", email: "", phone: "", company_name: "", 
         client_type: "B2C", address: "", city: "", state: "", zip_code: "" 
@@ -199,7 +201,7 @@ export const ClientSearchStep = ({ formData, updateFormData }: ClientSearchStepP
         </p>
       </div>
 
-      {selectedClient ? (
+      {selectedClient && !isChangingClient ? (
         <Card className="bg-green-50 border-green-200">
           <CardContent className="pt-4">
             <div className="flex items-center justify-between">
@@ -222,7 +224,11 @@ export const ClientSearchStep = ({ formData, updateFormData }: ClientSearchStepP
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => updateFormData("client_id", null)}
+                onClick={() => {
+                  // Just show the search interface without removing the client from DB
+                  setIsChangingClient(true);
+                  setSearchTerm("");
+                }}
               >
                 Change Client
               </Button>
@@ -251,7 +257,10 @@ export const ClientSearchStep = ({ formData, updateFormData }: ClientSearchStepP
                     <Card 
                       key={client.id} 
                       className="cursor-pointer hover:bg-gray-50"
-                      onClick={() => updateFormData("client_id", client.id)}
+                      onClick={() => {
+                        updateFormData("client_id", client.id);
+                        setIsChangingClient(false);
+                      }}
                     >
                       <CardContent className="p-3">
                         <div className="flex items-center space-x-3">
