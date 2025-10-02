@@ -34,6 +34,7 @@ const componentCategories = [
     name: "Text Elements",
     icon: Type,
     components: [
+      { type: 'document-header', name: 'Document Header', icon: Layout, description: 'Customizable header with logo, title & metadata' },
       { type: 'text', name: 'Text Block', icon: Type, description: 'Add formatted text' },
       { type: 'header', name: 'Company Header', icon: FileText, description: 'Company info & logo' },
       { type: 'client-info', name: 'Client Details', icon: Users, description: 'Client information' },

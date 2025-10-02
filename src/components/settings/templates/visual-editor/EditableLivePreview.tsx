@@ -1385,6 +1385,7 @@ export const EditableLivePreview = ({
   const [showComponentLibrary, setShowComponentLibrary] = useState(false);
 
   const availableBlocks = [
+    { type: 'document-header', name: 'Document Header', icon: ImageIcon, description: 'Customizable header with logo, title & metadata' },
     { type: 'header', name: 'Company Header', icon: Building2, description: 'Company info & logo' },
     { type: 'client-info', name: 'Client Details', icon: User, description: 'Client information' },
     { type: 'text', name: 'Text Block', icon: Type, description: 'Add formatted text' },
