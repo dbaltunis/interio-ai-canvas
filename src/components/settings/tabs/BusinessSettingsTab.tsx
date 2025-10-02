@@ -62,7 +62,7 @@ export const BusinessSettingsTab = () => {
     }
   }, [businessSettings]);
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | boolean) => {
     setSavedSuccessfully(false);
     setFormData(prev => ({
       ...prev,
@@ -420,7 +420,7 @@ export const BusinessSettingsTab = () => {
               </div>
               <Switch
                 checked={formData.allow_in_app_template_editing}
-                onCheckedChange={(checked) => handleInputChange("allow_in_app_template_editing", checked.toString())}
+                onCheckedChange={(checked) => handleInputChange("allow_in_app_template_editing", checked)}
                 disabled={!isEditing}
               />
             </div>
