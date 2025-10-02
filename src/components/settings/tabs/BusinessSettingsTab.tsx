@@ -295,9 +295,9 @@ export const BusinessSettingsTab = () => {
         description="Business contact details for customer communication"
         icon={<Mail className="h-5 w-5" />}
         isEditing={isEditing}
-        onEdit={() => {}}
-        onSave={() => {}}
-        onCancel={() => {}}
+        onEdit={() => setIsEditing(true)}
+        onSave={handleSave}
+        onCancel={handleCancel}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormFieldGroup label="Business Email">
@@ -327,9 +327,9 @@ export const BusinessSettingsTab = () => {
         description="Your business location and address details"
         icon={<MapPin className="h-5 w-5" />}
         isEditing={isEditing}
-        onEdit={() => {}}
-        onSave={() => {}}
-        onCancel={() => {}}
+        onEdit={() => setIsEditing(true)}
+        onSave={handleSave}
+        onCancel={handleCancel}
       >
         <FormFieldGroup label="Street Address">
           <Textarea
