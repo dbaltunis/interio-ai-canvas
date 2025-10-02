@@ -1,13 +1,13 @@
 
 import { useState } from "react";
-import { useClients, useCreateClient } from "@/hooks/useClients";
+import { useClients, useCreateClient, useUpdateClient } from "@/hooks/useClients";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Search, Plus, User, Building2 } from "lucide-react";
+import { Search, Plus, User, Building2, Edit } from "lucide-react";
 
 interface ProjectClientTabProps {
   project: any;
@@ -17,17 +17,33 @@ interface ProjectClientTabProps {
 
 export const ProjectClientTab = ({ project, onClientSelect, onClientRemove }: ProjectClientTabProps) => {
   const [showClientDialog, setShowClientDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [newClient, setNewClient] = useState({
     name: "",
     email: "",
     phone: "",
-    address: ""
+    address: "",
+    company_name: "",
+    city: "",
+    state: "",
+    zip_code: ""
+  });
+  const [editClient, setEditClient] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    company_name: "",
+    city: "",
+    state: "",
+    zip_code: ""
   });
 
   const { data: clients } = useClients();
   const createClient = useCreateClient();
+  const updateClient = useUpdateClient();
   const { toast } = useToast();
   
   const client = clients?.find(c => c.id === project.client_id);
@@ -48,10 +64,57 @@ export const ProjectClientTab = ({ project, onClientSelect, onClientRemove }: Pr
     try {
       const createdClient = await createClient.mutateAsync(newClient);
       handleClientSelect(createdClient.id);
-      setNewClient({ name: "", email: "", phone: "", address: "" });
+      setNewClient({ 
+        name: "", 
+        email: "", 
+        phone: "", 
+        address: "",
+        company_name: "",
+        city: "",
+        state: "",
+        zip_code: ""
+      });
       setIsCreatingNew(false);
     } catch (error) {
       toast({ title: "Error", description: "Failed to create client", variant: "destructive" });
+    }
+  };
+
+  const handleEditClient = async () => {
+    if (!editClient.name.trim() || !client) return;
+    
+    try {
+      await updateClient.mutateAsync({
+        id: client.id,
+        ...editClient
+      });
+      setShowEditDialog(false);
+      toast({ 
+        title: "Success", 
+        description: "Client details updated successfully" 
+      });
+    } catch (error) {
+      toast({ 
+        title: "Error", 
+        description: "Failed to update client", 
+        variant: "destructive" 
+      });
+    }
+  };
+
+  const openEditDialog = () => {
+    if (client) {
+      setEditClient({
+        name: client.name || "",
+        email: client.email || "",
+        phone: client.phone || "",
+        address: client.address || "",
+        company_name: client.company_name || "",
+        city: client.city || "",
+        state: client.state || "",
+        zip_code: client.zip_code || ""
+      });
+      setShowEditDialog(true);
     }
   };
 
@@ -66,10 +129,17 @@ export const ProjectClientTab = ({ project, onClientSelect, onClientRemove }: Pr
               </div>
               <div>
                 <h3 className="font-medium text-green-900">{client.name}</h3>
+                {client.company_name && (
+                  <p className="text-sm text-green-600">{client.company_name}</p>
+                )}
                 <p className="text-sm text-green-700">{client.email}</p>
               </div>
             </div>
             <div className="flex space-x-2">
+              <Button variant="outline" size="sm" onClick={openEditDialog}>
+                <Edit className="h-4 w-4 mr-1" />
+                Edit
+              </Button>
               <Button variant="outline" size="sm" onClick={() => setShowClientDialog(true)}>
                 Change Client
               </Button>
@@ -80,6 +150,22 @@ export const ProjectClientTab = ({ project, onClientSelect, onClientRemove }: Pr
           </div>
         </div>
 
+        {/* Edit Client Dialog */}
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Client Details</DialogTitle>
+            </DialogHeader>
+            <EditClientForm 
+              client={editClient}
+              onChange={setEditClient}
+              onSubmit={handleEditClient}
+              onCancel={() => setShowEditDialog(false)}
+            />
+          </DialogContent>
+        </Dialog>
+
+        {/* Change Client Dialog */}
         <Dialog open={showClientDialog} onOpenChange={setShowClientDialog}>
           <DialogContent className="max-w-md">
             <DialogHeader>
@@ -186,6 +272,14 @@ const CreateClientForm = ({ newClient, onChange, onSubmit, onBack }) => (
       />
     </div>
     <div className="space-y-2">
+      <Label>Company Name</Label>
+      <Input
+        value={newClient.company_name}
+        onChange={(e) => onChange({...newClient, company_name: e.target.value})}
+        placeholder="Company name (optional)"
+      />
+    </div>
+    <div className="space-y-2">
       <Label>Email</Label>
       <Input
         type="email"
@@ -208,6 +302,86 @@ const CreateClientForm = ({ newClient, onChange, onSubmit, onBack }) => (
       </Button>
       <Button onClick={onSubmit} disabled={!newClient.name.trim()} className="flex-1">
         Create Client
+      </Button>
+    </div>
+  </div>
+);
+
+const EditClientForm = ({ client, onChange, onSubmit, onCancel }) => (
+  <div className="space-y-4">
+    <div className="space-y-2">
+      <Label>Name *</Label>
+      <Input
+        value={client.name}
+        onChange={(e) => onChange({...client, name: e.target.value})}
+        placeholder="Client name"
+      />
+    </div>
+    <div className="space-y-2">
+      <Label>Company Name</Label>
+      <Input
+        value={client.company_name}
+        onChange={(e) => onChange({...client, company_name: e.target.value})}
+        placeholder="Company name (optional)"
+      />
+    </div>
+    <div className="space-y-2">
+      <Label>Email</Label>
+      <Input
+        type="email"
+        value={client.email}
+        onChange={(e) => onChange({...client, email: e.target.value})}
+        placeholder="email@example.com"
+      />
+    </div>
+    <div className="space-y-2">
+      <Label>Phone</Label>
+      <Input
+        value={client.phone}
+        onChange={(e) => onChange({...client, phone: e.target.value})}
+        placeholder="(555) 123-4567"
+      />
+    </div>
+    <div className="space-y-2">
+      <Label>Address</Label>
+      <Input
+        value={client.address}
+        onChange={(e) => onChange({...client, address: e.target.value})}
+        placeholder="Street address"
+      />
+    </div>
+    <div className="grid grid-cols-2 gap-2">
+      <div className="space-y-2">
+        <Label>City</Label>
+        <Input
+          value={client.city}
+          onChange={(e) => onChange({...client, city: e.target.value})}
+          placeholder="City"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label>State</Label>
+        <Input
+          value={client.state}
+          onChange={(e) => onChange({...client, state: e.target.value})}
+          placeholder="State"
+        />
+      </div>
+    </div>
+    <div className="space-y-2">
+      <Label>ZIP Code</Label>
+      <Input
+        value={client.zip_code}
+        onChange={(e) => onChange({...client, zip_code: e.target.value})}
+        placeholder="ZIP code"
+      />
+    </div>
+    <div className="flex space-x-2">
+      <Button variant="outline" onClick={onCancel} className="flex-1">
+        Cancel
+      </Button>
+      <Button onClick={onSubmit} disabled={!client.name.trim()} className="flex-1">
+        Save Changes
       </Button>
     </div>
   </div>
