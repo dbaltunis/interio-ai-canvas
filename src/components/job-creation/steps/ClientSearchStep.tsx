@@ -151,20 +151,54 @@ export const ClientSearchStep = ({ formData, updateFormData }: ClientSearchStepP
           </div>
 
           {newClientData.client_type === "B2B" && (
-            <div>
-              <Label htmlFor="company_name">Company Name</Label>
-              <Input
-                id="company_name"
-                value={newClientData.company_name}
-                onChange={(e) => setNewClientData(prev => ({ ...prev, company_name: e.target.value }))}
-                placeholder="Company name"
-              />
-            </div>
+            <>
+              <div>
+                <Label htmlFor="company_name">Company Name</Label>
+                <Input
+                  id="company_name"
+                  value={newClientData.company_name}
+                  onChange={(e) => setNewClientData(prev => ({ ...prev, company_name: e.target.value }))}
+                  placeholder="Company name"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="abn">ABN / Registration Number</Label>
+                <Input
+                  id="abn"
+                  value={newClientData.abn}
+                  onChange={(e) => setNewClientData(prev => ({ ...prev, abn: e.target.value }))}
+                  placeholder="Business registration number"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="business_email">Business Email</Label>
+                  <Input
+                    id="business_email"
+                    type="email"
+                    value={newClientData.business_email}
+                    onChange={(e) => setNewClientData(prev => ({ ...prev, business_email: e.target.value }))}
+                    placeholder="business@company.com"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="business_phone">Business Phone</Label>
+                  <Input
+                    id="business_phone"
+                    value={newClientData.business_phone}
+                    onChange={(e) => setNewClientData(prev => ({ ...prev, business_phone: e.target.value }))}
+                    placeholder="Business phone number"
+                  />
+                </div>
+              </div>
+            </>
           )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="client_email">Email</Label>
+              <Label htmlFor="client_email">{newClientData.client_type === "B2B" ? "Contact Email" : "Email"}</Label>
               <Input
                 id="client_email"
                 type="email"
@@ -174,7 +208,7 @@ export const ClientSearchStep = ({ formData, updateFormData }: ClientSearchStepP
               />
             </div>
             <div>
-              <Label htmlFor="client_phone">Phone</Label>
+              <Label htmlFor="client_phone">{newClientData.client_type === "B2B" ? "Contact Phone" : "Phone"}</Label>
               <Input
                 id="client_phone"
                 value={newClientData.phone}
@@ -420,19 +454,55 @@ export const ClientSearchStep = ({ formData, updateFormData }: ClientSearchStepP
               </Select>
             </div>
 
-            <div>
-              <Label htmlFor="edit_company">Company Name</Label>
-              <Input
-                id="edit_company"
-                value={editClientData.company_name}
-                onChange={(e) => setEditClientData(prev => ({ ...prev, company_name: e.target.value }))}
-                placeholder="Company name"
-              />
-            </div>
+            {editClientData.client_type === "B2B" && (
+              <>
+                <div>
+                  <Label htmlFor="edit_company">Company Name</Label>
+                  <Input
+                    id="edit_company"
+                    value={editClientData.company_name}
+                    onChange={(e) => setEditClientData(prev => ({ ...prev, company_name: e.target.value }))}
+                    placeholder="Company name"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="edit_abn">ABN / Registration Number</Label>
+                  <Input
+                    id="edit_abn"
+                    value={editClientData.abn}
+                    onChange={(e) => setEditClientData(prev => ({ ...prev, abn: e.target.value }))}
+                    placeholder="Business registration number"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit_business_email">Business Email</Label>
+                    <Input
+                      id="edit_business_email"
+                      type="email"
+                      value={editClientData.business_email}
+                      onChange={(e) => setEditClientData(prev => ({ ...prev, business_email: e.target.value }))}
+                      placeholder="business@company.com"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit_business_phone">Business Phone</Label>
+                    <Input
+                      id="edit_business_phone"
+                      value={editClientData.business_phone}
+                      onChange={(e) => setEditClientData(prev => ({ ...prev, business_phone: e.target.value }))}
+                      placeholder="Business phone number"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="edit_email">Email</Label>
+                <Label htmlFor="edit_email">{editClientData.client_type === "B2B" ? "Contact Email" : "Email"}</Label>
                 <Input
                   id="edit_email"
                   type="email"
@@ -442,7 +512,7 @@ export const ClientSearchStep = ({ formData, updateFormData }: ClientSearchStepP
                 />
               </div>
               <div>
-                <Label htmlFor="edit_phone">Phone</Label>
+                <Label htmlFor="edit_phone">{editClientData.client_type === "B2B" ? "Contact Phone" : "Phone"}</Label>
                 <Input
                   id="edit_phone"
                   value={editClientData.phone}
