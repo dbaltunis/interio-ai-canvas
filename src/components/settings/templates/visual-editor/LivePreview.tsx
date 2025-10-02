@@ -648,10 +648,12 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
                             <tr className="border-t">
                               <td className="p-3 font-medium">{itemNumber}</td>
                               <td className="p-3 font-medium">
-                                {item.treatment_type || item.name || 'Window Treatment'}
+                                {item.window_number 
+                                  ? `${item.treatment_name || item.name || 'Window Treatment'} - ${item.window_number}`
+                                  : (item.treatment_name || item.name || 'Window Treatment')}
                               </td>
                               <td className="p-3">
-                                {item.treatment_type || item.name || 'Custom Treatment'}
+                                {item.description || item.notes || item.room_name || 'Custom Treatment'}
                               </td>
                               <td className="p-3 text-center">{item.quantity || 1}</td>
                               <td className="p-3 text-right">
@@ -679,9 +681,13 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
                         return (
                           <tr key={`${roomName}-${itemIndex}`} className="border-t">
                             <td className="p-3">{itemNumber}</td>
-                            <td className="p-3">{item.treatment_type || item.name || 'Window Treatment'}</td>
+                            <td className="p-3">
+                              {item.window_number 
+                                ? `${item.treatment_name || item.name || 'Window Treatment'} - ${item.window_number}`
+                                : (item.treatment_name || item.name || 'Window Treatment')}
+                            </td>
                             <td className="p-3 text-sm text-gray-600">
-                              {item.description || item.notes || `${item.width || 0}" x ${item.height || 0}"`}
+                              {item.description || item.notes || item.room_name || `${item.width || 0}" x ${item.height || 0}"`}
                             </td>
                             <td className="p-3 text-center">{item.quantity || 1}</td>
                             <td className="p-3 text-right">${(item.unit_price || item.cost_per_unit || 0).toFixed(2)}</td>
