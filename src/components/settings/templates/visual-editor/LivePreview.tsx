@@ -801,23 +801,25 @@ export const LivePreview = ({
   }
 
   return (
-    <div 
-      className="bg-white min-h-full"
-      style={{ backgroundColor: containerStyles?.backgroundColor || '#ffffff' }}
-    >
+    <ScrollArea className="h-full w-full">
       <div 
-        className={`mx-auto ${containerStyles?.maxWidth === 'full' ? 'w-full' : `max-w-${containerStyles?.maxWidth || '4xl'}`}`}
-        style={{ padding: containerStyles?.padding || '32px' }}
+        className="bg-white min-h-full"
+        style={{ backgroundColor: containerStyles?.backgroundColor || '#ffffff' }}
       >
-        {blocks.map((block, index) => (
-          <LivePreviewBlock 
-            key={block.id || index} 
-            block={block} 
-            projectData={projectData}
-            isEditable={isEditable}
-          />
-        ))}
+        <div 
+          className={`mx-auto ${containerStyles?.maxWidth === 'full' ? 'w-full' : `max-w-${containerStyles?.maxWidth || '4xl'}`}`}
+          style={{ padding: containerStyles?.padding || '32px' }}
+        >
+          {blocks.map((block, index) => (
+            <LivePreviewBlock 
+              key={block.id || index} 
+              block={block} 
+              projectData={projectData}
+              isEditable={isEditable}
+            />
+          ))}
+        </div>
       </div>
-    </div>
+    </ScrollArea>
   );
 };
