@@ -121,6 +121,209 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
   };
 
   switch (blockType) {
+    case 'document-header':
+      const headerLayout = content.layout || 'centered';
+      return (
+        <div 
+          className="mb-8" 
+          style={{ 
+            backgroundColor: style.backgroundColor || '#ffffff',
+            color: style.textColor || '#1e293b',
+            padding: style.padding || '32px',
+            borderRadius: style.borderRadius || '0px',
+            borderBottom: style.borderBottom || '2px solid #e5e7eb',
+            margin: style.margin || '0 0 32px 0'
+          }}
+        >
+          {headerLayout === 'centered' && (
+            <div className="text-center space-y-4">
+              {/* Logo */}
+              {content.showLogo !== false && (
+                <div className="flex justify-center mb-4">
+                  {projectData?.businessSettings?.company_logo_url ? (
+                    <img 
+                      src={projectData.businessSettings.company_logo_url} 
+                      alt="Company Logo" 
+                      className="object-contain"
+                      style={{ 
+                        height: content.logoSize || '80px',
+                        maxWidth: '300px'
+                      }}
+                    />
+                  ) : (
+                    <div 
+                      className="bg-blue-600 rounded-lg flex items-center justify-center"
+                      style={{ 
+                        height: content.logoSize || '80px',
+                        width: content.logoSize || '80px'
+                      }}
+                    >
+                      <Building2 className="h-10 w-10 text-white" />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Document Title */}
+              <h1 className="text-3xl font-bold">
+                {content.documentTitle || "Your Quote"}
+              </h1>
+
+              {/* Tagline */}
+              {content.tagline && (
+                <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
+                  {content.tagline}
+                </p>
+              )}
+
+              {/* Metadata Row */}
+              <div className="flex items-center justify-between pt-6 mt-6 border-t">
+                {/* Client Info - Left */}
+                <div className="text-left">
+                  <div className="text-xs font-semibold uppercase text-muted-foreground mb-1">
+                    {content.clientLabel || "Sold to"}
+                  </div>
+                  <div className="text-sm space-y-0.5">
+                    <div className="font-medium">{renderTokenValue('client_name') || 'Client Name'}</div>
+                    <div className="text-muted-foreground">{renderTokenValue('client_email') || 'client@email.com'}</div>
+                    <div className="text-muted-foreground">{renderTokenValue('client_address') || 'Client Address'}</div>
+                  </div>
+                </div>
+
+                {/* Quote Details - Right */}
+                <div className="text-right">
+                  <div className="text-sm space-y-1">
+                    <div>{renderTokenValue('date')}</div>
+                    <div>
+                      <span className="text-muted-foreground">{content.quoteNumberLabel || "Order number:"} </span>
+                      <span className="font-semibold">{renderTokenValue('quote_number')}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {headerLayout === 'left-right' && (
+            <div className="flex items-start justify-between">
+              {/* Left: Logo & Company */}
+              <div className="flex-1">
+                {content.showLogo !== false && (
+                  <div className="mb-4">
+                    {projectData?.businessSettings?.company_logo_url ? (
+                      <img 
+                        src={projectData.businessSettings.company_logo_url} 
+                        alt="Company Logo" 
+                        className="object-contain"
+                        style={{ 
+                          height: content.logoSize || '60px',
+                          maxWidth: '200px'
+                        }}
+                      />
+                    ) : (
+                      <div 
+                        className="bg-blue-600 rounded-lg flex items-center justify-center"
+                        style={{ 
+                          height: content.logoSize || '60px',
+                          width: content.logoSize || '60px'
+                        }}
+                      >
+                        <Building2 className="h-8 w-8 text-white" />
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div className="text-xl font-bold mb-2">
+                  {content.companyName || renderTokenValue('company_name')}
+                </div>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <div>{renderTokenValue('company_address')}</div>
+                  <div>{renderTokenValue('company_phone')}</div>
+                  <div>{renderTokenValue('company_email')}</div>
+                </div>
+              </div>
+
+              {/* Right: Document Info */}
+              <div className="text-right">
+                <h1 className="text-2xl font-semibold mb-4">
+                  {content.documentTitle || "Quote"}
+                </h1>
+                <div className="text-sm space-y-1">
+                  <div className="flex items-center gap-2 justify-end">
+                    <Hash className="h-3 w-3" />
+                    <span>{content.quoteNumberLabel || "Quote #"}: {renderTokenValue('quote_number')}</span>
+                  </div>
+                  <div className="flex items-center gap-2 justify-end">
+                    <Calendar className="h-3 w-3" />
+                    <span>{content.dateLabel || "Date"}: {renderTokenValue('date')}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {headerLayout === 'stacked' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                {content.showLogo !== false && (
+                  <div>
+                    {projectData?.businessSettings?.company_logo_url ? (
+                      <img 
+                        src={projectData.businessSettings.company_logo_url} 
+                        alt="Company Logo" 
+                        className="object-contain"
+                        style={{ 
+                          height: content.logoSize || '60px',
+                          maxWidth: '200px'
+                        }}
+                      />
+                    ) : (
+                      <div 
+                        className="bg-blue-600 rounded-lg flex items-center justify-center"
+                        style={{ 
+                          height: content.logoSize || '60px',
+                          width: content.logoSize || '60px'
+                        }}
+                      >
+                        <Building2 className="h-8 w-8 text-white" />
+                      </div>
+                    )}
+                  </div>
+                )}
+                <h1 className="text-3xl font-bold">
+                  {content.documentTitle || "Quote"}
+                </h1>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-8 pt-4 border-t">
+                {/* Company Info */}
+                <div>
+                  <h4 className="font-semibold mb-2">From:</h4>
+                  <div className="text-sm space-y-1 text-muted-foreground">
+                    <div className="font-medium text-foreground">{renderTokenValue('company_name')}</div>
+                    <div>{renderTokenValue('company_address')}</div>
+                    <div>{renderTokenValue('company_phone')}</div>
+                  </div>
+                </div>
+                
+                {/* Client & Quote Info */}
+                <div>
+                  <h4 className="font-semibold mb-2">{content.clientLabel || "To:"}</h4>
+                  <div className="text-sm space-y-1 text-muted-foreground">
+                    <div className="font-medium text-foreground">{renderTokenValue('client_name')}</div>
+                    <div>{renderTokenValue('client_email')}</div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t text-sm">
+                    <div><strong>Quote #:</strong> {renderTokenValue('quote_number')}</div>
+                    <div><strong>Date:</strong> {renderTokenValue('date')}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+
     case 'header':
       return (
         <div 

@@ -10,6 +10,12 @@ interface BlockToolbarProps {
 export const BlockToolbar = ({ onAddBlock }: BlockToolbarProps) => {
   const blockTypes = [
     {
+      type: 'document-header',
+      label: 'Document Header',
+      icon: Image,
+      description: 'Customizable header with logo, title & metadata'
+    },
+    {
       type: 'text',
       label: 'Text Block',
       icon: Type,
