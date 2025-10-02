@@ -885,7 +885,12 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
               />
               <div className="border-t border-gray-400 pt-2 mt-12">
                 <div className="text-sm">
-                  <div className="font-medium">Client Signature</div>
+                  <EditableText
+                    value={content.clientSignatureLabel || "Client Signature"}
+                    onChange={(value) => updateBlockContent({ clientSignatureLabel: value })}
+                    className="font-medium"
+                    placeholder="Client Signature Label"
+                  />
                   <div className="text-gray-600">Print Name: {renderTokenValue('client_name')}</div>
                   <div className="text-gray-600">Date: _________________</div>
                 </div>
@@ -893,15 +898,20 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
             </div>
             <div>
               <EditableText
-                value={content.thankYouMessage || "Thank you for choosing us for your project!"}
-                onChange={(value) => updateBlockContent({ thankYouMessage: value })}
+                value={content.thankYouText || "Thank you for choosing us for your project!"}
+                onChange={(value) => updateBlockContent({ thankYouText: value })}
                 className="text-sm mb-4"
                 placeholder="Thank you message"
                 multiline
               />
               <div className="border-t border-gray-400 pt-2 mt-12">
                 <div className="text-sm">
-                  <div className="font-medium">Company Representative</div>
+                  <EditableText
+                    value={content.companySignatureLabel || "Company Representative"}
+                    onChange={(value) => updateBlockContent({ companySignatureLabel: value })}
+                    className="font-medium"
+                    placeholder="Company Representative Label"
+                  />
                   <div className="text-gray-600">Print Name: _________________</div>
                   <div className="text-gray-600">Date: _________________</div>
                 </div>
