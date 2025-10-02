@@ -75,12 +75,6 @@
     color: black !important;
   }
   
-  /* Remove any page borders or lines */
-  @page {
-    margin: 0;
-    border: none;
-  }
-  
   /* Remove any bottom borders or lines from sections */
   .document-surface .border-b,
   .document-surface .border-b-2,
@@ -100,24 +94,44 @@
     border: none !important;
   }
   
-  /* Ensure A4 page takes full width in print */
+  /* Ensure A4 page takes full width in print and removes all container styling */
   [style*="210mm"] {
     width: 100% !important;
+    max-width: 100% !important;
     box-shadow: none !important;
     border: none !important;
     margin: 0 !important;
-    overflow: hidden !important;
+    padding: 0 !important;
+    overflow: visible !important;
   }
   
-  /* Remove padding from content wrapper in print - margins controlled by @page */
-  [style*="210mm"] > div {
+  /* Remove ALL padding and margins from content wrappers - @page margins control ALL spacing */
+  [style*="210mm"] > div,
+  [style*="210mm"] > div > div {
     padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  
+  /* Ensure content area uses full width minus page margins only */
+  .mx-auto {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
     max-width: 100% !important;
   }
   
-  /* Ensure content respects 15mm margins */
-  [style*="210mm"] > div > div {
-    padding: 0 !important;
+  /* Remove max-width constraints in print */
+  .max-w-4xl,
+  .max-w-3xl,
+  .max-w-2xl,
+  .max-w-xl,
+  .max-w-lg,
+  .max-w-md,
+  .max-w-sm {
+    max-width: 100% !important;
+    width: 100% !important;
   }
   
   /* Better page breaks for summary sections */
@@ -138,9 +152,23 @@
     page-break-after: avoid !important;
   }
   
-  /* Update @page margins to match visual guides */
+  /* Set @page margins - this is the ONLY margin/padding that should exist in print */
   @page {
     margin: 15mm;
     border: none;
+    size: A4;
+  }
+  
+  /* Ensure tables don't overflow */
+  table {
+    width: 100% !important;
+    table-layout: auto !important;
+  }
+  
+  /* Prevent text overflow */
+  * {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    box-sizing: border-box !important;
   }
 }
