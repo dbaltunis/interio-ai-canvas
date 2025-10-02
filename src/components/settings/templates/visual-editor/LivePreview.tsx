@@ -582,28 +582,40 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
           });
         }
 
-        // Extract lining if present
-        if (item.manufacturing_details?.lining_type) {
-          const liningCost = parseFloat(item.linear_meters || 0) * 10; // Standard lining cost
+        // Extract lining if present with actual pricing
+        if (item.lining_details || item.manufacturing_details?.lining_type) {
+          const liningRate = parseFloat(
+            item.lining_details?.price_per_metre || 
+            item.lining_details?.labour_per_curtain || 
+            10
+          );
+          const liningQuantity = parseFloat(item.linear_meters || 0);
+          const liningCost = liningQuantity * liningRate;
+          
           components.push({
             type: 'Lining',
-            description: item.manufacturing_details.lining_type || 'Blackout',
-            quantity: parseFloat(item.linear_meters || 0).toFixed(2),
+            description: item.lining_details?.type || item.manufacturing_details?.lining_type || 'Standard',
+            quantity: liningQuantity.toFixed(2),
             unit: 'm',
-            rate: '10.00',
+            rate: liningRate.toFixed(2),
             total: liningCost.toFixed(2)
           });
         }
 
-        // Add heading row (can be 0.00)
-        components.push({
-          type: 'Heading',
-          description: 'Regular Headrail',
-          quantity: Math.round((item.measurements?.rail_width || 200)),
-          unit: 'cm',
-          rate: '0.00',
-          total: '0.00'
-        });
+        // Extract heading with actual pricing
+        if (item.heading_details) {
+          const headingCost = parseFloat(item.heading_details.cost || 0);
+          const headingQuantity = Math.round((item.measurements?.rail_width || 200));
+          
+          components.push({
+            type: 'Heading',
+            description: item.heading_details.heading_name || item.heading_details.name || 'Regular Headrail',
+            quantity: headingQuantity,
+            unit: 'cm',
+            rate: headingCost.toFixed(2),
+            total: headingCost.toFixed(2)
+          });
+        }
 
         return components;
       };
