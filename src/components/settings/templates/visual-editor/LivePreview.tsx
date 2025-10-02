@@ -189,6 +189,10 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
       const clientEmail = renderTokenValue('client_email');
       const clientPhone = renderTokenValue('client_phone');
       const clientAddress = renderTokenValue('client_address');
+      const clientAbn = renderTokenValue('client_abn');
+      const clientBusinessEmail = renderTokenValue('client_business_email');
+      const clientBusinessPhone = renderTokenValue('client_business_phone');
+      const clientType = renderTokenValue('client_type');
       
       console.log('📋 Client Info Block - Rendered Values:', {
         clientName,
@@ -196,11 +200,17 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
         clientEmail,
         clientPhone,
         clientAddress,
+        clientAbn,
+        clientBusinessEmail,
+        clientBusinessPhone,
+        clientType,
         showCompany: content.showCompany,
         showClientEmail: content.showClientEmail,
         showClientPhone: content.showClientPhone,
         showClientAddress: content.showClientAddress
       });
+      
+      const isB2B = clientType === 'B2B';
       
       return (
         <div className="mb-6">
@@ -212,13 +222,22 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
             <div className="space-y-1">
               {clientName && <p className="font-medium">{clientName}</p>}
               {clientCompany && (
-                <p className="text-gray-600">{clientCompany}</p>
+                <p className="text-gray-600 font-medium">{clientCompany}</p>
+              )}
+              {isB2B && clientAbn && (
+                <p className="text-gray-600 text-sm">ABN: {clientAbn}</p>
+              )}
+              {isB2B && clientBusinessEmail && (
+                <p className="text-gray-600 text-sm">Business: {clientBusinessEmail}</p>
+              )}
+              {isB2B && clientBusinessPhone && (
+                <p className="text-gray-600 text-sm">Business Phone: {clientBusinessPhone}</p>
               )}
               {clientEmail && (
-                <p className="text-gray-600">{clientEmail}</p>
+                <p className="text-gray-600">{isB2B ? 'Contact: ' : ''}{clientEmail}</p>
               )}
               {clientPhone && (
-                <p className="text-gray-600">{clientPhone}</p>
+                <p className="text-gray-600">{isB2B ? 'Contact Phone: ' : 'Phone: '}{clientPhone}</p>
               )}
               {clientAddress && (
                 <p className="text-gray-600">{clientAddress}</p>

@@ -296,21 +296,35 @@ export const ClientSearchStep = ({ formData, updateFormData }: ClientSearchStepP
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 {selectedClient.client_type === "B2B" ? (
-                  <Building className="h-5 w-5 text-green-600" />
+                  <Building className="h-5 w-5 text-green-600 flex-shrink-0" />
                 ) : (
-                  <User className="h-5 w-5 text-green-600" />
+                  <User className="h-5 w-5 text-green-600 flex-shrink-0" />
                 )}
-                <div>
+                <div className="flex-1">
                   <p className="font-medium text-green-800">{selectedClient.name}</p>
                   {selectedClient.company_name && (
-                    <p className="text-sm text-green-600">{selectedClient.company_name}</p>
+                    <p className="text-sm text-green-600 font-medium">{selectedClient.company_name}</p>
                   )}
-                  {selectedClient.email && (
-                    <p className="text-sm text-green-600">{selectedClient.email}</p>
+                  {selectedClient.client_type === "B2B" && selectedClient.abn && (
+                    <p className="text-sm text-green-600">ABN: {selectedClient.abn}</p>
                   )}
+                  <div className="mt-1 space-y-0.5">
+                    {selectedClient.client_type === "B2B" && selectedClient.business_email && (
+                      <p className="text-sm text-green-600">Business: {selectedClient.business_email}</p>
+                    )}
+                    {selectedClient.client_type === "B2B" && selectedClient.business_phone && (
+                      <p className="text-sm text-green-600">Business Phone: {selectedClient.business_phone}</p>
+                    )}
+                    {selectedClient.email && (
+                      <p className="text-sm text-green-600">{selectedClient.client_type === "B2B" ? "Contact: " : ""}{selectedClient.email}</p>
+                    )}
+                    {selectedClient.phone && (
+                      <p className="text-sm text-green-600">{selectedClient.client_type === "B2B" ? "Contact Phone: " : "Phone: "}{selectedClient.phone}</p>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-shrink-0">
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -323,7 +337,6 @@ export const ClientSearchStep = ({ formData, updateFormData }: ClientSearchStepP
                   variant="outline" 
                   size="sm"
                   onClick={() => {
-                    // Just show the search interface without removing the client from DB
                     setIsChangingClient(true);
                     setSearchTerm("");
                   }}
