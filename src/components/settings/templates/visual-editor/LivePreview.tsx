@@ -186,6 +186,9 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
                   <div className="text-sm space-y-0.5">
                     <div className="font-medium">{renderTokenValue('client_name') || 'Client Name'}</div>
                     <div className="text-muted-foreground">{renderTokenValue('client_email') || 'client@email.com'}</div>
+                    {renderTokenValue('client_phone') && (
+                      <div className="text-muted-foreground">{renderTokenValue('client_phone')}</div>
+                    )}
                     <div className="text-muted-foreground">{renderTokenValue('client_address') || 'Client Address'}</div>
                   </div>
                 </div>
@@ -193,10 +196,17 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
                 {/* Quote Details - Right */}
                 <div className="text-right">
                   <div className="text-sm space-y-1">
-                    <div>{renderTokenValue('date')}</div>
                     <div>
                       <span className="text-muted-foreground">{content.quoteNumberLabel || "Order number:"} </span>
                       <span className="font-semibold">{renderTokenValue('quote_number')}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Date: </span>
+                      <span>{renderTokenValue('date')}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Valid Until: </span>
+                      <span>{renderTokenValue('valid_until')}</span>
                     </div>
                   </div>
                 </div>
@@ -257,6 +267,10 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
                     <Calendar className="h-3 w-3" />
                     <span>{content.dateLabel || "Date"}: {renderTokenValue('date')}</span>
                   </div>
+                  <div className="flex items-center gap-2 justify-end">
+                    <Calendar className="h-3 w-3" />
+                    <span>Valid Until: {renderTokenValue('valid_until')}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -312,10 +326,14 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
                   <div className="text-sm space-y-1 text-muted-foreground">
                     <div className="font-medium text-foreground">{renderTokenValue('client_name')}</div>
                     <div>{renderTokenValue('client_email')}</div>
+                    {renderTokenValue('client_phone') && (
+                      <div>{renderTokenValue('client_phone')}</div>
+                    )}
                   </div>
                   <div className="mt-3 pt-3 border-t text-sm">
                     <div><strong>Quote #:</strong> {renderTokenValue('quote_number')}</div>
                     <div><strong>Date:</strong> {renderTokenValue('date')}</div>
+                    <div><strong>Valid Until:</strong> {renderTokenValue('valid_until')}</div>
                   </div>
                 </div>
               </div>
