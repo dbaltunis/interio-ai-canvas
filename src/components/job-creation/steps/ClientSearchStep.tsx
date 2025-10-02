@@ -4,9 +4,10 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, User, Building } from "lucide-react";
-import { useClients, useCreateClient } from "@/hooks/useClients";
+import { Search, Plus, User, Building, Edit } from "lucide-react";
+import { useClients, useCreateClient, useUpdateClient } from "@/hooks/useClients";
 
 interface ClientSearchStepProps {
   formData: any;
@@ -17,7 +18,19 @@ export const ClientSearchStep = ({ formData, updateFormData }: ClientSearchStepP
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isChangingClient, setIsChangingClient] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [newClientData, setNewClientData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    company_name: "",
+    client_type: "B2C" as "B2B" | "B2C",
+    address: "",
+    city: "",
+    state: "",
+    zip_code: ""
+  });
+  const [editClientData, setEditClientData] = useState({
     name: "",
     email: "",
     phone: "",
@@ -31,6 +44,7 @@ export const ClientSearchStep = ({ formData, updateFormData }: ClientSearchStepP
 
   const { data: clients, isLoading } = useClients();
   const createClient = useCreateClient();
+  const updateClient = useUpdateClient();
 
   const filteredClients = clients?.filter(client => 
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -55,6 +69,37 @@ export const ClientSearchStep = ({ formData, updateFormData }: ClientSearchStepP
       setSearchTerm("");
     } catch (error) {
       console.error("Failed to create client:", error);
+    }
+  };
+
+  const handleEditClient = async () => {
+    if (!editClientData.name.trim() || !selectedClient) return;
+    
+    try {
+      await updateClient.mutateAsync({
+        id: selectedClient.id,
+        ...editClientData
+      });
+      setShowEditDialog(false);
+    } catch (error) {
+      console.error("Failed to update client:", error);
+    }
+  };
+
+  const openEditDialog = () => {
+    if (selectedClient) {
+      setEditClientData({
+        name: selectedClient.name || "",
+        email: selectedClient.email || "",
+        phone: selectedClient.phone || "",
+        company_name: selectedClient.company_name || "",
+        client_type: (selectedClient.client_type as "B2B" | "B2C") || "B2C",
+        address: selectedClient.address || "",
+        city: selectedClient.city || "",
+        state: selectedClient.state || "",
+        zip_code: selectedClient.zip_code || ""
+      });
+      setShowEditDialog(true);
     }
   };
 
@@ -221,17 +266,27 @@ export const ClientSearchStep = ({ formData, updateFormData }: ClientSearchStepP
                   )}
                 </div>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => {
-                  // Just show the search interface without removing the client from DB
-                  setIsChangingClient(true);
-                  setSearchTerm("");
-                }}
-              >
-                Change Client
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={openEditDialog}
+                >
+                  <Edit className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    // Just show the search interface without removing the client from DB
+                    setIsChangingClient(true);
+                    setSearchTerm("");
+                  }}
+                >
+                  Change Client
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -321,6 +376,131 @@ export const ClientSearchStep = ({ formData, updateFormData }: ClientSearchStepP
           )}
         </>
       )}
+
+      {/* Edit Client Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Client Details</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit_name">Client Name *</Label>
+              <Input
+                id="edit_name"
+                value={editClientData.name}
+                onChange={(e) => setEditClientData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Full name"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="edit_client_type">Client Type</Label>
+              <Select 
+                value={editClientData.client_type} 
+                onValueChange={(value: "B2B" | "B2C") => setEditClientData(prev => ({ ...prev, client_type: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="B2C">Individual (B2C)</SelectItem>
+                  <SelectItem value="B2B">Business (B2B)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="edit_company">Company Name</Label>
+              <Input
+                id="edit_company"
+                value={editClientData.company_name}
+                onChange={(e) => setEditClientData(prev => ({ ...prev, company_name: e.target.value }))}
+                placeholder="Company name"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit_email">Email</Label>
+                <Input
+                  id="edit_email"
+                  type="email"
+                  value={editClientData.email}
+                  onChange={(e) => setEditClientData(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="email@example.com"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit_phone">Phone</Label>
+                <Input
+                  id="edit_phone"
+                  value={editClientData.phone}
+                  onChange={(e) => setEditClientData(prev => ({ ...prev, phone: e.target.value }))}
+                  placeholder="Phone number"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="edit_address">Address</Label>
+              <Input
+                id="edit_address"
+                value={editClientData.address}
+                onChange={(e) => setEditClientData(prev => ({ ...prev, address: e.target.value }))}
+                placeholder="Street address"
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="edit_city">City</Label>
+                <Input
+                  id="edit_city"
+                  value={editClientData.city}
+                  onChange={(e) => setEditClientData(prev => ({ ...prev, city: e.target.value }))}
+                  placeholder="City"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit_state">State</Label>
+                <Input
+                  id="edit_state"
+                  value={editClientData.state}
+                  onChange={(e) => setEditClientData(prev => ({ ...prev, state: e.target.value }))}
+                  placeholder="State"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit_zip">ZIP Code</Label>
+                <Input
+                  id="edit_zip"
+                  value={editClientData.zip_code}
+                  onChange={(e) => setEditClientData(prev => ({ ...prev, zip_code: e.target.value }))}
+                  placeholder="ZIP"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowEditDialog(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleEditClient}
+                disabled={!editClientData.name.trim()}
+                className="flex-1"
+              >
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
