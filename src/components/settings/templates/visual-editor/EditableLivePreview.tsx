@@ -457,15 +457,33 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
               <div className="text-sm space-y-1">
                 <div className="flex items-center gap-2">
                   <Hash className="h-3 w-3" />
-                  <span>Quote #: {renderTokenValue('quote_number')}</span>
+                  <EditableText
+                    value={content.quoteNumberLabel || "Quote #"}
+                    onChange={(value) => updateBlockContent({ quoteNumberLabel: value })}
+                    className="inline"
+                    placeholder="Quote Number Label"
+                  />
+                  <span>: {renderTokenValue('quote_number')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="h-3 w-3" />
-                  <span>Date: {renderTokenValue('date')}</span>
+                  <EditableText
+                    value={content.dateLabel || "Date"}
+                    onChange={(value) => updateBlockContent({ dateLabel: value })}
+                    className="inline"
+                    placeholder="Date Label"
+                  />
+                  <span>: {renderTokenValue('date')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="h-3 w-3" />
-                  <span>Valid Until: {renderTokenValue('valid_until')}</span>
+                  <EditableText
+                    value={content.validUntilLabel || "Valid Until"}
+                    onChange={(value) => updateBlockContent({ validUntilLabel: value })}
+                    className="inline"
+                    placeholder="Valid Until Label"
+                  />
+                  <span>: {renderTokenValue('valid_until')}</span>
                 </div>
               </div>
             </div>

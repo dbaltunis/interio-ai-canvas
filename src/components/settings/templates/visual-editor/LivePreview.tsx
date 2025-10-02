@@ -171,15 +171,15 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
               <div className="text-sm space-y-1">
                 <div className="flex items-center gap-2">
                   <Hash className="h-3 w-3" />
-                  <span>Quote #: {renderTokenValue('quote_number')}</span>
+                  <span>{content.quoteNumberLabel || "Quote #"}: {renderTokenValue('quote_number')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="h-3 w-3" />
-                  <span>Date: {renderTokenValue('date')}</span>
+                  <span>{content.dateLabel || "Date"}: {renderTokenValue('date')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="h-3 w-3" />
-                  <span>Valid Until: {renderTokenValue('valid_until')}</span>
+                  <span>{content.validUntilLabel || "Valid Until"}: {renderTokenValue('valid_until')}</span>
                 </div>
               </div>
             </div>
