@@ -102,7 +102,9 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
       notes: projectData?.notes || '',
       project_status: project.status || 'draft'
     };
-    return tokens[token as keyof typeof tokens] || token;
+    return tokens[token as keyof typeof tokens] !== undefined && tokens[token as keyof typeof tokens] !== '' 
+      ? tokens[token as keyof typeof tokens] 
+      : '';
   };
 
   const replaceTokens = (text: string) => {
