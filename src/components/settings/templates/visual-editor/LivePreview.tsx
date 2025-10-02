@@ -510,7 +510,40 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
       
       // Get real workshop items data which has the detailed breakdown
       const workshopItems = projectData?.workshopItems || [];
-      const projectItems = workshopItems.length > 0 ? workshopItems : (projectData?.treatments || projectData?.windowSummaries || []);
+      const surfaces = projectData?.surfaces || [];
+      
+      // Merge workshop items with surfaces to show all windows, even those without treatments
+      let projectItems = [];
+      if (workshopItems.length > 0 || surfaces.length > 0) {
+        // Create a map of surfaces by id
+        const surfaceMap = new Map(surfaces.map((s: any) => [s.id, s]));
+        
+        // Start with all workshop items
+        projectItems = [...workshopItems];
+        
+        // Add surfaces that don't have workshop items
+        const workshopSurfaceIds = new Set(workshopItems.map((wi: any) => wi.window_id).filter(Boolean));
+        surfaces.forEach((surface: any) => {
+          if (!workshopSurfaceIds.has(surface.id)) {
+            // Add placeholder for surface without treatment
+            projectItems.push({
+              id: surface.id,
+              surface_name: surface.name,
+              window_number: surface.name,
+              room_name: 'Pending Configuration',
+              description: 'No treatment configured yet',
+              total_cost: 0,
+              quantity: 1,
+              notes: `Window: ${surface.width || 0}cm x ${surface.height || 0}cm`,
+              _isPending: true
+            });
+          }
+        });
+      } else {
+        // Fallback to treatments if available
+        projectItems = projectData?.treatments || projectData?.windowSummaries || [];
+      }
+      
       const hasRealData = workshopItems.length > 0;
 
       // Function to get itemized breakdown for a workshop item
