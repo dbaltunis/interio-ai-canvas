@@ -192,18 +192,18 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
           </h3>
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="space-y-1">
-              <p className="font-medium">{clientName || '—'}</p>
-              {content.showCompany && (
-                <p className="text-gray-600">{clientCompany || '—'}</p>
+              {clientName && <p className="font-medium">{clientName}</p>}
+              {content.showCompany && clientCompany && (
+                <p className="text-gray-600">{clientCompany}</p>
               )}
-              {content.showClientEmail && (
-                <p className="text-gray-600">{clientEmail || '—'}</p>
+              {content.showClientEmail && clientEmail && (
+                <p className="text-gray-600">{clientEmail}</p>
               )}
-              {content.showClientPhone && (
-                <p className="text-gray-600">{clientPhone || '—'}</p>
+              {content.showClientPhone && clientPhone && (
+                <p className="text-gray-600">{clientPhone}</p>
               )}
-              {content.showClientAddress && (
-                <p className="text-gray-600">{clientAddress || '—'}</p>
+              {content.showClientAddress && clientAddress && (
+                <p className="text-gray-600">{clientAddress}</p>
               )}
             </div>
           </div>
