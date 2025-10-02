@@ -3,14 +3,16 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { useBusinessSettings, useCreateBusinessSettings, useUpdateBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, Mail, Phone, MapPin, Globe, Upload, Image } from "lucide-react";
+import { Building2, Mail, Phone, MapPin, Globe, Upload, Image, Edit3, Shield } from "lucide-react";
 import { LoadingFallback } from "@/components/ui/loading-fallback";
 import { FormSection } from "@/components/ui/form-section";
 import { FormFieldGroup } from "@/components/ui/form-field-group";
 import { SimpleLogoUpload } from "./SimpleLogoUpload";
 import { useUploadFile, useGetFileUrl } from "@/hooks/useFileStorage";
+import { useHasPermission } from "@/hooks/usePermissions";
 
 export const BusinessSettingsTab = () => {
   const { data: businessSettings, isLoading } = useBusinessSettings();
@@ -24,6 +26,8 @@ export const BusinessSettingsTab = () => {
   const uploadFile = useUploadFile();
   const getFileUrl = useGetFileUrl();
 
+  const isAdmin = useHasPermission('manage_settings');
+
   const [formData, setFormData] = useState({
     company_name: "",
     abn: "",
@@ -35,7 +39,8 @@ export const BusinessSettingsTab = () => {
     zip_code: "",
     country: "Australia",
     website: "",
-    company_logo_url: ""
+    company_logo_url: "",
+    allow_in_app_template_editing: false
   });
 
   useEffect(() => {
@@ -51,7 +56,8 @@ export const BusinessSettingsTab = () => {
         zip_code: businessSettings.zip_code || "",
         country: businessSettings.country || "Australia",
         website: businessSettings.website || "",
-        company_logo_url: businessSettings.company_logo_url || ""
+        company_logo_url: businessSettings.company_logo_url || "",
+        allow_in_app_template_editing: businessSettings.allow_in_app_template_editing || false
       });
     }
   }, [businessSettings]);
@@ -132,7 +138,8 @@ export const BusinessSettingsTab = () => {
           zip_code: savedData.zip_code || "",
           country: savedData.country || "Australia",
           website: savedData.website || "",
-          company_logo_url: savedData.company_logo_url || ""
+          company_logo_url: savedData.company_logo_url || "",
+          allow_in_app_template_editing: savedData.allow_in_app_template_editing || false
         });
       }
       
@@ -175,7 +182,8 @@ export const BusinessSettingsTab = () => {
         zip_code: businessSettings.zip_code || "",
         country: businessSettings.country || "Australia",
         website: businessSettings.website || "",
-        company_logo_url: businessSettings.company_logo_url || ""
+        company_logo_url: businessSettings.company_logo_url || "",
+        allow_in_app_template_editing: businessSettings.allow_in_app_template_editing || false
       });
     }
   };
@@ -379,6 +387,46 @@ export const BusinessSettingsTab = () => {
           />
         </FormFieldGroup>
       </FormSection>
+
+      {/* Advanced Settings - Admin Only */}
+      {isAdmin && (
+        <FormSection
+          title="Advanced Settings"
+          description="Admin-only settings for controlling app features"
+          icon={<Shield className="h-5 w-5" />}
+          isEditing={isEditing}
+          onEdit={() => setIsEditing(true)}
+          onSave={handleSave}
+          onCancel={handleCancel}
+        >
+          <FormFieldGroup 
+            label="Allow In-App Template Editing"
+            description="When enabled, staff can edit quotations and documents directly in the app and save them as templates. This feature is only available to admins."
+          >
+            <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/30">
+              <div className="flex items-center gap-3">
+                <Edit3 className="h-5 w-5 text-muted-foreground" />
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm font-medium">
+                    {formData.allow_in_app_template_editing ? "Enabled" : "Disabled"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {formData.allow_in_app_template_editing 
+                      ? "Admins can edit templates in quote/document views" 
+                      : "Template editing restricted to Settings page only"
+                    }
+                  </span>
+                </div>
+              </div>
+              <Switch
+                checked={formData.allow_in_app_template_editing}
+                onCheckedChange={(checked) => handleInputChange("allow_in_app_template_editing", checked.toString())}
+                disabled={!isEditing}
+              />
+            </div>
+          </FormFieldGroup>
+        </FormSection>
+      )}
 
       <SimpleLogoUpload
         open={showSimpleLogoUpload}

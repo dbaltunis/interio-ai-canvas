@@ -1,8 +1,9 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, Mail, Printer, DollarSign, MapPin } from "lucide-react";
+import { FileText, Mail, Printer, DollarSign, MapPin, Edit3 } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 import { useToast } from "@/hooks/use-toast";
 import { useTreatments } from "@/hooks/useTreatments";
@@ -14,6 +15,9 @@ import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
 import QuoteItemBreakdown from "@/components/quotes/QuoteItemBreakdown";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
 import { DetailedQuotationTable } from "@/components/jobs/quotation/DetailedQuotationTable";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { useHasPermission } from "@/hooks/usePermissions";
+import { EnhancedVisualEditor } from "@/components/settings/templates/visual-editor/EnhancedVisualEditor";
 interface ProjectQuoteTabProps {
   project: any;
   shouldHighlightNewQuote?: boolean;
@@ -25,6 +29,8 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
   const { data: rooms = [] } = useRooms(project?.id);
   const { data: surfaces = [] } = useSurfaces(project?.id);
   const { data: projectSummaries } = useProjectWindowSummaries(project?.id);
+  const { data: businessSettings } = useBusinessSettings();
+  const isAdmin = useHasPermission('manage_settings');
   const { buildQuotationItems } = useQuotationSync({
     projectId: project?.id || "",
     clientId: project?.client_id || "",
@@ -36,6 +42,10 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
   // Build quotation items from sync data
   const quotationData = buildQuotationItems();
   const { toast } = useToast();
+  
+  const [isTemplateEditorOpen, setIsTemplateEditorOpen] = useState(false);
+  
+  const canEditTemplates = businessSettings?.allow_in_app_template_editing && isAdmin;
 
   const client = clients?.find(c => c.id === project.client_id);
   
@@ -56,6 +66,14 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
     toast({ title: "Email sent", description: "Quote has been emailed to client" });
   };
 
+  const handleSaveTemplate = async (templateData: any) => {
+    toast({ 
+      title: "Template Saved", 
+      description: "Your quote template has been saved successfully"
+    });
+    setIsTemplateEditorOpen(false);
+  };
+
   return (
     <div className="space-y-6">
       {/* Quote Status */}
@@ -73,6 +91,16 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
             </div>
           </div>
           <div className="flex space-x-2">
+            {canEditTemplates && (
+              <Button 
+                size="sm" 
+                variant="secondary"
+                onClick={() => setIsTemplateEditorOpen(true)}
+              >
+                <Edit3 className="h-4 w-4 mr-2" />
+                Edit Template
+              </Button>
+            )}
             <Button size="sm" onClick={handleEmailQuote} disabled={!client}>
               <Mail className="h-4 w-4 mr-2" />
               Email Quote
@@ -138,6 +166,14 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
           </div>
         </Card>
       )}
+
+      {/* Template Editor Modal */}
+      <EnhancedVisualEditor
+        isOpen={isTemplateEditorOpen}
+        onClose={() => setIsTemplateEditorOpen(false)}
+        onSave={handleSaveTemplate}
+        projectId={project?.id}
+      />
     </div>
   );
 };

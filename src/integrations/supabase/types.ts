@@ -745,6 +745,7 @@ export type Database = {
         Row: {
           abn: string | null
           address: string | null
+          allow_in_app_template_editing: boolean | null
           business_email: string | null
           business_phone: string | null
           city: string | null
@@ -764,6 +765,7 @@ export type Database = {
         Insert: {
           abn?: string | null
           address?: string | null
+          allow_in_app_template_editing?: boolean | null
           business_email?: string | null
           business_phone?: string | null
           city?: string | null
@@ -783,6 +785,7 @@ export type Database = {
         Update: {
           abn?: string | null
           address?: string | null
+          allow_in_app_template_editing?: boolean | null
           business_email?: string | null
           business_phone?: string | null
           city?: string | null
