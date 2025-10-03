@@ -109,10 +109,17 @@ export const useQuotationSync = ({
           const breakdown = buildClientBreakdown(window.summary);
           const summary = window.summary;
           
-          // PARENT ITEM - The main window treatment
+          // Extract REAL fabric details from JSON
+          const fabricDetails = summary.fabric_details || {};
+          const liningDetails = summary.lining_details || {};
+          const headingDetails = summary.heading_details || {};
+          
+          // PARENT ITEM - Use actual fabric name from fabric_details
+          const fabricName = fabricDetails.name || fabricDetails.fabric_name || summary.fabric_name || window.surface_name || 'Window Treatment';
+          
           const parentItem = {
             id: window.window_id,
-            name: summary.fabric_name || window.surface_name || 'Window Treatment',
+            name: fabricName,
             description: `Auto-generated from ${window.surface_name || 'Window'} treatment`,
             quantity: 1,
             unit_price: summary.total_cost,
@@ -127,15 +134,18 @@ export const useQuotationSync = ({
             children: [] as any[]
           };
 
-          // DETAILED BREAKDOWN - Fabric
+          // DETAILED BREAKDOWN - Fabric (use REAL fabric details)
           if (summary.fabric_cost && summary.fabric_cost > 0) {
+            const fabricPricePerMetre = fabricDetails.selling_price || fabricDetails.price_per_metre || 
+                                       fabricDetails.unit_price || (summary.fabric_cost / (summary.linear_meters || 1));
+            
             parentItem.children.push({
               id: `${window.window_id}-fabric`,
               name: 'Fabric',
-              description: summary.fabric_name || 'fabric',
+              description: fabricName, // Use actual fabric name
               quantity: summary.linear_meters || 0,
               unit: 'm',
-              unit_price: summary.fabric_price_per_metre || (summary.fabric_cost / (summary.linear_meters || 1)),
+              unit_price: fabricPricePerMetre,
               total: summary.fabric_cost,
               isChild: true
             });
@@ -155,30 +165,36 @@ export const useQuotationSync = ({
             });
           }
 
-          // DETAILED BREAKDOWN - Lining
+          // DETAILED BREAKDOWN - Lining (use REAL lining details)
           if (summary.lining_cost && summary.lining_cost > 0) {
+            const liningType = liningDetails.type || summary.lining_type || 'Interlining';
+            const liningPricePerMetre = liningDetails.price_per_metre || (summary.lining_cost / (summary.linear_meters || 1));
+            
             parentItem.children.push({
               id: `${window.window_id}-lining`,
               name: 'Lining',
-              description: summary.lining_type || 'Interlining',
+              description: liningType,
               quantity: summary.linear_meters || 0,
               unit: 'm',
-              unit_price: summary.lining_price_per_metre || (summary.lining_cost / (summary.linear_meters || 1)),
+              unit_price: liningPricePerMetre,
               total: summary.lining_cost,
               isChild: true
             });
           }
 
-          // DETAILED BREAKDOWN - Heading
+          // DETAILED BREAKDOWN - Heading (use REAL heading details)
           if (summary.heading_cost && summary.heading_cost > 0) {
+            const headingName = headingDetails.heading_name || summary.heading_name || 'Pencil Pleat';
+            const headingCost = headingDetails.cost || summary.heading_cost;
+            
             parentItem.children.push({
               id: `${window.window_id}-heading`,
               name: 'Heading',
-              description: summary.heading_name || 'Pencil Pleat',
+              description: headingName,
               quantity: summary.finished_width_cm || 0,
               unit: 'cm',
-              unit_price: summary.heading_price_per_metre ? (summary.heading_price_per_metre / 100) : (summary.heading_cost / ((summary.finished_width_cm || 1) / 100)),
-              total: summary.heading_cost,
+              unit_price: headingCost / ((summary.finished_width_cm || 100) / 100),
+              total: headingCost,
               isChild: true
             });
           }
