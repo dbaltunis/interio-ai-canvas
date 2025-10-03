@@ -1193,6 +1193,7 @@ export const LivePreview = ({
   blocks, 
   projectData, 
   isEditable = false,
+  isPrintMode = false,
   onBlocksChange,
   containerStyles,
   onContainerStylesChange 
@@ -1267,7 +1268,10 @@ export const LivePreview = ({
           {/* Content area */}
           <div 
             className={`mx-auto ${containerStyles?.maxWidth === 'full' ? 'w-full' : `max-w-${containerStyles?.maxWidth || '4xl'}`} print:!p-0 print:!m-0 print:!max-w-full`}
-            style={{ padding: (containerStyles?.padding || '32px') }}
+            style={{ 
+              padding: isPrintMode ? '0' : (containerStyles?.padding || '32px'),
+              paddingTop: isPrintMode ? '0' : '40px'
+            }}
           >
             {blocks.map((block, index) => (
               <LivePreviewBlock 
