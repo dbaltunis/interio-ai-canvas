@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -154,8 +154,31 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
     autoCreateQuote: false
   });
 
-  // Build quotation items from sync data
-  const quotationData = buildQuotationItems();
+  // ALWAYS recalculate quotation data when source data changes
+  const quotationData = useMemo(() => {
+    const data = buildQuotationItems();
+    console.log('[QUOTATION TAB] ===== LIVE QUOTE RECALCULATED =====');
+    console.log('[QUOTATION TAB] Window Summaries:', {
+      windowCount: projectSummaries?.windows?.length || 0,
+      projectTotal: projectSummaries?.projectTotal,
+      windows: projectSummaries?.windows?.map(w => ({
+        id: w.window_id,
+        name: w.surface_name,
+        cost: w.summary?.total_cost
+      }))
+    });
+    console.log('[QUOTATION TAB] Quote Result:', {
+      baseSubtotal: data.baseSubtotal,
+      subtotal: data.subtotal,
+      total: data.total,
+      itemCount: data.items.length,
+      items: data.items.map((item: any) => ({
+        name: item.name,
+        total: item.total
+      }))
+    });
+    return data;
+  }, [buildQuotationItems, projectSummaries?.windows, projectSummaries?.projectTotal, treatments?.length]);
 
   // Filter quotes for this specific project (already filtered by hook)
   const projectQuotes = quotes;
