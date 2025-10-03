@@ -173,14 +173,16 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   // Use quotation data from sync
   const hasQuotationItems = (quotationData.items || []).length > 0;
   
-  // Use the same base data for all calculations
+  // Use calculated values from quotation sync (NO HARDCODED VALUES!)
   const baseSubtotal = quotationData.baseSubtotal || 0;
   const subtotal = quotationData.subtotal || 0;
   const taxAmount = quotationData.taxAmount || 0;
   const total = quotationData.total || 0;
-  const taxRate = 0.08;
-  const markupPercentage = 25;
-  const [, setMarkupPercentage] = useState<number>(25);
+  
+  // Get tax rate from business settings (convert to decimal for display)
+  const taxRate = (businessSettings?.tax_rate || 0) / 100;
+  const pricingSettings = businessSettings?.pricing_settings as any;
+  const markupPercentage = pricingSettings?.default_markup_percentage || 50;
 
   // Transform quotation items to match expected format for backward compatibility
   const sourceTreatments = (quotationData.items || [])
