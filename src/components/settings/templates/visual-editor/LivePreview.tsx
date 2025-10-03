@@ -1238,8 +1238,10 @@ export const LivePreview = ({
         <div 
           className="relative bg-white shadow-lg"
           style={{
-            width: '210mm',
-            minHeight: '297mm',
+            width: '794px',
+            minWidth: '794px',
+            maxWidth: '794px',
+            minHeight: '1123px',
             backgroundColor: containerStyles?.backgroundColor || '#ffffff',
             border: '2px solid hsl(var(--border))',
             boxShadow: '0 0 20px rgba(0, 0, 0, 0.1)'

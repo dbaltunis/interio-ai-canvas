@@ -110,7 +110,7 @@ export const EmailQuoteModal: React.FC<EmailQuoteModalProps> = ({
                   <div className="border rounded-md bg-white h-[600px] overflow-auto">
                     <ScrollArea className="h-full w-full">
                       <div style={{ 
-                        transform: 'scale(0.45)', 
+                        transform: 'scale(0.6)', 
                         transformOrigin: 'top left',
                         width: '794px',
                         minWidth: '794px',
