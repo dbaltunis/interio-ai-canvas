@@ -89,21 +89,29 @@ export const InventorySelectionPanel = ({
     const isSelected = selectedItems[category as keyof typeof selectedItems]?.id === item.id;
     const price = item.selling_price || item.unit_price || item.price_per_meter || 0;
     
-    // Get the image URL from Supabase storage
+    // Get the image URL - try multiple storage buckets
     const getImageUrl = () => {
       if (!item.images || item.images.length === 0) return null;
       
       const imagePath = item.images[0];
       
       // If it's already a full URL, return it
-      if (imagePath.startsWith('http')) return imagePath;
+      if (imagePath?.startsWith('http')) return imagePath;
       
-      // Otherwise, construct the Supabase storage URL
-      const { data } = supabase.storage
-        .from('inventory-images')
-        .getPublicUrl(imagePath);
+      // Try different storage buckets
+      const bucketsToTry = ['business-assets', 'project-images', 'inventory-images'];
       
-      return data.publicUrl;
+      // Return the first available public URL
+      for (const bucket of bucketsToTry) {
+        try {
+          const { data } = supabase.storage.from(bucket).getPublicUrl(imagePath);
+          if (data?.publicUrl) return data.publicUrl;
+        } catch (e) {
+          continue;
+        }
+      }
+      
+      return null;
     };
     
     const imageUrl = getImageUrl();
@@ -118,47 +126,65 @@ export const InventorySelectionPanel = ({
         }`}
         onClick={() => isSelected ? onItemDeselect(category) : onItemSelect(category, item)}
       >
-        <CardContent className="p-4">
-          <div className="flex flex-col items-center space-y-3">
-            {/* Preview image or placeholder */}
-            <div className="h-20 w-full flex flex-col items-center justify-center bg-gray-50 border-2 border-gray-200 rounded-md overflow-hidden relative">
+        <CardContent className="p-2">
+          <div className="flex flex-col space-y-2">
+            {/* Image */}
+            <div className="h-16 w-full bg-gray-50 border border-gray-200 rounded overflow-hidden relative">
               {imageUrl ? (
                 <img 
                   src={imageUrl} 
                   alt={item.name}
-                  className="w-full h-full object-cover absolute inset-0"
+                  className="w-full h-full object-cover"
                   onError={(e) => {
-                    const target = e.currentTarget;
-                    target.style.display = 'none';
-                    const parent = target.parentElement;
-                    if (parent) {
-                      const placeholder = document.createElement('div');
-                      placeholder.className = 'text-gray-400 text-xs';
-                      placeholder.textContent = 'No preview';
-                      parent.appendChild(placeholder);
-                    }
+                    console.error('Image failed to load:', imageUrl);
+                    e.currentTarget.style.display = 'none';
                   }}
                 />
               ) : (
-                <div className="text-gray-400 text-xs">No preview</div>
+                <div className="flex items-center justify-center h-full text-gray-400 text-[10px]">
+                  No image
+                </div>
+              )}
+              {isSelected && (
+                <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
               )}
             </div>
             
-            <div className="text-center w-full">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <h4 className="text-sm font-semibold truncate">{item.name}</h4>
-                {isSelected && (
-                  <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
-                )}
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <Badge variant="outline" className="text-xs h-5 px-2">
+            {/* Item details */}
+            <div className="space-y-1">
+              <h4 className="font-semibold text-xs line-clamp-1">{item.name}</h4>
+              
+              {/* Fabric-specific info */}
+              {category === "fabric" && (
+                <div className="space-y-0.5 text-[10px] text-muted-foreground">
+                  {item.fabric_width > 0 && (
+                    <div className="flex items-center gap-1">
+                      <span>📏 {item.fabric_width}cm wide</span>
+                    </div>
+                  )}
+                  {item.composition && (
+                    <div className="truncate">Comp: {item.composition}</div>
+                  )}
+                  {(item.pattern_repeat_vertical > 0 || item.pattern_repeat_horizontal > 0) && (
+                    <div>
+                      Repeat: {item.pattern_repeat_vertical || 0}×{item.pattern_repeat_horizontal || 0}cm
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Price and stock */}
+              <div className="flex items-center justify-between gap-1 pt-0.5">
+                <span className="text-xs font-semibold">
                   ${price.toFixed(2)}
-                  {item.unit && <span className="text-[10px]">/{item.unit}</span>}
-                </Badge>
-                {item.stock_quantity !== undefined && (
-                  <Badge variant={item.stock_quantity > 0 ? "secondary" : "destructive"} className="text-[10px] px-1.5 py-0 h-4">
-                    Stock: {item.stock_quantity}
+                  {item.unit && <span className="text-[9px] text-muted-foreground">/{item.unit}</span>}
+                </span>
+                {item.quantity !== undefined && (
+                  <Badge 
+                    variant={item.quantity > 0 ? "secondary" : "destructive"} 
+                    className="text-[9px] px-1 py-0 h-3.5"
+                  >
+                    {item.quantity > 0 ? `${item.quantity} ${item.unit || 'm'}` : 'Out'}
                   </Badge>
                 )}
               </div>
