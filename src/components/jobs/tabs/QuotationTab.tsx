@@ -251,7 +251,9 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
       const pdfBlob = await generateQuotePDFBlob(printRef.current);
       console.log('PDF Blob generated:', pdfBlob.size, 'bytes');
 
-      const fileName = `quote-${project?.job_number || 'QT-' + Date.now()}.pdf`;
+      // Generate unique filename with timestamp to avoid conflicts
+      const timestamp = Date.now();
+      const fileName = `quote-${project?.job_number || 'QT'}-${timestamp}.pdf`;
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -269,7 +271,7 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
         .from('email-attachments')
         .upload(filePath, pdfBlob, {
           contentType: 'application/pdf',
-          upsert: false,
+          upsert: true, // Allow overwriting if needed
           metadata: {
             user_id: user.id,
             client_id: project?.client_id || '',
