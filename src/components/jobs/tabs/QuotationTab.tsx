@@ -32,8 +32,6 @@ import { PrintableQuote } from "@/components/jobs/quotation/PrintableQuote";
 import { EmailQuoteModal } from "@/components/jobs/quotation/EmailQuoteModal";
 import { useQuoteTemplates } from "@/hooks/useQuoteTemplates";
 import { useClients } from "@/hooks/useClients";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 
 interface QuotationTabProps {
   projectId: string;
@@ -213,81 +211,22 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
     sourceTreatments: sourceTreatments.slice(0, 2) // Log first 2 for debugging
   });
 
-  const handleGeneratePDF = async () => {
-    console.log('Starting PDF generation...', { printRef: printRef.current });
-    
-    if (!printRef.current) {
-      console.error('printRef.current is null');
-      toast({
-        title: "Error",
-        description: "Quote template not ready. Please try again.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    try {
-      toast({
-        title: "Generating PDF...",
-        description: "Please wait while we create your quote PDF",
-      });
-
-      // Create a temporary container with exact A4 dimensions
-      const element = printRef.current;
-      console.log('Element to capture:', element);
-      
-      // Capture the element as canvas with high quality
-      console.log('Starting html2canvas...');
-      const canvas = await html2canvas(element, {
-        scale: 2, // Higher quality
-        useCORS: true,
-        logging: true, // Enable logging for debugging
-        backgroundColor: '#ffffff',
-        width: 794, // A4 width in pixels at 96 DPI (210mm)
-        height: 1123, // A4 height in pixels at 96 DPI (297mm)
-      });
-
-      console.log('Canvas created:', { width: canvas.width, height: canvas.height });
-
-      // Calculate PDF dimensions (A4 in mm)
-      const imgWidth = 210;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      console.log('Creating PDF...');
-      // Create PDF
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
-
-      // Add image to PDF
-      const imgData = canvas.toDataURL('image/png');
-      console.log('Adding image to PDF...');
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-
-      // Download the PDF
-      const fileName = `quote-${project?.job_number || 'QT-' + Math.floor(Math.random() * 10000)}.pdf`;
-      console.log('Saving PDF:', fileName);
-      pdf.save(fileName);
-
-      toast({
-        title: "PDF Generated",
-        description: `${fileName} has been downloaded successfully`,
-      });
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      console.error('Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      });
-      toast({
-        title: "Error",
-        description: "Failed to generate PDF. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `quote-${project?.job_number || 'QT-' + Math.floor(Math.random() * 10000)}`,
+    pageStyle: `
+      @page {
+        size: A4;
+        margin: 0;
+      }
+      @media print {
+        body {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+      }
+    `
+  });
 
   const handleAddDiscount = () => {
     toast({
@@ -423,7 +362,7 @@ const projectData = {
           <Button
             variant="default"
             size="sm"
-            onClick={handleGeneratePDF}
+            onClick={handlePrint}
             disabled={!clientData}
           >
             <Download className="h-4 w-4 mr-2" />
@@ -575,16 +514,8 @@ const projectData = {
         }}
       />
 
-      {/* Off-screen printable component - positioned absolute so html2canvas can capture it */}
-      <div 
-        style={{
-          position: 'fixed',
-          left: '-9999px',
-          top: 0,
-          width: '210mm',
-          zIndex: -1
-        }}
-      >
+      {/* Hidden printable component for PDF generation */}
+      <div className="hidden">
         {selectedQuoteTemplate?.blocks && (
           <PrintableQuote 
             ref={printRef}
