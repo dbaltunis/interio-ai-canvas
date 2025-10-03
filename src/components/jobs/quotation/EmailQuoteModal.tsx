@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Mail } from "lucide-react";
+import { Mail, Eye } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface EmailQuoteModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ interface EmailQuoteModalProps {
   client: any;
   onSend: (emailData: { to: string; subject: string; message: string }) => void;
   isSending?: boolean;
+  quotePreview?: React.ReactNode;
 }
 
 export const EmailQuoteModal: React.FC<EmailQuoteModalProps> = ({
@@ -21,13 +23,15 @@ export const EmailQuoteModal: React.FC<EmailQuoteModalProps> = ({
   project,
   client,
   onSend,
-  isSending = false
+  isSending = false,
+  quotePreview
 }) => {
   const [emailData, setEmailData] = useState({
     to: client?.email || "",
     subject: `Quote for ${project?.name || "Your Project"}`,
     message: `Dear ${client?.name || "Valued Customer"},\n\nPlease find attached the quote for your project.\n\nBest regards`
   });
+  const [showPreview, setShowPreview] = useState(false);
 
   const handleSend = () => {
     onSend(emailData);
@@ -78,8 +82,31 @@ export const EmailQuoteModal: React.FC<EmailQuoteModalProps> = ({
           </div>
 
           <div className="bg-muted p-3 rounded-md text-sm">
-            <p className="font-medium mb-1">Attachment:</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="font-medium">Attachment:</p>
+              {quotePreview && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowPreview(!showPreview)}
+                  className="h-auto py-1 px-2"
+                >
+                  <Eye className="h-3 w-3 mr-1" />
+                  {showPreview ? "Hide" : "Preview"} Quote
+                </Button>
+              )}
+            </div>
             <p className="text-muted-foreground">Quote PDF will be attached automatically</p>
+            
+            {showPreview && quotePreview && (
+              <div className="mt-3 border rounded-md bg-background">
+                <ScrollArea className="h-[400px] w-full">
+                  <div className="p-4 scale-75 origin-top-left" style={{ width: '133.33%' }}>
+                    {quotePreview}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
           </div>
         </div>
 

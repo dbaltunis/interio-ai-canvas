@@ -595,6 +595,15 @@ const projectData = {
         client={clientData}
         onSend={handleSendEmail}
         isSending={isSendingEmail}
+        quotePreview={
+          selectedQuoteTemplate?.blocks ? (
+            <PrintableQuote 
+              blocks={selectedQuoteTemplate.blocks}
+              projectData={projectData}
+              isPrintMode={false}
+            />
+          ) : undefined
+        }
       />
 
       {/* Hidden printable component for PDF generation */}
