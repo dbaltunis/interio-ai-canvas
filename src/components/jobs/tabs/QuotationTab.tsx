@@ -259,11 +259,21 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
         description: "Preparing attachment",
       });
 
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       const { error: uploadError } = await supabase.storage
         .from('email-attachments')
         .upload(filePath, pdfBlob, {
           contentType: 'application/pdf',
           upsert: false,
+          metadata: {
+            user_id: user.id,
+            client_id: project?.client_id || '',
+            project_id: projectId
+          }
         });
 
       if (uploadError) {
@@ -272,11 +282,6 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
       }
 
       console.log('PDF uploaded to:', filePath);
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
 
       toast({
         title: "Sending Email...",
