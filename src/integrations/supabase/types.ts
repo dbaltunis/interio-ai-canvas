@@ -1894,7 +1894,7 @@ export type Database = {
           category: string
           collection_name: string | null
           color: string | null
-          cost_price: number | null
+          cost_price: number
           created_at: string
           depth: number | null
           description: string | null
@@ -1920,6 +1920,7 @@ export type Database = {
           last_cost_update: string | null
           last_price_update: string | null
           location: string | null
+          margin_percentage: number | null
           markup_percentage: number | null
           markup_percentage_calculated: number | null
           name: string
@@ -1929,14 +1930,14 @@ export type Database = {
           price_per_unit: number | null
           price_per_yard: number | null
           profit_margin_percentage: number | null
+          profit_per_unit: number | null
           quantity: number | null
           reorder_point: number | null
-          selling_price: number | null
+          selling_price: number
           service_rate: number | null
           sku: string | null
           supplier: string | null
           unit: string | null
-          unit_price: number | null
           updated_at: string
           user_id: string
           vendor_id: string | null
@@ -1948,7 +1949,7 @@ export type Database = {
           category: string
           collection_name?: string | null
           color?: string | null
-          cost_price?: number | null
+          cost_price?: number
           created_at?: string
           depth?: number | null
           description?: string | null
@@ -1974,6 +1975,7 @@ export type Database = {
           last_cost_update?: string | null
           last_price_update?: string | null
           location?: string | null
+          margin_percentage?: number | null
           markup_percentage?: number | null
           markup_percentage_calculated?: number | null
           name: string
@@ -1983,14 +1985,14 @@ export type Database = {
           price_per_unit?: number | null
           price_per_yard?: number | null
           profit_margin_percentage?: number | null
+          profit_per_unit?: number | null
           quantity?: number | null
           reorder_point?: number | null
-          selling_price?: number | null
+          selling_price?: number
           service_rate?: number | null
           sku?: string | null
           supplier?: string | null
           unit?: string | null
-          unit_price?: number | null
           updated_at?: string
           user_id: string
           vendor_id?: string | null
@@ -2002,7 +2004,7 @@ export type Database = {
           category?: string
           collection_name?: string | null
           color?: string | null
-          cost_price?: number | null
+          cost_price?: number
           created_at?: string
           depth?: number | null
           description?: string | null
@@ -2028,6 +2030,7 @@ export type Database = {
           last_cost_update?: string | null
           last_price_update?: string | null
           location?: string | null
+          margin_percentage?: number | null
           markup_percentage?: number | null
           markup_percentage_calculated?: number | null
           name?: string
@@ -2037,14 +2040,14 @@ export type Database = {
           price_per_unit?: number | null
           price_per_yard?: number | null
           profit_margin_percentage?: number | null
+          profit_per_unit?: number | null
           quantity?: number | null
           reorder_point?: number | null
-          selling_price?: number | null
+          selling_price?: number
           service_rate?: number | null
           sku?: string | null
           supplier?: string | null
           unit?: string | null
-          unit_price?: number | null
           updated_at?: string
           user_id?: string
           vendor_id?: string | null
@@ -2054,6 +2057,13 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "enhanced_inventory_items_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_enhanced_inventory_vendor"
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendors"

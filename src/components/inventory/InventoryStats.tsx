@@ -22,7 +22,7 @@ export const InventoryStats = () => {
   }
 
   const totalItems = inventory?.length || 0;
-  const totalValue = inventory?.reduce((sum, item) => sum + (item.unit_price || 0) * item.quantity, 0) || 0;
+  const totalValue = inventory?.reduce((sum, item) => sum + (item.selling_price || 0) * item.quantity, 0) || 0;
   const lowStockItems = inventory?.filter(item => item.quantity <= (item.reorder_point || 5)).length || 0;
   const outOfStockItems = inventory?.filter(item => item.quantity <= 0).length || 0;
 

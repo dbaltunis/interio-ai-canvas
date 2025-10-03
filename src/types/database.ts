@@ -110,7 +110,11 @@ export interface EnhancedInventoryItem {
   category?: string;
   quantity: number;
   unit?: string;
-  unit_price?: number;
+  cost_price: number;
+  selling_price: number;
+  profit_per_unit?: number;
+  markup_percentage?: number;
+  margin_percentage?: number;
   supplier?: string;
   location?: string;
   min_stock_level?: number;

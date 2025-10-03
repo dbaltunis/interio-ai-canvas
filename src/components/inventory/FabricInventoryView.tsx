@@ -190,7 +190,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-lg font-bold">${item.selling_price || item.unit_price}/m</div>
+                      <div className="text-lg font-bold">${item.selling_price || 0}/m</div>
                       {item.fabric_width && (
                         <div className="text-xs text-muted-foreground">
                           Roll direction: {item.fabric_width <= 200 ? 'Vertical' : 'Horizontal'}

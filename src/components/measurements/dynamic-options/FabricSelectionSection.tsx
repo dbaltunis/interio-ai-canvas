@@ -104,7 +104,7 @@ export const FabricSelectionSection = ({
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-sm">{fabric.name}</span>
                     <Badge variant="outline" className="text-xs">
-                      {formatPrice(fabric.price_per_meter || fabric.unit_price || 0)}/{units.fabric === 'yards' ? 'yd' : 'm'}
+                      {formatPrice(fabric.price_per_meter || fabric.selling_price || 0)}/{units.fabric === 'yards' ? 'yd' : 'm'}
                     </Badge>
                   </div>
                   <div className="text-xs text-muted-foreground">
@@ -141,7 +141,7 @@ export const FabricSelectionSection = ({
               <div className="text-muted-foreground">Repeat</div>
             </div>
             <div className="text-center p-1 bg-muted/50 rounded">
-              <div className="font-medium">{formatPrice(selectedFabricItem.price_per_meter || selectedFabricItem.unit_price || 0)}</div>
+              <div className="font-medium">{formatPrice(selectedFabricItem.price_per_meter || selectedFabricItem.selling_price || 0)}</div>
               <div className="text-muted-foreground">Per {units.fabric === 'yards' ? 'Yard' : 'Meter'}</div>
             </div>
           </div>

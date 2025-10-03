@@ -15,7 +15,9 @@ export interface EnhancedInventoryItem {
   unit?: string;
   cost_price?: number;
   selling_price?: number;
-  unit_price?: number;
+  profit_per_unit?: number;
+  markup_percentage?: number;
+  margin_percentage?: number;
   supplier?: string;
   vendor_id?: string;
   location?: string;
@@ -45,7 +47,6 @@ export interface EnhancedInventoryItem {
   price_per_yard?: number;
   price_per_meter?: number;
   price_per_unit?: number;
-  markup_percentage?: number;
   
   // Physical dimensions (exact database column names)
   width?: number;
@@ -132,7 +133,7 @@ export const useCreateEnhancedInventoryItem = () => {
 
       // Whitelist fields to match enhanced_inventory_items schema
       const allowedKeys = [
-        'name','description','sku','category','quantity','unit','cost_price','selling_price','unit_price','supplier','vendor_id','location','reorder_point','active',
+        'name','description','sku','category','quantity','unit','cost_price','selling_price','supplier','vendor_id','location','reorder_point','active',
         'fabric_width','fabric_composition','fabric_care_instructions','fabric_origin','pattern_repeat_horizontal','pattern_repeat_vertical','fabric_grade','fabric_collection','is_flame_retardant',
         'hardware_finish','hardware_material','hardware_dimensions','hardware_weight','hardware_mounting_type','hardware_load_capacity',
         'price_per_yard','price_per_meter','price_per_unit','markup_percentage',
@@ -146,12 +147,10 @@ export const useCreateEnhancedInventoryItem = () => {
         if (val !== undefined && val !== null && val !== '') item[key] = val;
       }
 
-      // Derive sensible defaults
-      if (item.unit_price == null) {
-        if (typeof item.selling_price === 'number' && !isNaN(item.selling_price)) item.unit_price = item.selling_price;
-        else if (typeof item.price_per_unit === 'number' && !isNaN(item.price_per_unit)) item.unit_price = item.price_per_unit;
-        else if (typeof item.cost_price === 'number' && !isNaN(item.cost_price)) item.unit_price = item.cost_price;
-        else item.unit_price = 0;
+      // Ensure required pricing fields have defaults
+      if (item.cost_price == null || isNaN(item.cost_price)) item.cost_price = 0;
+      if (item.selling_price == null || isNaN(item.selling_price)) {
+        item.selling_price = item.price_per_unit || item.cost_price || 0;
       }
 
       const { data, error } = await supabase

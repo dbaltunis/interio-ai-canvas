@@ -331,7 +331,7 @@ export const DynamicWindowWorksheet = forwardRef<
               
               if (headingItem) {
                 const width = parseFloat(measurements.rail_width) || 0;
-                const additionalCost = (headingItem.price_per_meter || headingItem.unit_price || 0) * width / 100;
+                const additionalCost = (headingItem.price_per_meter || headingItem.selling_price || 0) * width / 100;
                 headingCost += additionalCost;
                 headingName = headingItem.name;
                 console.log("🎯 Inventory heading cost:", additionalCost, "name:", headingName);

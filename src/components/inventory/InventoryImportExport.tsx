@@ -55,7 +55,7 @@ export const InventoryImportExport = () => {
           `"${item.category || ""}"`,
           `"${item.sku || ""}"`,
           item.quantity || 0,
-          item.unit_price || 0,
+          item.selling_price || 0,
           `"${item.unit || ""}"`,
           item.reorder_point || 0,
           `"${item.supplier || ""}"`,
@@ -83,7 +83,7 @@ export const InventoryImportExport = () => {
           `"${item.category || ""}"`,
           `"${item.sku || ""}"`,
           item.quantity || 0,
-          item.unit_price || 0,
+          item.selling_price || 0,
           `"${item.unit || ""}"`,
           item.reorder_point || 0,
           item.reorder_point || 0,
@@ -176,8 +176,8 @@ export const InventoryImportExport = () => {
       errors.push("Quantity must be a non-negative number");
     }
     
-    if (item.unit_price !== undefined && (isNaN(item.unit_price) || item.unit_price < 0)) {
-      errors.push("Unit price must be a non-negative number");
+    if (item.selling_price !== undefined && (isNaN(item.selling_price) || item.selling_price < 0)) {
+      errors.push("Selling price must be a non-negative number");
     }
     
     if (item.reorder_point !== undefined && (isNaN(item.reorder_point) || item.reorder_point < 0)) {
@@ -240,7 +240,8 @@ export const InventoryImportExport = () => {
             item.quantity = value ? parseInt(value) || 0 : 0;
             break;
           case 'unit price':
-            item.unit_price = value ? parseFloat(value) || 0 : 0;
+          case 'selling price':
+            item.selling_price = value ? parseFloat(value) || 0 : 0;
             break;
           case 'unit':
             item.unit = value || 'units';

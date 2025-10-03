@@ -98,7 +98,7 @@ export const HeadingOptionsSection = ({
                     <div className="flex items-center justify-between w-full">
                       <span className="text-sm font-medium">{option.name}</span>
                       <span className="text-xs text-primary ml-2 font-semibold">
-                        {formatPrice(option.price_per_meter || option.unit_price || 0)}/m
+                        {formatPrice(option.price_per_meter || option.selling_price || 0)}/m
                       </span>
                     </div>
                   </SelectItem>

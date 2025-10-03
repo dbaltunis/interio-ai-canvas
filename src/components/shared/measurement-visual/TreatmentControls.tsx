@@ -60,7 +60,7 @@ export const TreatmentControls = ({
           id: fabric.id,
           name: fabric.name,
           fabric_width: fabric.fabric_width || 137,
-          price_per_meter: fabric.price_per_meter || fabric.unit_price || fabric.selling_price || 0
+          price_per_meter: fabric.price_per_meter || fabric.selling_price || 0
         }
       });
     }
@@ -113,7 +113,7 @@ export const TreatmentControls = ({
                     <span>{fabric.name}</span>
                     <span className="text-xs text-muted-foreground">
                       {fabric.fabric_width || 137}cm wide • 
-                      ${(fabric.price_per_meter || fabric.unit_price || fabric.selling_price || 0).toFixed(2)}/m
+                      ${(fabric.price_per_meter || fabric.selling_price || 0).toFixed(2)}/m
                     </span>
                   </div>
                 </SelectItem>

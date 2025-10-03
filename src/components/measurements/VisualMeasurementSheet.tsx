@@ -124,7 +124,6 @@ export const VisualMeasurementSheet = ({
       
       // Get price per meter from various possible fields
       const pricePerMeter = selectedFabricItem.price_per_meter || 
-                           selectedFabricItem.unit_price || 
                            selectedFabricItem.selling_price || 
                            0;
       
