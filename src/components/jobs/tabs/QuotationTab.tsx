@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,7 @@ import { PrintableQuote } from "@/components/jobs/quotation/PrintableQuote";
 import { EmailQuoteModal } from "@/components/jobs/quotation/EmailQuoteModal";
 import { useQuoteTemplates } from "@/hooks/useQuoteTemplates";
 import { useClients } from "@/hooks/useClients";
+import { generateQuotePDFBlob } from "@/utils/pdfGenerator";
 
 interface QuotationTabProps {
   projectId: string;
@@ -53,6 +54,7 @@ const removeDuplicateProductsBlocks = (blocks: any[] = []) => {
 
 export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const { toast } = useToast();
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   const { data: projects } = useProjects();
   const { data: treatments } = useTreatments(projectId);
   const { data: rooms } = useRooms(projectId);
@@ -227,6 +229,93 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
       }
     `
   });
+
+  const handleSendEmail = async (emailData: { to: string; subject: string; message: string }) => {
+    if (!printRef.current) {
+      toast({
+        title: "Error",
+        description: "Quote template not ready. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSendingEmail(true);
+    
+    try {
+      toast({
+        title: "Generating PDF...",
+        description: "Please wait while we prepare your quote",
+      });
+
+      const pdfBlob = await generateQuotePDFBlob(printRef.current);
+      console.log('PDF Blob generated:', pdfBlob.size, 'bytes');
+
+      const fileName = `quote-${project?.job_number || 'QT-' + Date.now()}.pdf`;
+      const filePath = `quotes/${fileName}`;
+      
+      toast({
+        title: "Uploading PDF...",
+        description: "Preparing attachment",
+      });
+
+      const { error: uploadError } = await supabase.storage
+        .from('email-attachments')
+        .upload(filePath, pdfBlob, {
+          contentType: 'application/pdf',
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw new Error(`Failed to upload PDF: ${uploadError.message}`);
+      }
+
+      console.log('PDF uploaded to:', filePath);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      toast({
+        title: "Sending Email...",
+        description: "Delivering quote to recipient",
+      });
+
+      const { error: emailError } = await supabase.functions.invoke('send-email', {
+        body: {
+          to: emailData.to,
+          subject: emailData.subject,
+          content: emailData.message,
+          user_id: user.id,
+          client_id: project?.client_id,
+          attachmentPaths: [filePath],
+        },
+      });
+
+      if (emailError) {
+        console.error('Email error:', emailError);
+        throw new Error(`Failed to send email: ${emailError.message}`);
+      }
+
+      toast({
+        title: "Email Sent Successfully",
+        description: `Quote sent to ${emailData.to}`,
+      });
+      
+      setIsEmailModalOpen(false);
+    } catch (error) {
+      console.error('Error sending email:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to send email. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
 
   const handleAddDiscount = () => {
     toast({
@@ -504,14 +593,8 @@ const projectData = {
         onClose={() => setIsEmailModalOpen(false)}
         project={project}
         client={clientData}
-        onSend={(emailData) => {
-          console.log("Email sent:", emailData);
-          toast({
-            title: "Email Sent",
-            description: `Quote successfully sent to ${clientData?.name}`
-          });
-          setIsEmailModalOpen(false);
-        }}
+        onSend={handleSendEmail}
+        isSending={isSendingEmail}
       />
 
       {/* Hidden printable component for PDF generation */}

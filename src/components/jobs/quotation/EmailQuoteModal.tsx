@@ -12,6 +12,7 @@ interface EmailQuoteModalProps {
   project: any;
   client: any;
   onSend: (emailData: { to: string; subject: string; message: string }) => void;
+  isSending?: boolean;
 }
 
 export const EmailQuoteModal: React.FC<EmailQuoteModalProps> = ({
@@ -19,7 +20,8 @@ export const EmailQuoteModal: React.FC<EmailQuoteModalProps> = ({
   onClose,
   project,
   client,
-  onSend
+  onSend,
+  isSending = false
 }) => {
   const [emailData, setEmailData] = useState({
     to: client?.email || "",
@@ -82,12 +84,12 @@ export const EmailQuoteModal: React.FC<EmailQuoteModalProps> = ({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} disabled={isSending}>
             Cancel
           </Button>
-          <Button onClick={handleSend} disabled={!emailData.to}>
+          <Button onClick={handleSend} disabled={!emailData.to || isSending}>
             <Mail className="h-4 w-4 mr-2" />
-            Send Email
+            {isSending ? "Sending..." : "Send Email"}
           </Button>
         </DialogFooter>
       </DialogContent>
