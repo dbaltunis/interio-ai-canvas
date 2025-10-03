@@ -167,11 +167,57 @@ const QuotationItemRow: React.FC<{
 }> = ({ item, showDetailedView, expandedItems, onToggleItem, currency }) => {
   const isExpanded = expandedItems.has(item.id);
   const hasBreakdown = item.breakdown && Array.isArray(item.breakdown) && item.breakdown.length > 0;
+  const hasChildren = item.children && Array.isArray(item.children) && item.children.length > 0;
 
   if (item.isHeader) {
     return null; // Skip headers in detailed view
   }
 
+  // If item has children (detailed breakdown), show parent + children
+  if (hasChildren) {
+    return (
+      <div className="border rounded-lg overflow-hidden">
+        {/* PARENT ROW */}
+        <div className="flex items-center justify-between p-3 bg-card text-card-foreground">
+          <div className="flex items-center space-x-2 flex-1">
+            <div className="flex-1">
+              <div className="font-medium text-sm text-foreground">{item.name}</div>
+              <div className="text-xs text-muted-foreground">{item.description}</div>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="font-medium text-foreground">{formatCurrency(item.total || 0, currency)}</div>
+          </div>
+        </div>
+        
+        {/* CHILDREN ROWS - Show detailed breakdown */}
+        {item.children.map((child: any, index: number) => (
+          <div 
+            key={child.id || `child-${index}`} 
+            className="flex items-center justify-between p-3 bg-muted/10 border-t text-sm pl-8"
+          >
+            <div className="flex-1">
+              <div className="font-medium text-foreground">{child.name}</div>
+              {child.description && child.description !== '-' && (
+                <div className="text-xs text-muted-foreground">{child.description}</div>
+              )}
+              {child.quantity && (
+                <div className="text-xs text-muted-foreground">
+                  {Number(child.quantity).toFixed(2)}{child.unit ? ` ${child.unit}` : ''} 
+                  {child.unit_price ? ` × ${formatCurrency(child.unit_price, currency)}` : ''}
+                </div>
+              )}
+            </div>
+            <div className="text-right font-medium text-foreground">
+              {formatCurrency(child.total || 0, currency)}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Regular item without children
   return (
     <div className="border rounded-lg overflow-hidden">
       <div className="flex items-center justify-between p-3 bg-card text-card-foreground">
