@@ -5,42 +5,46 @@ export async function generateQuotePDFBlob(element: HTMLElement): Promise<Blob> 
   console.log('Generating PDF from element:', element);
   
   try {
-    // Wait for all images to load
-    const images = element.getElementsByTagName('img');
-    await Promise.all(
-      Array.from(images).map(img => {
-        if (img.complete) return Promise.resolve<void>(undefined);
-        return new Promise<void>((resolve) => {
-          img.onload = () => resolve();
-          img.onerror = () => {
-            console.warn('Image failed to load:', img.src);
-            resolve(); // Continue even if image fails
-          };
-          setTimeout(() => resolve(), 3000); // Timeout after 3 seconds
-        });
-      })
-    );
+    // Remove all images temporarily to avoid PNG errors
+    const images = Array.from(element.getElementsByTagName('img'));
+    const imageData: Array<{ img: HTMLImageElement; src: string; parent: HTMLElement }> = [];
+    
+    images.forEach(img => {
+      const parent = img.parentElement;
+      if (parent) {
+        imageData.push({ img, src: img.src, parent });
+        // Replace image with placeholder
+        const placeholder = document.createElement('div');
+        placeholder.style.width = img.width + 'px';
+        placeholder.style.height = img.height + 'px';
+        placeholder.style.backgroundColor = '#f0f0f0';
+        placeholder.style.display = 'inline-block';
+        parent.replaceChild(placeholder, img);
+      }
+    });
 
     // Capture the element as canvas with high quality
     const canvas = await html2canvas(element, {
       scale: 2,
       useCORS: true,
-      allowTaint: true,
+      allowTaint: false,
       logging: false,
       backgroundColor: '#ffffff',
       width: 794,
       windowWidth: 794,
-      onclone: (clonedDoc) => {
-        // Ensure all images in the cloned document are visible
-        const clonedImages = clonedDoc.getElementsByTagName('img');
-        Array.from(clonedImages).forEach(img => {
-          img.style.display = 'block';
-        });
-      },
-      imageTimeout: 0, // Don't timeout on images
-      ignoreElements: (element) => {
-        // Ignore elements that might cause issues
-        return element.tagName === 'IFRAME' || element.tagName === 'VIDEO';
+      removeContainer: false,
+      imageTimeout: 0,
+      ignoreElements: (el) => {
+        // Ignore script and style elements
+        return el.tagName === 'SCRIPT' || el.tagName === 'STYLE' || el.tagName === 'IFRAME';
+      }
+    });
+
+    // Restore images
+    imageData.forEach(({ img, parent }) => {
+      const placeholders = parent.querySelectorAll('div[style*="background-color: rgb(240, 240, 240)"]');
+      if (placeholders.length > 0) {
+        parent.replaceChild(img, placeholders[0]);
       }
     });
 
@@ -56,21 +60,22 @@ export async function generateQuotePDFBlob(element: HTMLElement): Promise<Blob> 
       orientation: 'portrait',
       unit: 'mm',
       format: 'a4',
+      compress: true
     });
 
     let heightLeft = imgHeight;
     let position = 0;
 
     // Add image to PDF
-    const imgData = canvas.toDataURL('image/png');
-    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+    const imgData = canvas.toDataURL('image/jpeg', 0.95); // Use JPEG instead of PNG
+    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
     heightLeft -= pageHeight;
 
     // Add new pages if content is longer than one page
     while (heightLeft > 0) {
       position = heightLeft - imgHeight;
       pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
       heightLeft -= pageHeight;
     }
 
