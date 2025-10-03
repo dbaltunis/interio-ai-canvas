@@ -51,6 +51,13 @@ export const useQuotationSync = ({
 
   // Build quotation items from current project data
   const buildQuotationItems = () => {
+    console.log('[QUOTE BUILD] Building quotation items...', {
+      projectSummariesExists: !!projectSummaries,
+      windowCount: projectSummaries?.windows?.length || 0,
+      summariesTotal: projectSummaries?.projectTotal,
+      treatmentCount: treatments.length
+    });
+    
     const items: any[] = [];
 
     // Get the most accurate cost data - prioritize window summaries over treatments
@@ -61,6 +68,13 @@ export const useQuotationSync = ({
 
     const hasTreatments = treatments.length > 0;
     const baseSubtotal = summariesTotal > 0 ? summariesTotal : treatmentTotal;
+    
+    console.log('[QUOTE BUILD] Cost calculation:', {
+      summariesTotal,
+      treatmentTotal,
+      baseSubtotal,
+      usingWindowSummaries: summariesTotal > 0
+    });
 
     // Group items by room for better organization
     const roomGroups = rooms.reduce((groups, room) => {
@@ -180,7 +194,17 @@ export const useQuotationSync = ({
 
   // Sync quotation data
   const syncQuotation = async () => {
+    console.log('[QUOTE SYNC] ===== SYNC TRIGGERED =====');
     const quotationData = buildQuotationItems();
+    console.log('[QUOTE SYNC] Built quotation data:', {
+      baseSubtotal: quotationData.baseSubtotal,
+      subtotal: quotationData.subtotal,
+      total: quotationData.total,
+      itemCount: quotationData.items.length,
+      summariesTotal: projectSummaries?.projectTotal,
+      treatmentCount: treatments.length
+    });
+    
     const currentData = {
       treatmentCount: treatments.length,
       roomCount: rooms.length,
@@ -196,6 +220,7 @@ export const useQuotationSync = ({
       Math.abs(currentData.totalCost - previousDataRef.current.totalCost) > 0.01;
 
     if (!hasChanges) {
+      console.log('[QUOTE SYNC] No changes detected, skipping sync');
       return; // No changes detected
     }
 
@@ -212,6 +237,14 @@ export const useQuotationSync = ({
 
     if (existingQuote) {
       // Update existing quote
+      console.log('[QUOTE SYNC] Updating existing quote with new values:', {
+        quoteId: existingQuote.id,
+        oldSubtotal: existingQuote.subtotal,
+        newSubtotal: quotationData.subtotal,
+        oldTotal: existingQuote.total_amount,
+        newTotal: quotationData.total
+      });
+      
       await updateQuote.mutateAsync({
         id: existingQuote.id,
         subtotal: quotationData.subtotal,
