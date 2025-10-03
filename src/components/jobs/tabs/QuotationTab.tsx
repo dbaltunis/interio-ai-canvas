@@ -252,17 +252,18 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
       console.log('PDF Blob generated:', pdfBlob.size, 'bytes');
 
       const fileName = `quote-${project?.job_number || 'QT-' + Date.now()}.pdf`;
-      const filePath = `quotes/${fileName}`;
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      
+      const filePath = `${user.id}/quotes/${fileName}`;
       
       toast({
         title: "Uploading PDF...",
         description: "Preparing attachment",
       });
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
 
       const { error: uploadError } = await supabase.storage
         .from('email-attachments')

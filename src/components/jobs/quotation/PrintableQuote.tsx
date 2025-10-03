@@ -25,7 +25,7 @@ export const PrintableQuote = React.forwardRef<HTMLDivElement, PrintableQuotePro
           padding: '0',
           margin: '0',
           boxSizing: 'border-box',
-          overflow: 'hidden'
+          overflow: 'visible'
         }}
       >
         <div style={{ padding: '15mm', width: '100%', boxSizing: 'border-box' }}>
