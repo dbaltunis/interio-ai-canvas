@@ -1,9 +1,10 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useProjects } from "@/hooks/useProjects";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
@@ -15,7 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useQuotes, useCreateQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
 import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
-import { Percent, FileText, Mail, Eye, EyeOff, Settings, Plus, StickyNote, List } from "lucide-react";
+import { Percent, FileText, Mail, Eye, EyeOff, Settings, Plus, StickyNote, List, Download, MoreVertical, DollarSign } from "lucide-react";
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
 import { QuoteViewer } from "../QuoteViewer";
 import { TreatmentLineItems } from "@/components/jobs/quotation/TreatmentLineItems";
@@ -26,6 +27,11 @@ import { QuoteFullScreenView } from "@/components/jobs/quotation/QuoteFullScreen
 import { useQuotationSync } from "@/hooks/useQuotationSync";
 import { QuotationItemsModal } from "../quotation/QuotationItemsModal";
 import { DetailedQuotationTable } from "../quotation/DetailedQuotationTable";
+import { useReactToPrint } from "react-to-print";
+import { PrintableQuote } from "@/components/jobs/quotation/PrintableQuote";
+import { EmailQuoteModal } from "@/components/jobs/quotation/EmailQuoteModal";
+import { useQuoteTemplates } from "@/hooks/useQuoteTemplates";
+import { useClients } from "@/hooks/useClients";
 
 interface QuotationTabProps {
   projectId: string;
@@ -135,6 +141,10 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const [selectedQuote, setSelectedQuote] = useState<any | null>(null);
   const [showFullQuoteView, setShowFullQuoteView] = useState(false);
   const [showQuotationItems, setShowQuotationItems] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
+  const { data: clients } = useClients();
+  const { data: templates } = useQuoteTemplates();
 
   const { buildQuotationItems } = useQuotationSync({
     projectId: projectId,
@@ -201,12 +211,22 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
     sourceTreatments: sourceTreatments.slice(0, 2) // Log first 2 for debugging
   });
 
-  const handleEmailQuote = () => {
-    toast({
-      title: "Email Quote",
-      description: "Quote email functionality would be implemented here",
-    });
-  };
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `quote-${project?.job_number || 'QT-' + Math.floor(Math.random() * 10000)}`,
+    pageStyle: `
+      @page {
+        size: A4;
+        margin: 0;
+      }
+      @media print {
+        body {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+      }
+    `
+  });
 
   const handleAddDiscount = () => {
     toast({
@@ -219,6 +239,13 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
     toast({
       title: "Add Terms & Conditions",
       description: "Terms & Conditions functionality would be implemented here",
+    });
+  };
+
+  const handleAddDeposit = () => {
+    toast({
+      title: "Add Deposit",
+      description: "Deposit functionality would be implemented here",
     });
   };
 
@@ -253,26 +280,6 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
     });
   };
 
-  const actionMenuItems = [
-    {
-      label: "Add Discount",
-      icon: <Percent className="h-4 w-4" />,
-      onClick: handleAddDiscount,
-      variant: 'default' as const
-    },
-    {
-      label: "Add T&C / Payment Terms",
-      icon: <FileText className="h-4 w-4" />,
-      onClick: handleAddTerms,
-      variant: 'default' as const
-    },
-    {
-      label: "Email Quote",
-      icon: <Mail className="h-4 w-4" />,
-      onClick: handleEmailQuote,
-      variant: 'info' as const
-    }
-  ];
 
   if (!project) {
     return (
@@ -308,6 +315,25 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
 const baseBlocks = editedTemplateBlocks || (selectedTemplate?.blocks && Array.isArray(selectedTemplate.blocks) ? selectedTemplate.blocks : []);
 const templateBlocks = removeDuplicateProductsBlocks(baseBlocks);
 
+const selectedQuoteTemplate = templates?.find(t => t.id === selectedTemplateId);
+const clientData = clients?.find(c => c.id === project?.client_id);
+
+const projectData = {
+  project,
+  client: clientData,
+  businessSettings,
+  treatments: sourceTreatments,
+  workshopItems: workshopItems || [],
+  rooms: rooms || [],
+  surfaces: surfaces || [],
+  subtotal,
+  taxRate,
+  taxAmount,
+  total,
+  markupPercentage,
+  validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+};
+
   return (
     <div className="space-y-6">
       {/* Modern Compact Header */}
@@ -320,32 +346,63 @@ const templateBlocks = removeDuplicateProductsBlocks(baseBlocks);
         </div>
         
         {/* Compact Action Bar */}
-        <div className="flex items-center space-x-2">
-
-          {/* View Items Button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowQuotationItems(true)}
-            className="flex items-center space-x-2"
-          >
-            <List className="h-4 w-4" />
-            <span>View Items</span>
-          </Button>
-
+        <div className="flex items-center gap-2">
           {/* View Quote Button */}
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowFullQuoteView(true)}
-            className="flex items-center space-x-2"
+            disabled={!clientData}
           >
-            <Eye className="h-4 w-4" />
-            <span>View Quote</span>
+            <Eye className="h-4 w-4 mr-2" />
+            View Quote
           </Button>
-          {/* Actions Menu */}
-          <ThreeDotMenu items={actionMenuItems} />
-      </div>
+
+          {/* Save PDF Button */}
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handlePrint}
+            disabled={!clientData}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Save PDF
+          </Button>
+
+          {/* Email Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsEmailModalOpen(true)}
+            disabled={!clientData}
+          >
+            <Mail className="h-4 w-4 mr-2" />
+            Email
+          </Button>
+
+          {/* More Dropdown Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="z-50 bg-background border shadow-md">
+              <DropdownMenuItem onClick={handleAddDiscount}>
+                <Percent className="h-4 w-4 mr-2" />
+                Add Discount
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleAddTerms}>
+                <FileText className="h-4 w-4 mr-2" />
+                Add T&C
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleAddDeposit}>
+                <DollarSign className="h-4 w-4 mr-2" />
+                Add Deposit
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
       {/* Detailed Options Section */}
       <div className="flex items-center justify-between">
@@ -440,6 +497,34 @@ const templateBlocks = removeDuplicateProductsBlocks(baseBlocks);
         templateId={selectedTemplateId || 'standard'}
         workshopItems={workshopItems || []}
       />
+
+      {/* Email Modal */}
+      <EmailQuoteModal
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        project={project}
+        client={clientData}
+        onSend={(emailData) => {
+          console.log("Email sent:", emailData);
+          toast({
+            title: "Email Sent",
+            description: `Quote successfully sent to ${clientData?.name}`
+          });
+          setIsEmailModalOpen(false);
+        }}
+      />
+
+      {/* Hidden printable component */}
+      <div className="hidden">
+        {selectedQuoteTemplate?.blocks && (
+          <PrintableQuote 
+            ref={printRef}
+            blocks={selectedQuoteTemplate.blocks}
+            projectData={projectData}
+            isPrintMode={true}
+          />
+        )}
+      </div>
     </div>
   );
 };
