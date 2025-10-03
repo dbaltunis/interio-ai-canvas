@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Ruler, Eye, Package, Calculator, Save } from "lucide-react";
+import { Ruler, Package, Calculator, Save } from "lucide-react";
 
 import { WindowTypeSelector } from "../window-types/WindowTypeSelector";
 import { TreatmentPreviewEngine } from "../treatment-visualizers/TreatmentPreviewEngine";
@@ -12,8 +12,6 @@ import { ImprovedTreatmentSelector } from "./treatment-selection/ImprovedTreatme
 import { VisualMeasurementSheet } from "./VisualMeasurementSheet";
 import { CostCalculationSummary } from "./dynamic-options/CostCalculationSummary";
 import { LayeredTreatmentManager } from "../job-creation/LayeredTreatmentManager";
-import { MeasurementVisual, VISUAL_CONFIGS } from "@/components/shared/measurement-visual";
-import { transformWorksheetData } from "./utils/worksheet-measurement-adapter";
 
 import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
@@ -518,15 +516,14 @@ export const DynamicWindowWorksheet = forwardRef<
     <div className="space-y-6">
       {/* Enhanced Progress indicator with clickable navigation */}
       <div className="flex items-center space-x-4">
-        {["window-type", "treatment", "inventory", "measurements", "preview"].map((step, index) => {
-          const stepNames = ["Window Type", "Treatment", "Inventory", "Measurements", "Preview"];
+        {["window-type", "treatment", "inventory", "measurements"].map((step, index) => {
+          const stepNames = ["Window Type", "Treatment", "Inventory", "Measurements"];
           const isCompleted = (() => {
             switch(step) {
               case "window-type": return selectedWindowType;
               case "treatment": return selectedTemplate || (isLayeredMode && layeredTreatments.length > 0);
               case "inventory": return Object.values(selectedItems).some(item => item);
               case "measurements": return measurements.rail_width && measurements.drop;
-              case "preview": return true;
               default: return false;
             }
           })();
@@ -547,14 +544,14 @@ export const DynamicWindowWorksheet = forwardRef<
               >
                 {isCompleted ? '✓' : index + 1}
               </button>
-              {index < 4 && <div className="w-8 h-px bg-border mx-2" />}
+              {index < 3 && <div className="w-8 h-px bg-border mx-2" />}
             </div>
           );
         })}
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="window-type">
             <Ruler className="h-4 w-4 mr-2" />
             Window Type
@@ -574,10 +571,6 @@ export const DynamicWindowWorksheet = forwardRef<
             <Ruler className="h-4 w-4 mr-2" />
             Measurements
             {(measurements.rail_width && measurements.drop) && <span className="ml-1 text-xs">✓</span>}
-          </TabsTrigger>
-          <TabsTrigger value="preview">
-            <Eye className="h-4 w-4 mr-2" />
-            Preview
           </TabsTrigger>
         </TabsList>
 
@@ -760,129 +753,40 @@ export const DynamicWindowWorksheet = forwardRef<
                   />
                   
                   <Button 
-                    onClick={() => setActiveTab("preview")}
-                    disabled={!measurements.rail_width || !measurements.drop}
-                    className="w-full"
-                  >
-                    Continue to Preview
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Preview - Enhanced with MeasurementVisual System */}
-        <TabsContent value="preview" className="space-y-4">
-          {(() => {
-            // Transform worksheet data to MeasurementVisual format
-            const { measurementData, treatmentData, projectData } = transformWorksheetData(
-              measurements,
-              selectedTemplate,
-              selectedItems,
-              selectedHeading,
-              selectedLining,
-              clientId,
-              projectId,
-              surfaceId,
-              surfaceData
-            );
-
-            return (
-              <MeasurementVisual
-                measurements={measurementData}
-                treatmentData={treatmentData}
-                projectData={projectData}
-                config={{
-                  ...VISUAL_CONFIGS.PREVIEW,
-                  customTitle: "Window Treatment Configuration"
-                }}
-                onCalculationChange={(calculation) => {
-                  // Update fabric calculation when the visual calculates it
-                  if (calculation) {
-                    setFabricCalculation(calculation);
-                  }
-                }}
-              />
-            );
-          })()}
-          
-          {/* Action Buttons */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex gap-2">
-                <Button 
-                  onClick={async () => {
-                    try {
-                      console.log("DynamicWorksheet: Starting save process...");
-                      console.log("Current measurements:", measurements);
-                      console.log("Current selectedItems:", selectedItems);
-                      
-                      // Use the ref's autoSave method directly
-                      const currentRef = ref as React.MutableRefObject<{ autoSave: () => Promise<void> }>;
-                      if (currentRef?.current) {
-                        await currentRef.current.autoSave();
-                        console.log("DynamicWorksheet: AutoSave completed successfully");
-                      } else {
-                        console.error("DynamicWorksheet: No autoSave ref available!");
-                      }
-                      
-                      const { toast } = await import("@/hooks/use-toast");
-                      toast({
-                        title: "✅ Configuration Saved",
-                        description: "Your window configuration has been saved successfully",
-                      });
-                      
-                      // Close the dialog after successful save
-                      setTimeout(() => {
-                        console.log("DynamicWorksheet: Closing dialog after save");
-                        onClose?.();
-                      }, 500);
-                    } catch (error) {
-                      console.error("DynamicWorksheet: Save failed:", error);
-                      const { toast } = await import("@/hooks/use-toast");
-                      toast({
-                        title: "❌ Save Failed",
-                        description: "There was an error saving your configuration. Please try again.",
-                        variant: "destructive"
-                      });
-                    }
-                  }}
-                  disabled={readOnly}
-                  className="flex-1"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Configuration
-                </Button>
-                
-                {onSaveTreatment && (
-                  <Button 
-                    variant="outline"
                     onClick={async () => {
                       try {
-                        console.log("DynamicWorksheet: Starting treatment save...");
-                        await onSaveTreatment?.({
-                          window_type: selectedWindowType,
-                          template: selectedTemplate,
-                          measurements,
-                          selected_items: selectedItems,
-                          fabric_calculation: fabricCalculation
+                        console.log("DynamicWorksheet: Starting save from measurements tab...");
+                        const currentRef = ref as React.MutableRefObject<{ autoSave: () => Promise<void> }>;
+                        if (currentRef?.current) {
+                          await currentRef.current.autoSave();
+                        }
+                        
+                        const { toast } = await import("@/hooks/use-toast");
+                        toast({
+                          title: "✅ Configuration Saved",
+                          description: "Your window configuration has been saved successfully",
                         });
-                        console.log("DynamicWorksheet: Treatment saved successfully");
                         
                         setTimeout(() => {
-                          console.log("DynamicWorksheet: Closing dialog after treatment save");
                           onClose?.();
                         }, 500);
                       } catch (error) {
-                        console.error("DynamicWorksheet: Treatment save failed:", error);
+                        console.error("Save failed:", error);
+                        const { toast } = await import("@/hooks/use-toast");
+                        toast({
+                          title: "❌ Save Failed",
+                          description: "There was an error saving your configuration.",
+                          variant: "destructive"
+                        });
                       }
                     }}
-                    disabled={readOnly}
+                    disabled={!measurements.rail_width || !measurements.drop}
+                    className="w-full"
                   >
-                    Save as Treatment
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Configuration
                   </Button>
-                )}
+                </div>
               </div>
             </CardContent>
           </Card>
