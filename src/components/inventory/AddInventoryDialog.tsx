@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
@@ -14,14 +13,14 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
 
   return (
     <>
-      <DialogTrigger asChild onClick={() => setOpen(true)}>
-        {trigger || (
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Item
-          </Button>
-        )}
-      </DialogTrigger>
+      {trigger ? (
+        <div onClick={() => setOpen(true)}>{trigger}</div>
+      ) : (
+        <Button onClick={() => setOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Item
+        </Button>
+      )}
       
       <UnifiedInventoryDialog
         open={open}
