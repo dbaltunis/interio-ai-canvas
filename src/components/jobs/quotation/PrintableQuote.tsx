@@ -4,10 +4,11 @@ import { LivePreview } from "@/components/settings/templates/visual-editor/LiveP
 interface PrintableQuoteProps {
   blocks: any[];
   projectData: any;
+  isPrintMode?: boolean;
 }
 
 export const PrintableQuote = React.forwardRef<HTMLDivElement, PrintableQuoteProps>(
-  ({ blocks, projectData }, ref) => {
+  ({ blocks, projectData, isPrintMode = true }, ref) => {
     return (
       <div 
         ref={ref}
@@ -20,7 +21,7 @@ export const PrintableQuote = React.forwardRef<HTMLDivElement, PrintableQuotePro
           backgroundColor: '#ffffff',
           width: '210mm',
           minHeight: '297mm',
-          padding: '20mm',
+          padding: '15mm',
           boxSizing: 'border-box',
         }}
       >
@@ -28,6 +29,7 @@ export const PrintableQuote = React.forwardRef<HTMLDivElement, PrintableQuotePro
           blocks={blocks} 
           projectData={projectData}
           isEditable={false}
+          isPrintMode={isPrintMode}
         />
       </div>
     );

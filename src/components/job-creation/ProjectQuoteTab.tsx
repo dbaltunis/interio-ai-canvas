@@ -1,9 +1,10 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, Mail, Printer, DollarSign, MapPin, Edit3 } from "lucide-react";
+import { FileText, Mail, Printer, DollarSign, MapPin, Edit3, Download, MoreVertical } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useClients } from "@/hooks/useClients";
 import { useToast } from "@/hooks/use-toast";
 import { useTreatments } from "@/hooks/useTreatments";
@@ -18,6 +19,10 @@ import { DetailedQuotationTable } from "@/components/jobs/quotation/DetailedQuot
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { EnhancedVisualEditor } from "@/components/settings/templates/visual-editor/EnhancedVisualEditor";
+import { useReactToPrint } from "react-to-print";
+import { PrintableQuote } from "@/components/jobs/quotation/PrintableQuote";
+import { EmailQuoteModal } from "@/components/jobs/quotation/EmailQuoteModal";
+import { useQuoteTemplates } from "@/hooks/useQuoteTemplates";
 interface ProjectQuoteTabProps {
   project: any;
   shouldHighlightNewQuote?: boolean;
@@ -30,6 +35,7 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
   const { data: surfaces = [] } = useSurfaces(project?.id);
   const { data: projectSummaries } = useProjectWindowSummaries(project?.id);
   const { data: businessSettings } = useBusinessSettings();
+  const { data: templates } = useQuoteTemplates();
   const isAdmin = useHasPermission('manage_settings');
   const { buildQuotationItems } = useQuotationSync({
     projectId: project?.id || "",
@@ -44,6 +50,8 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
   const { toast } = useToast();
   
   const [isTemplateEditorOpen, setIsTemplateEditorOpen] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
   
   const canEditTemplates = businessSettings?.allow_in_app_template_editing && isAdmin;
 
@@ -61,10 +69,41 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
   const tax = quotationData.taxAmount || 0;
   const total = quotationData.total || 0;
 
+  const templateId = templates?.[0]?.id || '';
+  const selectedTemplate = templates?.find(t => t.id === templateId);
 
-  const handleEmailQuote = () => {
-    toast({ title: "Email sent", description: "Quote has been emailed to client" });
+  const projectData = {
+    project,
+    client,
+    businessSettings,
+    treatments,
+    workshopItems: [],
+    rooms,
+    surfaces,
+    subtotal,
+    taxRate,
+    taxAmount: tax,
+    total,
+    markupPercentage,
+    validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
   };
+
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `quote-${project?.quote_number || 'QT-' + Math.floor(Math.random() * 10000)}`,
+    pageStyle: `
+      @page {
+        size: A4;
+        margin: 0;
+      }
+      @media print {
+        body {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+      }
+    `
+  });
 
   const handleSaveTemplate = async (templateData: any) => {
     toast({ 
@@ -90,7 +129,7 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
               </p>
             </div>
           </div>
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap gap-2">
             {canEditTemplates && (
               <Button 
                 size="sm" 
@@ -101,14 +140,46 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
                 Edit Template
               </Button>
             )}
-            <Button size="sm" onClick={handleEmailQuote} disabled={!client}>
+            <Button 
+              size="sm" 
+              variant="default"
+              onClick={handlePrint}
+              disabled={!client}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              PDF
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => setIsEmailModalOpen(true)}
+              disabled={!client}
+            >
               <Mail className="h-4 w-4 mr-2" />
-              Email Quote
+              Email
             </Button>
-            <Button size="sm" variant="outline" onClick={() => window.print()}>
-              <Printer className="h-4 w-4 mr-2" />
-              Print
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline">
+                  <MoreVertical className="h-4 w-4 mr-2" />
+                  More
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>
+                  Add Terms & Conditions
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  Add Discount
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  Adjust Markup
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  Export Settings
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </Card>
@@ -174,6 +245,34 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
         onSave={handleSaveTemplate}
         projectId={project?.id}
       />
+
+      {/* Email Modal */}
+      <EmailQuoteModal
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        project={project}
+        client={client}
+        onSend={(emailData) => {
+          console.log("Email sent:", emailData);
+          toast({
+            title: "Email Sent",
+            description: `Quote successfully sent to ${client?.name}`
+          });
+          setIsEmailModalOpen(false);
+        }}
+      />
+
+      {/* Hidden printable component */}
+      <div className="hidden">
+        {selectedTemplate?.blocks && (
+          <PrintableQuote 
+            ref={printRef}
+            blocks={selectedTemplate.blocks}
+            projectData={projectData}
+            isPrintMode={true}
+          />
+        )}
+      </div>
     </div>
   );
 };

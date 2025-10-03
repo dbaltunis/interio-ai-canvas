@@ -1183,6 +1183,7 @@ interface LivePreviewProps {
   blocks: any[];
   projectData?: any;
   isEditable?: boolean;
+  isPrintMode?: boolean;
   onBlocksChange?: (blocks: any[]) => void;
   containerStyles?: any;
   onContainerStylesChange?: (styles: any) => void;
@@ -1266,7 +1267,7 @@ export const LivePreview = ({
           {/* Content area */}
           <div 
             className={`mx-auto ${containerStyles?.maxWidth === 'full' ? 'w-full' : `max-w-${containerStyles?.maxWidth || '4xl'}`} print:!p-0 print:!m-0 print:!max-w-full`}
-            style={{ padding: isEditable ? (containerStyles?.padding || '32px') : '0' }}
+            style={{ padding: (containerStyles?.padding || '32px') }}
           >
             {blocks.map((block, index) => (
               <LivePreviewBlock 
