@@ -607,10 +607,7 @@ export const DynamicWindowWorksheet = forwardRef<
         {/* Treatment Selection */}
         <TabsContent value="treatment" className="space-y-4">
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Select Treatment & Template</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <ImprovedTreatmentSelector
                 selectedCoveringId={selectedTemplate?.id || ""}
                 onCoveringSelect={(template) => {
@@ -635,10 +632,7 @@ export const DynamicWindowWorksheet = forwardRef<
         {/* Inventory Selection */}
         <TabsContent value="inventory" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Select Materials & Hardware</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <InventorySelectionPanel
                 treatmentType={selectedTreatmentType}
                 selectedItems={selectedItems}
@@ -651,6 +645,7 @@ export const DynamicWindowWorksheet = forwardRef<
                 <Button 
                   onClick={() => setActiveTab("measurements")}
                   disabled={!Object.values(selectedItems).some(item => item)}
+                  className="w-full"
                 >
                   Continue to Measurements
                 </Button>

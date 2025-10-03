@@ -87,6 +87,9 @@ export const InventorySelectionPanel = ({
     const estimatedCost = calculateEstimatedCost(item, category);
     const isSelected = selectedItems[category as keyof typeof selectedItems]?.id === item.id;
     const price = item.selling_price || item.unit_price || item.price_per_meter || 0;
+    
+    // Get the first image URL if available
+    const imageUrl = item.images && item.images.length > 0 ? item.images[0] : null;
 
     return (
       <Card 
@@ -100,10 +103,22 @@ export const InventorySelectionPanel = ({
       >
         <CardContent className="p-4">
           <div className="flex flex-col items-center space-y-3">
-            {/* Preview placeholder */}
+            {/* Preview image or placeholder */}
             <div className="h-20 w-full flex flex-col items-center justify-center bg-gray-50 border-2 border-gray-200 rounded-md overflow-hidden">
-              <div className="text-gray-400 text-xs">No preview</div>
-              {item.stock_quantity !== undefined && (
+              {imageUrl ? (
+                <img 
+                  src={imageUrl} 
+                  alt={item.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.parentElement!.innerHTML = '<div class="text-gray-400 text-xs">No preview</div>';
+                  }}
+                />
+              ) : (
+                <div className="text-gray-400 text-xs">No preview</div>
+              )}
+              {!imageUrl && item.stock_quantity !== undefined && (
                 <Badge variant={item.stock_quantity > 0 ? "secondary" : "destructive"} className="text-[10px] px-1.5 py-0 h-4 mt-1">
                   Stock: {item.stock_quantity}
                 </Badge>
