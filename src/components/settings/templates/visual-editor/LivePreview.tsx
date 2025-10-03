@@ -690,16 +690,16 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
             </div>
           )}
 
-          <div className="border rounded-lg overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50">
+          <div className="border rounded-lg overflow-hidden w-full">
+            <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
+              <thead className="bg-gray-50 border-b-2 border-gray-300">
                 <tr>
-                  <th className="text-left p-3 text-sm font-medium">#</th>
-                  <th className="text-left p-3 text-sm font-medium">Product/Service</th>
-                  <th className="text-left p-3 text-sm font-medium">Description</th>
-                  <th className="text-center p-3 text-sm font-medium">Quantity</th>
-                  <th className="text-right p-3 text-sm font-medium">Price rate</th>
-                  <th className="text-right p-3 text-sm font-medium">Total without GST</th>
+                  <th className="text-left p-2 text-xs font-medium" style={{ width: '5%' }}>#</th>
+                  <th className="text-left p-2 text-xs font-medium" style={{ width: '22%' }}>Product/Service</th>
+                  <th className="text-left p-2 text-xs font-medium" style={{ width: '28%' }}>Description</th>
+                  <th className="text-center p-2 text-xs font-medium" style={{ width: '12%' }}>Quantity</th>
+                  <th className="text-right p-2 text-xs font-medium" style={{ width: '15%' }}>Price rate</th>
+                  <th className="text-right p-2 text-xs font-medium" style={{ width: '18%' }}>Total without GST</th>
                 </tr>
               </thead>
               <tbody>
@@ -707,7 +707,7 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
                   <React.Fragment key={roomName}>
                     {groupByRoom && hasRealData && (
                       <tr className="bg-gray-100 border-t-2 border-gray-300">
-                        <td colSpan={6} className="p-3 font-medium text-gray-800">
+                        <td colSpan={6} className="p-2 font-medium text-sm text-gray-800" style={{ wordWrap: 'break-word' }}>
                           {roomName}
                         </td>
                       </tr>
@@ -722,31 +722,31 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
                           <React.Fragment key={`${roomName}-${itemIndex}`}>
                             {/* Main product row */}
                             <tr className="border-t">
-                              <td className="p-3 font-medium">{itemNumber}</td>
-                              <td className="p-3 font-medium">
+                              <td className="p-2 text-xs font-medium" style={{ wordWrap: 'break-word' }}>{itemNumber}</td>
+                              <td className="p-2 text-xs font-medium" style={{ wordWrap: 'break-word' }}>
                                 {item.fabric_details?.name || item.treatment_name || item.name || 'Window Treatment'}
                                 {item.window_number && ` - ${item.window_number}`}
                               </td>
-                              <td className="p-3">
+                              <td className="p-2 text-xs" style={{ wordWrap: 'break-word' }}>
                                 {item.description || item.notes || item.room_name || 'Custom Treatment'}
                               </td>
-                              <td className="p-3 text-center">{item.quantity || 1}</td>
-                              <td className="p-3 text-right">
+                              <td className="p-2 text-center text-xs" style={{ wordWrap: 'break-word' }}>{item.quantity || 1}</td>
+                              <td className="p-2 text-right text-xs" style={{ wordWrap: 'break-word' }}>
                                 ${(item.total_cost || item.total_price || 0).toFixed(2)}
                               </td>
-                              <td className="p-3 text-right font-medium">
+                              <td className="p-2 text-right font-medium text-xs" style={{ wordWrap: 'break-word' }}>
                                 ${((item.total_cost || item.total_price || 0) * (item.quantity || 1)).toFixed(2)}
                               </td>
                             </tr>
                             {/* Itemized component rows with smaller font and indentation */}
                             {itemizedComponents.map((component, compIndex) => (
                               <tr key={`${roomName}-${itemIndex}-${compIndex}`} className="border-t border-gray-100">
-                                <td className="p-3"></td>
-                                <td className="p-3 pl-8 text-sm text-gray-600">{component.type}</td>
-                                <td className="p-3 text-sm text-gray-600">{component.description}</td>
-                                <td className="p-3 text-center text-sm text-gray-600">{component.quantity} {component.unit}</td>
-                                <td className="p-3 text-right text-sm text-gray-600">${component.rate}</td>
-                                <td className="p-3 text-right text-sm text-gray-600">${component.total}</td>
+                                <td className="p-2"></td>
+                                <td className="p-2 pl-6 text-xs text-gray-600" style={{ wordWrap: 'break-word' }}>{component.type}</td>
+                                <td className="p-2 text-xs text-gray-600" style={{ wordWrap: 'break-word' }}>{component.description}</td>
+                                <td className="p-2 text-center text-xs text-gray-600" style={{ wordWrap: 'break-word' }}>{component.quantity} {component.unit}</td>
+                                <td className="p-2 text-right text-xs text-gray-600" style={{ wordWrap: 'break-word' }}>${component.rate}</td>
+                                <td className="p-2 text-right text-xs text-gray-600" style={{ wordWrap: 'break-word' }}>${component.total}</td>
                               </tr>
                             ))}
                           </React.Fragment>
@@ -755,17 +755,17 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
                         // Simple view
                         return (
                           <tr key={`${roomName}-${itemIndex}`} className="border-t">
-                            <td className="p-3">{itemNumber}</td>
-                            <td className="p-3">
+                            <td className="p-2 text-xs" style={{ wordWrap: 'break-word' }}>{itemNumber}</td>
+                            <td className="p-2 text-xs" style={{ wordWrap: 'break-word' }}>
                               {item.fabric_details?.name || item.treatment_name || item.name || 'Window Treatment'}
                               {item.window_number && ` - ${item.window_number}`}
                             </td>
-                            <td className="p-3 text-sm text-gray-600">
+                            <td className="p-2 text-xs text-gray-600" style={{ wordWrap: 'break-word' }}>
                               {item.description || item.notes || item.room_name || `${item.width || 0}" x ${item.height || 0}"`}
                             </td>
-                            <td className="p-3 text-center">{item.quantity || 1}</td>
-                            <td className="p-3 text-right">${(item.unit_price || item.cost_per_unit || 0).toFixed(2)}</td>
-                            <td className="p-3 text-right font-medium">
+                            <td className="p-2 text-center text-xs" style={{ wordWrap: 'break-word' }}>{item.quantity || 1}</td>
+                            <td className="p-2 text-right text-xs" style={{ wordWrap: 'break-word' }}>${(item.unit_price || item.cost_per_unit || 0).toFixed(2)}</td>
+                            <td className="p-2 text-right font-medium text-xs" style={{ wordWrap: 'break-word' }}>
                               ${(item.total_cost || item.total_price || 0).toFixed(2)}
                             </td>
                           </tr>
@@ -1272,10 +1272,11 @@ export const LivePreview = ({
           
           {/* Content area */}
           <div 
-            className={`mx-auto ${containerStyles?.maxWidth === 'full' ? 'w-full' : `max-w-${containerStyles?.maxWidth || '4xl'}`} print:!p-0 print:!m-0 print:!max-w-full`}
+            className="w-full print:!p-0 print:!m-0"
             style={{ 
-              padding: isPrintMode ? '0' : (containerStyles?.padding || '32px'),
-              paddingTop: isPrintMode ? '0' : '40px'
+              padding: '15mm',
+              boxSizing: 'border-box',
+              overflow: 'hidden'
             }}
           >
             {blocks.map((block, index) => (
