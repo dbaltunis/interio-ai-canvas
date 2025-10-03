@@ -166,7 +166,7 @@
   /* Set @page margins - this is the ONLY margin/padding that should exist in print */
   @page {
     size: A4 portrait;
-    margin: 15mm;
+    margin: 0;
   }
 
   /* Ensure content fits within page width */

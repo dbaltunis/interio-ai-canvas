@@ -1,9 +1,11 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, Mail, MoreVertical } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { TemplateQuotePreview } from "./TemplateQuotePreview";
 import { PrintableQuote } from "./PrintableQuote";
+import { EmailQuoteModal } from "./EmailQuoteModal";
 import { useReactToPrint } from "react-to-print";
 import { useQuoteTemplates } from "@/hooks/useQuoteTemplates";
 import { useClients } from "@/hooks/useClients";
@@ -41,6 +43,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
   workshopItems = []
 }) => {
   const printRef = useRef<HTMLDivElement>(null);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const { data: clients } = useClients();
   const { data: businessSettings } = useBusinessSettings();
   const { data: templates } = useQuoteTemplates();
@@ -67,6 +70,18 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
   const handlePrint = useReactToPrint({
     contentRef: printRef,
     documentTitle: `quote-QT-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
+    pageStyle: `
+      @page {
+        size: A4;
+        margin: 0;
+      }
+      @media print {
+        body {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+      }
+    `
   });
 
   return (
@@ -75,15 +90,48 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
         <DialogHeader className="px-6 py-4 border-b bg-background flex-shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle>Quote Full View</DialogTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePrint}
-              className="flex items-center space-x-2"
-            >
-              <Download className="h-4 w-4" />
-              <span>Print / Save PDF</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePrint}
+                className="flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                <span>PDF</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEmailModalOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Mail className="h-4 w-4" />
+                <span>Email</span>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                    <MoreVertical className="h-4 w-4" />
+                    <span>More</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem>
+                    Add Terms & Conditions
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    Add Discount
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    Adjust Markup
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    Export Settings
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </DialogHeader>
         
@@ -116,6 +164,17 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
           )}
         </div>
       </DialogContent>
+
+      <EmailQuoteModal
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        project={project}
+        client={client}
+        onSend={(emailData) => {
+          console.log("Email sent:", emailData);
+          setIsEmailModalOpen(false);
+        }}
+      />
     </Dialog>
   );
 };
