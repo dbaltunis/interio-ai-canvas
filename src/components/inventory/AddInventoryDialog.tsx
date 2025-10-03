@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,12 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Plus, DollarSign, Ruler, Package, Store } from "lucide-react";
+import { Plus, DollarSign, Ruler, Package, Store, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { useVendors } from "@/hooks/useVendors";
+import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { FieldHelp } from "@/components/ui/field-help";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface AddInventoryDialogProps {
   trigger?: React.ReactNode;
@@ -28,6 +30,8 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
   const { toast } = useToast();
   const createInventoryItem = useCreateEnhancedInventoryItem();
   const { data: vendors = [] } = useVendors();
+  const { data: userRole } = useUserRole();
+  const canViewMarkup = userRole?.canViewMarkup || false;
 
   const [formData, setFormData] = useState({
     // Basic fields
@@ -37,6 +41,8 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
     category: "",
     quantity: 0,
     unit: "meters",
+    cost_price: 0,
+    selling_price: 0,
     unit_price: 0,
     supplier: "",
     vendor_id: "",
@@ -105,6 +111,8 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
         category: "",
         quantity: 0,
         unit: "meters",
+        cost_price: 0,
+        selling_price: 0,
         unit_price: 0,
         supplier: "",
         vendor_id: "",
@@ -360,6 +368,15 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {canViewMarkup && (
+                      <Alert className="bg-primary/5 border-primary/20">
+                        <TrendingUp className="h-4 w-4" />
+                        <AlertDescription className="text-sm">
+                          Admin View: You can see profit margins and markup calculations below
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
                     <div className="grid gap-4 md:grid-cols-2">
                       <div>
                         <Label htmlFor="unit">Unit</Label>
@@ -381,6 +398,50 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
                       </div>
 
                       <div>
+                        <Label htmlFor="cost_price">
+                          Cost Price (Buying) ($)
+                          {canViewMarkup && <span className="text-primary ml-1">*</span>}
+                        </Label>
+                        <Input
+                          id="cost_price"
+                          type="number"
+                          step="0.01"
+                          value={formData.cost_price}
+                          onChange={(e) => {
+                            const costPrice = parseFloat(e.target.value) || 0;
+                            setFormData({ ...formData, cost_price: costPrice });
+                          }}
+                          placeholder="20.00"
+                        />
+                        {canViewMarkup && (
+                          <p className="text-xs text-muted-foreground mt-1">What you pay to supplier</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <Label htmlFor="selling_price">
+                          Selling Price (Retail) ($)
+                          {canViewMarkup && <span className="text-primary ml-1">*</span>}
+                        </Label>
+                        <Input
+                          id="selling_price"
+                          type="number"
+                          step="0.01"
+                          value={formData.selling_price}
+                          onChange={(e) => {
+                            const sellingPrice = parseFloat(e.target.value) || 0;
+                            setFormData({ ...formData, selling_price: sellingPrice });
+                          }}
+                          placeholder="45.00"
+                        />
+                        {canViewMarkup && (
+                          <p className="text-xs text-muted-foreground mt-1">What you charge customers</p>
+                        )}
+                      </div>
+
+                      <div>
                         <Label htmlFor="unit_price">Unit Price ($)</Label>
                         <Input
                           id="unit_price"
@@ -392,6 +453,56 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
                         />
                       </div>
                     </div>
+
+                    {canViewMarkup && formData.cost_price > 0 && formData.selling_price > 0 && (
+                      <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <TrendingUp className="h-4 w-4" />
+                            Profit Analysis (Admin Only)
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="grid gap-3 md:grid-cols-3">
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground">Profit per Unit</p>
+                              <p className="text-lg font-bold text-primary">
+                                ${(formData.selling_price - formData.cost_price).toFixed(2)}
+                              </p>
+                            </div>
+                            
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground">
+                                Markup %
+                                <FieldHelp content="(Selling - Cost) ÷ Cost × 100" />
+                              </p>
+                              <p className="text-lg font-bold text-emerald-600">
+                                {formData.cost_price > 0 
+                                  ? ((formData.selling_price - formData.cost_price) / formData.cost_price * 100).toFixed(1)
+                                  : '0'}%
+                              </p>
+                            </div>
+                            
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground">
+                                Profit Margin %
+                                <FieldHelp content="(Selling - Cost) ÷ Selling × 100" />
+                              </p>
+                              <p className="text-lg font-bold text-blue-600">
+                                {formData.selling_price > 0 
+                                  ? ((formData.selling_price - formData.cost_price) / formData.selling_price * 100).toFixed(1)
+                                  : '0'}%
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="pt-2 border-t text-xs text-muted-foreground">
+                            <p>💡 <strong>Markup</strong> shows profit relative to cost (what you pay)</p>
+                            <p>💡 <strong>Margin</strong> shows profit relative to selling price (what customer pays)</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

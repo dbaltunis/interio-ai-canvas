@@ -753,9 +753,12 @@ export type Database = {
           company_name: string | null
           country: string | null
           created_at: string
+          default_profit_margin_percentage: number | null
           id: string
           measurement_units: string | null
+          minimum_profit_margin_percentage: number | null
           pricing_settings: Json | null
+          show_profit_margins_to_staff: boolean | null
           state: string | null
           updated_at: string
           user_id: string
@@ -773,9 +776,12 @@ export type Database = {
           company_name?: string | null
           country?: string | null
           created_at?: string
+          default_profit_margin_percentage?: number | null
           id?: string
           measurement_units?: string | null
+          minimum_profit_margin_percentage?: number | null
           pricing_settings?: Json | null
+          show_profit_margins_to_staff?: boolean | null
           state?: string | null
           updated_at?: string
           user_id: string
@@ -793,9 +799,12 @@ export type Database = {
           company_name?: string | null
           country?: string | null
           created_at?: string
+          default_profit_margin_percentage?: number | null
           id?: string
           measurement_units?: string | null
+          minimum_profit_margin_percentage?: number | null
           pricing_settings?: Json | null
+          show_profit_margins_to_staff?: boolean | null
           state?: string | null
           updated_at?: string
           user_id?: string
@@ -1908,14 +1917,18 @@ export type Database = {
           image_url: string | null
           is_flame_retardant: boolean | null
           labor_hours: number | null
+          last_cost_update: string | null
+          last_price_update: string | null
           location: string | null
           markup_percentage: number | null
+          markup_percentage_calculated: number | null
           name: string
           pattern_repeat_horizontal: number | null
           pattern_repeat_vertical: number | null
           price_per_meter: number | null
           price_per_unit: number | null
           price_per_yard: number | null
+          profit_margin_percentage: number | null
           quantity: number | null
           reorder_point: number | null
           selling_price: number | null
@@ -1958,14 +1971,18 @@ export type Database = {
           image_url?: string | null
           is_flame_retardant?: boolean | null
           labor_hours?: number | null
+          last_cost_update?: string | null
+          last_price_update?: string | null
           location?: string | null
           markup_percentage?: number | null
+          markup_percentage_calculated?: number | null
           name: string
           pattern_repeat_horizontal?: number | null
           pattern_repeat_vertical?: number | null
           price_per_meter?: number | null
           price_per_unit?: number | null
           price_per_yard?: number | null
+          profit_margin_percentage?: number | null
           quantity?: number | null
           reorder_point?: number | null
           selling_price?: number | null
@@ -2008,14 +2025,18 @@ export type Database = {
           image_url?: string | null
           is_flame_retardant?: boolean | null
           labor_hours?: number | null
+          last_cost_update?: string | null
+          last_price_update?: string | null
           location?: string | null
           markup_percentage?: number | null
+          markup_percentage_calculated?: number | null
           name?: string
           pattern_repeat_horizontal?: number | null
           pattern_repeat_vertical?: number | null
           price_per_meter?: number | null
           price_per_unit?: number | null
           price_per_yard?: number | null
+          profit_margin_percentage?: number | null
           quantity?: number | null
           reorder_point?: number | null
           selling_price?: number | null
@@ -4754,6 +4775,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_security_settings: {
         Row: {
           created_at: string
@@ -5337,6 +5379,13 @@ export type Database = {
         Args: { permission_name: string }
         Returns: boolean
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       increment_email_open_count: {
         Args: { email_id_param: string }
         Returns: {
@@ -5346,6 +5395,10 @@ export type Database = {
         }[]
       }
       is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_admin_or_owner: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
@@ -5406,7 +5459,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "Owner" | "Admin" | "Manager" | "Staff" | "User"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -5533,6 +5586,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["Owner", "Admin", "Manager", "Staff", "User"],
+    },
   },
 } as const
