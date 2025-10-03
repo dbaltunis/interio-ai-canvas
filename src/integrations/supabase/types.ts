@@ -760,6 +760,8 @@ export type Database = {
           pricing_settings: Json | null
           show_profit_margins_to_staff: boolean | null
           state: string | null
+          tax_rate: number | null
+          tax_type: string | null
           updated_at: string
           user_id: string
           website: string | null
@@ -783,6 +785,8 @@ export type Database = {
           pricing_settings?: Json | null
           show_profit_margins_to_staff?: boolean | null
           state?: string | null
+          tax_rate?: number | null
+          tax_type?: string | null
           updated_at?: string
           user_id: string
           website?: string | null
@@ -806,6 +810,8 @@ export type Database = {
           pricing_settings?: Json | null
           show_profit_margins_to_staff?: boolean | null
           state?: string | null
+          tax_rate?: number | null
+          tax_type?: string | null
           updated_at?: string
           user_id?: string
           website?: string | null

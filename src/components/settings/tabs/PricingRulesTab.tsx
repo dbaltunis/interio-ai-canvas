@@ -5,24 +5,40 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Calculator, Percent, Shield } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calculator, Percent, Shield, Receipt } from "lucide-react";
 import { PricingRulesSection } from "../pricing/PricingRulesSection";
 import { useMarkupSettings, useUpdateMarkupSettings, MarkupSettings } from "@/hooks/useMarkupSettings";
+import { useBusinessSettings, useUpdateBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const PricingRulesTab = () => {
   const { data: markupSettings, isLoading } = useMarkupSettings();
+  const { data: businessSettings, isLoading: isLoadingBusiness } = useBusinessSettings();
   const canManageSettings = useHasPermission('manage_settings');
   const updateMarkupSettings = useUpdateMarkupSettings();
+  const updateBusinessSettings = useUpdateBusinessSettings();
   
   const [formData, setFormData] = useState<MarkupSettings | null>(null);
+  const [taxRate, setTaxRate] = useState<number>(0);
+  const [taxType, setTaxType] = useState<'none' | 'vat' | 'gst' | 'sales_tax'>('none');
 
   useEffect(() => {
     if (markupSettings) {
       setFormData(markupSettings);
     }
   }, [markupSettings]);
+
+  useEffect(() => {
+    if (businessSettings) {
+      setTaxRate(businessSettings.tax_rate || 0);
+      const validTaxType = businessSettings.tax_type || 'none';
+      if (['none', 'vat', 'gst', 'sales_tax'].includes(validTaxType)) {
+        setTaxType(validTaxType as 'none' | 'vat' | 'gst' | 'sales_tax');
+      }
+    }
+  }, [businessSettings]);
 
   const handleSaveGlobalSettings = async () => {
     if (!formData) return;
@@ -46,8 +62,18 @@ export const PricingRulesTab = () => {
     });
   };
 
+  const handleSaveTaxSettings = async () => {
+    if (!businessSettings?.id) return;
+    
+    await updateBusinessSettings.mutateAsync({
+      id: businessSettings.id,
+      tax_rate: taxRate,
+      tax_type: taxType
+    });
+  };
+
   // Show loading state while permissions or data are being checked
-  if (canManageSettings === undefined || isLoading) {
+  if (canManageSettings === undefined || isLoading || isLoadingBusiness) {
     return <div>Loading pricing settings...</div>;
   }
 
@@ -69,6 +95,58 @@ export const PricingRulesTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Tax Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Receipt className="h-5 w-5 text-brand-primary" />
+            Tax Settings
+          </CardTitle>
+          <CardDescription>Configure tax type and rate for quotes and invoices</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="taxType">Tax Type</Label>
+              <Select value={taxType} onValueChange={(value) => setTaxType(value as 'none' | 'vat' | 'gst' | 'sales_tax')}>
+                <SelectTrigger id="taxType">
+                  <SelectValue placeholder="Select tax type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Tax</SelectItem>
+                  <SelectItem value="vat">VAT (Value Added Tax)</SelectItem>
+                  <SelectItem value="gst">GST (Goods & Services Tax)</SelectItem>
+                  <SelectItem value="sales_tax">Sales Tax</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="taxRate">Tax Rate (%)</Label>
+              <Input 
+                id="taxRate" 
+                type="number" 
+                step="0.1" 
+                min="0"
+                max="100"
+                value={taxRate}
+                onChange={(e) => setTaxRate(Number(e.target.value))}
+                placeholder="e.g., 20 for 20%"
+              />
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Common rates: Australia/NZ GST = 10-15%, UK VAT = 20%, EU VAT = 15-27%
+          </p>
+          <Button 
+            className="bg-brand-primary hover:bg-brand-accent"
+            onClick={handleSaveTaxSettings}
+            disabled={updateBusinessSettings.isPending}
+          >
+            Save Tax Settings
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Global Pricing Settings */}
       <Card>
         <CardHeader>

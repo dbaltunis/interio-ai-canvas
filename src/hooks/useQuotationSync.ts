@@ -5,13 +5,13 @@ import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
 import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
+import { useMarkupSettings } from "@/hooks/useMarkupSettings";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 interface QuotationSyncOptions {
   projectId: string;
   clientId?: string;
   autoCreateQuote?: boolean;
-  markupPercentage?: number;
-  taxRate?: number;
 }
 
 /**
@@ -21,18 +21,21 @@ interface QuotationSyncOptions {
 export const useQuotationSync = ({ 
   projectId, 
   clientId,
-  autoCreateQuote = true,
-  markupPercentage = 25,
-  taxRate = 0.08
+  autoCreateQuote = true
 }: QuotationSyncOptions) => {
   const { data: quotes = [] } = useQuotes(projectId);
   const { data: treatments = [] } = useTreatments(projectId);
   const { data: rooms = [] } = useRooms(projectId);
   const { data: surfaces = [] } = useSurfaces(projectId);
   const { data: projectSummaries } = useProjectWindowSummaries(projectId);
+  const { data: markupSettings } = useMarkupSettings();
+  const { data: businessSettings } = useBusinessSettings();
   
   const createQuote = useCreateQuote();
   const updateQuote = useUpdateQuote();
+
+  // Get settings (prices already include markup, we just add tax)
+  const taxRate = (businessSettings?.tax_rate || 0) / 100;
   
   // Keep track of previous data to detect changes
   const previousDataRef = useRef<{
@@ -183,12 +186,17 @@ export const useQuotationSync = ({
       }
     });
 
+    // Prices from window summaries already include all markup/selling prices
+    // So we only need to add tax on top
+    const taxAmount = baseSubtotal * taxRate;
+    const total = baseSubtotal + taxAmount;
+
     return {
       items,
       baseSubtotal,
-      subtotal: baseSubtotal * (1 + markupPercentage / 100),
-      taxAmount: (baseSubtotal * (1 + markupPercentage / 100)) * taxRate,
-      total: (baseSubtotal * (1 + markupPercentage / 100)) * (1 + taxRate)
+      subtotal: baseSubtotal, // NO additional markup
+      taxAmount,
+      total
     };
   };
 

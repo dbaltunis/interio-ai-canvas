@@ -151,9 +151,7 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const { buildQuotationItems } = useQuotationSync({
     projectId: projectId,
     clientId: project?.client_id || "",
-    autoCreateQuote: false,
-    markupPercentage: 25,
-    taxRate: 0.08,
+    autoCreateQuote: false
   });
 
   // Build quotation items from sync data

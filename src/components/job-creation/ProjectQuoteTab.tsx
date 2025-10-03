@@ -40,15 +40,13 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
   const { buildQuotationItems } = useQuotationSync({
     projectId: project?.id || "",
     clientId: project?.client_id || "",
-    autoCreateQuote: false,
-    markupPercentage: 25,
-    taxRate: 0.08,
+    autoCreateQuote: false
   });
 
   // Build quotation items reactively - recalculate when data changes
   const quotationData = useMemo(() => {
     const data = buildQuotationItems();
-    console.log('[PROJECT QUOTE TAB] ===== QUOTE RECALCULATED =====');
+    console.log('[PROJECT QUOTE TAB] ===== QUOTE RECALCULATED (LIVE DATA) =====');
     console.log('[PROJECT QUOTE TAB] Window Summaries:', {
       windowCount: projectSummaries?.windows?.length || 0,
       projectTotal: projectSummaries?.projectTotal,
@@ -69,8 +67,9 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
         isHeader: item.isHeader
       }))
     });
+    console.log('[PROJECT QUOTE TAB] Prices are FINAL selling prices (no additional markup applied)');
     return data;
-  }, [treatments, rooms, surfaces, projectSummaries?.windows, projectSummaries?.projectTotal]);
+  }, [treatments, rooms, surfaces, projectSummaries?.windows, projectSummaries?.projectTotal, buildQuotationItems]);
   
   const { toast } = useToast();
   
@@ -82,17 +81,18 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
 
   const client = clients?.find(c => c.id === project.client_id);
   
-  // Use built quotation items
+  // Use built quotation items (prices already include markup)
   const displayQuoteItems = quotationData.items || [];
   
-  const markupPercentage = 25; // Default 25% markup to match QuotationTab
-  const taxRate = 0.08; // 8% tax rate to match QuotationTab
-  
-  // Use the same calculation approach as QuotationTab
+  // Get values directly from quotation data (no additional markup)
   const baseSubtotal = quotationData.baseSubtotal || 0;
   const subtotal = quotationData.subtotal || 0;
   const tax = quotationData.taxAmount || 0;
   const total = quotationData.total || 0;
+  
+  // Get tax info from business settings
+  const taxRate = (businessSettings?.tax_rate || 0) / 100;
+  const taxType = businessSettings?.tax_type || 'none';
 
   const templateId = templates?.[0]?.id || '';
   const selectedTemplate = templates?.find(t => t.id === templateId);
@@ -106,10 +106,9 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
     rooms,
     surfaces,
     subtotal,
-    taxRate,
+    taxRate: businessSettings?.tax_rate || 0,
     taxAmount: tax,
     total,
-    markupPercentage,
     validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
   };
 
@@ -215,7 +214,9 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
           <div className="flex items-center space-x-2">
             <DollarSign className="h-5 w-5 text-green-600" />
             <div>
-              <p className="text-sm text-gray-600">Subtotal (excl. GST)</p>
+              <p className="text-sm text-gray-600">
+                Subtotal (excl. {taxType === 'vat' ? 'VAT' : taxType === 'gst' ? 'GST' : 'Tax'})
+              </p>
               <p className="text-lg font-semibold">{formatCurrency(subtotal)}</p>
             </div>
           </div>
@@ -224,7 +225,10 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
           <div className="flex items-center space-x-2">
             <DollarSign className="h-5 w-5 text-yellow-600" />
             <div>
-              <p className="text-sm text-gray-600">GST (10%)</p>
+              <p className="text-sm text-gray-600">
+                {taxType === 'vat' ? 'VAT' : taxType === 'gst' ? 'GST' : 'Tax'} 
+                {taxRate > 0 ? ` (${(taxRate * 100).toFixed(1)}%)` : ''}
+              </p>
               <p className="text-lg font-semibold">{formatCurrency(tax)}</p>
             </div>
           </div>
@@ -233,7 +237,9 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
           <div className="flex items-center space-x-2">
             <DollarSign className="h-5 w-5 text-blue-600" />
             <div>
-              <p className="text-sm text-gray-600">Total (incl. GST)</p>
+              <p className="text-sm text-gray-600">
+                Total (incl. {taxType === 'vat' ? 'VAT' : taxType === 'gst' ? 'GST' : 'Tax'})
+              </p>
               <p className="text-xl font-bold">{formatCurrency(total)}</p>
             </div>
           </div>

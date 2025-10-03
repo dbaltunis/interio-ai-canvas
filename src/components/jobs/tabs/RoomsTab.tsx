@@ -25,9 +25,7 @@ const { data: projectSummaries } = useProjectWindowSummaries(projectId);
   const quotationSync = useQuotationSync({
     projectId,
     clientId: project?.client_id,
-    autoCreateQuote: true,
-    markupPercentage: 25,
-    taxRate: 0.08
+    autoCreateQuote: true
   });
 
   const workroomSync = useWorkroomSync({

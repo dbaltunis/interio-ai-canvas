@@ -18,6 +18,13 @@ export interface BusinessSettings {
   website?: string;
   company_logo_url?: string;
   measurement_units?: string;
+  tax_rate?: number;
+  tax_type?: 'none' | 'vat' | 'gst' | 'sales_tax';
+  pricing_settings?: any;
+  allow_in_app_template_editing?: boolean;
+  default_profit_margin_percentage?: number;
+  minimum_profit_margin_percentage?: number;
+  show_profit_margins_to_staff?: boolean;
   created_at: string;
   updated_at: string;
 }
