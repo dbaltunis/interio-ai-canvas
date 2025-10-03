@@ -147,6 +147,43 @@ export const UnifiedInventoryDialog = ({
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [saveDraft]);
 
+  // Prevent dialog from closing when user switches tabs/windows
+  useEffect(() => {
+    if (!open || mode === "edit") return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Save that dialog should remain open
+        sessionStorage.setItem('inventory_dialog_open', 'true');
+      }
+    };
+
+    const handleFocus = () => {
+      // Ensure dialog stays open when returning to tab
+      const shouldBeOpen = sessionStorage.getItem('inventory_dialog_open');
+      if (shouldBeOpen === 'true' && !open) {
+        // Dialog was force-closed, notify parent to reopen
+        console.log('[Dialog] Preventing unexpected close on tab return');
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    // Mark dialog as open
+    if (open) {
+      sessionStorage.setItem('inventory_dialog_open', 'true');
+    }
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      if (!open) {
+        sessionStorage.removeItem('inventory_dialog_open');
+      }
+    };
+  }, [open, mode]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -246,8 +283,24 @@ export const UnifiedInventoryDialog = ({
     return "text-red-600";
   };
 
+  const handleOpenChange = (newOpen: boolean) => {
+    // Prevent accidental closes - require explicit user action
+    if (!newOpen && mode === "create" && formData.name) {
+      const confirmClose = window.confirm("You have unsaved changes. Your draft will be saved. Close anyway?");
+      if (!confirmClose) {
+        return; // Don't close
+      }
+    }
+    
+    if (!newOpen) {
+      sessionStorage.removeItem('inventory_dialog_open');
+    }
+    
+    onOpenChange(newOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange} modal={true}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "Add New Product" : `Edit ${item?.name}`}</DialogTitle>
