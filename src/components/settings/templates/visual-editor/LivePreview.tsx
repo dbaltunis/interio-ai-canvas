@@ -690,16 +690,16 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
             </div>
           )}
 
-          <div className="border rounded-lg overflow-hidden w-full">
-            <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
+          <div className="border rounded-lg overflow-hidden w-full" style={{ maxWidth: '100%' }}>
+            <table className="w-full border-collapse" style={{ tableLayout: 'fixed', maxWidth: '100%' }}>
               <thead className="bg-gray-50 border-b-2 border-gray-300">
                 <tr>
-                  <th className="text-left p-2 text-xs font-medium" style={{ width: '5%' }}>#</th>
-                  <th className="text-left p-2 text-xs font-medium" style={{ width: '22%' }}>Product/Service</th>
-                  <th className="text-left p-2 text-xs font-medium" style={{ width: '28%' }}>Description</th>
-                  <th className="text-center p-2 text-xs font-medium" style={{ width: '12%' }}>Quantity</th>
-                  <th className="text-right p-2 text-xs font-medium" style={{ width: '15%' }}>Price rate</th>
-                  <th className="text-right p-2 text-xs font-medium" style={{ width: '18%' }}>Total without GST</th>
+                  <th className="text-left p-1 text-xs font-medium" style={{ width: '6%' }}>#</th>
+                  <th className="text-left p-1 text-xs font-medium" style={{ width: '24%' }}>Product/Service</th>
+                  <th className="text-left p-1 text-xs font-medium" style={{ width: '28%' }}>Description</th>
+                  <th className="text-center p-1 text-xs font-medium" style={{ width: '10%' }}>Qty</th>
+                  <th className="text-right p-1 text-xs font-medium" style={{ width: '15%' }}>Price</th>
+                  <th className="text-right p-1 text-xs font-medium" style={{ width: '17%' }}>Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -722,31 +722,31 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
                           <React.Fragment key={`${roomName}-${itemIndex}`}>
                             {/* Main product row */}
                             <tr className="border-t">
-                              <td className="p-2 text-xs font-medium" style={{ wordWrap: 'break-word' }}>{itemNumber}</td>
-                              <td className="p-2 text-xs font-medium" style={{ wordWrap: 'break-word' }}>
+                              <td className="p-1 text-xs font-medium" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{itemNumber}</td>
+                              <td className="p-1 text-xs font-medium" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
                                 {item.fabric_details?.name || item.treatment_name || item.name || 'Window Treatment'}
                                 {item.window_number && ` - ${item.window_number}`}
                               </td>
-                              <td className="p-2 text-xs" style={{ wordWrap: 'break-word' }}>
+                              <td className="p-1 text-xs" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
                                 {item.description || item.notes || item.room_name || 'Custom Treatment'}
                               </td>
-                              <td className="p-2 text-center text-xs" style={{ wordWrap: 'break-word' }}>{item.quantity || 1}</td>
-                              <td className="p-2 text-right text-xs" style={{ wordWrap: 'break-word' }}>
+                              <td className="p-1 text-center text-xs" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{item.quantity || 1}</td>
+                              <td className="p-1 text-right text-xs" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
                                 ${(item.total_cost || item.total_price || 0).toFixed(2)}
                               </td>
-                              <td className="p-2 text-right font-medium text-xs" style={{ wordWrap: 'break-word' }}>
+                              <td className="p-1 text-right font-medium text-xs" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
                                 ${((item.total_cost || item.total_price || 0) * (item.quantity || 1)).toFixed(2)}
                               </td>
                             </tr>
                             {/* Itemized component rows with smaller font and indentation */}
                             {itemizedComponents.map((component, compIndex) => (
                               <tr key={`${roomName}-${itemIndex}-${compIndex}`} className="border-t border-gray-100">
-                                <td className="p-2"></td>
-                                <td className="p-2 pl-6 text-xs text-gray-600" style={{ wordWrap: 'break-word' }}>{component.type}</td>
-                                <td className="p-2 text-xs text-gray-600" style={{ wordWrap: 'break-word' }}>{component.description}</td>
-                                <td className="p-2 text-center text-xs text-gray-600" style={{ wordWrap: 'break-word' }}>{component.quantity} {component.unit}</td>
-                                <td className="p-2 text-right text-xs text-gray-600" style={{ wordWrap: 'break-word' }}>${component.rate}</td>
-                                <td className="p-2 text-right text-xs text-gray-600" style={{ wordWrap: 'break-word' }}>${component.total}</td>
+                                <td className="p-1"></td>
+                                <td className="p-1 pl-4 text-xs text-gray-600" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{component.type}</td>
+                                <td className="p-1 text-xs text-gray-600" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{component.description}</td>
+                                <td className="p-1 text-center text-xs text-gray-600" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{component.quantity} {component.unit}</td>
+                                <td className="p-1 text-right text-xs text-gray-600" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>${component.rate}</td>
+                                <td className="p-1 text-right text-xs text-gray-600" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>${component.total}</td>
                               </tr>
                             ))}
                           </React.Fragment>
@@ -1274,9 +1274,10 @@ export const LivePreview = ({
           <div 
             className="w-full print:!p-0 print:!m-0"
             style={{ 
-              padding: '15mm',
+              padding: '10mm',
               boxSizing: 'border-box',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              maxWidth: '794px'
             }}
           >
             {blocks.map((block, index) => (

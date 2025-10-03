@@ -28,14 +28,12 @@ export const PrintableQuote = React.forwardRef<HTMLDivElement, PrintableQuotePro
           overflow: 'visible'
         }}
       >
-        <div style={{ padding: '15mm', width: '100%', boxSizing: 'border-box' }}>
-          <LivePreview 
-            blocks={blocks} 
-            projectData={projectData}
-            isEditable={false}
-            isPrintMode={isPrintMode}
-          />
-        </div>
+        <LivePreview 
+          blocks={blocks} 
+          projectData={projectData}
+          isEditable={false}
+          isPrintMode={isPrintMode}
+        />
       </div>
     );
   }
