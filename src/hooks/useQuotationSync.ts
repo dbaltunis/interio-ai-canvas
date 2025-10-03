@@ -107,21 +107,83 @@ export const useQuotationSync = ({
           }
 
           const breakdown = buildClientBreakdown(window.summary);
+          const summary = window.summary;
           
-          roomGroups[roomId].items.push({
+          // PARENT ITEM - The main window treatment
+          const parentItem = {
             id: window.window_id,
-            name: window.surface_name || 'Window Treatment',
-            description: `${window.summary.template_name || 'Window Treatment'} - ${window.surface_name}`,
+            name: summary.fabric_name || window.surface_name || 'Window Treatment',
+            description: `Auto-generated from ${window.surface_name || 'Window'} treatment`,
             quantity: 1,
-            unit_price: window.summary.total_cost,
-            total: window.summary.total_cost,
+            unit_price: summary.total_cost,
+            total: summary.total_cost,
             breakdown,
-            currency: window.summary.currency || 'GBP',
+            currency: summary.currency || 'GBP',
             room_name: roomName,
             room_id: roomId,
             surface_name: window.surface_name,
-            treatment_type: window.summary.template_name,
-          });
+            treatment_type: summary.template_name,
+            hasChildren: true,
+            children: [] as any[]
+          };
+
+          // DETAILED BREAKDOWN - Fabric
+          if (summary.fabric_cost && summary.fabric_cost > 0) {
+            parentItem.children.push({
+              id: `${window.window_id}-fabric`,
+              name: 'Fabric',
+              description: summary.fabric_name || 'fabric',
+              quantity: summary.linear_meters || 0,
+              unit: 'm',
+              unit_price: summary.fabric_price_per_metre || (summary.fabric_cost / (summary.linear_meters || 1)),
+              total: summary.fabric_cost,
+              isChild: true
+            });
+          }
+
+          // DETAILED BREAKDOWN - Manufacturing
+          if (summary.manufacturing_cost && summary.manufacturing_cost > 0) {
+            parentItem.children.push({
+              id: `${window.window_id}-manufacturing`,
+              name: 'Manufacturing price',
+              description: '-',
+              quantity: 1,
+              unit: '',
+              unit_price: summary.manufacturing_cost,
+              total: summary.manufacturing_cost,
+              isChild: true
+            });
+          }
+
+          // DETAILED BREAKDOWN - Lining
+          if (summary.lining_cost && summary.lining_cost > 0) {
+            parentItem.children.push({
+              id: `${window.window_id}-lining`,
+              name: 'Lining',
+              description: summary.lining_type || 'Interlining',
+              quantity: summary.linear_meters || 0,
+              unit: 'm',
+              unit_price: summary.lining_price_per_metre || (summary.lining_cost / (summary.linear_meters || 1)),
+              total: summary.lining_cost,
+              isChild: true
+            });
+          }
+
+          // DETAILED BREAKDOWN - Heading
+          if (summary.heading_cost && summary.heading_cost > 0) {
+            parentItem.children.push({
+              id: `${window.window_id}-heading`,
+              name: 'Heading',
+              description: summary.heading_name || 'Pencil Pleat',
+              quantity: summary.finished_width_cm || 0,
+              unit: 'cm',
+              unit_price: summary.heading_price_per_metre ? (summary.heading_price_per_metre / 100) : (summary.heading_cost / ((summary.finished_width_cm || 1) / 100)),
+              total: summary.heading_cost,
+              isChild: true
+            });
+          }
+
+          roomGroups[roomId].items.push(parentItem);
         }
       });
     } else if (hasTreatments) {
