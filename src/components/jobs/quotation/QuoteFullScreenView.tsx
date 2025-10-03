@@ -6,10 +6,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { TemplateQuotePreview } from "./TemplateQuotePreview";
 import { PrintableQuote } from "./PrintableQuote";
 import { EmailQuoteModal } from "./EmailQuoteModal";
-import { useReactToPrint } from "react-to-print";
+import { generateQuotePDFBlob } from "@/utils/pdfGenerator";
 import { useQuoteTemplates } from "@/hooks/useQuoteTemplates";
 import { useClients } from "@/hooks/useClients";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { useToast } from "@/hooks/use-toast";
 
 interface QuoteFullScreenViewProps {
   isOpen: boolean;
@@ -44,6 +45,9 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
 }) => {
   const printRef = useRef<HTMLDivElement>(null);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const { toast } = useToast();
   const { data: clients } = useClients();
   const { data: businessSettings } = useBusinessSettings();
   const { data: templates } = useQuoteTemplates();
@@ -64,25 +68,55 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
     taxAmount,
     total,
     markupPercentage,
-    validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    items: treatments.map((treatment: any, index: number) => ({
+      name: treatment.fabric_details?.name || treatment.treatment_name || 'Window Treatment',
+      description: `${treatment.room_name || ''} - ${treatment.window_number || ''}`.trim(),
+      quantity: treatment.quantity || 1,
+      total: treatment.total_cost || treatment.total_price || 0,
+      breakdown: treatment.itemized_breakdown || []
+    }))
   };
 
-  const handlePrint = useReactToPrint({
-    contentRef: printRef,
-    documentTitle: `quote-QT-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
-    pageStyle: `
-      @page {
-        size: A4;
-        margin: 0;
-      }
-      @media print {
-        body {
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
-      }
-    `
-  });
+  const handleDownloadPDF = async () => {
+    if (!selectedTemplate?.blocks) {
+      toast({
+        title: "Error",
+        description: "No template blocks found for PDF generation",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsDownloading(true);
+    try {
+      const blob = await generateQuotePDFBlob(selectedTemplate.blocks, projectData);
+      
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `quote-${projectData.project.quote_number || 'document'}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Success",
+        description: "PDF downloaded successfully"
+      });
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -94,11 +128,12 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handlePrint}
+                onClick={handleDownloadPDF}
+                disabled={isDownloading}
                 className="flex items-center gap-2"
               >
                 <Download className="h-4 w-4" />
-                <span>PDF</span>
+                <span>{isDownloading ? "Generating..." : "PDF"}</span>
               </Button>
               <Button
                 variant="outline"
@@ -170,10 +205,44 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
         onClose={() => setIsEmailModalOpen(false)}
         project={project}
         client={client}
-        onSend={(emailData) => {
-          console.log("Email sent:", emailData);
-          setIsEmailModalOpen(false);
+        onSend={async (emailData) => {
+          setIsSendingEmail(true);
+          try {
+            // Generate PDF
+            const pdfBlob = await generateQuotePDFBlob(selectedTemplate?.blocks || [], projectData);
+            
+            // Here you would send the email with the PDF attachment
+            // This requires a backend edge function
+            console.log("Email data:", emailData);
+            console.log("PDF blob size:", pdfBlob.size);
+            
+            toast({
+              title: "Success",
+              description: "Email functionality requires backend setup. PDF generated successfully.",
+            });
+            
+            setIsEmailModalOpen(false);
+          } catch (error) {
+            console.error('Email sending failed:', error);
+            toast({
+              title: "Error",
+              description: "Failed to generate PDF for email",
+              variant: "destructive"
+            });
+          } finally {
+            setIsSendingEmail(false);
+          }
         }}
+        isSending={isSendingEmail}
+        quotePreview={
+          selectedTemplate?.blocks && (
+            <PrintableQuote 
+              blocks={selectedTemplate.blocks}
+              projectData={projectData}
+              isPrintMode={false}
+            />
+          )
+        }
       />
     </Dialog>
   );
