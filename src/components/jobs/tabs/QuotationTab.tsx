@@ -214,7 +214,17 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   });
 
   const handleGeneratePDF = async () => {
-    if (!printRef.current) return;
+    console.log('Starting PDF generation...', { printRef: printRef.current });
+    
+    if (!printRef.current) {
+      console.error('printRef.current is null');
+      toast({
+        title: "Error",
+        description: "Quote template not ready. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
       toast({
@@ -224,34 +234,41 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
 
       // Create a temporary container with exact A4 dimensions
       const element = printRef.current;
+      console.log('Element to capture:', element);
       
       // Capture the element as canvas with high quality
+      console.log('Starting html2canvas...');
       const canvas = await html2canvas(element, {
         scale: 2, // Higher quality
         useCORS: true,
-        logging: false,
+        logging: true, // Enable logging for debugging
         backgroundColor: '#ffffff',
-        windowWidth: 794, // A4 width in pixels at 96 DPI (210mm)
-        windowHeight: 1123, // A4 height in pixels at 96 DPI (297mm)
+        width: 794, // A4 width in pixels at 96 DPI (210mm)
+        height: 1123, // A4 height in pixels at 96 DPI (297mm)
       });
+
+      console.log('Canvas created:', { width: canvas.width, height: canvas.height });
 
       // Calculate PDF dimensions (A4 in mm)
       const imgWidth = 210;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
+      console.log('Creating PDF...');
       // Create PDF
       const pdf = new jsPDF({
-        orientation: imgHeight > imgWidth ? 'portrait' : 'landscape',
+        orientation: 'portrait',
         unit: 'mm',
         format: 'a4',
       });
 
       // Add image to PDF
       const imgData = canvas.toDataURL('image/png');
+      console.log('Adding image to PDF...');
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
 
       // Download the PDF
       const fileName = `quote-${project?.job_number || 'QT-' + Math.floor(Math.random() * 10000)}.pdf`;
+      console.log('Saving PDF:', fileName);
       pdf.save(fileName);
 
       toast({
@@ -260,6 +277,10 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
       });
     } catch (error) {
       console.error('Error generating PDF:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       toast({
         title: "Error",
         description: "Failed to generate PDF. Please try again.",
