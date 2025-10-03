@@ -105,15 +105,14 @@ export const EmailQuoteModal: React.FC<EmailQuoteModalProps> = ({
                 </div>
 
                 {/* Quote Preview - Right Side */}
-                <div className="space-y-2">
+                <div className="space-y-2 flex-1">
                   <Label>Quote Preview</Label>
-                  <div className="border rounded-md bg-white overflow-hidden" style={{ height: '600px' }}>
+                  <div className="border rounded-md bg-gray-50 overflow-auto" style={{ height: '600px', width: '100%' }}>
                     <div style={{ 
-                      transform: 'scale(0.5)', 
+                      transform: 'scale(0.47)', 
                       transformOrigin: 'top left',
-                      width: '200%',
-                      height: '200%',
-                      overflow: 'auto'
+                      width: '794px',
+                      minWidth: '794px'
                     }}>
                       {quotePreview}
                     </div>
