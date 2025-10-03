@@ -40,11 +40,13 @@ export const useQuotationSync = ({
     roomCount: number;
     surfaceCount: number;
     totalCost: number;
+    windowCosts: Record<string, number>;
   }>({
     treatmentCount: 0,
     roomCount: 0,
     surfaceCount: 0,
-    totalCost: 0
+    totalCost: 0,
+    windowCosts: {}
   });
 
   // Build quotation items from current project data
@@ -242,21 +244,52 @@ export const useQuotationSync = ({
       console.log('✅ QuotationSync: Created new quote', quoteNumber);
     }
 
-    // Update reference data
-    previousDataRef.current = currentData;
+    // Update reference data including window costs
+    const currentWindowCosts: Record<string, number> = {};
+    (projectSummaries?.windows || []).forEach(w => {
+      currentWindowCosts[w.window_id] = Number(w.summary?.total_cost || 0);
+    });
+    
+    previousDataRef.current = {
+      ...currentData,
+      windowCosts: currentWindowCosts
+    };
   };
 
-  // Monitor changes and sync
+  // Monitor changes and sync with immediate + debounced pattern
   useEffect(() => {
     if (projectId && (treatments.length > 0 || projectSummaries?.windows?.length > 0)) {
-      // Debounce the sync to avoid too frequent updates
+      // Check if we need immediate sync
+      const currentWindowCosts: Record<string, number> = {};
+      (projectSummaries?.windows || []).forEach(w => {
+        currentWindowCosts[w.window_id] = Number(w.summary?.total_cost || 0);
+      });
+
+      const prevWindowCosts = previousDataRef.current.windowCosts || {};
+      const windowCountChanged = Object.keys(currentWindowCosts).length !== Object.keys(prevWindowCosts).length;
+      const windowCostsChanged = Object.keys(currentWindowCosts).some(
+        id => currentWindowCosts[id] !== prevWindowCosts[id]
+      );
+
+      if (windowCountChanged || windowCostsChanged) {
+        console.log('[QUOTE SYNC] Window data changed, triggering immediate sync', {
+          windowCountChanged,
+          windowCostsChanged,
+          currentCosts: currentWindowCosts,
+          prevCosts: prevWindowCosts
+        });
+        syncQuotation();
+        previousDataRef.current.windowCosts = currentWindowCosts;
+      }
+
+      // Also debounce for other changes
       const timeoutId = setTimeout(() => {
         syncQuotation();
       }, 1000);
 
       return () => clearTimeout(timeoutId);
     }
-  }, [projectId, treatments, rooms, surfaces, projectSummaries]);
+  }, [projectId, treatments, rooms, surfaces, projectSummaries, projectSummaries?.windows]);
 
   return {
     isLoading: createQuote.isPending || updateQuote.isPending,

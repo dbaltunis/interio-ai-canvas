@@ -325,6 +325,7 @@ export const MeasurementWorksheet = ({
           
           // Invalidate queries to refresh the card
           queryClient.invalidateQueries({ queryKey: ['window-summary', surfaceId] });
+          queryClient.invalidateQueries({ queryKey: ['project-window-summaries'] });
           
           // CREATE TREATMENT RECORD if a template is selected
           if (templateId && templateId !== 'default_template' && surfaceId && projectId) {

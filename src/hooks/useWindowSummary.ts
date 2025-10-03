@@ -223,6 +223,8 @@ export const useSaveWindowSummary = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["window-summary", data.window_id] });
+      // Invalidate project summaries to trigger quote sync
+      queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
       toast({
         title: "Success",
         description: "Window summary saved successfully",

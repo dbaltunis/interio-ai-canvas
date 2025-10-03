@@ -1090,6 +1090,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                           await queryClient.invalidateQueries({ queryKey: ["treatments"] });
                           await queryClient.invalidateQueries({ queryKey: ["window-summary"] });
                           await queryClient.invalidateQueries({ queryKey: ["client-measurements"] });
+                          await queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
                           console.log("✅ All data refreshed after save");
                         } catch (refreshError) {
                           console.warn("Failed to refresh after save:", refreshError);

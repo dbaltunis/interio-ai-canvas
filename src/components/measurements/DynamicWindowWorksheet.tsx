@@ -469,6 +469,7 @@ export const DynamicWindowWorksheet = forwardRef<
 
           // Invalidate cache to refresh UI
           await queryClient.invalidateQueries({ queryKey: ["window-summary", surfaceId] });
+          await queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
 
           console.log("✅ DynamicWindowWorksheet: Successfully saved to database:", data);
         } else {
