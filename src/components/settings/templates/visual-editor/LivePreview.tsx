@@ -506,8 +506,13 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
       );
 
     case 'products':
-      const [showDetailedProducts, setShowDetailedProducts] = React.useState(false);
-      const [groupByRoom, setGroupByRoom] = React.useState(false);
+      // Use content settings for initial state, with proper defaults
+      const [showDetailedProducts, setShowDetailedProducts] = React.useState(
+        content.showDetailed !== undefined ? content.showDetailed : false
+      );
+      const [groupByRoom, setGroupByRoom] = React.useState(
+        content.groupByRoom !== undefined ? content.groupByRoom : false
+      );
       
       // Get real workshop items data which has the detailed breakdown
       const workshopItems = projectData?.workshopItems || [];
@@ -662,21 +667,22 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
             {!isPrintMode && (
               <div className="no-print flex items-center gap-3">
                 {hasRealData && (
-                  <label className="flex items-center gap-2 text-sm text-gray-600">
+                  <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={groupByRoom}
                       onChange={(e) => setGroupByRoom(e.target.checked)}
-                      className="rounded border-gray-300"
+                      className="rounded border-gray-300 cursor-pointer"
                     />
-                    Group by room
+                    <span>Group by room</span>
                   </label>
                 )}
                 <button
                   onClick={() => setShowDetailedProducts(!showDetailedProducts)}
-                  className="px-3 py-1 text-sm border rounded hover:bg-gray-50 transition-colors"
+                  className="px-4 py-1.5 text-sm font-medium border rounded-md hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                  title={showDetailedProducts ? "Switch to simple view" : "Switch to detailed view with itemized breakdown"}
                 >
-                  {showDetailedProducts ? 'Simple' : 'Detailed'}
+                  {showDetailedProducts ? '📋 Simple View' : '🔍 Detailed View'}
                 </button>
               </div>
             )}
