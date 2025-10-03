@@ -1,0 +1,726 @@
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Plus, DollarSign, Ruler, Package, Store, TrendingUp, Trash2, ImageIcon } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useCreateEnhancedInventoryItem, useUpdateEnhancedInventoryItem, useDeleteEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
+import { useVendors } from "@/hooks/useVendors";
+import { useUserRole } from "@/hooks/useUserRole";
+import { FieldHelp } from "@/components/ui/field-help";
+
+interface UnifiedInventoryDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  mode: "create" | "edit";
+  item?: any;
+  onSuccess?: () => void;
+}
+
+export const UnifiedInventoryDialog = ({ 
+  open, 
+  onOpenChange, 
+  mode, 
+  item, 
+  onSuccess 
+}: UnifiedInventoryDialogProps) => {
+  const [activeTab, setActiveTab] = useState("basic");
+  const [trackInventory, setTrackInventory] = useState(mode === "edit" ? (item?.quantity > 0) : false);
+  const { toast } = useToast();
+  const createMutation = useCreateEnhancedInventoryItem();
+  const updateMutation = useUpdateEnhancedInventoryItem();
+  const deleteMutation = useDeleteEnhancedInventoryItem();
+  const { data: vendors = [] } = useVendors();
+  const { data: userRole } = useUserRole();
+  const canViewMarkup = userRole?.canViewMarkup || false;
+
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    sku: "",
+    category: "",
+    quantity: 0,
+    unit: "meters",
+    cost_price: 0,
+    selling_price: 0,
+    supplier: "",
+    vendor_id: "",
+    location: "",
+    reorder_point: 5,
+    fabric_width: 0,
+    pattern_repeat_vertical: 0,
+    pattern_repeat_horizontal: 0,
+    fabric_composition: "",
+    fabric_care_instructions: "",
+    collection_name: "",
+    color: "",
+    image_url: "",
+    hardware_finish: "",
+    hardware_material: "",
+    weight: 0
+  });
+
+  useEffect(() => {
+    if (mode === "edit" && item) {
+      setFormData({
+        name: item.name || "",
+        description: item.description || "",
+        sku: item.sku || "",
+        category: item.category || "",
+        quantity: item.quantity || 0,
+        unit: item.unit || "meters",
+        cost_price: item.cost_price || 0,
+        selling_price: item.selling_price || 0,
+        supplier: item.supplier || "",
+        vendor_id: item.vendor_id || "",
+        location: item.location || "",
+        reorder_point: item.reorder_point || 5,
+        fabric_width: item.fabric_width || 0,
+        pattern_repeat_vertical: item.pattern_repeat_vertical || 0,
+        pattern_repeat_horizontal: item.pattern_repeat_horizontal || 0,
+        fabric_composition: item.fabric_composition || "",
+        fabric_care_instructions: item.fabric_care_instructions || "",
+        collection_name: item.collection_name || "",
+        color: item.color || "",
+        image_url: item.image_url || "",
+        hardware_finish: item.hardware_finish || "",
+        hardware_material: item.hardware_material || "",
+        weight: item.weight || 0
+      });
+      setTrackInventory(item.quantity > 0);
+    }
+  }, [mode, item]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const cleanData = {
+        ...formData,
+        cost_price: formData.cost_price || 0,
+        selling_price: formData.selling_price || 0,
+        quantity: trackInventory ? formData.quantity : 0,
+        reorder_point: trackInventory ? formData.reorder_point : 0
+      };
+      
+      // Remove empty fields
+      Object.keys(cleanData).forEach(key => {
+        if (cleanData[key] === "" || cleanData[key] === undefined || cleanData[key] === null) {
+          delete cleanData[key];
+        }
+      });
+      
+      if (mode === "create") {
+        await createMutation.mutateAsync({ ...cleanData, active: true });
+      } else {
+        await updateMutation.mutateAsync({ id: item.id, ...cleanData });
+      }
+      
+      onOpenChange(false);
+      onSuccess?.();
+      
+      if (mode === "create") {
+        // Reset form for create mode
+        setFormData({
+          name: "",
+          description: "",
+          sku: "",
+          category: "",
+          quantity: 0,
+          unit: "meters",
+          cost_price: 0,
+          selling_price: 0,
+          supplier: "",
+          vendor_id: "",
+          location: "",
+          reorder_point: 5,
+          fabric_width: 0,
+          pattern_repeat_vertical: 0,
+          pattern_repeat_horizontal: 0,
+          fabric_composition: "",
+          fabric_care_instructions: "",
+          collection_name: "",
+          color: "",
+          image_url: "",
+          hardware_finish: "",
+          hardware_material: "",
+          weight: 0
+        });
+        setTrackInventory(false);
+      }
+      
+    } catch (error: any) {
+      console.error(`Error ${mode === "create" ? "creating" : "updating"} inventory item:`, error);
+      toast({
+        title: "Error",
+        description: error.message || `Failed to ${mode === "create" ? "create" : "update"} inventory item.`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (window.confirm('Are you sure you want to delete this item? This action cannot be undone.')) {
+      try {
+        await deleteMutation.mutateAsync(item.id);
+        onOpenChange(false);
+        onSuccess?.();
+      } catch (error) {
+        console.error('Failed to delete item:', error);
+      }
+    }
+  };
+
+  const isFabric = ["curtain_fabric", "blind_fabric", "wallcovering"].includes(formData.category);
+  const isHardware = ["track", "rod", "bracket", "motor", "accessory"].includes(formData.category);
+
+  const profitPerUnit = formData.selling_price - formData.cost_price;
+  const markupPercentage = formData.cost_price > 0 
+    ? ((formData.selling_price - formData.cost_price) / formData.cost_price) * 100 
+    : 0;
+  const marginPercentage = formData.selling_price > 0 
+    ? ((formData.selling_price - formData.cost_price) / formData.selling_price) * 100 
+    : 0;
+
+  const getMarginColor = () => {
+    if (marginPercentage >= 30) return "text-green-600";
+    if (marginPercentage >= 15) return "text-yellow-600";
+    return "text-red-600";
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{mode === "create" ? "Add New Product" : `Edit ${item?.name}`}</DialogTitle>
+          <DialogDescription>
+            {mode === "create" 
+              ? "Create a new fabric, hardware, or material item" 
+              : `Update the details for ${item?.name}`}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Product Type Selection - Only for Create */}
+          {mode === "create" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Product Type</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select product type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="curtain_fabric">Curtain Fabric</SelectItem>
+                    <SelectItem value="blind_fabric">Blind Fabric</SelectItem>
+                    <SelectItem value="wallcovering">Wallcovering</SelectItem>
+                    <SelectItem value="track">Track System</SelectItem>
+                    <SelectItem value="rod">Rod System</SelectItem>
+                    <SelectItem value="bracket">Bracket</SelectItem>
+                    <SelectItem value="motor">Motor</SelectItem>
+                    <SelectItem value="accessory">Accessory</SelectItem>
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
+          )}
+
+          {formData.category && (
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                <TabsTrigger value="specifications">Specifications</TabsTrigger>
+                <TabsTrigger value="pricing">Pricing</TabsTrigger>
+                <TabsTrigger value="inventory">Vendor & Stock</TabsTrigger>
+              </TabsList>
+
+              {/* BASIC INFO TAB */}
+              <TabsContent value="basic" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Package className="h-5 w-5" />
+                      Basic Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <div className="flex items-center">
+                        <Label htmlFor="name">Product Name</Label>
+                        <FieldHelp content="A descriptive name that clearly identifies the product." />
+                      </div>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="e.g., Luxury Velvet Navy"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <div className="flex items-center">
+                        <Label htmlFor="sku">SKU</Label>
+                        <FieldHelp content="Stock Keeping Unit - unique identifier for this product." />
+                      </div>
+                      <Input
+                        id="sku"
+                        value={formData.sku}
+                        onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                        placeholder="e.g., LVN-001"
+                      />
+                    </div>
+
+                    {mode === "edit" && (
+                      <div>
+                        <Label htmlFor="category">Category</Label>
+                        <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="curtain_fabric">Curtain Fabric</SelectItem>
+                            <SelectItem value="blind_fabric">Blind Fabric</SelectItem>
+                            <SelectItem value="wallcovering">Wallcovering</SelectItem>
+                            <SelectItem value="track">Track System</SelectItem>
+                            <SelectItem value="rod">Rod System</SelectItem>
+                            <SelectItem value="bracket">Bracket</SelectItem>
+                            <SelectItem value="motor">Motor</SelectItem>
+                            <SelectItem value="accessory">Accessory</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    <div className="md:col-span-2">
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        placeholder="Product description..."
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* SPECIFICATIONS TAB */}
+              <TabsContent value="specifications" className="space-y-4">
+                {/* Fabric Specifications */}
+                {isFabric && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Ruler className="h-5 w-5" />
+                        Fabric Specifications
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <Label htmlFor="fabric_width">Fabric Width (cm)</Label>
+                        <Input
+                          id="fabric_width"
+                          type="number"
+                          step="0.1"
+                          value={formData.fabric_width || ""}
+                          onChange={(e) => setFormData({ ...formData, fabric_width: parseFloat(e.target.value) || 0 })}
+                          placeholder="137"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="fabric_composition">Composition</Label>
+                        <Input
+                          id="fabric_composition"
+                          value={formData.fabric_composition}
+                          onChange={(e) => setFormData({ ...formData, fabric_composition: e.target.value })}
+                          placeholder="e.g., 100% Cotton"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="pattern_repeat_vertical">Vertical Pattern Repeat (cm)</Label>
+                        <Input
+                          id="pattern_repeat_vertical"
+                          type="number"
+                          step="0.1"
+                          value={formData.pattern_repeat_vertical || ""}
+                          onChange={(e) => setFormData({ ...formData, pattern_repeat_vertical: parseFloat(e.target.value) || 0 })}
+                          placeholder="64"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="pattern_repeat_horizontal">Horizontal Pattern Repeat (cm)</Label>
+                        <Input
+                          id="pattern_repeat_horizontal"
+                          type="number"
+                          step="0.1"
+                          value={formData.pattern_repeat_horizontal || ""}
+                          onChange={(e) => setFormData({ ...formData, pattern_repeat_horizontal: parseFloat(e.target.value) || 0 })}
+                          placeholder="32"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="collection_name">Collection</Label>
+                        <Input
+                          id="collection_name"
+                          value={formData.collection_name}
+                          onChange={(e) => setFormData({ ...formData, collection_name: e.target.value })}
+                          placeholder="e.g., Luxury Collection"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="color">Color</Label>
+                        <Input
+                          id="color"
+                          value={formData.color}
+                          onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                          placeholder="e.g., Navy Blue"
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <div className="flex items-center gap-2">
+                          <ImageIcon className="h-4 w-4" />
+                          <Label htmlFor="image_url">Image URL</Label>
+                        </div>
+                        <Input
+                          id="image_url"
+                          value={formData.image_url}
+                          onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                          placeholder="https://example.com/fabric-image.jpg"
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <Label htmlFor="fabric_care_instructions">Care Instructions</Label>
+                        <Textarea
+                          id="fabric_care_instructions"
+                          value={formData.fabric_care_instructions}
+                          onChange={(e) => setFormData({ ...formData, fabric_care_instructions: e.target.value })}
+                          placeholder="e.g., Dry clean only"
+                          rows={2}
+                        />
+                      </div>
+                    </CardContent>
+
+                    {/* Roll Direction Info */}
+                    {formData.fabric_width > 0 && (
+                      <CardContent>
+                        <div className="p-4 bg-muted rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="font-medium">Roll Direction</h4>
+                            <Badge variant={formData.fabric_width <= 200 ? "default" : "secondary"}>
+                              {formData.fabric_width <= 200 ? "Vertical" : "Horizontal"}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Based on fabric width of {formData.fabric_width}cm, this fabric will be used in{" "}
+                            <strong>{formData.fabric_width <= 200 ? "vertical" : "horizontal"}</strong> orientation for optimal fabric utilization.
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            • Narrow fabrics (≤200cm): Used vertically for better fabric efficiency
+                            • Wide fabrics ({">"}200cm): Used horizontally for standard curtain making
+                          </p>
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
+                )}
+
+                {/* Hardware Specifications */}
+                {isHardware && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Package className="h-5 w-5" />
+                        Hardware Specifications
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <Label htmlFor="hardware_material">Material</Label>
+                        <Input
+                          id="hardware_material"
+                          value={formData.hardware_material}
+                          onChange={(e) => setFormData({ ...formData, hardware_material: e.target.value })}
+                          placeholder="e.g., Aluminum"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="hardware_finish">Finish</Label>
+                        <Input
+                          id="hardware_finish"
+                          value={formData.hardware_finish}
+                          onChange={(e) => setFormData({ ...formData, hardware_finish: e.target.value })}
+                          placeholder="e.g., Chrome"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="weight">Weight (kg)</Label>
+                        <Input
+                          id="weight"
+                          type="number"
+                          step="0.1"
+                          value={formData.weight || ""}
+                          onChange={(e) => setFormData({ ...formData, weight: parseFloat(e.target.value) || 0 })}
+                          placeholder="2.5"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+
+              {/* PRICING TAB */}
+              <TabsContent value="pricing" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <DollarSign className="h-5 w-5" />
+                      Pricing Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {canViewMarkup && (
+                      <Alert className="bg-primary/5 border-primary/20">
+                        <TrendingUp className="h-4 w-4" />
+                        <AlertDescription className="text-sm">
+                          Admin View: You can see profit margins and markup calculations
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <Label htmlFor="unit">Unit</Label>
+                        <Select 
+                          value={formData.unit} 
+                          onValueChange={(value) => setFormData({ ...formData, unit: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="meters">Meters</SelectItem>
+                            <SelectItem value="yards">Yards</SelectItem>
+                            <SelectItem value="sqm">Square Meters</SelectItem>
+                            <SelectItem value="pieces">Pieces</SelectItem>
+                            <SelectItem value="rolls">Rolls</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="cost_price">
+                          Cost Price (Buying) per {formData.unit} ($)
+                        </Label>
+                        <Input
+                          id="cost_price"
+                          type="number"
+                          step="0.01"
+                          value={formData.cost_price || ""}
+                          onChange={(e) => setFormData({ ...formData, cost_price: parseFloat(e.target.value) || 0 })}
+                          placeholder="20.00"
+                          required
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">What you pay to supplier</p>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="selling_price">
+                          Selling Price (Retail) per {formData.unit} ($)
+                        </Label>
+                        <Input
+                          id="selling_price"
+                          type="number"
+                          step="0.01"
+                          value={formData.selling_price || ""}
+                          onChange={(e) => setFormData({ ...formData, selling_price: parseFloat(e.target.value) || 0 })}
+                          placeholder="40.00"
+                          required
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">What customer pays</p>
+                      </div>
+                    </div>
+
+                    {/* Profit Analysis - Admin Only */}
+                    {canViewMarkup && formData.cost_price > 0 && formData.selling_price > 0 && (
+                      <Card className="bg-muted/50">
+                        <CardHeader>
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <TrendingUp className="h-4 w-4" />
+                            Profit Analysis
+                          </CardTitle>
+                          <CardDescription>Calculated automatically based on your pricing</CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid gap-3 md:grid-cols-3">
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Profit per Unit</Label>
+                            <p className="text-xl font-bold">${profitPerUnit.toFixed(2)}</p>
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Markup %</Label>
+                            <p className="text-xl font-bold">{markupPercentage.toFixed(1)}%</p>
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Profit Margin %</Label>
+                            <p className={`text-xl font-bold ${getMarginColor()}`}>
+                              {marginPercentage.toFixed(1)}%
+                              {marginPercentage >= 30 && " 🟢"}
+                              {marginPercentage >= 15 && marginPercentage < 30 && " 🟡"}
+                              {marginPercentage < 15 && " 🔴"}
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* VENDOR & STOCK TAB */}
+              <TabsContent value="inventory" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Store className="h-5 w-5" />
+                      Vendor & Stock Management
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <Label htmlFor="vendor_id">Vendor</Label>
+                        <Select 
+                          value={formData.vendor_id} 
+                          onValueChange={(value) => setFormData({ ...formData, vendor_id: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select vendor" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {vendors.map((vendor) => (
+                              <SelectItem key={vendor.id} value={vendor.id}>
+                                {vendor.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="supplier">Supplier Name (Legacy)</Label>
+                        <Input
+                          id="supplier"
+                          value={formData.supplier}
+                          onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+                          placeholder="Supplier name"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="location">Storage Location</Label>
+                        <Input
+                          id="location"
+                          value={formData.location}
+                          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                          placeholder="e.g., Warehouse A - Shelf 12"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2 pt-2">
+                      <Switch
+                        id="track_inventory"
+                        checked={trackInventory}
+                        onCheckedChange={setTrackInventory}
+                      />
+                      <Label htmlFor="track_inventory" className="cursor-pointer">
+                        Track inventory quantity
+                      </Label>
+                    </div>
+
+                    {trackInventory && (
+                      <div className="grid gap-4 md:grid-cols-2 pt-2">
+                        <div>
+                          <Label htmlFor="quantity">Current Quantity</Label>
+                          <Input
+                            id="quantity"
+                            type="number"
+                            value={formData.quantity}
+                            onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
+                            placeholder="100"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="reorder_point">Reorder Point</Label>
+                          <Input
+                            id="reorder_point"
+                            type="number"
+                            value={formData.reorder_point}
+                            onChange={(e) => setFormData({ ...formData, reorder_point: parseInt(e.target.value) || 0 })}
+                            placeholder="5"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Alert when quantity falls below this level
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          )}
+
+          <div className="flex items-center justify-between pt-4">
+            {mode === "edit" && (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={deleteMutation.isPending}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Item
+              </Button>
+            )}
+            {mode === "create" && <div />}
+
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
+                {mode === "create" 
+                  ? (createMutation.isPending ? "Creating..." : "Create Item")
+                  : (updateMutation.isPending ? "Updating..." : "Update Item")}
+              </Button>
+            </div>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
