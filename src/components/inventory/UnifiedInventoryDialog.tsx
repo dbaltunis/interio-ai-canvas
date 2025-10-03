@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,8 @@ import { useCreateEnhancedInventoryItem, useUpdateEnhancedInventoryItem, useDele
 import { useVendors } from "@/hooks/useVendors";
 import { useUserRole } from "@/hooks/useUserRole";
 import { FieldHelp } from "@/components/ui/field-help";
+
+const STORAGE_KEY = "inventory_draft_data";
 
 interface UnifiedInventoryDialogProps {
   open: boolean;
@@ -68,8 +70,25 @@ export const UnifiedInventoryDialog = ({
     weight: 0
   });
 
+  // Load draft data on mount for create mode
   useEffect(() => {
-    if (mode === "edit" && item) {
+    if (mode === "create" && open) {
+      const savedDraft = localStorage.getItem(STORAGE_KEY);
+      if (savedDraft) {
+        try {
+          const parsed = JSON.parse(savedDraft);
+          setFormData(parsed.formData);
+          setTrackInventory(parsed.trackInventory);
+          setActiveTab(parsed.activeTab || "basic");
+          toast({
+            title: "Draft Restored",
+            description: "Your unsaved work has been restored.",
+          });
+        } catch (error) {
+          console.error("Failed to restore draft:", error);
+        }
+      }
+    } else if (mode === "edit" && item) {
       setFormData({
         name: item.name || "",
         description: item.description || "",
@@ -97,7 +116,36 @@ export const UnifiedInventoryDialog = ({
       });
       setTrackInventory(item.quantity > 0);
     }
-  }, [mode, item]);
+  }, [mode, item, open, toast]);
+
+  // Save draft when form data changes (only for create mode)
+  const saveDraft = useCallback(() => {
+    if (mode === "create" && open && formData.name) {
+      const draftData = {
+        formData,
+        trackInventory,
+        activeTab,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(draftData));
+    }
+  }, [mode, open, formData, trackInventory, activeTab]);
+
+  // Auto-save draft periodically
+  useEffect(() => {
+    const interval = setInterval(saveDraft, 2000); // Save every 2 seconds
+    return () => clearInterval(interval);
+  }, [saveDraft]);
+
+  // Save before page unload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      saveDraft();
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [saveDraft]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,6 +168,8 @@ export const UnifiedInventoryDialog = ({
       
       if (mode === "create") {
         await createMutation.mutateAsync({ ...cleanData, active: true });
+        // Clear draft on successful creation
+        localStorage.removeItem(STORAGE_KEY);
       } else {
         await updateMutation.mutateAsync({ id: item.id, ...cleanData });
       }
