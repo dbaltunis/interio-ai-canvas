@@ -1,5 +1,5 @@
 
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -45,8 +45,20 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
     taxRate: 0.08,
   });
 
-  // Build quotation items from sync data
-  const quotationData = buildQuotationItems();
+  // Build quotation items reactively - recalculate when data changes
+  const quotationData = useMemo(() => {
+    const data = buildQuotationItems();
+    console.log('[PROJECT QUOTE TAB] Recalculated quotation data:', {
+      baseSubtotal: data.baseSubtotal,
+      subtotal: data.subtotal,
+      total: data.total,
+      itemCount: data.items.length,
+      summariesTotal: projectSummaries?.projectTotal,
+      treatmentCount: treatments.length
+    });
+    return data;
+  }, [treatments, rooms, surfaces, projectSummaries, buildQuotationItems]);
+  
   const { toast } = useToast();
   
   const [isTemplateEditorOpen, setIsTemplateEditorOpen] = useState(false);
