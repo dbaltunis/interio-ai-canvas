@@ -607,64 +607,25 @@ export const DynamicWindowWorksheet = forwardRef<
         {/* Treatment Selection */}
         <TabsContent value="treatment" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Select Treatment & Template</CardTitle>
-              <div className="flex gap-2 mt-2">
-                <Button
-                  variant={!isLayeredMode ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setIsLayeredMode(false)}
-                >
-                  Single Treatment
-                </Button>
-                <Button
-                  variant={isLayeredMode ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setIsLayeredMode(true)}
-                >
-                  Layered Treatments
-                </Button>
-              </div>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Select Treatment & Template</CardTitle>
             </CardHeader>
             <CardContent>
-              {isLayeredMode ? (
-                /* Layered Treatment Manager */
-                <LayeredTreatmentManager
-                  treatments={layeredTreatments}
-                  onTreatmentsChange={setLayeredTreatments}
-                />
-              ) : (
-                /* Single Treatment Configuration */
-                <>
-                  <ImprovedTreatmentSelector
-                    selectedCoveringId={selectedTemplate?.id || ""}
-                    onCoveringSelect={(template) => {
-                      setSelectedTemplate(template);
-                    }}
-                    disabled={readOnly}
-                  />
-                  
-                  {selectedTemplate && (
-                    <div className="mt-6 p-4 bg-primary/5 rounded-lg">
-                      <h4 className="font-medium mb-2">Selected Template</h4>
-                      <p className="text-sm">{selectedTemplate.name}</p>
-                      <div className="flex gap-2 mt-2">
-                        <Badge variant="outline">{selectedTemplate.curtain_type || selectedTemplate.type}</Badge>
-                        {selectedTemplate.fullness_ratio && (
-                          <Badge variant="outline">Fullness: {selectedTemplate.fullness_ratio}x</Badge>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
+              <ImprovedTreatmentSelector
+                selectedCoveringId={selectedTemplate?.id || ""}
+                onCoveringSelect={(template) => {
+                  setSelectedTemplate(template);
+                }}
+                disabled={readOnly}
+              />
               
-              <div className="mt-6">
+              <div className="mt-4">
                 <Button 
                   onClick={() => setActiveTab("inventory")}
-                  disabled={!isLayeredMode && !selectedTemplate}
+                  disabled={!selectedTemplate}
+                  className="w-full"
                 >
-                  Continue to {isLayeredMode ? "Measurements" : "Inventory Selection"}
+                  Continue to Inventory Selection
                 </Button>
               </div>
             </CardContent>

@@ -51,54 +51,43 @@ export const TreatmentTypeGrid = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {Object.entries(groupedTreatments).map(([category, categoryTreatments]) => (
-        <div key={category} className="space-y-3">
-          <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground border-b pb-2">
+        <div key={category} className="space-y-2">
+          <h3 className="font-medium text-xs uppercase tracking-wider text-muted-foreground px-1">
             {category}
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
             {categoryTreatments.map((treatment) => (
               <Card
                 key={treatment.id}
-                className={`cursor-pointer transition-all hover:shadow-md hover:scale-[1.02] ${
+                className={`cursor-pointer transition-all hover:shadow-md ${
                   selectedId === treatment.id
-                    ? "ring-2 ring-primary bg-primary/5 shadow-lg"
+                    ? "ring-2 ring-primary bg-primary/5"
                     : "hover:bg-accent/50"
                 }`}
                 onClick={() => onSelect(treatment)}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h4 className="font-medium text-sm leading-tight">
+                <CardContent className="p-3">
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-1">
+                      <h4 className="font-medium text-xs leading-tight line-clamp-2 flex-1">
                         {treatment.name}
                       </h4>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {treatment.heading_name || "Standard"}
-                      </p>
-                    </div>
-                    {selectedId === treatment.id && (
-                      <div className="flex-shrink-0 ml-2">
-                        <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                          <Check className="w-3 h-3 text-primary-foreground" />
+                      {selectedId === treatment.id && (
+                        <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                          <Check className="w-2.5 h-2.5 text-primary-foreground" />
                         </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">Fullness:</span>
-                      <Badge variant="outline" className="text-xs">
+                      )}
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-1">
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
                         {treatment.fullness_ratio}x
                       </Badge>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">Pricing:</span>
-                      <span className="text-xs font-medium">
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
                         {treatment.pricing_type.replace('_', ' ')}
-                      </span>
+                      </Badge>
                     </div>
                   </div>
                 </CardContent>
