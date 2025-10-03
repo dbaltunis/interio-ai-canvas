@@ -213,19 +213,50 @@ export const useQuotationSync = ({
       treatmentCount: treatments.length
     });
     
+    // Build current window costs map for comparison
+    const currentWindowCosts: Record<string, number> = {};
+    (projectSummaries?.windows || []).forEach(w => {
+      currentWindowCosts[w.window_id] = Number(w.summary?.total_cost || 0);
+    });
+
     const currentData = {
       treatmentCount: treatments.length,
       roomCount: rooms.length,
       surfaceCount: surfaces.length,
-      totalCost: quotationData.baseSubtotal
+      totalCost: quotationData.baseSubtotal,
+      windowCosts: currentWindowCosts
     };
+
+    // Check if window costs have changed (more granular detection)
+    const prevWindowCosts = previousDataRef.current.windowCosts || {};
+    const windowIdsChanged = 
+      Object.keys(currentWindowCosts).length !== Object.keys(prevWindowCosts).length ||
+      Object.keys(currentWindowCosts).some(id => !prevWindowCosts[id]) ||
+      Object.keys(prevWindowCosts).some(id => !currentWindowCosts[id]);
+    
+    const windowValuesChanged = Object.keys(currentWindowCosts).some(
+      id => Math.abs((currentWindowCosts[id] || 0) - (prevWindowCosts[id] || 0)) > 0.01
+    );
 
     // Check if data has changed
     const hasChanges = 
       currentData.treatmentCount !== previousDataRef.current.treatmentCount ||
       currentData.roomCount !== previousDataRef.current.roomCount ||
       currentData.surfaceCount !== previousDataRef.current.surfaceCount ||
-      Math.abs(currentData.totalCost - previousDataRef.current.totalCost) > 0.01;
+      Math.abs(currentData.totalCost - previousDataRef.current.totalCost) > 0.01 ||
+      windowIdsChanged ||
+      windowValuesChanged;
+
+    console.log('[QUOTE SYNC] Change detection:', {
+      hasChanges,
+      treatmentCountChanged: currentData.treatmentCount !== previousDataRef.current.treatmentCount,
+      roomCountChanged: currentData.roomCount !== previousDataRef.current.roomCount,
+      totalCostChanged: Math.abs(currentData.totalCost - previousDataRef.current.totalCost) > 0.01,
+      windowIdsChanged,
+      windowValuesChanged,
+      currentWindowCosts,
+      prevWindowCosts
+    });
 
     if (!hasChanges) {
       console.log('[QUOTE SYNC] No changes detected, skipping sync');
@@ -282,19 +313,11 @@ export const useQuotationSync = ({
         notes: `Auto-generated from ${quotationData.items.length} project items`,
       });
       
-      console.log('✅ QuotationSync: Created new quote', quoteNumber);
+    console.log('✅ QuotationSync: Created new quote', quoteNumber);
     }
 
     // Update reference data including window costs
-    const currentWindowCosts: Record<string, number> = {};
-    (projectSummaries?.windows || []).forEach(w => {
-      currentWindowCosts[w.window_id] = Number(w.summary?.total_cost || 0);
-    });
-    
-    previousDataRef.current = {
-      ...currentData,
-      windowCosts: currentWindowCosts
-    };
+    previousDataRef.current = currentData;
   };
 
   // Monitor changes and sync with immediate + debounced pattern

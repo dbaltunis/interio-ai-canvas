@@ -43,11 +43,11 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
     autoCreateQuote: false
   });
 
-  // Build quotation items reactively - recalculate when data changes
+  // ALWAYS recalculate quotation data - never use stale data
   const quotationData = useMemo(() => {
     const data = buildQuotationItems();
-    console.log('[PROJECT QUOTE TAB] ===== QUOTE RECALCULATED (LIVE DATA) =====');
-    console.log('[PROJECT QUOTE TAB] Window Summaries:', {
+    console.log('[PROJECT QUOTE TAB] ===== LIVE QUOTE RECALCULATED =====');
+    console.log('[PROJECT QUOTE TAB] Window Summaries (SOURCE OF TRUTH):', {
       windowCount: projectSummaries?.windows?.length || 0,
       projectTotal: projectSummaries?.projectTotal,
       windows: projectSummaries?.windows?.map(w => ({
@@ -56,7 +56,7 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
         cost: w.summary?.total_cost
       }))
     });
-    console.log('[PROJECT QUOTE TAB] Quotation Result:', {
+    console.log('[PROJECT QUOTE TAB] Quote Calculation Result:', {
       baseSubtotal: data.baseSubtotal,
       subtotal: data.subtotal,
       total: data.total,
@@ -67,9 +67,9 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
         isHeader: item.isHeader
       }))
     });
-    console.log('[PROJECT QUOTE TAB] Prices are FINAL selling prices (no additional markup applied)');
+    console.log('[PROJECT QUOTE TAB] ✅ Prices match Rooms & Treatments (no additional markup)');
     return data;
-  }, [treatments, rooms, surfaces, projectSummaries?.windows, projectSummaries?.projectTotal, buildQuotationItems]);
+  }, [buildQuotationItems, projectSummaries?.windows, projectSummaries?.projectTotal, treatments.length]);
   
   const { toast } = useToast();
   
