@@ -295,21 +295,53 @@ export const QuotePDFDocument: React.FC<QuotePDFDocumentProps> = ({ blocks, proj
                 <Text style={[styles.tableCol1, { fontWeight: 'bold' }]}>#</Text>
                 <Text style={[styles.tableCol2, { fontWeight: 'bold' }]}>Description</Text>
                 <Text style={[styles.tableCol3, { fontWeight: 'bold' }]}>Qty</Text>
-                <Text style={[styles.tableCol4, { fontWeight: 'bold' }]}>Unit Price</Text>
                 <Text style={[styles.tableCol5, { fontWeight: 'bold' }]}>Total</Text>
               </View>
 
-              {/* Table Rows */}
+              {/* Table Rows with Breakdown */}
               {items.map((item: any, index: number) => (
-                <View style={styles.tableRow} key={index}>
-                  <Text style={styles.tableCol1}>{index + 1}</Text>
-                  <View style={styles.tableCol2}>
-                    <Text style={{ fontWeight: 'bold' }}>{item.name || item.description}</Text>
-                    {item.details && <Text style={{ fontSize: 8, color: '#666', marginTop: 2 }}>{item.details}</Text>}
+                <View key={index} style={{ marginBottom: 12, borderBottom: '1px solid #e2e8f0', paddingBottom: 12 }}>
+                  {/* Main Item Row */}
+                  <View style={[styles.tableRow, { borderBottom: 'none', paddingBottom: 4 }]}>
+                    <Text style={styles.tableCol1}>{index + 1}</Text>
+                    <View style={styles.tableCol2}>
+                      <Text style={{ fontWeight: 'bold', fontSize: 11 }}>{item.name || item.description}</Text>
+                      <Text style={{ fontSize: 9, color: '#666', marginTop: 2 }}>{item.description}</Text>
+                    </View>
+                    <Text style={styles.tableCol3}>{item.quantity || 1}</Text>
+                    <Text style={[styles.tableCol5, { fontWeight: 'bold' }]}>
+                      {renderTokenValue('currency_symbol')}{(item.total || 0).toFixed(2)}
+                    </Text>
                   </View>
-                  <Text style={styles.tableCol3}>{item.quantity || 1}</Text>
-                  <Text style={styles.tableCol4}>{renderTokenValue('currency_symbol')}{(item.unitPrice || 0).toFixed(2)}</Text>
-                  <Text style={styles.tableCol5}>{renderTokenValue('currency_symbol')}{(item.total || 0).toFixed(2)}</Text>
+                  
+                  {/* Breakdown Details */}
+                  {item.breakdown && item.breakdown.length > 0 && (
+                    <View style={{ marginLeft: 30, marginTop: 8, paddingLeft: 12, borderLeft: '2px solid #e5e7eb' }}>
+                      {item.breakdown.map((breakdownItem: any, idx: number) => (
+                        <View key={idx} style={{ marginBottom: 6, flexDirection: 'row' }}>
+                          <Text style={{ fontSize: 10, marginRight: 6, color: '#6b7280' }}>•</Text>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: 9, fontWeight: 'bold', marginBottom: 1 }}>
+                              {breakdownItem.name}
+                            </Text>
+                            <Text style={{ fontSize: 8, color: '#6b7280', marginBottom: 1 }}>
+                              {breakdownItem.description}
+                            </Text>
+                            {breakdownItem.quantity && breakdownItem.unit && (
+                              <Text style={{ fontSize: 8, color: '#9ca3af' }}>
+                                {breakdownItem.quantity} {breakdownItem.unit} × {renderTokenValue('currency_symbol')}{(breakdownItem.unit_price || 0).toFixed(2)} = {renderTokenValue('currency_symbol')}{(breakdownItem.total_cost || 0).toFixed(2)}
+                              </Text>
+                            )}
+                            {!breakdownItem.quantity && breakdownItem.total_cost > 0 && (
+                              <Text style={{ fontSize: 8, color: '#9ca3af' }}>
+                                {renderTokenValue('currency_symbol')}{(breakdownItem.total_cost || 0).toFixed(2)}
+                              </Text>
+                            )}
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  )}
                 </View>
               ))}
             </View>
