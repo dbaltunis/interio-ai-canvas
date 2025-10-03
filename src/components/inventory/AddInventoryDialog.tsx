@@ -85,8 +85,9 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
         user_id: user.id, // This is required for RLS policy
         category: itemType,
         active: true,
-        selling_price: formData.unit_price,
-        cost_price: formData.unit_price * 0.7,
+        cost_price: formData.cost_price || 0,
+        selling_price: formData.selling_price || formData.unit_price || 0,
+        unit_price: formData.unit_price || formData.selling_price || 0,
         quantity: trackInventory ? formData.quantity : 0,
         reorder_point: trackInventory ? formData.reorder_point : 0
       };
