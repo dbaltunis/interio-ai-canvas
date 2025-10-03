@@ -48,16 +48,29 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
   // Build quotation items reactively - recalculate when data changes
   const quotationData = useMemo(() => {
     const data = buildQuotationItems();
-    console.log('[PROJECT QUOTE TAB] Recalculated quotation data:', {
+    console.log('[PROJECT QUOTE TAB] ===== QUOTE RECALCULATED =====');
+    console.log('[PROJECT QUOTE TAB] Window Summaries:', {
+      windowCount: projectSummaries?.windows?.length || 0,
+      projectTotal: projectSummaries?.projectTotal,
+      windows: projectSummaries?.windows?.map(w => ({
+        id: w.window_id,
+        name: w.surface_name,
+        cost: w.summary?.total_cost
+      }))
+    });
+    console.log('[PROJECT QUOTE TAB] Quotation Result:', {
       baseSubtotal: data.baseSubtotal,
       subtotal: data.subtotal,
       total: data.total,
       itemCount: data.items.length,
-      summariesTotal: projectSummaries?.projectTotal,
-      treatmentCount: treatments.length
+      items: data.items.map((item: any) => ({
+        name: item.name,
+        total: item.total,
+        isHeader: item.isHeader
+      }))
     });
     return data;
-  }, [treatments, rooms, surfaces, projectSummaries, buildQuotationItems]);
+  }, [treatments, rooms, surfaces, projectSummaries?.windows, projectSummaries?.projectTotal]);
   
   const { toast } = useToast();
   
@@ -227,8 +240,9 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
         </Card>
       </div>
 
-      {/* Detailed Quotation Table */}
+      {/* Detailed Quotation Table - Force update with key */}
       <DetailedQuotationTable 
+        key={`quote-${projectSummaries?.projectTotal}-${treatments.length}`}
         quotationData={quotationData}
         groupByRoom={true}
         showDetailedView={true}
