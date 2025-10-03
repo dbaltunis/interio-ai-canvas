@@ -5,46 +5,23 @@ export async function generateQuotePDFBlob(element: HTMLElement): Promise<Blob> 
   console.log('Generating PDF from element:', element);
   
   try {
-    // Remove all images temporarily to avoid PNG errors
-    const images = Array.from(element.getElementsByTagName('img'));
-    const imageData: Array<{ img: HTMLImageElement; src: string; parent: HTMLElement }> = [];
-    
-    images.forEach(img => {
-      const parent = img.parentElement;
-      if (parent) {
-        imageData.push({ img, src: img.src, parent });
-        // Replace image with placeholder
-        const placeholder = document.createElement('div');
-        placeholder.style.width = img.width + 'px';
-        placeholder.style.height = img.height + 'px';
-        placeholder.style.backgroundColor = '#f0f0f0';
-        placeholder.style.display = 'inline-block';
-        parent.replaceChild(placeholder, img);
-      }
-    });
-
     // Capture the element as canvas with high quality
     const canvas = await html2canvas(element, {
       scale: 2,
       useCORS: true,
-      allowTaint: false,
+      allowTaint: true, // Allow cross-origin images
       logging: false,
       backgroundColor: '#ffffff',
       width: 794,
       windowWidth: 794,
       removeContainer: false,
-      imageTimeout: 0,
+      imageTimeout: 15000, // Wait for images to load
       ignoreElements: (el) => {
-        // Ignore script and style elements
-        return el.tagName === 'SCRIPT' || el.tagName === 'STYLE' || el.tagName === 'IFRAME';
-      }
-    });
-
-    // Restore images
-    imageData.forEach(({ img, parent }) => {
-      const placeholders = parent.querySelectorAll('div[style*="background-color: rgb(240, 240, 240)"]');
-      if (placeholders.length > 0) {
-        parent.replaceChild(img, placeholders[0]);
+        // Ignore script, style elements and elements with no-print class
+        return el.tagName === 'SCRIPT' || 
+               el.tagName === 'STYLE' || 
+               el.tagName === 'IFRAME' ||
+               el.classList.contains('no-print');
       }
     });
 

@@ -31,9 +31,10 @@ interface LivePreviewBlockProps {
   block: any;
   projectData?: any;
   isEditable?: boolean;
+  isPrintMode?: boolean;
 }
 
-const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockProps) => {
+const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false }: LivePreviewBlockProps) => {
   const content = block.content || {};
   const style = content.style || {};
   
@@ -658,25 +659,27 @@ const LivePreviewBlock = ({ block, projectData, isEditable }: LivePreviewBlockPr
               <ShoppingCart className="h-5 w-5" />
               {content.title || 'Quote Items'}
             </h3>
-            <div className="no-print flex items-center gap-3">
-              {hasRealData && (
-                <label className="flex items-center gap-2 text-sm text-gray-600">
-                  <input
-                    type="checkbox"
-                    checked={groupByRoom}
-                    onChange={(e) => setGroupByRoom(e.target.checked)}
-                    className="rounded border-gray-300"
-                  />
-                  Group by room
-                </label>
-              )}
-              <button
-                onClick={() => setShowDetailedProducts(!showDetailedProducts)}
-                className="px-3 py-1 text-sm border rounded hover:bg-gray-50 transition-colors"
-              >
-                {showDetailedProducts ? 'Simple' : 'Detailed'}
-              </button>
-            </div>
+            {!isPrintMode && (
+              <div className="no-print flex items-center gap-3">
+                {hasRealData && (
+                  <label className="flex items-center gap-2 text-sm text-gray-600">
+                    <input
+                      type="checkbox"
+                      checked={groupByRoom}
+                      onChange={(e) => setGroupByRoom(e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    Group by room
+                  </label>
+                )}
+                <button
+                  onClick={() => setShowDetailedProducts(!showDetailedProducts)}
+                  className="px-3 py-1 text-sm border rounded hover:bg-gray-50 transition-colors"
+                >
+                  {showDetailedProducts ? 'Simple' : 'Detailed'}
+                </button>
+              </div>
+            )}
           </div>
 
           {!hasRealData && (
@@ -1279,6 +1282,7 @@ export const LivePreview = ({
                 block={block} 
                 projectData={projectData}
                 isEditable={isEditable}
+                isPrintMode={isPrintMode}
               />
             ))}
           </div>
