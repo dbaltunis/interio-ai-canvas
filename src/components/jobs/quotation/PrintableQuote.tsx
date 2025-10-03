@@ -19,10 +19,13 @@ export const PrintableQuote = React.forwardRef<HTMLDivElement, PrintableQuotePro
           lineHeight: '1.5',
           color: '#000000',
           backgroundColor: '#ffffff',
-          width: '210mm',
-          minHeight: '297mm',
+          width: '794px',
+          minWidth: '794px',
+          maxWidth: '794px',
+          minHeight: '1123px',
           padding: '15mm',
           boxSizing: 'border-box',
+          overflow: 'visible'
         }}
       >
         <LivePreview 
