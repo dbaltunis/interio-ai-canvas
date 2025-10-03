@@ -40,7 +40,7 @@ export const EmailQuoteModal: React.FC<EmailQuoteModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5" />
@@ -48,67 +48,132 @@ export const EmailQuoteModal: React.FC<EmailQuoteModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="email-to">To</Label>
-            <Input
-              id="email-to"
-              type="email"
-              value={emailData.to}
-              onChange={(e) => setEmailData({ ...emailData, to: e.target.value })}
-              placeholder="client@example.com"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email-subject">Subject</Label>
-            <Input
-              id="email-subject"
-              value={emailData.subject}
-              onChange={(e) => setEmailData({ ...emailData, subject: e.target.value })}
-              placeholder="Quote for Your Project"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email-message">Message</Label>
-            <Textarea
-              id="email-message"
-              value={emailData.message}
-              onChange={(e) => setEmailData({ ...emailData, message: e.target.value })}
-              placeholder="Enter your message here..."
-              rows={8}
-            />
-          </div>
-
-          <div className="bg-muted p-3 rounded-md text-sm">
-            <div className="flex items-center justify-between mb-2">
-              <p className="font-medium">Attachment:</p>
-              {quotePreview && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowPreview(!showPreview)}
-                  className="h-auto py-1 px-2"
-                >
-                  <Eye className="h-3 w-3 mr-1" />
-                  {showPreview ? "Hide" : "Preview"} Quote
-                </Button>
-              )}
-            </div>
-            <p className="text-muted-foreground">Quote PDF will be attached automatically</p>
-            
-            {showPreview && quotePreview && (
-              <div className="mt-3 border rounded-md bg-background">
-                <ScrollArea className="h-[400px] w-full">
-                  <div className="p-4 scale-75 origin-top-left" style={{ width: '133.33%' }}>
-                    {quotePreview}
+        <ScrollArea className="flex-1 overflow-y-auto">
+          <div className="space-y-4 py-4 pr-4">{showPreview ? (
+              <div className="grid grid-cols-2 gap-4">
+                {/* Email Form - Left Side */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email-to">To</Label>
+                    <Input
+                      id="email-to"
+                      type="email"
+                      value={emailData.to}
+                      onChange={(e) => setEmailData({ ...emailData, to: e.target.value })}
+                      placeholder="client@example.com"
+                    />
                   </div>
-                </ScrollArea>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email-subject">Subject</Label>
+                    <Input
+                      id="email-subject"
+                      value={emailData.subject}
+                      onChange={(e) => setEmailData({ ...emailData, subject: e.target.value })}
+                      placeholder="Quote for Your Project"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email-message">Message</Label>
+                    <Textarea
+                      id="email-message"
+                      value={emailData.message}
+                      onChange={(e) => setEmailData({ ...emailData, message: e.target.value })}
+                      placeholder="Enter your message here..."
+                      rows={12}
+                    />
+                  </div>
+
+                  <div className="bg-muted p-3 rounded-md text-sm">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="font-medium">Attachment:</p>
+                      {quotePreview && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowPreview(!showPreview)}
+                          className="h-auto py-1 px-2"
+                        >
+                          <Eye className="h-3 w-3 mr-1" />
+                          Hide Quote
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-muted-foreground">Quote PDF will be attached automatically</p>
+                  </div>
+                </div>
+
+                {/* Quote Preview - Right Side */}
+                <div className="space-y-2">
+                  <Label>Quote Preview</Label>
+                  <div className="border rounded-md bg-background h-[600px] overflow-hidden">
+                    <ScrollArea className="h-full w-full">
+                      <div className="p-2">
+                        <div style={{ transform: 'scale(0.48)', transformOrigin: 'top left', width: '210mm' }}>
+                          {quotePreview}
+                        </div>
+                      </div>
+                    </ScrollArea>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Compact view without preview
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email-to">To</Label>
+                  <Input
+                    id="email-to"
+                    type="email"
+                    value={emailData.to}
+                    onChange={(e) => setEmailData({ ...emailData, to: e.target.value })}
+                    placeholder="client@example.com"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email-subject">Subject</Label>
+                  <Input
+                    id="email-subject"
+                    value={emailData.subject}
+                    onChange={(e) => setEmailData({ ...emailData, subject: e.target.value })}
+                    placeholder="Quote for Your Project"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email-message">Message</Label>
+                  <Textarea
+                    id="email-message"
+                    value={emailData.message}
+                    onChange={(e) => setEmailData({ ...emailData, message: e.target.value })}
+                    placeholder="Enter your message here..."
+                    rows={8}
+                  />
+                </div>
+
+                <div className="bg-muted p-3 rounded-md text-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="font-medium">Attachment:</p>
+                    {quotePreview && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowPreview(!showPreview)}
+                        className="h-auto py-1 px-2"
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        Preview Quote
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-muted-foreground">Quote PDF will be attached automatically</p>
+                </div>
               </div>
             )}
           </div>
-        </div>
+        </ScrollArea>
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isSending}>
