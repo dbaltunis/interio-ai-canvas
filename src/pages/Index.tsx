@@ -44,9 +44,11 @@ import { ErrorBoundary } from "@/components/performance/ErrorBoundary";
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => {
-    // Default to "projects" (Jobs page) instead of "jobs"
-    const tab = searchParams.get('tab') || "projects";
-    console.log('Index: Initial tab =', tab);
+    // Check sessionStorage first for persistence across page focus/blur
+    const savedTab = sessionStorage.getItem('active_tab');
+    const urlTab = searchParams.get('tab');
+    const tab = savedTab || urlTab || "projects";
+    console.log('Index: Initial tab =', tab, 'savedTab =', savedTab, 'urlTab =', urlTab);
     return tab;
   });
   const { signOut, user } = useAuth();
@@ -58,10 +60,12 @@ const Index = () => {
   useEffect(() => {
     const currentTab = searchParams.get('tab') || "projects";
     if (activeTab !== currentTab) {
-      console.warn('[NAV] Index: setSearchParams called - activeTab:', activeTab, 'currentTab:', currentTab, new Error().stack);
+      console.warn('[NAV] Index: setSearchParams called - activeTab:', activeTab, 'currentTab:', currentTab);
       setSearchParams({ tab: activeTab }, { replace: true });
     }
-  }, [activeTab, setSearchParams]);
+    // Save to sessionStorage for persistence
+    sessionStorage.setItem('active_tab', activeTab);
+  }, [activeTab]); // Removed searchParams and setSearchParams from deps to prevent resets
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
