@@ -664,19 +664,19 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
               <ShoppingCart className="h-5 w-5" />
               {content.title || 'Quote Items'}
             </h3>
-            {!isPrintMode && (
-              <div className="no-print flex items-center gap-3">
-                {hasRealData && (
-                  <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={groupByRoom}
-                      onChange={(e) => setGroupByRoom(e.target.checked)}
-                      className="rounded border-gray-300 cursor-pointer"
-                    />
-                    <span>Group by room</span>
-                  </label>
-                )}
+            <div className="flex items-center gap-3">
+              {!isPrintMode && hasRealData && (
+                <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={groupByRoom}
+                    onChange={(e) => setGroupByRoom(e.target.checked)}
+                    className="rounded border-gray-300 cursor-pointer"
+                  />
+                  <span>Group by room</span>
+                </label>
+              )}
+              {!isPrintMode && (
                 <button
                   onClick={() => setShowDetailedProducts(!showDetailedProducts)}
                   className="px-4 py-1.5 text-sm font-medium border rounded-md hover:bg-gray-50 active:bg-gray-100 transition-colors"
@@ -684,8 +684,13 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
                 >
                   {showDetailedProducts ? '📋 Simple View' : '🔍 Detailed View'}
                 </button>
-              </div>
-            )}
+              )}
+              {isPrintMode && (
+                <div className="px-3 py-1 text-xs bg-blue-50 border border-blue-200 rounded-md text-blue-700 font-medium">
+                  {showDetailedProducts ? '🔍 Detailed Breakdown' : '📋 Simple View'}
+                </div>
+              )}
+            </div>
           </div>
 
           {!hasRealData && (
@@ -725,7 +730,7 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
                         // Detailed view with itemization
                         const itemizedComponents = getItemizedBreakdown(item);
                         return (
-                          <React.Fragment key={`${roomName}-${itemIndex}`}>
+                          <React.Fragment key={`item-${roomName}-${itemIndex}`}>
                             {/* Main product row */}
                             <tr className="border-t">
                               <td className="p-1 text-xs font-medium" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{itemNumber}</td>
@@ -746,7 +751,7 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
                             </tr>
                             {/* Itemized component rows with smaller font and indentation */}
                             {itemizedComponents.map((component, compIndex) => (
-                              <tr key={`${roomName}-${itemIndex}-${compIndex}`} className="border-t border-gray-100">
+                              <tr key={`comp-${roomName}-${itemIndex}-${compIndex}`} className="border-t border-gray-100">
                                 <td className="p-1"></td>
                                 <td className="p-1 pl-4 text-xs text-gray-600" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{component.type}</td>
                                 <td className="p-1 text-xs text-gray-600" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{component.description}</td>
@@ -760,7 +765,7 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
                       } else {
                         // Simple view
                         return (
-                          <tr key={`${roomName}-${itemIndex}`} className="border-t">
+                          <tr key={`simple-${roomName}-${itemIndex}`} className="border-t">
                             <td className="p-2 text-xs" style={{ wordWrap: 'break-word' }}>{itemNumber}</td>
                             <td className="p-2 text-xs" style={{ wordWrap: 'break-word' }}>
                               {item.fabric_details?.name || item.treatment_name || item.name || 'Window Treatment'}
