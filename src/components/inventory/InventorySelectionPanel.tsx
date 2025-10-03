@@ -91,48 +91,37 @@ export const InventorySelectionPanel = ({
     return (
       <Card 
         key={item.id}
-        className={`cursor-pointer transition-all hover:shadow-md ${
-          isSelected ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-accent/50'
+        className={`cursor-pointer transition-all duration-200 hover:shadow-sm ${
+          isSelected 
+            ? 'border-primary bg-primary/5 shadow-sm' 
+            : 'border-border hover:border-primary/30'
         }`}
         onClick={() => isSelected ? onItemDeselect(category) : onItemSelect(category, item)}
       >
-        <CardContent className="p-3">
-          <div className="space-y-2">
-            <div className="flex items-start justify-between gap-2">
-              <h4 className="font-medium text-xs leading-tight line-clamp-2 flex-1">
-                {item.name}
-              </h4>
-              {isSelected && (
-                <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                  <Check className="w-2.5 h-2.5 text-primary-foreground" />
-                </div>
-              )}
-            </div>
-            
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-medium">
-                ${price.toFixed(2)}
-                {item.unit && <span className="text-muted-foreground text-[10px]">/{item.unit}</span>}
-              </span>
-              
+        <CardContent className="p-4">
+          <div className="flex flex-col items-center space-y-3">
+            {/* Preview placeholder */}
+            <div className="h-20 w-full flex flex-col items-center justify-center bg-gray-50 border-2 border-gray-200 rounded-md overflow-hidden">
+              <div className="text-gray-400 text-xs">No preview</div>
               {item.stock_quantity !== undefined && (
-                <Badge variant={item.stock_quantity > 0 ? "secondary" : "destructive"} className="text-[10px] px-1.5 py-0 h-4">
-                  {item.stock_quantity}
+                <Badge variant={item.stock_quantity > 0 ? "secondary" : "destructive"} className="text-[10px] px-1.5 py-0 h-4 mt-1">
+                  Stock: {item.stock_quantity}
                 </Badge>
               )}
             </div>
             
-            {category === "fabric" && item.fabric_width && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
-                {item.fabric_width}cm
-              </Badge>
-            )}
-            
-            {estimatedCost > 0 && (
-              <div className="text-[10px] text-primary font-medium">
-                Est: ${estimatedCost.toFixed(2)}
+            <div className="text-center w-full">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <h4 className="text-sm font-semibold truncate">{item.name}</h4>
+                {isSelected && (
+                  <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+                )}
               </div>
-            )}
+              <Badge variant="outline" className="text-xs h-5 px-2">
+                ${price.toFixed(2)}
+                {item.unit && <span className="text-[10px]">/{item.unit}</span>}
+              </Badge>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -168,78 +157,83 @@ export const InventorySelectionPanel = ({
   const availableTabs = getTabsForTreatment();
 
   return (
-    <Card className={className}>
-      <CardContent className="p-4 space-y-3">
-        {/* Selected Items Inline Display */}
-        {Object.values(selectedItems).some(item => item) && (
-          <div className="flex items-center gap-2 p-2 bg-primary/10 rounded-lg border border-primary/20">
-            <div className="flex-1 flex flex-wrap items-center gap-2">
-              {Object.entries(selectedItems).map(([category, item]) => 
-                item && (
-                  <div key={category} className="flex items-center gap-1.5 px-2 py-1 bg-background rounded border">
-                    <span className="text-xs font-medium capitalize">{category}:</span>
-                    <span className="text-xs">{item.name}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onItemDeselect(category);
-                      }}
-                      className="h-4 w-4 p-0 hover:bg-destructive/10"
-                    >
-                      <X className="h-3 w-3 text-destructive" />
-                    </Button>
-                  </div>
-                )
-              )}
-            </div>
-          </div>
-        )}
+    <div className={`space-y-3 ${className}`}>
+      <div>
+        <h3 className="text-base font-medium mb-1">Select Materials & Hardware</h3>
+        <p className="text-sm text-muted-foreground">
+          Choose materials and hardware below
+        </p>
+      </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search inventory..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 h-9"
-          />
-        </div>
-
-        {/* Category tabs */}
-        <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-          <TabsList className="grid w-full h-9" style={{ gridTemplateColumns: `repeat(${availableTabs.length}, 1fr)` }}>
-            {availableTabs.map(({ key, label, icon: Icon }) => (
-              <TabsTrigger key={key} value={key} className="flex items-center gap-1.5 text-xs">
-                <Icon className="h-3.5 w-3.5" />
-                {label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {availableTabs.map(({ key, label }) => (
-            <TabsContent key={key} value={key} className="mt-3">
-              <ScrollArea className="h-[300px]">
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 pr-3">
-                  {getInventoryByCategory(key).map(item => renderInventoryItem(item, key))}
+      {/* Selected Items Inline Display */}
+      {Object.values(selectedItems).some(item => item) && (
+        <div className="flex items-center gap-2 p-2 bg-primary/10 rounded-lg border border-primary/20">
+          <div className="flex-1 flex flex-wrap items-center gap-2">
+            {Object.entries(selectedItems).map(([category, item]) => 
+              item && (
+                <div key={category} className="flex items-center gap-1.5 px-2 py-1 bg-background rounded border">
+                  <span className="text-xs font-medium capitalize">{category}:</span>
+                  <span className="text-xs">{item.name}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onItemDeselect(category);
+                    }}
+                    className="h-4 w-4 p-0 hover:bg-destructive/10"
+                  >
+                    <X className="h-3 w-3 text-destructive" />
+                  </Button>
                 </div>
+              )
+            )}
+          </div>
+        </div>
+      )}
 
-                {getInventoryByCategory(key).length === 0 && (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                    <p className="text-sm">No {label.toLowerCase()} items found</p>
-                    {searchTerm && (
-                      <p className="text-xs mt-1">Try different search terms</p>
-                    )}
-                  </div>
-                )}
-              </ScrollArea>
-            </TabsContent>
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search inventory..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10 h-9"
+        />
+      </div>
+
+      {/* Category tabs */}
+      <Tabs value={activeCategory} onValueChange={setActiveCategory}>
+        <TabsList className="grid w-full h-9" style={{ gridTemplateColumns: `repeat(${availableTabs.length}, 1fr)` }}>
+          {availableTabs.map(({ key, label, icon: Icon }) => (
+            <TabsTrigger key={key} value={key} className="flex items-center gap-1.5 text-xs">
+              <Icon className="h-3.5 w-3.5" />
+              {label}
+            </TabsTrigger>
           ))}
-        </Tabs>
-      </CardContent>
-    </Card>
+        </TabsList>
+
+        {availableTabs.map(({ key, label }) => (
+          <TabsContent key={key} value={key} className="mt-3">
+            <ScrollArea className="h-[300px]">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 pr-3">
+                {getInventoryByCategory(key).map(item => renderInventoryItem(item, key))}
+              </div>
+
+              {getInventoryByCategory(key).length === 0 && (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                  <p className="text-sm">No {label.toLowerCase()} items found</p>
+                  {searchTerm && (
+                    <p className="text-xs mt-1">Try different search terms</p>
+                  )}
+                </div>
+              )}
+            </ScrollArea>
+          </TabsContent>
+        ))}
+      </Tabs>
+    </div>
   );
 };

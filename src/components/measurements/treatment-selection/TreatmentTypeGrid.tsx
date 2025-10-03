@@ -57,42 +57,43 @@ export const TreatmentTypeGrid = ({
           <h3 className="font-medium text-xs uppercase tracking-wider text-muted-foreground px-1">
             {category}
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-            {categoryTreatments.map((treatment) => (
-              <Card
-                key={treatment.id}
-                className={`cursor-pointer transition-all hover:shadow-md ${
-                  selectedId === treatment.id
-                    ? "ring-2 ring-primary bg-primary/5"
-                    : "hover:bg-accent/50"
-                }`}
-                onClick={() => onSelect(treatment)}
-              >
-                <CardContent className="p-3">
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-1">
-                      <h4 className="font-medium text-xs leading-tight line-clamp-2 flex-1">
-                        {treatment.name}
-                      </h4>
-                      {selectedId === treatment.id && (
-                        <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                          <Check className="w-2.5 h-2.5 text-primary-foreground" />
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+            {categoryTreatments.map((treatment) => {
+              const isSelected = selectedId === treatment.id;
+              
+              return (
+                <Card
+                  key={treatment.id}
+                  className={`cursor-pointer transition-all duration-200 hover:shadow-sm ${
+                    isSelected 
+                      ? 'border-primary bg-primary/5 shadow-sm' 
+                      : 'border-border hover:border-primary/30'
+                  }`}
+                  onClick={() => onSelect(treatment)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex flex-col items-center space-y-3">
+                      {/* Preview placeholder */}
+                      <div className="h-20 w-full flex items-center justify-center bg-gray-50 border-2 border-gray-200 rounded-md overflow-hidden">
+                        <div className="text-gray-400 text-xs">No preview</div>
+                      </div>
+                      
+                      <div className="text-center w-full">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <h4 className="text-sm font-semibold truncate">{treatment.name}</h4>
+                          {isSelected && (
+                            <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+                          )}
                         </div>
-                      )}
+                        <Badge variant="outline" className="text-xs h-5 px-2">
+                          {treatment.fullness_ratio}x
+                        </Badge>
+                      </div>
                     </div>
-                    
-                    <div className="flex flex-wrap gap-1">
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
-                        {treatment.fullness_ratio}x
-                      </Badge>
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
-                        {treatment.pricing_type.replace('_', ' ')}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       ))}
