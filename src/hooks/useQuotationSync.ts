@@ -114,8 +114,15 @@ export const useQuotationSync = ({
           const liningDetails = summary.lining_details || {};
           const headingDetails = summary.heading_details || {};
           
+          console.log(`[QUOTE ITEM] Window ${window.surface_name}:`, {
+            fabricName: fabricDetails.name,
+            fabricPrice: fabricDetails.selling_price,
+            liningType: liningDetails.type,
+            headingName: headingDetails.heading_name
+          });
+          
           // PARENT ITEM - Use actual fabric name from fabric_details
-          const fabricName = fabricDetails.name || fabricDetails.fabric_name || summary.fabric_name || window.surface_name || 'Window Treatment';
+          const fabricName = fabricDetails.name || window.surface_name || 'Window Treatment';
           
           const parentItem = {
             id: window.window_id,
@@ -136,8 +143,7 @@ export const useQuotationSync = ({
 
           // DETAILED BREAKDOWN - Fabric (use REAL fabric details)
           if (summary.fabric_cost && summary.fabric_cost > 0) {
-            const fabricPricePerMetre = fabricDetails.selling_price || fabricDetails.price_per_metre || 
-                                       fabricDetails.unit_price || (summary.fabric_cost / (summary.linear_meters || 1));
+            const fabricPricePerMetre = fabricDetails.selling_price || fabricDetails.unit_price || (summary.fabric_cost / (summary.linear_meters || 1));
             
             parentItem.children.push({
               id: `${window.window_id}-fabric`,
@@ -167,7 +173,7 @@ export const useQuotationSync = ({
 
           // DETAILED BREAKDOWN - Lining (use REAL lining details)
           if (summary.lining_cost && summary.lining_cost > 0) {
-            const liningType = liningDetails.type || summary.lining_type || 'Interlining';
+            const liningType = liningDetails.type || 'Interlining';
             const liningPricePerMetre = liningDetails.price_per_metre || (summary.lining_cost / (summary.linear_meters || 1));
             
             parentItem.children.push({
@@ -184,7 +190,7 @@ export const useQuotationSync = ({
 
           // DETAILED BREAKDOWN - Heading (use REAL heading details)
           if (summary.heading_cost && summary.heading_cost > 0) {
-            const headingName = headingDetails.heading_name || summary.heading_name || 'Pencil Pleat';
+            const headingName = headingDetails.heading_name || 'Pencil Pleat';
             const headingCost = headingDetails.cost || summary.heading_cost;
             
             parentItem.children.push({

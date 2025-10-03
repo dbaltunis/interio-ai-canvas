@@ -565,8 +565,9 @@ const projectData = {
       </div>
 
 
-      {/* Quotation Items Modal */}
+      {/* Quotation Items Modal - Force refresh when data changes */}
       <QuotationItemsModal
+        key={`quote-modal-${projectSummaries?.projectTotal}-${quotationData.items?.length}-${Date.now()}`}
         isOpen={showQuotationItems}
         onClose={() => setShowQuotationItems(false)}
         quotationData={quotationData}
