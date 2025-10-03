@@ -575,8 +575,16 @@ const projectData = {
         }}
       />
 
-      {/* Hidden printable component */}
-      <div className="hidden">
+      {/* Off-screen printable component - positioned absolute so html2canvas can capture it */}
+      <div 
+        style={{
+          position: 'fixed',
+          left: '-9999px',
+          top: 0,
+          width: '210mm',
+          zIndex: -1
+        }}
+      >
         {selectedQuoteTemplate?.blocks && (
           <PrintableQuote 
             ref={printRef}
