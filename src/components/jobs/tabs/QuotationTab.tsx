@@ -32,6 +32,8 @@ import { PrintableQuote } from "@/components/jobs/quotation/PrintableQuote";
 import { EmailQuoteModal } from "@/components/jobs/quotation/EmailQuoteModal";
 import { useQuoteTemplates } from "@/hooks/useQuoteTemplates";
 import { useClients } from "@/hooks/useClients";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 interface QuotationTabProps {
   projectId: string;
@@ -211,22 +213,60 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
     sourceTreatments: sourceTreatments.slice(0, 2) // Log first 2 for debugging
   });
 
-  const handlePrint = useReactToPrint({
-    contentRef: printRef,
-    documentTitle: `quote-${project?.job_number || 'QT-' + Math.floor(Math.random() * 10000)}`,
-    pageStyle: `
-      @page {
-        size: A4;
-        margin: 0;
-      }
-      @media print {
-        body {
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
-      }
-    `
-  });
+  const handleGeneratePDF = async () => {
+    if (!printRef.current) return;
+    
+    try {
+      toast({
+        title: "Generating PDF...",
+        description: "Please wait while we create your quote PDF",
+      });
+
+      // Create a temporary container with exact A4 dimensions
+      const element = printRef.current;
+      
+      // Capture the element as canvas with high quality
+      const canvas = await html2canvas(element, {
+        scale: 2, // Higher quality
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        windowWidth: 794, // A4 width in pixels at 96 DPI (210mm)
+        windowHeight: 1123, // A4 height in pixels at 96 DPI (297mm)
+      });
+
+      // Calculate PDF dimensions (A4 in mm)
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      // Create PDF
+      const pdf = new jsPDF({
+        orientation: imgHeight > imgWidth ? 'portrait' : 'landscape',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      // Add image to PDF
+      const imgData = canvas.toDataURL('image/png');
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+
+      // Download the PDF
+      const fileName = `quote-${project?.job_number || 'QT-' + Math.floor(Math.random() * 10000)}.pdf`;
+      pdf.save(fileName);
+
+      toast({
+        title: "PDF Generated",
+        description: `${fileName} has been downloaded successfully`,
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleAddDiscount = () => {
     toast({
@@ -362,7 +402,7 @@ const projectData = {
           <Button
             variant="default"
             size="sm"
-            onClick={handlePrint}
+            onClick={handleGeneratePDF}
             disabled={!clientData}
           >
             <Download className="h-4 w-4 mr-2" />
