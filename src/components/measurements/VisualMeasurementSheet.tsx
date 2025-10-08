@@ -14,7 +14,7 @@ import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
 import { calculateFabricUsage } from "../job-creation/treatment-pricing/fabric-calculation/fabricUsageCalculator";
 import { TreatmentPreviewEngine } from "../treatment-visualizers/TreatmentPreviewEngine";
 import { detectTreatmentType, getTreatmentConfig } from "@/utils/treatmentTypeDetection";
-import { ControlPositionField, MountingTypeField, FabricTransparencyField, ChainLengthField } from "./roller-blind-fields/RollerBlindFields";
+import { DynamicTopSystemSelector } from "./roller-blind-fields/DynamicTopSystemSelector";
 import { RollerBlindVisual } from "./visualizers/RollerBlindVisual";
 
 interface VisualMeasurementSheetProps {
@@ -630,32 +630,31 @@ export const VisualMeasurementSheet = ({
                 </div>
               )}
 
-              {/* ROLLER BLIND-SPECIFIC FIELDS */}
+              {/* ROLLER BLIND-SPECIFIC FIELDS - Dynamic Top Systems */}
               {treatmentType === 'roller_blinds' && (
                 <Card className="border-primary/20 bg-primary/5">
                   <CardHeader>
                     <CardTitle className="text-base">Roller Blind Configuration</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <ControlPositionField
-                      value={measurements.control_position}
-                      onChange={(val) => handleInputChange('control_position', val)}
-                    />
-                    
-                    <MountingTypeField
-                      value={measurements.mounting_type}
-                      onChange={(val) => handleInputChange('mounting_type', val)}
-                    />
-                    
-                    <FabricTransparencyField
-                      value={measurements.fabric_transparency}
-                      onChange={(val) => handleInputChange('fabric_transparency', val)}
-                    />
-                    
-                    <ChainLengthField
-                      value={measurements.chain_length}
-                      onChange={(val) => handleInputChange('chain_length', val)}
-                      unit={units.length}
+                    <DynamicTopSystemSelector
+                      selectedTopSystemId={measurements.selected_top_system_id}
+                      onChange={(systemId, systemData) => {
+                        // Store the selected system ID and all its configuration data
+                        handleInputChange('selected_top_system_id', systemId);
+                        handleInputChange('top_system_data', JSON.stringify(systemData));
+                        
+                        // Also store individual fields for backward compatibility and easy access
+                        if (systemData.tube_size) handleInputChange('tube_size', systemData.tube_size);
+                        if (systemData.mount_type) handleInputChange('mount_type', systemData.mount_type);
+                        if (systemData.fascia_type) handleInputChange('fascia_type', systemData.fascia_type);
+                        if (systemData.bottom_rail_style) handleInputChange('bottom_rail_style', systemData.bottom_rail_style);
+                        if (systemData.control_type) handleInputChange('control_type', systemData.control_type);
+                        if (systemData.chain_side) handleInputChange('chain_side', systemData.chain_side);
+                        if (systemData.motor_type) handleInputChange('motor_type', systemData.motor_type);
+                      }}
+                      treatmentType={selectedTemplate?.curtain_type || 'roller_blind'}
+                      readOnly={readOnly}
                     />
                   </CardContent>
                 </Card>
