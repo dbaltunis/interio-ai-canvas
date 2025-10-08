@@ -285,7 +285,7 @@ export const WindowTreatmentOptionsManager = () => {
                 <p className="text-sm text-muted-foreground">
                   Add {optType.label.toLowerCase()} for {getTreatmentLabel(activeTreatment).toLowerCase()}
                 </p>
-                <Button onClick={() => { setActiveOptionType(optType.type); setIsCreating(true); }}>
+                <Button onClick={() => setIsCreating(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Option
                 </Button>
