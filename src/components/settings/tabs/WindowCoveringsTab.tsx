@@ -4,7 +4,7 @@ import { HeadingInventoryManager } from "./components/HeadingInventoryManager";
 import { OptionCategoriesManager } from "./products/OptionCategoriesManager";
 import { MakingCostsManager } from "./products/MakingCostsManager";
 import { ManufacturingDefaults } from "./products/ManufacturingDefaults";
-import { CurtainTemplatesManager } from "./products/CurtainTemplatesManager";
+import { TreatmentsManagementTab } from "./TreatmentsManagementTab";
 import { Layers, Package, Tags, Settings } from "lucide-react";
 export const WindowCoveringsTab = () => {
   return <div className="space-y-6">
@@ -39,7 +39,7 @@ export const WindowCoveringsTab = () => {
             </TabsList>
 
             <TabsContent value="templates" className="space-y-6">
-              <CurtainTemplatesManager />
+              <TreatmentsManagementTab />
             </TabsContent>
 
             <TabsContent value="headings" className="space-y-6">
