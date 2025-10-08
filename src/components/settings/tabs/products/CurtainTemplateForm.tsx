@@ -67,18 +67,18 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     // Selected Top Systems from Library (for blinds)
     selected_top_system_ids: (template as any)?.selected_top_system_ids || [],
     
-    // Fabric Requirements (will use inventory)
+    // Fabric Requirements (for curtains - will use inventory)
     fabric_width_type: template?.fabric_width_type || "wide",
     vertical_repeat: template?.vertical_repeat?.toString() || "",
     horizontal_repeat: template?.horizontal_repeat?.toString() || "",
     fabric_direction: template?.fabric_direction || "standard",
     
-    // Hem Allowances - Default + Editable
+    // Curtain-specific: Hem Allowances - Default + Editable
     bottom_hem: template?.bottom_hem?.toString() || "15",
     side_hems: template?.side_hems?.toString() || "7.5",
     seam_hems: template?.seam_hems?.toString() || "1.5",
     
-    // Returns - Set in template, ON/OFF toggle in projects
+    // Curtain-specific: Returns - Set in template, ON/OFF toggle in projects
     return_left: template?.return_left?.toString() || "7.5",
     return_right: template?.return_right?.toString() || "7.5",
     overlap: template?.overlap?.toString() || "10",
@@ -86,7 +86,15 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     waste_percent: template?.waste_percent?.toString() || "5",
     is_railroadable: template?.is_railroadable || false,
     
-    // Lining Selection - Pre-created with pricing
+    // Blind/Shutter-specific: Manufacturing settings
+    bracket_deduction: (template as any)?.bracket_deduction?.toString() || "0",
+    minimum_width: (template as any)?.minimum_width?.toString() || "30",
+    maximum_width: (template as any)?.maximum_width?.toString() || "300",
+    minimum_height: (template as any)?.minimum_height?.toString() || "30",
+    maximum_height: (template as any)?.maximum_height?.toString() || "300",
+    stack_allowance: (template as any)?.stack_allowance?.toString() || "0",
+    
+    // Lining Selection - Pre-created with pricing (for curtains)
     lining_types: template?.lining_types || [
       { type: "Standard", price_per_metre: 15, labour_per_curtain: 25 },
       { type: "Blackout", price_per_metre: 22, labour_per_curtain: 35 },
@@ -663,168 +671,298 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
           </TabsContent>
 
           <TabsContent value="manufacturing" className="space-y-6">
-            {/* Manufacturing Configuration */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Manufacturing Configuration</CardTitle>
-                <CardDescription>Customize fabric usage rules based on your manufacturing setup</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Return & Overlap Allowance */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-medium">Returns & Overlap</h4>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Info className="h-4 w-4 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Returns wrap to the wall. Overlap is for pairs only.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="return_left">Return Left (cm)</Label>
-                      <Input
-                        id="return_left"
-                        type="number"
-                        step="0.5"
-                        value={formData.return_left}
-                        onChange={(e) => handleInputChange("return_left", e.target.value)}
-                        placeholder="7.5"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="return_right">Return Right (cm)</Label>
-                      <Input
-                        id="return_right"
-                        type="number"
-                        step="0.5"
-                        value={formData.return_right}
-                        onChange={(e) => handleInputChange("return_right", e.target.value)}
-                        placeholder="7.5"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="overlap">Centre Overlap (cm)</Label>
-                      <Input
-                        id="overlap"
-                        type="number"
-                        step="0.5"
-                        value={formData.overlap}
-                        onChange={(e) => handleInputChange("overlap", e.target.value)}
-                        placeholder="10"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Hem Allowances */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-medium">Hem Allowances</h4>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Info className="h-4 w-4 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Default values that can be overridden in projects if needed.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="header_allowance">Header Allowance (cm)</Label>
-                      <Input
-                        id="header_allowance"
-                        type="number"
-                        step="0.5"
-                        value={formData.header_allowance}
-                        onChange={(e) => handleInputChange("header_allowance", e.target.value)}
-                        placeholder="8"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="bottom_hem">Bottom Hem (cm)</Label>
-                      <Input
-                        id="bottom_hem"
-                        type="number"
-                        step="0.5"
-                        value={formData.bottom_hem}
-                        onChange={(e) => handleInputChange("bottom_hem", e.target.value)}
-                        placeholder="15"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="side_hems">Side Hems (cm)</Label>
-                      <Input
-                        id="side_hems"
-                        type="number"
-                        step="0.5"
-                        value={formData.side_hems}
-                        onChange={(e) => handleInputChange("side_hems", e.target.value)}
-                        placeholder="7.5"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Waste & Railroading */}
-                <div className="grid grid-cols-2 gap-6">
+            {/* Curtain Manufacturing Configuration */}
+            {formData.curtain_type === 'curtain' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Curtain Manufacturing</CardTitle>
+                  <CardDescription>Fabric usage rules for curtain production</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Return & Overlap Allowance */}
                   <div className="space-y-4">
                     <div className="flex items-center gap-2">
-                      <h4 className="font-medium">Waste Allowance</h4>
+                      <h4 className="font-medium">Returns & Overlap</h4>
                       <Tooltip>
                         <TooltipTrigger>
                           <Info className="h-4 w-4 text-muted-foreground" />
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Applied at the end to avoid cutting shortages.</p>
+                          <p>Returns wrap to the wall. Overlap is for pairs only.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="return_left">Return Left (cm)</Label>
+                        <Input
+                          id="return_left"
+                          type="number"
+                          step="0.5"
+                          value={formData.return_left}
+                          onChange={(e) => handleInputChange("return_left", e.target.value)}
+                          placeholder="7.5"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="return_right">Return Right (cm)</Label>
+                        <Input
+                          id="return_right"
+                          type="number"
+                          step="0.5"
+                          value={formData.return_right}
+                          onChange={(e) => handleInputChange("return_right", e.target.value)}
+                          placeholder="7.5"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="overlap">Centre Overlap (cm)</Label>
+                        <Input
+                          id="overlap"
+                          type="number"
+                          step="0.5"
+                          value={formData.overlap}
+                          onChange={(e) => handleInputChange("overlap", e.target.value)}
+                          placeholder="10"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Hem Allowances */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium">Hem Allowances</h4>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Default values that can be overridden in projects if needed.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="header_allowance">Header Allowance (cm)</Label>
+                        <Input
+                          id="header_allowance"
+                          type="number"
+                          step="0.5"
+                          value={formData.header_allowance}
+                          onChange={(e) => handleInputChange("header_allowance", e.target.value)}
+                          placeholder="8"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="bottom_hem">Bottom Hem (cm)</Label>
+                        <Input
+                          id="bottom_hem"
+                          type="number"
+                          step="0.5"
+                          value={formData.bottom_hem}
+                          onChange={(e) => handleInputChange("bottom_hem", e.target.value)}
+                          placeholder="15"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="side_hems">Side Hems (cm)</Label>
+                        <Input
+                          id="side_hems"
+                          type="number"
+                          step="0.5"
+                          value={formData.side_hems}
+                          onChange={(e) => handleInputChange("side_hems", e.target.value)}
+                          placeholder="7.5"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Waste & Railroading */}
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium">Waste Allowance</h4>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Applied at the end to avoid cutting shortages.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <div>
+                        <Label htmlFor="waste_percent">Waste (%)</Label>
+                        <Input
+                          id="waste_percent"
+                          type="number"
+                          step="0.1"
+                          value={formData.waste_percent}
+                          onChange={(e) => handleInputChange("waste_percent", e.target.value)}
+                          placeholder="5"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium">Railroading</h4>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Allow cutting from fabric width instead of length when possible.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="is_railroadable"
+                          checked={formData.is_railroadable}
+                          onCheckedChange={(checked) => handleInputChange("is_railroadable", checked)}
+                        />
+                        <Label htmlFor="is_railroadable">Allow railroading</Label>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Blind/Shutter Manufacturing Configuration */}
+            {formData.curtain_type !== 'curtain' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Manufacturing Specifications</CardTitle>
+                  <CardDescription>Size constraints and deductions for {formData.curtain_type.replace('_', ' ')}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Bracket Deduction */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium">Bracket Deduction</h4>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Amount to deduct from width for bracket space (per side)</p>
                         </TooltipContent>
                       </Tooltip>
                     </div>
                     <div>
-                      <Label htmlFor="waste_percent">Waste (%)</Label>
+                      <Label htmlFor="bracket_deduction">Deduction per Side (cm)</Label>
                       <Input
-                        id="waste_percent"
+                        id="bracket_deduction"
                         type="number"
                         step="0.1"
-                        value={formData.waste_percent}
-                        onChange={(e) => handleInputChange("waste_percent", e.target.value)}
-                        placeholder="5"
+                        value={formData.bracket_deduction}
+                        onChange={(e) => handleInputChange("bracket_deduction", e.target.value)}
+                        placeholder="0"
                       />
                     </div>
                   </div>
 
+                  <Separator />
+
+                  {/* Size Constraints */}
                   <div className="space-y-4">
                     <div className="flex items-center gap-2">
-                      <h4 className="font-medium">Railroading</h4>
+                      <h4 className="font-medium">Size Constraints</h4>
                       <Tooltip>
                         <TooltipTrigger>
                           <Info className="h-4 w-4 text-muted-foreground" />
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Allow cutting from fabric width instead of length when possible.</p>
+                          <p>Minimum and maximum dimensions for this product</p>
                         </TooltipContent>
                       </Tooltip>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="is_railroadable"
-                        checked={formData.is_railroadable}
-                        onCheckedChange={(checked) => handleInputChange("is_railroadable", checked)}
-                      />
-                      <Label htmlFor="is_railroadable">Allow railroading</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="minimum_width">Min Width (cm)</Label>
+                        <Input
+                          id="minimum_width"
+                          type="number"
+                          step="1"
+                          value={formData.minimum_width}
+                          onChange={(e) => handleInputChange("minimum_width", e.target.value)}
+                          placeholder="30"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="maximum_width">Max Width (cm)</Label>
+                        <Input
+                          id="maximum_width"
+                          type="number"
+                          step="1"
+                          value={formData.maximum_width}
+                          onChange={(e) => handleInputChange("maximum_width", e.target.value)}
+                          placeholder="300"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="minimum_height">Min Height (cm)</Label>
+                        <Input
+                          id="minimum_height"
+                          type="number"
+                          step="1"
+                          value={formData.minimum_height}
+                          onChange={(e) => handleInputChange("minimum_height", e.target.value)}
+                          placeholder="30"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="maximum_height">Max Height (cm)</Label>
+                        <Input
+                          id="maximum_height"
+                          type="number"
+                          step="1"
+                          value={formData.maximum_height}
+                          onChange={(e) => handleInputChange("maximum_height", e.target.value)}
+                          placeholder="300"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+
+                  <Separator />
+
+                  {/* Stack Allowance (for Roman blinds, etc.) */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium">Stack Allowance</h4>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Height to add for stacking when raised (Roman blinds, etc.)</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <div>
+                      <Label htmlFor="stack_allowance">Stack Height (cm)</Label>
+                      <Input
+                        id="stack_allowance"
+                        type="number"
+                        step="1"
+                        value={formData.stack_allowance}
+                        onChange={(e) => handleInputChange("stack_allowance", e.target.value)}
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="pricing" className="space-y-6">
