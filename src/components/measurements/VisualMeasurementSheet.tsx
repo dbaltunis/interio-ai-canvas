@@ -16,6 +16,7 @@ import { TreatmentPreviewEngine } from "../treatment-visualizers/TreatmentPrevie
 import { detectTreatmentType, getTreatmentConfig } from "@/utils/treatmentTypeDetection";
 import { DynamicRollerBlindFields } from "./roller-blind-fields/DynamicRollerBlindFields";
 import { RollerBlindVisual } from "./visualizers/RollerBlindVisual";
+import { DynamicBlindVisual } from "./visualizers/DynamicBlindVisual";
 
 interface VisualMeasurementSheetProps {
   measurements: Record<string, any>;
@@ -257,13 +258,26 @@ export const VisualMeasurementSheet = ({
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Visual Diagram */}
             <div className="lg:w-2/5 flex-shrink-0">
-              {/* Conditionally render visual based on treatment category */}
-              {treatmentCategory === 'roller_blinds' ? (
-                <RollerBlindVisual
+              {/* Conditionally render visual based on treatment type */}
+              {(treatmentCategory === 'roller_blinds' || 
+                treatmentCategory === 'venetian_blinds' || 
+                treatmentCategory === 'roman_blinds' ||
+                selectedTemplate?.curtain_type === 'roller_blind' ||
+                selectedTemplate?.curtain_type === 'venetian_blind' ||
+                selectedTemplate?.curtain_type === 'vertical_blind') ? (
+                <DynamicBlindVisual
                   windowType={windowType}
                   measurements={measurements}
                   template={selectedTemplate}
-                  material={undefined}
+                  blindType={
+                    treatmentCategory === 'roller_blinds' || selectedTemplate?.curtain_type === 'roller_blind' ? 'roller' :
+                    treatmentCategory === 'venetian_blinds' || selectedTemplate?.curtain_type === 'venetian_blind' ? 'venetian' :
+                    selectedTemplate?.curtain_type === 'vertical_blind' ? 'vertical' :
+                    treatmentCategory === 'roman_blinds' ? 'roman' :
+                    'roller'
+                  }
+                  mountType={measurements.mount_type || 'outside'}
+                  chainSide={measurements.chain_side || 'right'}
                 />
               ) : (
                 <div className="relative container-level-2 rounded-lg p-8 min-h-[400px] overflow-visible">
@@ -630,21 +644,72 @@ export const VisualMeasurementSheet = ({
                 </div>
               )}
 
-              {/* ROLLER BLIND-SPECIFIC FIELDS - Dynamic Options */}
-              {treatmentType === 'roller_blinds' && (
-                <Card className="border-primary/20 bg-primary/5">
-                  <CardHeader>
-                    <CardTitle className="text-base">Roller Blind Configuration</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <DynamicRollerBlindFields
-                      measurements={measurements}
-                      onChange={handleInputChange}
-                      treatmentType={selectedTemplate?.curtain_type || 'roller_blind'}
-                      readOnly={readOnly}
-                    />
-                  </CardContent>
-                </Card>
+              {/* BLIND-SPECIFIC FIELDS - Dynamic Options */}
+              {(treatmentType === 'roller_blinds' || 
+                selectedTemplate?.curtain_type === 'roller_blind' ||
+                selectedTemplate?.curtain_type === 'venetian_blind' ||
+                selectedTemplate?.curtain_type === 'vertical_blind') && (
+                <>
+                  {/* Mount Type Selection */}
+                  <Card className="border-primary/20 bg-primary/5">
+                    <CardHeader>
+                      <CardTitle className="text-base">Blind Configuration</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label className="text-sm font-medium mb-2 block">Mount Type</Label>
+                        <RadioGroup 
+                          value={measurements.mount_type || 'outside'} 
+                          onValueChange={(value) => handleInputChange("mount_type", value)}
+                          disabled={readOnly}
+                          className="flex flex-row space-x-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="inside" id="inside" />
+                            <Label htmlFor="inside">Inside Mount</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="outside" id="outside" />
+                            <Label htmlFor="outside">Outside Mount</Label>
+                          </div>
+                        </RadioGroup>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {measurements.mount_type === 'inside' 
+                            ? 'Blind fits inside the window frame' 
+                            : 'Blind mounts on the wall or outside the frame'}
+                        </p>
+                      </div>
+
+                      <div>
+                        <Label className="text-sm font-medium mb-2 block">Chain/Control Side</Label>
+                        <RadioGroup 
+                          value={measurements.chain_side || 'right'} 
+                          onValueChange={(value) => handleInputChange("chain_side", value)}
+                          disabled={readOnly}
+                          className="flex flex-row space-x-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="left" id="chain-left" />
+                            <Label htmlFor="chain-left">Left Side</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="right" id="chain-right" />
+                            <Label htmlFor="chain-right">Right Side</Label>
+                          </div>
+                        </RadioGroup>
+                      </div>
+
+                      {treatmentType === 'roller_blinds' && (
+                        <DynamicRollerBlindFields
+                          measurements={measurements}
+                          onChange={handleInputChange}
+                          treatmentType={selectedTemplate?.curtain_type || 'roller_blind'}
+                          readOnly={readOnly}
+                        />
+                      )}
+                    </CardContent>
+                  </Card>
+                </>
               )}
 
               {/* Additional Measurements for Curtain Makers - Collapsible */}
