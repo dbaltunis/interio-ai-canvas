@@ -76,16 +76,11 @@ export const useEnhancedInventory = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Get account owner to fetch account-level inventory
-      const { data: accountOwnerId } = await supabase.rpc('get_account_owner', { 
-        user_id_param: user.id 
-      });
-
+      // RLS policy handles filtering - shows user's items + defaults
       const { data, error } = await supabase
         .from("enhanced_inventory_items")
         .select("*")
         .eq("active", true)
-        .eq("user_id", accountOwnerId || user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -101,17 +96,12 @@ export const useEnhancedInventoryByCategory = (category: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Get account owner to fetch account-level inventory
-      const { data: accountOwnerId } = await supabase.rpc('get_account_owner', { 
-        user_id_param: user.id 
-      });
-
+      // RLS policy handles filtering - shows user's items + defaults
       const { data, error } = await supabase
         .from("enhanced_inventory_items")
         .select("*")
         .eq("category", category)
         .eq("active", true)
-        .eq("user_id", accountOwnerId || user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
