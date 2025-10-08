@@ -38,6 +38,9 @@ export const TopSystemsManager = () => {
     mount_type: 'face',
     fascia_type: 'none',
     bottom_rail_style: 'standard',
+    control_type: 'chain' as string,
+    chain_side: 'right' as string,
+    motor_type: 'battery' as string,
     price: 0,
     image_url: '',
     treatment_type: 'roller_blind' as string,
@@ -50,6 +53,9 @@ export const TopSystemsManager = () => {
       mount_type: 'face',
       fascia_type: 'none',
       bottom_rail_style: 'standard',
+      control_type: 'chain',
+      chain_side: 'right',
+      motor_type: 'battery',
       price: 0,
       image_url: '',
       treatment_type: 'roller_blind',
@@ -127,6 +133,9 @@ export const TopSystemsManager = () => {
         mount_type: formData.mount_type,
         fascia_type: formData.fascia_type,
         bottom_rail_style: formData.bottom_rail_style,
+        control_type: formData.control_type,
+        chain_side: formData.chain_side,
+        motor_type: formData.motor_type,
       };
 
       const itemData = {
@@ -175,6 +184,9 @@ export const TopSystemsManager = () => {
       mount_type: 'face',
       fascia_type: 'none',
       bottom_rail_style: 'standard',
+      control_type: 'chain',
+      chain_side: 'right',
+      motor_type: 'battery',
     };
 
     try {
@@ -192,6 +204,9 @@ export const TopSystemsManager = () => {
       mount_type: systemSettings.mount_type,
       fascia_type: systemSettings.fascia_type,
       bottom_rail_style: systemSettings.bottom_rail_style,
+      control_type: systemSettings.control_type,
+      chain_side: systemSettings.chain_side,
+      motor_type: systemSettings.motor_type,
       price: system.price_per_meter || 0,
       image_url: system.image_url || '',
       treatment_type: system.treatment_type || 'roller_blind',
@@ -349,6 +364,61 @@ export const TopSystemsManager = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div>
+                  <Label htmlFor="control_type">Control Type</Label>
+                  <Select 
+                    value={formData.control_type} 
+                    onValueChange={(value) => setFormData({ ...formData, control_type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="chain">Chain</SelectItem>
+                      <SelectItem value="wand">Wand</SelectItem>
+                      <SelectItem value="motorized">Motorized</SelectItem>
+                      <SelectItem value="cordless">Cordless</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {formData.control_type === 'chain' && (
+                  <div>
+                    <Label htmlFor="chain_side">Chain Side</Label>
+                    <Select 
+                      value={formData.chain_side} 
+                      onValueChange={(value) => setFormData({ ...formData, chain_side: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="left">Left</SelectItem>
+                        <SelectItem value="right">Right</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {formData.control_type === 'motorized' && (
+                  <div>
+                    <Label htmlFor="motor_type">Motor Type</Label>
+                    <Select 
+                      value={formData.motor_type} 
+                      onValueChange={(value) => setFormData({ ...formData, motor_type: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="battery">Battery</SelectItem>
+                        <SelectItem value="wired">Wired</SelectItem>
+                        <SelectItem value="solar">Solar</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div className="col-span-2">
                   <Label htmlFor="price">Price (Optional)</Label>
