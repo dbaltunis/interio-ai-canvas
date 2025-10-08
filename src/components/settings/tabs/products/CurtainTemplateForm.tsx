@@ -106,7 +106,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     compatible_hardware: template?.compatible_hardware || [],
     
     // Make-Up Pricing with machine/hand conditions
-    pricing_type: template?.pricing_type || "per_metre",
+    pricing_type: template?.pricing_type || "per_metre" as 'per_metre' | 'per_drop' | 'per_panel' | 'pricing_grid' | 'per_sqm' | 'per_unit',
     offers_hand_finished: false,
     machine_price_per_metre: template?.unit_price?.toString() || "",
     hand_price_per_metre: "",
@@ -966,122 +966,222 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
           </TabsContent>
 
           <TabsContent value="pricing" className="space-y-6">
-            {/* Make-Up Pricing */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Make-Up Pricing</CardTitle>
-                <CardDescription>Configure pricing logic with machine/hand conditions</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Hand-finished toggle */}
-                <HandFinishedToggle
-                  value={formData.offers_hand_finished}
-                  onChange={(checked) => handleInputChange("offers_hand_finished", checked)}
-                />
-
-                {/* Height-based pricing toggle */}
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="uses_height_pricing"
-                    checked={formData.uses_height_pricing}
-                    onCheckedChange={(checked) => handleInputChange("uses_height_pricing", checked)}
+            {/* Curtain Pricing */}
+            {formData.curtain_type === 'curtain' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Curtain Make-Up Pricing</CardTitle>
+                  <CardDescription>Configure pricing for curtain fabrication</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Hand-finished toggle */}
+                  <HandFinishedToggle
+                    value={formData.offers_hand_finished}
+                    onChange={(checked) => handleInputChange("offers_hand_finished", checked)}
                   />
-                  <Label htmlFor="uses_height_pricing">
-                    Use Height-Based Pricing
-                  </Label>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Info className="h-4 w-4 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Use different per-metre rates based on curtain height ranges</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
 
-                {/* Clear explanation of pricing logic */}
-                <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
-                  <h5 className="font-medium text-xs text-blue-900 dark:text-blue-100">💡 How Height-Based Pricing Works</h5>
-                  <p className="text-xs text-blue-800 dark:text-blue-200 mt-1">
-                    <strong>Without height pricing:</strong> Uses your standard per-metre rate for all curtain heights<br/>
-                    <strong>With height pricing:</strong> Uses DIFFERENT per-metre rates based on curtain height ranges<br/>
-                    <strong>Example:</strong> 1-200cm = £18/m, 201-250cm = £22/m, 251cm+ = £25/m
-                  </p>
-                </div>
-
-                {/* Height range pricing configuration */}
-                {formData.uses_height_pricing && (
-                  <HeightBasedPricingRanges
-                    heightPriceRanges={formData.height_price_ranges}
-                    onInputChange={handleInputChange}
-                  />
-                )}
-
-                <PricingMethodSelector
-                  value={formData.pricing_type}
-                  onChange={(value) => handleInputChange("pricing_type", value)}
-                />
-
-                {/* Fabric width setting for drop calculations only */}
-                {formData.pricing_type === "per_drop" && (
-                  <FabricWidthSelector
-                    value={formData.fabric_width_type}
-                    onChange={(value) => handleInputChange("fabric_width_type", value)}
-                  />
-                )}
-
-                {/* Per-metre pricing */}
-                {formData.pricing_type === "per_metre" && !formData.uses_height_pricing && (
-                  <PerMetrePricing
-                    machinePricePerMetre={formData.machine_price_per_metre}
-                    handPricePerMetre={formData.hand_price_per_metre}
-                    offersHandFinished={formData.offers_hand_finished}
-                    onInputChange={handleInputChange}
-                  />
-                )}
-
-                {/* Per-drop pricing */}
-                {formData.pricing_type === "per_drop" && (
-                  <PerDropPricing
-                    machinePricePerDrop={formData.machine_price_per_drop}
-                    handPricePerDrop={formData.hand_price_per_drop}
-                    offersHandFinished={formData.offers_hand_finished}
-                    dropHeightRanges={formData.drop_height_ranges}
-                    machineDropHeightPrices={formData.machine_drop_height_prices}
-                    handDropHeightPrices={formData.hand_drop_height_prices}
-                    onInputChange={handleInputChange}
-                  />
-                )}
-
-                {/* Per-panel pricing */}
-                {formData.pricing_type === "per_panel" && (
-                  <PerPanelPricing
-                    machinePricePerPanel={formData.machine_price_per_panel}
-                    handPricePerPanel={formData.hand_price_per_panel}
-                    offersHandFinished={formData.offers_hand_finished}
-                    onInputChange={handleInputChange}
-                  />
-                )}
-
-                {formData.pricing_type === "pricing_grid" && (
-                  <div className="space-y-4">
-                    <PricingGridUploader 
-                      initialData={formData.pricing_grid_data}
-                      onDataChange={(data) => handleInputChange("pricing_grid_data", data)}
+                  {/* Height-based pricing toggle */}
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="uses_height_pricing"
+                      checked={formData.uses_height_pricing}
+                      onCheckedChange={(checked) => handleInputChange("uses_height_pricing", checked)}
                     />
+                    <Label htmlFor="uses_height_pricing">
+                      Use Height-Based Pricing
+                    </Label>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Use different per-metre rates based on curtain height ranges</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
-                )}
-              </CardContent>
-            </Card>
 
+                  {/* Clear explanation of pricing logic */}
+                  <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
+                    <h5 className="font-medium text-xs text-blue-900 dark:text-blue-100">💡 How Height-Based Pricing Works</h5>
+                    <p className="text-xs text-blue-800 dark:text-blue-200 mt-1">
+                      <strong>Without height pricing:</strong> Uses your standard per-metre rate for all curtain heights<br/>
+                      <strong>With height pricing:</strong> Uses DIFFERENT per-metre rates based on curtain height ranges<br/>
+                      <strong>Example:</strong> 1-200cm = £18/m, 201-250cm = £22/m, 251cm+ = £25/m
+                    </p>
+                  </div>
 
-            {/* Hardware Compatibility */}
-            <HardwareCompatibilityManager 
-              headingType={formData.selected_heading_ids.length > 0 ? 
-                headingStyles.find(h => h.id === formData.selected_heading_ids[0])?.name || "" : ""}
-              compatibleHardware={formData.compatible_hardware}
-              onHardwareChange={(hardware) => handleInputChange("compatible_hardware", hardware)}
-            />
+                  {/* Height range pricing configuration */}
+                  {formData.uses_height_pricing && (
+                    <HeightBasedPricingRanges
+                      heightPriceRanges={formData.height_price_ranges}
+                      onInputChange={handleInputChange}
+                    />
+                  )}
+
+                  <PricingMethodSelector
+                    value={formData.pricing_type}
+                    onChange={(value) => handleInputChange("pricing_type", value)}
+                />
+
+                  {/* Fabric width setting for drop calculations only */}
+                  {formData.pricing_type === "per_drop" && (
+                    <FabricWidthSelector
+                      value={formData.fabric_width_type}
+                      onChange={(value) => handleInputChange("fabric_width_type", value)}
+                    />
+                  )}
+
+                  {/* Per-metre pricing */}
+                  {formData.pricing_type === "per_metre" && !formData.uses_height_pricing && (
+                    <PerMetrePricing
+                      machinePricePerMetre={formData.machine_price_per_metre}
+                      handPricePerMetre={formData.hand_price_per_metre}
+                      offersHandFinished={formData.offers_hand_finished}
+                      onInputChange={handleInputChange}
+                    />
+                  )}
+
+                  {/* Per-drop pricing */}
+                  {formData.pricing_type === "per_drop" && (
+                    <PerDropPricing
+                      machinePricePerDrop={formData.machine_price_per_drop}
+                      handPricePerDrop={formData.hand_price_per_drop}
+                      offersHandFinished={formData.offers_hand_finished}
+                      dropHeightRanges={formData.drop_height_ranges}
+                      machineDropHeightPrices={formData.machine_drop_height_prices}
+                      handDropHeightPrices={formData.hand_drop_height_prices}
+                      onInputChange={handleInputChange}
+                    />
+                  )}
+
+                  {/* Per-panel pricing */}
+                  {formData.pricing_type === "per_panel" && (
+                    <PerPanelPricing
+                      machinePricePerPanel={formData.machine_price_per_panel}
+                      handPricePerPanel={formData.hand_price_per_panel}
+                      offersHandFinished={formData.offers_hand_finished}
+                      onInputChange={handleInputChange}
+                    />
+                  )}
+
+                  {formData.pricing_type === "pricing_grid" && (
+                    <div className="space-y-4">
+                      <PricingGridUploader 
+                        initialData={formData.pricing_grid_data}
+                        onDataChange={(data) => handleInputChange("pricing_grid_data", data)}
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Blind/Shutter Pricing */}
+            {formData.curtain_type !== 'curtain' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">{formData.curtain_type.replace('_', ' ')} Pricing</CardTitle>
+                  <CardDescription>
+                    Industry-standard pricing for {formData.curtain_type.replace('_', ' ')}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Pricing method for blinds/shutters */}
+                  <div className="space-y-2">
+                    <Label htmlFor="blind_pricing_method">Pricing Method</Label>
+                    <Select 
+                      value={formData.pricing_type} 
+                      onValueChange={(value) => handleInputChange("pricing_type", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select pricing method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="per_sqm">Per Square Metre (Most Common)</SelectItem>
+                        <SelectItem value="per_unit">Per Unit (Size Ranges)</SelectItem>
+                        <SelectItem value="pricing_grid">Pricing Grid (Width x Height)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      {formData.pricing_type === 'per_sqm' && 'Price calculated by width × height in square metres'}
+                      {formData.pricing_type === 'per_unit' && 'Fixed price per unit based on size ranges'}
+                      {formData.pricing_type === 'pricing_grid' && 'Upload a pricing grid with width/height combinations'}
+                    </p>
+                  </div>
+
+                  {/* Per Square Metre Pricing */}
+                  {formData.pricing_type === "per_sqm" && (
+                    <div className="space-y-4">
+                      <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
+                        <h5 className="font-medium text-xs text-blue-900 dark:text-blue-100">💡 Square Metre Pricing</h5>
+                        <p className="text-xs text-blue-800 dark:text-blue-200 mt-1">
+                          Price = Width (m) × Height (m) × Price per m²<br/>
+                          <strong>Example:</strong> 1.5m wide × 2.0m high × $150/m² = $450
+                        </p>
+                      </div>
+                      <div>
+                        <Label htmlFor="price_per_sqm">Price per Square Metre ($)</Label>
+                        <Input
+                          id="price_per_sqm"
+                          type="number"
+                          step="0.01"
+                          value={formData.machine_price_per_metre}
+                          onChange={(e) => handleInputChange("machine_price_per_metre", e.target.value)}
+                          placeholder="150.00"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Per Unit Pricing */}
+                  {formData.pricing_type === "per_unit" && (
+                    <div className="space-y-4">
+                      <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
+                        <h5 className="font-medium text-xs text-blue-900 dark:text-blue-100">💡 Per Unit Pricing</h5>
+                        <p className="text-xs text-blue-800 dark:text-blue-200 mt-1">
+                          Fixed price ranges based on blind dimensions<br/>
+                          <strong>Example:</strong> Small (up to 1m²) = $200, Medium (1-2m²) = $350, Large (2m²+) = $500
+                        </p>
+                      </div>
+                      <div>
+                        <Label htmlFor="base_price">Base Price per Unit ($)</Label>
+                        <Input
+                          id="base_price"
+                          type="number"
+                          step="0.01"
+                          value={formData.machine_price_per_drop}
+                          onChange={(e) => handleInputChange("machine_price_per_drop", e.target.value)}
+                          placeholder="200.00"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Additional size-based pricing can be configured in price rules
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Pricing Grid Upload */}
+                  {formData.pricing_type === "pricing_grid" && (
+                    <div className="space-y-4">
+                      <PricingGridUploader 
+                        initialData={formData.pricing_grid_data}
+                        onDataChange={(data) => handleInputChange("pricing_grid_data", data)}
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Hardware Compatibility - Only for Curtains */}
+            {formData.curtain_type === 'curtain' && (
+              <HardwareCompatibilityManager 
+                headingType={formData.selected_heading_ids.length > 0 ? 
+                  headingStyles.find(h => h.id === formData.selected_heading_ids[0])?.name || "" : ""}
+                compatibleHardware={formData.compatible_hardware}
+                onHardwareChange={(hardware) => handleInputChange("compatible_hardware", hardware)}
+              />
+            )}
           </TabsContent>
         </div>
 
