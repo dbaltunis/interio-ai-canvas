@@ -17,59 +17,14 @@ export const DynamicRollerBlindFields = ({
   treatmentType,
   readOnly = false 
 }: DynamicRollerBlindFieldsProps) => {
-  const { data: topSystems = [], isLoading } = useEnhancedInventoryByCategory('top_system');
-  
-  // Filter top systems based on treatment type
-  const filteredSystems = topSystems.filter(system => 
-    !system.treatment_type || system.treatment_type === treatmentType
-  );
-
-  // Extract unique options from all configured systems
-  const getUniqueOptions = (field: string): string[] => {
-    const options = new Set<string>();
-    
-    filteredSystems.forEach(system => {
-      try {
-        const details = system.description ? JSON.parse(system.description) : {};
-        if (details[field]) {
-          options.add(details[field]);
-        }
-      } catch (e) {
-        console.log('Could not parse system details');
-      }
-    });
-    
-    return Array.from(options).sort();
-  };
-
-  const tubeSizes = getUniqueOptions('tube_size');
-  const mountTypes = getUniqueOptions('mount_type');
-  const fasciaTypes = getUniqueOptions('fascia_type');
-  const bottomRailStyles = getUniqueOptions('bottom_rail_style');
-  const controlTypes = getUniqueOptions('control_type');
-  const chainSides = getUniqueOptions('chain_side');
-  const motorTypes = getUniqueOptions('motor_type');
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (filteredSystems.length === 0) {
-    return (
-      <div className="p-4 border border-amber-300 bg-amber-50 rounded-lg">
-        <p className="text-sm text-amber-800 font-medium">
-          No top systems configured for {treatmentType.replace('_', ' ')}
-        </p>
-        <p className="text-xs text-amber-700 mt-1">
-          Please create top systems in Settings → Window Coverings → Top Systems to define available options
-        </p>
-      </div>
-    );
-  }
+  // Predefined options for all roller blind fields
+  const tubeSizes = ['25', '32', '38', '45', '50', '63', '70'];
+  const mountTypes = ['inside_mount', 'outside_mount', 'ceiling_mount', 'wall_mount'];
+  const fasciaTypes = ['none', 'standard_fascia', 'designer_fascia', 'full_cassette', 'semi_cassette'];
+  const bottomRailStyles = ['standard', 'weighted', 'decorative', 'aluminum', 'steel'];
+  const controlTypes = ['chain', 'motorized', 'spring', 'cordless'];
+  const chainSides = ['left', 'right'];
+  const motorTypes = ['battery', 'hardwired', 'rechargeable', 'solar'];
 
   const formatLabel = (value: string) => {
     return value.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
