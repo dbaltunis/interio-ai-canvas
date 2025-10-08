@@ -292,7 +292,7 @@ export const WindowTreatmentOptionsManager = () => {
               </div>
 
               {/* Create/Edit Form */}
-              {(isCreating || editingOption) && (
+              {(isCreating || editingOption) && activeOptionType === optType.type && (
                 <div className="p-4 border rounded-lg bg-muted/50">
                   <h3 className="text-lg font-semibold mb-4">
                     {editingOption ? `Edit Option` : `Add New Option`}
