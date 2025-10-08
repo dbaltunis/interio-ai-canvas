@@ -1,12 +1,12 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HeadingInventoryManager } from "./components/HeadingInventoryManager";
-import { TopSystemsManager } from "./components/TopSystemsManager";
+import { RollerBlindOptionsManager } from "./components/RollerBlindOptionsManager";
 import { OptionCategoriesManager } from "./products/OptionCategoriesManager";
 import { MakingCostsManager } from "./products/MakingCostsManager";
 import { ManufacturingDefaults } from "./products/ManufacturingDefaults";
 import { CurtainTemplatesManager } from "./products/CurtainTemplatesManager";
-import { Layers, Package, Tags, Settings, Box } from "lucide-react";
+import { Layers, Package, Tags, Settings, Sliders } from "lucide-react";
 export const WindowCoveringsTab = () => {
   return <div className="space-y-6">
       <Card>
@@ -25,9 +25,9 @@ export const WindowCoveringsTab = () => {
                 <Layers className="h-4 w-4" />
                 Heading Library
               </TabsTrigger>
-              <TabsTrigger value="top-systems" className="flex items-center gap-2">
-                <Box className="h-4 w-4" />
-                Top Systems
+              <TabsTrigger value="roller-options" className="flex items-center gap-2">
+                <Sliders className="h-4 w-4" />
+                Roller Blind Options
               </TabsTrigger>
               <TabsTrigger value="options" className="flex items-center gap-2">
                 <Tags className="h-4 w-4" />
@@ -51,8 +51,8 @@ export const WindowCoveringsTab = () => {
               <HeadingInventoryManager />
             </TabsContent>
 
-            <TabsContent value="top-systems" className="space-y-6">
-              <TopSystemsManager />
+            <TabsContent value="roller-options" className="space-y-6">
+              <RollerBlindOptionsManager />
             </TabsContent>
 
             <TabsContent value="options" className="space-y-6">
