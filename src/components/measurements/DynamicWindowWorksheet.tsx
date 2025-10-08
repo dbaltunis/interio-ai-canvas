@@ -20,6 +20,7 @@ import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { convertLength } from "@/hooks/useBusinessSettings";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { detectTreatmentType, getTreatmentConfig, TreatmentCategory } from "@/utils/treatmentTypeDetection";
 
 interface DynamicWindowWorksheetProps {
   clientId?: string;
@@ -53,6 +54,7 @@ export const DynamicWindowWorksheet = forwardRef<
   const [selectedWindowType, setSelectedWindowType] = useState<any>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [selectedTreatmentType, setSelectedTreatmentType] = useState("curtains");
+  const [treatmentCategory, setTreatmentCategory] = useState<TreatmentCategory>('curtains');
   const [measurements, setMeasurements] = useState<Record<string, any>>({});
   const [selectedItems, setSelectedItems] = useState<{
     fabric?: any;
@@ -165,7 +167,10 @@ export const DynamicWindowWorksheet = forwardRef<
       if (templateDetails && typeof templateDetails === 'object') {
         setSelectedTemplate(templateDetails);
         setSelectedTreatmentType(templateDetails.curtain_type || "curtains");
-        console.log("📊 Loaded template:", templateDetails.name);
+        // Detect treatment category
+        const detectedType = detectTreatmentType(templateDetails);
+        setTreatmentCategory(detectedType);
+        console.log("📊 Loaded template:", templateDetails.name, "Treatment type:", detectedType);
       }
       
       // Set fabric from saved summary
@@ -640,6 +645,7 @@ export const DynamicWindowWorksheet = forwardRef<
                 onItemSelect={handleItemSelect}
                 onItemDeselect={handleItemDeselect}
                 measurements={measurements}
+                treatmentCategory={treatmentCategory}
               />
               
               <div className="mt-6">
@@ -674,6 +680,7 @@ export const DynamicWindowWorksheet = forwardRef<
                     onHeadingChange={setSelectedHeading}
                     onFabricCalculationChange={setFabricCalculation}
                     readOnly={readOnly}
+                    treatmentCategory={treatmentCategory}
                   />
                 </div>
 

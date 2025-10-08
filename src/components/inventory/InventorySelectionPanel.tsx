@@ -9,6 +9,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { supabase } from "@/integrations/supabase/client";
+import { TreatmentCategory, getTreatmentConfig } from "@/utils/treatmentTypeDetection";
+import { useTreatmentSpecificFabrics } from "@/hooks/useTreatmentSpecificFabrics";
 
 interface InventorySelectionPanelProps {
   treatmentType: string;
@@ -21,6 +23,7 @@ interface InventorySelectionPanelProps {
   onItemDeselect: (category: string) => void;
   measurements?: Record<string, any>;
   className?: string;
+  treatmentCategory?: TreatmentCategory;
 }
 
 export const InventorySelectionPanel = ({
@@ -29,13 +32,18 @@ export const InventorySelectionPanel = ({
   onItemSelect,
   onItemDeselect,
   measurements = {},
-  className = ""
+  className = "",
+  treatmentCategory = 'curtains'
 }: InventorySelectionPanelProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("fabric");
   
   const { data: inventory = [] } = useEnhancedInventory();
   const { units, formatLength } = useMeasurementUnits();
+  const treatmentConfig = getTreatmentConfig(treatmentCategory);
+  
+  // Use treatment-specific fabrics
+  const { data: treatmentFabrics = [] } = useTreatmentSpecificFabrics(treatmentCategory);
 
   // Filter inventory by treatment type and category
   const getInventoryByCategory = (category: string) => {

@@ -2,6 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
+import { detectTreatmentType, getTreatmentConfig, getTreatmentDisplayName } from "@/utils/treatmentTypeDetection";
+import { RollerBlindVisualizer } from "./RollerBlindVisualizer";
 
 interface DynamicTreatmentVisualizerProps {
   template: CurtainTemplate;
@@ -17,6 +19,8 @@ export const DynamicTreatmentVisualizer = ({
   selectedLining
 }: DynamicTreatmentVisualizerProps) => {
   const { units } = useMeasurementUnits();
+  const treatmentType = detectTreatmentType(template);
+  const treatmentConfig = getTreatmentConfig(treatmentType);
   
   const width = parseFloat(measurements.rail_width || measurements.measurement_a || '150');
   const height = parseFloat(measurements.drop || measurements.measurement_b || '200');
@@ -188,14 +192,24 @@ export const DynamicTreatmentVisualizer = ({
   };
 
   const renderVisualization = () => {
-    // Determine treatment type from template name or description
-    const templateName = template.name.toLowerCase();
-    
-    if (templateName.includes('roman') || templateName.includes('blind')) {
-      return renderRomanBlindVisualization();
-    } else {
-      // Default to curtain visualization
-      return renderCurtainVisualization();
+    switch (treatmentType) {
+      case 'roller_blinds':
+        return (
+          <RollerBlindVisualizer
+            measurements={measurements}
+            selectedFabric={selectedFabric}
+            controlPosition={measurements.control_position}
+            mountingType={measurements.mounting_type}
+            transparency={measurements.fabric_transparency}
+          />
+        );
+      
+      case 'roman_blinds':
+        return renderRomanBlindVisualization();
+      
+      case 'curtains':
+      default:
+        return renderCurtainVisualization();
     }
   };
 
@@ -203,7 +217,7 @@ export const DynamicTreatmentVisualizer = ({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>Treatment Preview</span>
+          <span>Treatment Preview - {getTreatmentDisplayName(treatmentType)}</span>
           <div className="flex gap-2">
             <Badge variant="outline">{template.name}</Badge>
             {selectedFabric && <Badge variant="secondary">Fabric Selected</Badge>}

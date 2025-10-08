@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
@@ -12,6 +13,8 @@ import { LiningOptionsSection } from "./dynamic-options/LiningOptionsSection";
 import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
 import { calculateFabricUsage } from "../job-creation/treatment-pricing/fabric-calculation/fabricUsageCalculator";
 import { TreatmentPreviewEngine } from "../treatment-visualizers/TreatmentPreviewEngine";
+import { detectTreatmentType, getTreatmentConfig } from "@/utils/treatmentTypeDetection";
+import { ControlPositionField, MountingTypeField, FabricTransparencyField, ChainLengthField } from "./roller-blind-fields/RollerBlindFields";
 
 interface VisualMeasurementSheetProps {
   measurements: Record<string, any>;
@@ -26,6 +29,7 @@ interface VisualMeasurementSheetProps {
   selectedHeading?: string;
   onHeadingChange?: (headingId: string) => void;
   onFabricCalculationChange?: (calculation: any) => void;
+  treatmentCategory?: import("@/utils/treatmentTypeDetection").TreatmentCategory;
 }
 
 export const VisualMeasurementSheet = ({ 
@@ -40,8 +44,12 @@ export const VisualMeasurementSheet = ({
   onLiningChange,
   selectedHeading,
   onHeadingChange,
-  onFabricCalculationChange
+  onFabricCalculationChange,
+  treatmentCategory = 'curtains'
 }: VisualMeasurementSheetProps) => {
+  // Detect treatment type
+  const treatmentType = detectTreatmentType(selectedTemplate);
+  const treatmentConfig = getTreatmentConfig(treatmentType);
   const handleInputChange = (field: string, value: string) => {
     if (!readOnly) {
       console.log(`🔧 VisualMeasurementSheet: Changing ${field} to:`, value);
@@ -586,25 +594,58 @@ export const VisualMeasurementSheet = ({
 
             {/* Measurement Inputs Section */}
             <div className="lg:w-3/5 space-y-4">
-              {/* Hardware Type */}
-              <div className="bg-muted/20 border border-border rounded-lg p-4">
-                <h4 className="font-medium mb-3 text-foreground">Hardware Type</h4>
-                <RadioGroup 
-                  value={hardwareType} 
-                  onValueChange={(value) => handleInputChange("hardware_type", value)}
-                  disabled={readOnly}
-                  className="flex flex-row space-x-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="rod" id="rod" />
-                    <Label htmlFor="rod">Rod</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="track" id="track" />
-                    <Label htmlFor="track">Track</Label>
-                  </div>
-                </RadioGroup>
-              </div>
+              {/* CURTAIN-SPECIFIC FIELDS */}
+              {treatmentConfig.requiresHardwareType && (
+                <div className="bg-muted/20 border border-border rounded-lg p-4">
+                  <h4 className="font-medium mb-3 text-foreground">Hardware Type</h4>
+                  <RadioGroup 
+                    value={hardwareType} 
+                    onValueChange={(value) => handleInputChange("hardware_type", value)}
+                    disabled={readOnly}
+                    className="flex flex-row space-x-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="rod" id="rod" />
+                      <Label htmlFor="rod">Rod</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="track" id="track" />
+                      <Label htmlFor="track">Track</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              )}
+
+              {/* ROLLER BLIND-SPECIFIC FIELDS */}
+              {treatmentType === 'roller_blinds' && (
+                <Card className="border-primary/20 bg-primary/5">
+                  <CardHeader>
+                    <CardTitle className="text-base">Roller Blind Configuration</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <ControlPositionField
+                      value={measurements.control_position}
+                      onChange={(val) => handleInputChange('control_position', val)}
+                    />
+                    
+                    <MountingTypeField
+                      value={measurements.mounting_type}
+                      onChange={(val) => handleInputChange('mounting_type', val)}
+                    />
+                    
+                    <FabricTransparencyField
+                      value={measurements.fabric_transparency}
+                      onChange={(val) => handleInputChange('fabric_transparency', val)}
+                    />
+                    
+                    <ChainLengthField
+                      value={measurements.chain_length}
+                      onChange={(val) => handleInputChange('chain_length', val)}
+                      unit={units.length}
+                    />
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Additional Measurements for Curtain Makers - Collapsible */}
               <details className="group">

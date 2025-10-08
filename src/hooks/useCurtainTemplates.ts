@@ -7,6 +7,7 @@ export interface CurtainTemplate {
   user_id: string;
   name: string;
   description?: string;
+  treatment_category?: 'curtains' | 'roller_blinds' | 'roman_blinds' | 'venetian_blinds' | 'shutters';
   
   // Curtain Type
   curtain_type: 'single' | 'pair';
