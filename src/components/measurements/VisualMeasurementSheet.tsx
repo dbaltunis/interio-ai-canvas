@@ -258,10 +258,10 @@ export const VisualMeasurementSheet = ({
               {/* Conditionally render visual based on treatment category */}
               {treatmentCategory === 'roller_blinds' ? (
                 <RollerBlindVisual
-                  railWidth={parseFloat(measurements.rail_width || '0')}
-                  drop={parseFloat(measurements.drop || '0')}
-                  unit={units.length}
                   windowType={windowType}
+                  measurements={measurements}
+                  template={selectedTemplate}
+                  material={undefined}
                 />
               ) : (
                 <div className="relative container-level-2 rounded-lg p-8 min-h-[400px] overflow-visible">
