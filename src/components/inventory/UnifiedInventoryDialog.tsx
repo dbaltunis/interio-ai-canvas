@@ -266,7 +266,7 @@ export const UnifiedInventoryDialog = ({
     }
   };
 
-  const isFabric = ["curtain_fabric", "blind_fabric", "wallcovering"].includes(formData.category);
+  const isFabric = ["curtain_fabric", "roller_blind_fabric", "blind_fabric", "venetian_slats", "shutter_panels", "wallcovering"].includes(formData.category);
   const isHardware = ["track", "rod", "bracket", "motor", "accessory"].includes(formData.category);
 
   const profitPerUnit = formData.selling_price - formData.cost_price;
@@ -325,7 +325,10 @@ export const UnifiedInventoryDialog = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="curtain_fabric">Curtain Fabric</SelectItem>
-                    <SelectItem value="blind_fabric">Blind Fabric</SelectItem>
+                    <SelectItem value="roller_blind_fabric">Roller Blind Fabric</SelectItem>
+                    <SelectItem value="blind_fabric">Roman Blind Fabric</SelectItem>
+                    <SelectItem value="venetian_slats">Venetian Slats</SelectItem>
+                    <SelectItem value="shutter_panels">Shutter Panels</SelectItem>
                     <SelectItem value="wallcovering">Wallcovering</SelectItem>
                     <SelectItem value="track">Track System</SelectItem>
                     <SelectItem value="rod">Rod System</SelectItem>
@@ -393,7 +396,10 @@ export const UnifiedInventoryDialog = ({
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="curtain_fabric">Curtain Fabric</SelectItem>
-                            <SelectItem value="blind_fabric">Blind Fabric</SelectItem>
+                            <SelectItem value="roller_blind_fabric">Roller Blind Fabric</SelectItem>
+                            <SelectItem value="blind_fabric">Roman Blind Fabric</SelectItem>
+                            <SelectItem value="venetian_slats">Venetian Slats</SelectItem>
+                            <SelectItem value="shutter_panels">Shutter Panels</SelectItem>
                             <SelectItem value="wallcovering">Wallcovering</SelectItem>
                             <SelectItem value="track">Track System</SelectItem>
                             <SelectItem value="rod">Rod System</SelectItem>
