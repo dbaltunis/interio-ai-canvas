@@ -146,7 +146,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       return;
     }
 
-    if (formData.selected_heading_ids.length === 0) {
+    // Only validate heading selection for curtains
+    if (formData.curtain_type === 'curtain' && formData.selected_heading_ids.length === 0) {
       toast({
         title: "Validation Error",
         description: "At least one heading style must be selected",
