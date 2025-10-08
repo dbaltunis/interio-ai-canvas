@@ -1,0 +1,70 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface OptionValue {
+  id: string;
+  option_id: string;
+  code: string;
+  label: string;
+  order_index: number;
+  extra_data?: any;
+}
+
+export interface TreatmentOption {
+  id: string;
+  treatment_id: string;
+  key: string;
+  label: string;
+  input_type: 'select' | 'number' | 'boolean' | 'text' | 'multiselect';
+  required: boolean;
+  visible: boolean;
+  order_index: number;
+  validation?: any;
+  option_values?: OptionValue[];
+}
+
+export const useTreatmentOptions = (treatmentId?: string) => {
+  return useQuery({
+    queryKey: ['treatment-options', treatmentId],
+    queryFn: async () => {
+      let query = supabase
+        .from('treatment_options')
+        .select(`
+          *,
+          option_values (*)
+        `)
+        .order('order_index');
+      
+      if (treatmentId) {
+        query = query.eq('treatment_id', treatmentId);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      return data as TreatmentOption[];
+    },
+    enabled: !!treatmentId,
+  });
+};
+
+export const useUpdateTreatmentOption = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<TreatmentOption> }) => {
+      const { data, error } = await supabase
+        .from('treatment_options')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
+    },
+  });
+};

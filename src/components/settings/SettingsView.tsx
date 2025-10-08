@@ -6,6 +6,7 @@ import { PersonalSettingsTab } from "./tabs/PersonalSettingsTab";
 import { BusinessSettingsTab } from "./tabs/BusinessSettingsTab";
 import { BillingTab } from "./tabs/BillingTab";
 import { WindowCoveringsTab } from "./tabs/WindowCoveringsTab";
+import { TreatmentsManagementTab } from "./tabs/TreatmentsManagementTab";
 
 import { MeasurementUnitsTab } from "./tabs/MeasurementUnitsTab";
 import { IntegrationsTab } from "./tabs/IntegrationsTab";
@@ -96,10 +97,16 @@ export const SettingsView = () => {
           )}
           
           {canViewWindowTreatments && (
-            <TabsTrigger value="window-coverings" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              <Package className="h-4 w-4" />
-              <span className="hidden sm:inline font-medium">Products</span>
-            </TabsTrigger>
+            <>
+              <TabsTrigger value="treatments" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                <Layers className="h-4 w-4" />
+                <span className="hidden sm:inline font-medium">Treatments</span>
+              </TabsTrigger>
+              <TabsTrigger value="window-coverings" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                <Package className="h-4 w-4" />
+                <span className="hidden sm:inline font-medium">Products</span>
+              </TabsTrigger>
+            </>
           )}
           
           {canManageMarkup && (
@@ -181,13 +188,22 @@ export const SettingsView = () => {
         )}
 
         {canViewWindowTreatments && (
-          <TabsContent value="window-coverings" className="animate-fade-in">
-            <Card className="hover:shadow-md transition-all duration-300">
-              <CardContent className="p-6">
-                <WindowCoveringsTab />
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <>
+            <TabsContent value="treatments" className="animate-fade-in">
+              <Card className="hover:shadow-md transition-all duration-300">
+                <CardContent className="p-6">
+                  <TreatmentsManagementTab />
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="window-coverings" className="animate-fade-in">
+              <Card className="hover:shadow-md transition-all duration-300">
+                <CardContent className="p-6">
+                  <WindowCoveringsTab />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </>
         )}
 
         {canManageMarkup && (
