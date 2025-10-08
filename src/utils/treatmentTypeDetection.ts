@@ -13,12 +13,33 @@ export interface TreatmentConfig {
 }
 
 export const detectTreatmentType = (template: any): TreatmentCategory => {
-  // Check if template has explicit treatment_category field
+  // Priority 1: Check if template has explicit treatment_category field
   if (template?.treatment_category) {
     return template.treatment_category as TreatmentCategory;
   }
   
-  // Fallback to name-based detection
+  // Priority 2: Check curtain_type field (from curtain_templates table)
+  if (template?.curtain_type) {
+    const curtainType = template.curtain_type.toLowerCase();
+    if (curtainType === 'roller_blind' || curtainType === 'roller blind' || curtainType.includes('roller')) {
+      return 'roller_blinds';
+    }
+    if (curtainType === 'roman_blind' || curtainType === 'roman blind' || curtainType.includes('roman')) {
+      return 'roman_blinds';
+    }
+    if (curtainType === 'venetian_blind' || curtainType === 'venetian blind' || curtainType.includes('venetian')) {
+      return 'venetian_blinds';
+    }
+    if (curtainType.includes('shutter')) {
+      return 'shutters';
+    }
+    // Default to curtains for 'curtain', 'single', 'pair', etc.
+    if (curtainType === 'curtain' || curtainType === 'single' || curtainType === 'pair') {
+      return 'curtains';
+    }
+  }
+  
+  // Priority 3: Fallback to name-based detection
   const name = template?.name?.toLowerCase() || '';
   const description = template?.description?.toLowerCase() || '';
   
