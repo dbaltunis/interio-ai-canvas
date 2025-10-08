@@ -49,9 +49,18 @@ export const VisualMeasurementSheet = ({
   onFabricCalculationChange,
   treatmentCategory = 'curtains'
 }: VisualMeasurementSheetProps) => {
-  // Detect treatment type
-  const treatmentType = detectTreatmentType(selectedTemplate);
+  // Detect treatment type - use treatmentCategory prop if provided, otherwise detect from template
+  const treatmentType = treatmentCategory || detectTreatmentType(selectedTemplate);
   const treatmentConfig = getTreatmentConfig(treatmentType);
+  
+  console.log("🎯 VisualMeasurementSheet - Treatment Detection:", {
+    treatmentCategory,
+    detectedType: detectTreatmentType(selectedTemplate),
+    finalTreatmentType: treatmentType,
+    selectedTemplate: selectedTemplate?.name,
+    curtainType: selectedTemplate?.curtain_type,
+    requiresHardwareType: treatmentConfig.requiresHardwareType
+  });
   const handleInputChange = (field: string, value: string) => {
     if (!readOnly) {
       console.log(`🔧 VisualMeasurementSheet: Changing ${field} to:`, value);
