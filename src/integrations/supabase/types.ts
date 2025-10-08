@@ -4804,6 +4804,39 @@ export type Database = {
           },
         ]
       }
+      treatment_templates: {
+        Row: {
+          active: boolean | null
+          category: Database["public"]["Enums"]["treatment_category"]
+          created_at: string | null
+          id: string
+          mount_types: string[] | null
+          name: string
+          unit_system: Database["public"]["Enums"]["unit_system"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          category: Database["public"]["Enums"]["treatment_category"]
+          created_at?: string | null
+          id?: string
+          mount_types?: string[] | null
+          name: string
+          unit_system?: Database["public"]["Enums"]["unit_system"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          category?: Database["public"]["Enums"]["treatment_category"]
+          created_at?: string | null
+          id?: string
+          mount_types?: string[] | null
+          name?: string
+          unit_system?: Database["public"]["Enums"]["unit_system"] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       treatments: {
         Row: {
           calculation_details: Json | null
@@ -5915,6 +5948,14 @@ export type Database = {
         | "text"
         | "multiselect"
       price_list_status: "draft" | "ready" | "live" | "archived"
+      treatment_category:
+        | "blinds"
+        | "curtains"
+        | "shutters"
+        | "shades"
+        | "awnings"
+        | "other"
+      unit_system: "mm" | "inch"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -6046,6 +6087,15 @@ export const Constants = {
       modifier_method: ["add", "multiply", "override"],
       option_input_type: ["select", "number", "boolean", "text", "multiselect"],
       price_list_status: ["draft", "ready", "live", "archived"],
+      treatment_category: [
+        "blinds",
+        "curtains",
+        "shutters",
+        "shades",
+        "awnings",
+        "other",
+      ],
+      unit_system: ["mm", "inch"],
     },
   },
 } as const
