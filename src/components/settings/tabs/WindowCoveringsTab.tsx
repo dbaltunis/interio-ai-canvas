@@ -6,17 +6,12 @@ import { MakingCostsManager } from "./products/MakingCostsManager";
 import { ManufacturingDefaults } from "./products/ManufacturingDefaults";
 import { CurtainTemplatesManager } from "./products/CurtainTemplatesManager";
 import { Layers, Package, Tags, Settings } from "lucide-react";
-
 export const WindowCoveringsTab = () => {
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Window Coverings Management</CardTitle>
-          <CardDescription>
-            Comprehensive management system for window covering templates, pricing, and manufacturing configurations. 
-            Create templates for curtains, blinds, shutters, and more with integrated option categories.
-          </CardDescription>
+          
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="templates" className="w-full">
@@ -65,6 +60,5 @@ export const WindowCoveringsTab = () => {
           </Tabs>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
