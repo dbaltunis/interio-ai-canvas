@@ -84,7 +84,8 @@ export const CostCalculationSummary = ({
   }
 
   // Manufacturing allowances from template
-  const curtainCount = template.curtain_type === 'pair' ? 2 : 1;
+  const panelConfig = (template as any).panel_configuration || template.curtain_type;
+  const curtainCount = panelConfig === 'pair' ? 2 : 1;
   const sideHems = template.side_hems || 0;
   const totalSideHems = sideHems * 2 * curtainCount;
   const returnLeft = template.return_left || 0;
@@ -194,7 +195,8 @@ export const CostCalculationSummary = ({
 
     const fabricUsage = calculateFabricUsage();
     const liningCost = fabricUsage.linearMeters * liningType.price_per_metre;
-    const laborCost = liningType.labour_per_curtain * (template.curtain_type === 'pair' ? 2 : 1);
+    const panelConfig = (template as any).panel_configuration || template.curtain_type;
+    const laborCost = liningType.labour_per_curtain * (panelConfig === 'pair' ? 2 : 1);
 
     return liningCost + laborCost;
   };
@@ -208,7 +210,8 @@ export const CostCalculationSummary = ({
       cost += template.heading_upcharge_per_metre * width / 100; // Convert cm to m
     }
     if (template.heading_upcharge_per_curtain) {
-      cost += template.heading_upcharge_per_curtain * (template.curtain_type === 'pair' ? 2 : 1);
+      const panelConfig = (template as any).panel_configuration || template.curtain_type;
+      cost += template.heading_upcharge_per_curtain * (panelConfig === 'pair' ? 2 : 1);
     }
 
     // Selected heading from settings
@@ -251,7 +254,8 @@ export const CostCalculationSummary = ({
     }
 
     let cost = 0;
-    const curtainCount = template.curtain_type === 'pair' ? 2 : 1;
+    const panelConfig = (template as any).panel_configuration || template.curtain_type;
+    const curtainCount = panelConfig === 'pair' ? 2 : 1;
     const fabricUsage = calculateFabricUsage();
 
     // Cost per metre of fabric used

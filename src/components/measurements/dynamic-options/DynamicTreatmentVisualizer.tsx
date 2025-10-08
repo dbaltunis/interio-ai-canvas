@@ -26,7 +26,8 @@ export const DynamicTreatmentVisualizer = ({
   const height = parseFloat(measurements.drop || measurements.measurement_b || '200');
 
   const renderCurtainVisualization = () => {
-    const isPair = template.curtain_type === 'pair';
+    const panelConfig = (template as any).panel_configuration || template.curtain_type;
+    const isPair = panelConfig === 'pair';
     const fabricWidth = width * template.fullness_ratio;
     const totalDrop = height + (template.bottom_hem || 0) + (template.header_allowance || 0);
 
@@ -115,7 +116,7 @@ export const DynamicTreatmentVisualizer = ({
 
           {/* Labels */}
           <div className="absolute bottom-2 left-2">
-            <Badge variant="outline">{template.curtain_type} Curtain</Badge>
+            <Badge variant="outline">{(template as any).panel_configuration || template.curtain_type} Panel{((template as any).panel_configuration || template.curtain_type) === 'pair' ? 's' : ''}</Badge>
           </div>
           <div className="absolute bottom-2 right-2">
             <Badge variant="secondary">{template.heading_name}</Badge>
@@ -125,7 +126,7 @@ export const DynamicTreatmentVisualizer = ({
         <div className="grid grid-cols-4 gap-3 text-sm">
           <div className="text-center">
             <div className="font-medium">Type</div>
-            <div className="text-muted-foreground">{template.curtain_type}</div>
+            <div className="text-muted-foreground">{(template as any).panel_configuration || template.curtain_type} panel{((template as any).panel_configuration || template.curtain_type) === 'pair' ? 's' : ''}</div>
           </div>
           <div className="text-center">
             <div className="font-medium">Fullness</div>

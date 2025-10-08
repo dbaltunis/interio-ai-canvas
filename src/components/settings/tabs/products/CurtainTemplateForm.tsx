@@ -56,7 +56,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     description: template?.description || "",
     
     // Curtain Type
-    curtain_type: template?.curtain_type || "single",
+    curtain_type: template?.curtain_type || "curtain",
+    panel_configuration: (template as any)?.panel_configuration || "pair",
     
     // Selected Headings from Library
     selected_heading_ids: template?.selected_heading_ids || [],
@@ -156,7 +157,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         user_id: user.id,
         name: formData.name,
         description: formData.description,
-        curtain_type: formData.curtain_type as 'single' | 'pair',
+        curtain_type: formData.curtain_type,
+        panel_configuration: formData.panel_configuration,
         selected_heading_ids: formData.selected_heading_ids,
         // Keep these for compatibility - now derived from selected headings
         heading_name: formData.selected_heading_ids.length > 0 ? 
@@ -265,8 +267,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                       <SelectValue placeholder="Select window covering type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="single">Single Curtain</SelectItem>
-                      <SelectItem value="pair">Pair of Curtains</SelectItem>
+                      <SelectItem value="curtain">Curtain</SelectItem>
                       <SelectItem value="roller_blind">Roller Blind</SelectItem>
                       <SelectItem value="venetian_blind">Venetian Blind</SelectItem>
                       <SelectItem value="vertical_blind">Vertical Blind</SelectItem>
@@ -280,6 +281,22 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                     </SelectContent>
                   </Select>
                 </div>
+                
+                {formData.curtain_type === 'curtain' && (
+                  <div>
+                    <Label htmlFor="panel_configuration">Panel Configuration</Label>
+                    <Select value={formData.panel_configuration} onValueChange={(value) => handleInputChange("panel_configuration", value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select panel configuration" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="single">Single Panel</SelectItem>
+                        <SelectItem value="pair">Pair of Panels</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">Choose whether this curtain has one or two panels</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

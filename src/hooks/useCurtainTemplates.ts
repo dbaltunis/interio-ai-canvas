@@ -10,7 +10,8 @@ export interface CurtainTemplate {
   treatment_category?: 'curtains' | 'roller_blinds' | 'roman_blinds' | 'venetian_blinds' | 'shutters';
   
   // Curtain Type
-  curtain_type: 'single' | 'pair';
+  curtain_type: string;
+  panel_configuration?: 'single' | 'pair';
   
   // Heading Style
   heading_name: string;

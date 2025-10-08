@@ -1417,6 +1417,7 @@ export type Database = {
           name: string
           offers_hand_finished: boolean | null
           overlap: number | null
+          panel_configuration: string | null
           price_above_breakpoint_multiplier: number | null
           price_rules: Json | null
           pricing_grid_data: Json | null
@@ -1474,6 +1475,7 @@ export type Database = {
           name: string
           offers_hand_finished?: boolean | null
           overlap?: number | null
+          panel_configuration?: string | null
           price_above_breakpoint_multiplier?: number | null
           price_rules?: Json | null
           pricing_grid_data?: Json | null
@@ -1531,6 +1533,7 @@ export type Database = {
           name?: string
           offers_hand_finished?: boolean | null
           overlap?: number | null
+          panel_configuration?: string | null
           price_above_breakpoint_multiplier?: number | null
           price_rules?: Json | null
           pricing_grid_data?: Json | null

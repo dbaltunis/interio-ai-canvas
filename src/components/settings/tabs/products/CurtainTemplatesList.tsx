@@ -124,6 +124,9 @@ export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
             <div className="space-y-3">
               <div className="flex flex-wrap gap-2">
                 <Badge variant="secondary">{template.curtain_type}</Badge>
+                {template.curtain_type === 'curtain' && (template as any).panel_configuration && (
+                  <Badge variant="outline">{(template as any).panel_configuration}</Badge>
+                )}
                 {template.selected_heading_ids && template.selected_heading_ids.length > 0 ? (
                   template.selected_heading_ids.map((headingId) => {
                     const heading = headingStyles.find(h => h.id === headingId);

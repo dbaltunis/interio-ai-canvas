@@ -78,7 +78,8 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
     
     // Add returns and overlap to the flat finished width
     const returnAllowance = (template.return_left || 7.5) + (template.return_right || 7.5);
-    const overlapAllowance = template.curtain_type === 'pair' ? (template.overlap || 10) : 0;
+    const panelConfig = (template as any).panel_configuration || template.curtain_type;
+    const overlapAllowance = panelConfig === 'pair' ? (template.overlap || 10) : 0;
     
     // Add extra fabric if specified
     let extraFabric = 0;
@@ -181,7 +182,8 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
       case 'per_panel':
         // Fixed price per panel - doesn't scale with fabric complexity
         const pricePerPanel = template.machine_price_per_panel || 180;
-        const panelCount = template.curtain_type === 'pair' ? 2 : 1;
+        const panelConfig = (template as any).panel_configuration || template.curtain_type;
+        const panelCount = panelConfig === 'pair' ? 2 : 1;
         makeUpPrice = panelCount * pricePerPanel;
         break;
       default:
@@ -193,7 +195,8 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
       makeUpPrice += railWidth * template.heading_upcharge_per_metre;
     }
     if (template.heading_upcharge_per_curtain) {
-      const curtainCount = template.curtain_type === 'pair' ? 2 : 1;
+      const panelConfig = (template as any).panel_configuration || template.curtain_type;
+      const curtainCount = panelConfig === 'pair' ? 2 : 1;
       makeUpPrice += template.heading_upcharge_per_curtain * curtainCount;
     }
 
@@ -224,7 +227,8 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
         explanation: `${dropsRequired} drops × £${template.machine_price_per_drop || 30} per drop`
       };
     } else if (template.pricing_type === 'per_panel') {
-      const panelCount = template.curtain_type === 'pair' ? 2 : 1;
+      const panelConfig = (template as any).panel_configuration || template.curtain_type;
+      const panelCount = panelConfig === 'pair' ? 2 : 1;
       calculationDetails = {
         panelCount,
         pricePerPanel: template.machine_price_per_panel || 180,

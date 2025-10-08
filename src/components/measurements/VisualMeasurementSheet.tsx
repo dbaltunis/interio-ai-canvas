@@ -63,7 +63,8 @@ export const VisualMeasurementSheet = ({
   console.log("🎯 Specific values - rail_width:", measurements.rail_width, "drop:", measurements.drop);
 
   // Use template data if available, fallback to measurements
-  const curtainType = selectedTemplate?.curtain_type || measurements.curtain_type || "pair";
+  const panelConfig = (selectedTemplate as any)?.panel_configuration || selectedTemplate?.curtain_type || measurements.curtain_type || "pair";
+  const curtainType = panelConfig;
   const curtainSide = measurements.curtain_side || "left";
   const hardwareType = selectedTemplate?.compatible_hardware?.[0]?.toLowerCase() || measurements.hardware_type || "rod";
   const poolingOption = measurements.pooling_option || "above_floor";
@@ -112,7 +113,8 @@ export const VisualMeasurementSheet = ({
       const requiredWidth = width * selectedTemplate.fullness_ratio;
       
       // Add side hems to width calculation (for curtain pairs, each curtain needs side hems)
-      const curtainCount = selectedTemplate.curtain_type === 'pair' ? 2 : 1;
+      const panelConfig = (selectedTemplate as any).panel_configuration || selectedTemplate.curtain_type;
+      const curtainCount = panelConfig === 'pair' ? 2 : 1;
       const totalSideHems = sideHems * 2 * curtainCount; // Both sides of each curtain
       
       // Calculate total width including returns and side hems
@@ -183,7 +185,7 @@ export const VisualMeasurementSheet = ({
         returnLeft: returnLeft,
         returnRight: returnRight,
         curtainCount: curtainCount,
-        curtainType: selectedTemplate.curtain_type,
+        curtainType: (selectedTemplate as any).panel_configuration || selectedTemplate.curtain_type,
         totalWidthWithAllowances: totalWidthWithAllowances
       };
     } catch (error) {
