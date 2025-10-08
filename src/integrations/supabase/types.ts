@@ -82,6 +82,60 @@ export type Database = {
           },
         ]
       }
+      account_overrides: {
+        Row: {
+          account_id: string
+          created_at: string | null
+          default_value: string | null
+          id: string
+          option_id: string | null
+          option_value_id: string | null
+          order_index: number | null
+          required: boolean | null
+          updated_at: string | null
+          visible: boolean | null
+        }
+        Insert: {
+          account_id: string
+          created_at?: string | null
+          default_value?: string | null
+          id?: string
+          option_id?: string | null
+          option_value_id?: string | null
+          order_index?: number | null
+          required?: boolean | null
+          updated_at?: string | null
+          visible?: boolean | null
+        }
+        Update: {
+          account_id?: string
+          created_at?: string | null
+          default_value?: string | null
+          id?: string
+          option_id?: string | null
+          option_value_id?: string | null
+          order_index?: number | null
+          required?: boolean | null
+          updated_at?: string | null
+          visible?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_overrides_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_overrides_option_value_id_fkey"
+            columns: ["option_value_id"]
+            isOneToOne: false
+            referencedRelation: "option_values"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       account_settings: {
         Row: {
           account_owner_id: string
@@ -1496,6 +1550,53 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_options: {
+        Row: {
+          account_id: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          input_type: Database["public"]["Enums"]["option_input_type"]
+          key: string
+          label: string
+          treatment_id: string
+          updated_at: string | null
+          validation: Json | null
+        }
+        Insert: {
+          account_id: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          input_type: Database["public"]["Enums"]["option_input_type"]
+          key: string
+          label: string
+          treatment_id: string
+          updated_at?: string | null
+          validation?: Json | null
+        }
+        Update: {
+          account_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          input_type?: Database["public"]["Enums"]["option_input_type"]
+          key?: string
+          label?: string
+          treatment_id?: string
+          updated_at?: string | null
+          validation?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_options_treatment_id_fkey"
+            columns: ["treatment_id"]
+            isOneToOne: false
+            referencedRelation: "treatments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
           actual_close_date: string | null
@@ -2824,6 +2925,54 @@ export type Database = {
           },
         ]
       }
+      media_files: {
+        Row: {
+          account_id: string
+          created_at: string | null
+          id: string
+          mime: string | null
+          purpose: string
+          ref_option_id: string | null
+          ref_treatment_id: string | null
+          url: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string | null
+          id?: string
+          mime?: string | null
+          purpose: string
+          ref_option_id?: string | null
+          ref_treatment_id?: string | null
+          url: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string | null
+          id?: string
+          mime?: string | null
+          purpose?: string
+          ref_option_id?: string | null
+          ref_treatment_id?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_files_ref_option_id_fkey"
+            columns: ["ref_option_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_files_ref_treatment_id_fkey"
+            columns: ["ref_treatment_id"]
+            isOneToOne: false
+            referencedRelation: "treatments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_attachments: {
         Row: {
           created_at: string | null
@@ -3095,6 +3244,47 @@ export type Database = {
           },
         ]
       }
+      option_rules: {
+        Row: {
+          active: boolean | null
+          condition: Json
+          created_at: string | null
+          description: string | null
+          effect: Json
+          id: string
+          treatment_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          condition: Json
+          created_at?: string | null
+          description?: string | null
+          effect: Json
+          id?: string
+          treatment_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          condition?: Json
+          created_at?: string | null
+          description?: string | null
+          effect?: Json
+          id?: string
+          treatment_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "option_rules_treatment_id_fkey"
+            columns: ["treatment_id"]
+            isOneToOne: false
+            referencedRelation: "treatments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       option_sub_subcategories: {
         Row: {
           active: boolean | null
@@ -3209,6 +3399,44 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "option_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      option_values: {
+        Row: {
+          code: string
+          created_at: string | null
+          extra_data: Json | null
+          id: string
+          label: string
+          option_id: string
+          order_index: number | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          extra_data?: Json | null
+          id?: string
+          label: string
+          option_id: string
+          order_index?: number | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          extra_data?: Json | null
+          id?: string
+          label?: string
+          option_id?: string
+          order_index?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "option_values_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_options"
             referencedColumns: ["id"]
           },
         ]
@@ -3338,6 +3566,103 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      price_modifiers: {
+        Row: {
+          amount: number
+          code: string
+          created_at: string | null
+          id: string
+          label: string
+          method: Database["public"]["Enums"]["modifier_method"]
+          price_list_id: string
+          scope: string
+        }
+        Insert: {
+          amount: number
+          code: string
+          created_at?: string | null
+          id?: string
+          label: string
+          method: Database["public"]["Enums"]["modifier_method"]
+          price_list_id: string
+          scope: string
+        }
+        Update: {
+          amount?: number
+          code?: string
+          created_at?: string | null
+          id?: string
+          label?: string
+          method?: Database["public"]["Enums"]["modifier_method"]
+          price_list_id?: string
+          scope?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_modifiers_price_list_id_fkey"
+            columns: ["price_list_id"]
+            isOneToOne: false
+            referencedRelation: "retailer_price_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      price_rows: {
+        Row: {
+          add_on_code: string | null
+          add_on_price: number | null
+          band_d_max: number
+          band_d_min: number
+          band_w_max: number
+          band_w_min: number
+          base_price: number
+          created_at: string | null
+          id: string
+          notes: string | null
+          price_list_id: string
+          price_per_m2: number | null
+          sku: string | null
+        }
+        Insert: {
+          add_on_code?: string | null
+          add_on_price?: number | null
+          band_d_max: number
+          band_d_min: number
+          band_w_max: number
+          band_w_min: number
+          base_price: number
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          price_list_id: string
+          price_per_m2?: number | null
+          sku?: string | null
+        }
+        Update: {
+          add_on_code?: string | null
+          add_on_price?: number | null
+          band_d_max?: number
+          band_d_min?: number
+          band_w_max?: number
+          band_w_min?: number
+          base_price?: number
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          price_list_id?: string
+          price_per_m2?: number | null
+          sku?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_rows_price_list_id_fkey"
+            columns: ["price_list_id"]
+            isOneToOne: false
+            referencedRelation: "retailer_price_lists"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pricing_rules: {
         Row: {
@@ -3818,6 +4143,59 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      retailer_price_lists: {
+        Row: {
+          created_at: string | null
+          currency: string | null
+          id: string
+          name: string
+          region: string | null
+          retailer_id: string
+          status: Database["public"]["Enums"]["price_list_status"] | null
+          tax_inclusive: boolean | null
+          treatment_id: string
+          updated_at: string | null
+          valid_from: string | null
+          valid_to: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          name: string
+          region?: string | null
+          retailer_id: string
+          status?: Database["public"]["Enums"]["price_list_status"] | null
+          tax_inclusive?: boolean | null
+          treatment_id: string
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          name?: string
+          region?: string | null
+          retailer_id?: string
+          status?: Database["public"]["Enums"]["price_list_status"] | null
+          tax_inclusive?: boolean | null
+          treatment_id?: string
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retailer_price_lists_treatment_id_fkey"
+            columns: ["treatment_id"]
+            isOneToOne: false
+            referencedRelation: "treatments"
             referencedColumns: ["id"]
           },
         ]
@@ -4375,6 +4753,56 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      treatment_options: {
+        Row: {
+          created_at: string | null
+          id: string
+          input_type: Database["public"]["Enums"]["option_input_type"]
+          key: string
+          label: string
+          order_index: number | null
+          required: boolean | null
+          treatment_id: string
+          updated_at: string | null
+          validation: Json | null
+          visible: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          input_type: Database["public"]["Enums"]["option_input_type"]
+          key: string
+          label: string
+          order_index?: number | null
+          required?: boolean | null
+          treatment_id: string
+          updated_at?: string | null
+          validation?: Json | null
+          visible?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          input_type?: Database["public"]["Enums"]["option_input_type"]
+          key?: string
+          label?: string
+          order_index?: number | null
+          required?: boolean | null
+          treatment_id?: string
+          updated_at?: string | null
+          validation?: Json | null
+          visible?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treatment_options_treatment_id_fkey"
+            columns: ["treatment_id"]
+            isOneToOne: false
+            referencedRelation: "treatments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       treatments: {
         Row: {
@@ -5479,6 +5907,14 @@ export type Database = {
     }
     Enums: {
       app_role: "Owner" | "Admin" | "Manager" | "Staff" | "User"
+      modifier_method: "add" | "multiply" | "override"
+      option_input_type:
+        | "select"
+        | "number"
+        | "boolean"
+        | "text"
+        | "multiselect"
+      price_list_status: "draft" | "ready" | "live" | "archived"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -5607,6 +6043,9 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["Owner", "Admin", "Manager", "Staff", "User"],
+      modifier_method: ["add", "multiply", "override"],
+      option_input_type: ["select", "number", "boolean", "text", "multiselect"],
+      price_list_status: ["draft", "ready", "live", "archived"],
     },
   },
 } as const
