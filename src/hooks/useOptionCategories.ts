@@ -17,6 +17,7 @@ export interface OptionCategory {
   calculation_method?: string;
   affects_fabric_calculation?: boolean;
   affects_labor_calculation?: boolean;
+  treatment_type?: string;
   active: boolean;
   created_at: string;
   updated_at: string;

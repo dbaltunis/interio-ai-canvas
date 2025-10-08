@@ -292,16 +292,33 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Available Option Categories</CardTitle>
-                <CardDescription>Select which option categories customers can choose from</CardDescription>
+                <CardDescription>
+                  Select which option categories customers can choose from
+                  {formData.curtain_type && formData.curtain_type !== 'custom' && (
+                    <span className="block mt-1 text-xs">
+                      Showing only options for: <strong>{formData.curtain_type.replace('_', ' ')}</strong>
+                    </span>
+                  )}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {optionCategories.length === 0 ? (
+                  {optionCategories.filter(category => 
+                    !category.treatment_type || 
+                    category.treatment_type === formData.curtain_type ||
+                    formData.curtain_type === 'custom'
+                  ).length === 0 ? (
                     <p className="text-sm text-muted-foreground">
-                      No option categories found. Create option categories first in the "Option Categories" tab.
+                      No option categories found for {formData.curtain_type}. Create option categories in the "Option Categories" tab, or set their treatment type to "{formData.curtain_type}".
                     </p>
                   ) : (
-                    optionCategories.map((category) => (
+                    optionCategories
+                      .filter(category => 
+                        !category.treatment_type || 
+                        category.treatment_type === formData.curtain_type ||
+                        formData.curtain_type === 'custom'
+                      )
+                      .map((category) => (
                       <div key={category.id} className="flex items-center space-x-3 p-3 border rounded-lg">
                         <Checkbox
                           id={`option-category-${category.id}`}
@@ -338,14 +355,33 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Available Heading Styles</CardTitle>
-                <CardDescription>Select heading styles to include in this template</CardDescription>
+                <CardDescription>
+                  Select heading styles to include in this template
+                  {formData.curtain_type && formData.curtain_type !== 'custom' && (
+                    <span className="block mt-1 text-xs">
+                      Showing only headings for: <strong>{formData.curtain_type.replace('_', ' ')}</strong>
+                    </span>
+                  )}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {headingStyles.length === 0 ? (
-                    <p className="text-muted-foreground text-sm">No heading styles found. Create heading styles in the inventory section first.</p>
+                  {headingStyles.filter(heading => 
+                    !heading.treatment_type || 
+                    heading.treatment_type === formData.curtain_type ||
+                    formData.curtain_type === 'custom'
+                  ).length === 0 ? (
+                    <p className="text-muted-foreground text-sm">
+                      No heading styles found for {formData.curtain_type}. Create heading styles in the inventory section first, or set their treatment type to "{formData.curtain_type}".
+                    </p>
                   ) : (
-                    headingStyles.map((heading) => (
+                    headingStyles
+                      .filter(heading => 
+                        !heading.treatment_type || 
+                        heading.treatment_type === formData.curtain_type ||
+                        formData.curtain_type === 'custom'
+                      )
+                      .map((heading) => (
                       <div key={heading.id} className="flex items-center space-x-3 p-3 border rounded-lg">
                         <Checkbox
                           id={`heading-${heading.id}`}

@@ -62,6 +62,7 @@ export interface EnhancedInventoryItem {
   labor_hours?: number;
   fullness_ratio?: number;
   service_rate?: number;
+  treatment_type?: string;
   
   // Timestamps
   created_at: string;

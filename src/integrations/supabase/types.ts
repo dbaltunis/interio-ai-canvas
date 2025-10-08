@@ -2050,6 +2050,7 @@ export type Database = {
           service_rate: number | null
           sku: string | null
           supplier: string | null
+          treatment_type: string | null
           unit: string | null
           updated_at: string
           user_id: string
@@ -2105,6 +2106,7 @@ export type Database = {
           service_rate?: number | null
           sku?: string | null
           supplier?: string | null
+          treatment_type?: string | null
           unit?: string | null
           updated_at?: string
           user_id: string
@@ -2160,6 +2162,7 @@ export type Database = {
           service_rate?: number | null
           sku?: string | null
           supplier?: string | null
+          treatment_type?: string | null
           unit?: string | null
           updated_at?: string
           user_id?: string
@@ -3144,6 +3147,7 @@ export type Database = {
           is_required: boolean | null
           name: string
           sort_order: number | null
+          treatment_type: string | null
           updated_at: string
           user_id: string
         }
@@ -3162,6 +3166,7 @@ export type Database = {
           is_required?: boolean | null
           name: string
           sort_order?: number | null
+          treatment_type?: string | null
           updated_at?: string
           user_id: string
         }
@@ -3180,6 +3185,7 @@ export type Database = {
           is_required?: boolean | null
           name?: string
           sort_order?: number | null
+          treatment_type?: string | null
           updated_at?: string
           user_id?: string
         }
