@@ -11,10 +11,15 @@ export const useTreatmentSpecificFabrics = (treatmentCategory: TreatmentCategory
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Roman blinds can use both curtain_fabric and blind_fabric
+      const categories = treatmentCategory === 'roman_blinds' 
+        ? ['curtain_fabric', 'blind_fabric']
+        : [config.inventoryCategory];
+
       const { data, error } = await supabase
         .from("enhanced_inventory_items")
         .select("*")
-        .eq("category", config.inventoryCategory)
+        .in("category", categories)
         .eq("active", true)
         .order("name");
 
