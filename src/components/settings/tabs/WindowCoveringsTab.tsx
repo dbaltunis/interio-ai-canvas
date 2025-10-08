@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HeadingInventoryManager } from "./components/HeadingInventoryManager";
-import { RollerBlindOptionsManager } from "./components/RollerBlindOptionsManager";
+import { WindowTreatmentOptionsManager } from "./components/WindowTreatmentOptionsManager";
 import { OptionCategoriesManager } from "./products/OptionCategoriesManager";
 import { MakingCostsManager } from "./products/MakingCostsManager";
 import { ManufacturingDefaults } from "./products/ManufacturingDefaults";
@@ -25,9 +25,9 @@ export const WindowCoveringsTab = () => {
                 <Layers className="h-4 w-4" />
                 Heading Library
               </TabsTrigger>
-              <TabsTrigger value="roller-options" className="flex items-center gap-2">
+              <TabsTrigger value="treatment-options" className="flex items-center gap-2">
                 <Sliders className="h-4 w-4" />
-                Roller Blind Options
+                Treatment Options
               </TabsTrigger>
               <TabsTrigger value="options" className="flex items-center gap-2">
                 <Tags className="h-4 w-4" />
@@ -51,8 +51,8 @@ export const WindowCoveringsTab = () => {
               <HeadingInventoryManager />
             </TabsContent>
 
-            <TabsContent value="roller-options" className="space-y-6">
-              <RollerBlindOptionsManager />
+            <TabsContent value="treatment-options" className="space-y-6">
+              <WindowTreatmentOptionsManager />
             </TabsContent>
 
             <TabsContent value="options" className="space-y-6">

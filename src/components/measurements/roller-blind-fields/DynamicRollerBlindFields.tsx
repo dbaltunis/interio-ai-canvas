@@ -18,7 +18,7 @@ export const DynamicRollerBlindFields = ({
   treatmentType,
   readOnly = false 
 }: DynamicRollerBlindFieldsProps) => {
-  const { data: blindOptions = [], isLoading } = useEnhancedInventoryByCategory('blind_option');
+  const { data: blindOptions = [], isLoading } = useEnhancedInventoryByCategory('treatment_option');
   
   // Extract options from configured blind_option items
   const getOptionsByType = (optionType: string) => {
@@ -62,10 +62,10 @@ export const DynamicRollerBlindFields = ({
     return (
       <div className="p-4 border border-amber-300 bg-amber-50 rounded-lg">
         <p className="text-sm text-amber-800 font-medium">
-          No roller blind options configured
+          No window treatment options configured
         </p>
         <p className="text-xs text-amber-700 mt-1">
-          Please add roller blind options in Settings → Window Coverings → Roller Blind Options
+          Please add treatment options in Settings → Window Coverings → Treatment Options
         </p>
       </div>
     );
