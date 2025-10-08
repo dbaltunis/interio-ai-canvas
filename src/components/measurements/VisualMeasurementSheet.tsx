@@ -632,7 +632,7 @@ export const VisualMeasurementSheet = ({
             {/* Measurement Inputs Section */}
             <div className="lg:w-3/5 space-y-4">
               {/* CURTAIN-SPECIFIC FIELDS */}
-              {treatmentConfig.requiresHardwareType && (
+              {treatmentConfig.requiresHardwareType && treatmentType === 'curtains' && (
                 <div className="bg-muted/20 border border-border rounded-lg p-4">
                   <h4 className="font-medium mb-3 text-foreground">Hardware Type</h4>
                   <RadioGroup 
