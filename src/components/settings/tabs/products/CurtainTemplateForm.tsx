@@ -43,7 +43,6 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   const { data: headingStyles = [] } = useHeadingInventory();
   const { data: topSystems = [] } = useEnhancedInventoryByCategory('top_system');
   const { data: optionCategories = [] } = useOptionCategories();
-  const { data: treatmentTemplates = [] } = useEnhancedInventoryByCategory('treatment_option');
 
   // State for eyelet ring library
   const [eyeletRings] = useState([
@@ -274,19 +273,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                     <SelectTrigger>
                       <SelectValue placeholder="Select window covering type" />
                     </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
-                      {treatmentTemplates.length > 0 ? (
-                        <>
-                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Your Treatment Templates</div>
-                          {treatmentTemplates.map((template) => (
-                            <SelectItem key={template.id} value={template.treatment_type || 'custom'}>
-                              {template.name} {template.description && `- ${template.description}`}
-                            </SelectItem>
-                          ))}
-                          <Separator className="my-2" />
-                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Standard Types</div>
-                        </>
-                      ) : null}
+                    <SelectContent>
                       <SelectItem value="curtain">Curtain</SelectItem>
                       <SelectItem value="roller_blind">Roller Blind</SelectItem>
                       <SelectItem value="venetian_blind">Venetian Blind</SelectItem>
@@ -295,16 +282,11 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                       <SelectItem value="roman_blind">Roman Blind</SelectItem>
                       <SelectItem value="plantation_shutter">Plantation Shutter</SelectItem>
                       <SelectItem value="cafe_shutter">Cafe Shutter</SelectItem>
-                      <SelectItem value="awning">Awning</SelectItem>
-                      <SelectItem value="panel_glide">Panel Glide</SelectItem>
-                      <SelectItem value="custom">Custom Window Covering</SelectItem>
+                       <SelectItem value="awning">Awning</SelectItem>
+                       <SelectItem value="panel_glide">Panel Glide</SelectItem>
+                       <SelectItem value="custom">Custom Window Covering</SelectItem>
                     </SelectContent>
                   </Select>
-                  {treatmentTemplates.length === 0 && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Configure treatment templates in Treatment Options to see them here
-                    </p>
-                  )}
                 </div>
                 
                 {formData.curtain_type === 'curtain' && (
