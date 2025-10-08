@@ -20,6 +20,11 @@ export const ImprovedTreatmentSelector = ({
   const [searchQuery, setSearchQuery] = useState("");
   const { data: curtainTemplates = [], isLoading } = useCurtainTemplates();
   
+  // Debug: Log loaded templates
+  console.log("📋 Loaded treatment templates:", curtainTemplates);
+  console.log("📋 Total templates count:", curtainTemplates.length);
+  console.log("📋 Roller blind templates:", curtainTemplates.filter(t => t.curtain_type === 'roller_blind'));
+  
   const selectedCovering = curtainTemplates.find(c => c.id === selectedCoveringId);
 
   const handleTreatmentSelect = (treatment: CurtainTemplate) => {
