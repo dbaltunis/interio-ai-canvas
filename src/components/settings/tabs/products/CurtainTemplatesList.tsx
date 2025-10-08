@@ -124,38 +124,70 @@ export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
             <div className="space-y-3">
               <div className="flex flex-wrap gap-2">
                 <Badge variant="secondary">{template.curtain_type}</Badge>
-                {template.curtain_type === 'curtain' && (template as any).panel_configuration && (
-                  <Badge variant="outline">{(template as any).panel_configuration}</Badge>
+                
+                {/* Curtain-specific badges */}
+                {template.curtain_type === 'curtain' && (
+                  <>
+                    {(template as any).panel_configuration && (
+                      <Badge variant="outline">{(template as any).panel_configuration}</Badge>
+                    )}
+                    {template.selected_heading_ids && template.selected_heading_ids.length > 0 ? (
+                      template.selected_heading_ids.map((headingId) => {
+                        const heading = headingStyles.find(h => h.id === headingId);
+                        return heading ? (
+                          <Badge key={headingId} variant="outline">{heading.name}</Badge>
+                        ) : null;
+                      })
+                    ) : (
+                      template.heading_name && <Badge variant="outline">{template.heading_name}</Badge>
+                    )}
+                    <Badge variant="outline">Fullness: {template.fullness_ratio}</Badge>
+                    {template.is_railroadable && <Badge variant="outline">Railroadable</Badge>}
+                  </>
                 )}
-                {template.selected_heading_ids && template.selected_heading_ids.length > 0 ? (
-                  template.selected_heading_ids.map((headingId) => {
-                    const heading = headingStyles.find(h => h.id === headingId);
-                    return heading ? (
-                      <Badge key={headingId} variant="outline">{heading.name}</Badge>
-                    ) : null;
-                  })
-                ) : (
-                  <Badge variant="outline">{template.heading_name}</Badge>
-                )}
-                <Badge variant="outline">Fullness: {template.fullness_ratio}</Badge>
+                
                 <Badge variant="outline">{template.manufacturing_type}</Badge>
-                {template.is_railroadable && <Badge variant="outline">Railroadable</Badge>}
+                <Badge variant="outline">Pricing: {template.pricing_type.replace('_', ' ')}</Badge>
               </div>
               
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="font-medium">Returns:</span> L:{template.return_left}cm R:{template.return_right}cm
+              {/* Curtain-specific details */}
+              {template.curtain_type === 'curtain' && (
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Returns:</span> L:{template.return_left}cm R:{template.return_right}cm
+                  </div>
+                  <div>
+                    <span className="font-medium">Overlap:</span> {template.overlap}cm
+                  </div>
+                  <div>
+                    <span className="font-medium">Header Allowance:</span> {template.header_allowance}cm
+                  </div>
+                  <div>
+                    <span className="font-medium">Waste:</span> {template.waste_percent}%
+                  </div>
                 </div>
-                <div>
-                  <span className="font-medium">Header Allowance:</span> {template.header_allowance}cm
+              )}
+              
+              {/* Blind/Shutter-specific details */}
+              {template.curtain_type !== 'curtain' && (
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  {(template as any).bracket_deduction && (
+                    <div>
+                      <span className="font-medium">Bracket Deduction:</span> {(template as any).bracket_deduction}cm
+                    </div>
+                  )}
+                  {(template as any).stack_allowance && (
+                    <div>
+                      <span className="font-medium">Stack Allowance:</span> {(template as any).stack_allowance}cm
+                    </div>
+                  )}
+                  {template.waste_percent > 0 && (
+                    <div>
+                      <span className="font-medium">Waste:</span> {template.waste_percent}%
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <span className="font-medium">Waste:</span> {template.waste_percent}%
-                </div>
-                <div>
-                  <span className="font-medium">Pricing:</span> {template.pricing_type.replace('_', ' ')}
-                </div>
-              </div>
+              )}
             </div>
           </CardContent>
         </Card>
