@@ -10,6 +10,7 @@ import type { EnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface OptionItem extends EnhancedInventoryItem {
   option_type?: string;
@@ -268,13 +269,15 @@ export const WindowTreatmentOptionsManager = () => {
         </div>
 
         <Tabs value={activeOptionType} onValueChange={(v) => setActiveOptionType(v)} className="w-full">
-          <TabsList className="grid w-full grid-cols-auto overflow-x-auto">
-            {currentOptions.map(opt => (
-              <TabsTrigger key={opt.type} value={opt.type}>
-                {opt.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+          <ScrollArea className="w-full whitespace-nowrap rounded-md border bg-background">
+            <TabsList className="inline-flex h-10 items-center justify-start rounded-none bg-transparent p-1 text-muted-foreground w-max">
+              {currentOptions.map(opt => (
+                <TabsTrigger key={opt.type} value={opt.type} className="px-3">
+                  {opt.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </ScrollArea>
 
           {currentOptions.map((optType) => (
             <TabsContent key={optType.type} value={optType.type} className="space-y-4">
