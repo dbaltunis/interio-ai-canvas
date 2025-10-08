@@ -15,6 +15,7 @@ import { calculateFabricUsage } from "../job-creation/treatment-pricing/fabric-c
 import { TreatmentPreviewEngine } from "../treatment-visualizers/TreatmentPreviewEngine";
 import { detectTreatmentType, getTreatmentConfig } from "@/utils/treatmentTypeDetection";
 import { ControlPositionField, MountingTypeField, FabricTransparencyField, ChainLengthField } from "./roller-blind-fields/RollerBlindFields";
+import { RollerBlindVisual } from "./visualizers/RollerBlindVisual";
 
 interface VisualMeasurementSheetProps {
   measurements: Record<string, any>;
@@ -254,7 +255,16 @@ export const VisualMeasurementSheet = ({
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Visual Diagram */}
             <div className="lg:w-2/5 flex-shrink-0">
-              <div className="relative container-level-2 rounded-lg p-8 min-h-[400px] overflow-visible">
+              {/* Conditionally render visual based on treatment category */}
+              {treatmentCategory === 'roller_blinds' ? (
+                <RollerBlindVisual
+                  railWidth={parseFloat(measurements.rail_width || '0')}
+                  drop={parseFloat(measurements.drop || '0')}
+                  unit={units.length}
+                  windowType={windowType}
+                />
+              ) : (
+                <div className="relative container-level-2 rounded-lg p-8 min-h-[400px] overflow-visible">
 
               {/* Hardware - Track/Rod that follows window shape */}
               {windowType === 'bay' ? (
@@ -576,6 +586,8 @@ export const VisualMeasurementSheet = ({
                 </div>
               )}
               </div>
+              )}
+              {/* End of curtain visual conditional */}
 
               {/* Measurement Guide */}
               <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
@@ -852,7 +864,8 @@ export const VisualMeasurementSheet = ({
                 </div>
               </details>
 
-              {/* Curtain Configuration - Professional Design */}
+              {/* Curtain Configuration - Professional Design (Only for curtains) */}
+              {treatmentCategory === 'curtains' && (
               <div className="container-level-1 rounded-lg p-4">
               <h4 className="text-lg font-bold text-card-foreground mb-4">Curtain Configuration</h4>
               
@@ -912,6 +925,8 @@ export const VisualMeasurementSheet = ({
                 )}
               </div>
             </div>
+            )}
+            {/* End of curtain configuration conditional */}
 
             {/* Main Measurements - Compact Design */}
             <div className="container-level-1 rounded-lg p-4">

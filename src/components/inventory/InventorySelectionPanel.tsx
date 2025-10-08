@@ -47,18 +47,22 @@ export const InventorySelectionPanel = ({
 
   // Filter inventory by treatment type and category
   const getInventoryByCategory = (category: string) => {
+    // For fabric category, ALWAYS use treatment-specific fabrics
+    if (category === "fabric") {
+      return treatmentFabrics.filter(item => {
+        const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                             item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+        return matchesSearch;
+      });
+    }
+
+    // For other categories, use general inventory
     const categoryMap: Record<string, string[]> = {
-      fabric: ["Fabric", "fabric"],
       hardware: ["Hardware", "hardware", "Track", "Rod", "Pole"],
       material: ["Material", "material", "Blind Material", "Blind_Material"]
     };
 
-    // For fabric category, use treatment-specific fabrics if available
-    const sourceInventory = (category === "fabric" && treatmentFabrics.length > 0) 
-      ? treatmentFabrics 
-      : inventory;
-
-    return sourceInventory.filter(item => {
+    return inventory.filter(item => {
       const matchesCategory = categoryMap[category]?.some(cat => 
         item.category?.toLowerCase().includes(cat.toLowerCase())
       );
