@@ -1408,6 +1408,7 @@ export type Database = {
           horizontal_repeat: number | null
           id: string
           is_railroadable: boolean | null
+          is_system_default: boolean | null
           lining_types: Json | null
           machine_drop_height_prices: Json | null
           machine_price_per_drop: number | null
@@ -1466,6 +1467,7 @@ export type Database = {
           horizontal_repeat?: number | null
           id?: string
           is_railroadable?: boolean | null
+          is_system_default?: boolean | null
           lining_types?: Json | null
           machine_drop_height_prices?: Json | null
           machine_price_per_drop?: number | null
@@ -1524,6 +1526,7 @@ export type Database = {
           horizontal_repeat?: number | null
           id?: string
           is_railroadable?: boolean | null
+          is_system_default?: boolean | null
           lining_types?: Json | null
           machine_drop_height_prices?: Json | null
           machine_price_per_drop?: number | null
@@ -5781,6 +5784,10 @@ export type Database = {
         Returns: boolean
       }
       cleanup_duplicate_invitations: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      create_system_blind_templates: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
