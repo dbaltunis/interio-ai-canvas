@@ -997,6 +997,14 @@ export const EnhancedMeasurementWorksheet = forwardRef<
             key={`measurements-${stateKey}`} // Use stable key based on surface ID
             windowType={windowType}
             selectedTemplate={selectedCovering}
+            treatmentCategory={
+              selectedCovering?.curtain_type === 'roller_blind' ? 'roller_blinds' :
+              selectedCovering?.curtain_type === 'venetian_blind' ? 'venetian_blinds' :
+              selectedCovering?.curtain_type === 'roman_blind' ? 'roman_blinds' :
+              selectedCovering?.curtain_type === 'shutter' ? 'shutters' :
+              selectedCovering?.curtain_type === 'curtain' ? 'curtains' :
+              'curtains'
+            }
             selectedFabric={selectedFabric}
             onFabricChange={(fabricId) => {
               setSelectedFabric(fabricId);
