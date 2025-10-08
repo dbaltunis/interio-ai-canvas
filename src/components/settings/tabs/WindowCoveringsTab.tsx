@@ -6,7 +6,8 @@ import { OptionCategoriesManager } from "./products/OptionCategoriesManager";
 import { MakingCostsManager } from "./products/MakingCostsManager";
 import { ManufacturingDefaults } from "./products/ManufacturingDefaults";
 import { CurtainTemplatesManager } from "./products/CurtainTemplatesManager";
-import { Layers, Package, Tags, Settings, Sliders } from "lucide-react";
+import { SystemTemplatesLibrary } from "./components/SystemTemplatesLibrary";
+import { Layers, Package, Tags, Settings, Sliders, Library } from "lucide-react";
 export const WindowCoveringsTab = () => {
   return <div className="space-y-6">
       <Card>
@@ -16,35 +17,43 @@ export const WindowCoveringsTab = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="templates" className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="templates" className="flex items-center gap-2">
                 <Layers className="h-4 w-4" />
-                Templates
+                My Templates
+              </TabsTrigger>
+              <TabsTrigger value="system-library" className="flex items-center gap-2">
+                <Library className="h-4 w-4" />
+                Template Library
               </TabsTrigger>
               <TabsTrigger value="headings" className="flex items-center gap-2">
                 <Layers className="h-4 w-4" />
-                Heading Library
+                Headings
               </TabsTrigger>
               <TabsTrigger value="treatment-options" className="flex items-center gap-2">
                 <Sliders className="h-4 w-4" />
-                Treatment Options
+                Options
               </TabsTrigger>
               <TabsTrigger value="options" className="flex items-center gap-2">
                 <Tags className="h-4 w-4" />
-                Option Categories
+                Categories
               </TabsTrigger>
               <TabsTrigger value="making-costs" className="flex items-center gap-2">
                 <Package className="h-4 w-4" />
-                Making Costs
+                Costs
               </TabsTrigger>
               <TabsTrigger value="defaults" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
-                Manufacturing Defaults
+                Defaults
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="templates" className="space-y-6">
               <CurtainTemplatesManager />
+            </TabsContent>
+
+            <TabsContent value="system-library" className="space-y-6">
+              <SystemTemplatesLibrary />
             </TabsContent>
 
             <TabsContent value="headings" className="space-y-6">
