@@ -2028,6 +2028,7 @@ export type Database = {
           height: number | null
           id: string
           image_url: string | null
+          is_default: boolean | null
           is_flame_retardant: boolean | null
           labor_hours: number | null
           last_cost_update: string | null
@@ -2084,6 +2085,7 @@ export type Database = {
           height?: number | null
           id?: string
           image_url?: string | null
+          is_default?: boolean | null
           is_flame_retardant?: boolean | null
           labor_hours?: number | null
           last_cost_update?: string | null
@@ -2140,6 +2142,7 @@ export type Database = {
           height?: number | null
           id?: string
           image_url?: string | null
+          is_default?: boolean | null
           is_flame_retardant?: boolean | null
           labor_hours?: number | null
           last_cost_update?: string | null
