@@ -43,6 +43,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   const { data: headingStyles = [] } = useHeadingInventory();
   const { data: topSystems = [] } = useEnhancedInventoryByCategory('top_system');
   const { data: optionCategories = [] } = useOptionCategories();
+  const { data: treatmentOptions = [] } = useEnhancedInventoryByCategory('treatment_option');
 
   // State for eyelet ring library
   const [eyeletRings] = useState([
@@ -297,15 +298,78 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
           </TabsContent>
 
           <TabsContent value="options" className="space-y-6">
-            {/* Option Categories Integration */}
+            {/* Treatment Options - Dynamically filtered */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Available Option Categories</CardTitle>
+                <CardTitle className="text-base">Treatment Options</CardTitle>
                 <CardDescription>
-                  Select which option categories customers can choose from
+                  Select which treatment options are available for this template
                   {formData.curtain_type && formData.curtain_type !== 'custom' && (
                     <span className="block mt-1 text-xs">
                       Showing only options for: <strong>{formData.curtain_type.replace('_', ' ')}</strong>
+                    </span>
+                  )}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {treatmentOptions.filter(option => 
+                    !option.treatment_type || 
+                    option.treatment_type === formData.curtain_type ||
+                    formData.curtain_type === 'custom'
+                  ).length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      No treatment options found for {formData.curtain_type}. Create treatment options in the "Treatment Options" section and set their treatment type to "{formData.curtain_type}".
+                    </p>
+                  ) : (
+                    treatmentOptions
+                      .filter(option => 
+                        !option.treatment_type || 
+                        option.treatment_type === formData.curtain_type ||
+                        formData.curtain_type === 'custom'
+                      )
+                      .map((option) => (
+                      <div key={option.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                        <Checkbox
+                          id={`treatment-option-${option.id}`}
+                          checked={formData.selected_option_categories.includes(option.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              handleInputChange("selected_option_categories", [...formData.selected_option_categories, option.id]);
+                            } else {
+                              handleInputChange("selected_option_categories", formData.selected_option_categories.filter(id => id !== option.id));
+                            }
+                          }}
+                        />
+                        <div className="flex-1">
+                          <Label htmlFor={`treatment-option-${option.id}`} className="font-medium cursor-pointer">
+                            {option.name}
+                          </Label>
+                          <div className="text-sm text-muted-foreground">
+                            {option.description || "No description"}
+                          </div>
+                          {option.cost_price && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Cost: ${option.cost_price} | Sell: ${option.selling_price || option.cost_price}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Option Categories Integration */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Hierarchical Option Categories</CardTitle>
+                <CardDescription>
+                  Select which option categories customers can choose from (advanced multi-level options)
+                  {formData.curtain_type && formData.curtain_type !== 'custom' && (
+                    <span className="block mt-1 text-xs">
+                      Showing only categories for: <strong>{formData.curtain_type.replace('_', ' ')}</strong>
                     </span>
                   )}
                 </CardDescription>
