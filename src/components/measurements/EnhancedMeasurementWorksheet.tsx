@@ -28,6 +28,7 @@ import { calculateTreatmentPricing } from "@/utils/pricing/calculateTreatmentPri
 import { useTreatments } from "@/hooks/useTreatments";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { detectTreatmentType } from "@/utils/treatmentTypeDetection";
 
 interface EnhancedMeasurementWorksheetProps {
   clientId?: string; // Optional - measurements can exist without being assigned to a client
@@ -997,14 +998,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
             key={`measurements-${stateKey}`} // Use stable key based on surface ID
             windowType={windowType}
             selectedTemplate={selectedCovering}
-            treatmentCategory={
-              selectedCovering?.curtain_type === 'roller_blind' ? 'roller_blinds' :
-              selectedCovering?.curtain_type === 'venetian_blind' ? 'venetian_blinds' :
-              selectedCovering?.curtain_type === 'roman_blind' ? 'roman_blinds' :
-              selectedCovering?.curtain_type === 'shutter' ? 'shutters' :
-              selectedCovering?.curtain_type === 'curtain' ? 'curtains' :
-              'curtains'
-            }
+            treatmentCategory={detectTreatmentType(selectedCovering)}
             selectedFabric={selectedFabric}
             onFabricChange={(fabricId) => {
               setSelectedFabric(fabricId);
