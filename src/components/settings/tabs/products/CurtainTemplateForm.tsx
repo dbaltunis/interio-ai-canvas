@@ -233,7 +233,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
           {formData.curtain_type === 'curtain' ? (
             <TabsTrigger value="heading">Heading</TabsTrigger>
           ) : (
-            <TabsTrigger value="top_systems">Top Systems</TabsTrigger>
+            <TabsTrigger value="treatment_settings">Treatment Settings</TabsTrigger>
           )}
           <TabsTrigger value="manufacturing">Manufacturing</TabsTrigger>
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
@@ -501,69 +501,165 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
             />
           </TabsContent>
 
-          {/* Top Systems Tab - Only for Blinds */}
-          <TabsContent value="top_systems" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Top Systems</CardTitle>
-                <CardDescription>
-                  Select top systems (tubes, cassettes, headrails) for this blind template
-                  <span className="block mt-1 text-xs">
-                    Showing only top systems for: <strong>{formData.curtain_type.replace('_', ' ')}</strong>
-                  </span>
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {topSystems.filter(system => 
-                    !system.treatment_type || 
-                    system.treatment_type === formData.curtain_type
-                  ).length === 0 ? (
-                    <p className="text-muted-foreground text-sm">
-                      No top systems found for {formData.curtain_type}. Create top systems in the "Top Systems" tab first.
+          {/* Treatment Settings Tab - Only for Non-Curtain Window Coverings */}
+          <TabsContent value="treatment_settings" className="space-y-6">
+            {(() => {
+              // Map curtain_type to organized option types
+              const treatmentOptionGroups: Record<string, { type: string; label: string }[]> = {
+                roller_blind: [
+                  { type: 'tube_size', label: 'Tube Sizes' },
+                  { type: 'mount_type', label: 'Mount Types' },
+                  { type: 'fascia_type', label: 'Fascia Types' },
+                  { type: 'bottom_rail_style', label: 'Bottom Rails' },
+                  { type: 'control_type', label: 'Control Types' },
+                  { type: 'motor_type', label: 'Motor Types' },
+                ],
+                roman_blind: [
+                  { type: 'headrail_type', label: 'Headrail Types' },
+                  { type: 'fold_style', label: 'Fold Styles' },
+                  { type: 'lining_type', label: 'Lining Types' },
+                  { type: 'control_type', label: 'Control Types' },
+                  { type: 'mount_type', label: 'Mount Types' },
+                ],
+                venetian_blind: [
+                  { type: 'slat_size', label: 'Slat Sizes' },
+                  { type: 'material', label: 'Materials' },
+                  { type: 'control_type', label: 'Control Types' },
+                  { type: 'headrail_type', label: 'Headrail Types' },
+                  { type: 'mount_type', label: 'Mount Types' },
+                ],
+                vertical_blind: [
+                  { type: 'louvre_width', label: 'Louvre Widths' },
+                  { type: 'headrail_type', label: 'Headrail Types' },
+                  { type: 'control_type', label: 'Control Types' },
+                  { type: 'weight_style', label: 'Weight Styles' },
+                ],
+                cellular_blind: [
+                  { type: 'cell_size', label: 'Cell Sizes' },
+                  { type: 'headrail_type', label: 'Headrail Types' },
+                  { type: 'control_type', label: 'Control Types' },
+                  { type: 'mount_type', label: 'Mount Types' },
+                ],
+                plantation_shutter: [
+                  { type: 'louvre_size', label: 'Louvre Sizes' },
+                  { type: 'frame_type', label: 'Frame Types' },
+                  { type: 'hinge_type', label: 'Hinge Types' },
+                  { type: 'material', label: 'Materials' },
+                  { type: 'finish_type', label: 'Finish Types' },
+                  { type: 'control_type', label: 'Control Types' },
+                ],
+                cafe_shutter: [
+                  { type: 'louvre_size', label: 'Louvre Sizes' },
+                  { type: 'frame_type', label: 'Frame Types' },
+                  { type: 'hinge_type', label: 'Hinge Types' },
+                  { type: 'material', label: 'Materials' },
+                  { type: 'finish_type', label: 'Finish Types' },
+                ],
+                awning: [
+                  { type: 'motor_type', label: 'Motor Types' },
+                  { type: 'bracket_type', label: 'Bracket Types' },
+                  { type: 'projection_type', label: 'Projection Types' },
+                  { type: 'control_type', label: 'Control Types' },
+                  { type: 'arm_type', label: 'Arm Types' },
+                ],
+                panel_glide: [
+                  { type: 'track_type', label: 'Track Types' },
+                  { type: 'panel_width', label: 'Panel Widths' },
+                  { type: 'control_type', label: 'Control Types' },
+                ],
+              };
+
+              const currentGroups = treatmentOptionGroups[formData.curtain_type] || [];
+              
+              // Helper to parse option_type from description field
+              const getOptionType = (option: any): string => {
+                try {
+                  const details = option.description ? JSON.parse(option.description) : {};
+                  return details.option_type || '';
+                } catch {
+                  return '';
+                }
+              };
+
+              // Filter options for current treatment type
+              const relevantOptions = treatmentOptions.filter(opt => 
+                opt.treatment_type === formData.curtain_type
+              );
+
+              return currentGroups.length === 0 ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Treatment Settings</CardTitle>
+                    <CardDescription>
+                      No specific treatment settings configured for this window covering type
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      Select a different window covering type or create treatment options in the "Treatment Options" section.
                     </p>
-                  ) : (
-                    topSystems
-                      .filter(system => 
-                        !system.treatment_type || 
-                        system.treatment_type === formData.curtain_type
-                      )
-                      .map((system) => (
-                      <div key={system.id} className="flex items-center space-x-3 p-3 border rounded-lg">
-                        <Checkbox
-                          id={`system-${system.id}`}
-                          checked={formData.selected_top_system_ids.includes(system.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              handleInputChange("selected_top_system_ids", [...formData.selected_top_system_ids, system.id]);
-                            } else {
-                              handleInputChange("selected_top_system_ids", formData.selected_top_system_ids.filter(id => id !== system.id));
-                            }
-                          }}
-                        />
-                        <div className="flex items-center gap-3 flex-1">
-                          {(system as any).image_url && (
-                            <img 
-                              src={(system as any).image_url} 
-                              alt={system.name}
-                              className="w-12 h-12 object-cover rounded"
-                            />
-                          )}
-                          <div className="flex-1">
-                            <Label htmlFor={`system-${system.id}`} className="font-medium cursor-pointer">
-                              {system.name}
-                            </Label>
-                            <div className="text-sm text-muted-foreground">
-                              {system.price_per_meter ? `$${system.price_per_meter.toFixed(2)}` : 'Free'}
-                            </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                currentGroups.map((group) => {
+                  const groupOptions = relevantOptions.filter(opt => getOptionType(opt) === group.type);
+                  
+                  return (
+                    <Card key={group.type}>
+                      <CardHeader>
+                        <CardTitle className="text-base">{group.label}</CardTitle>
+                        <CardDescription>
+                          Select which {group.label.toLowerCase()} are available for this template
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {groupOptions.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">
+                            No {group.label.toLowerCase()} found. Create them in the "Treatment Options" section with type "{group.type}" and treatment type "{formData.curtain_type}".
+                          </p>
+                        ) : (
+                          <div className="grid grid-cols-1 gap-3">
+                            {groupOptions.map((option) => (
+                              <div key={option.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent/50 transition-colors">
+                                <Checkbox
+                                  id={`option-${option.id}`}
+                                  checked={formData.selected_option_categories.includes(option.id)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      handleInputChange("selected_option_categories", [...formData.selected_option_categories, option.id]);
+                                    } else {
+                                      handleInputChange("selected_option_categories", formData.selected_option_categories.filter(id => id !== option.id));
+                                    }
+                                  }}
+                                />
+                                <div className="flex-1">
+                                  <Label htmlFor={`option-${option.id}`} className="font-medium cursor-pointer">
+                                    {option.name}
+                                  </Label>
+                                  {option.description && !option.description.includes('{') && (
+                                    <div className="text-sm text-muted-foreground mt-1">
+                                      {option.description}
+                                    </div>
+                                  )}
+                                  <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+                                    {option.cost_price && option.cost_price > 0 && (
+                                      <span>Cost: ${option.cost_price.toFixed(2)}</span>
+                                    )}
+                                    {option.selling_price && option.selling_price > 0 && (
+                                      <span>Sell: ${option.selling_price.toFixed(2)}</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              );
+            })()}
           </TabsContent>
 
           <TabsContent value="manufacturing" className="space-y-6">
