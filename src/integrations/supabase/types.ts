@@ -1372,6 +1372,7 @@ export type Database = {
           seam_hems: number
           selected_heading_ids: string[] | null
           side_hems: number
+          treatment_category: string | null
           unit_price: number | null
           updated_at: string
           user_id: string
@@ -1428,6 +1429,7 @@ export type Database = {
           seam_hems?: number
           selected_heading_ids?: string[] | null
           side_hems?: number
+          treatment_category?: string | null
           unit_price?: number | null
           updated_at?: string
           user_id: string
@@ -1484,6 +1486,7 @@ export type Database = {
           seam_hems?: number
           selected_heading_ids?: string[] | null
           side_hems?: number
+          treatment_category?: string | null
           unit_price?: number | null
           updated_at?: string
           user_id?: string

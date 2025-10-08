@@ -264,6 +264,15 @@ export const DynamicWindowWorksheet = forwardRef<
     }
   }, [existingMeasurement, existingTreatments, existingWindowSummary]);
 
+  // Detect treatment type when template changes
+  useEffect(() => {
+    if (selectedTemplate) {
+      const detectedType = detectTreatmentType(selectedTemplate);
+      setTreatmentCategory(detectedType);
+      console.log('🎯 Treatment type detected:', detectedType, 'for template:', selectedTemplate.name);
+    }
+  }, [selectedTemplate]);
+
   // Enhanced auto-save implementation with cross-mode data
   useImperativeHandle(ref, () => ({
     autoSave: async () => {

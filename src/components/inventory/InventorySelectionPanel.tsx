@@ -53,7 +53,12 @@ export const InventorySelectionPanel = ({
       material: ["Material", "material", "Blind Material", "Blind_Material"]
     };
 
-    return inventory.filter(item => {
+    // For fabric category, use treatment-specific fabrics if available
+    const sourceInventory = (category === "fabric" && treatmentFabrics.length > 0) 
+      ? treatmentFabrics 
+      : inventory;
+
+    return sourceInventory.filter(item => {
       const matchesCategory = categoryMap[category]?.some(cat => 
         item.category?.toLowerCase().includes(cat.toLowerCase())
       );
