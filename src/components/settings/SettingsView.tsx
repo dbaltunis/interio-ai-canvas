@@ -105,7 +105,7 @@ export const SettingsView = () => {
           {canManageMarkup && (
             <TabsTrigger value="pricing" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
               <Calculator className="h-4 w-4" />
-              <span className="hidden sm:inline font-medium">Pricing</span>
+              <span className="hidden sm:inline font-medium">Markup & Tax</span>
             </TabsTrigger>
           )}
           
