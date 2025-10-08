@@ -104,6 +104,8 @@ export const WindowTreatmentOptionsManager = () => {
   };
 
   const handleSave = async () => {
+    console.log('handleSave called', { formData, activeOptionType, activeTreatment });
+    
     if (!formData.name.trim() || !formData.value.trim()) {
       toast({
         title: "Required fields",
@@ -142,27 +144,29 @@ export const WindowTreatmentOptionsManager = () => {
         labor_hours: 0,
       };
 
+      console.log('Saving item:', itemData);
+
       if (editingOption) {
         await updateItem.mutateAsync({ id: editingOption.id, ...itemData });
         setEditingOption(null);
         toast({
           title: "Option updated",
-          description: "The option has been updated.",
+          description: "The option has been updated successfully.",
         });
       } else {
         await createItem.mutateAsync(itemData);
         setIsCreating(false);
         toast({
           title: "Option created",
-          description: "New option has been created.",
+          description: "New option has been created successfully.",
         });
       }
       resetForm();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving option:', error);
       toast({
         title: "Save failed",
-        description: "Failed to save option. Please try again.",
+        description: error?.message || "Failed to save option. Please try again.",
         variant: "destructive"
       });
     }
@@ -292,7 +296,7 @@ export const WindowTreatmentOptionsManager = () => {
               </div>
 
               {/* Create/Edit Form */}
-              {(isCreating || editingOption) && activeOptionType === optType.type && (
+              {(isCreating || editingOption) && (
                 <div className="p-4 border rounded-lg bg-muted/50">
                   <h3 className="text-lg font-semibold mb-4">
                     {editingOption ? `Edit Option` : `Add New Option`}
