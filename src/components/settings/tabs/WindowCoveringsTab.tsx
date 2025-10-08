@@ -1,11 +1,12 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HeadingInventoryManager } from "./components/HeadingInventoryManager";
+import { TopSystemsManager } from "./components/TopSystemsManager";
 import { OptionCategoriesManager } from "./products/OptionCategoriesManager";
 import { MakingCostsManager } from "./products/MakingCostsManager";
 import { ManufacturingDefaults } from "./products/ManufacturingDefaults";
 import { CurtainTemplatesManager } from "./products/CurtainTemplatesManager";
-import { Layers, Package, Tags, Settings } from "lucide-react";
+import { Layers, Package, Tags, Settings, Box } from "lucide-react";
 export const WindowCoveringsTab = () => {
   return <div className="space-y-6">
       <Card>
@@ -15,7 +16,7 @@ export const WindowCoveringsTab = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="templates" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="templates" className="flex items-center gap-2">
                 <Layers className="h-4 w-4" />
                 Templates
@@ -23,6 +24,10 @@ export const WindowCoveringsTab = () => {
               <TabsTrigger value="headings" className="flex items-center gap-2">
                 <Layers className="h-4 w-4" />
                 Heading Library
+              </TabsTrigger>
+              <TabsTrigger value="top-systems" className="flex items-center gap-2">
+                <Box className="h-4 w-4" />
+                Top Systems
               </TabsTrigger>
               <TabsTrigger value="options" className="flex items-center gap-2">
                 <Tags className="h-4 w-4" />
@@ -44,6 +49,10 @@ export const WindowCoveringsTab = () => {
 
             <TabsContent value="headings" className="space-y-6">
               <HeadingInventoryManager />
+            </TabsContent>
+
+            <TabsContent value="top-systems" className="space-y-6">
+              <TopSystemsManager />
             </TabsContent>
 
             <TabsContent value="options" className="space-y-6">
