@@ -229,7 +229,11 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="basic">Basic</TabsTrigger>
           <TabsTrigger value="options">Options</TabsTrigger>
-          <TabsTrigger value="heading">Heading</TabsTrigger>
+          {formData.curtain_type === 'curtain' ? (
+            <TabsTrigger value="heading">Heading</TabsTrigger>
+          ) : (
+            <TabsTrigger value="top_systems">Top Systems</TabsTrigger>
+          )}
           <TabsTrigger value="manufacturing">Manufacturing</TabsTrigger>
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
         </TabsList>
@@ -355,8 +359,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
             </Card>
           </TabsContent>
 
+          {/* Heading Tab - Only for Curtains */}
           <TabsContent value="heading" className="space-y-6">
-            {/* Heading Configuration */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Available Heading Styles</CardTitle>
@@ -426,81 +430,76 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
               </CardContent>
             </Card>
 
-            {/* Top Systems Section - Only for blinds */}
-            {(formData.curtain_type === 'roller_blind' || 
-              formData.curtain_type === 'roman_blind' || 
-              formData.curtain_type === 'venetian_blind' ||
-              formData.curtain_type === 'vertical_blind' ||
-              formData.curtain_type === 'honeycomb_blind') && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Top Systems</CardTitle>
-                  <CardDescription>
-                    Select top systems (tubes, cassettes, headrails) for this blind template
-                    <span className="block mt-1 text-xs">
-                      Showing only top systems for: <strong>{formData.curtain_type.replace('_', ' ')}</strong>
-                    </span>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {topSystems.filter(system => 
-                      !system.treatment_type || 
-                      system.treatment_type === formData.curtain_type
-                    ).length === 0 ? (
-                      <p className="text-muted-foreground text-sm">
-                        No top systems found for {formData.curtain_type}. Create top systems in the "Top Systems" tab first.
-                      </p>
-                    ) : (
-                      topSystems
-                        .filter(system => 
-                          !system.treatment_type || 
-                          system.treatment_type === formData.curtain_type
-                        )
-                        .map((system) => (
-                        <div key={system.id} className="flex items-center space-x-3 p-3 border rounded-lg">
-                          <Checkbox
-                            id={`system-${system.id}`}
-                            checked={formData.selected_top_system_ids.includes(system.id)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                handleInputChange("selected_top_system_ids", [...formData.selected_top_system_ids, system.id]);
-                              } else {
-                                handleInputChange("selected_top_system_ids", formData.selected_top_system_ids.filter(id => id !== system.id));
-                              }
-                            }}
-                          />
-                          <div className="flex items-center gap-3 flex-1">
-                            {(system as any).image_url && (
-                              <img 
-                                src={(system as any).image_url} 
-                                alt={system.name}
-                                className="w-12 h-12 object-cover rounded"
-                              />
-                            )}
-                            <div className="flex-1">
-                              <Label htmlFor={`system-${system.id}`} className="font-medium cursor-pointer">
-                                {system.name}
-                              </Label>
-                              <div className="text-sm text-muted-foreground">
-                                {system.price_per_meter ? `$${system.price_per_meter.toFixed(2)}` : 'Free'}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
             {/* Lining Configuration */}
             <LiningTypeManager 
               liningTypes={formData.lining_types}
               onLiningTypesChange={(types) => handleInputChange("lining_types", types)}
             />
+          </TabsContent>
 
+          {/* Top Systems Tab - Only for Blinds */}
+          <TabsContent value="top_systems" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Top Systems</CardTitle>
+                <CardDescription>
+                  Select top systems (tubes, cassettes, headrails) for this blind template
+                  <span className="block mt-1 text-xs">
+                    Showing only top systems for: <strong>{formData.curtain_type.replace('_', ' ')}</strong>
+                  </span>
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {topSystems.filter(system => 
+                    !system.treatment_type || 
+                    system.treatment_type === formData.curtain_type
+                  ).length === 0 ? (
+                    <p className="text-muted-foreground text-sm">
+                      No top systems found for {formData.curtain_type}. Create top systems in the "Top Systems" tab first.
+                    </p>
+                  ) : (
+                    topSystems
+                      .filter(system => 
+                        !system.treatment_type || 
+                        system.treatment_type === formData.curtain_type
+                      )
+                      .map((system) => (
+                      <div key={system.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                        <Checkbox
+                          id={`system-${system.id}`}
+                          checked={formData.selected_top_system_ids.includes(system.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              handleInputChange("selected_top_system_ids", [...formData.selected_top_system_ids, system.id]);
+                            } else {
+                              handleInputChange("selected_top_system_ids", formData.selected_top_system_ids.filter(id => id !== system.id));
+                            }
+                          }}
+                        />
+                        <div className="flex items-center gap-3 flex-1">
+                          {(system as any).image_url && (
+                            <img 
+                              src={(system as any).image_url} 
+                              alt={system.name}
+                              className="w-12 h-12 object-cover rounded"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <Label htmlFor={`system-${system.id}`} className="font-medium cursor-pointer">
+                              {system.name}
+                            </Label>
+                            <div className="text-sm text-muted-foreground">
+                              {system.price_per_meter ? `$${system.price_per_meter.toFixed(2)}` : 'Free'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="manufacturing" className="space-y-6">
