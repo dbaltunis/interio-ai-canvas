@@ -44,6 +44,7 @@ export const HeadingInventoryManager = () => {
     extra_fabric: 0,
     price_per_linear_unit: 0,
     image_url: '',
+    treatment_type: 'curtain' as string,
     // Advanced settings
     heading_type: 'standard' as 'standard' | 'wave' | 'eyelet',
     spacing: 10,
@@ -60,6 +61,7 @@ export const HeadingInventoryManager = () => {
       extra_fabric: 0,
       price_per_linear_unit: 0,
       image_url: '',
+      treatment_type: 'curtain',
       heading_type: 'standard',
       spacing: 10,
       eyelet_diameter: 8,
@@ -187,6 +189,7 @@ export const HeadingInventoryManager = () => {
         image_url: formData.image_url,
         description: JSON.stringify(advancedSettings), // Store advanced settings in description as JSON
         category: 'heading' as const,
+        treatment_type: formData.treatment_type,
         quantity: 1,
         active: true
       };
@@ -243,6 +246,7 @@ export const HeadingInventoryManager = () => {
       extra_fabric: heading.labor_hours || 0,
       price_per_linear_unit: heading.price_per_meter || 0,
       image_url: heading.image_url || '',
+      treatment_type: heading.treatment_type || 'curtain',
       heading_type: advancedSettings.heading_type,
       spacing: advancedSettings.spacing,
       eyelet_diameter: advancedSettings.eyelet_diameter,
@@ -324,6 +328,23 @@ export const HeadingInventoryManager = () => {
                   />
                 </div>
                 
+                <div>
+                  <Label htmlFor="treatment_type">Treatment Type</Label>
+                  <Select 
+                    value={formData.treatment_type} 
+                    onValueChange={(value) => setFormData({ ...formData, treatment_type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="curtain">Curtain</SelectItem>
+                      <SelectItem value="sheer">Sheer</SelectItem>
+                      <SelectItem value="drape">Drape</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div>
                   <Label htmlFor="heading_type">Heading Type</Label>
                   <Select 

@@ -19,6 +19,7 @@ import { LiningTypeManager } from "./LiningTypeManager";
 import { PricingGridUploader } from "./PricingGridUploader";
 import { HardwareCompatibilityManager } from "./HardwareCompatibilityManager";
 import { useHeadingInventory } from "@/hooks/useHeadingInventory";
+import { useEnhancedInventoryByCategory } from "@/hooks/useEnhancedInventory";
 import { useOptionCategories } from "@/hooks/useOptionCategories";
 
 // Import pricing components
@@ -40,6 +41,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   const createTemplate = useCreateCurtainTemplate();
   const updateTemplate = useUpdateCurtainTemplate();
   const { data: headingStyles = [] } = useHeadingInventory();
+  const { data: topSystems = [] } = useEnhancedInventoryByCategory('top_system');
   const { data: optionCategories = [] } = useOptionCategories();
 
   // State for eyelet ring library
@@ -58,8 +60,11 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     // Curtain Type
     curtain_type: template?.curtain_type || "curtain",
     
-    // Selected Headings from Library
+    // Selected Headings from Library (for curtains)
     selected_heading_ids: template?.selected_heading_ids || [],
+    
+    // Selected Top Systems from Library (for blinds)
+    selected_top_system_ids: (template as any)?.selected_top_system_ids || [],
     
     // Fabric Requirements (will use inventory)
     fabric_width_type: template?.fabric_width_type || "wide",
@@ -420,6 +425,75 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                 </div>
               </CardContent>
             </Card>
+
+            {/* Top Systems Section - Only for blinds */}
+            {(formData.curtain_type === 'roller_blind' || 
+              formData.curtain_type === 'roman_blind' || 
+              formData.curtain_type === 'venetian_blind' ||
+              formData.curtain_type === 'vertical_blind' ||
+              formData.curtain_type === 'honeycomb_blind') && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Top Systems</CardTitle>
+                  <CardDescription>
+                    Select top systems (tubes, cassettes, headrails) for this blind template
+                    <span className="block mt-1 text-xs">
+                      Showing only top systems for: <strong>{formData.curtain_type.replace('_', ' ')}</strong>
+                    </span>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {topSystems.filter(system => 
+                      !system.treatment_type || 
+                      system.treatment_type === formData.curtain_type
+                    ).length === 0 ? (
+                      <p className="text-muted-foreground text-sm">
+                        No top systems found for {formData.curtain_type}. Create top systems in the "Top Systems" tab first.
+                      </p>
+                    ) : (
+                      topSystems
+                        .filter(system => 
+                          !system.treatment_type || 
+                          system.treatment_type === formData.curtain_type
+                        )
+                        .map((system) => (
+                        <div key={system.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                          <Checkbox
+                            id={`system-${system.id}`}
+                            checked={formData.selected_top_system_ids.includes(system.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                handleInputChange("selected_top_system_ids", [...formData.selected_top_system_ids, system.id]);
+                              } else {
+                                handleInputChange("selected_top_system_ids", formData.selected_top_system_ids.filter(id => id !== system.id));
+                              }
+                            }}
+                          />
+                          <div className="flex items-center gap-3 flex-1">
+                            {(system as any).image_url && (
+                              <img 
+                                src={(system as any).image_url} 
+                                alt={system.name}
+                                className="w-12 h-12 object-cover rounded"
+                              />
+                            )}
+                            <div className="flex-1">
+                              <Label htmlFor={`system-${system.id}`} className="font-medium cursor-pointer">
+                                {system.name}
+                              </Label>
+                              <div className="text-sm text-muted-foreground">
+                                {system.price_per_meter ? `$${system.price_per_meter.toFixed(2)}` : 'Free'}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Lining Configuration */}
             <LiningTypeManager 
