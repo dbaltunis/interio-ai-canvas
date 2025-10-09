@@ -64,9 +64,9 @@ const OPTION_TYPES_BY_CATEGORY: Record<TreatmentCategory, { type: string; label:
 export const WindowTreatmentOptionsManager = () => {
   const { data: allTreatmentOptions = [], isLoading } = useAllTreatmentOptions();
   
-  // Fetch curtain templates (which include all window covering templates)
+  // Fetch curtain templates (including system defaults for viewing)
   const { data: allTemplates = [], isLoading: templatesLoading } = useQuery({
-    queryKey: ['curtain-templates'],
+    queryKey: ['curtain-templates-for-options'],
     queryFn: async () => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return [];
@@ -75,7 +75,7 @@ export const WindowTreatmentOptionsManager = () => {
         .from('curtain_templates')
         .select('*')
         .eq('active', true)
-        .eq('user_id', user.user.id);
+        .or(`user_id.eq.${user.user.id},is_system_default.eq.true`);
       if (error) throw error;
       return data;
     },
@@ -139,7 +139,17 @@ export const WindowTreatmentOptionsManager = () => {
     if (matchingTemplates.length === 0) {
       toast({
         title: "No templates found",
-        description: `Create a ${getTreatmentLabel(activeTreatment)} template first before adding options.`,
+        description: `Clone a ${getTreatmentLabel(activeTreatment)} template from "Template Library" first.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const userTemplates = matchingTemplates.filter(t => !t.is_system_default);
+    if (userTemplates.length === 0) {
+      toast({
+        title: "Clone template first",
+        description: `Clone a ${getTreatmentLabel(activeTreatment)} template to customize options.`,
         variant: "destructive"
       });
       return;
@@ -167,8 +177,9 @@ export const WindowTreatmentOptionsManager = () => {
           description: "The option has been updated across all templates.",
         });
       } else {
-        // Create option for all matching templates
-        for (const template of matchingTemplates) {
+        // Create option for user's templates only (not system templates)
+        const userTemplates = matchingTemplates.filter(t => !t.is_system_default);
+        for (const template of userTemplates) {
           // Check if this option type already exists for this template
           let treatmentOption = allTreatmentOptions.find(
             (opt: any) => opt.treatment_id === template.id && opt.key === activeOptionType
@@ -329,17 +340,25 @@ export const WindowTreatmentOptionsManager = () => {
             </TabsList>
           </ScrollArea>
 
-          {currentOptions.map((optType) => (
-            <TabsContent key={optType.type} value={optType.type} className="space-y-4">
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-muted-foreground">
-                  Add {optType.label.toLowerCase()} for {getTreatmentLabel(activeTreatment).toLowerCase()}
-                </p>
-                <Button onClick={() => handleAddOption(optType.type)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Option
-                </Button>
-              </div>
+          {currentOptions.map((optType) => {
+            const isSystemOnly = matchingTemplates.length > 0 && matchingTemplates.every(t => t.is_system_default);
+            
+            return (
+              <TabsContent key={optType.type} value={optType.type} className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <p className="text-sm text-muted-foreground">
+                    {isSystemOnly 
+                      ? `Viewing system ${optType.label.toLowerCase()} (clone template to customize)`
+                      : `Add ${optType.label.toLowerCase()} for ${getTreatmentLabel(activeTreatment).toLowerCase()}`
+                    }
+                  </p>
+                  {!isSystemOnly && (
+                    <Button onClick={() => handleAddOption(optType.type)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Option
+                    </Button>
+                  )}
+                </div>
 
               {/* Create/Edit Form */}
               {(isCreating || editingValue) && (
@@ -400,12 +419,17 @@ export const WindowTreatmentOptionsManager = () => {
               <div className="space-y-2">
                 {matchingTemplates.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
-                    <p className="font-medium">No {getTreatmentLabel(activeTreatment)} templates found</p>
-                    <p className="text-xs mt-1">Create a template in the "My Templates" tab first</p>
+                    <p className="font-medium">No {getTreatmentLabel(activeTreatment)} templates available</p>
+                    <p className="text-xs mt-1">Clone a system template from "Template Library" tab first</p>
                   </div>
                 ) : uniqueOptionValues.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No {optType.label.toLowerCase()} yet. Click "Add Option" to create one.
+                  <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
+                    <p className="font-medium">No {optType.label.toLowerCase()} found</p>
+                    <p className="text-xs mt-1">
+                      {matchingTemplates.some(t => t.is_system_default) 
+                        ? 'Clone the template to customize options' 
+                        : 'Click "Add Option" to create one'}
+                    </p>
                   </div>
                 ) : (
                   uniqueOptionValues.map((value) => (
@@ -438,7 +462,8 @@ export const WindowTreatmentOptionsManager = () => {
                 )}
               </div>
             </TabsContent>
-          ))}
+          );
+        })}
         </Tabs>
       </CardContent>
     </Card>
