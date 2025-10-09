@@ -70,13 +70,7 @@ export const DynamicRollerBlindFields = ({
   useEffect(() => {
     if (!onOptionPriceChange || treatmentOptions.length === 0) return;
     
-    // Only initialize if selectedOptions is empty (prevent re-initialization)
-    if (selectedOptions.length > 0) {
-      console.log('🟡 Skipping initialization - options already exist:', selectedOptions);
-      return;
-    }
-    
-    console.log('🟢 Initializing ALL selected options from measurements:', measurements);
+    console.log('🟢 Checking for options to initialize from measurements:', measurements);
     
     // List of all possible option keys
     const optionKeys = [
@@ -92,19 +86,22 @@ export const DynamicRollerBlindFields = ({
       { key: 'headrail_type', options: headrailTypes }
     ];
     
-    // Call each initialization in React 18's automatic batching context
-    // React 18 automatically batches multiple setState calls in the same event
+    // Initialize all existing measurement values
     optionKeys.forEach(({ key, options }) => {
       const value = measurements[key];
       if (value && options.length > 0) {
-        const selectedOption = options.find(opt => opt.value === value);
-        if (selectedOption) {
-          console.log(`🟢 Initializing ${key}:`, selectedOption);
-          onOptionPriceChange(key, selectedOption.price, selectedOption.label);
+        // Check if this option is already in selectedOptions
+        const alreadySelected = selectedOptions.some(opt => opt.name.startsWith(key + ':'));
+        if (!alreadySelected) {
+          const selectedOption = options.find(opt => opt.value === value);
+          if (selectedOption) {
+            console.log(`🟢 Initializing ${key}:`, selectedOption);
+            onOptionPriceChange(key, selectedOption.price, selectedOption.label);
+          }
         }
       }
     });
-  }, [treatmentOptions, selectedOptions.length]);
+  }, [treatmentOptions.length, tubeSizes, mountTypes, fasciaTypes, bottomRailStyles, controlTypes, chainSides, motorTypes, slatSizes, slatMaterials, headrailTypes]);
 
   if (isLoading) {
     return (
