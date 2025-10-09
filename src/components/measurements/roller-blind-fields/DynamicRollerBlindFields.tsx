@@ -3,7 +3,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTreatmentOptions } from "@/hooks/useTreatmentOptions";
 import { Loader2 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 
 interface DynamicRollerBlindFieldsProps {
   measurements: Record<string, any>;
@@ -63,6 +63,39 @@ export const DynamicRollerBlindFields = ({
   const slatSizes = useMemo(() => getOptionsByKey('slat_size'), [treatmentOptions]);
   const slatMaterials = useMemo(() => getOptionsByKey('slat_material'), [treatmentOptions]);
   const headrailTypes = useMemo(() => getOptionsByKey('headrail_type'), [treatmentOptions]);
+
+  // Initialize selected options from existing measurements on load
+  useEffect(() => {
+    if (!onOptionPriceChange || treatmentOptions.length === 0) return;
+    
+    console.log('🟢 Initializing selected options from measurements:', measurements);
+    
+    // List of all possible option keys
+    const optionKeys = [
+      { key: 'tube_size', options: tubeSizes },
+      { key: 'mount_type', options: mountTypes },
+      { key: 'fascia_type', options: fasciaTypes },
+      { key: 'bottom_rail_style', options: bottomRailStyles },
+      { key: 'control_type', options: controlTypes },
+      { key: 'chain_side', options: chainSides },
+      { key: 'motor_type', options: motorTypes },
+      { key: 'slat_size', options: slatSizes },
+      { key: 'slat_material', options: slatMaterials },
+      { key: 'headrail_type', options: headrailTypes }
+    ];
+    
+    // For each option key, if there's a value in measurements, notify parent
+    optionKeys.forEach(({ key, options }) => {
+      const value = measurements[key];
+      if (value && options.length > 0) {
+        const selectedOption = options.find(opt => opt.value === value);
+        if (selectedOption) {
+          console.log(`🟢 Initializing ${key}:`, selectedOption);
+          onOptionPriceChange(key, selectedOption.price, selectedOption.label);
+        }
+      }
+    });
+  }, [treatmentOptions]); // Only run when options are loaded
 
   if (isLoading) {
     return (
