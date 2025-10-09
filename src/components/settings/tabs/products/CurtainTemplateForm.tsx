@@ -24,6 +24,7 @@ import { useOptionCategories } from "@/hooks/useOptionCategories";
 import { useTreatmentOptions, useUpdateTreatmentOption } from "@/hooks/useTreatmentOptions";
 import { useQuery } from "@tanstack/react-query";
 import { useCreateTreatmentOption, useCreateOptionValue } from "@/hooks/useTreatmentOptionsManagement";
+import { OptionRulesManager } from "./OptionRulesManager";
 
 // Import pricing components
 import { HandFinishedToggle } from "./pricing/HandFinishedToggle";
@@ -412,7 +413,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   return (
     <TooltipProvider>
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="basic">Basic</TabsTrigger>
           <TabsTrigger value="options">Options</TabsTrigger>
           {formData.curtain_type === 'curtain' ? (
@@ -422,6 +423,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
           )}
           <TabsTrigger value="manufacturing">Manufacturing</TabsTrigger>
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
+          <TabsTrigger value="rules" disabled={!template?.id}>Rules</TabsTrigger>
         </TabsList>
 
         <div className="max-h-[70vh] overflow-y-auto py-4">
@@ -1329,6 +1331,21 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                 compatibleHardware={formData.compatible_hardware}
                 onHardwareChange={(hardware) => handleInputChange("compatible_hardware", hardware)}
               />
+            )}
+          </TabsContent>
+
+          {/* Rules Tab */}
+          <TabsContent value="rules" className="space-y-6">
+            {!template?.id ? (
+              <Card>
+                <CardContent className="p-6">
+                  <p className="text-sm text-muted-foreground">
+                    Save the template first to configure conditional option rules.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <OptionRulesManager templateId={template.id} />
             )}
           </TabsContent>
         </div>

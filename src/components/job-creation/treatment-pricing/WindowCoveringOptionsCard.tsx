@@ -66,6 +66,7 @@ export const WindowCoveringOptionsCard = ({
             onOptionToggle={onOptionToggle}
             currency={units.currency}
             hierarchicalSelections={hierarchicalSelections}
+            templateId={windowCovering?.curtain_template_id}
           />
         )}
 

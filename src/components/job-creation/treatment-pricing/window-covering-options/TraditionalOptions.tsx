@@ -1,8 +1,8 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "./currencyUtils";
-import { createOptionFilter } from "./optionFilters";
+import { useConditionalOptions } from "@/hooks/useConditionalOptions";
+import { useMemo } from "react";
 
 interface TraditionalOptionsProps {
   options: any[];
@@ -10,6 +10,7 @@ interface TraditionalOptionsProps {
   onOptionToggle: (optionId: string) => void;
   currency: string;
   hierarchicalSelections: Record<string, string>;
+  templateId?: string;
 }
 
 export const TraditionalOptions = ({ 
@@ -17,9 +18,20 @@ export const TraditionalOptions = ({
   selectedOptions, 
   onOptionToggle, 
   currency,
-  hierarchicalSelections 
+  hierarchicalSelections,
+  templateId
 }: TraditionalOptionsProps) => {
-  const { getFilteredOptions } = createOptionFilter(selectedOptions, hierarchicalSelections);
+  const selectedOptionsMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    options.forEach(opt => {
+      if (selectedOptions.includes(opt.id)) {
+        map[opt.option_type || opt.name] = opt.id;
+      }
+    });
+    return { ...map, ...hierarchicalSelections };
+  }, [selectedOptions, options, hierarchicalSelections]);
+
+  const { isOptionVisible } = useConditionalOptions(templateId, selectedOptionsMap);
 
   // Group options by type for better organization
   const groupedOptions = options.reduce((acc: Record<string, any[]>, option) => {
@@ -33,7 +45,9 @@ export const TraditionalOptions = ({
   return (
     <>
       {Object.entries(groupedOptions).map(([optionType, typeOptions]) => {
-        const filteredOptions = getFilteredOptions(typeOptions as any[]);
+        const filteredOptions = (typeOptions as any[]).filter((opt: any) => 
+          isOptionVisible(opt.option_type || opt.name || opt.id)
+        );
         
         if (filteredOptions.length === 0) {
           return null;
