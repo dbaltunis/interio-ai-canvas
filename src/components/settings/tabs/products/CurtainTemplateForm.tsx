@@ -21,7 +21,9 @@ import { HardwareCompatibilityManager } from "./HardwareCompatibilityManager";
 import { useHeadingInventory } from "@/hooks/useHeadingInventory";
 import { useEnhancedInventoryByCategory } from "@/hooks/useEnhancedInventory";
 import { useOptionCategories } from "@/hooks/useOptionCategories";
-import { useTreatmentOptions } from "@/hooks/useTreatmentOptions";
+import { useTreatmentOptions, useUpdateTreatmentOption } from "@/hooks/useTreatmentOptions";
+import { useQuery } from "@tanstack/react-query";
+import { useCreateTreatmentOption, useCreateOptionValue } from "@/hooks/useTreatmentOptionsManagement";
 
 // Import pricing components
 import { HandFinishedToggle } from "./pricing/HandFinishedToggle";
@@ -47,6 +49,9 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   
   // Fetch treatment options for THIS template
   const { data: treatmentOptionsForTemplate = [] } = useTreatmentOptions(template?.id);
+  const updateTreatmentOption = useUpdateTreatmentOption();
+  const createTreatmentOption = useCreateTreatmentOption();
+  const createOptionValue = useCreateOptionValue();
 
   // State for eyelet ring library
   const [eyeletRings] = useState([
@@ -134,6 +139,101 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     // Option Categories Integration
     selected_option_categories: template?.compatible_hardware || []  // Temporarily use this field
   });
+  
+  // Fetch ALL available treatment options to show what can be enabled/disabled
+  const { data: allAvailableOptions = [] } = useQuery({
+    queryKey: ['available-treatment-options', formData.curtain_type],
+    queryFn: async () => {
+      if (!formData.curtain_type || !template?.id) return [];
+      
+      const { data: templates, error: templatesError } = await supabase
+        .from('curtain_templates')
+        .select('id')
+        .or(`curtain_type.eq.${formData.curtain_type},treatment_category.eq.${formData.curtain_type}`)
+        .eq('active', true)
+        .neq('id', template.id); // Exclude current template
+      
+      if (templatesError) throw templatesError;
+      if (!templates || templates.length === 0) return [];
+      
+      const templateIds = templates.map(t => t.id);
+      
+      const { data, error } = await supabase
+        .from('treatment_options')
+        .select(`
+          *,
+          option_values (*)
+        `)
+        .in('template_id', templateIds)
+        .order('order_index');
+      
+      if (error) throw error;
+      
+      // Group by key to get unique option types
+      const uniqueOptions = data?.reduce((acc: any[], opt: any) => {
+        if (!acc.find(o => o.key === opt.key)) {
+          acc.push(opt);
+        }
+        return acc;
+      }, []);
+      
+      return uniqueOptions || [];
+    },
+    enabled: !!formData.curtain_type && !!template?.id,
+  });
+  
+  const handleToggleOption = async (optionKey: string, optionLabel: string, enabled: boolean) => {
+    if (!template?.id) return;
+    
+    try {
+      const existingOption = treatmentOptionsForTemplate.find(opt => opt.key === optionKey);
+      
+      if (existingOption) {
+        // Update visibility
+        await updateTreatmentOption.mutateAsync({
+          id: existingOption.id,
+          updates: { visible: enabled }
+        });
+      } else if (enabled) {
+        // Create new option for this template
+        const sourceOption = allAvailableOptions.find(opt => opt.key === optionKey);
+        if (!sourceOption) return;
+        
+        const newOption = await createTreatmentOption.mutateAsync({
+          template_id: template.id,
+          key: optionKey,
+          label: optionLabel,
+          input_type: 'select',
+          required: false,
+          visible: true,
+          order_index: 0,
+        });
+        
+        // Copy all option values from source
+        for (const value of (sourceOption.option_values || [])) {
+          await createOptionValue.mutateAsync({
+            option_id: newOption.id,
+            code: value.code,
+            label: value.label,
+            order_index: value.order_index,
+            extra_data: value.extra_data,
+          });
+        }
+      }
+      
+      toast({
+        title: enabled ? "Option enabled" : "Option disabled",
+        description: `${optionLabel} has been ${enabled ? 'enabled' : 'disabled'} for this template.`,
+      });
+    } catch (error: any) {
+      console.error('Error toggling option:', error);
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to toggle option.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleInputChange = (field: string, value: string | any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -546,31 +646,50 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                 </Card>
               ) : (
                 currentGroups.map((group) => {
-                  // Find the treatment option matching this group type
-                  const matchingOption = treatmentOptionsForTemplate.find(opt => opt.key === group.type && opt.visible);
+                  // Check if this option exists for this template
+                  const matchingOption = treatmentOptionsForTemplate.find(opt => opt.key === group.type);
+                  const isEnabled = matchingOption?.visible || false;
                   const optionValues = matchingOption?.option_values || [];
+                  
+                  // Check if this option type exists in other templates
+                  const availableInOtherTemplates = allAvailableOptions.find(opt => opt.key === group.type);
+                  const hasOptionsAvailable = availableInOtherTemplates?.option_values?.length > 0;
                   
                   return (
                     <Card key={group.type}>
                       <CardHeader>
-                        <CardTitle className="text-base">{group.label}</CardTitle>
-                        <CardDescription>
-                          Available {group.label.toLowerCase()} for this template
-                        </CardDescription>
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <CardTitle className="text-base">{group.label}</CardTitle>
+                            <CardDescription>
+                              Enable/disable {group.label.toLowerCase()} for this template
+                            </CardDescription>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              checked={isEnabled}
+                              onCheckedChange={(checked) => handleToggleOption(group.type, group.label, checked)}
+                              disabled={!template?.id || (!hasOptionsAvailable && !isEnabled)}
+                            />
+                            <Label className="text-sm font-medium">
+                              {isEnabled ? 'Enabled' : 'Disabled'}
+                            </Label>
+                          </div>
+                        </div>
                       </CardHeader>
                       <CardContent>
-                        {optionValues.length === 0 ? (
+                        {!hasOptionsAvailable && !isEnabled ? (
                           <div className="text-sm text-muted-foreground p-4 border border-dashed rounded-lg bg-muted/30">
-                            <p className="font-medium">No {group.label.toLowerCase()} found.</p>
+                            <p className="font-medium">No {group.label.toLowerCase()} available.</p>
                             <p className="text-xs mt-1">
                               Go to Settings → Window Coverings → Options tab, select "{formData.curtain_type === 'venetian_blind' ? 'Venetian Blinds' : formData.curtain_type}", 
                               then add options under the "{group.label}" section.
                             </p>
                           </div>
-                        ) : (
+                        ) : isEnabled && optionValues.length > 0 ? (
                           <div className="space-y-2">
                             <p className="text-sm text-muted-foreground mb-3">
-                              {optionValues.length} option{optionValues.length !== 1 ? 's' : ''} available:
+                              {optionValues.length} option{optionValues.length !== 1 ? 's' : ''} enabled for this template:
                             </p>
                             <div className="grid grid-cols-2 gap-2">
                               {optionValues.map((value) => (
@@ -586,6 +705,14 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                                 </div>
                               ))}
                             </div>
+                          </div>
+                        ) : isEnabled ? (
+                          <div className="text-sm text-muted-foreground p-4 border border-dashed rounded-lg bg-accent/10">
+                            <p>Option enabled but no values configured yet.</p>
+                          </div>
+                        ) : (
+                          <div className="text-sm text-muted-foreground p-4 border border-dashed rounded-lg">
+                            <p>Enable this option to see available values.</p>
                           </div>
                         )}
                       </CardContent>
