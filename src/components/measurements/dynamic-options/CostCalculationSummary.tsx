@@ -5,6 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calculator, DollarSign, Info } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useHeadingOptions } from "@/hooks/useHeadingOptions";
+import { getPriceFromGrid } from "@/hooks/usePricingGrids";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 
 // Simple black outline SVG icons
@@ -249,6 +250,19 @@ export const CostCalculationSummary = ({
 
   // Calculate manufacturing cost
   const calculateManufacturingCost = () => {
+    // PRICING GRID: If template uses pricing_grid, get price from grid
+    if (template.pricing_type === 'pricing_grid' && template.pricing_grid_data) {
+      console.log("🎯 Using PRICING GRID for manufacturing cost");
+      console.log("Grid data:", template.pricing_grid_data);
+      console.log("Looking up: width =", width, "cm, drop =", height, "cm");
+      
+      const gridPrice = getPriceFromGrid(template.pricing_grid_data, width, height);
+      
+      console.log("💰 Pricing Grid Result:", gridPrice);
+      return gridPrice;
+    }
+    
+    // FALLBACK: Original pricing logic
     if (!template.machine_price_per_metre && !template.machine_price_per_drop && !template.machine_price_per_panel) {
       return 0;
     }
@@ -503,11 +517,35 @@ export const CostCalculationSummary = ({
         </div>
       </div>
 
-      {/* Additional Notes */}
+      {/* Additional Notes with Pricing Breakdown */}
       <div className="text-xs text-muted-foreground space-y-1">
+        <div className="font-medium text-card-foreground mb-2 flex items-center gap-2">
+          <Info className="h-3 w-3" />
+          Pricing Details
+        </div>
         <div>Template: {template.name}</div>
-        <div>Pricing: {template.pricing_type}</div>
-        <div>Waste factor: 5%</div>
+        <div>Pricing Method: {template.pricing_type}</div>
+        {template.pricing_type === 'pricing_grid' && (
+          <div className="mt-2 p-2 bg-primary/5 rounded border border-primary/20">
+            <div className="font-medium text-primary mb-1">Grid Lookup:</div>
+            <div>• Width: {width}cm</div>
+            <div>• Drop: {height}cm</div>
+            <div>• Grid Price: {formatPrice(manufacturingCost)}</div>
+          </div>
+        )}
+        {template.pricing_type === 'per_metre' && (
+          <div className="mt-2 p-2 bg-primary/5 rounded border border-primary/20">
+            <div>• Rate: {formatPrice(template.machine_price_per_metre || 0)}/m</div>
+            <div>• Linear Metres: {finalLinearMeters.toFixed(2)}m</div>
+          </div>
+        )}
+        {(template.pricing_type === 'per_panel' || template.pricing_type === 'per_drop') && (
+          <div className="mt-2 p-2 bg-primary/5 rounded border border-primary/20">
+            <div>• Size: {(width/100).toFixed(2)}m × {(height/100).toFixed(2)}m</div>
+            <div>• Area: {(width/100 * height/100).toFixed(2)}m²</div>
+          </div>
+        )}
+        <div className="mt-2">Waste factor: {template.waste_percent || 5}%</div>
       </div>
     </div>
   );
