@@ -39,12 +39,17 @@ export const DynamicRollerBlindFields = ({
 
   // Helper to handle option change and notify parent of price
   const handleOptionChange = (key: string, value: string, options: any[]) => {
+    console.log(`🔵 handleOptionChange called - key: ${key}, value: ${value}, options:`, options);
     onChange(key, value);
     if (onOptionPriceChange) {
       const selectedOption = options.find(opt => opt.value === value);
+      console.log(`🔵 Found selected option:`, selectedOption);
       if (selectedOption) {
+        console.log(`🔵 Calling onOptionPriceChange with:`, { key, price: selectedOption.price, label: selectedOption.label });
         onOptionPriceChange(key, selectedOption.price, selectedOption.label);
       }
+    } else {
+      console.log(`🔴 onOptionPriceChange is NOT defined!`);
     }
   };
 
