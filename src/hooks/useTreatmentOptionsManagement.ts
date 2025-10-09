@@ -27,6 +27,7 @@ export const useCreateTreatmentOption = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
+      queryClient.invalidateQueries({ queryKey: ['all-treatment-options'] });
     },
   });
 };
@@ -54,6 +55,7 @@ export const useCreateOptionValue = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
+      queryClient.invalidateQueries({ queryKey: ['all-treatment-options'] });
     },
   });
 };
@@ -76,6 +78,7 @@ export const useUpdateOptionValue = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
+      queryClient.invalidateQueries({ queryKey: ['all-treatment-options'] });
     },
   });
 };
@@ -95,6 +98,7 @@ export const useDeleteOptionValue = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
+      queryClient.invalidateQueries({ queryKey: ['all-treatment-options'] });
     },
   });
 };
