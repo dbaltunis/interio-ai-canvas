@@ -7,11 +7,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Upload, Download, FileText, AlertCircle, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface PricingGridData {
   widthRanges: string[];
   dropRanges: string[];
   prices: number[][];
+  unit?: 'cm' | 'mm';
 }
 
 interface PricingGridUploaderProps {
@@ -25,18 +27,20 @@ export const PricingGridUploader = ({ onDataChange, initialData }: PricingGridUp
   const [gridData, setGridData] = useState<PricingGridData | null>(initialData || null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unit, setUnit] = useState<'cm' | 'mm'>(initialData?.unit || 'cm');
 
   const generateSampleData = () => {
     const sampleData: PricingGridData = {
-      widthRanges: ["0-100cm", "101-150cm", "151-200cm", "201-250cm", "251-300cm"],
-      dropRanges: ["0-150cm", "151-200cm", "201-250cm", "251-300cm", "301cm+"],
+      widthRanges: ["100", "150", "200", "250", "300"],
+      dropRanges: ["150", "200", "250", "300", "350"],
       prices: [
         [120, 140, 160, 180, 200],
         [150, 175, 200, 225, 250],
         [180, 210, 240, 270, 300],
         [210, 245, 280, 315, 350],
         [240, 280, 320, 360, 400]
-      ]
+      ],
+      unit: unit
     };
     return sampleData;
   };
@@ -138,8 +142,9 @@ export const PricingGridUploader = ({ onDataChange, initialData }: PricingGridUp
 
     try {
       const data = await parseCSVFile(file);
-      setGridData(data);
-      onDataChange(data);
+      const dataWithUnit = { ...data, unit: unit };
+      setGridData(dataWithUnit);
+      onDataChange(dataWithUnit);
       
       toast({
         title: "Grid Uploaded",
@@ -184,6 +189,25 @@ export const PricingGridUploader = ({ onDataChange, initialData }: PricingGridUp
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Unit Selector */}
+        <div className="flex gap-4 items-end">
+          <div className="flex-1">
+            <Label htmlFor="unit_selector">Measurement Unit</Label>
+            <Select value={unit} onValueChange={(value: 'cm' | 'mm') => setUnit(value)}>
+              <SelectTrigger id="unit_selector">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cm">Centimetres (cm)</SelectItem>
+                <SelectItem value="mm">Millimetres (mm)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Select the unit used in your pricing grid
+            </p>
+          </div>
+        </div>
+
         <div className="flex gap-2">
           <div className="flex-1">
             <Label htmlFor="pricing_grid_file">Upload CSV File</Label>
@@ -237,7 +261,7 @@ export const PricingGridUploader = ({ onDataChange, initialData }: PricingGridUp
           <Alert>
             <CheckCircle className="h-4 w-4" />
             <AlertDescription>
-              Pricing grid loaded: {gridData.dropRanges.length} drop ranges × {gridData.widthRanges.length} width ranges
+              Pricing grid loaded: {gridData.dropRanges.length} drop ranges × {gridData.widthRanges.length} width ranges ({gridData.unit || 'cm'})
             </AlertDescription>
           </Alert>
         )}
@@ -247,14 +271,14 @@ export const PricingGridUploader = ({ onDataChange, initialData }: PricingGridUp
             <div className="p-3 bg-muted">
               <h4 className="font-medium">Pricing Grid Preview</h4>
               <p className="text-sm text-muted-foreground">
-                {gridData.dropRanges.length} × {gridData.widthRanges.length} matrix
+                {gridData.dropRanges.length} × {gridData.widthRanges.length} matrix (in {gridData.unit || 'cm'})
               </p>
             </div>
             <div className="max-h-64 overflow-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-24">Drop/Width</TableHead>
+                    <TableHead className="w-24">Drop/Width ({gridData.unit || 'cm'})</TableHead>
                     {gridData.widthRanges.map((width, index) => (
                       <TableHead key={index} className="text-center min-w-20">
                         {width}
@@ -282,9 +306,10 @@ export const PricingGridUploader = ({ onDataChange, initialData }: PricingGridUp
         <div className="text-sm text-muted-foreground space-y-2">
           <p><strong>CSV Format Requirements:</strong></p>
           <ul className="list-disc list-inside space-y-1 ml-4">
-            <li>First row: Drop/Width, Width Range 1, Width Range 2, etc.</li>
-            <li>Data rows: Drop Range, Price 1, Price 2, etc.</li>
-            <li>All prices must be numeric values</li>
+            <li>First row: Drop/Width, then width values (e.g., 100, 150, 200)</li>
+            <li>Data rows: Drop value, then prices (e.g., 150, 120, 140, 160)</li>
+            <li>Use simple numbers - no ranges needed (just max values)</li>
+            <li>Select your unit (cm/mm) before uploading</li>
             <li>Download the sample for the correct format</li>
           </ul>
         </div>
