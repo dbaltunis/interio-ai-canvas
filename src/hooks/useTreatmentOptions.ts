@@ -23,9 +23,9 @@ export interface TreatmentOption {
   option_values?: OptionValue[];
 }
 
-export const useTreatmentOptions = (treatmentId?: string) => {
+export const useTreatmentOptions = (templateId?: string) => {
   return useQuery({
-    queryKey: ['treatment-options', treatmentId],
+    queryKey: ['treatment-options', templateId],
     queryFn: async () => {
       let query = supabase
         .from('treatment_options')
@@ -35,8 +35,8 @@ export const useTreatmentOptions = (treatmentId?: string) => {
         `)
         .order('order_index');
       
-      if (treatmentId) {
-        query = query.eq('treatment_id', treatmentId);
+      if (templateId) {
+        query = query.eq('template_id', templateId);
       }
       
       const { data, error } = await query;
@@ -44,7 +44,7 @@ export const useTreatmentOptions = (treatmentId?: string) => {
       if (error) throw error;
       return data as TreatmentOption[];
     },
-    enabled: !!treatmentId,
+    enabled: !!templateId,
   });
 };
 

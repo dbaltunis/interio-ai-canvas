@@ -4778,7 +4778,8 @@ export type Database = {
           label: string
           order_index: number | null
           required: boolean | null
-          treatment_id: string
+          template_id: string | null
+          treatment_id: string | null
           updated_at: string | null
           validation: Json | null
           visible: boolean | null
@@ -4791,7 +4792,8 @@ export type Database = {
           label: string
           order_index?: number | null
           required?: boolean | null
-          treatment_id: string
+          template_id?: string | null
+          treatment_id?: string | null
           updated_at?: string | null
           validation?: Json | null
           visible?: boolean | null
@@ -4804,17 +4806,18 @@ export type Database = {
           label?: string
           order_index?: number | null
           required?: boolean | null
-          treatment_id?: string
+          template_id?: string | null
+          treatment_id?: string | null
           updated_at?: string | null
           validation?: Json | null
           visible?: boolean | null
         }
         Relationships: [
           {
-            foreignKeyName: "treatment_options_treatment_id_fkey"
-            columns: ["treatment_id"]
+            foreignKeyName: "treatment_options_template_id_fkey"
+            columns: ["template_id"]
             isOneToOne: false
-            referencedRelation: "treatments"
+            referencedRelation: "curtain_templates"
             referencedColumns: ["id"]
           },
         ]

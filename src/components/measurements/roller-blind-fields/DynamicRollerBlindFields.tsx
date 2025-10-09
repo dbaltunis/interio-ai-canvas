@@ -8,17 +8,17 @@ import { useMemo } from "react";
 interface DynamicRollerBlindFieldsProps {
   measurements: Record<string, any>;
   onChange: (field: string, value: string) => void;
-  treatmentId?: string;
+  templateId?: string;
   readOnly?: boolean;
 }
 
 export const DynamicRollerBlindFields = ({ 
   measurements, 
   onChange, 
-  treatmentId,
+  templateId,
   readOnly = false 
 }: DynamicRollerBlindFieldsProps) => {
-  const { data: treatmentOptions = [], isLoading } = useTreatmentOptions(treatmentId);
+  const { data: treatmentOptions = [], isLoading } = useTreatmentOptions(templateId);
   
   // Extract options by key (tube_size, mount_type, etc.)
   const getOptionsByKey = (key: string) => {
