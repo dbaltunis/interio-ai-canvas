@@ -151,7 +151,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         .select('id')
         .or(`curtain_type.eq.${formData.curtain_type},treatment_category.eq.${formData.curtain_type}`)
         .eq('active', true)
-        .neq('id', template.id); // Exclude current template
+        .neq('id', template.id);
       
       if (templatesError) throw templatesError;
       if (!templates || templates.length === 0) return [];
@@ -169,10 +169,21 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       
       if (error) throw error;
       
-      // Group by key to get unique option types
+      // Group by key to get unique option types with all their values
       const uniqueOptions = data?.reduce((acc: any[], opt: any) => {
-        if (!acc.find(o => o.key === opt.key)) {
+        const existing = acc.find(o => o.key === opt.key);
+        if (!existing) {
           acc.push(opt);
+        } else {
+          // Merge option values from multiple templates
+          const existingValues = existing.option_values || [];
+          const newValues = opt.option_values || [];
+          newValues.forEach((newVal: any) => {
+            if (!existingValues.find((ev: any) => ev.code === newVal.code)) {
+              existingValues.push(newVal);
+            }
+          });
+          existing.option_values = existingValues;
         }
         return acc;
       }, []);
@@ -230,6 +241,58 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       toast({
         title: "Error",
         description: error?.message || "Failed to toggle option.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleToggleOptionValue = async (optionKey: string, optionLabel: string, valueCode: string, valueLabel: string, enabled: boolean, extraData?: any) => {
+    if (!template?.id) return;
+    
+    try {
+      let existingOption = treatmentOptionsForTemplate.find(opt => opt.key === optionKey);
+      
+      // If option doesn't exist, create it first
+      if (!existingOption) {
+        const newOption = await createTreatmentOption.mutateAsync({
+          template_id: template.id,
+          key: optionKey,
+          label: optionLabel,
+          input_type: 'select',
+          required: false,
+          visible: true,
+          order_index: 0,
+        });
+        existingOption = newOption as any;
+      }
+      
+      const existingValue = existingOption.option_values?.find((v: any) => v.code === valueCode);
+      
+      if (enabled && !existingValue) {
+        // Add this value
+        await createOptionValue.mutateAsync({
+          option_id: existingOption.id,
+          code: valueCode,
+          label: valueLabel,
+          order_index: existingOption.option_values?.length || 0,
+          extra_data: extraData,
+        });
+      } else if (!enabled && existingValue) {
+        // Remove this value
+        const { useDeleteOptionValue } = require('@/hooks/useTreatmentOptionsManagement');
+        const deleteOptionValue = useDeleteOptionValue();
+        await deleteOptionValue.mutateAsync(existingValue.id);
+      }
+      
+      toast({
+        title: enabled ? "Option added" : "Option removed",
+        description: `${valueLabel} has been ${enabled ? 'added to' : 'removed from'} this template.`,
+      });
+    } catch (error: any) {
+      console.error('Error toggling option value:', error);
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to toggle option value.",
         variant: "destructive"
       });
     }
@@ -649,11 +712,12 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                   // Check if this option exists for this template
                   const matchingOption = treatmentOptionsForTemplate.find(opt => opt.key === group.type);
                   const isEnabled = matchingOption?.visible || false;
-                  const optionValues = matchingOption?.option_values || [];
+                  const enabledValues = matchingOption?.option_values || [];
                   
-                  // Check if this option type exists in other templates
+                  // Get all available values for this option type from other templates
                   const availableInOtherTemplates = allAvailableOptions.find(opt => opt.key === group.type);
-                  const hasOptionsAvailable = availableInOtherTemplates?.option_values?.length > 0;
+                  const allAvailableValues = availableInOtherTemplates?.option_values || [];
+                  const hasOptionsAvailable = allAvailableValues.length > 0;
                   
                   return (
                     <Card key={group.type}>
@@ -662,7 +726,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                           <div className="flex-1">
                             <CardTitle className="text-base">{group.label}</CardTitle>
                             <CardDescription>
-                              Enable/disable {group.label.toLowerCase()} for this template
+                              Select which {group.label.toLowerCase()} to enable for this template
                             </CardDescription>
                           </div>
                           <div className="flex items-center space-x-2">
@@ -686,24 +750,45 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                               then add options under the "{group.label}" section.
                             </p>
                           </div>
-                        ) : isEnabled && optionValues.length > 0 ? (
+                        ) : isEnabled && allAvailableValues.length > 0 ? (
                           <div className="space-y-2">
                             <p className="text-sm text-muted-foreground mb-3">
-                              {optionValues.length} option{optionValues.length !== 1 ? 's' : ''} enabled for this template:
+                              Select which options to include:
                             </p>
                             <div className="grid grid-cols-2 gap-2">
-                              {optionValues.map((value) => (
-                                <div key={value.id} className="flex items-center space-x-2 p-2 border rounded bg-accent/20">
-                                  <div className="flex-1">
-                                    <div className="font-medium text-sm">{value.label}</div>
-                                    {value.extra_data?.price > 0 && (
-                                      <div className="text-xs text-muted-foreground">
-                                        +${value.extra_data.price.toFixed(2)}
-                                      </div>
-                                    )}
+                              {allAvailableValues.map((value: any) => {
+                                const isValueEnabled = enabledValues.some((ev: any) => ev.code === value.code);
+                                
+                                return (
+                                  <div key={value.code} className="flex items-center space-x-2 p-3 border rounded hover:bg-accent/20 transition-colors">
+                                    <Checkbox
+                                      id={`${group.type}-${value.code}`}
+                                      checked={isValueEnabled}
+                                      onCheckedChange={(checked) => 
+                                        handleToggleOptionValue(
+                                          group.type, 
+                                          group.label, 
+                                          value.code, 
+                                          value.label, 
+                                          checked as boolean,
+                                          value.extra_data
+                                        )
+                                      }
+                                    />
+                                    <Label 
+                                      htmlFor={`${group.type}-${value.code}`}
+                                      className="flex-1 cursor-pointer"
+                                    >
+                                      <div className="font-medium text-sm">{value.label}</div>
+                                      {value.extra_data?.price > 0 && (
+                                        <div className="text-xs text-muted-foreground">
+                                          +${value.extra_data.price.toFixed(2)}
+                                        </div>
+                                      )}
+                                    </Label>
                                   </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           </div>
                         ) : isEnabled ? (
@@ -712,7 +797,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                           </div>
                         ) : (
                           <div className="text-sm text-muted-foreground p-4 border border-dashed rounded-lg">
-                            <p>Enable this option to see available values.</p>
+                            <p>Enable this option to select available values.</p>
                           </div>
                         )}
                       </CardContent>
