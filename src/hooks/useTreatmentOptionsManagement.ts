@@ -8,7 +8,7 @@ export const useCreateTreatmentOption = () => {
   
   return useMutation({
     mutationFn: async (data: {
-      template_id: string;
+      treatment_id: string;
       key: string;
       label: string;
       input_type: 'select' | 'number' | 'boolean' | 'text' | 'multiselect';
@@ -108,16 +108,24 @@ export const useAllTreatmentOptions = () => {
   return useQuery({
     queryKey: ['all-treatment-options'],
     queryFn: async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) return [];
+      
       const { data, error } = await supabase
         .from('treatment_options')
         .select(`
           *,
-          option_values (*)
+          option_values (*),
+          curtain_templates!treatment_options_treatment_id_fkey (user_id)
         `)
         .order('order_index');
       
       if (error) throw error;
-      return data as TreatmentOption[];
+      
+      // Filter to only show options for user's templates
+      return (data as any[]).filter(opt => 
+        opt.curtain_templates?.user_id === user.user.id
+      ) as TreatmentOption[];
     },
   });
 };

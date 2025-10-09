@@ -222,7 +222,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         if (!sourceOption) return;
         
         const newOption = await createTreatmentOption.mutateAsync({
-          template_id: template.id,
+          treatment_id: template.id,
           key: optionKey,
           label: optionLabel,
           input_type: 'select',
@@ -266,7 +266,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       // If option doesn't exist, create it first
       if (!existingOption) {
         const newOption = await createTreatmentOption.mutateAsync({
-          template_id: template.id,
+          treatment_id: template.id,
           key: optionKey,
           label: optionLabel,
           input_type: 'select',

@@ -68,10 +68,14 @@ export const WindowTreatmentOptionsManager = () => {
   const { data: allTemplates = [], isLoading: templatesLoading } = useQuery({
     queryKey: ['curtain-templates'],
     queryFn: async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) return [];
+      
       const { data, error } = await supabase
         .from('curtain_templates')
         .select('*')
-        .eq('active', true);
+        .eq('active', true)
+        .eq('user_id', user.user.id);
       if (error) throw error;
       return data;
     },
@@ -108,7 +112,7 @@ export const WindowTreatmentOptionsManager = () => {
 
   // Find treatment options linked to any of the matching templates
   const relevantOptions = allTreatmentOptions.filter((opt: any) => 
-    matchingTemplates.some((t: any) => t.id === opt.template_id) && opt.key === activeOptionType
+    matchingTemplates.some((t: any) => t.id === opt.treatment_id) && opt.key === activeOptionType
   );
 
   // For display, we'll show all unique option values across all templates
@@ -167,7 +171,7 @@ export const WindowTreatmentOptionsManager = () => {
         for (const template of matchingTemplates) {
           // Check if this option type already exists for this template
           let treatmentOption = allTreatmentOptions.find(
-            (opt: any) => opt.template_id === template.id && opt.key === activeOptionType
+            (opt: any) => opt.treatment_id === template.id && opt.key === activeOptionType
           );
 
           // If not, create it
@@ -177,7 +181,7 @@ export const WindowTreatmentOptionsManager = () => {
             );
             
             const newOption = await createTreatmentOption.mutateAsync({
-              template_id: template.id,
+              treatment_id: template.id,
               key: activeOptionType,
               label: optionTypeConfig?.label || activeOptionType,
               input_type: 'select',
