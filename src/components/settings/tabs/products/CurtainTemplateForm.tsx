@@ -642,6 +642,21 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
 
           {/* Treatment Settings Tab - Only for Non-Curtain Window Coverings */}
           <TabsContent value="treatment_settings" className="space-y-6">
+            {!template?.id && (
+              <Card className="border-amber-500/50 bg-amber-500/5">
+                <CardHeader>
+                  <CardTitle className="text-base text-amber-600 dark:text-amber-400">Save Template First</CardTitle>
+                  <CardDescription>
+                    You must save this template before you can configure treatment options.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Fill in the required fields in the Basic Info tab and click "Save Template" to enable treatment option configuration.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
             {(() => {
               // Map curtain_type to organized option types
               const treatmentOptionGroups: Record<string, { type: string; label: string }[]> = {
