@@ -203,6 +203,62 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
     );
   };
 
+  const renderCellularBlind = () => {
+    const isInsideMount = mountType === 'inside';
+    const blindWidth = isInsideMount ? 'left-16 right-16' : 'left-12 right-12';
+    const blindTop = isInsideMount ? 'top-24' : 'top-20';
+    const cellCount = 8;
+    
+    return (
+      <>
+        {/* Headrail */}
+        <div className={`absolute ${blindTop} ${blindWidth} h-3 bg-gradient-to-b from-muted-foreground to-muted rounded-sm shadow-md z-20`}>
+          <div className="absolute -left-2 -top-0.5 w-3 h-4 bg-foreground/80 rounded-sm"></div>
+          <div className="absolute -right-2 -top-0.5 w-3 h-4 bg-foreground/80 rounded-sm"></div>
+          
+          {/* Control cord */}
+          {chainSide === 'right' ? (
+            <div className="absolute -right-1 top-full w-0.5 h-32 bg-muted-foreground/60 z-30">
+              <div className="absolute -right-1 bottom-0 w-2 h-8 bg-muted-foreground/80 rounded-sm"></div>
+            </div>
+          ) : (
+            <div className="absolute -left-1 top-full w-0.5 h-32 bg-muted-foreground/60 z-30">
+              <div className="absolute -left-1 bottom-0 w-2 h-8 bg-muted-foreground/80 rounded-sm"></div>
+            </div>
+          )}
+        </div>
+
+        {/* Cellular honeycomb structure */}
+        <div className={`absolute ${blindWidth} bg-primary/25 backdrop-blur-[1px] shadow-lg`}
+             style={{
+               top: `calc(${blindTop.includes('24') ? '6rem' : '5rem'} + 0.75rem)`,
+               bottom: '4rem'
+             }}>
+          {/* Honeycomb cells */}
+          {Array.from({ length: cellCount }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute left-0 right-0 border-t border-b border-primary/30"
+              style={{ 
+                height: `${100 / cellCount}%`,
+                top: `${(i / cellCount) * 100}%`,
+                background: `linear-gradient(90deg, transparent 0%, ${i % 2 === 0 ? 'hsl(var(--primary) / 0.15)' : 'hsl(var(--primary) / 0.25)'} 50%, transparent 100%)`
+              }}
+            >
+              {/* Cell dividers */}
+              <div className="absolute left-1/4 top-0 bottom-0 w-px bg-primary/20"></div>
+              <div className="absolute left-2/4 top-0 bottom-0 w-px bg-primary/20"></div>
+              <div className="absolute left-3/4 top-0 bottom-0 w-px bg-primary/20"></div>
+            </div>
+          ))}
+          
+          {/* Bottom bar */}
+          <div className="absolute -bottom-1 left-0 right-0 h-2 bg-gradient-to-b from-muted-foreground/60 to-muted-foreground/80 rounded-sm shadow-md"></div>
+        </div>
+      </>
+    );
+  };
+
   const renderBlindVisualization = () => {
     switch (blindType) {
       case 'roller':
@@ -213,6 +269,8 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
         return renderVerticalBlind();
       case 'roman':
         return renderRomanBlind();
+      case 'cellular':
+        return renderCellularBlind();
       default:
         return renderRollerBlind();
     }

@@ -267,11 +267,14 @@ export const VisualMeasurementSheet = ({
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Visual Diagram */}
             <div className="lg:w-2/5 flex-shrink-0">
-              {/* Conditionally render visual based on treatment type - Use unified RollerBlindVisual for all blinds */}
+              {/* Conditionally render visual based on treatment type */}
               {(treatmentCategory === 'roller_blinds' || 
                 treatmentCategory === 'venetian_blinds' || 
                 treatmentCategory === 'roman_blinds' ||
                 treatmentCategory === 'cellular_blinds' ||
+                treatmentCategory === 'vertical_blinds' ||
+                treatmentCategory === 'panel_glide' ||
+                treatmentCategory === 'plantation_shutters' ||
                 selectedTemplate?.curtain_type === 'roller_blind' ||
                 selectedTemplate?.curtain_type === 'roman_blind' ||
                 selectedTemplate?.curtain_type === 'venetian_blind' ||
@@ -279,11 +282,20 @@ export const VisualMeasurementSheet = ({
                 selectedTemplate?.curtain_type === 'cellular_blind' ||
                 selectedTemplate?.curtain_type === 'panel_glide' ||
                 selectedTemplate?.curtain_type === 'plantation_shutter') ? (
-                <RollerBlindVisual
+                <DynamicBlindVisual
                   windowType={windowType}
                   measurements={measurements}
                   template={selectedTemplate}
-                  className="min-h-[400px]"
+                  blindType={
+                    treatmentCategory === 'roller_blinds' || selectedTemplate?.curtain_type === 'roller_blind' ? 'roller' :
+                    treatmentCategory === 'venetian_blinds' || selectedTemplate?.curtain_type === 'venetian_blind' ? 'venetian' :
+                    treatmentCategory === 'vertical_blinds' || selectedTemplate?.curtain_type === 'vertical_blind' ? 'vertical' :
+                    treatmentCategory === 'roman_blinds' || selectedTemplate?.curtain_type === 'roman_blind' ? 'roman' :
+                    treatmentCategory === 'cellular_blinds' || selectedTemplate?.curtain_type === 'cellular_blind' ? 'cellular' :
+                    'roller'
+                  }
+                  mountType={measurements.mount_type || 'outside'}
+                  chainSide={measurements.chain_side || 'right'}
                 />
               ) : (
                 <div className="relative container-level-2 rounded-lg p-8 min-h-[400px] overflow-visible">
