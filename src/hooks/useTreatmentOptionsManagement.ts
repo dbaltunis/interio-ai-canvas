@@ -103,7 +103,7 @@ export const useDeleteOptionValue = () => {
   });
 };
 
-// Get all treatment options for management (without filtering by treatment_id)
+// Get all treatment options for management
 export const useAllTreatmentOptions = () => {
   return useQuery({
     queryKey: ['all-treatment-options'],
@@ -115,17 +115,24 @@ export const useAllTreatmentOptions = () => {
         .from('treatment_options')
         .select(`
           *,
-          option_values (*),
-          curtain_templates!treatment_options_treatment_id_fkey (user_id)
+          option_values (*)
         `)
         .order('order_index');
       
       if (error) throw error;
       
+      // Get user's template IDs to filter options
+      const { data: templates } = await supabase
+        .from('curtain_templates')
+        .select('id')
+        .eq('user_id', user.user.id);
+      
+      const templateIds = templates?.map(t => t.id) || [];
+      
       // Filter to only show options for user's templates
-      return (data as any[]).filter(opt => 
-        opt.curtain_templates?.user_id === user.user.id
-      ) as TreatmentOption[];
+      return (data as TreatmentOption[]).filter(opt => 
+        templateIds.includes(opt.treatment_id)
+      );
     },
   });
 };
