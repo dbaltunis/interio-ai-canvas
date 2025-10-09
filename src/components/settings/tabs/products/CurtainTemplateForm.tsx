@@ -140,24 +140,34 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     selected_option_categories: template?.compatible_hardware || []  // Temporarily use this field
   });
   
-  // Fetch ALL available treatment options to show what can be enabled/disabled
+  // Fetch ALL available treatment options - checking the WindowTreatmentOptionsManager approach
+  // We'll check for options from templates managed in the Options tab
   const { data: allAvailableOptions = [] } = useQuery({
-    queryKey: ['available-treatment-options', formData.curtain_type],
+    queryKey: ['available-treatment-options-from-manager', formData.curtain_type],
     queryFn: async () => {
-      if (!formData.curtain_type || !template?.id) return [];
+      if (!formData.curtain_type) return [];
       
-      const { data: templates, error: templatesError } = await supabase
+      // Get ALL curtain templates (not just roller blind ones) to check for shared options
+      const { data: allTemplates, error: templatesError } = await supabase
         .from('curtain_templates')
-        .select('id')
-        .or(`curtain_type.eq.${formData.curtain_type},treatment_category.eq.${formData.curtain_type}`)
-        .eq('active', true)
-        .neq('id', template.id);
+        .select('id, curtain_type, treatment_category')
+        .eq('active', true);
       
       if (templatesError) throw templatesError;
-      if (!templates || templates.length === 0) return [];
       
-      const templateIds = templates.map(t => t.id);
+      // Filter to templates matching our curtain_type OR treatment_category
+      const matchingTemplates = allTemplates?.filter((t: any) => 
+        t.curtain_type === formData.curtain_type || t.treatment_category === formData.curtain_type
+      ) || [];
       
+      // If no templates exist for this type yet, return empty (user can still toggle options)
+      if (matchingTemplates.length === 0) {
+        return [];
+      }
+      
+      const templateIds = matchingTemplates.map((t: any) => t.id);
+      
+      // Get all treatment options for these templates
       const { data, error } = await supabase
         .from('treatment_options')
         .select(`
@@ -171,7 +181,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       
       // Group by key to get unique option types with all their values
       const uniqueOptions = data?.reduce((acc: any[], opt: any) => {
-        const existing = acc.find(o => o.key === opt.key);
+        const existing = acc.find((o: any) => o.key === opt.key);
         if (!existing) {
           acc.push(opt);
         } else {
@@ -190,7 +200,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       
       return uniqueOptions || [];
     },
-    enabled: !!formData.curtain_type && !!template?.id,
+    enabled: !!formData.curtain_type,
   });
   
   const handleToggleOption = async (optionKey: string, optionLabel: string, enabled: boolean) => {
@@ -733,7 +743,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                             <Switch
                               checked={isEnabled}
                               onCheckedChange={(checked) => handleToggleOption(group.type, group.label, checked)}
-                              disabled={!template?.id || (!hasOptionsAvailable && !isEnabled)}
+                              disabled={!template?.id}
                             />
                             <Label className="text-sm font-medium">
                               {isEnabled ? 'Enabled' : 'Disabled'}
