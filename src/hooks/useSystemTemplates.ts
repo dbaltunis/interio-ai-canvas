@@ -56,7 +56,7 @@ export const useCloneSystemTemplate = () => {
       if (fetchError) throw fetchError;
       
       // Clone the template with user's custom pricing
-      const { data, error } = await supabase
+      const { data: clonedTemplate, error } = await supabase
         .from('curtain_templates')
         .insert({
           ...template,
@@ -72,7 +72,55 @@ export const useCloneSystemTemplate = () => {
         .single();
       
       if (error) throw error;
-      return data;
+      
+      // Clone associated treatment_options and option_values
+      const { data: options, error: optionsError } = await supabase
+        .from('treatment_options')
+        .select('*, option_values(*)')
+        .eq('treatment_id', systemTemplateId);
+      
+      if (optionsError) throw optionsError;
+      
+      if (options && options.length > 0) {
+        // Clone each option
+        for (const option of options) {
+          const { data: newOption, error: optionInsertError } = await supabase
+            .from('treatment_options')
+            .insert({
+              treatment_id: clonedTemplate.id,
+              key: option.key,
+              label: option.label,
+              input_type: option.input_type,
+              required: option.required,
+              visible: option.visible,
+              order_index: option.order_index,
+              validation: option.validation,
+            })
+            .select()
+            .single();
+          
+          if (optionInsertError) throw optionInsertError;
+          
+          // Clone option values
+          if (option.option_values && option.option_values.length > 0) {
+            const valuesToInsert = option.option_values.map((value: any) => ({
+              option_id: newOption.id,
+              code: value.code,
+              label: value.label,
+              extra_data: value.extra_data,
+              order_index: value.order_index,
+            }));
+            
+            const { error: valuesInsertError } = await supabase
+              .from('option_values')
+              .insert(valuesToInsert);
+            
+            if (valuesInsertError) throw valuesInsertError;
+          }
+        }
+      }
+      
+      return clonedTemplate;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['curtain-templates'] });

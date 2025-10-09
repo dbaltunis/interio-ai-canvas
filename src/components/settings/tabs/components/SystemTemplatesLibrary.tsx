@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useSystemTemplates, useCloneSystemTemplate } from "@/hooks/useSystemTemplates";
-import { Copy, DollarSign, Info } from "lucide-react";
+import { Copy, DollarSign, Info, Settings } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import {
   Dialog,
@@ -15,29 +17,133 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 
+// Hook to get option count for a template
+const useTemplateOptionCount = (templateId: string) => {
+  return useQuery({
+    queryKey: ['template-option-count', templateId],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('treatment_options')
+        .select('*', { count: 'exact', head: true })
+        .eq('treatment_id', templateId);
+      
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+};
+
+const TemplateCard = ({ template }: { template: any }) => {
+  const { data: optionCount } = useTemplateOptionCount(template.id);
+  const cloneTemplate = useCloneSystemTemplate();
+  const [showDialog, setShowDialog] = useState(false);
+  const [customPrice, setCustomPrice] = useState<number>(template.unit_price || 0);
+
+  const handleClone = () => {
+    cloneTemplate.mutate({
+      systemTemplateId: template.id,
+      customPricing: customPrice,
+    });
+    setShowDialog(false);
+  };
+
+  return (
+    <>
+      <Card className="relative">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1">
+              <CardTitle className="text-base">{template.name}</CardTitle>
+              {template.description && (
+                <CardDescription className="text-xs line-clamp-2 mt-1">
+                  {template.description}
+                </CardDescription>
+              )}
+            </div>
+            {optionCount !== undefined && optionCount > 0 && (
+              <Badge variant="secondary" className="flex items-center gap-1 shrink-0">
+                <Settings className="h-3 w-3" />
+                {optionCount}
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Base Price:</span>
+            <span className="font-semibold">${template.unit_price?.toFixed(2) || '0.00'}</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Badge variant="outline" className="text-xs">
+              {template.pricing_type}
+            </Badge>
+            <Badge variant="outline" className="text-xs">
+              {template.manufacturing_type}
+            </Badge>
+          </div>
+          <Button 
+            onClick={() => setShowDialog(true)}
+            className="w-full"
+            size="sm"
+            variant="outline"
+          >
+            <Copy className="h-3 w-3 mr-2" />
+            Clone & Customize
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Clone Template: {template.name}</DialogTitle>
+            <DialogDescription>
+              Set your custom pricing for this template. All preset options will be included.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="custom-price">Your Price ({template.pricing_type})</Label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="custom-price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={customPrice}
+                  onChange={(e) => setCustomPrice(parseFloat(e.target.value))}
+                  className="pl-9"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                System default: ${template.unit_price?.toFixed(2) || '0.00'}
+              </p>
+            </div>
+            {optionCount !== undefined && optionCount > 0 && (
+              <p className="text-sm text-muted-foreground">
+                ✓ {optionCount} preset options will be included
+              </p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleClone} disabled={cloneTemplate.isPending}>
+              {cloneTemplate.isPending ? 'Cloning...' : 'Clone Template'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
 export const SystemTemplatesLibrary = () => {
   const { data: templates, isLoading } = useSystemTemplates();
-  const cloneTemplate = useCloneSystemTemplate();
-  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
-  const [customPrice, setCustomPrice] = useState<number>(0);
-  const [showCloneDialog, setShowCloneDialog] = useState(false);
-
-  const handleCloneClick = (template: any) => {
-    setSelectedTemplate(template);
-    setCustomPrice(template.unit_price || 0);
-    setShowCloneDialog(true);
-  };
-
-  const handleConfirmClone = () => {
-    if (selectedTemplate) {
-      cloneTemplate.mutate({
-        systemTemplateId: selectedTemplate.id,
-        customPricing: customPrice,
-      });
-      setShowCloneDialog(false);
-      setSelectedTemplate(null);
-    }
-  };
 
   const getCategoryBadgeColor = (category: string | null) => {
     const colors: Record<string, string> = {
@@ -107,86 +213,13 @@ export const SystemTemplatesLibrary = () => {
               
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {categoryTemplates?.map((template) => (
-                  <Card key={template.id} className="relative">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base">{template.name}</CardTitle>
-                      {template.description && (
-                        <CardDescription className="text-xs line-clamp-2">
-                          {template.description}
-                        </CardDescription>
-                      )}
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Base Price:</span>
-                        <span className="font-semibold">${template.unit_price?.toFixed(2) || '0.00'}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Badge variant="outline" className="text-xs">
-                          {template.pricing_type}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          {template.manufacturing_type}
-                        </Badge>
-                      </div>
-                      <Button 
-                        onClick={() => handleCloneClick(template)}
-                        className="w-full"
-                        size="sm"
-                        variant="outline"
-                      >
-                        <Copy className="h-3 w-3 mr-2" />
-                        Clone & Customize
-                      </Button>
-                    </CardContent>
-                  </Card>
+                  <TemplateCard key={template.id} template={template} />
                 ))}
               </div>
             </div>
           ))}
         </CardContent>
       </Card>
-
-      <Dialog open={showCloneDialog} onOpenChange={setShowCloneDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Clone Template: {selectedTemplate?.name}</DialogTitle>
-            <DialogDescription>
-              Set your custom pricing for this template. You can modify all settings after cloning.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="custom-price">Your Price ({selectedTemplate?.pricing_type})</Label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="custom-price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={customPrice}
-                  onChange={(e) => setCustomPrice(parseFloat(e.target.value))}
-                  className="pl-9"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                System default: ${selectedTemplate?.unit_price?.toFixed(2) || '0.00'}
-              </p>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCloneDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleConfirmClone} disabled={cloneTemplate.isPending}>
-              {cloneTemplate.isPending ? 'Cloning...' : 'Clone Template'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 };
