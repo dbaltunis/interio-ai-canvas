@@ -121,15 +121,15 @@ export const useAllTreatmentOptions = () => {
       
       if (error) throw error;
       
-      // Get user's template IDs to filter options
+      // Get user's template IDs AND system default template IDs
       const { data: templates } = await supabase
         .from('curtain_templates')
         .select('id')
-        .eq('user_id', user.user.id);
+        .or(`user_id.eq.${user.user.id},is_system_default.eq.true`);
       
       const templateIds = templates?.map(t => t.id) || [];
       
-      // Filter to only show options for user's templates
+      // Filter to show options for user's templates AND system defaults
       return (data as TreatmentOption[]).filter(opt => 
         templateIds.includes(opt.treatment_id)
       );
