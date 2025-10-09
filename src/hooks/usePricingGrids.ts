@@ -104,39 +104,48 @@ export const getPriceFromGrid = (gridData: any, width: number, drop: number): nu
       console.log("📋 Available drops:", dropRows.map((r: any) => r.drop + "cm"));
       console.log("📋 Available widths:", widthColumns.map((w: string) => w + "cm"));
       
-      // Find the exact drop row
+      // Find the closest drop row (rounds to nearest grid value)
+      const dropValues = dropRows.map((r: any) => parseInt(r.drop));
+      const closestDrop = dropValues.reduce((prev, curr) => {
+        return Math.abs(curr - drop) < Math.abs(prev - drop) ? curr : prev;
+      });
+      
       const matchingDropRow = dropRows.find((row: any) => {
         const rowDrop = parseInt(row.drop);
-        return rowDrop === drop;
+        return rowDrop === closestDrop;
       });
       
       if (!matchingDropRow) {
-        console.log("❌ No exact drop match found for:", drop + "cm");
+        console.log("❌ No drop row found");
         return 0;
       }
       
-      console.log("✅ Found matching drop row:", matchingDropRow.drop + "cm");
+      console.log("✅ Found closest drop row:", matchingDropRow.drop + "cm", "(looking for " + drop + "cm)");
       
-      // Find the exact width column index
+      // Find the closest width column (rounds to nearest grid value)
+      const widthValues = widthColumns.map((w: string) => parseInt(w.toString()));
+      const closestWidth = widthValues.reduce((prev, curr) => {
+        return Math.abs(curr - width) < Math.abs(prev - width) ? curr : prev;
+      });
+      
       const widthIndex = widthColumns.findIndex((col: string) => {
         const colWidth = parseInt(col.toString());
-        return colWidth === width;
+        return colWidth === closestWidth;
       });
       
       if (widthIndex === -1) {
-        console.log("❌ No exact width match found for:", width + "cm");
-        console.log("Available widths:", widthColumns);
+        console.log("❌ No width column found");
         return 0;
       }
       
-      console.log("✅ Found matching width at index:", widthIndex, "for width:", width + "cm");
+      console.log("✅ Found closest width at index:", widthIndex, "=", closestWidth + "cm", "(looking for " + width + "cm)");
       
       // Get the price from the matching row and column
       const price = parseFloat(matchingDropRow.prices[widthIndex]?.toString() || "0");
       
-      console.log("✅ EXACT MATCH FOUND:");
-      console.log("  📏 Width:", width + "cm");
-      console.log("  📏 Drop:", drop + "cm");
+      console.log("✅ GRID MATCH FOUND:");
+      console.log("  📏 Requested Width:", width + "cm", "→ Using:", closestWidth + "cm");
+      console.log("  📏 Requested Drop:", drop + "cm", "→ Using:", closestDrop + "cm");
       console.log("  💰 Manufacturing Price:", "£" + price);
       console.log("🔍 === END PRICING GRID LOOKUP ===");
       
