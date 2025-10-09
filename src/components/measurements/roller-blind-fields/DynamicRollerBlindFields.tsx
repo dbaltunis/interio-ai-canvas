@@ -140,7 +140,7 @@ export const DynamicRollerBlindFields = ({
           <Label htmlFor="headrail_type">Headrail Type</Label>
           <Select 
             value={measurements.headrail_type || headrailTypes[0]?.value} 
-            onValueChange={(value) => onChange('headrail_type', value)}
+            onValueChange={(value) => handleOptionChange('headrail_type', value, headrailTypes)}
             disabled={readOnly}
           >
             <SelectTrigger id="headrail_type">
@@ -149,7 +149,10 @@ export const DynamicRollerBlindFields = ({
             <SelectContent>
               {headrailTypes.map(opt => (
                 <SelectItem key={opt.id} value={opt.value}>
-                  {opt.label}
+                  <div className="flex items-center justify-between w-full">
+                    <span>{opt.label}</span>
+                    {opt.price > 0 && <span className="text-xs text-muted-foreground ml-2">+${opt.price}</span>}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -215,7 +218,7 @@ export const DynamicRollerBlindFields = ({
           <Label htmlFor="fascia_type">Fascia/Cassette Type</Label>
           <Select 
             value={measurements.fascia_type || fasciaTypes[0]?.value} 
-            onValueChange={(value) => onChange('fascia_type', value)}
+            onValueChange={(value) => handleOptionChange('fascia_type', value, fasciaTypes)}
             disabled={readOnly}
           >
             <SelectTrigger id="fascia_type">
@@ -224,7 +227,10 @@ export const DynamicRollerBlindFields = ({
             <SelectContent>
               {fasciaTypes.map(opt => (
                 <SelectItem key={opt.id} value={opt.value}>
-                  {opt.label}
+                  <div className="flex items-center justify-between w-full">
+                    <span>{opt.label}</span>
+                    {opt.price > 0 && <span className="text-xs text-muted-foreground ml-2">+${opt.price}</span>}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -238,7 +244,7 @@ export const DynamicRollerBlindFields = ({
           <Label htmlFor="bottom_rail_style">Bottom Rail Style</Label>
           <Select 
             value={measurements.bottom_rail_style || bottomRailStyles[0]?.value} 
-            onValueChange={(value) => onChange('bottom_rail_style', value)}
+            onValueChange={(value) => handleOptionChange('bottom_rail_style', value, bottomRailStyles)}
             disabled={readOnly}
           >
             <SelectTrigger id="bottom_rail_style">
@@ -247,7 +253,10 @@ export const DynamicRollerBlindFields = ({
             <SelectContent>
               {bottomRailStyles.map(opt => (
                 <SelectItem key={opt.id} value={opt.value}>
-                  {opt.label}
+                  <div className="flex items-center justify-between w-full">
+                    <span>{opt.label}</span>
+                    {opt.price > 0 && <span className="text-xs text-muted-foreground ml-2">+${opt.price}</span>}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -287,7 +296,7 @@ export const DynamicRollerBlindFields = ({
           <Label htmlFor="chain_side">Chain Side</Label>
           <RadioGroup 
             value={measurements.chain_side || chainSides[0]?.value} 
-            onValueChange={(value) => onChange('chain_side', value)}
+            onValueChange={(value) => handleOptionChange('chain_side', value, chainSides)}
             disabled={readOnly}
           >
             {chainSides.map(opt => (
