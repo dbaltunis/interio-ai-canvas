@@ -96,6 +96,45 @@ export const getPriceFromGrid = (gridData: any, width: number, drop: number): nu
     console.log("📊 Looking for:", { width: width + "cm", drop: drop + "cm" });
     console.log("📁 Grid data structure:", gridData);
     
+    // Handle the data structure with dropRanges and widthRanges (from pricing grid)
+    if (gridData.dropRanges && gridData.widthRanges && gridData.prices) {
+      const dropRanges = gridData.dropRanges;
+      const widthRanges = gridData.widthRanges;
+      const prices = gridData.prices;
+      
+      console.log("📋 Available drops:", dropRanges.map((d: string) => d + "cm"));
+      console.log("📋 Available widths:", widthRanges.map((w: string) => w + "cm"));
+      
+      // Find the closest drop index
+      const dropValues = dropRanges.map((d: string) => parseInt(d));
+      const closestDrop = dropValues.reduce((prev, curr) => {
+        return Math.abs(curr - drop) < Math.abs(prev - drop) ? curr : prev;
+      });
+      const dropIndex = dropValues.indexOf(closestDrop);
+      
+      console.log("✅ Found closest drop:", closestDrop + "cm at index", dropIndex, "(looking for " + drop + "cm)");
+      
+      // Find the closest width index
+      const widthValues = widthRanges.map((w: string) => parseInt(w));
+      const closestWidth = widthValues.reduce((prev, curr) => {
+        return Math.abs(curr - width) < Math.abs(prev - width) ? curr : prev;
+      });
+      const widthIndex = widthValues.indexOf(closestWidth);
+      
+      console.log("✅ Found closest width:", closestWidth + "cm at index", widthIndex, "(looking for " + width + "cm)");
+      
+      // Get the price from the 2D array
+      const price = parseFloat(prices[dropIndex]?.[widthIndex]?.toString() || "0");
+      
+      console.log("✅ GRID MATCH FOUND:");
+      console.log("  📏 Requested Width:", width + "cm", "→ Using:", closestWidth + "cm");
+      console.log("  📏 Requested Drop:", drop + "cm", "→ Using:", closestDrop + "cm");
+      console.log("  💰 Manufacturing Price:", "£" + price);
+      console.log("🔍 === END PRICING GRID LOOKUP ===");
+      
+      return price;
+    }
+    
     // Handle the actual data structure with dropRows (from uploaded CSV)
     if (gridData.dropRows && gridData.widthColumns) {
       const dropRows = gridData.dropRows;
