@@ -60,6 +60,7 @@ export const DynamicWindowWorksheet = forwardRef<{
   const [fabricCalculation, setFabricCalculation] = useState<any>(null);
   const [selectedHeading, setSelectedHeading] = useState("standard");
   const [selectedLining, setSelectedLining] = useState("none");
+  const [selectedOptions, setSelectedOptions] = useState<Array<{ name: string; price: number }>>([]);
   const [layeredTreatments, setLayeredTreatments] = useState<Array<{
     id: string;
     type: string;
@@ -636,14 +637,38 @@ export const DynamicWindowWorksheet = forwardRef<{
               <div className="space-y-6">
                 {/* Full Width Visual Worksheet */}
                 <div className="w-full">
-                  <VisualMeasurementSheet measurements={measurements} onMeasurementChange={handleMeasurementChange} windowType={selectedWindowType?.key || "standard"} selectedTemplate={selectedTemplate} selectedFabric={selectedItems.fabric?.id} selectedLining={selectedLining} onLiningChange={setSelectedLining} selectedHeading={selectedHeading} onHeadingChange={setSelectedHeading} onFabricCalculationChange={setFabricCalculation} readOnly={readOnly} treatmentCategory={treatmentCategory} />
+                  <VisualMeasurementSheet 
+                    measurements={measurements} 
+                    onMeasurementChange={handleMeasurementChange} 
+                    windowType={selectedWindowType?.key || "standard"} 
+                    selectedTemplate={selectedTemplate} 
+                    selectedFabric={selectedItems.fabric?.id} 
+                    selectedLining={selectedLining} 
+                    onLiningChange={setSelectedLining} 
+                    selectedHeading={selectedHeading} 
+                    onHeadingChange={setSelectedHeading} 
+                    onFabricCalculationChange={setFabricCalculation} 
+                    readOnly={readOnly} 
+                    treatmentCategory={treatmentCategory}
+                    selectedOptions={selectedOptions}
+                    onSelectedOptionsChange={setSelectedOptions}
+                  />
                 </div>
 
                 {/* Bottom Section - Configuration & Cost */}
                 <div className="space-y-4">
                   
 
-                  <CostCalculationSummary template={selectedTemplate} measurements={measurements} selectedFabric={selectedItems.fabric} selectedLining={selectedLining} selectedHeading={selectedHeading} inventory={[]} fabricCalculation={fabricCalculation} />
+                  <CostCalculationSummary 
+                    template={selectedTemplate} 
+                    measurements={measurements} 
+                    selectedFabric={selectedItems.fabric} 
+                    selectedLining={selectedLining} 
+                    selectedHeading={selectedHeading} 
+                    inventory={[]} 
+                    fabricCalculation={fabricCalculation}
+                    selectedOptions={selectedOptions}
+                  />
                   
                   <Button onClick={async () => {
                   try {

@@ -32,6 +32,8 @@ interface VisualMeasurementSheetProps {
   onHeadingChange?: (headingId: string) => void;
   onFabricCalculationChange?: (calculation: any) => void;
   treatmentCategory?: import("@/utils/treatmentTypeDetection").TreatmentCategory;
+  selectedOptions?: Array<{ name: string; price: number }>;
+  onSelectedOptionsChange?: (options: Array<{ name: string; price: number }>) => void;
 }
 
 export const VisualMeasurementSheet = ({ 
@@ -47,7 +49,9 @@ export const VisualMeasurementSheet = ({
   selectedHeading,
   onHeadingChange,
   onFabricCalculationChange,
-  treatmentCategory = 'curtains'
+  treatmentCategory = 'curtains',
+  selectedOptions = [],
+  onSelectedOptionsChange
 }: VisualMeasurementSheetProps) => {
   // Detect treatment type - use treatmentCategory prop if provided, otherwise detect from template
   const treatmentType = treatmentCategory || detectTreatmentType(selectedTemplate);
@@ -65,6 +69,18 @@ export const VisualMeasurementSheet = ({
     if (!readOnly) {
       console.log(`🔧 VisualMeasurementSheet: Changing ${field} to:`, value);
       onMeasurementChange(field, value);
+    }
+  };
+
+  // Handle option price changes from dynamic fields
+  const handleOptionPriceChange = (optionKey: string, price: number, label: string) => {
+    if (onSelectedOptionsChange) {
+      const updatedOptions = selectedOptions.filter(opt => !opt.name.startsWith(optionKey));
+      if (price > 0) {
+        updatedOptions.push({ name: `${optionKey}: ${label}`, price });
+      }
+      onSelectedOptionsChange(updatedOptions);
+      console.log('🎯 Updated selected options:', updatedOptions);
     }
   };
 
@@ -768,6 +784,7 @@ export const VisualMeasurementSheet = ({
                           onChange={handleInputChange}
                           templateId={selectedTemplate?.id}
                           readOnly={readOnly}
+                          onOptionPriceChange={handleOptionPriceChange}
                         />
                       </CardContent>
                     </Card>

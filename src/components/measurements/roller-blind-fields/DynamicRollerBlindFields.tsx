@@ -10,17 +10,19 @@ interface DynamicRollerBlindFieldsProps {
   onChange: (field: string, value: string) => void;
   templateId?: string;
   readOnly?: boolean;
+  onOptionPriceChange?: (optionKey: string, price: number, label: string) => void;
 }
 
 export const DynamicRollerBlindFields = ({ 
   measurements, 
   onChange, 
   templateId,
-  readOnly = false 
+  readOnly = false,
+  onOptionPriceChange
 }: DynamicRollerBlindFieldsProps) => {
   const { data: treatmentOptions = [], isLoading } = useTreatmentOptions(templateId);
   
-  // Extract options by key (tube_size, mount_type, etc.)
+  // Extract options by key (tube_size, mount_type, etc.) with price info
   const getOptionsByKey = (key: string) => {
     const option = treatmentOptions.find(opt => opt.key === key && opt.visible);
     if (!option || !option.option_values) return [];
@@ -30,8 +32,20 @@ export const DynamicRollerBlindFields = ({
       .map(val => ({
         value: val.code,
         label: val.label,
-        id: val.id
+        id: val.id,
+        price: val.extra_data?.price || 0
       }));
+  };
+
+  // Helper to handle option change and notify parent of price
+  const handleOptionChange = (key: string, value: string, options: any[]) => {
+    onChange(key, value);
+    if (onOptionPriceChange) {
+      const selectedOption = options.find(opt => opt.value === value);
+      if (selectedOption) {
+        onOptionPriceChange(key, selectedOption.price, selectedOption.label);
+      }
+    }
   };
 
   const tubeSizes = useMemo(() => getOptionsByKey('tube_size'), [treatmentOptions]);
@@ -74,7 +88,7 @@ export const DynamicRollerBlindFields = ({
           <Label htmlFor="slat_material">Slat Material</Label>
           <Select 
             value={measurements.slat_material || slatMaterials[0]?.value} 
-            onValueChange={(value) => onChange('slat_material', value)}
+            onValueChange={(value) => handleOptionChange('slat_material', value, slatMaterials)}
             disabled={readOnly}
           >
             <SelectTrigger id="slat_material">
@@ -83,7 +97,10 @@ export const DynamicRollerBlindFields = ({
             <SelectContent>
               {slatMaterials.map(opt => (
                 <SelectItem key={opt.id} value={opt.value}>
-                  {opt.label}
+                  <div className="flex items-center justify-between w-full">
+                    <span>{opt.label}</span>
+                    {opt.price > 0 && <span className="text-xs text-muted-foreground ml-2">+${opt.price}</span>}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -97,7 +114,7 @@ export const DynamicRollerBlindFields = ({
           <Label htmlFor="slat_size">Slat Size</Label>
           <Select 
             value={measurements.slat_size || slatSizes[0]?.value} 
-            onValueChange={(value) => onChange('slat_size', value)}
+            onValueChange={(value) => handleOptionChange('slat_size', value, slatSizes)}
             disabled={readOnly}
           >
             <SelectTrigger id="slat_size">
@@ -106,7 +123,10 @@ export const DynamicRollerBlindFields = ({
             <SelectContent>
               {slatSizes.map(opt => (
                 <SelectItem key={opt.id} value={opt.value}>
-                  {opt.label}
+                  <div className="flex items-center justify-between w-full">
+                    <span>{opt.label}</span>
+                    {opt.price > 0 && <span className="text-xs text-muted-foreground ml-2">+${opt.price}</span>}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -143,7 +163,7 @@ export const DynamicRollerBlindFields = ({
           <Label htmlFor="tube_size">Tube Size</Label>
           <Select 
             value={measurements.tube_size || tubeSizes[0]?.value} 
-            onValueChange={(value) => onChange('tube_size', value)}
+            onValueChange={(value) => handleOptionChange('tube_size', value, tubeSizes)}
             disabled={readOnly}
           >
             <SelectTrigger id="tube_size">
@@ -152,7 +172,10 @@ export const DynamicRollerBlindFields = ({
             <SelectContent>
               {tubeSizes.map(opt => (
                 <SelectItem key={opt.id} value={opt.value}>
-                  {opt.label}
+                  <div className="flex items-center justify-between w-full">
+                    <span>{opt.label}</span>
+                    {opt.price > 0 && <span className="text-xs text-muted-foreground ml-2">+${opt.price}</span>}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -166,7 +189,7 @@ export const DynamicRollerBlindFields = ({
           <Label htmlFor="mount_type">Mount Type</Label>
           <Select 
             value={measurements.mount_type || mountTypes[0]?.value} 
-            onValueChange={(value) => onChange('mount_type', value)}
+            onValueChange={(value) => handleOptionChange('mount_type', value, mountTypes)}
             disabled={readOnly}
           >
             <SelectTrigger id="mount_type">
@@ -175,7 +198,10 @@ export const DynamicRollerBlindFields = ({
             <SelectContent>
               {mountTypes.map(opt => (
                 <SelectItem key={opt.id} value={opt.value}>
-                  {opt.label}
+                  <div className="flex items-center justify-between w-full">
+                    <span>{opt.label}</span>
+                    {opt.price > 0 && <span className="text-xs text-muted-foreground ml-2">+${opt.price}</span>}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -235,7 +261,7 @@ export const DynamicRollerBlindFields = ({
           <Label htmlFor="control_type">Control Type</Label>
           <Select 
             value={measurements.control_type || controlTypes[0]?.value} 
-            onValueChange={(value) => onChange('control_type', value)}
+            onValueChange={(value) => handleOptionChange('control_type', value, controlTypes)}
             disabled={readOnly}
           >
             <SelectTrigger id="control_type">
@@ -244,7 +270,10 @@ export const DynamicRollerBlindFields = ({
             <SelectContent>
               {controlTypes.map(opt => (
                 <SelectItem key={opt.id} value={opt.value}>
-                  {opt.label}
+                  <div className="flex items-center justify-between w-full">
+                    <span>{opt.label}</span>
+                    {opt.price > 0 && <span className="text-xs text-muted-foreground ml-2">+${opt.price}</span>}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -279,7 +308,7 @@ export const DynamicRollerBlindFields = ({
           <Label htmlFor="motor_type">Motor Type</Label>
           <Select 
             value={measurements.motor_type || motorTypes[0]?.value} 
-            onValueChange={(value) => onChange('motor_type', value)}
+            onValueChange={(value) => handleOptionChange('motor_type', value, motorTypes)}
             disabled={readOnly}
           >
             <SelectTrigger id="motor_type">
@@ -288,7 +317,10 @@ export const DynamicRollerBlindFields = ({
             <SelectContent>
               {motorTypes.map(opt => (
                 <SelectItem key={opt.id} value={opt.value}>
-                  {opt.label}
+                  <div className="flex items-center justify-between w-full">
+                    <span>{opt.label}</span>
+                    {opt.price > 0 && <span className="text-xs text-muted-foreground ml-2">+${opt.price}</span>}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>

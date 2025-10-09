@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calculator, DollarSign, Info } from "lucide-react";
+import { Calculator, DollarSign, Info, Settings } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import { getPriceFromGrid } from "@/hooks/usePricingGrids";
@@ -304,6 +304,10 @@ export const CostCalculationSummary = ({
   const headingCost = calculateHeadingCost();
   const manufacturingCost = calculateManufacturingCost();
   
+  // Calculate options cost
+  const optionsCost = selectedOptions?.reduce((total, option) => total + (option.price || 0), 0) || 0;
+  console.log('🎯 Options cost calculated:', optionsCost, 'from options:', selectedOptions);
+  
   // If selectedFabric is missing but there's a fabric selection, try to find it in inventory
   let effectiveFabricCost = fabricUsage.cost;
   let fabricName = selectedFabric?.name || "No fabric selected";
@@ -451,7 +455,7 @@ export const CostCalculationSummary = ({
     finalLinearMeters = fabricCalculation.linearMeters || fabricUsage.linearMeters;
   }
 
-  const totalCost = finalFabricCost + liningCost + headingCost + manufacturingCost;
+  const totalCost = finalFabricCost + liningCost + headingCost + manufacturingCost + optionsCost;
 
   // Detect product type for dynamic labels
   const productCategory = (template as any).category?.toLowerCase() || template.name?.toLowerCase() || '';
@@ -533,6 +537,17 @@ export const CostCalculationSummary = ({
               <span className="text-card-foreground font-medium">{getManufacturingLabel()}</span>
             </div>
             <span className="font-medium text-card-foreground ml-2">{formatPrice(manufacturingCost)}</span>
+          </div>
+        )}
+
+        {/* Options */}
+        {optionsCost > 0 && (
+          <div className="flex items-center justify-between py-1.5">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span className="text-card-foreground font-medium">Options</span>
+            </div>
+            <span className="font-medium text-card-foreground ml-2">{formatPrice(optionsCost)}</span>
           </div>
         )}
       </div>
