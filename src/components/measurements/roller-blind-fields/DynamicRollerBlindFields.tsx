@@ -1,55 +1,49 @@
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useEnhancedInventoryByCategory } from "@/hooks/useEnhancedInventory";
+import { useTreatmentOptions } from "@/hooks/useTreatmentOptions";
 import { Loader2 } from "lucide-react";
 import { useMemo } from "react";
 
 interface DynamicRollerBlindFieldsProps {
   measurements: Record<string, any>;
   onChange: (field: string, value: string) => void;
-  treatmentType: string;
+  treatmentId?: string;
   readOnly?: boolean;
 }
 
 export const DynamicRollerBlindFields = ({ 
   measurements, 
   onChange, 
-  treatmentType,
+  treatmentId,
   readOnly = false 
 }: DynamicRollerBlindFieldsProps) => {
-  const { data: blindOptions = [], isLoading } = useEnhancedInventoryByCategory('treatment_option');
+  const { data: treatmentOptions = [], isLoading } = useTreatmentOptions(treatmentId);
   
-  // Extract options from configured blind_option items
-  const getOptionsByType = (optionType: string) => {
-    return blindOptions
-      .filter(opt => {
-        try {
-          const details = JSON.parse(opt.description || '{}');
-          // Filter by BOTH option_type AND treatment_type from the description JSON
-          return details.option_type === optionType && 
-                 details.treatment_type === treatmentType;
-        } catch {
-          return false;
-        }
-      })
-      .map(opt => {
-        const details = JSON.parse(opt.description || '{}');
-        return {
-          value: details.option_value,
-          label: opt.name,
-          price: opt.price_per_meter || 0
-        };
-      });
+  // Extract options by key (tube_size, mount_type, etc.)
+  const getOptionsByKey = (key: string) => {
+    const option = treatmentOptions.find(opt => opt.key === key && opt.visible);
+    if (!option || !option.option_values) return [];
+    
+    return option.option_values
+      .sort((a, b) => a.order_index - b.order_index)
+      .map(val => ({
+        value: val.code,
+        label: val.label,
+        id: val.id
+      }));
   };
 
-  const tubeSizes = useMemo(() => getOptionsByType('tube_size'), [blindOptions, treatmentType]);
-  const mountTypes = useMemo(() => getOptionsByType('mount_type'), [blindOptions, treatmentType]);
-  const fasciaTypes = useMemo(() => getOptionsByType('fascia_type'), [blindOptions, treatmentType]);
-  const bottomRailStyles = useMemo(() => getOptionsByType('bottom_rail_style'), [blindOptions, treatmentType]);
-  const controlTypes = useMemo(() => getOptionsByType('control_type'), [blindOptions, treatmentType]);
-  const chainSides = useMemo(() => getOptionsByType('chain_side'), [blindOptions, treatmentType]);
-  const motorTypes = useMemo(() => getOptionsByType('motor_type'), [blindOptions, treatmentType]);
+  const tubeSizes = useMemo(() => getOptionsByKey('tube_size'), [treatmentOptions]);
+  const mountTypes = useMemo(() => getOptionsByKey('mount_type'), [treatmentOptions]);
+  const fasciaTypes = useMemo(() => getOptionsByKey('fascia_type'), [treatmentOptions]);
+  const bottomRailStyles = useMemo(() => getOptionsByKey('bottom_rail_style'), [treatmentOptions]);
+  const controlTypes = useMemo(() => getOptionsByKey('control_type'), [treatmentOptions]);
+  const chainSides = useMemo(() => getOptionsByKey('chain_side'), [treatmentOptions]);
+  const motorTypes = useMemo(() => getOptionsByKey('motor_type'), [treatmentOptions]);
+  const slatSizes = useMemo(() => getOptionsByKey('slat_size'), [treatmentOptions]);
+  const slatMaterials = useMemo(() => getOptionsByKey('slat_material'), [treatmentOptions]);
+  const headrailTypes = useMemo(() => getOptionsByKey('headrail_type'), [treatmentOptions]);
 
   if (isLoading) {
     return (
@@ -59,26 +53,91 @@ export const DynamicRollerBlindFields = ({
     );
   }
 
-  if (blindOptions.length === 0) {
+  if (treatmentOptions.length === 0) {
     return (
       <div className="p-4 border border-amber-300 bg-amber-50 rounded-lg">
         <p className="text-sm text-amber-800 font-medium">
           No window treatment options configured
         </p>
         <p className="text-xs text-amber-700 mt-1">
-          Please add treatment options in Settings → Window Coverings → Treatment Options
+          Please add treatment options in Settings → Window Covering Templates → Treatment Settings tab
         </p>
       </div>
     );
   }
 
-  const formatLabel = (value: string) => {
-    return value.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
-
   return (
     <div className="space-y-4">
-      {/* Tube Size */}
+      {/* Slat Material - for venetian blinds */}
+      {slatMaterials.length > 0 && (
+        <div className="space-y-2">
+          <Label htmlFor="slat_material">Slat Material</Label>
+          <Select 
+            value={measurements.slat_material || slatMaterials[0]?.value} 
+            onValueChange={(value) => onChange('slat_material', value)}
+            disabled={readOnly}
+          >
+            <SelectTrigger id="slat_material">
+              <SelectValue placeholder="Select slat material" />
+            </SelectTrigger>
+            <SelectContent>
+              {slatMaterials.map(opt => (
+                <SelectItem key={opt.id} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Slat Size - for venetian blinds */}
+      {slatSizes.length > 0 && (
+        <div className="space-y-2">
+          <Label htmlFor="slat_size">Slat Size</Label>
+          <Select 
+            value={measurements.slat_size || slatSizes[0]?.value} 
+            onValueChange={(value) => onChange('slat_size', value)}
+            disabled={readOnly}
+          >
+            <SelectTrigger id="slat_size">
+              <SelectValue placeholder="Select slat size" />
+            </SelectTrigger>
+            <SelectContent>
+              {slatSizes.map(opt => (
+                <SelectItem key={opt.id} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Headrail Type */}
+      {headrailTypes.length > 0 && (
+        <div className="space-y-2">
+          <Label htmlFor="headrail_type">Headrail Type</Label>
+          <Select 
+            value={measurements.headrail_type || headrailTypes[0]?.value} 
+            onValueChange={(value) => onChange('headrail_type', value)}
+            disabled={readOnly}
+          >
+            <SelectTrigger id="headrail_type">
+              <SelectValue placeholder="Select headrail type" />
+            </SelectTrigger>
+            <SelectContent>
+              {headrailTypes.map(opt => (
+                <SelectItem key={opt.id} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Tube Size - for roller blinds */}
       {tubeSizes.length > 0 && (
         <div className="space-y-2">
           <Label htmlFor="tube_size">Tube Size</Label>
@@ -92,8 +151,8 @@ export const DynamicRollerBlindFields = ({
             </SelectTrigger>
             <SelectContent>
               {tubeSizes.map(opt => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label} {opt.price > 0 && `(+$${opt.price.toFixed(2)})`}
+                <SelectItem key={opt.id} value={opt.value}>
+                  {opt.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -115,8 +174,8 @@ export const DynamicRollerBlindFields = ({
             </SelectTrigger>
             <SelectContent>
               {mountTypes.map(opt => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label} {opt.price > 0 && `(+$${opt.price.toFixed(2)})`}
+                <SelectItem key={opt.id} value={opt.value}>
+                  {opt.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -138,8 +197,8 @@ export const DynamicRollerBlindFields = ({
             </SelectTrigger>
             <SelectContent>
               {fasciaTypes.map(opt => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label} {opt.price > 0 && `(+$${opt.price.toFixed(2)})`}
+                <SelectItem key={opt.id} value={opt.value}>
+                  {opt.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -161,8 +220,8 @@ export const DynamicRollerBlindFields = ({
             </SelectTrigger>
             <SelectContent>
               {bottomRailStyles.map(opt => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label} {opt.price > 0 && `(+$${opt.price.toFixed(2)})`}
+                <SelectItem key={opt.id} value={opt.value}>
+                  {opt.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -184,8 +243,8 @@ export const DynamicRollerBlindFields = ({
             </SelectTrigger>
             <SelectContent>
               {controlTypes.map(opt => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label} {opt.price > 0 && `(+$${opt.price.toFixed(2)})`}
+                <SelectItem key={opt.id} value={opt.value}>
+                  {opt.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -203,7 +262,7 @@ export const DynamicRollerBlindFields = ({
             disabled={readOnly}
           >
             {chainSides.map(opt => (
-              <div key={opt.value} className="flex items-center space-x-2">
+              <div key={opt.id} className="flex items-center space-x-2">
                 <RadioGroupItem value={opt.value} id={`chain-${opt.value}`} />
                 <Label htmlFor={`chain-${opt.value}`} className="font-normal cursor-pointer">
                   {opt.label}
@@ -228,8 +287,8 @@ export const DynamicRollerBlindFields = ({
             </SelectTrigger>
             <SelectContent>
               {motorTypes.map(opt => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label} {opt.price > 0 && `(+$${opt.price.toFixed(2)})`}
+                <SelectItem key={opt.id} value={opt.value}>
+                  {opt.label}
                 </SelectItem>
               ))}
             </SelectContent>

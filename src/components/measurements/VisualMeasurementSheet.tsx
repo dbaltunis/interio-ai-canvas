@@ -728,7 +728,7 @@ export const VisualMeasurementSheet = ({
                         <DynamicRollerBlindFields
                           measurements={measurements}
                           onChange={handleInputChange}
-                          treatmentType={selectedTemplate?.curtain_type || 'roller_blind'}
+                          treatmentId={selectedTemplate?.id}
                           readOnly={readOnly}
                         />
                       )}
