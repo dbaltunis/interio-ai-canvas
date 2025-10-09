@@ -1089,126 +1089,130 @@ export const VisualMeasurementSheet = ({
               </div>
             </div>
 
-            {/* Pooling Configuration - Collapsible */}
-            <div className="space-y-2">
-              <details className="group">
-                <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-amber-700 hover:text-amber-900 transition-colors">
-                  <svg className="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                  Pooling Configuration
-                  <span className="text-xs text-amber-600 ml-auto">Optional - Click to configure</span>
-                </summary>
-                <div className="mt-3 p-4 bg-amber-50/50 rounded-lg border border-amber-200">
-                  <div className="space-y-4">
-                    <div>
-                      <Label className="text-sm font-medium mb-2 block">Pooling Position</Label>
-                      <RadioGroup 
-                        value={poolingOption} 
-                        onValueChange={(value) => {
-                          console.log("Pooling option changed to:", value);
-                          handleInputChange("pooling_option", value);
-                          
-                          // Set default pooling amount when "below_floor" is selected
-                          if (value === "below_floor" && (!poolingAmount || poolingAmount === "0")) {
-                            const defaultValue = units.system === "imperial" ? "1" : "2"; // 1 inch or 2 cm
-                            handleInputChange("pooling_amount", defaultValue);
-                          }
-                          // Clear pooling amount when not below floor
-                          if (value !== "below_floor") {
-                            handleInputChange("pooling_amount", "");
-                          }
-                        }}
-                        disabled={readOnly}
-                        className="space-y-2"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="above_floor" id="above_floor" />
-                          <Label htmlFor="above_floor">Above floor (hanging)</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="touching_floor" id="touching_floor" />
-                          <Label htmlFor="touching_floor">Touching floor</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="below_floor" id="below_floor" />
-                          <Label htmlFor="below_floor">Below floor (pooling)</Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-
-                    {poolingOption === "below_floor" && (
-                      <div className="space-y-3">
-                        <div>
-                          <Label htmlFor="pooling_amount" className="text-sm font-medium">Pooling Amount</Label>
-                          <p className="text-xs text-muted-foreground mb-1">How much fabric pools on the floor</p>
-                          <Input
-                            id="pooling_amount"
-                            type="number"
-                            step="0.25"
-                            value={poolingAmount}
-                            onChange={(e) => handleInputChange("pooling_amount", e.target.value)}
-                            placeholder="2.00"
-                            readOnly={readOnly}
-                            className="font-semibold"
-                          />
-                        </div>
-                        
-                        {/* Fabric Usage Impact Indicator */}
-                        {hasValue(poolingAmount) && selectedFabric && fabricCalculation && (
-                          <div className="p-2 bg-amber-100/50 border border-amber-300 rounded text-xs">
-                            <div className="font-medium text-amber-800 mb-1">
-                              ✓ Pooling included in fabric calculation
-                            </div>
-                            <div className="text-amber-700 space-y-1">
-                              <div>• Pooling amount: {displayValue(poolingAmount)} added to drop</div>
-                              <div>• Extra fabric: ~{((parseFloat(poolingAmount) / 100) * fabricCalculation.widthsRequired).toFixed(2)}{units.fabric}</div>
-                              <div>• Total fabric: {fabricCalculation.linearMeters.toFixed(2)}{units.fabric} (includes pooling)</div>
-                            </div>
+            {/* Pooling Configuration - ONLY for curtains */}
+            {treatmentType === 'curtains' && (
+              <div className="space-y-2">
+                <details className="group">
+                  <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-amber-700 hover:text-amber-900 transition-colors">
+                    <svg className="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                    Pooling Configuration
+                    <span className="text-xs text-amber-600 ml-auto">Optional - Click to configure</span>
+                  </summary>
+                  <div className="mt-3 p-4 bg-amber-50/50 rounded-lg border border-amber-200">
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-sm font-medium mb-2 block">Pooling Position</Label>
+                        <RadioGroup 
+                          value={poolingOption} 
+                          onValueChange={(value) => {
+                            console.log("Pooling option changed to:", value);
+                            handleInputChange("pooling_option", value);
+                            
+                            // Set default pooling amount when "below_floor" is selected
+                            if (value === "below_floor" && (!poolingAmount || poolingAmount === "0")) {
+                              const defaultValue = units.system === "imperial" ? "1" : "2"; // 1 inch or 2 cm
+                              handleInputChange("pooling_amount", defaultValue);
+                            }
+                            // Clear pooling amount when not below floor
+                            if (value !== "below_floor") {
+                              handleInputChange("pooling_amount", "");
+                            }
+                          }}
+                          disabled={readOnly}
+                          className="space-y-2"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="above_floor" id="above_floor" />
+                            <Label htmlFor="above_floor">Above floor (hanging)</Label>
                           </div>
-                        )}
-                        
-                        {hasValue(poolingAmount) && !selectedFabric && (
-                          <div className="p-2 bg-amber-100/50 border border-amber-300 rounded text-xs">
-                            <div className="text-amber-700">
-                              💡 Select a fabric above to see how pooling affects fabric usage
-                            </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="touching_floor" id="touching_floor" />
+                            <Label htmlFor="touching_floor">Touching floor</Label>
                           </div>
-                        )}
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="below_floor" id="below_floor" />
+                            <Label htmlFor="below_floor">Below floor (pooling)</Label>
+                          </div>
+                        </RadioGroup>
                       </div>
-                    )}
-                  </div>
-                </div>
-              </details>
-            </div>
 
-            {/* Treatment Options - Compact Style */}
+                      {poolingOption === "below_floor" && (
+                        <div className="space-y-3">
+                          <div>
+                            <Label htmlFor="pooling_amount" className="text-sm font-medium">Pooling Amount</Label>
+                            <p className="text-xs text-muted-foreground mb-1">How much fabric pools on the floor</p>
+                            <Input
+                              id="pooling_amount"
+                              type="number"
+                              step="0.25"
+                              value={poolingAmount}
+                              onChange={(e) => handleInputChange("pooling_amount", e.target.value)}
+                              placeholder="2.00"
+                              readOnly={readOnly}
+                              className="font-semibold"
+                            />
+                          </div>
+                          
+                          {/* Fabric Usage Impact Indicator */}
+                          {hasValue(poolingAmount) && selectedFabric && fabricCalculation && (
+                            <div className="p-2 bg-amber-100/50 border border-amber-300 rounded text-xs">
+                              <div className="font-medium text-amber-800 mb-1">
+                                ✓ Pooling included in fabric calculation
+                              </div>
+                              <div className="text-amber-700 space-y-1">
+                                <div>• Pooling amount: {displayValue(poolingAmount)} added to drop</div>
+                                <div>• Extra fabric: ~{((parseFloat(poolingAmount) / 100) * fabricCalculation.widthsRequired).toFixed(2)}{units.fabric}</div>
+                                <div>• Total fabric: {fabricCalculation.linearMeters.toFixed(2)}{units.fabric} (includes pooling)</div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {hasValue(poolingAmount) && !selectedFabric && (
+                            <div className="p-2 bg-amber-100/50 border border-amber-300 rounded text-xs">
+                              <div className="text-amber-700">
+                                💡 Select a fabric above to see how pooling affects fabric usage
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </details>
+              </div>
+            )}
+
+            {/* Treatment Options - ONLY show if relevant for this treatment type */}
             {selectedTemplate && (
               <div className="space-y-3">
-                {/* Fabric Selection - Compact */}
-                <div className="bg-white border-2 border-purple-200 rounded-lg p-3 shadow-sm">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-6 h-6 bg-purple-100 rounded-md flex items-center justify-center">
-                      <svg className="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5H9a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2z" />
-                      </svg>
+                {/* Fabric Selection - ONLY for curtains */}
+                {treatmentType === 'curtains' && (
+                  <div className="bg-white border-2 border-purple-200 rounded-lg p-3 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 bg-purple-100 rounded-md flex items-center justify-center">
+                        <svg className="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5H9a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-foreground text-sm">Fabric Selection</h4>
+                        <p className="text-xs text-muted-foreground">Choose material</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-foreground text-sm">Fabric Selection</h4>
-                      <p className="text-xs text-muted-foreground">Choose material</p>
-                    </div>
+                    <FabricSelectionSection
+                      selectedFabric={selectedFabric || ""}
+                      onFabricChange={onFabricChange || (() => {})}
+                      readOnly={readOnly}
+                      fabricCalculation={fabricCalculation}
+                      onMeasurementChange={onMeasurementChange}
+                    />
                   </div>
-                  <FabricSelectionSection
-                    selectedFabric={selectedFabric || ""}
-                    onFabricChange={onFabricChange || (() => {})}
-                    readOnly={readOnly}
-                    fabricCalculation={fabricCalculation}
-                    onMeasurementChange={onMeasurementChange}
-                  />
-                </div>
+                )}
 
-                {/* Lining Options - Compact */}
-                {selectedTemplate?.lining_types && selectedTemplate.lining_types.length > 0 && (
+                {/* Lining Options - ONLY for curtains AND if lining types are configured */}
+                {treatmentType === 'curtains' && selectedTemplate?.lining_types && selectedTemplate.lining_types.length > 0 && (
                   <div className="container-level-2 border-2 border-purple-200 rounded-lg p-4 shadow-sm">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -1230,26 +1234,28 @@ export const VisualMeasurementSheet = ({
                   </div>
                 )}
 
-                {/* Heading Options - Compact */}
-                <div className="container-level-2 border-2 border-orange-200 rounded-lg p-4 shadow-sm">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                      </svg>
+                {/* Heading Options - ONLY for curtains */}
+                {treatmentType === 'curtains' && (
+                  <div className="container-level-2 border-2 border-orange-200 rounded-lg p-4 shadow-sm">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                        <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-card-foreground text-base">Heading Style</h4>
+                        <p className="text-sm text-card-foreground/70">Top treatment</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-card-foreground text-base">Heading Style</h4>
-                      <p className="text-sm text-card-foreground/70">Top treatment</p>
-                    </div>
+                     <HeadingOptionsSection
+                       template={selectedTemplate}
+                       selectedHeading={selectedHeading || "standard"}
+                       onHeadingChange={onHeadingChange || (() => {})}
+                       readOnly={readOnly}
+                     />
                   </div>
-                   <HeadingOptionsSection
-                     template={selectedTemplate}
-                     selectedHeading={selectedHeading || "standard"}
-                     onHeadingChange={onHeadingChange || (() => {})}
-                     readOnly={readOnly}
-                   />
-                </div>
+                )}
               </div>
             )}
           </div>
