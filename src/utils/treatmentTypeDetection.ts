@@ -1,4 +1,4 @@
-export type TreatmentCategory = 'curtains' | 'roller_blinds' | 'roman_blinds' | 'venetian_blinds' | 'shutters';
+export type TreatmentCategory = 'curtains' | 'roller_blinds' | 'roman_blinds' | 'venetian_blinds' | 'vertical_blinds' | 'cellular_blinds' | 'panel_glide' | 'plantation_shutters' | 'shutters';
 
 export interface TreatmentConfig {
   requiresFullness: boolean;
@@ -29,6 +29,18 @@ export const detectTreatmentType = (template: any): TreatmentCategory => {
     }
     if (curtainType === 'venetian_blind' || curtainType === 'venetian blind' || curtainType.includes('venetian')) {
       return 'venetian_blinds';
+    }
+    if (curtainType === 'vertical_blind' || curtainType === 'vertical blind' || curtainType.includes('vertical')) {
+      return 'vertical_blinds';
+    }
+    if (curtainType === 'cellular_blind' || curtainType === 'cellular' || curtainType.includes('cellular')) {
+      return 'cellular_blinds';
+    }
+    if (curtainType === 'panel_glide' || curtainType.includes('panel')) {
+      return 'panel_glide';
+    }
+    if (curtainType === 'plantation_shutter' || curtainType.includes('plantation')) {
+      return 'plantation_shutters';
     }
     if (curtainType.includes('shutter')) {
       return 'shutters';
@@ -83,7 +95,7 @@ export const getTreatmentConfig = (category: TreatmentCategory): TreatmentConfig
       showPooling: false,
       inventoryCategory: 'blind_fabric',
       specificFields: ['fold_style', 'fold_spacing', 'mounting_type'],
-      visualComponent: 'RomanBlindVisualizer',
+      visualComponent: 'RollerBlindVisualizer',
     },
     venetian_blinds: {
       requiresFullness: false,
@@ -94,7 +106,51 @@ export const getTreatmentConfig = (category: TreatmentCategory): TreatmentConfig
       showPooling: false,
       inventoryCategory: 'venetian_slats',
       specificFields: ['slat_size', 'slat_material', 'control_type'],
-      visualComponent: 'VenetianBlindVisualizer',
+      visualComponent: 'RollerBlindVisualizer',
+    },
+    vertical_blinds: {
+      requiresFullness: false,
+      requiresHardwareType: false,
+      requiresFabricOrientation: false,
+      requiresHeading: false,
+      requiresLining: false,
+      showPooling: false,
+      inventoryCategory: 'vertical_blind_vanes',
+      specificFields: ['louvre_width', 'headrail_type', 'control_type'],
+      visualComponent: 'RollerBlindVisualizer',
+    },
+    cellular_blinds: {
+      requiresFullness: false,
+      requiresHardwareType: false,
+      requiresFabricOrientation: false,
+      requiresHeading: false,
+      requiresLining: false,
+      showPooling: false,
+      inventoryCategory: 'cellular_shade_fabric',
+      specificFields: ['cell_size', 'headrail_type', 'control_type', 'mount_type'],
+      visualComponent: 'RollerBlindVisualizer',
+    },
+    panel_glide: {
+      requiresFullness: false,
+      requiresHardwareType: false,
+      requiresFabricOrientation: false,
+      requiresHeading: false,
+      requiresLining: false,
+      showPooling: false,
+      inventoryCategory: 'panel_glide_fabric',
+      specificFields: ['track_type', 'panel_width', 'control_type'],
+      visualComponent: 'RollerBlindVisualizer',
+    },
+    plantation_shutters: {
+      requiresFullness: false,
+      requiresHardwareType: false,
+      requiresFabricOrientation: false,
+      requiresHeading: false,
+      requiresLining: false,
+      showPooling: false,
+      inventoryCategory: 'shutter_panels',
+      specificFields: ['louvre_size', 'frame_type', 'hinge_type', 'material'],
+      visualComponent: 'RollerBlindVisualizer',
     },
     shutters: {
       requiresFullness: false,
@@ -105,7 +161,7 @@ export const getTreatmentConfig = (category: TreatmentCategory): TreatmentConfig
       showPooling: false,
       inventoryCategory: 'shutter_panels',
       specificFields: ['louver_size', 'panel_config', 'frame_type'],
-      visualComponent: 'ShutterVisualizer',
+      visualComponent: 'RollerBlindVisualizer',
     },
   };
   
@@ -118,6 +174,10 @@ export const getTreatmentDisplayName = (category: TreatmentCategory): string => 
     roller_blinds: 'Roller Blinds',
     roman_blinds: 'Roman Blinds',
     venetian_blinds: 'Venetian Blinds',
+    vertical_blinds: 'Vertical Blinds',
+    cellular_blinds: 'Cellular Shades',
+    panel_glide: 'Panel Glide',
+    plantation_shutters: 'Plantation Shutters',
     shutters: 'Shutters',
   };
   return names[category];

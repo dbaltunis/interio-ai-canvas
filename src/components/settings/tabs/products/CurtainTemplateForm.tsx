@@ -591,9 +591,15 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
               };
 
               // Filter options for current treatment type
-              const relevantOptions = treatmentOptions.filter(opt => 
-                opt.treatment_type === formData.curtain_type
-              );
+              // Treatment type is stored in the description JSON field
+              const relevantOptions = treatmentOptions.filter(opt => {
+                try {
+                  const details = opt.description ? JSON.parse(opt.description) : {};
+                  return details.treatment_type === formData.curtain_type;
+                } catch {
+                  return false;
+                }
+              });
 
               return currentGroups.length === 0 ? (
                 <Card>
