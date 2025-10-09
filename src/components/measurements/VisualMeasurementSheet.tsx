@@ -639,11 +639,92 @@ export const VisualMeasurementSheet = ({
             </div>
 
             {/* Measurement Inputs Section */}
-            <div className="lg:w-3/5 space-y-4">
+            <div className="lg:w-3/5 space-y-2">
+              {/* ESSENTIAL MEASUREMENTS - MOVED TO TOP */}
+              <div className="container-level-1 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21l3-3 9.5-9.5a1.5 1.5 0 000-2.121L18.379 5.257a1.5 1.5 0 00-2.121 0L6.5 14.5 7 21z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-base font-bold text-card-foreground">Essential Measurements</h4>
+                    <p className="text-xs text-card-foreground/70">Required for accurate calculations</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-7 h-7 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-xs">W</span>
+                      <Label htmlFor="rail_width" className="text-sm font-bold text-card-foreground">
+                        {hardwareType === "track" ? "Track" : "Rail"} Width
+                      </Label>
+                    </div>
+                    <div className="relative">
+                        <Input
+                         id="rail_width"
+                         type="number"
+                         inputMode="decimal"
+                         step="0.25"
+                         value={measurements.rail_width || ""}
+                         onChange={(e) => {
+                           console.log("🔧 Rail width input change:", e.target.value, "Current measurements:", measurements);
+                           handleInputChange("rail_width", e.target.value);
+                         }}
+                         onFocus={(e) => {
+                           e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                         }}
+                         placeholder="0.00"
+                         readOnly={readOnly}
+                         className="h-11 pr-14 text-base font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground"
+                       />
+                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-xs bg-muted px-2 py-0.5 rounded">
+                         {units.length}
+                      </span>
+                    </div>
+                    <p className="text-xs text-card-foreground/70">Total {hardwareType === "track" ? "track" : "rail"} length</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-7 h-7 bg-secondary rounded-full flex items-center justify-center text-secondary-foreground font-bold text-xs">H</span>
+                      <Label htmlFor="drop" className="text-sm font-bold text-card-foreground">
+                        Curtain Drop
+                      </Label>
+                    </div>
+                    <div className="relative">
+                        <Input
+                         id="drop"
+                         type="number"
+                         inputMode="decimal"
+                         step="0.25"
+                         value={measurements.drop || ""}
+                         onChange={(e) => {
+                           console.log("🔧 Drop input change:", e.target.value, "Current measurements:", measurements);
+                           handleInputChange("drop", e.target.value);
+                         }}
+                         onFocus={(e) => {
+                           e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                         }}
+                         placeholder="0.00"
+                         readOnly={readOnly}
+                         className="h-11 pr-14 text-base font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground"
+                       />
+                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-xs bg-muted px-2 py-0.5 rounded">
+                        {units.length}
+                      </span>
+                    </div>
+                    <p className="text-xs text-card-foreground/70">Length to curtain bottom</p>
+                  </div>
+                </div>
+              </div>
+
               {/* CURTAIN-SPECIFIC FIELDS */}
               {treatmentConfig.requiresHardwareType && treatmentType === 'curtains' && (
-                <div className="bg-muted/20 border border-border rounded-lg p-4">
-                  <h4 className="font-medium mb-3 text-foreground">Hardware Type</h4>
+                <div className="bg-muted/20 border border-border rounded-lg p-3">
+                  <h4 className="font-medium mb-2 text-sm text-foreground">Hardware Type</h4>
                   <RadioGroup 
                     value={hardwareType} 
                     onValueChange={(value) => handleInputChange("hardware_type", value)}
@@ -670,10 +751,10 @@ export const VisualMeasurementSheet = ({
                 <>
                   {/* Mount Type Selection */}
                   <Card className="border-primary/20 bg-primary/5">
-                    <CardHeader>
-                      <CardTitle className="text-base">Blind Configuration</CardTitle>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Blind Configuration</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-3 pt-2">
                       <div>
                         <Label className="text-sm font-medium mb-2 block">Mount Type</Label>
                         <RadioGroup 
@@ -946,12 +1027,12 @@ export const VisualMeasurementSheet = ({
 
               {/* Curtain Configuration - Professional Design (Only for curtains) */}
               {treatmentCategory === 'curtains' && (
-              <div className="container-level-1 rounded-lg p-4">
-              <h4 className="text-lg font-bold text-card-foreground mb-4">Curtain Configuration</h4>
+              <div className="container-level-1 rounded-lg p-3">
+              <h4 className="text-base font-bold text-card-foreground mb-3">Curtain Configuration</h4>
               
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div>
-                  <Label className="text-sm font-semibold mb-3 block text-card-foreground">Curtain Type</Label>
+                  <Label className="text-xs font-semibold mb-2 block text-card-foreground">Curtain Type</Label>
                   <RadioGroup 
                     value={curtainType} 
                     onValueChange={(value) => {
@@ -959,18 +1040,18 @@ export const VisualMeasurementSheet = ({
                       handleInputChange("curtain_type", value);
                     }}
                     disabled={readOnly}
-                    className="grid grid-cols-2 gap-3"
+                    className="grid grid-cols-2 gap-2"
                   >
-                    <div className="container-level-3 rounded-lg p-3 hover:bg-muted/30 transition-colors">
-                      <div className="flex items-center space-x-3">
+                    <div className="container-level-3 rounded-lg p-2 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center space-x-2">
                         <RadioGroupItem value="pair" id="pair" className="w-4 h-4" />
-                        <Label htmlFor="pair" className="text-sm font-medium text-card-foreground cursor-pointer flex-1">Pair (Two panels)</Label>
+                        <Label htmlFor="pair" className="text-xs font-medium text-card-foreground cursor-pointer flex-1">Pair (Two panels)</Label>
                       </div>
                     </div>
-                    <div className="container-level-3 rounded-lg p-3 hover:bg-muted/30 transition-colors">
-                      <div className="flex items-center space-x-3">
+                    <div className="container-level-3 rounded-lg p-2 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center space-x-2">
                         <RadioGroupItem value="single" id="single" className="w-4 h-4" />
-                        <Label htmlFor="single" className="text-sm font-medium text-card-foreground cursor-pointer flex-1">Single (One panel)</Label>
+                        <Label htmlFor="single" className="text-xs font-medium text-card-foreground cursor-pointer flex-1">Single (One panel)</Label>
                       </div>
                     </div>
                   </RadioGroup>
@@ -978,7 +1059,7 @@ export const VisualMeasurementSheet = ({
 
                 {curtainType === "single" && (
                   <div>
-                    <Label className="text-sm font-semibold mb-3 block text-card-foreground">Panel Position</Label>
+                    <Label className="text-xs font-semibold mb-2 block text-card-foreground">Panel Position</Label>
                     <RadioGroup 
                       value={curtainSide} 
                       onValueChange={(value) => {
@@ -986,18 +1067,18 @@ export const VisualMeasurementSheet = ({
                         handleInputChange("curtain_side", value);
                       }}
                       disabled={readOnly}
-                      className="grid grid-cols-2 gap-3"
+                      className="grid grid-cols-2 gap-2"
                     >
-                      <div className="container-level-3 rounded-lg p-3 hover:bg-muted/30 transition-colors">
-                        <div className="flex items-center space-x-3">
+                      <div className="container-level-3 rounded-lg p-2 hover:bg-muted/30 transition-colors">
+                        <div className="flex items-center space-x-2">
                           <RadioGroupItem value="left" id="left" className="w-4 h-4" />
-                          <Label htmlFor="left" className="text-sm font-medium text-card-foreground cursor-pointer flex-1">Left side</Label>
+                          <Label htmlFor="left" className="text-xs font-medium text-card-foreground cursor-pointer flex-1">Left side</Label>
                         </div>
                       </div>
-                      <div className="container-level-3 rounded-lg p-3 hover:bg-muted/30 transition-colors">
-                        <div className="flex items-center space-x-3">
+                      <div className="container-level-3 rounded-lg p-2 hover:bg-muted/30 transition-colors">
+                        <div className="flex items-center space-x-2">
                           <RadioGroupItem value="right" id="right" className="w-4 h-4" />
-                          <Label htmlFor="right" className="text-sm font-medium text-card-foreground cursor-pointer flex-1">Right side</Label>
+                          <Label htmlFor="right" className="text-xs font-medium text-card-foreground cursor-pointer flex-1">Right side</Label>
                         </div>
                       </div>
                     </RadioGroup>
@@ -1007,87 +1088,6 @@ export const VisualMeasurementSheet = ({
             </div>
             )}
             {/* End of curtain configuration conditional */}
-
-            {/* Main Measurements - Compact Design */}
-            <div className="container-level-1 rounded-lg p-4">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21l3-3 9.5-9.5a1.5 1.5 0 000-2.121L18.379 5.257a1.5 1.5 0 00-2.121 0L6.5 14.5 7 21z" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="text-lg font-bold text-card-foreground">Essential Measurements</h4>
-                  <p className="text-sm text-card-foreground">Required for accurate calculations</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">W</span>
-                    <Label htmlFor="rail_width" className="text-base font-bold text-card-foreground">
-                      {hardwareType === "track" ? "Track" : "Rail"} Width
-                    </Label>
-                  </div>
-                  <div className="relative">
-                      <Input
-                       id="rail_width"
-                       type="number"
-                       inputMode="decimal"
-                       step="0.25"
-                       value={measurements.rail_width || ""}
-                       onChange={(e) => {
-                         console.log("🔧 Rail width input change:", e.target.value, "Current measurements:", measurements);
-                         handleInputChange("rail_width", e.target.value);
-                       }}
-                       onFocus={(e) => {
-                         e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                       }}
-                       placeholder="0.00"
-                       readOnly={readOnly}
-                       className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground"
-                     />
-                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-sm bg-muted px-2 py-1 rounded">
-                       {units.length}
-                    </span>
-                  </div>
-                  <p className="text-sm text-card-foreground font-medium">Total {hardwareType === "track" ? "track" : "rail"} length</p>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center text-secondary-foreground font-bold text-sm">H</span>
-                    <Label htmlFor="drop" className="text-base font-bold text-card-foreground">
-                      Curtain Drop
-                    </Label>
-                  </div>
-                  <div className="relative">
-                      <Input
-                       id="drop"
-                       type="number"
-                       inputMode="decimal"
-                       step="0.25"
-                       value={measurements.drop || ""}
-                       onChange={(e) => {
-                         console.log("🔧 Drop input change:", e.target.value, "Current measurements:", measurements);
-                         handleInputChange("drop", e.target.value);
-                       }}
-                       onFocus={(e) => {
-                         e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                       }}
-                       placeholder="0.00"
-                       readOnly={readOnly}
-                       className="h-12 pr-16 text-lg font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground"
-                     />
-                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-sm bg-muted px-2 py-1 rounded">
-                      {units.length}
-                    </span>
-                  </div>
-                  <p className="text-sm text-card-foreground font-medium">Length to curtain bottom</p>
-                </div>
-              </div>
-            </div>
 
             {/* Pooling Configuration - ONLY for curtains */}
             {treatmentType === 'curtains' && (
@@ -1186,12 +1186,12 @@ export const VisualMeasurementSheet = ({
 
             {/* Treatment Options - ONLY show if relevant for this treatment type */}
             {selectedTemplate && (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {/* Fabric Selection - ONLY for curtains */}
                 {treatmentType === 'curtains' && (
-                  <div className="bg-white border-2 border-purple-200 rounded-lg p-3 shadow-sm">
+                  <div className="bg-white border-2 border-purple-200 rounded-lg p-2 shadow-sm">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 bg-purple-100 rounded-md flex items-center justify-center">
+                      <div className="w-5 h-5 bg-purple-100 rounded-md flex items-center justify-center">
                         <svg className="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5H9a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2z" />
                         </svg>
@@ -1213,16 +1213,16 @@ export const VisualMeasurementSheet = ({
 
                 {/* Lining Options - ONLY for curtains AND if lining types are configured */}
                 {treatmentType === 'curtains' && selectedTemplate?.lining_types && selectedTemplate.lining_types.length > 0 && (
-                  <div className="container-level-2 border-2 border-purple-200 rounded-lg p-4 shadow-sm">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <div className="container-level-2 border-2 border-purple-200 rounded-lg p-3 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 bg-purple-100 rounded-lg flex items-center justify-center">
                         <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
                       <div>
-                        <h4 className="font-bold text-card-foreground text-base">Lining Options</h4>
-                        <p className="text-sm text-card-foreground/70">Interior backing</p>
+                        <h4 className="font-bold text-card-foreground text-sm">Lining Options</h4>
+                        <p className="text-xs text-card-foreground/70">Interior backing</p>
                       </div>
                     </div>
                     <LiningOptionsSection
@@ -1236,16 +1236,16 @@ export const VisualMeasurementSheet = ({
 
                 {/* Heading Options - ONLY for curtains */}
                 {treatmentType === 'curtains' && (
-                  <div className="container-level-2 border-2 border-orange-200 rounded-lg p-4 shadow-sm">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                        <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="container-level-2 border-2 border-orange-200 rounded-lg p-3 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 bg-orange-100 rounded-lg flex items-center justify-center">
+                        <svg className="w-3 h-3 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
                       </div>
                       <div>
-                        <h4 className="font-bold text-card-foreground text-base">Heading Style</h4>
-                        <p className="text-sm text-card-foreground/70">Top treatment</p>
+                        <h4 className="font-bold text-card-foreground text-sm">Heading Style</h4>
+                        <p className="text-xs text-card-foreground/70">Top treatment</p>
                       </div>
                     </div>
                      <HeadingOptionsSection
