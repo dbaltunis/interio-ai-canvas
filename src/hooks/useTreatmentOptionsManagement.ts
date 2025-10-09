@@ -8,7 +8,7 @@ export const useCreateTreatmentOption = () => {
   
   return useMutation({
     mutationFn: async (data: {
-      treatment_id: string;
+      template_id: string;
       key: string;
       label: string;
       input_type: 'select' | 'number' | 'boolean' | 'text' | 'multiselect';
@@ -28,6 +28,7 @@ export const useCreateTreatmentOption = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
       queryClient.invalidateQueries({ queryKey: ['all-treatment-options'] });
+      queryClient.invalidateQueries({ queryKey: ['available-treatment-options-from-manager'] });
     },
   });
 };

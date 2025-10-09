@@ -22,7 +22,7 @@ import { useHeadingInventory } from "@/hooks/useHeadingInventory";
 import { useEnhancedInventoryByCategory } from "@/hooks/useEnhancedInventory";
 import { useOptionCategories } from "@/hooks/useOptionCategories";
 import { useTreatmentOptions, useUpdateTreatmentOption } from "@/hooks/useTreatmentOptions";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCreateTreatmentOption, useCreateOptionValue } from "@/hooks/useTreatmentOptionsManagement";
 import { OptionRulesManager } from "./OptionRulesManager";
 
@@ -47,6 +47,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   const { data: headingStyles = [] } = useHeadingInventory();
   const { data: topSystems = [] } = useEnhancedInventoryByCategory('top_system');
   const { data: optionCategories = [] } = useOptionCategories();
+  const queryClient = useQueryClient();
   
   // Fetch treatment options for THIS template
   const { data: treatmentOptionsForTemplate = [] } = useTreatmentOptions(template?.id);
@@ -227,7 +228,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         if (!sourceOption) return;
         
         const newOption = await createTreatmentOption.mutateAsync({
-          treatment_id: template.id,
+          template_id: template.id,
           key: optionKey,
           label: optionLabel,
           input_type: 'select',
@@ -248,10 +249,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         }
       }
       
-      // Force refetch of the queries
-      const { useQueryClient } = require('@tanstack/react-query');
-      const queryClient = useQueryClient();
-      await queryClient.invalidateQueries({ queryKey: ['treatment-options', template.id] });
+      // Force refetch
+      await queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
       await queryClient.invalidateQueries({ queryKey: ['available-treatment-options-from-manager'] });
       
       toast({
@@ -277,7 +276,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       // If option doesn't exist, create it first
       if (!existingOption) {
         const newOption = await createTreatmentOption.mutateAsync({
-          treatment_id: template.id,
+          template_id: template.id,
           key: optionKey,
           label: optionLabel,
           input_type: 'select',

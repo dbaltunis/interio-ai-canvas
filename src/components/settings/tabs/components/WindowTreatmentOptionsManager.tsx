@@ -202,7 +202,7 @@ export const WindowTreatmentOptionsManager = () => {
             );
             
             const newOption = await createTreatmentOption.mutateAsync({
-              treatment_id: template.id,
+              template_id: template.id,
               key: activeOptionType,
               label: optionTypeConfig?.label || activeOptionType,
               input_type: 'select',
