@@ -7,6 +7,7 @@ interface DynamicBlindVisualProps {
   blindType: 'roller' | 'venetian' | 'vertical' | 'roman' | 'cellular';
   mountType?: 'inside' | 'outside';
   chainSide?: 'left' | 'right';
+  controlType?: string;
 }
 
 export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
@@ -15,10 +16,14 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
   template,
   blindType = 'roller',
   mountType = 'outside',
-  chainSide = 'right'
+  chainSide = 'right',
+  controlType
 }) => {
   const hasValue = (value: any) => value && value !== "" && value !== "0";
   const displayValue = (value: any) => `${value}cm`;
+  
+  // Determine if chain should be visible
+  const showChain = controlType !== 'motorized' && controlType !== 'motor';
 
   const renderRollerBlind = () => {
     const isInsideMount = mountType === 'inside';
@@ -33,15 +38,19 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
           <div className="absolute -left-2 -top-1 w-3 h-6 bg-foreground/80 rounded-sm"></div>
           <div className="absolute -right-2 -top-1 w-3 h-6 bg-foreground/80 rounded-sm"></div>
           
-          {/* Chain/Control */}
-          {chainSide === 'right' ? (
-            <div className="absolute -right-1 top-full w-0.5 h-32 bg-muted-foreground/60 z-30">
-              <div className="absolute -right-1 bottom-0 w-2 h-8 bg-muted-foreground/80 rounded-sm"></div>
-            </div>
-          ) : (
-            <div className="absolute -left-1 top-full w-0.5 h-32 bg-muted-foreground/60 z-30">
-              <div className="absolute -left-1 bottom-0 w-2 h-8 bg-muted-foreground/80 rounded-sm"></div>
-            </div>
+          {/* Chain/Control - Only show if not motorized */}
+          {showChain && (
+            <>
+              {chainSide === 'right' ? (
+                <div className="absolute -right-1 top-full w-0.5 h-32 bg-muted-foreground/60 z-30">
+                  <div className="absolute -right-1 bottom-0 w-2 h-8 bg-muted-foreground/80 rounded-sm"></div>
+                </div>
+              ) : (
+                <div className="absolute -left-1 top-full w-0.5 h-32 bg-muted-foreground/60 z-30">
+                  <div className="absolute -left-1 bottom-0 w-2 h-8 bg-muted-foreground/80 rounded-sm"></div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -88,21 +97,25 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
           {/* Control mechanism indicator */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-1 bg-foreground/40 rounded-full"></div>
           
-          {/* Tilt wand */}
-          {chainSide === 'right' ? (
-            <div className="absolute -right-0.5 top-full w-1 h-28 bg-muted-foreground/70 rounded-full z-30 shadow-sm">
-              <div className="absolute -right-0.5 bottom-0 w-2 h-3 bg-muted-foreground/90 rounded-full"></div>
-            </div>
-          ) : (
-            <div className="absolute -left-0.5 top-full w-1 h-28 bg-muted-foreground/70 rounded-full z-30 shadow-sm">
-              <div className="absolute -left-0.5 bottom-0 w-2 h-3 bg-muted-foreground/90 rounded-full"></div>
-            </div>
+          {/* Tilt wand and lift cord - Only show if not motorized */}
+          {showChain && (
+            <>
+              {chainSide === 'right' ? (
+                <div className="absolute -right-0.5 top-full w-1 h-28 bg-muted-foreground/70 rounded-full z-30 shadow-sm">
+                  <div className="absolute -right-0.5 bottom-0 w-2 h-3 bg-muted-foreground/90 rounded-full"></div>
+                </div>
+              ) : (
+                <div className="absolute -left-0.5 top-full w-1 h-28 bg-muted-foreground/70 rounded-full z-30 shadow-sm">
+                  <div className="absolute -left-0.5 bottom-0 w-2 h-3 bg-muted-foreground/90 rounded-full"></div>
+                </div>
+              )}
+              
+              {/* Lift cord */}
+              <div className={`absolute ${chainSide === 'right' ? 'right-8' : 'left-8'} top-full w-0.5 h-24 bg-muted-foreground/50 z-25`}>
+                <div className="absolute -left-1 bottom-0 w-2.5 h-6 bg-muted-foreground/80 rounded-sm shadow-sm"></div>
+              </div>
+            </>
           )}
-          
-          {/* Lift cord */}
-          <div className={`absolute ${chainSide === 'right' ? 'right-8' : 'left-8'} top-full w-0.5 h-24 bg-muted-foreground/50 z-25`}>
-            <div className="absolute -left-1 bottom-0 w-2.5 h-6 bg-muted-foreground/80 rounded-sm shadow-sm"></div>
-          </div>
         </div>
 
         {/* Venetian Slats - Realistic tilted appearance */}
@@ -165,11 +178,15 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
           <div className="absolute -left-2 -top-0.5 w-3 h-4 bg-foreground/80 rounded-sm"></div>
           <div className="absolute -right-2 -top-0.5 w-3 h-4 bg-foreground/80 rounded-sm"></div>
           
-          {/* Control chain */}
-          {chainSide === 'right' ? (
-            <div className="absolute -right-1 top-full w-0.5 h-40 bg-muted-foreground/60 z-30"></div>
-          ) : (
-            <div className="absolute -left-1 top-full w-0.5 h-40 bg-muted-foreground/60 z-30"></div>
+          {/* Control chain - Only show if not motorized */}
+          {showChain && (
+            <>
+              {chainSide === 'right' ? (
+                <div className="absolute -right-1 top-full w-0.5 h-40 bg-muted-foreground/60 z-30"></div>
+              ) : (
+                <div className="absolute -left-1 top-full w-0.5 h-40 bg-muted-foreground/60 z-30"></div>
+              )}
+            </>
           )}
         </div>
 
@@ -208,15 +225,19 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
           <div className="absolute -left-2 -top-0.5 w-3 h-4 bg-foreground/80 rounded-sm"></div>
           <div className="absolute -right-2 -top-0.5 w-3 h-4 bg-foreground/80 rounded-sm"></div>
           
-          {/* Control cord */}
-          {chainSide === 'right' ? (
-            <div className="absolute -right-1 top-full w-0.5 h-32 bg-muted-foreground/60 z-30">
-              <div className="absolute -right-1 bottom-0 w-2 h-8 bg-muted-foreground/80 rounded-sm"></div>
-            </div>
-          ) : (
-            <div className="absolute -left-1 top-full w-0.5 h-32 bg-muted-foreground/60 z-30">
-              <div className="absolute -left-1 bottom-0 w-2 h-8 bg-muted-foreground/80 rounded-sm"></div>
-            </div>
+          {/* Control cord - Only show if not motorized */}
+          {showChain && (
+            <>
+              {chainSide === 'right' ? (
+                <div className="absolute -right-1 top-full w-0.5 h-32 bg-muted-foreground/60 z-30">
+                  <div className="absolute -right-1 bottom-0 w-2 h-8 bg-muted-foreground/80 rounded-sm"></div>
+                </div>
+              ) : (
+                <div className="absolute -left-1 top-full w-0.5 h-32 bg-muted-foreground/60 z-30">
+                  <div className="absolute -left-1 bottom-0 w-2 h-8 bg-muted-foreground/80 rounded-sm"></div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -260,15 +281,19 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
           <div className="absolute -left-2 -top-0.5 w-3 h-4 bg-foreground/80 rounded-sm"></div>
           <div className="absolute -right-2 -top-0.5 w-3 h-4 bg-foreground/80 rounded-sm"></div>
           
-          {/* Control cord */}
-          {chainSide === 'right' ? (
-            <div className="absolute -right-1 top-full w-0.5 h-32 bg-muted-foreground/60 z-30">
-              <div className="absolute -right-1 bottom-0 w-2 h-8 bg-muted-foreground/80 rounded-sm"></div>
-            </div>
-          ) : (
-            <div className="absolute -left-1 top-full w-0.5 h-32 bg-muted-foreground/60 z-30">
-              <div className="absolute -left-1 bottom-0 w-2 h-8 bg-muted-foreground/80 rounded-sm"></div>
-            </div>
+          {/* Control cord - Only show if not motorized */}
+          {showChain && (
+            <>
+              {chainSide === 'right' ? (
+                <div className="absolute -right-1 top-full w-0.5 h-32 bg-muted-foreground/60 z-30">
+                  <div className="absolute -right-1 bottom-0 w-2 h-8 bg-muted-foreground/80 rounded-sm"></div>
+                </div>
+              ) : (
+                <div className="absolute -left-1 top-full w-0.5 h-32 bg-muted-foreground/60 z-30">
+                  <div className="absolute -left-1 bottom-0 w-2 h-8 bg-muted-foreground/80 rounded-sm"></div>
+                </div>
+              )}
+            </>
           )}
         </div>
 

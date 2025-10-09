@@ -296,6 +296,7 @@ export const VisualMeasurementSheet = ({
                   }
                   mountType={measurements.mount_type || 'outside'}
                   chainSide={measurements.chain_side || 'right'}
+                  controlType={measurements.control_type}
                 />
               ) : (
                 <div className="relative container-level-2 rounded-lg p-8 min-h-[400px] overflow-visible">
@@ -749,72 +750,28 @@ export const VisualMeasurementSheet = ({
                 selectedTemplate?.curtain_type === 'venetian_blind' ||
                 selectedTemplate?.curtain_type === 'vertical_blind') && (
                 <>
-                  {/* Mount Type Selection */}
-                  <Card className="border-primary/20 bg-primary/5">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Blind Configuration</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3 pt-2">
-                      <div>
-                        <Label className="text-sm font-medium mb-2 block">Mount Type</Label>
-                        <RadioGroup 
-                          value={measurements.mount_type || 'outside'} 
-                          onValueChange={(value) => handleInputChange("mount_type", value)}
-                          disabled={readOnly}
-                          className="flex flex-row space-x-4"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="inside" id="inside" />
-                            <Label htmlFor="inside">Inside Mount</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="outside" id="outside" />
-                            <Label htmlFor="outside">Outside Mount</Label>
-                          </div>
-                        </RadioGroup>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {measurements.mount_type === 'inside' 
-                            ? 'Blind fits inside the window frame' 
-                            : 'Blind mounts on the wall or outside the frame'}
-                        </p>
-                      </div>
-
-                      <div>
-                        <Label className="text-sm font-medium mb-2 block">Chain/Control Side</Label>
-                        <RadioGroup 
-                          value={measurements.chain_side || 'right'} 
-                          onValueChange={(value) => handleInputChange("chain_side", value)}
-                          disabled={readOnly}
-                          className="flex flex-row space-x-4"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="left" id="chain-left" />
-                            <Label htmlFor="chain-left">Left Side</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="right" id="chain-right" />
-                            <Label htmlFor="chain-right">Right Side</Label>
-                          </div>
-                        </RadioGroup>
-                      </div>
-
-                      {/* Show dynamic blind fields for ALL blind types */}
-                      {(treatmentType === 'roller_blinds' || 
-                        treatmentType === 'venetian_blinds' ||
-                        treatmentType === 'roman_blinds' ||
-                        treatmentType === 'vertical_blinds' ||
-                        treatmentType === 'cellular_blinds' ||
-                        treatmentType === 'panel_glide' ||
-                        treatmentType === 'plantation_shutters') && (
+                  {/* Show dynamic blind fields for ALL blind types */}
+                  {(treatmentType === 'roller_blinds' || 
+                    treatmentType === 'venetian_blinds' ||
+                    treatmentType === 'roman_blinds' ||
+                    treatmentType === 'vertical_blinds' ||
+                    treatmentType === 'cellular_blinds' ||
+                    treatmentType === 'panel_glide' ||
+                    treatmentType === 'plantation_shutters') && (
+                    <Card className="border-primary/20 bg-primary/5">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm">Blind Configuration</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3 pt-2">
                         <DynamicRollerBlindFields
                           measurements={measurements}
                           onChange={handleInputChange}
                           templateId={selectedTemplate?.id}
                           readOnly={readOnly}
                         />
-                      )}
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  )}
                 </>
               )}
 
