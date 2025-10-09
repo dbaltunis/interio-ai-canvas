@@ -21,6 +21,7 @@ import { HardwareCompatibilityManager } from "./HardwareCompatibilityManager";
 import { useHeadingInventory } from "@/hooks/useHeadingInventory";
 import { useEnhancedInventoryByCategory } from "@/hooks/useEnhancedInventory";
 import { useOptionCategories } from "@/hooks/useOptionCategories";
+import { useTreatmentOptions } from "@/hooks/useTreatmentOptions";
 
 // Import pricing components
 import { HandFinishedToggle } from "./pricing/HandFinishedToggle";
@@ -43,7 +44,9 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   const { data: headingStyles = [] } = useHeadingInventory();
   const { data: topSystems = [] } = useEnhancedInventoryByCategory('top_system');
   const { data: optionCategories = [] } = useOptionCategories();
-  const { data: treatmentOptions = [] } = useEnhancedInventoryByCategory('treatment_option');
+  
+  // Fetch treatment options for THIS template
+  const { data: treatmentOptionsForTemplate = [] } = useTreatmentOptions(template?.id);
 
   // State for eyelet ring library
   const [eyeletRings] = useState([
@@ -307,67 +310,14 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
           </TabsContent>
 
           <TabsContent value="options" className="space-y-6">
-            {/* Treatment Options - Dynamically filtered */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Treatment Options</CardTitle>
+                <CardTitle className="text-base">Treatment Configuration</CardTitle>
                 <CardDescription>
-                  Select which treatment options are available for this template
-                  {formData.curtain_type && formData.curtain_type !== 'custom' && (
-                    <span className="block mt-1 text-xs">
-                      Showing only options for: <strong>{formData.curtain_type.replace('_', ' ')}</strong>
-                    </span>
-                  )}
+                  Treatment-specific options are now configured in the "Treatment Settings" tab above.
+                  Go to the Options tab in Settings → Window Coverings to manage available options.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {treatmentOptions.filter(option => 
-                    !option.treatment_type || 
-                    option.treatment_type === formData.curtain_type ||
-                    formData.curtain_type === 'custom'
-                  ).length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      No treatment options found for {formData.curtain_type}. Create treatment options in the "Treatment Options" section and set their treatment type to "{formData.curtain_type}".
-                    </p>
-                  ) : (
-                    treatmentOptions
-                      .filter(option => 
-                        !option.treatment_type || 
-                        option.treatment_type === formData.curtain_type ||
-                        formData.curtain_type === 'custom'
-                      )
-                      .map((option) => (
-                      <div key={option.id} className="flex items-center space-x-3 p-3 border rounded-lg">
-                        <Checkbox
-                          id={`treatment-option-${option.id}`}
-                          checked={formData.selected_option_categories.includes(option.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              handleInputChange("selected_option_categories", [...formData.selected_option_categories, option.id]);
-                            } else {
-                              handleInputChange("selected_option_categories", formData.selected_option_categories.filter(id => id !== option.id));
-                            }
-                          }}
-                        />
-                        <div className="flex-1">
-                          <Label htmlFor={`treatment-option-${option.id}`} className="font-medium cursor-pointer">
-                            {option.name}
-                          </Label>
-                          <div className="text-sm text-muted-foreground">
-                            {option.description || "No description"}
-                          </div>
-                          {option.cost_price && (
-                            <div className="text-xs text-muted-foreground mt-1">
-                              Cost: ${option.cost_price} | Sell: ${option.selling_price || option.cost_price}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
             </Card>
 
             {/* Option Categories Integration */}
@@ -580,27 +530,6 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
 
               const currentGroups = treatmentOptionGroups[formData.curtain_type] || [];
               
-              // Helper to parse option_type from description field
-              const getOptionType = (option: any): string => {
-                try {
-                  const details = option.description ? JSON.parse(option.description) : {};
-                  return details.option_type || '';
-                } catch {
-                  return '';
-                }
-              };
-
-              // Filter options for current treatment type
-              // Treatment type is stored in the description JSON field
-              const relevantOptions = treatmentOptions.filter(opt => {
-                try {
-                  const details = opt.description ? JSON.parse(opt.description) : {};
-                  return details.treatment_type === formData.curtain_type;
-                } catch {
-                  return false;
-                }
-              });
-
               return currentGroups.length === 0 ? (
                 <Card>
                   <CardHeader>
@@ -611,62 +540,52 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground">
-                      Select a different window covering type or create treatment options in the "Treatment Options" section.
+                      Select a different window covering type or create treatment options in the "Options" tab.
                     </p>
                   </CardContent>
                 </Card>
               ) : (
                 currentGroups.map((group) => {
-                  const groupOptions = relevantOptions.filter(opt => getOptionType(opt) === group.type);
+                  // Find the treatment option matching this group type
+                  const matchingOption = treatmentOptionsForTemplate.find(opt => opt.key === group.type && opt.visible);
+                  const optionValues = matchingOption?.option_values || [];
                   
                   return (
                     <Card key={group.type}>
                       <CardHeader>
                         <CardTitle className="text-base">{group.label}</CardTitle>
                         <CardDescription>
-                          Select which {group.label.toLowerCase()} are available for this template
+                          Available {group.label.toLowerCase()} for this template
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        {groupOptions.length === 0 ? (
-                          <p className="text-sm text-muted-foreground">
-                            No {group.label.toLowerCase()} found. Create them in the "Treatment Options" section with type "{group.type}" and treatment type "{formData.curtain_type}".
-                          </p>
+                        {optionValues.length === 0 ? (
+                          <div className="text-sm text-muted-foreground p-4 border border-dashed rounded-lg bg-muted/30">
+                            <p className="font-medium">No {group.label.toLowerCase()} found.</p>
+                            <p className="text-xs mt-1">
+                              Go to Settings → Window Coverings → Options tab, select "{formData.curtain_type === 'venetian_blind' ? 'Venetian Blinds' : formData.curtain_type}", 
+                              then add options under the "{group.label}" section.
+                            </p>
+                          </div>
                         ) : (
-                          <div className="grid grid-cols-1 gap-3">
-                            {groupOptions.map((option) => (
-                              <div key={option.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent/50 transition-colors">
-                                <Checkbox
-                                  id={`option-${option.id}`}
-                                  checked={formData.selected_option_categories.includes(option.id)}
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      handleInputChange("selected_option_categories", [...formData.selected_option_categories, option.id]);
-                                    } else {
-                                      handleInputChange("selected_option_categories", formData.selected_option_categories.filter(id => id !== option.id));
-                                    }
-                                  }}
-                                />
-                                <div className="flex-1">
-                                  <Label htmlFor={`option-${option.id}`} className="font-medium cursor-pointer">
-                                    {option.name}
-                                  </Label>
-                                  {option.description && !option.description.includes('{') && (
-                                    <div className="text-sm text-muted-foreground mt-1">
-                                      {option.description}
-                                    </div>
-                                  )}
-                                  <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
-                                    {option.cost_price && option.cost_price > 0 && (
-                                      <span>Cost: ${option.cost_price.toFixed(2)}</span>
-                                    )}
-                                    {option.selling_price && option.selling_price > 0 && (
-                                      <span>Sell: ${option.selling_price.toFixed(2)}</span>
+                          <div className="space-y-2">
+                            <p className="text-sm text-muted-foreground mb-3">
+                              {optionValues.length} option{optionValues.length !== 1 ? 's' : ''} available:
+                            </p>
+                            <div className="grid grid-cols-2 gap-2">
+                              {optionValues.map((value) => (
+                                <div key={value.id} className="flex items-center space-x-2 p-2 border rounded bg-accent/20">
+                                  <div className="flex-1">
+                                    <div className="font-medium text-sm">{value.label}</div>
+                                    {value.extra_data?.price > 0 && (
+                                      <div className="text-xs text-muted-foreground">
+                                        +${value.extra_data.price.toFixed(2)}
+                                      </div>
                                     )}
                                   </div>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
                         )}
                       </CardContent>
