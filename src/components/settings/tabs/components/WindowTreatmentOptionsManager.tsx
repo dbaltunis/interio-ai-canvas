@@ -1,21 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Edit, Trash2 } from "lucide-react";
-import { useEnhancedInventoryByCategory, useCreateEnhancedInventoryItem, useUpdateEnhancedInventoryItem, useDeleteEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
-import type { EnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-interface OptionItem extends EnhancedInventoryItem {
-  option_type?: string;
-  option_value?: string;
-}
+import { useAllTreatmentOptions, useCreateOptionValue, useUpdateOptionValue, useDeleteOptionValue } from "@/hooks/useTreatmentOptionsManagement";
+import type { TreatmentOption, OptionValue } from "@/hooks/useTreatmentOptions";
 
 type TreatmentCategory = 'roller_blind' | 'roman_blind' | 'venetian_blind' | 'vertical_blind' | 'shutter' | 'awning';
 
@@ -66,18 +61,16 @@ const OPTION_TYPES_BY_CATEGORY: Record<TreatmentCategory, { type: string; label:
 };
 
 export const WindowTreatmentOptionsManager = () => {
-  const { data: optionsData = [], isLoading } = useEnhancedInventoryByCategory('treatment_option');
-  const createItem = useCreateEnhancedInventoryItem();
-  const updateItem = useUpdateEnhancedInventoryItem();
-  const deleteItem = useDeleteEnhancedInventoryItem();
+  const { data: allTreatmentOptions = [], isLoading } = useAllTreatmentOptions();
+  const createOptionValue = useCreateOptionValue();
+  const updateOptionValue = useUpdateOptionValue();
+  const deleteOptionValue = useDeleteOptionValue();
   const { toast } = useToast();
   
-  const options = optionsData as OptionItem[];
-  
-  const [activeTreatment, setActiveTreatment] = useState<TreatmentCategory>('roller_blind');
-  const [activeOptionType, setActiveOptionType] = useState<string>('tube_size');
+  const [activeTreatment, setActiveTreatment] = useState<TreatmentCategory>('venetian_blind');
+  const [activeOptionType, setActiveOptionType] = useState<string>('slat_size');
   const [isCreating, setIsCreating] = useState(false);
-  const [editingOption, setEditingOption] = useState<OptionItem | null>(null);
+  const [editingValue, setEditingValue] = useState<OptionValue | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     value: '',
@@ -92,20 +85,13 @@ export const WindowTreatmentOptionsManager = () => {
     });
   };
 
-  const getFilteredOptions = (treatmentType: TreatmentCategory, optionType: string) => {
-    return options.filter(opt => {
-      try {
-        const details = opt.description ? JSON.parse(opt.description) : {};
-        return details.option_type === optionType && opt.treatment_type === treatmentType;
-      } catch {
-        return false;
-      }
-    });
-  };
+  // Find the treatment option for the current key
+  const currentTreatmentOption = allTreatmentOptions.find(opt => opt.key === activeOptionType);
+  
+  // Get option values for the current option
+  const currentOptionValues = currentTreatmentOption?.option_values || [];
 
   const handleSave = async () => {
-    console.log('handleSave called', { formData, activeOptionType, activeTreatment });
-    
     if (!formData.name.trim() || !formData.value.trim()) {
       toast({
         title: "Required fields",
@@ -115,46 +101,40 @@ export const WindowTreatmentOptionsManager = () => {
       return;
     }
 
+    if (!currentTreatmentOption) {
+      toast({
+        title: "Configuration error",
+        description: "Treatment option not found. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Authentication required",
-          description: "You must be logged in to save options.",
-          variant: "destructive"
+      const valueData = {
+        option_id: currentTreatmentOption.id,
+        code: formData.value.trim().toLowerCase().replace(/\s+/g, '_'),
+        label: formData.name.trim(),
+        order_index: currentOptionValues.length,
+        extra_data: formData.price > 0 ? { price: formData.price } : null,
+      };
+
+      if (editingValue) {
+        await updateOptionValue.mutateAsync({ 
+          id: editingValue.id, 
+          updates: {
+            code: valueData.code,
+            label: valueData.label,
+            extra_data: valueData.extra_data,
+          }
         });
-        return;
-      }
-
-      const optionDetails = {
-        option_type: activeOptionType,
-        option_value: formData.value,
-      };
-
-      const itemData = {
-        user_id: user.id,
-        name: formData.name.trim(),
-        price_per_meter: formData.price,
-        description: JSON.stringify(optionDetails),
-        category: 'treatment_option' as const,
-        treatment_type: activeTreatment,
-        quantity: 1,
-        active: true,
-        fullness_ratio: 1,
-        labor_hours: 0,
-      };
-
-      console.log('Saving item:', itemData);
-
-      if (editingOption) {
-        await updateItem.mutateAsync({ id: editingOption.id, ...itemData });
-        setEditingOption(null);
+        setEditingValue(null);
         toast({
           title: "Option updated",
           description: "The option has been updated successfully.",
         });
       } else {
-        await createItem.mutateAsync(itemData);
+        await createOptionValue.mutateAsync(valueData);
         setIsCreating(false);
         toast({
           title: "Option created",
@@ -172,34 +152,20 @@ export const WindowTreatmentOptionsManager = () => {
     }
   };
 
-  const handleEdit = (option: OptionItem) => {
-    let optionDetails = {
-      option_type: activeOptionType,
-      option_value: '',
-    };
-
-    try {
-      if (option.description) {
-        const parsed = JSON.parse(option.description);
-        optionDetails = { ...optionDetails, ...parsed };
-      }
-    } catch (e) {
-      console.log('Could not parse option details, using defaults');
-    }
-
+  const handleEdit = (value: OptionValue) => {
     setFormData({
-      name: option.name,
-      value: optionDetails.option_value,
-      price: option.price_per_meter || 0,
+      name: value.label,
+      value: value.code,
+      price: value.extra_data?.price || 0,
     });
-    setEditingOption(option);
+    setEditingValue(value);
     setIsCreating(false);
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this option?')) {
       try {
-        await deleteItem.mutateAsync(id);
+        await deleteOptionValue.mutateAsync(id);
         toast({
           title: "Option deleted",
           description: "The option has been removed.",
@@ -217,7 +183,7 @@ export const WindowTreatmentOptionsManager = () => {
 
   const handleCancel = () => {
     setIsCreating(false);
-    setEditingOption(null);
+    setEditingValue(null);
     resetForm();
   };
 
@@ -296,10 +262,10 @@ export const WindowTreatmentOptionsManager = () => {
               </div>
 
               {/* Create/Edit Form */}
-              {(isCreating || editingOption) && (
+              {(isCreating || editingValue) && (
                 <div className="p-4 border rounded-lg bg-muted/50">
                   <h3 className="text-lg font-semibold mb-4">
-                    {editingOption ? `Edit Option` : `Add New Option`}
+                    {editingValue ? `Edit Option` : `Add New Option`}
                   </h3>
                   
                   <div className="grid grid-cols-2 gap-4">
@@ -341,7 +307,7 @@ export const WindowTreatmentOptionsManager = () => {
 
                   <div className="flex gap-2 mt-4">
                     <Button onClick={handleSave}>
-                      {editingOption ? 'Update' : 'Create'}
+                      {editingValue ? 'Update' : 'Create'}
                     </Button>
                     <Button variant="outline" onClick={handleCancel}>
                       Cancel
@@ -352,41 +318,38 @@ export const WindowTreatmentOptionsManager = () => {
 
               {/* Options List */}
               <div className="space-y-2">
-                {getFilteredOptions(activeTreatment, optType.type).length === 0 ? (
+                {currentOptionValues.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     No {optType.label.toLowerCase()} yet. Click "Add Option" to create one.
                   </div>
                 ) : (
-                  getFilteredOptions(activeTreatment, optType.type).map((option) => {
-                    const details = JSON.parse(option.description || '{}');
-                    return (
-                      <div key={option.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
-                        <div className="flex-1">
-                          <div className="font-medium">{option.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            Value: {details.option_value}
-                            {option.price_per_meter > 0 && ` • +$${option.price_per_meter.toFixed(2)}`}
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(option)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(option.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                  currentOptionValues.map((value) => (
+                    <div key={value.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
+                      <div className="flex-1">
+                        <div className="font-medium uppercase">{value.label}</div>
+                        <div className="text-sm text-muted-foreground">
+                          Value: {value.code}
+                          {value.extra_data?.price > 0 && ` • +$${value.extra_data.price.toFixed(2)}`}
                         </div>
                       </div>
-                    );
-                  })
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(value)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(value.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
             </TabsContent>
