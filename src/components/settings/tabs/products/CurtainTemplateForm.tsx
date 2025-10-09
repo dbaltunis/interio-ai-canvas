@@ -148,11 +148,16 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     queryFn: async () => {
       if (!formData.curtain_type) return [];
       
-      // Get ALL curtain templates (not just roller blind ones) to check for shared options
+      // Get account owner to query both user and system templates
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+      
+      // Get ALL curtain templates (including system defaults) to check for shared options
       const { data: allTemplates, error: templatesError } = await supabase
         .from('curtain_templates')
-        .select('id, curtain_type, treatment_category')
-        .eq('active', true);
+        .select('id, curtain_type, treatment_category, user_id, is_system_default')
+        .eq('active', true)
+        .or(`user_id.eq.${user.id},is_system_default.eq.true`);
       
       if (templatesError) throw templatesError;
       
