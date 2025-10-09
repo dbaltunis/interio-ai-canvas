@@ -248,6 +248,12 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         }
       }
       
+      // Force refetch of the queries
+      const { useQueryClient } = require('@tanstack/react-query');
+      const queryClient = useQueryClient();
+      await queryClient.invalidateQueries({ queryKey: ['treatment-options', template.id] });
+      await queryClient.invalidateQueries({ queryKey: ['available-treatment-options-from-manager'] });
+      
       toast({
         title: enabled ? "Option enabled" : "Option disabled",
         description: `${optionLabel} has been ${enabled ? 'enabled' : 'disabled'} for this template.`,
