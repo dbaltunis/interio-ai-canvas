@@ -92,18 +92,15 @@ export const DynamicRollerBlindFields = ({
       { key: 'headrail_type', options: headrailTypes }
     ];
     
-    // Process each option synchronously with a small delay between each
-    let delay = 0;
+    // Call each initialization in React 18's automatic batching context
+    // React 18 automatically batches multiple setState calls in the same event
     optionKeys.forEach(({ key, options }) => {
       const value = measurements[key];
       if (value && options.length > 0) {
         const selectedOption = options.find(opt => opt.value === value);
         if (selectedOption) {
-          setTimeout(() => {
-            console.log(`🟢 Initializing ${key}:`, selectedOption);
-            onOptionPriceChange(key, selectedOption.price, selectedOption.label);
-          }, delay);
-          delay += 10; // 10ms delay between each initialization
+          console.log(`🟢 Initializing ${key}:`, selectedOption);
+          onOptionPriceChange(key, selectedOption.price, selectedOption.label);
         }
       }
     });

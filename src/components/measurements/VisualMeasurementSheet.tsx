@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { FabricSelectionSection } from "./dynamic-options/FabricSelectionSection";
 import { LiningOptionsSection } from "./dynamic-options/LiningOptionsSection";
 import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
@@ -53,6 +53,14 @@ export const VisualMeasurementSheet = ({
   selectedOptions = [],
   onSelectedOptionsChange
 }: VisualMeasurementSheetProps) => {
+  // Use ref to track latest options during batch initialization
+  const selectedOptionsRef = useRef(selectedOptions);
+  
+  // Keep ref in sync with props
+  useEffect(() => {
+    selectedOptionsRef.current = selectedOptions;
+  }, [selectedOptions]);
+  
   // Detect treatment type - use treatmentCategory prop if provided, otherwise detect from template
   const treatmentType = treatmentCategory || detectTreatmentType(selectedTemplate);
   const treatmentConfig = getTreatmentConfig(treatmentType);
@@ -75,19 +83,21 @@ export const VisualMeasurementSheet = ({
   // Handle option price changes from dynamic fields
   const handleOptionPriceChange = (optionKey: string, price: number, label: string) => {
     if (onSelectedOptionsChange) {
-      // Create updated options by filtering out old value for this key and adding new one
+      // Use ref to get current state, update it, and set new state
+      const currentOptions = selectedOptionsRef.current;
+      const filteredOptions = currentOptions.filter(opt => !opt.name.startsWith(optionKey + ':'));
       const newOption = { name: `${optionKey}: ${label}`, price };
-      
-      // Build new array without mutating
-      const filteredOptions = selectedOptions.filter(opt => !opt.name.startsWith(optionKey + ':'));
       const updatedOptions = [...filteredOptions, newOption];
       
       console.log(`🎯 handleOptionPriceChange - ${optionKey}:`, {
-        oldOptions: selectedOptions,
+        currentOptions,
         newOption,
         updatedOptions
       });
       
+      // Update ref immediately for next call in the same batch
+      selectedOptionsRef.current = updatedOptions;
+      // Update state
       onSelectedOptionsChange(updatedOptions);
     }
   };
