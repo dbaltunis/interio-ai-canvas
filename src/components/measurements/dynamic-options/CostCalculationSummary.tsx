@@ -47,6 +47,13 @@ const SewingMachineIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+const AssemblyIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    {/* Wrench */}
+    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+  </svg>
+);
+
 interface CostCalculationSummaryProps {
   template: CurtainTemplate;
   measurements: any;
@@ -85,8 +92,8 @@ export const CostCalculationSummary = ({
   }
 
   // Manufacturing allowances from template
-  const panelConfig = (template as any).panel_configuration || template.curtain_type;
-  const curtainCount = panelConfig === 'pair' ? 2 : 1;
+  const initialPanelConfig = (template as any).panel_configuration || template.curtain_type;
+  const curtainCount = initialPanelConfig === 'pair' ? 2 : 1;
   const sideHems = template.side_hems || 0;
   const totalSideHems = sideHems * 2 * curtainCount;
   const returnLeft = template.return_left || 0;
@@ -444,6 +451,26 @@ export const CostCalculationSummary = ({
 
   const totalCost = finalFabricCost + liningCost + headingCost + manufacturingCost;
 
+  // Detect product type for dynamic labels
+  const productCategory = (template as any).category?.toLowerCase() || template.name?.toLowerCase() || '';
+  const isBlind = productCategory.includes('blind') || productCategory.includes('shade');
+  const isRollerBlind = productCategory.includes('roller');
+  const panelCount = initialPanelConfig === 'pair' ? 2 : 1;
+
+  // Dynamic labels based on product type
+  const getManufacturingLabel = () => {
+    if (isBlind) return 'Assembly';
+    return 'Manufacturing';
+  };
+
+  const getPerUnitLabel = () => {
+    if (isRollerBlind) return 'Per blind';
+    if (isBlind) return 'Per unit';
+    return 'Per panel';
+  };
+
+  const ManufacturingIcon = isBlind ? AssemblyIcon : SewingMachineIcon;
+
   return (
     <div className="bg-card border border-border rounded-lg p-3 space-y-3">
       {/* Header */}
@@ -500,9 +527,9 @@ export const CostCalculationSummary = ({
         {manufacturingCost > 0 && (
           <div className="flex items-center justify-between py-1.5">
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              <SewingMachineIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+              <ManufacturingIcon className="h-3.5 w-3.5 text-primary shrink-0" />
               <div className="flex flex-col min-w-0">
-                <span className="text-card-foreground font-medium">Manufacturing</span>
+                <span className="text-card-foreground font-medium">{getManufacturingLabel()}</span>
                 <span className="text-xs text-muted-foreground truncate">{template.manufacturing_type}</span>
               </div>
             </div>
@@ -517,10 +544,12 @@ export const CostCalculationSummary = ({
           <span className="text-base font-semibold text-card-foreground">Total</span>
           <span className="text-lg font-bold text-primary">{formatPrice(totalCost)}</span>
         </div>
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>Per panel</span>
-          <span>{formatPrice(totalCost / 2)}</span>
-        </div>
+        {panelCount > 1 && (
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>{getPerUnitLabel()}</span>
+            <span>{formatPrice(totalCost / panelCount)}</span>
+          </div>
+        )}
       </div>
 
       {/* Collapsible Details */}
