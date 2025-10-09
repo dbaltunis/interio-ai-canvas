@@ -233,7 +233,7 @@ export const PricingGridUploader = ({ onDataChange, initialData }: PricingGridUp
           </Alert>
         )}
 
-        {gridData && !isLoading && (
+        {gridData && gridData.dropRanges && gridData.widthRanges && !isLoading && (
           <Alert>
             <CheckCircle className="h-4 w-4" />
             <AlertDescription>
@@ -242,7 +242,7 @@ export const PricingGridUploader = ({ onDataChange, initialData }: PricingGridUp
           </Alert>
         )}
 
-        {gridData && (
+        {gridData && gridData.dropRanges && gridData.widthRanges && gridData.prices && (
           <div className="border rounded-lg">
             <div className="p-3 bg-muted">
               <h4 className="font-medium">Pricing Grid Preview</h4>
