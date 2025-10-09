@@ -62,6 +62,7 @@ interface CostCalculationSummaryProps {
   selectedHeading?: string;
   inventory: any[];
   fabricCalculation?: any;
+  selectedOptions?: Array<{ name: string; price?: number }>;
 }
 
 export const CostCalculationSummary = ({
@@ -71,7 +72,8 @@ export const CostCalculationSummary = ({
   selectedLining,
   selectedHeading,
   inventory,
-  fabricCalculation
+  fabricCalculation,
+  selectedOptions = []
 }: CostCalculationSummaryProps) => {
   const { units } = useMeasurementUnits();
   const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
@@ -523,15 +525,12 @@ export const CostCalculationSummary = ({
           </div>
         )}
 
-        {/* Manufacturing */}
+        {/* Manufacturing/Assembly */}
         {manufacturingCost > 0 && (
           <div className="flex items-center justify-between py-1.5">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <ManufacturingIcon className="h-3.5 w-3.5 text-primary shrink-0" />
-              <div className="flex flex-col min-w-0">
-                <span className="text-card-foreground font-medium">{getManufacturingLabel()}</span>
-                <span className="text-xs text-muted-foreground truncate">{template.manufacturing_type}</span>
-              </div>
+              <span className="text-card-foreground font-medium">{getManufacturingLabel()}</span>
             </div>
             <span className="font-medium text-card-foreground ml-2">{formatPrice(manufacturingCost)}</span>
           </div>
@@ -544,7 +543,7 @@ export const CostCalculationSummary = ({
           <span className="text-base font-semibold text-card-foreground">Total</span>
           <span className="text-lg font-bold text-primary">{formatPrice(totalCost)}</span>
         </div>
-        {panelCount > 1 && (
+        {panelCount > 1 && !isBlind && (
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>{getPerUnitLabel()}</span>
             <span>{formatPrice(totalCost / panelCount)}</span>
@@ -562,6 +561,22 @@ export const CostCalculationSummary = ({
         <div className="space-y-1 mt-2 pl-4 border-l-2 border-border">
           <div>Template: {template.name}</div>
           <div>Method: {template.pricing_type}</div>
+          
+          {/* Selected Options */}
+          {selectedOptions && selectedOptions.length > 0 && (
+            <div className="mt-2">
+              <div className="font-medium text-card-foreground mb-1">Selected Options:</div>
+              {selectedOptions.map((option, index) => (
+                <div key={index} className="flex items-center justify-between text-xs">
+                  <span>• {option.name}</span>
+                  {option.price && option.price > 0 && (
+                    <span className="text-card-foreground font-medium">{formatPrice(option.price)}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          
           {template.pricing_type === 'pricing_grid' && (
             <div className="mt-1.5 p-1.5 bg-primary/5 rounded text-xs">
               <div className="font-medium text-primary">Grid:</div>
