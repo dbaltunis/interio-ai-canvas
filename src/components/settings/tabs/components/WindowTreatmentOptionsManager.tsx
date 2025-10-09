@@ -9,8 +9,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useAllTreatmentOptions, useCreateOptionValue, useUpdateOptionValue, useDeleteOptionValue } from "@/hooks/useTreatmentOptionsManagement";
+import { useAllTreatmentOptions, useCreateOptionValue, useUpdateOptionValue, useDeleteOptionValue, useCreateTreatmentOption } from "@/hooks/useTreatmentOptionsManagement";
 import type { TreatmentOption, OptionValue } from "@/hooks/useTreatmentOptions";
+import { useQuery } from "@tanstack/react-query";
 
 type TreatmentCategory = 'roller_blind' | 'roman_blind' | 'venetian_blind' | 'vertical_blind' | 'shutter' | 'awning';
 
@@ -62,6 +63,21 @@ const OPTION_TYPES_BY_CATEGORY: Record<TreatmentCategory, { type: string; label:
 
 export const WindowTreatmentOptionsManager = () => {
   const { data: allTreatmentOptions = [], isLoading } = useAllTreatmentOptions();
+  
+  // Fetch curtain templates (which include all window covering templates)
+  const { data: allTemplates = [], isLoading: templatesLoading } = useQuery({
+    queryKey: ['curtain-templates'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('curtain_templates')
+        .select('*')
+        .eq('active', true);
+      if (error) throw error;
+      return data;
+    },
+  });
+  
+  const createTreatmentOption = useCreateTreatmentOption();
   const createOptionValue = useCreateOptionValue();
   const updateOptionValue = useUpdateOptionValue();
   const deleteOptionValue = useDeleteOptionValue();
@@ -85,11 +101,26 @@ export const WindowTreatmentOptionsManager = () => {
     });
   };
 
-  // Find the treatment option for the current key
-  const currentTreatmentOption = allTreatmentOptions.find(opt => opt.key === activeOptionType);
+  // Get templates matching the active treatment category
+  const matchingTemplates = allTemplates.filter((t: any) => 
+    t.curtain_type === activeTreatment || t.treatment_category === activeTreatment
+  );
+
+  // Find treatment options linked to any of the matching templates
+  const relevantOptions = allTreatmentOptions.filter((opt: any) => 
+    matchingTemplates.some((t: any) => t.id === opt.template_id) && opt.key === activeOptionType
+  );
+
+  // For display, we'll show all unique option values across all templates
+  const allOptionValues = relevantOptions.flatMap(opt => opt.option_values || []);
   
-  // Get option values for the current option
-  const currentOptionValues = currentTreatmentOption?.option_values || [];
+  // Deduplicate by code
+  const uniqueOptionValues = allOptionValues.reduce((acc, val) => {
+    if (!acc.find(v => v.code === val.code)) {
+      acc.push(val);
+    }
+    return acc;
+  }, [] as OptionValue[]);
 
   const handleSave = async () => {
     if (!formData.name.trim() || !formData.value.trim()) {
@@ -101,44 +132,76 @@ export const WindowTreatmentOptionsManager = () => {
       return;
     }
 
-    if (!currentTreatmentOption) {
+    if (matchingTemplates.length === 0) {
       toast({
-        title: "Configuration error",
-        description: "Treatment option not found. Please try again.",
+        title: "No templates found",
+        description: `Create a ${getTreatmentLabel(activeTreatment)} template first before adding options.`,
         variant: "destructive"
       });
       return;
     }
 
     try {
-      const valueData = {
-        option_id: currentTreatmentOption.id,
-        code: formData.value.trim().toLowerCase().replace(/\s+/g, '_'),
-        label: formData.name.trim(),
-        order_index: currentOptionValues.length,
-        extra_data: formData.price > 0 ? { price: formData.price } : null,
-      };
-
       if (editingValue) {
-        await updateOptionValue.mutateAsync({ 
-          id: editingValue.id, 
-          updates: {
-            code: valueData.code,
-            label: valueData.label,
-            extra_data: valueData.extra_data,
+        // Update the existing option value across all templates
+        for (const opt of relevantOptions) {
+          const existingVal = opt.option_values?.find(v => v.code === editingValue.code);
+          if (existingVal) {
+            await updateOptionValue.mutateAsync({
+              id: existingVal.id,
+              updates: {
+                code: formData.value.trim().toLowerCase().replace(/\s+/g, '_'),
+                label: formData.name.trim(),
+                extra_data: formData.price > 0 ? { price: formData.price } : null,
+              }
+            });
           }
-        });
+        }
         setEditingValue(null);
         toast({
           title: "Option updated",
-          description: "The option has been updated successfully.",
+          description: "The option has been updated across all templates.",
         });
       } else {
-        await createOptionValue.mutateAsync(valueData);
+        // Create option for all matching templates
+        for (const template of matchingTemplates) {
+          // Check if this option type already exists for this template
+          let treatmentOption = allTreatmentOptions.find(
+            (opt: any) => opt.template_id === template.id && opt.key === activeOptionType
+          );
+
+          // If not, create it
+          if (!treatmentOption) {
+            const optionTypeConfig = OPTION_TYPES_BY_CATEGORY[activeTreatment].find(
+              opt => opt.type === activeOptionType
+            );
+            
+            const newOption = await createTreatmentOption.mutateAsync({
+              template_id: template.id,
+              key: activeOptionType,
+              label: optionTypeConfig?.label || activeOptionType,
+              input_type: 'select',
+              required: false,
+              visible: true,
+              order_index: 0,
+            });
+            treatmentOption = newOption;
+          }
+
+          // Now create the value
+          await createOptionValue.mutateAsync({
+            option_id: treatmentOption.id,
+            code: formData.value.trim().toLowerCase().replace(/\s+/g, '_'),
+            label: formData.name.trim(),
+            order_index: uniqueOptionValues.length,
+            extra_data: formData.price > 0 ? { price: formData.price } : null,
+          });
+        }
+
         setIsCreating(false);
         toast({
           title: "Option created",
-          description: "New option has been created successfully.",
+          description: `New option has been added to all ${getTreatmentLabel(activeTreatment)} templates.`,
         });
       }
       resetForm();
@@ -162,13 +225,19 @@ export const WindowTreatmentOptionsManager = () => {
     setIsCreating(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this option?')) {
+  const handleDelete = async (valueCode: string) => {
+    if (confirm('Are you sure you want to delete this option from all templates?')) {
       try {
-        await deleteOptionValue.mutateAsync(id);
+        // Delete this value from all templates
+        for (const opt of relevantOptions) {
+          const existingVal = opt.option_values?.find(v => v.code === valueCode);
+          if (existingVal) {
+            await deleteOptionValue.mutateAsync(existingVal.id);
+          }
+        }
         toast({
           title: "Option deleted",
-          description: "The option has been removed.",
+          description: "The option has been removed from all templates.",
         });
       } catch (error) {
         console.error('Error deleting option:', error);
@@ -199,7 +268,7 @@ export const WindowTreatmentOptionsManager = () => {
     return labels[category];
   };
 
-  if (isLoading) {
+  if (isLoading || templatesLoading) {
     return <div className="text-center py-8">Loading options...</div>;
   }
 
@@ -318,13 +387,18 @@ export const WindowTreatmentOptionsManager = () => {
 
               {/* Options List */}
               <div className="space-y-2">
-                {currentOptionValues.length === 0 ? (
+                {matchingTemplates.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
+                    <p className="font-medium">No {getTreatmentLabel(activeTreatment)} templates found</p>
+                    <p className="text-xs mt-1">Create a template in the "My Templates" tab first</p>
+                  </div>
+                ) : uniqueOptionValues.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     No {optType.label.toLowerCase()} yet. Click "Add Option" to create one.
                   </div>
                 ) : (
-                  currentOptionValues.map((value) => (
-                    <div key={value.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
+                  uniqueOptionValues.map((value) => (
+                    <div key={value.code} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
                       <div className="flex-1">
                         <div className="font-medium uppercase">{value.label}</div>
                         <div className="text-sm text-muted-foreground">
@@ -343,7 +417,7 @@ export const WindowTreatmentOptionsManager = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDelete(value.id)}
+                          onClick={() => handleDelete(value.code)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
