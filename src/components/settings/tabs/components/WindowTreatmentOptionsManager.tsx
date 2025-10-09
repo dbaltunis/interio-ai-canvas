@@ -255,6 +255,13 @@ export const WindowTreatmentOptionsManager = () => {
     setEditingValue(null);
     resetForm();
   };
+  
+  const handleAddOption = (optionType: string) => {
+    setActiveOptionType(optionType);
+    setIsCreating(true);
+    setEditingValue(null);
+    resetForm();
+  };
 
   const getTreatmentLabel = (category: TreatmentCategory) => {
     const labels: Record<TreatmentCategory, string> = {
@@ -324,7 +331,7 @@ export const WindowTreatmentOptionsManager = () => {
                 <p className="text-sm text-muted-foreground">
                   Add {optType.label.toLowerCase()} for {getTreatmentLabel(activeTreatment).toLowerCase()}
                 </p>
-                <Button onClick={() => setIsCreating(true)}>
+                <Button onClick={() => handleAddOption(optType.type)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Option
                 </Button>
