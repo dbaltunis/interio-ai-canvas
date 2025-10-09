@@ -272,30 +272,62 @@ export function WindowSummaryCard({
 
             {/* Cost Breakdown - Only show when expanded */}
             {showBreakdown && (
-              <div className="grid grid-cols-4 gap-3 text-sm border rounded-lg p-3">
-                <SummaryItem
-                  title="Fabric"
-                  main={formatCurrency(summary.fabric_cost, userCurrency)}
-                  sub={`${summary.linear_meters?.toFixed(1) || '0'} m • ${summary.widths_required || 1} widths`}
-                />
-                
-                <SummaryItem
-                  title="Lining"
-                  main={formatCurrency(summary.lining_cost, userCurrency)}
-                  sub={summary.lining_details?.type || 'Interlining'}
-                />
+              <div className="space-y-2">
+                {/* Fabric/Material */}
+                <div className="border rounded-lg p-3">
+                  <SummaryItem
+                    title={summary.fabric_details?.category?.includes('blind') ? 'Blind Fabric' : 'Fabric'}
+                    main={formatCurrency(summary.fabric_cost, userCurrency)}
+                    sub={`${summary.linear_meters?.toFixed(1) || '0'} m • ${summary.widths_required || 1} width(s)`}
+                  />
+                </div>
 
-                <SummaryItem
-                  title="Heading"
-                  main={formatCurrency(summary.heading_details?.cost || 0, userCurrency)}
-                  sub={summary.heading_details?.heading_name || '0'}
-                />
-                
-                <SummaryItem
-                  title="Manufacturing"
-                  main={formatCurrency(summary.manufacturing_cost, userCurrency)}
-                  sub="machine"
-                />
+                {/* For curtains: show lining and heading */}
+                {treatmentType === 'curtains' || !summary.fabric_details?.category?.includes('blind') ? (
+                  <>
+                    {Number(summary.lining_cost) > 0 && (
+                      <div className="border rounded-lg p-3">
+                        <SummaryItem
+                          title="Lining"
+                          main={formatCurrency(summary.lining_cost, userCurrency)}
+                          sub={summary.lining_details?.type || 'Interlining'}
+                        />
+                      </div>
+                    )}
+                    
+                    {Number(summary.heading_details?.cost || 0) > 0 && (
+                      <div className="border rounded-lg p-3">
+                        <SummaryItem
+                          title="Heading"
+                          main={formatCurrency(summary.heading_details?.cost || 0, userCurrency)}
+                          sub={summary.heading_details?.heading_name || 'Standard'}
+                        />
+                      </div>
+                    )}
+                  </>
+                ) : null}
+
+                {/* Selected Options - for blinds */}
+                {enrichedBreakdown
+                  .filter(item => !['fabric', 'lining', 'heading', 'manufacturing'].includes(item.category))
+                  .map((item) => (
+                    <div key={item.id} className="border rounded-lg p-3">
+                      <SummaryItem
+                        title={item.name}
+                        main={formatCurrency(item.total_cost, userCurrency)}
+                        sub={item.description}
+                      />
+                    </div>
+                  ))}
+
+                {/* Manufacturing */}
+                <div className="border rounded-lg p-3">
+                  <SummaryItem
+                    title="Manufacturing"
+                    main={formatCurrency(summary.manufacturing_cost, userCurrency)}
+                    sub={summary.manufacturing_type || 'machine'}
+                  />
+                </div>
               </div>
             )}
           </div>
