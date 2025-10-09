@@ -75,12 +75,20 @@ export const VisualMeasurementSheet = ({
   // Handle option price changes from dynamic fields
   const handleOptionPriceChange = (optionKey: string, price: number, label: string) => {
     if (onSelectedOptionsChange) {
-      // Remove any existing option with this key
-      const updatedOptions = selectedOptions.filter(opt => !opt.name.startsWith(optionKey + ':'));
-      // Always add the new selection (even if price is 0)
-      updatedOptions.push({ name: `${optionKey}: ${label}`, price });
+      // Create updated options by filtering out old value for this key and adding new one
+      const newOption = { name: `${optionKey}: ${label}`, price };
+      
+      // Build new array without mutating
+      const filteredOptions = selectedOptions.filter(opt => !opt.name.startsWith(optionKey + ':'));
+      const updatedOptions = [...filteredOptions, newOption];
+      
+      console.log(`🎯 handleOptionPriceChange - ${optionKey}:`, {
+        oldOptions: selectedOptions,
+        newOption,
+        updatedOptions
+      });
+      
       onSelectedOptionsChange(updatedOptions);
-      console.log('🎯 Updated selected options:', updatedOptions);
     }
   };
 
@@ -785,6 +793,7 @@ export const VisualMeasurementSheet = ({
                           templateId={selectedTemplate?.id}
                           readOnly={readOnly}
                           onOptionPriceChange={handleOptionPriceChange}
+                          selectedOptions={selectedOptions}
                         />
                       </CardContent>
                     </Card>

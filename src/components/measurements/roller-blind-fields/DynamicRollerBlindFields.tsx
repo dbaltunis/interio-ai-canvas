@@ -11,6 +11,7 @@ interface DynamicRollerBlindFieldsProps {
   templateId?: string;
   readOnly?: boolean;
   onOptionPriceChange?: (optionKey: string, price: number, label: string) => void;
+  selectedOptions?: Array<{ name: string; price: number }>;
 }
 
 export const DynamicRollerBlindFields = ({ 
@@ -18,7 +19,8 @@ export const DynamicRollerBlindFields = ({
   onChange, 
   templateId,
   readOnly = false,
-  onOptionPriceChange
+  onOptionPriceChange,
+  selectedOptions = []
 }: DynamicRollerBlindFieldsProps) => {
   const { data: treatmentOptions = [], isLoading } = useTreatmentOptions(templateId);
   
@@ -68,7 +70,13 @@ export const DynamicRollerBlindFields = ({
   useEffect(() => {
     if (!onOptionPriceChange || treatmentOptions.length === 0) return;
     
-    console.log('🟢 Initializing selected options from measurements:', measurements);
+    // Only initialize if selectedOptions is empty (prevent re-initialization)
+    if (selectedOptions.length > 0) {
+      console.log('🟡 Skipping initialization - options already exist:', selectedOptions);
+      return;
+    }
+    
+    console.log('🟢 Initializing ALL selected options from measurements:', measurements);
     
     // List of all possible option keys
     const optionKeys = [
@@ -84,18 +92,22 @@ export const DynamicRollerBlindFields = ({
       { key: 'headrail_type', options: headrailTypes }
     ];
     
-    // For each option key, if there's a value in measurements, notify parent
+    // Process each option synchronously with a small delay between each
+    let delay = 0;
     optionKeys.forEach(({ key, options }) => {
       const value = measurements[key];
       if (value && options.length > 0) {
         const selectedOption = options.find(opt => opt.value === value);
         if (selectedOption) {
-          console.log(`🟢 Initializing ${key}:`, selectedOption);
-          onOptionPriceChange(key, selectedOption.price, selectedOption.label);
+          setTimeout(() => {
+            console.log(`🟢 Initializing ${key}:`, selectedOption);
+            onOptionPriceChange(key, selectedOption.price, selectedOption.label);
+          }, delay);
+          delay += 10; // 10ms delay between each initialization
         }
       }
     });
-  }, [treatmentOptions]); // Only run when options are loaded
+  }, [treatmentOptions, selectedOptions.length]);
 
   if (isLoading) {
     return (
