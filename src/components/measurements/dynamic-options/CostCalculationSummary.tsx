@@ -445,108 +445,114 @@ export const CostCalculationSummary = ({
   const totalCost = finalFabricCost + liningCost + headingCost + manufacturingCost;
 
   return (
-    <div className="bg-card border border-border rounded-lg p-6 space-y-6">
+    <div className="bg-card border border-border rounded-lg p-3 space-y-3">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border pb-4">
-        <div className="flex items-center gap-2">
-          <Calculator className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-semibold text-card-foreground">Cost Calculation</h3>
-        </div>
+      <div className="flex items-center gap-2 pb-2 border-b border-border">
+        <Calculator className="h-4 w-4 text-primary" />
+        <h3 className="text-base font-semibold text-card-foreground">Cost Summary</h3>
       </div>
 
-      {/* Cost Breakdown */}
-      <div className="space-y-1">
+      {/* Cost Breakdown - Compact Grid Layout */}
+      <div className="grid gap-1.5 text-sm">
         {/* Fabric */}
-        <div className="flex items-center justify-between py-2 text-sm">
-          <div className="flex items-center gap-3">
-            <CurtainIcon className="h-4 w-4 text-primary" />
-            <span className="text-card-foreground font-medium">Fabric</span>
-            <span className="text-muted-foreground">
-              {finalLinearMeters.toFixed(2)}{units.fabric === 'yards' ? 'yd' : 'm'} × {formatPrice(fabricPriceDisplay)}/{units.fabric === 'yards' ? 'yd' : 'm'}
-            </span>
+        <div className="flex items-center justify-between py-1.5">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <CurtainIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+            <div className="flex flex-col min-w-0">
+              <span className="text-card-foreground font-medium">Fabric</span>
+              <span className="text-xs text-muted-foreground truncate">
+                {finalLinearMeters.toFixed(2)}{units.fabric === 'yards' ? 'yd' : 'm'} × {formatPrice(fabricPriceDisplay)}/{units.fabric === 'yards' ? 'yd' : 'm'}
+              </span>
+            </div>
           </div>
-          <span className="font-medium text-card-foreground">{formatPrice(finalFabricCost)}</span>
+          <span className="font-medium text-card-foreground ml-2">{formatPrice(finalFabricCost)}</span>
         </div>
 
         {/* Lining */}
         {selectedLining && selectedLining !== 'none' && (
-          <div className="flex items-center justify-between py-2 text-sm">
-            <div className="flex items-center gap-3">
-              <FabricSwatchIcon className="h-4 w-4 text-primary" />
-              <span className="text-card-foreground font-medium">Lining</span>
-              <span className="text-muted-foreground">{selectedLining}</span>
+          <div className="flex items-center justify-between py-1.5">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+              <div className="flex flex-col min-w-0">
+                <span className="text-card-foreground font-medium">Lining</span>
+                <span className="text-xs text-muted-foreground truncate">{selectedLining}</span>
+              </div>
             </div>
-            <span className="font-medium text-card-foreground">{formatPrice(liningCost)}</span>
+            <span className="font-medium text-card-foreground ml-2">{formatPrice(liningCost)}</span>
           </div>
         )}
 
         {/* Heading */}
         {headingCost > 0 && (
-          <div className="flex items-center justify-between py-2 text-sm">
-            <div className="flex items-center gap-3">
-              <span className="w-4 h-4 border-b-2 border-primary" />
-              <span className="text-card-foreground font-medium">Heading</span>
-              <span className="text-muted-foreground">{template.heading_name}</span>
+          <div className="flex items-center justify-between py-1.5">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <span className="w-3.5 h-3.5 border-b-2 border-primary shrink-0" />
+              <div className="flex flex-col min-w-0">
+                <span className="text-card-foreground font-medium">Heading</span>
+                <span className="text-xs text-muted-foreground truncate">{template.heading_name}</span>
+              </div>
             </div>
-            <span className="font-medium text-card-foreground">{formatPrice(headingCost)}</span>
+            <span className="font-medium text-card-foreground ml-2">{formatPrice(headingCost)}</span>
           </div>
         )}
 
         {/* Manufacturing */}
         {manufacturingCost > 0 && (
-          <div className="flex items-center justify-between py-2 text-sm">
-            <div className="flex items-center gap-3">
-              <SewingMachineIcon className="h-4 w-4 text-primary" />
-              <span className="text-card-foreground font-medium">Manufacturing</span>
-              <span className="text-muted-foreground">{template.manufacturing_type}</span>
+          <div className="flex items-center justify-between py-1.5">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <SewingMachineIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+              <div className="flex flex-col min-w-0">
+                <span className="text-card-foreground font-medium">Manufacturing</span>
+                <span className="text-xs text-muted-foreground truncate">{template.manufacturing_type}</span>
+              </div>
             </div>
-            <span className="font-medium text-card-foreground">{formatPrice(manufacturingCost)}</span>
+            <span className="font-medium text-card-foreground ml-2">{formatPrice(manufacturingCost)}</span>
           </div>
         )}
       </div>
 
-      {/* Total */}
-      <div className="border-t border-border pt-4">
+      {/* Total - More Compact */}
+      <div className="border-t border-border pt-2.5 space-y-0.5">
         <div className="flex items-center justify-between">
-          <span className="text-lg font-semibold text-card-foreground">Total Cost</span>
-          <span className="text-xl font-bold text-primary">{formatPrice(totalCost)}</span>
+          <span className="text-base font-semibold text-card-foreground">Total</span>
+          <span className="text-lg font-bold text-primary">{formatPrice(totalCost)}</span>
         </div>
-        <div className="flex items-center justify-between text-sm text-muted-foreground mt-1">
-          <span>Cost per panel</span>
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>Per panel</span>
           <span>{formatPrice(totalCost / 2)}</span>
         </div>
       </div>
 
-      {/* Additional Notes with Pricing Breakdown */}
-      <div className="text-xs text-muted-foreground space-y-1">
-        <div className="font-medium text-card-foreground mb-2 flex items-center gap-2">
+      {/* Collapsible Details */}
+      <details className="text-xs text-muted-foreground group">
+        <summary className="cursor-pointer font-medium text-card-foreground flex items-center gap-1.5 py-1 hover:text-primary transition-colors">
           <Info className="h-3 w-3" />
-          Pricing Details
+          <span>Pricing Details</span>
+          <span className="ml-auto text-xs group-open:rotate-180 transition-transform">▼</span>
+        </summary>
+        <div className="space-y-1 mt-2 pl-4 border-l-2 border-border">
+          <div>Template: {template.name}</div>
+          <div>Method: {template.pricing_type}</div>
+          {template.pricing_type === 'pricing_grid' && (
+            <div className="mt-1.5 p-1.5 bg-primary/5 rounded text-xs">
+              <div className="font-medium text-primary">Grid:</div>
+              <div>W: {width}cm × H: {height}cm</div>
+              <div>Price: {formatPrice(manufacturingCost)}</div>
+            </div>
+          )}
+          {template.pricing_type === 'per_metre' && (
+            <div className="mt-1.5 p-1.5 bg-primary/5 rounded text-xs">
+              <div>{formatPrice(template.machine_price_per_metre || 0)}/m × {finalLinearMeters.toFixed(2)}m</div>
+            </div>
+          )}
+          {(template.pricing_type === 'per_panel' || template.pricing_type === 'per_drop') && (
+            <div className="mt-1.5 p-1.5 bg-primary/5 rounded text-xs">
+              <div>{(width/100).toFixed(2)}m × {(height/100).toFixed(2)}m = {(width/100 * height/100).toFixed(2)}m²</div>
+            </div>
+          )}
+          <div className="mt-1">Waste: {template.waste_percent || 5}%</div>
         </div>
-        <div>Template: {template.name}</div>
-        <div>Pricing Method: {template.pricing_type}</div>
-        {template.pricing_type === 'pricing_grid' && (
-          <div className="mt-2 p-2 bg-primary/5 rounded border border-primary/20">
-            <div className="font-medium text-primary mb-1">Grid Lookup:</div>
-            <div>• Width: {width}cm</div>
-            <div>• Drop: {height}cm</div>
-            <div>• Grid Price: {formatPrice(manufacturingCost)}</div>
-          </div>
-        )}
-        {template.pricing_type === 'per_metre' && (
-          <div className="mt-2 p-2 bg-primary/5 rounded border border-primary/20">
-            <div>• Rate: {formatPrice(template.machine_price_per_metre || 0)}/m</div>
-            <div>• Linear Metres: {finalLinearMeters.toFixed(2)}m</div>
-          </div>
-        )}
-        {(template.pricing_type === 'per_panel' || template.pricing_type === 'per_drop') && (
-          <div className="mt-2 p-2 bg-primary/5 rounded border border-primary/20">
-            <div>• Size: {(width/100).toFixed(2)}m × {(height/100).toFixed(2)}m</div>
-            <div>• Area: {(width/100 * height/100).toFixed(2)}m²</div>
-          </div>
-        )}
-        <div className="mt-2">Waste factor: {template.waste_percent || 5}%</div>
-      </div>
+      </details>
     </div>
   );
 };
