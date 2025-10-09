@@ -105,10 +105,20 @@ export const WindowTreatmentOptionsManager = () => {
     });
   };
 
-  // Get templates matching the active treatment category
-  const matchingTemplates = allTemplates.filter((t: any) => 
-    t.curtain_type === activeTreatment || t.treatment_category === activeTreatment
-  );
+  // Get templates matching the active treatment category (handle both singular and plural forms)
+  const matchingTemplates = allTemplates.filter((t: any) => {
+    const categoryMap: Record<string, string[]> = {
+      'roller_blind': ['roller_blind', 'roller_blinds'],
+      'roman_blind': ['roman_blind', 'roman_blinds'],
+      'venetian_blind': ['venetian_blind', 'venetian_blinds'],
+      'vertical_blind': ['vertical_blind', 'vertical_blinds'],
+      'shutter': ['shutter', 'shutters'],
+      'awning': ['awning', 'awnings'],
+    };
+    
+    const validCategories = categoryMap[activeTreatment] || [activeTreatment];
+    return validCategories.includes(t.curtain_type) || validCategories.includes(t.treatment_category);
+  });
 
   // Find treatment options linked to any of the matching templates
   const relevantOptions = allTreatmentOptions.filter((opt: any) => 
