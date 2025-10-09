@@ -65,44 +65,88 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
     const isInsideMount = mountType === 'inside';
     const blindWidth = isInsideMount ? 'left-16 right-16' : 'left-12 right-12';
     const blindTop = isInsideMount ? 'top-24' : 'top-20';
-    const slatsCount = 20;
+    
+    // Get slat size from measurements or use default
+    const slatSize = measurements.slat_size || measurements.slat_width || '25mm';
+    const slatSizeNum = parseInt(slatSize); // e.g., 25, 50, 63
+    
+    // Calculate number of slats based on slat size (smaller slats = more slats)
+    const slatsCount = slatSizeNum <= 25 ? 24 : slatSizeNum <= 50 ? 16 : 12;
     
     return (
       <>
-        {/* Headrail */}
-        <div className={`absolute ${blindTop} ${blindWidth} h-3 bg-gradient-to-b from-muted-foreground to-muted rounded-sm shadow-md z-20`}>
-          <div className="absolute -left-2 -top-0.5 w-3 h-4 bg-foreground/80 rounded-sm"></div>
-          <div className="absolute -right-2 -top-0.5 w-3 h-4 bg-foreground/80 rounded-sm"></div>
+        {/* Headrail with modern design */}
+        <div className={`absolute ${blindTop} ${blindWidth} h-4 bg-gradient-to-b from-muted-foreground via-muted to-muted-foreground rounded-sm shadow-lg z-20`}>
+          {/* Mounting brackets */}
+          <div className="absolute -left-2 -top-0.5 w-4 h-5 bg-foreground/90 rounded-sm shadow-md">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-3 bg-background/20"></div>
+          </div>
+          <div className="absolute -right-2 -top-0.5 w-4 h-5 bg-foreground/90 rounded-sm shadow-md">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-3 bg-background/20"></div>
+          </div>
           
-          {/* Control cord */}
+          {/* Control mechanism indicator */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-1 bg-foreground/40 rounded-full"></div>
+          
+          {/* Tilt wand */}
           {chainSide === 'right' ? (
-            <div className="absolute -right-1 top-full w-0.5 h-24 bg-muted-foreground/60 z-30">
-              <div className="absolute -right-0.5 bottom-0 w-1.5 h-6 bg-muted-foreground/80 rounded-sm"></div>
+            <div className="absolute -right-0.5 top-full w-1 h-28 bg-muted-foreground/70 rounded-full z-30 shadow-sm">
+              <div className="absolute -right-0.5 bottom-0 w-2 h-3 bg-muted-foreground/90 rounded-full"></div>
             </div>
           ) : (
-            <div className="absolute -left-1 top-full w-0.5 h-24 bg-muted-foreground/60 z-30">
-              <div className="absolute -left-0.5 bottom-0 w-1.5 h-6 bg-muted-foreground/80 rounded-sm"></div>
+            <div className="absolute -left-0.5 top-full w-1 h-28 bg-muted-foreground/70 rounded-full z-30 shadow-sm">
+              <div className="absolute -left-0.5 bottom-0 w-2 h-3 bg-muted-foreground/90 rounded-full"></div>
             </div>
           )}
+          
+          {/* Lift cord */}
+          <div className={`absolute ${chainSide === 'right' ? 'right-8' : 'left-8'} top-full w-0.5 h-24 bg-muted-foreground/50 z-25`}>
+            <div className="absolute -left-1 bottom-0 w-2.5 h-6 bg-muted-foreground/80 rounded-sm shadow-sm"></div>
+          </div>
         </div>
 
-        {/* Venetian Slats */}
+        {/* Venetian Slats - Realistic tilted appearance */}
         <div className={`absolute ${blindWidth}`}
              style={{
-               top: `calc(${blindTop.includes('24') ? '6rem' : '5rem'} + 0.75rem)`,
+               top: `calc(${blindTop.includes('24') ? '6rem' : '5rem'} + 1rem)`,
                bottom: '4rem'
              }}>
-          {Array.from({ length: slatsCount }).map((_, i) => (
-            <div
-              key={i}
-              className="absolute left-0 right-0 h-1 bg-primary/40 border-t border-b border-primary/20 shadow-sm"
-              style={{ 
-                top: `${(i / slatsCount) * 100}%`,
-                transform: 'rotateX(15deg)',
-                transformOrigin: 'center'
-              }}
-            />
-          ))}
+          {Array.from({ length: slatsCount }).map((_, i) => {
+            // Create realistic slat tilting effect (45-degree angle when closed)
+            const slatHeight = slatSizeNum <= 25 ? 'h-1.5' : slatSizeNum <= 50 ? 'h-2' : 'h-2.5';
+            
+            return (
+              <div
+                key={i}
+                className={`absolute left-0 right-0 ${slatHeight} transition-all duration-300`}
+                style={{ 
+                  top: `${(i / slatsCount) * 100}%`,
+                  background: `linear-gradient(180deg, 
+                    hsl(var(--primary) / 0.5) 0%, 
+                    hsl(var(--primary) / 0.35) 40%, 
+                    hsl(var(--primary) / 0.45) 60%,
+                    hsl(var(--primary) / 0.3) 100%)`,
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.1)',
+                  borderRadius: '1px',
+                  transform: 'perspective(500px) rotateX(45deg)',
+                  transformOrigin: 'center center',
+                  borderTop: '1px solid hsl(var(--primary) / 0.2)',
+                  borderBottom: '1px solid hsl(var(--primary) / 0.15)',
+                }}
+              >
+                {/* Slat highlight for 3D effect */}
+                <div 
+                  className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                  style={{ opacity: 0.3 }}
+                ></div>
+              </div>
+            );
+          })}
+          
+          {/* Bottom rail */}
+          <div className="absolute -bottom-2 left-0 right-0 h-2.5 bg-gradient-to-b from-muted-foreground/70 to-muted-foreground/90 rounded-sm shadow-md z-10">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+          </div>
         </div>
       </>
     );
