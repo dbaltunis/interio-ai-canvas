@@ -717,7 +717,14 @@ export const VisualMeasurementSheet = ({
                         </RadioGroup>
                       </div>
 
-                      {treatmentType === 'roller_blinds' && (
+                      {/* Show dynamic blind fields for ALL blind types */}
+                      {(treatmentType === 'roller_blinds' || 
+                        treatmentType === 'venetian_blinds' ||
+                        treatmentType === 'roman_blinds' ||
+                        treatmentType === 'vertical_blinds' ||
+                        treatmentType === 'cellular_blinds' ||
+                        treatmentType === 'panel_glide' ||
+                        treatmentType === 'plantation_shutters') && (
                         <DynamicRollerBlindFields
                           measurements={measurements}
                           onChange={handleInputChange}
@@ -730,15 +737,16 @@ export const VisualMeasurementSheet = ({
                 </>
               )}
 
-              {/* Additional Measurements for Curtain Makers - Collapsible */}
-              <details className="group">
-                <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-foreground hover:text-muted-foreground transition-colors p-2 bg-muted rounded border">
-                  <svg className="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                  More Details for Curtain Makers
-                  <span className="text-xs text-muted-foreground ml-auto">Optional measurements - Click to expand</span>
-                </summary>
+              {/* Additional Measurements for Curtain Makers - ONLY show for curtains */}
+              {treatmentType === 'curtains' && (
+                <details className="group">
+                  <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-foreground hover:text-muted-foreground transition-colors p-2 bg-muted rounded border">
+                    <svg className="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                    More Details for Curtain Makers
+                    <span className="text-xs text-muted-foreground ml-auto">Optional measurements - Click to expand</span>
+                  </summary>
                 
                 <div className="mt-3 space-y-4">
                   {/* Professional Extension Measurements */}
@@ -934,6 +942,7 @@ export const VisualMeasurementSheet = ({
                   </div>
                 </div>
               </details>
+              )}
 
               {/* Curtain Configuration - Professional Design (Only for curtains) */}
               {treatmentCategory === 'curtains' && (
