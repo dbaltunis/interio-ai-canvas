@@ -26,8 +26,9 @@ export const DynamicRollerBlindFields = ({
       .filter(opt => {
         try {
           const details = JSON.parse(opt.description || '{}');
+          // Filter by BOTH option_type AND treatment_type from the description JSON
           return details.option_type === optionType && 
-                 (!opt.treatment_type || opt.treatment_type === treatmentType);
+                 details.treatment_type === treatmentType;
         } catch {
           return false;
         }
