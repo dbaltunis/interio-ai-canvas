@@ -75,10 +75,10 @@ export const VisualMeasurementSheet = ({
   // Handle option price changes from dynamic fields
   const handleOptionPriceChange = (optionKey: string, price: number, label: string) => {
     if (onSelectedOptionsChange) {
-      const updatedOptions = selectedOptions.filter(opt => !opt.name.startsWith(optionKey));
-      if (price > 0) {
-        updatedOptions.push({ name: `${optionKey}: ${label}`, price });
-      }
+      // Remove any existing option with this key
+      const updatedOptions = selectedOptions.filter(opt => !opt.name.startsWith(optionKey + ':'));
+      // Always add the new selection (even if price is 0)
+      updatedOptions.push({ name: `${optionKey}: ${label}`, price });
       onSelectedOptionsChange(updatedOptions);
       console.log('🎯 Updated selected options:', updatedOptions);
     }

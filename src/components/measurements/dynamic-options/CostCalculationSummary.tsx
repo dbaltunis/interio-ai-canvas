@@ -584,9 +584,9 @@ export const CostCalculationSummary = ({
               {selectedOptions.map((option, index) => (
                 <div key={index} className="flex items-center justify-between text-xs">
                   <span>• {option.name}</span>
-                  {option.price && option.price > 0 && (
-                    <span className="text-card-foreground font-medium">{formatPrice(option.price)}</span>
-                  )}
+                  <span className="text-card-foreground font-medium">
+                    {option.price > 0 ? formatPrice(option.price) : 'Included'}
+                  </span>
                 </div>
               ))}
             </div>
