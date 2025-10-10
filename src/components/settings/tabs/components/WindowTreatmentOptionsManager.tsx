@@ -154,11 +154,24 @@ export const WindowTreatmentOptionsManager = () => {
           });
         }
 
-        // Now create the value for this option
+        // Check if this value already exists
         const uniqueOptionValues = treatmentOption?.option_values || [];
+        const valueCode = formData.value.trim().toLowerCase().replace(/\s+/g, '_');
+        const existingValue = uniqueOptionValues.find(v => v.code === valueCode);
+        
+        if (existingValue) {
+          toast({
+            title: "Duplicate value",
+            description: "This value already exists. Please use a different value or edit the existing one.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Now create the value for this option
         await createOptionValue.mutateAsync({
           option_id: treatmentOption.id,
-          code: formData.value.trim().toLowerCase().replace(/\s+/g, '_'),
+          code: valueCode,
           label: formData.name.trim(),
           order_index: uniqueOptionValues.length,
           extra_data: { price: Number(formData.price) || 0 },
