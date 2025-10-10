@@ -52,18 +52,23 @@ export const useCreateOptionTypeCategory = () => {
   
   return useMutation({
     mutationFn: async (category: Omit<OptionTypeCategory, 'id' | 'created_at' | 'updated_at' | 'user_id' | 'is_system_default' | 'active'>) => {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      // Use getSession() instead of getUser() to get the session with auth token
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      console.log('🔐 Creating option type - Auth check:', { user: user?.id, authError });
+      console.log('🔐 Creating option type - Session check:', { 
+        hasSession: !!session, 
+        userId: session?.user?.id,
+        sessionError 
+      });
       
-      if (authError || !user) {
-        console.error('Authentication failed:', authError);
-        throw new Error('Not authenticated. Please refresh the page and try again.');
+      if (sessionError || !session?.user) {
+        console.error('Session check failed:', sessionError);
+        throw new Error('Authentication session missing. Please sign in again.');
       }
       
       const insertData = {
         ...category,
-        user_id: user.id,
+        user_id: session.user.id,
         is_system_default: false,
         active: true,
       };
