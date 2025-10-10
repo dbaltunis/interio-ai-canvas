@@ -26,6 +26,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCreateTreatmentOption, useCreateOptionValue, useDeleteOptionValue } from "@/hooks/useTreatmentOptionsManagement";
 import { OptionRulesManager } from "./OptionRulesManager";
 import { useOptionTypeCategories } from "@/hooks/useOptionTypeCategories";
+import { TREATMENT_CATEGORIES } from "@/types/treatmentCategories";
 
 // Import pricing components
 import { HandFinishedToggle } from "./pricing/HandFinishedToggle";
@@ -480,17 +481,11 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                       <SelectValue placeholder="Select window covering type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="curtain">Curtain</SelectItem>
-                      <SelectItem value="roller_blind">Roller Blind</SelectItem>
-                      <SelectItem value="venetian_blind">Venetian Blind</SelectItem>
-                      <SelectItem value="vertical_blind">Vertical Blind</SelectItem>
-                      <SelectItem value="cellular_shade">Cellular Shade</SelectItem>
-                      <SelectItem value="roman_blind">Roman Blind</SelectItem>
-                      <SelectItem value="plantation_shutter">Plantation Shutter</SelectItem>
-                      <SelectItem value="cafe_shutter">Cafe Shutter</SelectItem>
-                       <SelectItem value="awning">Awning</SelectItem>
-                       <SelectItem value="panel_glide">Panel Glide</SelectItem>
-                       <SelectItem value="custom">Custom Window Covering</SelectItem>
+                      {Object.values(TREATMENT_CATEGORIES).map((category) => (
+                        <SelectItem key={category.singular} value={category.singular}>
+                          {category.display_name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
