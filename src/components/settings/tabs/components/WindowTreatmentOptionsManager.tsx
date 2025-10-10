@@ -16,13 +16,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useOptionTypeCategories, useCreateOptionTypeCategory } from "@/hooks/useOptionTypeCategories";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-type TreatmentCategory = 'roller_blind' | 'roman_blind' | 'venetian_blind' | 'vertical_blind' | 'shutter' | 'awning' | 'plantation_shutter' | 'cellular_shade' | 'curtains' | 'panel_glide';
+type TreatmentCategory = 'roller_blinds' | 'roman_blinds' | 'venetian_blinds' | 'vertical_blinds' | 'shutters' | 'awning' | 'plantation_shutters' | 'cellular_blinds' | 'curtains' | 'panel_glide';
 
 export const WindowTreatmentOptionsManager = () => {
   const queryClient = useQueryClient();
   const { data: allTreatmentOptions = [], isLoading } = useAllTreatmentOptions();
   
-  const [activeTreatment, setActiveTreatment] = useState<TreatmentCategory>('roller_blind');
+  const [activeTreatment, setActiveTreatment] = useState<TreatmentCategory>('roller_blinds');
   const [activeOptionType, setActiveOptionType] = useState<string>('');
   
   // Fetch curtain templates (including system defaults for viewing)
@@ -282,14 +282,14 @@ export const WindowTreatmentOptionsManager = () => {
 
   const getTreatmentLabel = (category: TreatmentCategory) => {
     const labels: Record<TreatmentCategory, string> = {
-      roller_blind: 'Roller Blinds',
-      roman_blind: 'Roman Blinds',
-      venetian_blind: 'Venetian Blinds',
-      vertical_blind: 'Vertical Blinds',
-      shutter: 'Shutters',
+      roller_blinds: 'Roller Blinds',
+      roman_blinds: 'Roman Blinds',
+      venetian_blinds: 'Venetian Blinds',
+      vertical_blinds: 'Vertical Blinds',
+      shutters: 'Shutters',
       awning: 'Awnings',
-      plantation_shutter: 'Plantation Shutters',
-      cellular_shade: 'Cellular Shades',
+      plantation_shutters: 'Plantation Shutters',
+      cellular_blinds: 'Cellular Shades',
       curtains: 'Curtains',
       panel_glide: 'Panel Glides',
     };
