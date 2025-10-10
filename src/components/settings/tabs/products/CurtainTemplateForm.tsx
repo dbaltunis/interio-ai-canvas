@@ -148,12 +148,12 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   const mapCurtainTypeToCategory = (type: string) => {
     const mapping: Record<string, string> = {
       'curtain': 'curtains',
-      'roller_blind': 'roller_blind',  // Keep singular to match database
+      'roller_blind': 'roller_blinds',  // ✅ FIXED: Match the actual category
       'roman_blind': 'roman_blinds',
       'venetian_blind': 'venetian_blinds',
       'vertical_blind': 'vertical_blinds',
-      'cellular_shade': 'cellular_shades',
-      'plantation_shutter': 'plantation_shutter',
+      'cellular_shade': 'cellular_blinds',  // ✅ FIXED: Match the actual category
+      'plantation_shutter': 'plantation_shutters',  // ✅ FIXED: Match the actual category
       'cafe_shutter': 'shutters',
       'panel_glide': 'panel_glide',
       'awning': 'awning',
