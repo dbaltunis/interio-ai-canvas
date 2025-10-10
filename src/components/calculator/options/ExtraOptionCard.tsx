@@ -1,6 +1,6 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { getOptionPrice } from "@/utils/optionDataAdapter";
 
 interface ExtraOptionCardProps {
   extra: {
@@ -17,6 +17,8 @@ interface ExtraOptionCardProps {
 }
 
 export const ExtraOptionCard = ({ extra, isSelected, onToggle }: ExtraOptionCardProps) => {
+  const price = getOptionPrice(extra);
+  
   return (
     <div className="ml-6 flex items-center space-x-3 p-2 border rounded-lg bg-muted">
       <input
@@ -47,7 +49,7 @@ export const ExtraOptionCard = ({ extra, isSelected, onToggle }: ExtraOptionCard
             {extra.is_default && <span className="text-xs text-blue-600">• Default</span>}
           </div>
           <Badge variant="outline" className="text-xs">
-            £{extra.base_price}
+            £{price}
           </Badge>
         </div>
       </Label>

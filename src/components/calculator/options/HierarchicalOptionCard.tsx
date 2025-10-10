@@ -1,6 +1,6 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { getOptionPrice, getOptionPricingMethod } from "@/utils/optionDataAdapter";
 
 interface HierarchicalOptionCardProps {
   option: {
@@ -16,6 +16,9 @@ interface HierarchicalOptionCardProps {
 }
 
 export const HierarchicalOptionCard = ({ option, isSelected, onToggle }: HierarchicalOptionCardProps) => {
+  const price = getOptionPrice(option);
+  const pricingMethod = getOptionPricingMethod(option);
+  
   return (
     <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
       <input
@@ -43,7 +46,7 @@ export const HierarchicalOptionCard = ({ option, isSelected, onToggle }: Hierarc
             )}
           </div>
           <Badge variant="outline" className="text-xs">
-            £{option.base_price} {option.pricing_method}
+            £{price} {pricingMethod}
           </Badge>
         </div>
       </Label>

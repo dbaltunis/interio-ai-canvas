@@ -1,5 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
+import { getOptionPrice, getOptionPricingMethod } from '@/utils/optionDataAdapter';
 
 export interface MakingCost {
   id: string;
@@ -262,11 +262,11 @@ const calculateDropRangePrice = (dropRanges: any[], drop: number): number => {
 
 const calculateOptionCost = (option: any, params: any) => {
   const { railWidth, drop, quantity, fabricCostPerYard, fabricUsage } = params;
-  const baseCost = option.base_cost || 0;
+  const baseCost = getOptionPrice(option);
   let cost = 0;
   let calculation = '';
 
-  switch (option.cost_type || 'fixed') {
+  switch (getOptionPricingMethod(option)) {
     case 'per-meter':
       const widthInMeters = railWidth / 100;
       cost = baseCost * widthInMeters * quantity;

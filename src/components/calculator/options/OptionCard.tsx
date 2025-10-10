@@ -2,6 +2,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { WindowCoveringOption } from "@/hooks/useWindowCoveringOptions";
+import { getOptionPrice, getOptionPricingMethod } from "@/utils/optionDataAdapter";
 
 interface OptionCardProps {
   option: WindowCoveringOption;
@@ -10,6 +11,9 @@ interface OptionCardProps {
 }
 
 export const OptionCard = ({ option, isSelected, onToggle }: OptionCardProps) => {
+  const price = getOptionPrice(option);
+  const pricingMethod = getOptionPricingMethod(option);
+  
   return (
     <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
       <input
@@ -39,7 +43,7 @@ export const OptionCard = ({ option, isSelected, onToggle }: OptionCardProps) =>
           </div>
           <div className="flex gap-2">
             <Badge variant="outline" className="text-xs">
-              £{option.base_cost} {option.cost_type}
+              £{price} {pricingMethod}
             </Badge>
             {option.is_required && (
               <Badge variant="destructive" className="text-xs">Required</Badge>

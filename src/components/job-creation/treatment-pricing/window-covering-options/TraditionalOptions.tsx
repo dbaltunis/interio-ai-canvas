@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { formatCurrency } from "./currencyUtils";
 import { useConditionalOptions } from "@/hooks/useConditionalOptions";
 import { useMemo } from "react";
+import { getOptionPrice, getOptionPricingMethod } from "@/utils/optionDataAdapter";
 
 interface TraditionalOptionsProps {
   options: any[];
@@ -86,7 +87,7 @@ export const TraditionalOptions = ({
                       </div>
                       <div className="flex gap-2">
                         <Badge variant="outline" className="text-xs">
-                          {formatCurrency(option.base_cost, currency)} {option.cost_type}
+                          {formatCurrency(getOptionPrice(option), currency)} {getOptionPricingMethod(option)}
                         </Badge>
                         {option.is_required && (
                           <Badge variant="destructive" className="text-xs">Required</Badge>

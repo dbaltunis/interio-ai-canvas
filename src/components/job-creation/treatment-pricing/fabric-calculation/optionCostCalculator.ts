@@ -1,12 +1,13 @@
+import { getOptionPrice, getOptionPricingMethod } from "@/utils/optionDataAdapter";
 
 export const calculateOptionCost = (option: any, formData: any) => {
   const railWidth = parseFloat(formData.rail_width) || 0;
   const drop = parseFloat(formData.drop) || 0;
   const quantity = formData.quantity || 1;
-  const baseCost = option.base_cost || option.base_price || 0;
+  const baseCost = getOptionPrice(option);
   
   // Determine which pricing method to use
-  let method = option.pricing_method || option.cost_type;
+  let method = getOptionPricingMethod(option);
   
   // If option inherits from window covering, use window covering's method
   if (method === 'inherit' && option.window_covering_pricing_method) {
@@ -83,10 +84,10 @@ export const calculateHierarchicalOptionCost = (option: any, formData: any) => {
   const railWidth = parseFloat(formData.rail_width) || 0;
   const drop = parseFloat(formData.drop) || 0;
   const quantity = formData.quantity || 1;
-  const baseCost = option.base_price || 0;
+  const baseCost = getOptionPrice(option);
   
   // Determine which pricing method to use
-  let method = option.pricing_method;
+  let method = getOptionPricingMethod(option);
   
   // If option inherits from window covering or category, use that method
   if (method === 'inherit' && option.window_covering_pricing_method) {
