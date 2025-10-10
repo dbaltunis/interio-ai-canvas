@@ -3418,12 +3418,49 @@ export type Database = {
           },
         ]
       }
+      option_type_categories: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          id: string
+          is_system_default: boolean | null
+          treatment_category: string
+          type_key: string
+          type_label: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          is_system_default?: boolean | null
+          treatment_category: string
+          type_key: string
+          type_label: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          is_system_default?: boolean | null
+          treatment_category?: string
+          type_key?: string
+          type_label?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       option_values: {
         Row: {
           code: string
           created_at: string | null
           extra_data: Json | null
           id: string
+          is_system_default: boolean | null
           label: string
           option_id: string
           order_index: number | null
@@ -3433,6 +3470,7 @@ export type Database = {
           created_at?: string | null
           extra_data?: Json | null
           id?: string
+          is_system_default?: boolean | null
           label: string
           option_id: string
           order_index?: number | null
@@ -3442,6 +3480,7 @@ export type Database = {
           created_at?: string | null
           extra_data?: Json | null
           id?: string
+          is_system_default?: boolean | null
           label?: string
           option_id?: string
           order_index?: number | null
@@ -4774,11 +4813,13 @@ export type Database = {
           created_at: string | null
           id: string
           input_type: Database["public"]["Enums"]["option_input_type"]
+          is_system_default: boolean | null
           key: string
           label: string
           order_index: number | null
           required: boolean | null
           template_id: string | null
+          treatment_category: string | null
           treatment_id: string | null
           updated_at: string | null
           validation: Json | null
@@ -4788,11 +4829,13 @@ export type Database = {
           created_at?: string | null
           id?: string
           input_type: Database["public"]["Enums"]["option_input_type"]
+          is_system_default?: boolean | null
           key: string
           label: string
           order_index?: number | null
           required?: boolean | null
           template_id?: string | null
+          treatment_category?: string | null
           treatment_id?: string | null
           updated_at?: string | null
           validation?: Json | null
@@ -4802,11 +4845,13 @@ export type Database = {
           created_at?: string | null
           id?: string
           input_type?: Database["public"]["Enums"]["option_input_type"]
+          is_system_default?: boolean | null
           key?: string
           label?: string
           order_index?: number | null
           required?: boolean | null
           template_id?: string | null
+          treatment_category?: string | null
           treatment_id?: string | null
           updated_at?: string | null
           validation?: Json | null
@@ -5929,6 +5974,14 @@ export type Database = {
           reminder_type_param?: string
         }
         Returns: string
+      }
+      seed_roller_blind_defaults: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      seed_system_option_types: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       trigger_automation_workflow: {
         Args: {
