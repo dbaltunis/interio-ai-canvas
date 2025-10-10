@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit, Trash2, X } from "lucide-react";
+import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -330,9 +330,22 @@ export const WindowTreatmentOptionsManager = () => {
         </div>
 
         <Tabs value={activeOptionType} onValueChange={(v) => setActiveOptionType(v)} className="w-full">
-          <ScrollArea className="w-full whitespace-nowrap">
-            <div className="w-max">{/* wrapper for horizontal scroll */}
-            <TabsList className="inline-flex h-10 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground w-max">
+          <div className="relative flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-shrink-0"
+              onClick={() => {
+                const scrollEl = document.querySelector('[data-radix-scroll-area-viewport]');
+                if (scrollEl) scrollEl.scrollBy({ left: -200, behavior: 'smooth' });
+              }}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            <ScrollArea className="w-full whitespace-nowrap">
+              <div className="w-max">{/* wrapper for horizontal scroll */}
+              <TabsList className="inline-flex h-10 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground w-max">
               {optionTypeCategories.map(opt => (
                 <div key={opt.type_key} className="relative group">
                   <TabsTrigger value={opt.type_key} className="px-3 pr-8">
@@ -387,9 +400,22 @@ export const WindowTreatmentOptionsManager = () => {
                 <Plus className="h-3 w-3 mr-1" />
                 New Type
               </Button>
-            </TabsList>
-            </div>
-          </ScrollArea>
+              </TabsList>
+              </div>
+            </ScrollArea>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-shrink-0"
+              onClick={() => {
+                const scrollEl = document.querySelector('[data-radix-scroll-area-viewport]');
+                if (scrollEl) scrollEl.scrollBy({ left: 200, behavior: 'smooth' });
+              }}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
 
           {optionTypeCategories.map((optType) => {
             const isSystemOnly = matchingTemplates.length > 0 && matchingTemplates.every(t => t.is_system_default);
