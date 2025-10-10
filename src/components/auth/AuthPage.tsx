@@ -201,8 +201,18 @@ export const AuthPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/30">
-      <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-screen">
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-background via-primary/5 to-secondary/10">
+      {/* AI-themed animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-secondary/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+        
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(var(--primary-rgb,0,0,0),0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(var(--primary-rgb,0,0,0),0.03)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)]"></div>
+      </div>
+      
+      <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-screen relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 items-center w-full max-w-6xl">
           {/* Left side - Branding and Info */}
           <div className="space-y-8 text-center lg:text-left">
@@ -251,7 +261,10 @@ export const AuthPage = () => {
 
           {/* Right side - Auth Form */}
           <div className="w-full max-w-md mx-auto">
-            <Card className="shadow-lg border-0 bg-card/60 backdrop-blur-sm">
+            <Card className="shadow-2xl border border-primary/20 bg-card/80 backdrop-blur-md relative overflow-hidden">
+              {/* Subtle animated border glow */}
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 animate-pulse pointer-events-none"></div>
+              <div className="relative z-10">
               <CardHeader className="text-center pb-4">
                 {invitation && (
                   <div className="mb-4">
@@ -420,6 +433,7 @@ export const AuthPage = () => {
                   </>
                 )}
               </CardContent>
+              </div>
             </Card>
           </div>
         </div>
