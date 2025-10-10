@@ -244,7 +244,7 @@ export const WindowTreatmentOptionsManager = () => {
     setFormData({
       name: value.label,
       value: value.code,
-      price: value.extra_data?.price || 0,
+      price: Number(value.extra_data?.price) || 0,
     });
     setEditingValue(value);
     setIsCreating(false);
