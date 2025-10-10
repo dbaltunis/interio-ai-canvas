@@ -279,8 +279,8 @@ export const WindowTreatmentOptionsManager = () => {
     }
   };
 
-  const getTreatmentLabel = (category: TreatmentCategory) => {
-    const labels: Record<TreatmentCategory, string> = {
+  const getTreatmentLabel = (category: TreatmentCategoryDbValue) => {
+    const labels: Record<TreatmentCategoryDbValue, string> = {
       roller_blinds: 'Roller Blinds',
       roman_blinds: 'Roman Blinds',
       venetian_blinds: 'Venetian Blinds',
@@ -314,7 +314,7 @@ export const WindowTreatmentOptionsManager = () => {
           <Select 
             value={activeTreatment} 
             onValueChange={(v) => {
-              setActiveTreatment(v as TreatmentCategory);
+              setActiveTreatment(v as TreatmentCategoryDbValue);
               setActiveOptionType(''); // Will be set by useEffect when categories load
             }}
           >
