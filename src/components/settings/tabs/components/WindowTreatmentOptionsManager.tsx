@@ -158,30 +158,60 @@ export const WindowTreatmentOptionsManager = () => {
       } else {
         // Create option for user's templates only (not system templates)
         const userTemplates = matchingTemplates.filter(t => !t.is_system_default);
+        
+        // Track created options to avoid duplicates
+        const createdOptions = new Map<string, any>();
+        
         for (const template of userTemplates) {
           // Check if this option type already exists for this template
           let treatmentOption = allTreatmentOptions.find(
             (opt: any) => opt.treatment_id === template.id && opt.key === activeOptionType
           );
 
-          // If not, create it
+          // If not in cache, check if we just created it
+          if (!treatmentOption && createdOptions.has(template.id)) {
+            treatmentOption = createdOptions.get(template.id);
+          }
+
+          // If still not found, create it
           if (!treatmentOption) {
             const optionTypeConfig = optionTypeCategories.find(
               opt => opt.type_key === activeOptionType
             );
             
-            const newOption = await createTreatmentOption.mutateAsync({
-              template_id: template.id,
-              key: activeOptionType,
-              label: optionTypeConfig?.type_label || activeOptionType,
-              input_type: 'select',
-              required: false,
-              visible: true,
-              order_index: 0,
-              treatment_category: activeTreatment,
-              is_system_default: false,
-            });
-            treatmentOption = newOption;
+            try {
+              const newOption = await createTreatmentOption.mutateAsync({
+                template_id: template.id,
+                key: activeOptionType,
+                label: optionTypeConfig?.type_label || activeOptionType,
+                input_type: 'select',
+                required: false,
+                visible: true,
+                order_index: 0,
+                treatment_category: activeTreatment,
+                is_system_default: false,
+              });
+              treatmentOption = newOption;
+              createdOptions.set(template.id, newOption);
+            } catch (error: any) {
+              // If duplicate error, try to fetch the option that was just created
+              if (error?.code === '23505') {
+                const { data } = await supabase
+                  .from('treatment_options')
+                  .select('*')
+                  .eq('template_id', template.id)
+                  .eq('key', activeOptionType)
+                  .single();
+                if (data) {
+                  treatmentOption = data;
+                  createdOptions.set(template.id, data);
+                } else {
+                  throw error;
+                }
+              } else {
+                throw error;
+              }
+            }
           }
 
           // Now create the value
