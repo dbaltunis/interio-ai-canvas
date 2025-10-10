@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { Save, X, Info, Plus, Trash2, Upload, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +28,7 @@ import { useCreateTreatmentOption, useCreateOptionValue, useDeleteOptionValue } 
 import { OptionRulesManager } from "./OptionRulesManager";
 import { useOptionTypeCategories } from "@/hooks/useOptionTypeCategories";
 import { TREATMENT_CATEGORIES } from "@/types/treatmentCategories";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 // Import pricing components
 import { HandFinishedToggle } from "./pricing/HandFinishedToggle";
@@ -50,6 +52,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   const { data: topSystems = [] } = useEnhancedInventoryByCategory('top_system');
   const { data: optionCategories = [] } = useOptionCategories();
   const queryClient = useQueryClient();
+  const { units } = useMeasurementUnits();
   
   // Fetch treatment options for THIS template
   const { data: treatmentOptionsForTemplate = [] } = useTreatmentOptions(template?.id);
@@ -57,6 +60,19 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   const createTreatmentOption = useCreateTreatmentOption();
   const createOptionValue = useCreateOptionValue();
   const deleteOptionValue = useDeleteOptionValue();
+
+  // Helper function to format price consistently
+  const formatOptionPrice = (price: number | undefined): string => {
+    if (price === undefined || price === null) return 'Included';
+    if (price === 0) return 'Included';
+    
+    const currencySymbol = units.currency === 'GBP' ? '£' : 
+                          units.currency === 'EUR' ? '€' : 
+                          units.currency === 'USD' ? '$' : 
+                          units.currency;
+    
+    return `+${currencySymbol}${price.toFixed(2)}`;
+  };
 
   // State for eyelet ring library
   const [eyeletRings] = useState([
@@ -769,14 +785,12 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                                     />
                                     <Label 
                                       htmlFor={`${group.type}-${value.code}`}
-                                      className="flex-1 cursor-pointer"
+                                      className="flex-1 cursor-pointer flex items-center justify-between"
                                     >
-                                      <div className="font-medium text-sm">{value.label}</div>
-                                      {value.extra_data?.price !== undefined && (
-                                        <div className="text-xs text-muted-foreground">
-                                          {value.extra_data.price === 0 ? 'Included' : `+$${value.extra_data.price.toFixed(2)}`}
-                                        </div>
-                                      )}
+                                      <span className="font-medium text-sm">{value.label}</span>
+                                      <Badge variant={value.extra_data?.price === 0 ? "secondary" : "outline"} className="text-xs ml-2">
+                                        {formatOptionPrice(value.extra_data?.price)}
+                                      </Badge>
                                     </Label>
                                   </div>
                                 );
