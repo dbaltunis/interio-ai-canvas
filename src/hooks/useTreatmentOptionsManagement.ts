@@ -8,13 +8,15 @@ export const useCreateTreatmentOption = () => {
   
   return useMutation({
     mutationFn: async (data: {
-      template_id: string;
+      template_id?: string;
       key: string;
       label: string;
       input_type: 'select' | 'number' | 'boolean' | 'text' | 'multiselect';
       required?: boolean;
       visible?: boolean;
       order_index?: number;
+      treatment_category?: string;
+      is_system_default?: boolean;
     }) => {
       const { data: option, error } = await supabase
         .from('treatment_options')

@@ -12,57 +12,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAllTreatmentOptions, useCreateOptionValue, useUpdateOptionValue, useDeleteOptionValue, useCreateTreatmentOption } from "@/hooks/useTreatmentOptionsManagement";
 import type { TreatmentOption, OptionValue } from "@/hooks/useTreatmentOptions";
 import { useQuery } from "@tanstack/react-query";
+import { useOptionTypeCategories, useCreateOptionTypeCategory } from "@/hooks/useOptionTypeCategories";
 
-type TreatmentCategory = 'roller_blind' | 'roman_blind' | 'venetian_blind' | 'vertical_blind' | 'shutter' | 'awning';
-
-const OPTION_TYPES_BY_CATEGORY: Record<TreatmentCategory, { type: string; label: string; examples: { name: string; value: string } }[]> = {
-  roller_blind: [
-    { type: 'tube_size', label: 'Tube Sizes', examples: { name: '38mm Tube', value: '38' } },
-    { type: 'mount_type', label: 'Mount Types', examples: { name: 'Inside Mount', value: 'inside_mount' } },
-    { type: 'fascia_type', label: 'Fascia Types', examples: { name: 'Standard Fascia', value: 'standard_fascia' } },
-    { type: 'bottom_rail_style', label: 'Bottom Rails', examples: { name: 'Weighted Bar', value: 'weighted' } },
-    { type: 'control_type', label: 'Control Types', examples: { name: 'Chain Control', value: 'chain' } },
-    { type: 'motor_type', label: 'Motor Types', examples: { name: 'Battery Motor', value: 'battery' } },
-  ],
-  roman_blind: [
-    { type: 'headrail_type', label: 'Headrail Types', examples: { name: 'Standard Headrail', value: 'standard' } },
-    { type: 'fold_style', label: 'Fold Styles', examples: { name: 'Flat Fold', value: 'flat' } },
-    { type: 'lining_type', label: 'Lining Types', examples: { name: 'Blackout Lining', value: 'blackout' } },
-    { type: 'control_type', label: 'Control Types', examples: { name: 'Chain Control', value: 'chain' } },
-    { type: 'mount_type', label: 'Mount Types', examples: { name: 'Inside Mount', value: 'inside_mount' } },
-  ],
-  venetian_blind: [
-    { type: 'slat_size', label: 'Slat Sizes', examples: { name: '25mm Slat', value: '25' } },
-    { type: 'material', label: 'Materials', examples: { name: 'Aluminum', value: 'aluminum' } },
-    { type: 'control_type', label: 'Control Types', examples: { name: 'Wand Control', value: 'wand' } },
-    { type: 'headrail_type', label: 'Headrail Types', examples: { name: 'Standard Headrail', value: 'standard' } },
-    { type: 'mount_type', label: 'Mount Types', examples: { name: 'Inside Mount', value: 'inside_mount' } },
-  ],
-  vertical_blind: [
-    { type: 'louvre_width', label: 'Louvre Widths', examples: { name: '89mm Louvre', value: '89' } },
-    { type: 'headrail_type', label: 'Headrail Types', examples: { name: 'Standard Track', value: 'standard' } },
-    { type: 'control_type', label: 'Control Types', examples: { name: 'Wand Control', value: 'wand' } },
-    { type: 'weight_style', label: 'Weight Styles', examples: { name: 'Chain Weight', value: 'chain' } },
-  ],
-  shutter: [
-    { type: 'louvre_size', label: 'Louvre Sizes', examples: { name: '63mm Louvre', value: '63' } },
-    { type: 'frame_type', label: 'Frame Types', examples: { name: 'L-Frame', value: 'l_frame' } },
-    { type: 'hinge_type', label: 'Hinge Types', examples: { name: 'Standard Hinge', value: 'standard' } },
-    { type: 'material', label: 'Materials', examples: { name: 'Basswood', value: 'basswood' } },
-    { type: 'finish_type', label: 'Finish Types', examples: { name: 'Painted', value: 'painted' } },
-    { type: 'control_type', label: 'Control Types', examples: { name: 'Center Tilt Rod', value: 'center_tilt' } },
-  ],
-  awning: [
-    { type: 'motor_type', label: 'Motor Types', examples: { name: 'Somfy RTS', value: 'somfy_rts' } },
-    { type: 'bracket_type', label: 'Bracket Types', examples: { name: 'Wall Bracket', value: 'wall' } },
-    { type: 'projection_type', label: 'Projection Types', examples: { name: 'Standard Projection', value: 'standard' } },
-    { type: 'control_type', label: 'Control Types', examples: { name: 'Remote Control', value: 'remote' } },
-    { type: 'arm_type', label: 'Arm Types', examples: { name: 'Folding Arm', value: 'folding' } },
-  ],
-};
+type TreatmentCategory = 'roller_blind' | 'roman_blind' | 'venetian_blind' | 'vertical_blind' | 'shutter' | 'awning' | 'plantation_shutter' | 'cellular_shade' | 'curtains' | 'panel_glide';
 
 export const WindowTreatmentOptionsManager = () => {
   const { data: allTreatmentOptions = [], isLoading } = useAllTreatmentOptions();
+  
+  const [activeTreatment, setActiveTreatment] = useState<TreatmentCategory>('roller_blind');
+  const [activeOptionType, setActiveOptionType] = useState<string>('');
   
   // Fetch curtain templates (including system defaults for viewing)
   const { data: allTemplates = [], isLoading: templatesLoading } = useQuery({
@@ -81,21 +39,31 @@ export const WindowTreatmentOptionsManager = () => {
     },
   });
   
+  // Fetch option type categories dynamically from database
+  const { data: optionTypeCategories = [], isLoading: categoriesLoading } = useOptionTypeCategories(activeTreatment);
+  
   const createTreatmentOption = useCreateTreatmentOption();
   const createOptionValue = useCreateOptionValue();
   const updateOptionValue = useUpdateOptionValue();
   const deleteOptionValue = useDeleteOptionValue();
+  const createOptionTypeCategory = useCreateOptionTypeCategory();
   const { toast } = useToast();
-  
-  const [activeTreatment, setActiveTreatment] = useState<TreatmentCategory>('venetian_blind');
-  const [activeOptionType, setActiveOptionType] = useState<string>('slat_size');
   const [isCreating, setIsCreating] = useState(false);
   const [editingValue, setEditingValue] = useState<OptionValue | null>(null);
+  const [showCreateOptionTypeDialog, setShowCreateOptionTypeDialog] = useState(false);
+  const [newOptionTypeData, setNewOptionTypeData] = useState({ type_label: '', type_key: '' });
   const [formData, setFormData] = useState({
     name: '',
     value: '',
     price: 0 as number,
   });
+
+  // Set first option type when categories load
+  useEffect(() => {
+    if (optionTypeCategories.length > 0 && !activeOptionType) {
+      setActiveOptionType(optionTypeCategories[0].type_key);
+    }
+  }, [optionTypeCategories, activeOptionType]);
 
   const resetForm = () => {
     setFormData({
@@ -197,18 +165,20 @@ export const WindowTreatmentOptionsManager = () => {
 
           // If not, create it
           if (!treatmentOption) {
-            const optionTypeConfig = OPTION_TYPES_BY_CATEGORY[activeTreatment].find(
-              opt => opt.type === activeOptionType
+            const optionTypeConfig = optionTypeCategories.find(
+              opt => opt.type_key === activeOptionType
             );
             
             const newOption = await createTreatmentOption.mutateAsync({
               template_id: template.id,
               key: activeOptionType,
-              label: optionTypeConfig?.label || activeOptionType,
+              label: optionTypeConfig?.type_label || activeOptionType,
               input_type: 'select',
               required: false,
               visible: true,
               order_index: 0,
+              treatment_category: activeTreatment,
+              is_system_default: false,
             });
             treatmentOption = newOption;
           }
@@ -296,15 +266,17 @@ export const WindowTreatmentOptionsManager = () => {
       vertical_blind: 'Vertical Blinds',
       shutter: 'Shutters',
       awning: 'Awnings',
+      plantation_shutter: 'Plantation Shutters',
+      cellular_shade: 'Cellular Shades',
+      curtains: 'Curtains',
+      panel_glide: 'Panel Glides',
     };
     return labels[category];
   };
 
-  if (isLoading || templatesLoading) {
+  if (isLoading || templatesLoading || categoriesLoading) {
     return <div className="text-center py-8">Loading options...</div>;
   }
-
-  const currentOptions = OPTION_TYPES_BY_CATEGORY[activeTreatment];
 
   return (
     <Card>
@@ -322,7 +294,7 @@ export const WindowTreatmentOptionsManager = () => {
             value={activeTreatment} 
             onValueChange={(v) => {
               setActiveTreatment(v as TreatmentCategory);
-              setActiveOptionType(OPTION_TYPES_BY_CATEGORY[v as TreatmentCategory][0].type);
+              setActiveOptionType(''); // Will be set by useEffect when categories load
             }}
           >
             <SelectTrigger>
@@ -342,28 +314,37 @@ export const WindowTreatmentOptionsManager = () => {
         <Tabs value={activeOptionType} onValueChange={(v) => setActiveOptionType(v)} className="w-full">
           <ScrollArea className="w-full whitespace-nowrap rounded-md border bg-background">
             <TabsList className="inline-flex h-10 items-center justify-start rounded-none bg-transparent p-1 text-muted-foreground w-max">
-              {currentOptions.map(opt => (
-                <TabsTrigger key={opt.type} value={opt.type} className="px-3">
-                  {opt.label}
+              {optionTypeCategories.map(opt => (
+                <TabsTrigger key={opt.type_key} value={opt.type_key} className="px-3">
+                  {opt.type_label}
                 </TabsTrigger>
               ))}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowCreateOptionTypeDialog(true)}
+                className="ml-2"
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                New Type
+              </Button>
             </TabsList>
           </ScrollArea>
 
-          {currentOptions.map((optType) => {
+          {optionTypeCategories.map((optType) => {
             const isSystemOnly = matchingTemplates.length > 0 && matchingTemplates.every(t => t.is_system_default);
             
             return (
-              <TabsContent key={optType.type} value={optType.type} className="space-y-4">
+              <TabsContent key={optType.type_key} value={optType.type_key} className="space-y-4">
                 <div className="flex justify-between items-center">
                   <p className="text-sm text-muted-foreground">
                     {isSystemOnly 
-                      ? `Viewing system ${optType.label.toLowerCase()} (clone template to customize)`
-                      : `Add ${optType.label.toLowerCase()} for ${getTreatmentLabel(activeTreatment).toLowerCase()}`
+                      ? `Viewing system ${optType.type_label.toLowerCase()} (clone template to customize)`
+                      : `Add ${optType.type_label.toLowerCase()} for ${getTreatmentLabel(activeTreatment).toLowerCase()}`
                     }
                   </p>
                   {!isSystemOnly && (
-                    <Button onClick={() => handleAddOption(optType.type)}>
+                    <Button onClick={() => handleAddOption(optType.type_key)}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add Option
                     </Button>
@@ -384,7 +365,7 @@ export const WindowTreatmentOptionsManager = () => {
                         id="name"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder={optType.examples.name}
+                        placeholder="e.g. 38mm Tube"
                       />
                     </div>
                     
@@ -394,7 +375,7 @@ export const WindowTreatmentOptionsManager = () => {
                         id="value"
                         value={formData.value}
                         onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-                        placeholder={optType.examples.value}
+                        placeholder="e.g. 38mm"
                       />
                       <p className="text-xs text-muted-foreground mt-1">
                         Lowercase with underscores for multi-word values
@@ -434,7 +415,7 @@ export const WindowTreatmentOptionsManager = () => {
                   </div>
                 ) : uniqueOptionValues.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
-                    <p className="font-medium">No {optType.label.toLowerCase()} found</p>
+                    <p className="font-medium">No {optType.type_label.toLowerCase()} found</p>
                     <p className="text-xs mt-1">
                       {matchingTemplates.some(t => t.is_system_default) 
                         ? 'Clone the template to customize options' 

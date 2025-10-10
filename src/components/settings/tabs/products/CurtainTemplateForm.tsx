@@ -175,15 +175,25 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       
       const templateIds = matchingTemplates.map((t: any) => t.id);
       
-      // Get all treatment options for these templates
-      const { data, error } = await supabase
+      const { data: authUser } = await supabase.auth.getUser();
+      
+      // Get all treatment options for this treatment category (system defaults + user's own)
+      let query = supabase
         .from('treatment_options')
         .select(`
           *,
           option_values (*)
         `)
-        .in('template_id', templateIds)
+        .eq('treatment_category', formData.curtain_type)
         .order('order_index');
+      
+      if (authUser?.user) {
+        query = query.or(`is_system_default.eq.true,user_id.eq.${authUser.user.id}`);
+      } else {
+        query = query.eq('is_system_default', true);
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
       
