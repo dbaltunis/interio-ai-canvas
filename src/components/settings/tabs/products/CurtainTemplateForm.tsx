@@ -173,16 +173,18 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   // Fetch ALL available treatment options - checking the WindowTreatmentOptionsManager approach
   // We'll check for options from templates managed in the Options tab
   const { data: allAvailableOptions = [] } = useQuery({
-    queryKey: ['available-treatment-options-from-manager', formData.curtain_type],
+    queryKey: ['available-treatment-options-from-manager', curtainType],
     queryFn: async () => {
       if (!formData.curtain_type) return [];
       
       // Map formData.curtain_type to proper treatment_category
       const categoryToSearch = mapCurtainTypeToCategory(formData.curtain_type);
       
+      console.log('🔍 Fetching treatment options for category:', categoryToSearch);
+      
       // Query treatment options for this treatment category
       // Note: treatment_options table doesn't have user_id column
-      let query = supabase
+      const query = supabase
         .from('treatment_options')
         .select(`
           *,
@@ -193,7 +195,17 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       
       const { data, error } = await query;
       
-      if (error) throw error;
+      console.log('📦 Treatment options query result:', { 
+        categoryToSearch, 
+        dataCount: data?.length, 
+        error,
+        sampleData: data?.slice(0, 2)
+      });
+      
+      if (error) {
+        console.error('Error fetching treatment options:', error);
+        throw error;
+      }
       
       // Group by key to get unique option types with all their values
       const uniqueOptions = data?.reduce((acc: any[], opt: any) => {
@@ -726,19 +738,22 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                           </div>
                         </div>
                       </CardHeader>
-                      <CardContent>
-                        {!hasOptionsAvailable && !isEnabled ? (
+                       <CardContent>
+                        {!hasOptionsAvailable ? (
                           <div className="text-sm text-muted-foreground p-4 border border-dashed rounded-lg bg-muted/30">
                             <p className="font-medium">No {group.label.toLowerCase()} available.</p>
                             <p className="text-xs mt-1">
-                              Go to Settings → Window Coverings → Options tab, select "{formData.curtain_type === 'venetian_blind' ? 'Venetian Blinds' : formData.curtain_type}", 
+                              Go to Settings → Window Coverings → Options tab, select "{curtainType}", 
                               then add options under the "{group.label}" section.
                             </p>
+                            <p className="text-xs mt-2 font-medium">
+                              Current treatment category: <code className="bg-muted px-1 rounded">{curtainType}</code>
+                            </p>
                           </div>
-                        ) : isEnabled && allAvailableValues.length > 0 ? (
+                        ) : (
                           <div className="space-y-2">
                             <p className="text-sm text-muted-foreground mb-3">
-                              Select which options to include:
+                              {isEnabled ? 'Select which options to include:' : 'Available options (enable to activate):'}
                             </p>
                             <div className="grid grid-cols-2 gap-2">
                               {allAvailableValues.map((value: any) => {
@@ -749,6 +764,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                                     <Checkbox
                                       id={`${group.type}-${value.code}`}
                                       checked={isValueEnabled}
+                                      disabled={!isEnabled || !template?.id}
                                       onCheckedChange={(checked) => 
                                         handleToggleOptionValue(
                                           group.type, 
@@ -775,14 +791,6 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                                 );
                               })}
                             </div>
-                          </div>
-                        ) : isEnabled ? (
-                          <div className="text-sm text-muted-foreground p-4 border border-dashed rounded-lg bg-accent/10">
-                            <p>Option enabled but no values configured yet.</p>
-                          </div>
-                        ) : (
-                          <div className="text-sm text-muted-foreground p-4 border border-dashed rounded-lg">
-                            <p>Enable this option to select available values.</p>
                           </div>
                         )}
                       </CardContent>
