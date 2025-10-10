@@ -73,56 +73,8 @@ export const useCloneSystemTemplate = () => {
       
       if (error) throw error;
       
-      // Clone associated treatment_options and option_values by treatment_category
-      const { data: options, error: optionsError } = await supabase
-        .from('treatment_options')
-        .select('*, option_values(*)')
-        .eq('treatment_category', template.treatment_category)
-        .eq('is_system_default', true);
-      
-      if (optionsError) throw optionsError;
-      
-      if (options && options.length > 0) {
-        // Clone each option for the user's template
-        for (const option of options) {
-          const { data: newOption, error: optionInsertError } = await supabase
-            .from('treatment_options')
-            .insert({
-              treatment_category: template.treatment_category,
-              user_id: user.id,
-              key: option.key,
-              label: option.label,
-              input_type: option.input_type,
-              required: option.required,
-              visible: option.visible,
-              order_index: option.order_index,
-              validation: option.validation,
-              is_system_default: false,
-            })
-            .select()
-            .single();
-          
-          if (optionInsertError) throw optionInsertError;
-          
-          // Clone option values
-          if (option.option_values && option.option_values.length > 0) {
-            const valuesToInsert = option.option_values.map((value: any) => ({
-              option_id: newOption.id,
-              code: value.code,
-              label: value.label,
-              extra_data: value.extra_data,
-              order_index: value.order_index,
-              is_system_default: false,
-            }));
-            
-            const { error: valuesInsertError } = await supabase
-              .from('option_values')
-              .insert(valuesToInsert);
-            
-            if (valuesInsertError) throw valuesInsertError;
-          }
-        }
-      }
+      // NO LONGER CLONE OPTIONS - they are category-based and shared
+      // Options are created once per category and reused by all templates
       
       return clonedTemplate;
     },

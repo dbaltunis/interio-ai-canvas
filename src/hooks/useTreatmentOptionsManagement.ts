@@ -8,19 +8,22 @@ export const useCreateTreatmentOption = () => {
   
   return useMutation({
     mutationFn: async (data: {
-      template_id?: string;
       key: string;
       label: string;
       input_type: 'select' | 'number' | 'boolean' | 'text' | 'multiselect';
       required?: boolean;
       visible?: boolean;
       order_index?: number;
-      treatment_category?: string;
+      treatment_category: string;
       is_system_default?: boolean;
     }) => {
+      // Always create category-based options (NO template_id)
       const { data: option, error } = await supabase
         .from('treatment_options')
-        .insert(data)
+        .insert({
+          ...data,
+          template_id: null, // Force category-based options
+        })
         .select()
         .single();
       
@@ -106,7 +109,7 @@ export const useDeleteOptionValue = () => {
   });
 };
 
-// Get all treatment options for management
+// Get all treatment options for management (category-based, not template-specific)
 export const useAllTreatmentOptions = () => {
   return useQuery({
     queryKey: ['all-treatment-options'],
@@ -114,28 +117,21 @@ export const useAllTreatmentOptions = () => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return [];
       
+      // Get all category-based options (template_id is NULL)
+      // Show both system defaults AND user-created options
       const { data, error } = await supabase
         .from('treatment_options')
         .select(`
           *,
           option_values (*)
         `)
-        .order('order_index');
+        .is('template_id', null)
+        .order('treatment_category', { ascending: true })
+        .order('order_index', { ascending: true });
       
       if (error) throw error;
       
-      // Get user's template IDs AND system default template IDs
-      const { data: templates } = await supabase
-        .from('curtain_templates')
-        .select('id')
-        .or(`user_id.eq.${user.user.id},is_system_default.eq.true`);
-      
-      const templateIds = templates?.map(t => t.id) || [];
-      
-      // Filter to show options for user's templates AND system defaults
-      return (data as TreatmentOption[]).filter(opt => 
-        templateIds.includes(opt.treatment_id)
-      );
+      return data as TreatmentOption[];
     },
   });
 };

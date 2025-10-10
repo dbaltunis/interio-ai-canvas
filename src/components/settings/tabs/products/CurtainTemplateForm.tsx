@@ -233,32 +233,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
           updates: { visible: enabled }
         });
       } else if (enabled) {
-        // Create new option for this template
-        const sourceOption = allAvailableOptions.find(opt => opt.key === optionKey);
-        if (!sourceOption) return;
-        
-        const newOption = await createTreatmentOption.mutateAsync({
-          template_id: template.id,
-          key: optionKey,
-          label: optionLabel,
-          input_type: 'select',
-          required: false,
-          visible: true,
-          order_index: 0,
-        });
-        
-        // Copy all option values from source
-        for (const value of (sourceOption.option_values || [])) {
-          await createOptionValue.mutateAsync({
-            option_id: newOption.id,
-            code: value.code,
-            label: value.label,
-            order_index: value.order_index,
-            extra_data: value.extra_data && Object.keys(value.extra_data).length > 0 
-              ? value.extra_data 
-              : { price: 0 },
-          });
-        }
+        // Options are now category-based and shared
+        // No need to create anything - they already exist globally
       }
       
       // Force refetch
@@ -283,20 +259,20 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     if (!template?.id) return;
     
     try {
-      let existingOption = treatmentOptionsForTemplate.find(opt => opt.key === optionKey);
+      // Find the category-based option (not template-specific)
+      let existingOption = allAvailableOptions.find(opt => 
+        opt.key === optionKey && 
+        opt.treatment_category === template.treatment_category
+      );
       
-      // If option doesn't exist, create it first
       if (!existingOption) {
-        const newOption = await createTreatmentOption.mutateAsync({
-          template_id: template.id,
-          key: optionKey,
-          label: optionLabel,
-          input_type: 'select',
-          required: false,
-          visible: true,
-          order_index: 0,
+        console.error('Category-based option not found:', optionKey);
+        toast({
+          title: "Error",
+          description: "Option category not found. Please create it in the Options tab first.",
+          variant: "destructive"
         });
-        existingOption = newOption as any;
+        return;
       }
       
       const existingValue = existingOption.option_values?.find((v: any) => v.code === valueCode);

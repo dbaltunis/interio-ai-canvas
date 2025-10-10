@@ -109,132 +109,66 @@ export const WindowTreatmentOptionsManager = () => {
       return;
     }
 
-    if (matchingTemplates.length === 0) {
-      toast({
-        title: "No templates found",
-        description: `Clone a ${getTreatmentLabel(activeTreatment)} template from "Template Library" first.`,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const userTemplates = matchingTemplates.filter(t => !t.is_system_default);
-    if (!editingValue && userTemplates.length === 0) {
-      toast({
-        title: "Clone template first",
-        description: `Clone a ${getTreatmentLabel(activeTreatment)} template to customize options.`,
-        variant: "destructive"
-      });
-      return;
-    }
-
     try {
       if (editingValue) {
-        // Update the existing option value across all templates
-        for (const opt of relevantOptions) {
-          const existingVal = opt.option_values?.find(v => v.code === editingValue.code);
-          if (existingVal) {
-            await updateOptionValue.mutateAsync({
-              id: existingVal.id,
-              updates: {
-                code: formData.value.trim().toLowerCase().replace(/\s+/g, '_'),
-                label: formData.name.trim(),
-                extra_data: { price: Number(formData.price) || 0 },
-              }
-            });
-          }
+        // Update the existing option value
+        const opt = relevantOptions[0];
+        const existingVal = opt?.option_values?.find(v => v.code === editingValue.code);
+        if (existingVal) {
+          await updateOptionValue.mutateAsync({
+            id: existingVal.id,
+            updates: {
+              code: formData.value.trim().toLowerCase().replace(/\s+/g, '_'),
+              label: formData.name.trim(),
+              extra_data: { price: Number(formData.price) || 0 },
+            }
+          });
         }
         setEditingValue(null);
         
-        // Force refresh all queries - including the template form query
-        await queryClient.invalidateQueries({ queryKey: ['all-treatment-options'] });
-        await queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
-        await queryClient.invalidateQueries({ queryKey: ['available-treatment-options-from-manager'] });
-        
         toast({
           title: "Option updated",
-          description: "The option has been updated across all templates.",
+          description: "The option value has been updated.",
         });
       } else {
-        // Create option for user's templates only (not system templates)
-        const userTemplates = matchingTemplates.filter(t => !t.is_system_default);
-        
-        // Track created options to avoid duplicates
-        const createdOptions = new Map<string, any>();
-        
-        for (const template of userTemplates) {
-          // Check if this option type already exists for this template
-          let treatmentOption = allTreatmentOptions.find(
-            (opt: any) => opt.treatment_id === template.id && opt.key === activeOptionType
+        // Check if this option category already exists
+        let treatmentOption = allTreatmentOptions.find(
+          (opt: any) => opt.treatment_category === activeTreatment && opt.key === activeOptionType
+        );
+
+        // Create option category if it doesn't exist
+        if (!treatmentOption) {
+          const optionTypeConfig = optionTypeCategories.find(
+            opt => opt.type_key === activeOptionType
           );
-
-          // If not in cache, check if we just created it
-          if (!treatmentOption && createdOptions.has(template.id)) {
-            treatmentOption = createdOptions.get(template.id);
-          }
-
-          // If still not found, create it
-          if (!treatmentOption) {
-            const optionTypeConfig = optionTypeCategories.find(
-              opt => opt.type_key === activeOptionType
-            );
-            
-            try {
-              const newOption = await createTreatmentOption.mutateAsync({
-                template_id: template.id,
-                key: activeOptionType,
-                label: optionTypeConfig?.type_label || activeOptionType,
-                input_type: 'select',
-                required: false,
-                visible: true,
-                order_index: 0,
-                treatment_category: activeTreatment,
-                is_system_default: false,
-              });
-              treatmentOption = newOption;
-              createdOptions.set(template.id, newOption);
-            } catch (error: any) {
-              // If duplicate error, try to fetch the option that was just created
-              if (error?.code === '23505') {
-                const { data } = await supabase
-                  .from('treatment_options')
-                  .select('*')
-                  .eq('template_id', template.id)
-                  .eq('key', activeOptionType)
-                  .single();
-                if (data) {
-                  treatmentOption = data;
-                  createdOptions.set(template.id, data);
-                } else {
-                  throw error;
-                }
-              } else {
-                throw error;
-              }
-            }
-          }
-
-          // Now create the value
-          await createOptionValue.mutateAsync({
-            option_id: treatmentOption.id,
-            code: formData.value.trim().toLowerCase().replace(/\s+/g, '_'),
-            label: formData.name.trim(),
-            order_index: uniqueOptionValues.length,
-            extra_data: { price: Number(formData.price) || 0 },
+          
+          treatmentOption = await createTreatmentOption.mutateAsync({
+            key: activeOptionType,
+            label: optionTypeConfig?.type_label || activeOptionType,
+            input_type: 'select',
+            required: false,
+            visible: true,
+            order_index: 0,
+            treatment_category: activeTreatment,
+            is_system_default: false,
           });
         }
 
+        // Now create the value for this option
+        const uniqueOptionValues = treatmentOption?.option_values || [];
+        await createOptionValue.mutateAsync({
+          option_id: treatmentOption.id,
+          code: formData.value.trim().toLowerCase().replace(/\s+/g, '_'),
+          label: formData.name.trim(),
+          order_index: uniqueOptionValues.length,
+          extra_data: { price: Number(formData.price) || 0 },
+        });
+
         setIsCreating(false);
-        
-        // Force refresh all queries - including the template form query
-        await queryClient.invalidateQueries({ queryKey: ['all-treatment-options'] });
-        await queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
-        await queryClient.invalidateQueries({ queryKey: ['curtain-templates-for-options'] });
-        await queryClient.invalidateQueries({ queryKey: ['available-treatment-options-from-manager'] });
         
         toast({
           title: "Option created",
-          description: `New option has been added to all ${getTreatmentLabel(activeTreatment)} templates.`,
+          description: `New option value has been added.`,
         });
       }
       resetForm();
