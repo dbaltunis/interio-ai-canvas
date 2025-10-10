@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -330,12 +330,53 @@ export const WindowTreatmentOptionsManager = () => {
         </div>
 
         <Tabs value={activeOptionType} onValueChange={(v) => setActiveOptionType(v)} className="w-full">
-          <ScrollArea className="w-full whitespace-nowrap rounded-md border bg-background">
-            <TabsList className="inline-flex h-10 items-center justify-start rounded-none bg-transparent p-1 text-muted-foreground w-max">
+          <ScrollArea className="w-full whitespace-nowrap">
+            <div className="w-max">{/* wrapper for horizontal scroll */}
+            <TabsList className="inline-flex h-10 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground w-max">
               {optionTypeCategories.map(opt => (
-                <TabsTrigger key={opt.type_key} value={opt.type_key} className="px-3">
-                  {opt.type_label}
-                </TabsTrigger>
+                <div key={opt.type_key} className="relative group">
+                  <TabsTrigger value={opt.type_key} className="px-3 pr-8">
+                    {opt.type_label}
+                  </TabsTrigger>
+                  {!opt.is_system_default && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (confirm(`Delete "${opt.type_label}" type? This will remove all its options.`)) {
+                          try {
+                            await supabase
+                              .from('option_type_categories')
+                              .delete()
+                              .eq('id', opt.id);
+                            
+                            queryClient.invalidateQueries({ queryKey: ['option-type-categories'] });
+                            toast({
+                              title: "Type deleted",
+                              description: `${opt.type_label} has been deleted.`,
+                            });
+                            
+                            // Switch to first available type
+                            if (optionTypeCategories.length > 1) {
+                              const nextType = optionTypeCategories.find(t => t.type_key !== opt.type_key);
+                              if (nextType) setActiveOptionType(nextType.type_key);
+                            }
+                          } catch (error: any) {
+                            toast({
+                              title: "Delete failed",
+                              description: error.message,
+                              variant: "destructive"
+                            });
+                          }
+                        }
+                      }}
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
               ))}
               <Button
                 variant="ghost"
@@ -347,6 +388,7 @@ export const WindowTreatmentOptionsManager = () => {
                 New Type
               </Button>
             </TabsList>
+            </div>
           </ScrollArea>
 
           {optionTypeCategories.map((optType) => {
