@@ -23,7 +23,7 @@ import { useEnhancedInventoryByCategory } from "@/hooks/useEnhancedInventory";
 import { useOptionCategories } from "@/hooks/useOptionCategories";
 import { useTreatmentOptions, useUpdateTreatmentOption } from "@/hooks/useTreatmentOptions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCreateTreatmentOption, useCreateOptionValue } from "@/hooks/useTreatmentOptionsManagement";
+import { useCreateTreatmentOption, useCreateOptionValue, useDeleteOptionValue } from "@/hooks/useTreatmentOptionsManagement";
 import { OptionRulesManager } from "./OptionRulesManager";
 
 // Import pricing components
@@ -54,6 +54,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   const updateTreatmentOption = useUpdateTreatmentOption();
   const createTreatmentOption = useCreateTreatmentOption();
   const createOptionValue = useCreateOptionValue();
+  const deleteOptionValue = useDeleteOptionValue();
 
   // State for eyelet ring library
   const [eyeletRings] = useState([
@@ -300,8 +301,6 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         });
       } else if (!enabled && existingValue) {
         // Remove this value
-        const { useDeleteOptionValue } = require('@/hooks/useTreatmentOptionsManagement');
-        const deleteOptionValue = useDeleteOptionValue();
         await deleteOptionValue.mutateAsync(existingValue.id);
       }
       
@@ -817,9 +816,9 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                                       className="flex-1 cursor-pointer"
                                     >
                                       <div className="font-medium text-sm">{value.label}</div>
-                                      {value.extra_data?.price > 0 && (
+                                      {value.extra_data?.price !== undefined && (
                                         <div className="text-xs text-muted-foreground">
-                                          +${value.extra_data.price.toFixed(2)}
+                                          {value.extra_data.price === 0 ? 'Included' : `+$${value.extra_data.price.toFixed(2)}`}
                                         </div>
                                       )}
                                     </Label>
