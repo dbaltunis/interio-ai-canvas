@@ -17,6 +17,7 @@ import { detectTreatmentType, getTreatmentConfig } from "@/utils/treatmentTypeDe
 import { DynamicRollerBlindFields } from "./roller-blind-fields/DynamicRollerBlindFields";
 import { RollerBlindVisual } from "./visualizers/RollerBlindVisual";
 import { DynamicBlindVisual } from "./visualizers/DynamicBlindVisual";
+import { singularToDbValue } from "@/types/treatmentCategories";
 
 interface VisualMeasurementSheetProps {
   measurements: Record<string, any>;

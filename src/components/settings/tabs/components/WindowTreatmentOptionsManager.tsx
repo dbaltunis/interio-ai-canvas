@@ -15,14 +15,13 @@ import type { TreatmentOption, OptionValue } from "@/hooks/useTreatmentOptions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useOptionTypeCategories, useCreateOptionTypeCategory } from "@/hooks/useOptionTypeCategories";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-
-type TreatmentCategory = 'roller_blinds' | 'roman_blinds' | 'venetian_blinds' | 'vertical_blinds' | 'shutters' | 'awning' | 'plantation_shutters' | 'cellular_blinds' | 'curtains' | 'panel_glide';
+import { TREATMENT_CATEGORIES, TreatmentCategoryDbValue } from "@/types/treatmentCategories";
 
 export const WindowTreatmentOptionsManager = () => {
   const queryClient = useQueryClient();
   const { data: allTreatmentOptions = [], isLoading } = useAllTreatmentOptions();
   
-  const [activeTreatment, setActiveTreatment] = useState<TreatmentCategory>('roller_blinds');
+  const [activeTreatment, setActiveTreatment] = useState<TreatmentCategoryDbValue>(TREATMENT_CATEGORIES.ROLLER_BLINDS.db_value);
   const [activeOptionType, setActiveOptionType] = useState<string>('');
   
   // Fetch curtain templates (including system defaults for viewing)
