@@ -245,7 +245,9 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
             code: value.code,
             label: value.label,
             order_index: value.order_index,
-            extra_data: value.extra_data,
+            extra_data: value.extra_data && Object.keys(value.extra_data).length > 0 
+              ? value.extra_data 
+              : { price: 0 },
           });
         }
       }

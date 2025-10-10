@@ -94,7 +94,7 @@ export const WindowTreatmentOptionsManager = () => {
   const [formData, setFormData] = useState({
     name: '',
     value: '',
-    price: 0,
+    price: 0 as number,
   });
 
   const resetForm = () => {
@@ -176,7 +176,7 @@ export const WindowTreatmentOptionsManager = () => {
               updates: {
                 code: formData.value.trim().toLowerCase().replace(/\s+/g, '_'),
                 label: formData.name.trim(),
-                extra_data: { price: formData.price },
+                extra_data: { price: Number(formData.price) || 0 },
               }
             });
           }
@@ -219,7 +219,7 @@ export const WindowTreatmentOptionsManager = () => {
             code: formData.value.trim().toLowerCase().replace(/\s+/g, '_'),
             label: formData.name.trim(),
             order_index: uniqueOptionValues.length,
-            extra_data: { price: formData.price },
+            extra_data: { price: Number(formData.price) || 0 },
           });
         }
 
