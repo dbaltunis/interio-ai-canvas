@@ -265,20 +265,15 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   };
   
   const handleToggleOptionValue = async (optionKey: string, optionLabel: string, valueCode: string, valueLabel: string, enabled: boolean, extraData?: any) => {
-    if (!template?.id) return;
-    
     try {
       // Find the category-based option (not template-specific)
-      let existingOption = allAvailableOptions.find(opt => 
-        opt.key === optionKey && 
-        opt.treatment_category === template.treatment_category
-      );
+      let existingOption = allAvailableOptions.find(opt => opt.key === optionKey);
       
       if (!existingOption) {
         console.error('Category-based option not found:', optionKey);
         toast({
           title: "Error",
-          description: "Option category not found. Please create it in the Options tab first.",
+          description: "This option type doesn't exist yet. Please go to Settings → Window Coverings → Options and create it first.",
           variant: "destructive"
         });
         return;
@@ -300,9 +295,13 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         await deleteOptionValue.mutateAsync(existingValue.id);
       }
       
+      // Force refetch
+      await queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
+      await queryClient.invalidateQueries({ queryKey: ['available-treatment-options-from-manager'] });
+      
       toast({
         title: enabled ? "Option added" : "Option removed",
-        description: `${valueLabel} has been ${enabled ? 'added to' : 'removed from'} this template.`,
+        description: `${valueLabel} has been ${enabled ? 'added to' : 'removed from'} ${optionLabel}.`,
       });
     } catch (error: any) {
       console.error('Error toggling option value:', error);
