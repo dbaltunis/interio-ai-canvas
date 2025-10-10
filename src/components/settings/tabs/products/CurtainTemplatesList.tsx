@@ -6,6 +6,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from "@/hooks/use-toast";
 import { useCurtainTemplates, useDeleteCurtainTemplate, useCreateCurtainTemplate, CurtainTemplate } from "@/hooks/useCurtainTemplates";
 import { useHeadingInventory } from "@/hooks/useHeadingInventory";
+import { getDisplayNameFromSingular } from "@/types/treatmentCategories";
 
 interface CurtainTemplatesListProps {
   onEdit: (template: CurtainTemplate) => void;
@@ -123,7 +124,7 @@ export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
           <CardContent>
             <div className="space-y-3">
               <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary">{template.curtain_type}</Badge>
+                <Badge variant="secondary">{getDisplayNameFromSingular(template.curtain_type)}</Badge>
                 
                 {/* Curtain-specific badges */}
                 {template.curtain_type === 'curtain' && (
