@@ -176,7 +176,7 @@ export const WindowTreatmentOptionsManager = () => {
               updates: {
                 code: formData.value.trim().toLowerCase().replace(/\s+/g, '_'),
                 label: formData.name.trim(),
-                extra_data: formData.price > 0 ? { price: formData.price } : null,
+                extra_data: { price: formData.price },
               }
             });
           }
@@ -219,7 +219,7 @@ export const WindowTreatmentOptionsManager = () => {
             code: formData.value.trim().toLowerCase().replace(/\s+/g, '_'),
             label: formData.name.trim(),
             order_index: uniqueOptionValues.length,
-            extra_data: formData.price > 0 ? { price: formData.price } : null,
+            extra_data: { price: formData.price },
           });
         }
 
@@ -448,7 +448,7 @@ export const WindowTreatmentOptionsManager = () => {
                         <div className="font-medium uppercase">{value.label}</div>
                         <div className="text-sm text-muted-foreground">
                           Value: {value.code}
-                          {value.extra_data?.price > 0 && ` • +$${value.extra_data.price.toFixed(2)}`}
+                          {value.extra_data?.price !== undefined && ` • ${value.extra_data.price === 0 ? 'Included' : `+$${value.extra_data.price.toFixed(2)}`}`}
                         </div>
                       </div>
                       <div className="flex gap-2">
