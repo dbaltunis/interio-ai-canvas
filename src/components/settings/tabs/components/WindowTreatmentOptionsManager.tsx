@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -75,19 +76,11 @@ export const WindowTreatmentOptionsManager = () => {
     });
   };
 
-  // Get templates matching the active treatment category (handle both singular and plural forms)
+  // Get templates matching the active treatment category
+  // Use normalized category matching - templates should have been standardized by migration
   const matchingTemplates = allTemplates.filter((t: any) => {
-    const categoryMap: Record<string, string[]> = {
-      'roller_blind': ['roller_blind', 'roller_blinds'],
-      'roman_blind': ['roman_blind', 'roman_blinds'],
-      'venetian_blind': ['venetian_blind', 'venetian_blinds'],
-      'vertical_blind': ['vertical_blind', 'vertical_blinds'],
-      'shutter': ['shutter', 'shutters'],
-      'awning': ['awning', 'awnings'],
-    };
-    
-    const validCategories = categoryMap[activeTreatment] || [activeTreatment];
-    return validCategories.includes(t.curtain_type) || validCategories.includes(t.treatment_category);
+    // Check if treatment_category matches (post-migration, all should be normalized)
+    return t.treatment_category === activeTreatment;
   });
 
   // Find treatment options linked to any of the matching templates
@@ -504,7 +497,14 @@ export const WindowTreatmentOptionsManager = () => {
                   uniqueOptionValues.map((value) => (
                     <div key={value.code} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
                       <div className="flex-1">
-                        <div className="font-medium uppercase">{value.label}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="font-medium uppercase">{value.label}</div>
+                          {value.extra_data?.price && value.extra_data.price > 0 && (
+                            <Badge variant="secondary" className="text-xs">
+                              +${value.extra_data.price.toFixed(2)}
+                            </Badge>
+                          )}
+                        </div>
                         <div className="text-sm text-muted-foreground">
                           Value: {value.code}
                           {value.extra_data?.price !== undefined && ` • ${value.extra_data.price === 0 ? 'Included' : `+$${value.extra_data.price.toFixed(2)}`}`}

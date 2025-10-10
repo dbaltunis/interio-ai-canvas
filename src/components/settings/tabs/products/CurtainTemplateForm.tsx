@@ -161,43 +161,35 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
       
-      // Get ALL curtain templates (including system defaults) to check for shared options
-      const { data: allTemplates, error: templatesError } = await supabase
-        .from('curtain_templates')
-        .select('id, curtain_type, treatment_category, user_id, is_system_default')
-        .eq('active', true)
-        .or(`user_id.eq.${user.id},is_system_default.eq.true`);
+      // Normalize the category using the database function
+      const { data: normalizedCategory } = await supabase.rpc('normalize_treatment_category', {
+        category_input: formData.curtain_type
+      });
       
-      if (templatesError) throw templatesError;
+      const categoryToSearch = normalizedCategory || formData.curtain_type;
       
-      // Filter to templates matching our curtain_type OR treatment_category
-      const matchingTemplates = allTemplates?.filter((t: any) => 
-        t.curtain_type === formData.curtain_type || t.treatment_category === formData.curtain_type
-      ) || [];
-      
-      // If no templates exist for this type yet, return empty (user can still toggle options)
-      if (matchingTemplates.length === 0) {
-        return [];
-      }
-      
-      const templateIds = matchingTemplates.map((t: any) => t.id);
-      
+      // Get account owner for user's templates
       const { data: authUser } = await supabase.auth.getUser();
       
-      // Get all treatment options for this treatment category (system defaults + user's own)
+      // Get all treatment options for this treatment category using flexible matching
+      // This query matches BOTH:
+      // 1. Options where treatment_category matches (normalized)
+      // 2. System defaults and user's own options
       let query = supabase
         .from('treatment_options')
         .select(`
           *,
           option_values (*)
         `)
-        .eq('treatment_category', formData.curtain_type)
         .order('order_index');
       
       if (authUser?.user) {
-        query = query.or(`is_system_default.eq.true,user_id.eq.${authUser.user.id}`);
+        // User can see: system defaults OR their own options matching this category
+        query = query.or(`and(is_system_default.eq.true,treatment_category.eq.${categoryToSearch}),and(user_id.eq.${authUser.user.id},treatment_category.eq.${categoryToSearch})`);
       } else {
-        query = query.eq('is_system_default', true);
+        // Not authenticated: only system defaults
+        query = query.eq('is_system_default', true)
+          .eq('treatment_category', categoryToSearch);
       }
       
       const { data, error } = await query;

@@ -69,16 +69,25 @@ const TemplateCard = ({ template }: { template: any }) => {
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Base Price:</span>
-            <span className="font-semibold">${template.unit_price?.toFixed(2) || '0.00'}</span>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div>
+              <span className="text-muted-foreground block text-xs">Base Price:</span>
+              <span className="font-semibold text-lg">${template.unit_price?.toFixed(2) || '0.00'}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground block text-xs">Options:</span>
+              <span className="font-semibold text-lg">{optionCount || 0}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Badge variant="outline" className="text-xs">
-              {template.pricing_type}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+            <Badge variant="outline" className="text-xs capitalize">
+              {template.pricing_type?.replace('_', ' ')}
             </Badge>
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs capitalize">
               {template.manufacturing_type}
+            </Badge>
+            <Badge variant="secondary" className="text-xs">
+              {template.treatment_category?.replace('_', ' ')}
             </Badge>
           </div>
           <Button 
