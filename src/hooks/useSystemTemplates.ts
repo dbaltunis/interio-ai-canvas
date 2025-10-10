@@ -77,7 +77,7 @@ export const useCloneSystemTemplate = () => {
       const { data: options, error: optionsError } = await supabase
         .from('treatment_options')
         .select('*, option_values(*)')
-        .eq('treatment_category', template.curtain_type)
+        .eq('treatment_category', template.treatment_category)
         .eq('is_system_default', true);
       
       if (optionsError) throw optionsError;
@@ -88,7 +88,7 @@ export const useCloneSystemTemplate = () => {
           const { data: newOption, error: optionInsertError } = await supabase
             .from('treatment_options')
             .insert({
-              treatment_category: template.curtain_type,
+              treatment_category: template.treatment_category,
               user_id: user.id,
               key: option.key,
               label: option.label,
