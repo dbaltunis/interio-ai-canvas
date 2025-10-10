@@ -413,19 +413,10 @@ export const WindowTreatmentOptionsManager = () => {
 
               {/* Options List */}
               <div className="space-y-2">
-                {matchingTemplates.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
-                    <p className="font-medium">No {getTreatmentLabel(activeTreatment)} templates available</p>
-                    <p className="text-xs mt-1">Clone a system template from "Template Library" tab first</p>
-                  </div>
-                ) : uniqueOptionValues.length === 0 ? (
+                {uniqueOptionValues.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
                     <p className="font-medium">No {optType.type_label.toLowerCase()} found</p>
-                    <p className="text-xs mt-1">
-                      {matchingTemplates.some(t => t.is_system_default) 
-                        ? 'Clone the template to customize options' 
-                        : 'Click "Add Option" to create one'}
-                    </p>
+                    <p className="text-xs mt-1">Click "Add Option" to create one</p>
                   </div>
                 ) : (
                   uniqueOptionValues.map((value) => (
