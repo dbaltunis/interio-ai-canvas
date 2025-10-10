@@ -153,9 +153,10 @@ export const WindowTreatmentOptionsManager = () => {
         }
         setEditingValue(null);
         
-        // Force refresh all queries
+        // Force refresh all queries - including the template form query
         await queryClient.invalidateQueries({ queryKey: ['all-treatment-options'] });
         await queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
+        await queryClient.invalidateQueries({ queryKey: ['available-treatment-options-from-manager'] });
         
         toast({
           title: "Option updated",
@@ -232,10 +233,11 @@ export const WindowTreatmentOptionsManager = () => {
 
         setIsCreating(false);
         
-        // Force refresh all queries
+        // Force refresh all queries - including the template form query
         await queryClient.invalidateQueries({ queryKey: ['all-treatment-options'] });
         await queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
         await queryClient.invalidateQueries({ queryKey: ['curtain-templates-for-options'] });
+        await queryClient.invalidateQueries({ queryKey: ['available-treatment-options-from-manager'] });
         
         toast({
           title: "Option created",
