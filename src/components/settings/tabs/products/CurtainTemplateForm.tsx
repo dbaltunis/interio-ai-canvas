@@ -232,21 +232,19 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   });
   
   const handleToggleOption = async (optionKey: string, optionLabel: string, enabled: boolean) => {
-    if (!template?.id) return;
-    
     try {
-      const existingOption = treatmentOptionsForTemplate.find(opt => opt.key === optionKey);
+      // Find the category-based option (not template-specific)
+      const categoryOption = allAvailableOptions.find(opt => opt.key === optionKey);
       
-      if (existingOption) {
-        // Update visibility
-        await updateTreatmentOption.mutateAsync({
-          id: existingOption.id,
-          updates: { visible: enabled }
-        });
-      } else if (enabled) {
-        // Options are now category-based and shared
-        // No need to create anything - they already exist globally
+      if (!categoryOption) {
+        throw new Error(`Option ${optionKey} not found. Please create it in the Options tab first.`);
       }
+      
+      // Update the visibility of the category-based option
+      await updateTreatmentOption.mutateAsync({
+        id: categoryOption.id,
+        updates: { visible: enabled }
+      });
       
       // Force refetch
       await queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
@@ -706,8 +704,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                 </Card>
               ) : (
                 currentGroups.map((group) => {
-                  // Check if this option exists for this template
-                  const matchingOption = treatmentOptionsForTemplate.find(opt => opt.key === group.type);
+                  // Check if this option exists in the category-based options
+                  const matchingOption = allAvailableOptions.find(opt => opt.key === group.type);
                   const isEnabled = matchingOption?.visible || false;
                   const enabledValues = matchingOption?.option_values || [];
                   
