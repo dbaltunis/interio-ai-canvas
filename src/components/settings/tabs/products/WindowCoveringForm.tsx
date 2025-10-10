@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Upload, X, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useMakingCosts } from "@/hooks/useMakingCosts";
 
 interface WindowCovering {
   id: string;
@@ -21,7 +20,6 @@ interface WindowCovering {
   active: boolean;
   pricing_grid_data?: string;
   unit_price?: number;
-  making_cost_id?: string;
 }
 
 interface WindowCoveringFormProps {
@@ -33,7 +31,6 @@ interface WindowCoveringFormProps {
 
 export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing }: WindowCoveringFormProps) => {
   const { toast } = useToast();
-  const { data: makingCosts = [], isLoading: makingCostsLoading } = useMakingCosts();
   
   const [formData, setFormData] = useState({
     name: windowCovering?.name || '',
@@ -43,8 +40,7 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
     image_url: windowCovering?.image_url || '',
     active: windowCovering?.active !== undefined ? windowCovering.active : true,
     pricing_grid_data: windowCovering?.pricing_grid_data || '',
-    unit_price: windowCovering?.unit_price || 0,
-    making_cost_id: windowCovering?.making_cost_id || ''
+    unit_price: windowCovering?.unit_price || 0
   });
 
   const [imagePreview, setImagePreview] = useState(windowCovering?.image_url || '');
@@ -115,8 +111,7 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
       image_url: formData.image_url || undefined,
       active: formData.active,
       pricing_grid_data: formData.pricing_grid_data || undefined,
-      unit_price: formData.unit_price,
-      making_cost_id: formData.making_cost_id === "no-making-cost" ? undefined : formData.making_cost_id || undefined
+      unit_price: formData.unit_price
     });
   };
 
@@ -185,27 +180,6 @@ export const WindowCoveringForm = ({ windowCovering, onSave, onCancel, isEditing
               </Label>
             </div>
           )}
-        </div>
-
-        {/* Making Cost */}
-        <div>
-          <Label>Making Cost Configuration</Label>
-          <Select
-            value={formData.making_cost_id}
-            onValueChange={(value) => setFormData(prev => ({ ...prev, making_cost_id: value }))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select making cost (optional)" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="no-making-cost">No making cost</SelectItem>
-              {makingCosts.map((cost) => (
-                <SelectItem key={cost.id} value={cost.id}>
-                  {cost.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
         {/* Pricing Method */}

@@ -3,11 +3,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HeadingInventoryManager } from "./components/HeadingInventoryManager";
 import { WindowTreatmentOptionsManager } from "./components/WindowTreatmentOptionsManager";
 import { OptionCategoriesManager } from "./products/OptionCategoriesManager";
-import { MakingCostsManager } from "./products/MakingCostsManager";
 import { ManufacturingDefaults } from "./products/ManufacturingDefaults";
 import { CurtainTemplatesManager } from "./products/CurtainTemplatesManager";
 import { SystemTemplatesLibrary } from "./components/SystemTemplatesLibrary";
-import { Layers, Package, Tags, Settings, Sliders, Library } from "lucide-react";
+import { Layers, Tags, Settings, Sliders, Library } from "lucide-react";
 export const WindowCoveringsTab = () => {
   return <div className="space-y-6">
       <Card>
@@ -17,7 +16,7 @@ export const WindowCoveringsTab = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="templates" className="w-full">
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="templates" className="flex items-center gap-2">
                 <Layers className="h-4 w-4" />
                 My Templates
@@ -37,10 +36,6 @@ export const WindowCoveringsTab = () => {
               <TabsTrigger value="options" className="flex items-center gap-2">
                 <Tags className="h-4 w-4" />
                 Categories
-              </TabsTrigger>
-              <TabsTrigger value="making-costs" className="flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                Costs
               </TabsTrigger>
               <TabsTrigger value="defaults" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
@@ -66,10 +61,6 @@ export const WindowCoveringsTab = () => {
 
             <TabsContent value="options" className="space-y-6">
               <OptionCategoriesManager />
-            </TabsContent>
-
-            <TabsContent value="making-costs" className="space-y-6">
-              <MakingCostsManager />
             </TabsContent>
 
             <TabsContent value="defaults" className="space-y-6">
