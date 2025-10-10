@@ -57,12 +57,6 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   const createOptionValue = useCreateOptionValue();
   const deleteOptionValue = useDeleteOptionValue();
 
-  // Get curtain_type for fetching option type categories
-  const curtainType = template?.treatment_category || template?.curtain_type || 'roller_blind';
-  
-  // Fetch dynamic option type categories from database
-  const { data: optionTypeCategories = [], isLoading: categoriesLoading } = useOptionTypeCategories(curtainType);
-
   // State for eyelet ring library
   const [eyeletRings] = useState([
     { id: 1, name: "Standard Silver 25mm", color: "Silver", diameter: 25 },
@@ -150,6 +144,30 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     selected_option_categories: template?.compatible_hardware || []  // Temporarily use this field
   });
   
+  // Map curtain_type to treatment_category
+  const mapCurtainTypeToCategory = (type: string) => {
+    const mapping: Record<string, string> = {
+      'curtain': 'curtains',
+      'roller_blind': 'roller_blinds',
+      'roman_blind': 'roman_blinds',
+      'venetian_blind': 'venetian_blinds',
+      'vertical_blind': 'vertical_blinds',
+      'cellular_shade': 'cellular_shades',
+      'plantation_shutter': 'plantation_shutters',
+      'cafe_shutter': 'shutters',
+      'panel_glide': 'panel_glide',
+      'awning': 'awning',
+    };
+    return mapping[type] || type;
+  };
+  
+  const curtainType = mapCurtainTypeToCategory(
+    template?.treatment_category || template?.curtain_type || formData.curtain_type || 'roller_blinds'
+  );
+  
+  // Fetch dynamic option type categories from database
+  const { data: optionTypeCategories = [], isLoading: categoriesLoading } = useOptionTypeCategories(curtainType);
+  
   // Fetch ALL available treatment options - checking the WindowTreatmentOptionsManager approach
   // We'll check for options from templates managed in the Options tab
   const { data: allAvailableOptions = [] } = useQuery({
@@ -162,11 +180,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       if (!user) throw new Error("User not authenticated");
       
       // Normalize the category using the database function
-      const { data: normalizedCategory } = await supabase.rpc('normalize_treatment_category', {
-        category_input: formData.curtain_type
-      });
-      
-      const categoryToSearch = normalizedCategory || formData.curtain_type;
+      // Map formData.curtain_type to proper treatment_category
+      const categoryToSearch = mapCurtainTypeToCategory(formData.curtain_type);
       
       // Get account owner for user's templates
       const { data: authUser } = await supabase.auth.getUser();
