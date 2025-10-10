@@ -5961,6 +5961,10 @@ export type Database = {
         Args: { user_id: string }
         Returns: undefined
       }
+      normalize_treatment_category: {
+        Args: { category_input: string }
+        Returns: string
+      }
       sanitize_text_input: {
         Args: { input_text: string }
         Returns: string
