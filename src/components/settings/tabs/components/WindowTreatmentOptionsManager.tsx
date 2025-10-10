@@ -177,6 +177,10 @@ export const WindowTreatmentOptionsManager = () => {
           extra_data: { price: Number(formData.price) || 0 },
         });
 
+        // Invalidate queries to refetch the updated data
+        queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
+        queryClient.invalidateQueries({ queryKey: ['option-values'] });
+
         setIsCreating(false);
         
         toast({
