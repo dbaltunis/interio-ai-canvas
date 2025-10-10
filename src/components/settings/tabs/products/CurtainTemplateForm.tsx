@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -144,7 +144,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     selected_option_categories: template?.compatible_hardware || []  // Temporarily use this field
   });
   
-  // Map curtain_type to treatment_category
+  // Map curtain_type to treatment_category - make it reactive with useMemo
   const mapCurtainTypeToCategory = (type: string) => {
     const mapping: Record<string, string> = {
       'curtain': 'curtains',
@@ -161,11 +161,13 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     return mapping[type] || type;
   };
   
-  const curtainType = mapCurtainTypeToCategory(
-    template?.treatment_category || template?.curtain_type || formData.curtain_type || 'roller_blinds'
+  // Reactively compute curtainType based on current formData
+  const curtainType = useMemo(() => 
+    mapCurtainTypeToCategory(formData.curtain_type || 'roller_blinds'),
+    [formData.curtain_type]
   );
   
-  // Fetch dynamic option type categories from database
+  // Fetch dynamic option type categories from database - will re-fetch when curtainType changes
   const { data: optionTypeCategories = [], isLoading: categoriesLoading } = useOptionTypeCategories(curtainType);
   
   // Fetch ALL available treatment options - checking the WindowTreatmentOptionsManager approach
