@@ -25,6 +25,7 @@ import { useTreatmentOptions, useUpdateTreatmentOption } from "@/hooks/useTreatm
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCreateTreatmentOption, useCreateOptionValue, useDeleteOptionValue } from "@/hooks/useTreatmentOptionsManagement";
 import { OptionRulesManager } from "./OptionRulesManager";
+import { useOptionTypeCategories } from "@/hooks/useOptionTypeCategories";
 
 // Import pricing components
 import { HandFinishedToggle } from "./pricing/HandFinishedToggle";
@@ -55,6 +56,12 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   const createTreatmentOption = useCreateTreatmentOption();
   const createOptionValue = useCreateOptionValue();
   const deleteOptionValue = useDeleteOptionValue();
+
+  // Get curtain_type for fetching option type categories
+  const curtainType = template?.treatment_category || template?.curtain_type || 'roller_blind';
+  
+  // Fetch dynamic option type categories from database
+  const { data: optionTypeCategories = [], isLoading: categoriesLoading } = useOptionTypeCategories(curtainType);
 
   // State for eyelet ring library
   const [eyeletRings] = useState([
@@ -674,84 +681,33 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
               </Card>
             )}
             {(() => {
-              // Map curtain_type to organized option types
-              const treatmentOptionGroups: Record<string, { type: string; label: string }[]> = {
-                roller_blind: [
-                  { type: 'tube_size', label: 'Tube Sizes' },
-                  { type: 'mount_type', label: 'Mount Types' },
-                  { type: 'fascia_type', label: 'Fascia Types' },
-                  { type: 'bottom_rail_style', label: 'Bottom Rails' },
-                  { type: 'control_type', label: 'Control Types' },
-                  { type: 'motor_type', label: 'Motor Types' },
-                ],
-                roman_blind: [
-                  { type: 'headrail_type', label: 'Headrail Types' },
-                  { type: 'fold_style', label: 'Fold Styles' },
-                  { type: 'lining_type', label: 'Lining Types' },
-                  { type: 'control_type', label: 'Control Types' },
-                  { type: 'mount_type', label: 'Mount Types' },
-                ],
-                venetian_blind: [
-                  { type: 'slat_size', label: 'Slat Sizes' },
-                  { type: 'material', label: 'Materials' },
-                  { type: 'control_type', label: 'Control Types' },
-                  { type: 'headrail_type', label: 'Headrail Types' },
-                  { type: 'mount_type', label: 'Mount Types' },
-                ],
-                vertical_blind: [
-                  { type: 'louvre_width', label: 'Louvre Widths' },
-                  { type: 'headrail_type', label: 'Headrail Types' },
-                  { type: 'control_type', label: 'Control Types' },
-                  { type: 'weight_style', label: 'Weight Styles' },
-                ],
-                cellular_blind: [
-                  { type: 'cell_size', label: 'Cell Sizes' },
-                  { type: 'headrail_type', label: 'Headrail Types' },
-                  { type: 'control_type', label: 'Control Types' },
-                  { type: 'mount_type', label: 'Mount Types' },
-                ],
-                plantation_shutter: [
-                  { type: 'louvre_size', label: 'Louvre Sizes' },
-                  { type: 'frame_type', label: 'Frame Types' },
-                  { type: 'hinge_type', label: 'Hinge Types' },
-                  { type: 'material', label: 'Materials' },
-                  { type: 'finish_type', label: 'Finish Types' },
-                  { type: 'control_type', label: 'Control Types' },
-                ],
-                cafe_shutter: [
-                  { type: 'louvre_size', label: 'Louvre Sizes' },
-                  { type: 'frame_type', label: 'Frame Types' },
-                  { type: 'hinge_type', label: 'Hinge Types' },
-                  { type: 'material', label: 'Materials' },
-                  { type: 'finish_type', label: 'Finish Types' },
-                ],
-                awning: [
-                  { type: 'motor_type', label: 'Motor Types' },
-                  { type: 'bracket_type', label: 'Bracket Types' },
-                  { type: 'projection_type', label: 'Projection Types' },
-                  { type: 'control_type', label: 'Control Types' },
-                  { type: 'arm_type', label: 'Arm Types' },
-                ],
-                panel_glide: [
-                  { type: 'track_type', label: 'Track Types' },
-                  { type: 'panel_width', label: 'Panel Widths' },
-                  { type: 'control_type', label: 'Control Types' },
-                ],
-              };
-
-              const currentGroups = treatmentOptionGroups[formData.curtain_type] || [];
+              // Use dynamic option type categories from database instead of hardcoded
+              const currentGroups = optionTypeCategories.map(cat => ({
+                type: cat.type_key,
+                label: cat.type_label
+              }));
+              
+              if (categoriesLoading) {
+                return (
+                  <Card>
+                    <CardContent className="p-8 text-center text-muted-foreground">
+                      Loading option types...
+                    </CardContent>
+                  </Card>
+                );
+              }
               
               return currentGroups.length === 0 ? (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base">Treatment Settings</CardTitle>
                     <CardDescription>
-                      No specific treatment settings configured for this window covering type
+                      No option types configured for this treatment category yet
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground">
-                      Select a different window covering type or create treatment options in the "Options" tab.
+                      Go to <strong>Settings → Products → Options</strong> and create option types for <strong>{formData.curtain_type}</strong>.
                     </p>
                   </CardContent>
                 </Card>
