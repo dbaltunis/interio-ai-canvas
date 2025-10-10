@@ -52,21 +52,36 @@ export const useCreateOptionTypeCategory = () => {
   
   return useMutation({
     mutationFn: async (category: Omit<OptionTypeCategory, 'id' | 'created_at' | 'updated_at' | 'user_id' | 'is_system_default' | 'active'>) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      console.log('🔐 Creating option type - Auth check:', { user: user?.id, authError });
+      
+      if (authError || !user) {
+        console.error('Authentication failed:', authError);
+        throw new Error('Not authenticated. Please refresh the page and try again.');
+      }
+      
+      const insertData = {
+        ...category,
+        user_id: user.id,
+        is_system_default: false,
+        active: true,
+      };
+      
+      console.log('📝 Inserting option type:', insertData);
       
       const { data, error } = await supabase
         .from('option_type_categories')
-        .insert({
-          ...category,
-          user_id: user.id,
-          is_system_default: false,
-          active: true,
-        })
+        .insert(insertData)
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Insert error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Option type created:', data);
       return data;
     },
     onSuccess: () => {
