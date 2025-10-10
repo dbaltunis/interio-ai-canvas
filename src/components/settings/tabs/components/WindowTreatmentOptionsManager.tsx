@@ -11,13 +11,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAllTreatmentOptions, useCreateOptionValue, useUpdateOptionValue, useDeleteOptionValue, useCreateTreatmentOption } from "@/hooks/useTreatmentOptionsManagement";
 import type { TreatmentOption, OptionValue } from "@/hooks/useTreatmentOptions";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useOptionTypeCategories, useCreateOptionTypeCategory } from "@/hooks/useOptionTypeCategories";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type TreatmentCategory = 'roller_blind' | 'roman_blind' | 'venetian_blind' | 'vertical_blind' | 'shutter' | 'awning' | 'plantation_shutter' | 'cellular_shade' | 'curtains' | 'panel_glide';
 
 export const WindowTreatmentOptionsManager = () => {
+  const queryClient = useQueryClient();
   const { data: allTreatmentOptions = [], isLoading } = useAllTreatmentOptions();
   
   const [activeTreatment, setActiveTreatment] = useState<TreatmentCategory>('roller_blind');
@@ -151,6 +152,11 @@ export const WindowTreatmentOptionsManager = () => {
           }
         }
         setEditingValue(null);
+        
+        // Force refresh all queries
+        await queryClient.invalidateQueries({ queryKey: ['all-treatment-options'] });
+        await queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
+        
         toast({
           title: "Option updated",
           description: "The option has been updated across all templates.",
@@ -225,6 +231,12 @@ export const WindowTreatmentOptionsManager = () => {
         }
 
         setIsCreating(false);
+        
+        // Force refresh all queries
+        await queryClient.invalidateQueries({ queryKey: ['all-treatment-options'] });
+        await queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
+        await queryClient.invalidateQueries({ queryKey: ['curtain-templates-for-options'] });
+        
         toast({
           title: "Option created",
           description: `New option has been added to all ${getTreatmentLabel(activeTreatment)} templates.`,
