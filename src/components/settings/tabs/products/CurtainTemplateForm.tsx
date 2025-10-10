@@ -148,12 +148,12 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   const mapCurtainTypeToCategory = (type: string) => {
     const mapping: Record<string, string> = {
       'curtain': 'curtains',
-      'roller_blind': 'roller_blinds',
+      'roller_blind': 'roller_blind',  // Keep singular to match database
       'roman_blind': 'roman_blinds',
       'venetian_blind': 'venetian_blinds',
       'vertical_blind': 'vertical_blinds',
       'cellular_shade': 'cellular_shades',
-      'plantation_shutter': 'plantation_shutters',
+      'plantation_shutter': 'plantation_shutter',
       'cafe_shutter': 'shutters',
       'panel_glide': 'panel_glide',
       'awning': 'awning',
@@ -163,7 +163,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   
   // Reactively compute curtainType based on current formData
   const curtainType = useMemo(() => 
-    mapCurtainTypeToCategory(formData.curtain_type || 'roller_blinds'),
+    mapCurtainTypeToCategory(formData.curtain_type || 'roller_blind'),
     [formData.curtain_type]
   );
   
