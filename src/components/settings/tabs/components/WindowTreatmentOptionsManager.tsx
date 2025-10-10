@@ -83,12 +83,12 @@ export const WindowTreatmentOptionsManager = () => {
     return t.treatment_category === activeTreatment;
   });
 
-  // Find treatment options linked to any of the matching templates
+  // Find treatment options for the active treatment category and option type
   const relevantOptions = allTreatmentOptions.filter((opt: any) => 
-    matchingTemplates.some((t: any) => t.id === opt.treatment_id) && opt.key === activeOptionType
+    opt.treatment_category === activeTreatment && opt.key === activeOptionType
   );
 
-  // For display, we'll show all unique option values across all templates
+  // For display, we'll show all unique option values across all options
   const allOptionValues = relevantOptions.flatMap(opt => opt.option_values || []);
   
   // Deduplicate by code
