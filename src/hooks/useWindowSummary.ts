@@ -66,11 +66,20 @@ export const useWindowSummary = (windowId: string | undefined) => {
             .select()
             .maybeSingle();
           if (!saveErr && saved) {
+            // Extract selected_options from measurements_details and expose at top level
+            if (saved.measurements_details && (saved.measurements_details as any).selected_options) {
+              (saved as any).selected_options = (saved.measurements_details as any).selected_options;
+            }
             return saved as WindowSummary;
           }
         }
       } catch (e) {
         console.warn("WindowSummary backfill skipped:", e);
+      }
+
+      // Extract selected_options from measurements_details and expose at top level
+      if (data.measurements_details && (data.measurements_details as any).selected_options) {
+        (data as any).selected_options = (data.measurements_details as any).selected_options;
       }
 
       return data as WindowSummary | null;
