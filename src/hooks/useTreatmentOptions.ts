@@ -15,7 +15,7 @@ export interface TreatmentOption {
   treatment_id: string;
   key: string;
   label: string;
-  input_type: 'select' | 'number' | 'boolean' | 'text' | 'multiselect';
+  input_type: 'select' | 'radio' | 'number' | 'boolean' | 'text' | 'multiselect';
   required: boolean;
   visible: boolean;
   order_index: number;
@@ -61,7 +61,7 @@ export const useUpdateTreatmentOption = () => {
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<TreatmentOption> }) => {
       const { data, error } = await supabase
         .from('treatment_options')
-        .update(updates)
+        .update(updates as any)
         .eq('id', id)
         .select()
         .single();
