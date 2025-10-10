@@ -13,6 +13,7 @@ import { useAllTreatmentOptions, useCreateOptionValue, useUpdateOptionValue, use
 import type { TreatmentOption, OptionValue } from "@/hooks/useTreatmentOptions";
 import { useQuery } from "@tanstack/react-query";
 import { useOptionTypeCategories, useCreateOptionTypeCategory } from "@/hooks/useOptionTypeCategories";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type TreatmentCategory = 'roller_blind' | 'roman_blind' | 'venetian_blind' | 'vertical_blind' | 'shutter' | 'awning' | 'plantation_shutter' | 'cellular_shade' | 'curtains' | 'panel_glide';
 
@@ -258,6 +259,39 @@ export const WindowTreatmentOptionsManager = () => {
     resetForm();
   };
 
+  const handleCreateOptionType = async () => {
+    if (!newOptionTypeData.type_label.trim() || !newOptionTypeData.type_key.trim()) {
+      toast({
+        title: "Required fields",
+        description: "Please enter both type label and type key.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await createOptionTypeCategory.mutateAsync({
+        treatment_category: activeTreatment,
+        type_key: newOptionTypeData.type_key.toLowerCase().replace(/\s+/g, '_'),
+        type_label: newOptionTypeData.type_label.trim(),
+      });
+      
+      setShowCreateOptionTypeDialog(false);
+      setNewOptionTypeData({ type_label: '', type_key: '' });
+      toast({
+        title: "Option type created",
+        description: "You can now add values to this option type.",
+      });
+    } catch (error: any) {
+      console.error('Error creating option type:', error);
+      toast({
+        title: "Create failed",
+        description: error?.message || "Failed to create option type. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const getTreatmentLabel = (category: TreatmentCategory) => {
     const labels: Record<TreatmentCategory, string> = {
       roller_blind: 'Roller Blinds',
@@ -456,6 +490,55 @@ export const WindowTreatmentOptionsManager = () => {
           );
         })}
         </Tabs>
+
+        {/* Create Option Type Dialog */}
+        <Dialog open={showCreateOptionTypeDialog} onOpenChange={setShowCreateOptionTypeDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Option Type</DialogTitle>
+              <DialogDescription>
+                Add a new option type category for {getTreatmentLabel(activeTreatment)}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div>
+                <Label htmlFor="type_label">Option Type Label *</Label>
+                <Input
+                  id="type_label"
+                  value={newOptionTypeData.type_label}
+                  onChange={(e) => setNewOptionTypeData({ ...newOptionTypeData, type_label: e.target.value })}
+                  placeholder="e.g. Motor Types"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Display name for this option type
+                </p>
+              </div>
+              
+              <div>
+                <Label htmlFor="type_key">Option Type Key *</Label>
+                <Input
+                  id="type_key"
+                  value={newOptionTypeData.type_key}
+                  onChange={(e) => setNewOptionTypeData({ ...newOptionTypeData, type_key: e.target.value })}
+                  placeholder="e.g. motor_type"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Technical key (lowercase with underscores)
+                </p>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCreateOptionTypeDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateOptionType}>
+                Create Option Type
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
