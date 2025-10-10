@@ -207,6 +207,9 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     safeExistingMeasurement?.measurements?.selected_fabric || 
     ""
   );
+  
+  // Track selected options with prices from window covering settings
+  const [selectedOptions, setSelectedOptions] = useState<Array<{ name: string; price: number }>>([]);
 
   // Get treatments data early so it can be used in the effect
   const { data: allProjectTreatments = [] } = useTreatments(projectId);
@@ -768,108 +771,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     // Upsert window summary for card/quotation views
     try {
       if (surfaceId) {
-        // Build selected_options array from treatmentData with prices
-        const selectedOptions: Array<{ name: string; price: number; description?: string }> = [];
-        
-        // Extract options from treatmentData and format with prices
-        if (treatmentData) {
-          // Common options for blinds
-          if (treatmentData.mounting_type) {
-            selectedOptions.push({
-              name: `Mount Type: ${treatmentData.mounting_type}`,
-              price: 0, // Add actual pricing logic if needed
-              description: treatmentData.mounting_type === 'inside' ? 'Inside Mount' : 'Outside Mount'
-            });
-          }
-          if (treatmentData.control_type) {
-            // Add motorized pricing if applicable
-            const controlPrice = treatmentData.control_type === 'motorized' ? 150 : 0;
-            selectedOptions.push({
-              name: `Control Type: ${treatmentData.control_type}`,
-              price: controlPrice,
-              description: treatmentData.control_type
-            });
-          }
-          if (treatmentData.slat_size) {
-            selectedOptions.push({
-              name: `Slat Size: ${treatmentData.slat_size}"`,
-              price: 0,
-              description: `${treatmentData.slat_size} inch slats`
-            });
-          }
-          if (treatmentData.valance && treatmentData.valance !== 'none') {
-            const valancePrice = treatmentData.valance === 'decorative' ? 50 : 25;
-            selectedOptions.push({
-              name: `Valance: ${treatmentData.valance}`,
-              price: valancePrice,
-              description: treatmentData.valance
-            });
-          }
-          
-          // Options for curtains
-          if (treatmentData.heading_type) {
-            selectedOptions.push({
-              name: `Heading: ${treatmentData.heading_type}`,
-              price: 0,
-              description: treatmentData.heading_type
-            });
-          }
-          if (treatmentData.fullness_ratio) {
-            selectedOptions.push({
-              name: `Fullness: ${treatmentData.fullness_ratio}x`,
-              price: 0,
-              description: `${treatmentData.fullness_ratio}x fullness ratio`
-            });
-          }
-          if (treatmentData.lining) {
-            selectedOptions.push({
-              name: 'Lining',
-              price: liningCost || 0,
-              description: 'Curtain lining included'
-            });
-          }
-          
-          // Roman shade options
-          if (treatmentData.fold_style) {
-            selectedOptions.push({
-              name: `Fold Style: ${treatmentData.fold_style}`,
-              price: 0,
-              description: treatmentData.fold_style
-            });
-          }
-          if (treatmentData.blackout_lining) {
-            selectedOptions.push({
-              name: 'Blackout Lining',
-              price: 75,
-              description: 'Blackout lining for light control'
-            });
-          }
-          
-          // Shutter options
-          if (treatmentData.louver_size) {
-            selectedOptions.push({
-              name: `Louver Size: ${treatmentData.louver_size}"`,
-              price: 0,
-              description: `${treatmentData.louver_size} inch louvers`
-            });
-          }
-          if (treatmentData.panel_config) {
-            selectedOptions.push({
-              name: `Panel Configuration: ${treatmentData.panel_config}`,
-              price: 0,
-              description: treatmentData.panel_config
-            });
-          }
-          if (treatmentData.tilt_rod) {
-            selectedOptions.push({
-              name: 'Hidden Tilt Rod',
-              price: 35,
-              description: 'Hidden tilt rod upgrade'
-            });
-          }
-        }
-        
-        console.log('💾 Saving window summary with selected_options:', selectedOptions);
+        console.log('💾 Saving window summary with selected_options from state:', selectedOptions);
         
         await saveWindowSummary.mutateAsync({
           window_id: surfaceId,
@@ -903,7 +805,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
           cost_breakdown: calculation_details.breakdown,
           measurements_details: {
             ...measurements,
-            selected_options: selectedOptions
+            selected_options: selectedOptions  // Use the tracked state with actual prices from database
           }
         } as any);
       }
@@ -1120,6 +1022,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
               setSelectedHeading(headingId);
               handleMeasurementChange('selected_heading', headingId);
             }}
+            selectedOptions={selectedOptions}
+            onSelectedOptionsChange={setSelectedOptions}
             onFabricCalculationChange={setFabricCalculation}
           />
 
@@ -1138,6 +1042,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                 selectedLining={selectedLining}
                 inventory={inventoryItems}
                 fabricCalculation={fabricCalculation}
+                selectedOptions={selectedOptions}
               />
             </div>
           )}
