@@ -73,6 +73,21 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
     });
   }
 
+  // Selected Options (from measurements.selected_options)
+  if (summary.selected_options && Array.isArray(summary.selected_options)) {
+    summary.selected_options.forEach((option: any, index: number) => {
+      // Always add options regardless of price - even zero-price options should be visible
+      items.push({
+        id: option.id || `option-${index}`,
+        name: option.name || 'Option',
+        description: option.description,
+        total_cost: Number(option.price) || 0,
+        category: 'option',
+        details: option,
+      });
+    });
+  }
+
   // Manufacturing
   items.push({
     id: 'manufacturing',

@@ -307,9 +307,9 @@ export function WindowSummaryCard({
                   </>
                 ) : null}
 
-                {/* Selected Options - for blinds */}
+                {/* Selected Options - show ALL options (even zero-price) */}
                 {enrichedBreakdown
-                  .filter(item => !['fabric', 'lining', 'heading', 'manufacturing'].includes(item.category))
+                  .filter(item => item.category === 'option')
                   .map((item) => (
                     <div key={item.id} className="border rounded-lg p-3">
                       <SummaryItem
