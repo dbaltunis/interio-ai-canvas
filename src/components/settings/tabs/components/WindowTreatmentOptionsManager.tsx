@@ -119,7 +119,7 @@ export const WindowTreatmentOptionsManager = () => {
     }
 
     const userTemplates = matchingTemplates.filter(t => !t.is_system_default);
-    if (userTemplates.length === 0) {
+    if (!editingValue && userTemplates.length === 0) {
       toast({
         title: "Clone template first",
         description: `Clone a ${getTreatmentLabel(activeTreatment)} template to customize options.`,
