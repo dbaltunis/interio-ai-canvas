@@ -177,37 +177,19 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     queryFn: async () => {
       if (!formData.curtain_type) return [];
       
-      // Get account owner to query both user and system templates
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-      
-      // Normalize the category using the database function
       // Map formData.curtain_type to proper treatment_category
       const categoryToSearch = mapCurtainTypeToCategory(formData.curtain_type);
       
-      // Get account owner for user's templates
-      const { data: authUser } = await supabase.auth.getUser();
-      
-      // Get all treatment options for this treatment category using flexible matching
-      // This query matches BOTH:
-      // 1. Options where treatment_category matches (normalized)
-      // 2. System defaults and user's own options
+      // Query treatment options for this treatment category
+      // Note: treatment_options table doesn't have user_id column
       let query = supabase
         .from('treatment_options')
         .select(`
           *,
           option_values (*)
         `)
+        .eq('treatment_category', categoryToSearch)
         .order('order_index');
-      
-      if (authUser?.user) {
-        // User can see: system defaults OR their own options matching this category
-        query = query.or(`and(is_system_default.eq.true,treatment_category.eq.${categoryToSearch}),and(user_id.eq.${authUser.user.id},treatment_category.eq.${categoryToSearch})`);
-      } else {
-        // Not authenticated: only system defaults
-        query = query.eq('is_system_default', true)
-          .eq('treatment_category', categoryToSearch);
-      }
       
       const { data, error } = await query;
       
