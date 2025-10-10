@@ -27,7 +27,13 @@ export const useCreateTreatmentOption = () => {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        // Handle unique constraint violation gracefully
+        if (error.code === '23505' && error.message.includes('treatment_options_category_key_unique')) {
+          throw new Error(`This treatment option already exists for ${data.treatment_category}`);
+        }
+        throw error;
+      }
       return option;
     },
     onSuccess: () => {

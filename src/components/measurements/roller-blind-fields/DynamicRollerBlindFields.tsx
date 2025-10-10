@@ -113,9 +113,13 @@ export const DynamicRollerBlindFields = ({
   }
 
   // Filter and sort visible options
+  // Filter, sort, and deduplicate options (safety net in case of data issues)
   const visibleOptions = treatmentOptions
     .filter(opt => opt.visible)
-    .sort((a, b) => a.order_index - b.order_index);
+    .sort((a, b) => a.order_index - b.order_index)
+    .filter((opt, index, self) => 
+      index === self.findIndex(o => o.key === opt.key)
+    );
 
   return (
     <div className="space-y-4">

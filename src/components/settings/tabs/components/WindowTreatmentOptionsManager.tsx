@@ -141,16 +141,29 @@ export const WindowTreatmentOptionsManager = () => {
             opt => opt.type_key === activeOptionType
           );
           
-          treatmentOption = await createTreatmentOption.mutateAsync({
-            key: activeOptionType,
-            label: optionTypeConfig?.type_label || activeOptionType,
-            input_type: 'select',
-            required: false,
-            visible: true,
-            order_index: 0,
-            treatment_category: activeTreatment,
-            is_system_default: false,
-          });
+          try {
+            treatmentOption = await createTreatmentOption.mutateAsync({
+              key: activeOptionType,
+              label: optionTypeConfig?.type_label || activeOptionType,
+              input_type: 'select',
+              required: false,
+              visible: true,
+              order_index: 0,
+              treatment_category: activeTreatment,
+              is_system_default: false,
+            });
+          } catch (error: any) {
+            // If duplicate key error, refetch and use existing option
+            if (error.message.includes('already exists')) {
+              await queryClient.invalidateQueries({ queryKey: ['all-treatment-options'] });
+              toast({
+                title: "Option Already Exists",
+                description: "This treatment option already exists. Refreshing data...",
+              });
+              return;
+            }
+            throw error;
+          }
         }
 
         // Check if this value already exists
