@@ -730,7 +730,6 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                             <Switch
                               checked={isEnabled}
                               onCheckedChange={(checked) => handleToggleOption(group.type, group.label, checked)}
-                              disabled={!template?.id}
                             />
                             <Label className="text-sm font-medium">
                               {isEnabled ? 'Enabled' : 'Disabled'}
