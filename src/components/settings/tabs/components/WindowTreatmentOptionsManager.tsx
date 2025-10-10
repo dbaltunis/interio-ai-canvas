@@ -322,16 +322,11 @@ export const WindowTreatmentOptionsManager = () => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="roller_blind">Roller Blinds</SelectItem>
-              <SelectItem value="roman_blind">Roman Blinds</SelectItem>
-              <SelectItem value="venetian_blind">Venetian Blinds</SelectItem>
-              <SelectItem value="vertical_blind">Vertical Blinds</SelectItem>
-              <SelectItem value="cellular_shade">Cellular Shades</SelectItem>
-              <SelectItem value="plantation_shutter">Plantation Shutters</SelectItem>
-              <SelectItem value="shutter">Shutters</SelectItem>
-              <SelectItem value="awning">Awnings</SelectItem>
-              <SelectItem value="panel_glide">Panel Glides</SelectItem>
-              <SelectItem value="curtains">Curtains</SelectItem>
+              {Object.values(TREATMENT_CATEGORIES).map(cat => (
+                <SelectItem key={cat.db_value} value={cat.db_value}>
+                  {cat.display_name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
