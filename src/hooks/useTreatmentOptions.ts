@@ -23,9 +23,9 @@ export interface TreatmentOption {
   option_values?: OptionValue[];
 }
 
-export const useTreatmentOptions = (templateId?: string) => {
+export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 'template' | 'category' = 'template') => {
   return useQuery({
-    queryKey: ['treatment-options', templateId],
+    queryKey: ['treatment-options', templateIdOrCategory, queryType],
     queryFn: async () => {
       let query = supabase
         .from('treatment_options')
@@ -35,8 +35,14 @@ export const useTreatmentOptions = (templateId?: string) => {
         `)
         .order('order_index');
       
-      if (templateId) {
-        query = query.eq('template_id', templateId);
+      if (templateIdOrCategory) {
+        if (queryType === 'category') {
+          // Query by treatment_category for category-based options
+          query = query.eq('treatment_category', templateIdOrCategory);
+        } else {
+          // Query by template_id for template-specific options (legacy)
+          query = query.eq('template_id', templateIdOrCategory);
+        }
       }
       
       const { data, error } = await query;
@@ -44,7 +50,7 @@ export const useTreatmentOptions = (templateId?: string) => {
       if (error) throw error;
       return data as TreatmentOption[];
     },
-    enabled: !!templateId,
+    enabled: !!templateIdOrCategory,
   });
 };
 

@@ -9,6 +9,7 @@ interface DynamicRollerBlindFieldsProps {
   measurements: Record<string, any>;
   onChange: (field: string, value: string) => void;
   templateId?: string;
+  treatmentCategory?: string;
   readOnly?: boolean;
   onOptionPriceChange?: (optionKey: string, price: number, label: string) => void;
   selectedOptions?: Array<{ name: string; price: number }>;
@@ -18,11 +19,16 @@ export const DynamicRollerBlindFields = ({
   measurements, 
   onChange, 
   templateId,
+  treatmentCategory,
   readOnly = false,
   onOptionPriceChange,
   selectedOptions = []
 }: DynamicRollerBlindFieldsProps) => {
-  const { data: treatmentOptions = [], isLoading } = useTreatmentOptions(templateId);
+  // Query by treatment category (category-based options) instead of template ID
+  const { data: treatmentOptions = [], isLoading } = useTreatmentOptions(
+    treatmentCategory || templateId, 
+    treatmentCategory ? 'category' : 'template'
+  );
   
   // Extract options by key (tube_size, mount_type, etc.) with price info
   const getOptionsByKey = (key: string) => {

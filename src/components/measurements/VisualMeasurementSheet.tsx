@@ -801,6 +801,7 @@ export const VisualMeasurementSheet = ({
                           measurements={measurements}
                           onChange={handleInputChange}
                           templateId={selectedTemplate?.id}
+                          treatmentCategory={treatmentType}
                           readOnly={readOnly}
                           onOptionPriceChange={handleOptionPriceChange}
                           selectedOptions={selectedOptions}
