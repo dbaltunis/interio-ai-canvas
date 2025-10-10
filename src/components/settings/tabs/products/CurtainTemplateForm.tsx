@@ -340,11 +340,25 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         return;
       }
 
+      const treatmentCategory: CurtainTemplate['treatment_category'] = 
+        formData.curtain_type === 'curtain' ? 'curtains' : 
+        formData.curtain_type === 'roller_blind' ? 'roller_blinds' :
+        formData.curtain_type === 'roman_blind' ? 'roman_blinds' :
+        formData.curtain_type === 'venetian_blind' ? 'venetian_blinds' :
+        formData.curtain_type === 'vertical_blind' ? 'vertical_blinds' :
+        formData.curtain_type === 'cellular_shade' ? 'cellular_shades' :
+        formData.curtain_type === 'plantation_shutter' ? 'plantation_shutters' :
+        formData.curtain_type === 'cafe_shutter' ? 'shutters' :
+        formData.curtain_type === 'panel_glide' ? 'panel_glide' :
+        formData.curtain_type === 'awning' ? 'awning' :
+        'curtains';
+      
       const templateData = {
         user_id: user.id,
         name: formData.name,
         description: formData.description,
         curtain_type: formData.curtain_type,
+        treatment_category: treatmentCategory,
         selected_heading_ids: formData.selected_heading_ids,
         // Keep these for compatibility - now derived from selected headings
         heading_name: formData.selected_heading_ids.length > 0 ? 
