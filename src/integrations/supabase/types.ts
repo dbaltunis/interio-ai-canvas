@@ -2011,6 +2011,7 @@ export type Database = {
           collection_name: string | null
           color: string | null
           cost_price: number
+          coverage_per_roll: number | null
           created_at: string
           depth: number | null
           description: string | null
@@ -2041,6 +2042,7 @@ export type Database = {
           markup_percentage: number | null
           markup_percentage_calculated: number | null
           name: string
+          pattern_repeat_cm: number | null
           pattern_repeat_horizontal: number | null
           pattern_repeat_vertical: number | null
           price_per_meter: number | null
@@ -2050,9 +2052,12 @@ export type Database = {
           profit_per_unit: number | null
           quantity: number | null
           reorder_point: number | null
+          roll_length_cm: number | null
+          roll_width_cm: number | null
           selling_price: number
           service_rate: number | null
           sku: string | null
+          sold_by_unit: string | null
           supplier: string | null
           treatment_type: string | null
           unit: string | null
@@ -2068,6 +2073,7 @@ export type Database = {
           collection_name?: string | null
           color?: string | null
           cost_price?: number
+          coverage_per_roll?: number | null
           created_at?: string
           depth?: number | null
           description?: string | null
@@ -2098,6 +2104,7 @@ export type Database = {
           markup_percentage?: number | null
           markup_percentage_calculated?: number | null
           name: string
+          pattern_repeat_cm?: number | null
           pattern_repeat_horizontal?: number | null
           pattern_repeat_vertical?: number | null
           price_per_meter?: number | null
@@ -2107,9 +2114,12 @@ export type Database = {
           profit_per_unit?: number | null
           quantity?: number | null
           reorder_point?: number | null
+          roll_length_cm?: number | null
+          roll_width_cm?: number | null
           selling_price?: number
           service_rate?: number | null
           sku?: string | null
+          sold_by_unit?: string | null
           supplier?: string | null
           treatment_type?: string | null
           unit?: string | null
@@ -2125,6 +2135,7 @@ export type Database = {
           collection_name?: string | null
           color?: string | null
           cost_price?: number
+          coverage_per_roll?: number | null
           created_at?: string
           depth?: number | null
           description?: string | null
@@ -2155,6 +2166,7 @@ export type Database = {
           markup_percentage?: number | null
           markup_percentage_calculated?: number | null
           name?: string
+          pattern_repeat_cm?: number | null
           pattern_repeat_horizontal?: number | null
           pattern_repeat_vertical?: number | null
           price_per_meter?: number | null
@@ -2164,9 +2176,12 @@ export type Database = {
           profit_per_unit?: number | null
           quantity?: number | null
           reorder_point?: number | null
+          roll_length_cm?: number | null
+          roll_width_cm?: number | null
           selling_price?: number
           service_rate?: number | null
           sku?: string | null
+          sold_by_unit?: string | null
           supplier?: string | null
           treatment_type?: string | null
           unit?: string | null
