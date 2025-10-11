@@ -96,20 +96,82 @@ export const WallpaperVisual = ({
   };
   
   return (
-    <div className="flex flex-col lg:flex-row gap-4">
-      {/* Wall Visual - Left side on desktop */}
-      <div className="lg:w-3/5">
-        <Card className="p-4 bg-muted/30">
+    <div className="flex flex-col lg:flex-row gap-6 h-full">
+      {/* Wall Visual - Full width on mobile, left side on desktop */}
+      <div className="flex-1 lg:w-3/5">
+        <Card className="p-6 bg-muted/30 h-full">
           {!hasMeasurements ? (
-            // Empty state - no measurements
-            <div className="flex flex-col items-center justify-center py-12 px-4">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <WallpaperIcon className="h-8 w-8 text-primary/40" />
-              </div>
-              <h3 className="text-lg font-medium text-foreground mb-2">Ready to Measure</h3>
-              <p className="text-sm text-muted-foreground text-center max-w-xs">
-                Enter wall dimensions to see the wallpaper visualization and calculate how many rolls you'll need
-              </p>
+            // Empty state - brick wall with tools
+            <div className="flex flex-col items-center justify-center h-full min-h-[400px]">
+              <svg 
+                viewBox="0 0 400 320" 
+                className="w-full max-w-lg"
+                style={{ aspectRatio: '5/4' }}
+              >
+                <defs>
+                  {/* Brick pattern */}
+                  <pattern id="brick-pattern" x="0" y="0" width="80" height="40" patternUnits="userSpaceOnUse">
+                    <rect width="80" height="40" fill="#d4a574" />
+                    {/* Horizontal mortar */}
+                    <rect y="0" width="80" height="2" fill="#9e9e9e" />
+                    <rect y="40" width="80" height="2" fill="#9e9e9e" />
+                    {/* Vertical mortar - offset pattern */}
+                    <rect x="0" y="0" width="2" height="20" fill="#9e9e9e" />
+                    <rect x="40" y="20" width="2" height="20" fill="#9e9e9e" />
+                    <rect x="80" y="0" width="2" height="20" fill="#9e9e9e" />
+                    {/* Individual bricks for texture */}
+                    <rect x="2" y="2" width="36" height="18" fill="#c4956a" />
+                    <rect x="42" y="22" width="36" height="18" fill="#c4956a" />
+                  </pattern>
+                </defs>
+                
+                {/* Background room */}
+                <rect x="0" y="0" width="400" height="320" fill="#f3f4f6" />
+                
+                {/* Floor */}
+                <rect x="0" y="280" width="400" height="40" fill="#8b7355" />
+                <rect x="0" y="280" width="400" height="3" fill="#6b5945" />
+                
+                {/* Brick wall */}
+                <rect 
+                  x="50" 
+                  y="40" 
+                  width="300" 
+                  height="240" 
+                  fill="url(#brick-pattern)"
+                  stroke="#7d7d7d" 
+                  strokeWidth="2"
+                />
+                
+                {/* Bucket on the left */}
+                <ellipse cx="90" cy="270" rx="20" ry="8" fill="#c0c0c0" />
+                <rect x="70" y="230" width="40" height="40" fill="#d0d0d0" rx="2" />
+                <ellipse cx="90" cy="230" rx="20" ry="8" fill="#e0e0e0" />
+                <rect x="75" y="235" width="30" height="25" fill="#87ceeb" opacity="0.6" />
+                
+                {/* Paste brush in bucket */}
+                <rect x="85" y="215" width="4" height="20" fill="#8b4513" />
+                <ellipse cx="87" cy="213" rx="6" ry="3" fill="#daa520" />
+                
+                {/* Smoothing tool on the right */}
+                <rect x="310" y="250" width="50" height="25" fill="#ffd700" rx="2" />
+                <rect x="315" y="255" width="40" height="15" fill="#ffed4e" />
+                <rect x="355" y="257" width="10" height="11" fill="#8b4513" />
+                
+                {/* Measuring tape */}
+                <ellipse cx="280" cy="270" rx="15" ry="15" fill="#ffeb3b" />
+                <ellipse cx="280" cy="270" rx="12" ry="12" fill="#fdd835" />
+                <rect x="278" y="260" width="4" height="8" fill="#333" />
+                <line x1="280" y1="268" x2="295" y2="268" stroke="#333" strokeWidth="2" />
+                
+                {/* Text prompt */}
+                <text x="200" y="150" textAnchor="middle" fill="#64748b" fontSize="16" fontWeight="600">
+                  Ready to Wallpaper
+                </text>
+                <text x="200" y="175" textAnchor="middle" fill="#94a3b8" fontSize="12">
+                  Enter wall measurements to begin
+                </text>
+              </svg>
             </div>
           ) : (
             // Show visual when measurements exist
@@ -208,7 +270,7 @@ export const WallpaperVisual = ({
       </div>
       
       {/* Measurement Inputs & Results - Right side on desktop */}
-      <div className="lg:w-2/5 space-y-4">
+      <div className="lg:w-2/5 flex-shrink-0 space-y-4">
         {/* Measurement Inputs */}
         <Card className="p-4">
           <h3 className="font-semibold mb-3 flex items-center gap-2">
