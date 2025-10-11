@@ -153,9 +153,9 @@ export const WindowManagementDialog = ({
       <Dialog open={isOpen} onOpenChange={handleDialogClose}>
         <DialogContent className="max-w-7xl max-h-[95vh] flex flex-col bg-background border-2">
           <DialogHeader className="flex-shrink-0 pb-4 border-b border-border">
-            <DialogTitle className="flex items-center gap-2 text-xl font-bold text-foreground">
+            <DialogTitle className="flex items-center gap-3 text-xl font-bold text-foreground group">
               <Ruler className="h-6 w-6 text-primary" />
-              Design area: {surface?.window_type === 'room_wall' ? 'Room Wall' : 'Window'} - 
+              <span>Design area: <span className="font-bold">{surface?.visual_key === 'room_wall' ? 'Room Wall' : 'Window'}</span> - </span>
               <WindowRenameButton 
                 windowName={surface?.name || 'Untitled'}
                 onRename={(newName) => {
