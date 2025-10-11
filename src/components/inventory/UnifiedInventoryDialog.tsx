@@ -71,7 +71,12 @@ export const UnifiedInventoryDialog = ({
     wallpaper_roll_width: 0,
     wallpaper_roll_length: 0,
     wallpaper_sold_by: "per_roll",
-    wallpaper_unit_of_measure: "cm"
+    wallpaper_unit_of_measure: "cm",
+    // Shopify-compatible fields
+    product_type: "",
+    tags: "",
+    barcode: "",
+    compare_at_price: 0
   });
 
   // Load draft data on mount for create mode
@@ -120,7 +125,11 @@ export const UnifiedInventoryDialog = ({
         wallpaper_roll_width: item.wallpaper_roll_width || 0,
         wallpaper_roll_length: item.wallpaper_roll_length || 0,
         wallpaper_sold_by: item.wallpaper_sold_by || "per_roll",
-        wallpaper_unit_of_measure: item.wallpaper_unit_of_measure || "cm"
+        wallpaper_unit_of_measure: item.wallpaper_unit_of_measure || "cm",
+        product_type: item.product_type || "",
+        tags: item.tags || "",
+        barcode: item.barcode || "",
+        compare_at_price: item.compare_at_price || 0
       });
       setTrackInventory(item.quantity > 0);
     }
@@ -251,7 +260,11 @@ export const UnifiedInventoryDialog = ({
           wallpaper_roll_width: 0,
           wallpaper_roll_length: 0,
           wallpaper_sold_by: "per_roll",
-          wallpaper_unit_of_measure: "cm"
+          wallpaper_unit_of_measure: "cm",
+          product_type: "",
+          tags: "",
+          barcode: "",
+          compare_at_price: 0
         });
         setTrackInventory(false);
       }
@@ -413,15 +426,53 @@ export const UnifiedInventoryDialog = ({
                             <SelectItem value="venetian_slats">Venetian Slats</SelectItem>
                             <SelectItem value="shutter_panels">Shutter Panels</SelectItem>
                             <SelectItem value="wallcovering">Wallcovering</SelectItem>
+                            <SelectItem value="wallpaper">Wallpaper</SelectItem>
                             <SelectItem value="track">Track System</SelectItem>
                             <SelectItem value="rod">Rod System</SelectItem>
                             <SelectItem value="bracket">Bracket</SelectItem>
                             <SelectItem value="motor">Motor</SelectItem>
                             <SelectItem value="accessory">Accessory</SelectItem>
+                            <SelectItem value="fabric">Fabric</SelectItem>
+                            <SelectItem value="hardware">Hardware</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                     )}
+
+                    {/* Shopify-compatible Product Type */}
+                    <div>
+                      <Label htmlFor="product_type">Product Type (Shopify)</Label>
+                      <Input
+                        id="product_type"
+                        value={formData.product_type}
+                        onChange={(e) => setFormData({ ...formData, product_type: e.target.value })}
+                        placeholder="e.g., Curtains, Blinds, Hardware"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Used for Shopify product categorization</p>
+                    </div>
+
+                    {/* Tags for filtering and Shopify */}
+                    <div>
+                      <Label htmlFor="tags">Tags (Shopify)</Label>
+                      <Input
+                        id="tags"
+                        value={formData.tags}
+                        onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                        placeholder="e.g., luxury, modern, blackout"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Comma-separated tags for Shopify</p>
+                    </div>
+
+                    {/* Barcode for inventory tracking */}
+                    <div>
+                      <Label htmlFor="barcode">Barcode/UPC</Label>
+                      <Input
+                        id="barcode"
+                        value={formData.barcode}
+                        onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                        placeholder="Barcode or UPC"
+                      />
+                    </div>
 
                     <div className="md:col-span-2">
                       <Label htmlFor="description">Description</Label>
