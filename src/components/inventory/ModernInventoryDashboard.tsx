@@ -46,58 +46,25 @@ export const ModernInventoryDashboard = () => {
             {inventory?.length || 0} items
           </Badge>
         </div>
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="outline" 
-            className="bg-background border-input text-foreground hover:bg-accent hover:text-accent-foreground rounded-md"
-            onClick={() => setShowSearch(!showSearch)}
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            Filters
-          </Button>
-          <Button 
-            variant="outline" 
-            className="bg-background border-input text-foreground hover:bg-accent hover:text-accent-foreground rounded-md"
-            onClick={() => {
-              setActiveTab("analytics");
-              setTimeout(() => {
-                const importExportElement = document.querySelector('[data-import-export]');
-                importExportElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }, 100);
-            }}
-            title="Import/Export Inventory"
-          >
-            <ArrowRightLeft className="h-4 w-4" />
-          </Button>
-          <AddInventoryDialog 
-            trigger={
-              <Button className="bg-primary text-white hover:bg-primary-600 rounded-md">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Item
-              </Button>
-            }
-            onSuccess={() => refetch()}
-          />
-        </div>
-      </div>
-
-      {/* Search and View Controls */}
-      {showSearch && (
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+        <div className="flex items-center gap-2">
+          {/* Compact Search */}
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search inventory..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-9 h-9"
             />
           </div>
+          
+          {/* View Toggle */}
           <div className="flex items-center gap-1 border rounded-md p-1">
             <Button
               variant={viewMode === "grid" ? "default" : "ghost"}
               size="sm"
               onClick={() => setViewMode("grid")}
+              className="h-7 w-7 p-0"
             >
               <Grid className="h-4 w-4" />
             </Button>
@@ -105,12 +72,29 @@ export const ModernInventoryDashboard = () => {
               variant={viewMode === "list" ? "default" : "ghost"}
               size="sm"
               onClick={() => setViewMode("list")}
+              className="h-7 w-7 p-0"
             >
               <List className="h-4 w-4" />
             </Button>
           </div>
+
+          {/* Import/Export - Primary Action */}
+          <Button 
+            variant="default"
+            className="bg-primary text-white hover:bg-primary-600 rounded-md"
+            onClick={() => {
+              setActiveTab("analytics");
+              setTimeout(() => {
+                const importExportElement = document.querySelector('[data-import-export]');
+                importExportElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 100);
+            }}
+          >
+            <ArrowRightLeft className="h-4 w-4 mr-2" />
+            Import/Export
+          </Button>
         </div>
-      )}
+      </div>
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

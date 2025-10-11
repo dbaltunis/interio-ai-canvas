@@ -96,26 +96,16 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
             </p>
           </div>
         </div>
-        <AddInventoryDialog
-          trigger={
-            <Button className="bg-primary text-white hover:bg-primary-600">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Fabric
-            </Button>
-          }
-          onSuccess={() => refetch()}
-        />
-      </div>
-
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search by name, SKU, or supplier..."
-          value={localSearch}
-          onChange={(e) => setLocalSearch(e.target.value)}
-          className="pl-9"
-        />
+        {/* Search - Compact */}
+        <div className="relative w-64">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search fabrics..."
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            className="pl-9 h-9"
+          />
+        </div>
       </div>
 
       {/* Category Tabs */}
