@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Ruler } from "lucide-react";
@@ -56,37 +56,18 @@ export const WindowManagementDialog = ({
   const { data: inventoryItems = [] } = useInventory();
   const { units } = useMeasurementUnits();
 
-  // Fetch the latest surface data to get the current visual_key
-  const { data: surfaceData } = useQuery({
-    queryKey: ["surface", surface?.id],
-    queryFn: async () => {
-      if (!surface?.id) return null;
-      
-      const { data, error } = await supabase
-        .from("surfaces")
-        .select(`
-          id,
-          name,
-          window_types (
-            visual_key
-          )
-        `)
-        .eq("id", surface.id)
-        .single();
-      
-      if (error) {
-        console.error("Error fetching surface:", error);
-        return null;
-      }
-      
-      return data;
-    },
-    enabled: !!surface?.id,
-    refetchInterval: 1000, // Refetch every second to catch changes
-  });
+  // Use state to track the current visual key
+  const [currentVisualKey, setCurrentVisualKey] = useState(
+    (surface?.window_types as any)?.visual_key || 'standard'
+  );
 
-  // Get the visual key from the fetched surface data or fallback to prop
-  const visualKey = (surfaceData?.window_types as any)?.visual_key || (surface?.window_types as any)?.visual_key || 'standard';
+  // Update visual key when surface prop changes
+  React.useEffect(() => {
+    const newVisualKey = (surface?.window_types as any)?.visual_key || 'standard';
+    setCurrentVisualKey(newVisualKey);
+  }, [surface?.window_types]);
+
+  const visualKey = currentVisualKey;
 
   // Filter inventory by category based on treatment type
   const getInventoryForTreatment = (treatmentType: string) => {

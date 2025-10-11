@@ -47,6 +47,47 @@ export const DynamicWindowWorksheet = forwardRef<{
 }, ref) => {
   // State management
   const [selectedWindowType, setSelectedWindowType] = useState<any>(null);
+  
+  // Handler to save window type to database when selected
+  const handleWindowTypeChange = async (windowType: any) => {
+    setSelectedWindowType(windowType);
+    
+    // Save to surfaces table immediately
+    if (surfaceId && windowType) {
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        
+        // Get the window_type record ID that matches this visual_key
+        const { data: windowTypeRecord, error: lookupError } = await supabase
+          .from('window_types')
+          .select('id')
+          .eq('visual_key', windowType.visual_key)
+          .single();
+        
+        if (lookupError || !windowTypeRecord) {
+          console.error('Failed to lookup window type ID:', lookupError);
+          return;
+        }
+        
+        // Update the surface with the new window type
+        const { error } = await supabase
+          .from('surfaces')
+          .update({ window_type_id: windowTypeRecord.id } as any)
+          .eq('id', surfaceId);
+        
+        if (error) {
+          console.error('Failed to update surface window type:', error);
+        } else {
+          console.log('✅ Updated surface window type to:', windowType.name);
+          // Invalidate surfaces queries to refresh the data
+          queryClient.invalidateQueries({ queryKey: ["surfaces"] });
+          queryClient.invalidateQueries({ queryKey: ["surface", surfaceId] });
+        }
+      } catch (error) {
+        console.error('Error updating window type:', error);
+      }
+    }
+  };
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [selectedTreatmentType, setSelectedTreatmentType] = useState("curtains");
   const [treatmentCategory, setTreatmentCategory] = useState<TreatmentCategory>('curtains');
@@ -581,7 +622,7 @@ export const DynamicWindowWorksheet = forwardRef<{
         <TabsContent value="window-type" className="space-y-4">
           <Card>
             <CardContent className="pt-6">
-              <WindowTypeSelector selectedWindowType={selectedWindowType} onWindowTypeChange={setSelectedWindowType} readOnly={readOnly} />
+              <WindowTypeSelector selectedWindowType={selectedWindowType} onWindowTypeChange={handleWindowTypeChange} readOnly={readOnly} />
               
               {selectedWindowType && <div className="mt-6 p-4 bg-primary/5 rounded-lg border">
                   <h4 className="font-medium mb-2 flex items-center gap-2">
