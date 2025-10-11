@@ -31,9 +31,6 @@ const CalendarView = lazy(() =>
 const MeasurementWizardDemo = lazy(() => 
   import("@/components/measurement-wizard/MeasurementWizardDemo").catch(() => ({ default: () => <div>Error loading Measurement Wizard</div> }))
 );
-const CalculatorPage = lazy(() =>
-  import("@/pages/CalculatorPage").catch(() => ({ default: () => <div>Error loading Calculator</div> }))
-);
 
 // Skeleton loading components
 import { DashboardSkeleton } from "@/components/dashboard/skeleton/DashboardSkeleton";
@@ -135,14 +132,6 @@ const Index = () => {
           <Suspense fallback={<div>Loading...</div>}>
             <ComponentWrapper>
               <MeasurementWizardDemo />
-            </ComponentWrapper>
-          </Suspense>
-        );
-      case 'calculator':
-        return (
-          <Suspense fallback={<div>Loading...</div>}>
-            <ComponentWrapper>
-              <CalculatorPage />
             </ComponentWrapper>
           </Suspense>
         );
