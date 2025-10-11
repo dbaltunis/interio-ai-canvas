@@ -4,10 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Filter, Grid, List, Package, Home, Minus, Palette, ArrowRightLeft } from "lucide-react";
+import { Search, Plus, Filter, Grid, List, Package, Home, Minus, Palette, ArrowRightLeft, Wallpaper } from "lucide-react";
 import { InventoryStats } from "./InventoryStats";
 import { FabricInventoryView } from "./FabricInventoryView";
 import { HardwareInventoryView } from "./HardwareInventoryView";
+import { WallcoveringInventoryView } from "./WallcoveringInventoryView";
 import { AssemblyKitBuilder } from "./AssemblyKitBuilder";
 import { InventoryAnalytics } from "./InventoryAnalytics";
 import { AddInventoryDialog } from "./AddInventoryDialog";
@@ -126,6 +127,10 @@ export const ModernInventoryDashboard = () => {
             <Minus className="h-4 w-4" />
             <span>Hardware</span>
           </TabsTrigger>
+          <TabsTrigger value="wallcoverings" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">
+            <Wallpaper className="h-4 w-4" />
+            <span>Wallcoverings</span>
+          </TabsTrigger>
           <TabsTrigger value="vendors" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">
             <Package className="h-4 w-4" />
             <span>Vendors</span>
@@ -207,6 +212,34 @@ export const ModernInventoryDashboard = () => {
                 </CardContent>
               </Card>
 
+              <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20" onClick={() => setActiveTab("wallcoverings")}>
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-purple-500/10">
+                        <Wallpaper className="h-5 w-5 text-purple-500" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base">Wallcoverings</CardTitle>
+                        <CardDescription className="text-xs">
+                          Wallpaper & coverings
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary" className="text-xs">
+                      {inventory?.filter(i => i.category === 'wallcovering' || i.category === 'wallpaper').length || 0} Items
+                    </Badge>
+                    <Button variant="ghost" size="sm" className="text-xs group-hover:text-primary">
+                      View →
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
               <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20" onClick={() => setActiveTab("vendors")}>
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
@@ -278,6 +311,10 @@ export const ModernInventoryDashboard = () => {
 
         <TabsContent value="hardware" className="space-y-6">
           <HardwareInventoryView searchQuery={searchQuery} viewMode={viewMode} />
+        </TabsContent>
+
+        <TabsContent value="wallcoverings" className="space-y-6">
+          <WallcoveringInventoryView searchQuery={searchQuery} viewMode={viewMode} />
         </TabsContent>
 
         <TabsContent value="vendors" className="space-y-6">
