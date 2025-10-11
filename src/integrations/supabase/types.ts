@@ -1434,11 +1434,6 @@ export type Database = {
           user_id: string
           uses_height_pricing: boolean | null
           vertical_repeat: number | null
-          wallpaper_pattern_repeat: number | null
-          wallpaper_roll_length: number | null
-          wallpaper_roll_width: number | null
-          wallpaper_sold_by: string | null
-          wallpaper_unit_of_measure: string | null
           waste_percent: number | null
         }
         Insert: {
@@ -1498,11 +1493,6 @@ export type Database = {
           user_id: string
           uses_height_pricing?: boolean | null
           vertical_repeat?: number | null
-          wallpaper_pattern_repeat?: number | null
-          wallpaper_roll_length?: number | null
-          wallpaper_roll_width?: number | null
-          wallpaper_sold_by?: string | null
-          wallpaper_unit_of_measure?: string | null
           waste_percent?: number | null
         }
         Update: {
@@ -1562,11 +1552,6 @@ export type Database = {
           user_id?: string
           uses_height_pricing?: boolean | null
           vertical_repeat?: number | null
-          wallpaper_pattern_repeat?: number | null
-          wallpaper_roll_length?: number | null
-          wallpaper_roll_width?: number | null
-          wallpaper_sold_by?: string | null
-          wallpaper_unit_of_measure?: string | null
           waste_percent?: number | null
         }
         Relationships: []
@@ -2390,6 +2375,10 @@ export type Database = {
           updated_at: string
           user_id: string
           vendor_id: string | null
+          wallpaper_roll_length: number | null
+          wallpaper_roll_width: number | null
+          wallpaper_sold_by: string | null
+          wallpaper_unit_of_measure: string | null
           weight_capacity: number | null
         }
         Insert: {
@@ -2433,6 +2422,10 @@ export type Database = {
           updated_at?: string
           user_id: string
           vendor_id?: string | null
+          wallpaper_roll_length?: number | null
+          wallpaper_roll_width?: number | null
+          wallpaper_sold_by?: string | null
+          wallpaper_unit_of_measure?: string | null
           weight_capacity?: number | null
         }
         Update: {
@@ -2476,6 +2469,10 @@ export type Database = {
           updated_at?: string
           user_id?: string
           vendor_id?: string | null
+          wallpaper_roll_length?: number | null
+          wallpaper_roll_width?: number | null
+          wallpaper_sold_by?: string | null
+          wallpaper_unit_of_measure?: string | null
           weight_capacity?: number | null
         }
         Relationships: [
