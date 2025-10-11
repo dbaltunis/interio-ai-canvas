@@ -418,12 +418,11 @@ export const UnifiedInventoryDialog = ({
                       <Select
                         value={formData.category}
                         onValueChange={(value) => setFormData({ ...formData, category: value })}
-                        disabled={mode === "edit"}
                       >
                         <SelectTrigger id="category">
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-background z-50">
                           <SelectItem value="fabric">Fabric (General)</SelectItem>
                           <SelectItem value="curtain_fabric">Curtain Fabrics</SelectItem>
                           <SelectItem value="roller_fabric">Roller Fabrics</SelectItem>
