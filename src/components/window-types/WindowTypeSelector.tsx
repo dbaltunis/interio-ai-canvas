@@ -192,30 +192,39 @@ export const WindowTypeSelector = ({
                       </div>
                     </div>
                   ) : windowType.visual_key === 'room_wall' ? (
-                    // Room Wall Visual for Wallpaper
+                    // Room Wall Visual - Brick Wall Pattern
                     <div className="w-18 h-14 relative">
-                      {/* Wall background with texture pattern */}
-                      <div className="w-full h-full bg-gradient-to-b from-amber-50 to-amber-100 border-2 border-gray-600 relative overflow-hidden">
-                        {/* Wallpaper pattern - decorative lines */}
+                      {/* Wall with brick pattern */}
+                      <div className="w-full h-full bg-gradient-to-br from-orange-200 via-orange-300 to-orange-400 border-2 border-gray-700 relative overflow-hidden">
+                        {/* Brick pattern */}
                         <div className="absolute inset-0">
-                          {Array.from({ length: 6 }).map((_, i) => (
-                            <div
-                              key={i}
-                              className="absolute h-full w-px bg-amber-300/40"
-                              style={{ left: `${(i + 1) * 14.28}%` }}
-                            />
-                          ))}
-                          {/* Decorative pattern */}
-                          <div className="absolute inset-1 grid grid-cols-3 gap-1">
+                          {/* Row 1 */}
+                          <div className="absolute top-0 left-0 right-0 h-3 flex gap-px">
+                            {Array.from({ length: 8 }).map((_, i) => (
+                              <div key={`r1-${i}`} className="flex-1 bg-red-400 border border-red-600/30" />
+                            ))}
+                          </div>
+                          {/* Row 2 - offset */}
+                          <div className="absolute top-3 left-0 right-0 h-3 flex gap-px" style={{ marginLeft: '-0.5rem' }}>
                             {Array.from({ length: 9 }).map((_, i) => (
-                              <div key={i} className="flex items-center justify-center">
-                                <div className="w-1.5 h-1.5 rounded-full bg-rose-400/30" />
-                              </div>
+                              <div key={`r2-${i}`} className="flex-1 bg-red-500 border border-red-700/30" />
+                            ))}
+                          </div>
+                          {/* Row 3 */}
+                          <div className="absolute top-6 left-0 right-0 h-3 flex gap-px">
+                            {Array.from({ length: 8 }).map((_, i) => (
+                              <div key={`r3-${i}`} className="flex-1 bg-red-400 border border-red-600/30" />
+                            ))}
+                          </div>
+                          {/* Row 4 - offset */}
+                          <div className="absolute top-9 left-0 right-0 h-3 flex gap-px" style={{ marginLeft: '-0.5rem' }}>
+                            {Array.from({ length: 9 }).map((_, i) => (
+                              <div key={`r4-${i}`} className="flex-1 bg-red-500 border border-red-700/30" />
                             ))}
                           </div>
                         </div>
-                        {/* Baseboard */}
-                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-amber-800 border-t border-gray-700" />
+                        {/* Shadow/depth effect */}
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/10" />
                       </div>
                     </div>
                   ) : (
