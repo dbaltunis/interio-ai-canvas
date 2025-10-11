@@ -412,32 +412,45 @@ export const UnifiedInventoryDialog = ({
                       />
                     </div>
 
-                    {mode === "edit" && (
-                      <div>
-                        <Label htmlFor="category">Category</Label>
-                        <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="curtain_fabric">Curtain Fabric</SelectItem>
-                            <SelectItem value="roller_blind_fabric">Roller Blind Fabric</SelectItem>
-                            <SelectItem value="blind_fabric">Roman Blind Fabric</SelectItem>
-                            <SelectItem value="venetian_slats">Venetian Slats</SelectItem>
-                            <SelectItem value="shutter_panels">Shutter Panels</SelectItem>
-                            <SelectItem value="wallcovering">Wallcovering</SelectItem>
-                            <SelectItem value="wallpaper">Wallpaper</SelectItem>
-                            <SelectItem value="track">Track System</SelectItem>
-                            <SelectItem value="rod">Rod System</SelectItem>
-                            <SelectItem value="bracket">Bracket</SelectItem>
-                            <SelectItem value="motor">Motor</SelectItem>
-                            <SelectItem value="accessory">Accessory</SelectItem>
-                            <SelectItem value="fabric">Fabric</SelectItem>
-                            <SelectItem value="hardware">Hardware</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
+                    {/* Category selection - both create and edit modes */}
+                    <div>
+                      <Label htmlFor="category">Category</Label>
+                      <Select
+                        value={formData.category}
+                        onValueChange={(value) => setFormData({ ...formData, category: value })}
+                        disabled={mode === "edit"}
+                      >
+                        <SelectTrigger id="category">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fabric">Fabric (General)</SelectItem>
+                          <SelectItem value="curtain_fabric">Curtain Fabrics</SelectItem>
+                          <SelectItem value="roller_fabric">Roller Fabrics</SelectItem>
+                          <SelectItem value="furniture_fabric">Furniture Fabrics</SelectItem>
+                          <SelectItem value="sheer_fabric">Sheer Fabrics</SelectItem>
+                          <SelectItem value="blind_fabric">Blind Fabric</SelectItem>
+                          <SelectItem value="upholstery_fabric">Upholstery Fabric</SelectItem>
+                          <SelectItem value="lining">Lining/Interlining</SelectItem>
+                          <SelectItem value="trimming">Trimming/Passementerie</SelectItem>
+                          <SelectItem value="hardware">Hardware (General)</SelectItem>
+                          <SelectItem value="track_system">Track System</SelectItem>
+                          <SelectItem value="rod_system">Rod System</SelectItem>
+                          <SelectItem value="bracket">Bracket/Mounting</SelectItem>
+                          <SelectItem value="motor">Motorization</SelectItem>
+                          <SelectItem value="chain">Chain/Cord</SelectItem>
+                          <SelectItem value="venetian_slats">Venetian Slats</SelectItem>
+                          <SelectItem value="shutter_panels">Shutter Panels</SelectItem>
+                          <SelectItem value="wallcovering">Wallcovering (General)</SelectItem>
+                          <SelectItem value="wallpaper">Wallpaper</SelectItem>
+                          <SelectItem value="accessory">Accessory</SelectItem>
+                          <SelectItem value="service">Service/Labor</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Choose the specific fabric or hardware type for better organization
+                      </p>
+                    </div>
 
                     {/* Shopify-compatible Product Type */}
                     <div>

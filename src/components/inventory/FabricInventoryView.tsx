@@ -17,10 +17,10 @@ interface FabricInventoryViewProps {
 
 const FABRIC_CATEGORIES = [
   { key: "all", label: "All Fabrics" },
-  { key: "curtain", label: "Curtain Fabrics" },
-  { key: "roller", label: "Roller Fabrics" },
-  { key: "furniture", label: "Furniture Fabrics" },
-  { key: "sheer", label: "Sheer Fabrics" }
+  { key: "curtain_fabric", label: "Curtain Fabrics" },
+  { key: "roller_fabric", label: "Roller Fabrics" },
+  { key: "furniture_fabric", label: "Furniture Fabrics" },
+  { key: "sheer_fabric", label: "Sheer Fabrics" }
 ];
 
 export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryViewProps) => {
@@ -34,7 +34,12 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
     item.category === 'curtain_fabric' || 
     item.category === 'blind_fabric' ||
     item.category === 'furniture_fabric' ||
-    item.category === 'sheer_fabric'
+    item.category === 'sheer_fabric' ||
+    item.category === 'roller_fabric' ||
+    item.category === 'upholstery_fabric' ||
+    item.category === 'lining' ||
+    item.category === 'trimming' ||
+    item.category?.includes('fabric')
   ) || [];
 
   const filteredItems = fabricItems.filter(item => {
