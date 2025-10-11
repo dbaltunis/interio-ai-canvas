@@ -1,4 +1,4 @@
-export type TreatmentCategory = 'curtains' | 'roller_blinds' | 'roman_blinds' | 'venetian_blinds' | 'vertical_blinds' | 'cellular_blinds' | 'panel_glide' | 'plantation_shutters' | 'shutters';
+export type TreatmentCategory = 'curtains' | 'roller_blinds' | 'roman_blinds' | 'venetian_blinds' | 'vertical_blinds' | 'cellular_blinds' | 'panel_glide' | 'plantation_shutters' | 'shutters' | 'wallpaper';
 
 export interface TreatmentConfig {
   requiresFullness: boolean;
@@ -59,6 +59,7 @@ export const detectTreatmentType = (template: any): TreatmentCategory => {
   if (name.includes('roman') || description.includes('roman blind')) return 'roman_blinds';
   if (name.includes('venetian')) return 'venetian_blinds';
   if (name.includes('shutter')) return 'shutters';
+  if (name.includes('wallpaper') || name.includes('wall covering') || description.includes('wallpaper')) return 'wallpaper';
   
   return 'curtains'; // default
 };
@@ -163,6 +164,17 @@ export const getTreatmentConfig = (category: TreatmentCategory): TreatmentConfig
       specificFields: ['louver_size', 'panel_config', 'frame_type'],
       visualComponent: 'RollerBlindVisualizer',
     },
+    wallpaper: {
+      requiresFullness: false,
+      requiresHardwareType: false,
+      requiresFabricOrientation: false,
+      requiresHeading: false,
+      requiresLining: false,
+      showPooling: false,
+      inventoryCategory: 'wallcovering',
+      specificFields: ['roll_width', 'roll_length', 'pattern_repeat'],
+      visualComponent: 'RollerBlindVisualizer',
+    },
   };
   
   return configs[category];
@@ -179,6 +191,7 @@ export const getTreatmentDisplayName = (category: TreatmentCategory): string => 
     panel_glide: 'Panel Glide',
     plantation_shutters: 'Plantation Shutters',
     shutters: 'Shutters',
+    wallpaper: 'Wallpaper',
   };
   return names[category];
 };

@@ -129,7 +129,8 @@ export const useCreateEnhancedInventoryItem = () => {
         'hardware_finish','hardware_material','hardware_dimensions','hardware_weight','hardware_mounting_type','hardware_load_capacity',
         'price_per_yard','price_per_meter','price_per_unit','markup_percentage',
         'width','height','depth','weight','color','finish','collection_name','image_url',
-        'labor_hours','fullness_ratio','service_rate','treatment_type'
+        'labor_hours','fullness_ratio','service_rate','treatment_type',
+        'wallpaper_roll_width','wallpaper_roll_length','wallpaper_sold_by','wallpaper_unit_of_measure'
       ] as const;
 
       const item: Record<string, any> = { user_id: userId, active: true };
