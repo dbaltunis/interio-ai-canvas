@@ -78,6 +78,17 @@ export const ModernInventoryDashboard = () => {
             </Button>
           </div>
 
+          {/* Add Item Button */}
+          <AddInventoryDialog
+            trigger={
+              <Button variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Item
+              </Button>
+            }
+            onSuccess={refetch}
+          />
+
           {/* Import/Export - Primary Action */}
           <Button 
             variant="default"
