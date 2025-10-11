@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Home, Plus, Search, Image as ImageIcon, Trash2 } from "lucide-react";
+import { Home, Plus, Search, Image as ImageIcon, Trash2, Edit } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { AddInventoryDialog } from "./AddInventoryDialog";
+import { EditInventoryDialog } from "./EditInventoryDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -133,7 +134,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filteredItems.map((item) => (
                   <Card key={item.id} className="group hover:shadow-lg transition-all overflow-hidden">
-                    <div className="aspect-square relative overflow-hidden bg-muted">
+                    <div className="aspect-[4/3] relative overflow-hidden bg-muted">
                       {item.image_url ? (
                         <img 
                           src={item.image_url} 
@@ -142,10 +143,22 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <Home className="h-16 w-16 text-muted-foreground" />
+                          <Home className="h-12 w-12 text-muted-foreground" />
                         </div>
                       )}
-                      <div className="absolute top-2 right-2">
+                      <div className="absolute top-2 right-2 flex gap-1">
+                        <EditInventoryDialog 
+                          item={item}
+                          trigger={
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          }
+                        />
                         <Button
                           variant="destructive"
                           size="sm"
@@ -233,13 +246,23 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
                           </Badge>
                         </td>
                         <td className="px-4 py-3">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(item.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <EditInventoryDialog 
+                              item={item}
+                              trigger={
+                                <Button variant="ghost" size="sm">
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              }
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(item.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
