@@ -1,281 +1,281 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Ruler, Palette, Package, AlertTriangle, Edit, Eye } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Home, Plus, Search, Image as ImageIcon, Trash2 } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
-import { EditInventoryDialog } from "./EditInventoryDialog";
+import { AddInventoryDialog } from "./AddInventoryDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface FabricInventoryViewProps {
   searchQuery: string;
   viewMode: "grid" | "list";
 }
 
+const FABRIC_CATEGORIES = [
+  { key: "all", label: "All Fabrics" },
+  { key: "curtain", label: "Curtain Fabrics" },
+  { key: "roller", label: "Roller Fabrics" },
+  { key: "furniture", label: "Furniture Fabrics" },
+  { key: "sheer", label: "Sheer Fabrics" }
+];
+
 export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryViewProps) => {
-  const { data: inventory, isLoading } = useEnhancedInventory();
-  const [selectedCollection, setSelectedCollection] = useState<string>("all");
-  const [selectedType, setSelectedType] = useState<string>("all");
-  const [widthFilter, setWidthFilter] = useState<string>("all");
+  const { data: inventory, refetch } = useEnhancedInventory();
+  const { toast } = useToast();
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [localSearch, setLocalSearch] = useState("");
 
   const fabricItems = inventory?.filter(item => 
-    item.category?.includes('fabric') || 
-    item.category === 'curtain_fabric' ||
+    item.category === 'fabric' || 
+    item.category === 'curtain_fabric' || 
     item.category === 'blind_fabric' ||
-    item.category === 'wallcovering'
+    item.category === 'furniture_fabric' ||
+    item.category === 'sheer_fabric'
   ) || [];
 
   const filteredItems = fabricItems.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         item.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
+    const matchesGlobalSearch = item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.sku?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesLocalSearch = item.name?.toLowerCase().includes(localSearch.toLowerCase()) ||
+      item.sku?.toLowerCase().includes(localSearch.toLowerCase()) ||
+      item.supplier?.toLowerCase().includes(localSearch.toLowerCase());
+    
+    const matchesCategory = activeCategory === "all" || 
+      item.category?.includes(activeCategory);
+
+    return matchesGlobalSearch && matchesLocalSearch && matchesCategory;
   });
 
-  if (isLoading) {
-    return (
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {[...Array(6)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <div className="h-48 bg-muted rounded-t-lg" />
-            <CardContent className="p-4">
-              <div className="h-4 bg-muted rounded mb-2" />
-              <div className="h-3 bg-muted rounded w-2/3" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this fabric?')) return;
+
+    const { error } = await supabase
+      .from('inventory')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete fabric",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Fabric deleted successfully",
+      });
+      refetch();
+    }
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(price);
+  };
 
   return (
     <div className="space-y-6">
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Fabric Filters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Collection</label>
-              <Select value={selectedCollection} onValueChange={setSelectedCollection}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Collections" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Collections</SelectItem>
-                  <SelectItem value="luxury">Luxury Collection</SelectItem>
-                  <SelectItem value="modern">Modern Collection</SelectItem>
-                  <SelectItem value="classic">Classic Collection</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium mb-2 block">Type</label>
-              <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Types" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="curtain">Curtain Fabric</SelectItem>
-                  <SelectItem value="blind">Blind Material</SelectItem>
-                  <SelectItem value="sheer">Sheer Fabric</SelectItem>
-                  <SelectItem value="blackout">Blackout Fabric</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Width</label>
-              <Select value={widthFilter} onValueChange={setWidthFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Widths" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Widths</SelectItem>
-                  <SelectItem value="narrow">Up to 140cm</SelectItem>
-                  <SelectItem value="medium">140-280cm</SelectItem>
-                  <SelectItem value="wide">280cm+</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Stock Status</label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Stock" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Stock</SelectItem>
-                  <SelectItem value="in_stock">In Stock</SelectItem>
-                  <SelectItem value="low_stock">Low Stock</SelectItem>
-                  <SelectItem value="out_of_stock">Out of Stock</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-blue-500/10 rounded-lg">
+            <Home className="h-6 w-6 text-blue-500" />
           </div>
-        </CardContent>
-      </Card>
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Fabrics</h2>
+            <p className="text-sm text-muted-foreground">
+              {filteredItems.length} fabrics in inventory
+            </p>
+          </div>
+        </div>
+        <AddInventoryDialog
+          trigger={
+            <Button className="bg-primary text-white hover:bg-primary-600">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Fabric
+            </Button>
+          }
+          onSuccess={() => refetch()}
+        />
+      </div>
 
-      {/* Fabric Grid */}
-      {viewMode === "grid" ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredItems.map((item) => (
-            <Card key={item.id} className="group hover:shadow-lg transition-shadow">
-              <div className="relative">
-                {(item as any).image_url ? (
-                  <img 
-                    src={(item as any).image_url} 
-                    alt={item.name}
-                    className="h-48 w-full object-cover rounded-t-lg"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                    }}
-                  />
-                ) : null}
-                <div className={`h-48 bg-gradient-to-br from-blue-50 to-blue-100 rounded-t-lg flex items-center justify-center ${(item as any).image_url ? 'hidden' : ''}`}>
-                  <Palette className="h-12 w-12 text-blue-300" />
-                </div>
-                <div className="absolute top-2 right-2 flex gap-1">
-                  {item.quantity <= (item.reorder_point || 5) && (
-                    <Badge variant="destructive" className="text-xs">
-                      <AlertTriangle className="h-3 w-3 mr-1" />
-                      Low Stock
-                    </Badge>
-                  )}
-                </div>
-              </div>
-              
-              <CardContent className="p-4">
-                <div className="space-y-3">
-                  <div>
-                    <h3 className="font-semibold text-lg leading-tight">{item.name}</h3>
-                    <p className="text-sm text-muted-foreground">{item.description}</p>
-                  </div>
+      {/* Search */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search by name, SKU, or supplier..."
+          value={localSearch}
+          onChange={(e) => setLocalSearch(e.target.value)}
+          className="pl-9"
+        />
+      </div>
 
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="flex items-center gap-1">
-                      <Ruler className="h-4 w-4 text-muted-foreground" />
-                      <span>{item.fabric_width || 'N/A'}cm wide</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Package className="h-4 w-4 text-muted-foreground" />
-                      <span>{item.quantity} {item.unit}</span>
-                    </div>
-                  </div>
+      {/* Category Tabs */}
+      <Tabs value={activeCategory} onValueChange={setActiveCategory}>
+        <TabsList className="bg-background border-b border-border/50 rounded-none p-0 h-auto flex w-full justify-start gap-0">
+          {FABRIC_CATEGORIES.map((cat) => (
+            <TabsTrigger
+              key={cat.key}
+              value={cat.key}
+              className="px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold rounded-none text-muted-foreground hover:text-foreground"
+            >
+              {cat.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-                  <div className="space-y-1">
-                    {item.fabric_composition && (
-                      <div className="text-xs text-muted-foreground">
-                        Composition: {item.fabric_composition}
-                      </div>
-                    )}
-                    {item.color && (
-                      <div className="text-xs text-muted-foreground">
-                        Color: {item.color}
-                      </div>
-                    )}
-                    {(item.pattern_repeat_vertical || item.pattern_repeat_horizontal) && (
-                      <div className="text-xs text-muted-foreground">
-                        Pattern repeat: {item.pattern_repeat_vertical || 0}×{item.pattern_repeat_horizontal || 0}cm
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-lg font-bold">${item.selling_price || 0}/m</div>
-                      {item.fabric_width && (
-                        <div className="text-xs text-muted-foreground">
-                          Roll direction: {item.fabric_width <= 200 ? 'Vertical' : 'Horizontal'}
+        {FABRIC_CATEGORIES.map((cat) => (
+          <TabsContent key={cat.key} value={cat.key} className="mt-6">
+            {viewMode === "grid" ? (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {filteredItems.map((item) => (
+                  <Card key={item.id} className="group hover:shadow-lg transition-all overflow-hidden">
+                    <div className="aspect-square relative overflow-hidden bg-muted">
+                      {item.image_url ? (
+                        <img 
+                          src={item.image_url} 
+                          alt={item.name}
+                          className="object-cover w-full h-full group-hover:scale-105 transition-transform"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Home className="h-16 w-16 text-muted-foreground" />
                         </div>
                       )}
-                    </div>
-                    <div className="flex gap-1">
-                      <Button size="sm" variant="outline">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <EditInventoryDialog item={item} />
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>SKU: {item.sku}</span>
-                    <Badge variant="outline" className="text-xs">
-                      {item.category}
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Fabric Inventory List</CardTitle>
-            <CardDescription>
-              Detailed view of all fabric items with specifications
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {filteredItems.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-lg flex items-center justify-center overflow-hidden">
-                      {(item as any).image_url ? (
-                        <img 
-                          src={(item as any).image_url} 
-                          alt={item.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                          }}
-                        />
-                      ) : null}
-                      <div className={`w-16 h-16 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg flex items-center justify-center ${(item as any).image_url ? 'hidden' : ''}`}>
-                        <Palette className="h-6 w-6 text-blue-300" />
+                      <div className="absolute top-2 right-2">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => handleDelete(item.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div>
-                      <h3 className="font-semibold">{item.name}</h3>
-                      <p className="text-sm text-muted-foreground">{item.description}</p>
-                      <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                        <span>SKU: {item.sku}</span>
-                        <span>Width: {item.fabric_width || 'N/A'}cm</span>
-                        {(item.pattern_repeat_vertical || item.pattern_repeat_horizontal) && (
-                          <span>Pattern: {item.pattern_repeat_vertical || 0}×{item.pattern_repeat_horizontal || 0}cm</span>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base line-clamp-1">{item.name}</CardTitle>
+                      <CardDescription className="text-xs">{item.sku || 'No SKU'}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="space-y-1">
+                        {item.supplier && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Supplier:</span>
+                            <span className="font-medium">{item.supplier}</span>
+                          </div>
                         )}
+                        {item.fabric_width && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Width:</span>
+                            <span className="font-medium">{item.fabric_width}cm</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Price:</span>
+                          <span className="font-bold text-primary">
+                            {formatPrice(item.price_per_meter || item.selling_price || 0)}/m
+                          </span>
+                        </div>
                       </div>
-                    </div>
+                      <div className="pt-2 border-t">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Stock:</span>
+                          <Badge variant={item.quantity && item.quantity > 0 ? "default" : "secondary"}>
+                            {item.quantity || 0}m
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-md border">
+                <table className="w-full">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-medium">Image</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">Name</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">SKU</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">Supplier</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">Width</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">Price</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">Stock</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredItems.map((item) => (
+                      <tr key={item.id} className="border-t hover:bg-muted/30">
+                        <td className="px-4 py-3">
+                          {item.image_url ? (
+                            <img src={item.image_url} alt={item.name} className="h-12 w-12 rounded object-cover" />
+                          ) : (
+                            <div className="h-12 w-12 rounded bg-muted flex items-center justify-center">
+                              <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 font-medium">{item.name}</td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">{item.sku || '-'}</td>
+                        <td className="px-4 py-3 text-sm">{item.supplier || '-'}</td>
+                        <td className="px-4 py-3 text-sm">{item.fabric_width ? `${item.fabric_width}cm` : '-'}</td>
+                        <td className="px-4 py-3 font-medium">
+                          {formatPrice(item.price_per_meter || item.selling_price || 0)}/m
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant={item.quantity && item.quantity > 0 ? "default" : "secondary"}>
+                            {item.quantity || 0}m
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(item.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {filteredItems.length === 0 && (
+                  <div className="p-8 text-center text-muted-foreground">
+                    No fabrics found
                   </div>
-                  
-                  <div className="text-right">
-                    <div className="font-semibold">${item.selling_price}/m</div>
-                    <div className="text-sm text-muted-foreground">{item.quantity} {item.unit} available</div>
-                    <div className="flex items-center gap-2 mt-2">
-                      {item.quantity <= (item.reorder_point || 5) && (
-                        <Badge variant="destructive" className="text-xs">Low Stock</Badge>
-                      )}
-                      <EditInventoryDialog item={item} />
-                    </div>
+                )}
+              </div>
+            )}
+
+            {filteredItems.length === 0 && viewMode === "grid" && (
+              <Card className="p-12">
+                <div className="flex flex-col items-center justify-center text-center space-y-4">
+                  <div className="p-4 rounded-full bg-muted">
+                    <Home className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">No fabrics found</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {localSearch || searchQuery ? 'Try adjusting your search' : 'Add your first fabric to get started'}
+                    </p>
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              </Card>
+            )}
+          </TabsContent>
+        ))}
+      </Tabs>
     </div>
   );
 };
