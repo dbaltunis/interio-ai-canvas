@@ -51,7 +51,7 @@ export const VisualMeasurementSheet = ({
   selectedHeading,
   onHeadingChange,
   onFabricCalculationChange,
-  treatmentCategory = 'curtains',
+  treatmentCategory = 'curtains' as import("@/utils/treatmentTypeDetection").TreatmentCategory,
   selectedOptions = [],
   onSelectedOptionsChange
 }: VisualMeasurementSheetProps) => {
@@ -300,49 +300,51 @@ export const VisualMeasurementSheet = ({
       <div className="p-6 space-y-6">
         {/* Visual Diagram Section */}
         <div className="w-full">
-          <div className="flex flex-col lg:flex-row gap-6">
-            {/* Visual Diagram */}
-            <div className="lg:w-2/5 flex-shrink-0">
-              {/* Wallpaper visual */}
-              {treatmentCategory === 'wallpaper' ? (
-                <WallpaperVisual
-                  measurements={measurements}
-                  selectedWallpaper={selectedFabric ? inventory.find(item => item.id === selectedFabric) : undefined}
-                  onMeasurementChange={handleInputChange}
-                  readOnly={readOnly}
-                />
-              ) : /* Blinds visual */
-              (treatmentCategory === 'roller_blinds' || 
-                treatmentCategory === 'venetian_blinds' || 
-                treatmentCategory === 'roman_blinds' ||
-                treatmentCategory === 'cellular_blinds' ||
-                treatmentCategory === 'vertical_blinds' ||
-                treatmentCategory === 'panel_glide' ||
-                treatmentCategory === 'plantation_shutters' ||
-                selectedTemplate?.curtain_type === 'roller_blind' ||
-                selectedTemplate?.curtain_type === 'roman_blind' ||
-                selectedTemplate?.curtain_type === 'venetian_blind' ||
-                selectedTemplate?.curtain_type === 'vertical_blind' ||
-                selectedTemplate?.curtain_type === 'cellular_blind' ||
-                selectedTemplate?.curtain_type === 'panel_glide' ||
-                selectedTemplate?.curtain_type === 'plantation_shutter') ? (
-                <DynamicBlindVisual
-                  windowType={windowType}
-                  measurements={measurements}
-                  template={selectedTemplate}
-                  blindType={
-                    treatmentCategory === 'roller_blinds' || selectedTemplate?.curtain_type === 'roller_blind' ? 'roller' :
-                    treatmentCategory === 'venetian_blinds' || selectedTemplate?.curtain_type === 'venetian_blind' ? 'venetian' :
-                    treatmentCategory === 'vertical_blinds' || selectedTemplate?.curtain_type === 'vertical_blind' ? 'vertical' :
-                    treatmentCategory === 'roman_blinds' || selectedTemplate?.curtain_type === 'roman_blind' ? 'roman' :
-                    treatmentCategory === 'cellular_blinds' || selectedTemplate?.curtain_type === 'cellular_blind' ? 'cellular' :
-                    'roller'
-                  }
-                  mountType={measurements.mount_type || 'outside'}
-                  chainSide={measurements.chain_side || 'right'}
-                  controlType={measurements.control_type}
-                />
-              ) : (
+          {/* Wallpaper uses its own full-width layout */}
+          {treatmentCategory === 'wallpaper' ? (
+            <WallpaperVisual
+              measurements={measurements}
+              selectedWallpaper={selectedFabric ? inventory.find(item => item.id === selectedFabric) : undefined}
+              onMeasurementChange={handleInputChange}
+              readOnly={readOnly}
+            />
+          ) : (
+            /* Other treatments use the standard 2/5 + 3/5 layout */
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* Visual Diagram */}
+              <div className="lg:w-2/5 flex-shrink-0">
+                {/* Blinds visual */}
+                {(treatmentCategory === 'roller_blinds' || 
+                  treatmentCategory === 'venetian_blinds' || 
+                  treatmentCategory === 'roman_blinds' ||
+                  treatmentCategory === 'cellular_blinds' ||
+                  treatmentCategory === 'vertical_blinds' ||
+                  treatmentCategory === 'panel_glide' ||
+                  treatmentCategory === 'plantation_shutters' ||
+                  selectedTemplate?.curtain_type === 'roller_blind' ||
+                  selectedTemplate?.curtain_type === 'roman_blind' ||
+                  selectedTemplate?.curtain_type === 'venetian_blind' ||
+                  selectedTemplate?.curtain_type === 'vertical_blind' ||
+                  selectedTemplate?.curtain_type === 'cellular_blind' ||
+                  selectedTemplate?.curtain_type === 'panel_glide' ||
+                  selectedTemplate?.curtain_type === 'plantation_shutter') ? (
+                  <DynamicBlindVisual
+                    windowType={windowType}
+                    measurements={measurements}
+                    template={selectedTemplate}
+                    blindType={
+                      treatmentCategory === 'roller_blinds' || selectedTemplate?.curtain_type === 'roller_blind' ? 'roller' :
+                      treatmentCategory === 'venetian_blinds' || selectedTemplate?.curtain_type === 'venetian_blind' ? 'venetian' :
+                      treatmentCategory === 'vertical_blinds' || selectedTemplate?.curtain_type === 'vertical_blind' ? 'vertical' :
+                      treatmentCategory === 'roman_blinds' || selectedTemplate?.curtain_type === 'roman_blind' ? 'roman' :
+                      treatmentCategory === 'cellular_blinds' || selectedTemplate?.curtain_type === 'cellular_blind' ? 'cellular' :
+                      'roller'
+                    }
+                    mountType={measurements.mount_type || 'outside'}
+                    chainSide={measurements.chain_side || 'right'}
+                    controlType={measurements.control_type}
+                  />
+                ) : (
                 /* Curtains visual */
                 <div className="relative container-level-2 rounded-lg p-8 min-h-[400px] overflow-visible">
 
@@ -687,7 +689,7 @@ export const VisualMeasurementSheet = ({
             {/* Measurement Inputs Section */}
             <div className="lg:w-3/5 space-y-2">
               {/* ESSENTIAL MEASUREMENTS - Only show for curtains and blinds, NOT for wallpaper */}
-              {treatmentCategory !== 'wallpaper' && (
+              {treatmentCategory as string !== 'wallpaper' && (
               <div className="container-level-1 rounded-lg p-3">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center">
@@ -1267,9 +1269,10 @@ export const VisualMeasurementSheet = ({
               </div>
             )}
           </div>
+            </div>
+          )}
         </div>
       </div>
-    </div>
     </div>
   );
 };
