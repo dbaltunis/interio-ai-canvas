@@ -175,11 +175,11 @@ export const WallpaperVisual = ({
             </div>
           ) : (
             // Show visual when measurements exist
-            <div className="flex flex-col items-center justify-center">
+            <div className="flex flex-col items-center justify-center h-full w-full">
               <svg 
-                viewBox="0 0 400 320" 
-                className="w-full max-w-md"
-                style={{ aspectRatio: '5/4' }}
+                viewBox="0 0 450 320" 
+                className="w-full h-full"
+                preserveAspectRatio="xMidYMid meet"
               >
                 <defs>
                   {createWallpaperPattern()}
@@ -191,10 +191,10 @@ export const WallpaperVisual = ({
                 </defs>
                 
                 {/* Room perspective */}
-                <rect x="0" y="0" width="400" height="320" fill="#f9fafb" />
+                <rect x="0" y="0" width="450" height="320" fill="#f9fafb" />
                 
                 {/* Floor */}
-                <rect x="0" y="280" width="400" height="40" fill="#d1d5db" />
+                <rect x="0" y="280" width="450" height="40" fill="#d1d5db" />
                 
                 {/* Main wall - only show wallpaper if selected */}
                 <rect 
@@ -217,8 +217,8 @@ export const WallpaperVisual = ({
                 </text>
                 
                 {/* Height measurement line */}
-                <line x1="365" y1="40" x2="365" y2="280" stroke="#3b82f6" strokeWidth="2" markerEnd="url(#arrowhead-down)" markerStart="url(#arrowhead-up)" />
-                <text x="380" y="160" textAnchor="start" fill="#3b82f6" fontSize="12" fontWeight="bold">
+                <line x1="375" y1="40" x2="375" y2="280" stroke="#3b82f6" strokeWidth="2" markerEnd="url(#arrowhead-down)" markerStart="url(#arrowhead-up)" />
+                <text x="390" y="160" textAnchor="start" fill="#3b82f6" fontSize="12" fontWeight="bold">
                   {wallHeight}cm
                 </text>
                 
