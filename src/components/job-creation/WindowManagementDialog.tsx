@@ -56,8 +56,37 @@ export const WindowManagementDialog = ({
   const { data: inventoryItems = [] } = useInventory();
   const { units } = useMeasurementUnits();
 
-  // Get the visual key from the nested window_types object
-  const visualKey = surface?.window_types?.visual_key || 'standard';
+  // Fetch the latest surface data to get the current visual_key
+  const { data: surfaceData } = useQuery({
+    queryKey: ["surface", surface?.id],
+    queryFn: async () => {
+      if (!surface?.id) return null;
+      
+      const { data, error } = await supabase
+        .from("surfaces")
+        .select(`
+          id,
+          name,
+          window_types (
+            visual_key
+          )
+        `)
+        .eq("id", surface.id)
+        .single();
+      
+      if (error) {
+        console.error("Error fetching surface:", error);
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!surface?.id,
+    refetchInterval: 1000, // Refetch every second to catch changes
+  });
+
+  // Get the visual key from the fetched surface data or fallback to prop
+  const visualKey = (surfaceData?.window_types as any)?.visual_key || (surface?.window_types as any)?.visual_key || 'standard';
 
   // Filter inventory by category based on treatment type
   const getInventoryForTreatment = (treatmentType: string) => {
