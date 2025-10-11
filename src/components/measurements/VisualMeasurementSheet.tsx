@@ -17,6 +17,7 @@ import { detectTreatmentType, getTreatmentConfig } from "@/utils/treatmentTypeDe
 import { DynamicRollerBlindFields } from "./roller-blind-fields/DynamicRollerBlindFields";
 import { RollerBlindVisual } from "./visualizers/RollerBlindVisual";
 import { DynamicBlindVisual } from "./visualizers/DynamicBlindVisual";
+import { WallpaperVisual } from "./visualizers/WallpaperVisual";
 import { singularToDbValue } from "@/types/treatmentCategories";
 
 interface VisualMeasurementSheetProps {
@@ -302,8 +303,16 @@ export const VisualMeasurementSheet = ({
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Visual Diagram */}
             <div className="lg:w-2/5 flex-shrink-0">
-              {/* Conditionally render visual based on treatment type */}
-              {(treatmentCategory === 'roller_blinds' || 
+              {/* Wallpaper visual */}
+              {treatmentCategory === 'wallpaper' ? (
+                <WallpaperVisual
+                  measurements={measurements}
+                  selectedWallpaper={selectedFabric ? inventory.find(item => item.id === selectedFabric) : undefined}
+                  onMeasurementChange={handleInputChange}
+                  readOnly={readOnly}
+                />
+              ) : /* Blinds visual */
+              (treatmentCategory === 'roller_blinds' || 
                 treatmentCategory === 'venetian_blinds' || 
                 treatmentCategory === 'roman_blinds' ||
                 treatmentCategory === 'cellular_blinds' ||
@@ -334,6 +343,7 @@ export const VisualMeasurementSheet = ({
                   controlType={measurements.control_type}
                 />
               ) : (
+                /* Curtains visual */
                 <div className="relative container-level-2 rounded-lg p-8 min-h-[400px] overflow-visible">
 
               {/* Hardware - Track/Rod that follows window shape */}
