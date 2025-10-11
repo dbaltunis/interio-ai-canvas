@@ -122,7 +122,7 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
         {WALLCOVERING_CATEGORIES.map((cat) => (
           <TabsContent key={cat.key} value={cat.key} className="mt-6">
             {viewMode === "grid" ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                 {filteredItems.map((item) => (
                   <Card key={item.id} className="group hover:shadow-lg transition-all overflow-hidden">
                     <div className="aspect-[16/5] relative overflow-hidden bg-muted">
