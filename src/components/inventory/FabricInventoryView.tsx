@@ -134,7 +134,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filteredItems.map((item) => (
                   <Card key={item.id} className="group hover:shadow-lg transition-all overflow-hidden">
-                    <div className="aspect-[4/3] relative overflow-hidden bg-muted">
+                    <div className="aspect-[16/5] relative overflow-hidden bg-muted">
                       {item.image_url ? (
                         <img 
                           src={item.image_url} 
