@@ -686,7 +686,8 @@ export const VisualMeasurementSheet = ({
 
             {/* Measurement Inputs Section */}
             <div className="lg:w-3/5 space-y-2">
-              {/* ESSENTIAL MEASUREMENTS - MOVED TO TOP */}
+              {/* ESSENTIAL MEASUREMENTS - Only show for curtains and blinds, NOT for wallpaper */}
+              {treatmentCategory !== 'wallpaper' && (
               <div className="container-level-1 rounded-lg p-3">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center">
@@ -766,6 +767,8 @@ export const VisualMeasurementSheet = ({
                   </div>
                 </div>
               </div>
+              )}
+              {/* End Essential Measurements */}
 
               {/* CURTAIN-SPECIFIC FIELDS */}
               {treatmentConfig.requiresHardwareType && treatmentType === 'curtains' && (
