@@ -186,6 +186,33 @@ export const WindowTypeSelector = ({
                         </div>
                       </div>
                     </div>
+                  ) : windowType.visual_key === 'room_wall' ? (
+                    // Room Wall Visual for Wallpaper
+                    <div className="w-18 h-14 relative">
+                      {/* Wall background with texture pattern */}
+                      <div className="w-full h-full bg-gradient-to-b from-amber-50 to-amber-100 border-2 border-gray-600 relative overflow-hidden">
+                        {/* Wallpaper pattern - decorative lines */}
+                        <div className="absolute inset-0">
+                          {Array.from({ length: 6 }).map((_, i) => (
+                            <div
+                              key={i}
+                              className="absolute h-full w-px bg-amber-300/40"
+                              style={{ left: `${(i + 1) * 14.28}%` }}
+                            />
+                          ))}
+                          {/* Decorative pattern */}
+                          <div className="absolute inset-1 grid grid-cols-3 gap-1">
+                            {Array.from({ length: 9 }).map((_, i) => (
+                              <div key={i} className="flex items-center justify-center">
+                                <div className="w-1.5 h-1.5 rounded-full bg-rose-400/30" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        {/* Baseboard */}
+                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-amber-800 border-t border-gray-700" />
+                      </div>
+                    </div>
                   ) : (
                     // Fallback for other window types
                     <div className="text-gray-400 text-xs">No preview</div>
