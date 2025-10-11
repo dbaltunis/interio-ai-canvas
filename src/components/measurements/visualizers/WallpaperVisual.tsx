@@ -211,32 +211,20 @@ export const WallpaperVisual = ({
                 <rect x="50" y="40" width="300" height="240" fill="url(#wall-shadow)" opacity="0.3" />
                 
                 {/* Width measurement line */}
-                <line x1="50" y1="25" x2="350" y2="25" stroke="#3b82f6" strokeWidth="2" markerEnd="url(#arrowhead)" markerStart="url(#arrowhead-start)" />
+                <line x1="50" y1="25" x2="350" y2="25" stroke="#3b82f6" strokeWidth="1.5" />
+                <polygon points="50,25 56,22 56,28" fill="#3b82f6" />
+                <polygon points="350,25 344,22 344,28" fill="#3b82f6" />
                 <text x="200" y="18" textAnchor="middle" fill="#3b82f6" fontSize="12" fontWeight="bold">
                   {wallWidth}cm
                 </text>
                 
                 {/* Height measurement line */}
-                <line x1="375" y1="40" x2="375" y2="280" stroke="#3b82f6" strokeWidth="2" markerEnd="url(#arrowhead-down)" markerStart="url(#arrowhead-up)" />
+                <line x1="375" y1="40" x2="375" y2="280" stroke="#3b82f6" strokeWidth="1.5" />
+                <polygon points="375,40 372,46 378,46" fill="#3b82f6" />
+                <polygon points="375,280 372,274 378,274" fill="#3b82f6" />
                 <text x="390" y="160" textAnchor="start" fill="#3b82f6" fontSize="12" fontWeight="bold">
                   {wallHeight}cm
                 </text>
-                
-                {/* Arrow markers */}
-                <defs>
-                  <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
-                    <polygon points="0 0, 10 5, 0 10" fill="#3b82f6" />
-                  </marker>
-                  <marker id="arrowhead-start" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
-                    <polygon points="10 0, 0 5, 10 10" fill="#3b82f6" />
-                  </marker>
-                  <marker id="arrowhead-down" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
-                    <polygon points="0 0, 5 10, 10 0" fill="#3b82f6" />
-                  </marker>
-                  <marker id="arrowhead-up" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
-                    <polygon points="0 10, 5 0, 10 10" fill="#3b82f6" />
-                  </marker>
-                </defs>
                 
                 {/* Pattern repeat indicator (if applicable) */}
                 {patternRepeat > 0 && selectedWallpaper && (
