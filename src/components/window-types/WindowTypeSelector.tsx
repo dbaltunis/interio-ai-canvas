@@ -66,8 +66,13 @@ export const WindowTypeSelector = ({
             visual_key: item.visual_key
           }));
           
-          // Sort to ensure standard comes first, then bay
-          const sortedTypes = simpleTypes.sort((a, b) => {
+          // Filter out French Doors, Sliding Doors, and Bay Window
+          const filteredTypes = simpleTypes.filter(type => 
+            !['french_doors', 'sliding_doors', 'bay'].includes(type.visual_key)
+          );
+          
+          // Sort to ensure standard comes first
+          const sortedTypes = filteredTypes.sort((a, b) => {
             if (a.visual_key === 'standard') return -1;
             if (b.visual_key === 'standard') return 1;
             return 0;
