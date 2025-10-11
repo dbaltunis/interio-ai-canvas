@@ -99,7 +99,7 @@ export const WallpaperVisual = ({
     <div className="flex flex-col lg:flex-row gap-6 h-full">
       {/* Wall Visual - Full width on mobile, left side on desktop */}
       <div className="flex-1 lg:w-3/5">
-        <Card className="p-6 bg-muted/30 h-full">
+        <Card className="bg-muted/30 h-full overflow-hidden">
           {!hasMeasurements ? (
             // Empty state - brick wall with tools
             <div className="flex flex-col items-center justify-center h-full min-h-[400px]">
