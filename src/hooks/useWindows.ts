@@ -17,7 +17,12 @@ export const useWindows = (projectId?: string) => {
 
         const { data, error } = await supabase
           .from("surfaces")
-          .select("*")
+          .select(`
+            *,
+            window_types (
+              visual_key
+            )
+          `)
           .eq("user_id", user.id)
           .order("created_at");
         
@@ -27,7 +32,12 @@ export const useWindows = (projectId?: string) => {
       
       const { data, error } = await supabase
         .from("surfaces")
-        .select("*")
+        .select(`
+          *,
+          window_types (
+            visual_key
+          )
+        `)
         .eq("project_id", projectId)
         .order("created_at");
       
