@@ -67,7 +67,11 @@ export const UnifiedInventoryDialog = ({
     image_url: "",
     hardware_finish: "",
     hardware_material: "",
-    weight: 0
+    weight: 0,
+    wallpaper_roll_width: 0,
+    wallpaper_roll_length: 0,
+    wallpaper_sold_by: "per_roll",
+    wallpaper_unit_of_measure: "cm"
   });
 
   // Load draft data on mount for create mode
@@ -112,7 +116,11 @@ export const UnifiedInventoryDialog = ({
         image_url: item.image_url || "",
         hardware_finish: item.hardware_finish || "",
         hardware_material: item.hardware_material || "",
-        weight: item.weight || 0
+        weight: item.weight || 0,
+        wallpaper_roll_width: item.wallpaper_roll_width || 0,
+        wallpaper_roll_length: item.wallpaper_roll_length || 0,
+        wallpaper_sold_by: item.wallpaper_sold_by || "per_roll",
+        wallpaper_unit_of_measure: item.wallpaper_unit_of_measure || "cm"
       });
       setTrackInventory(item.quantity > 0);
     }
@@ -239,7 +247,11 @@ export const UnifiedInventoryDialog = ({
           image_url: "",
           hardware_finish: "",
           hardware_material: "",
-          weight: 0
+          weight: 0,
+          wallpaper_roll_width: 0,
+          wallpaper_roll_length: 0,
+          wallpaper_sold_by: "per_roll",
+          wallpaper_unit_of_measure: "cm"
         });
         setTrackInventory(false);
       }
@@ -527,8 +539,105 @@ export const UnifiedInventoryDialog = ({
                       </div>
                     </CardContent>
 
+                    {/* Wallpaper-specific fields */}
+                    {formData.category === "wallcovering" && (
+                      <CardContent className="border-t">
+                        <h4 className="font-medium mb-4">Wallpaper Specifications</h4>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div>
+                            <div className="flex items-center">
+                              <Label htmlFor="wallpaper_roll_width">Roll Width</Label>
+                              <FieldHelp content="The width of one wallpaper roll (typically 53cm or 68cm)" />
+                            </div>
+                            <div className="flex gap-2">
+                              <Input
+                                id="wallpaper_roll_width"
+                                type="number"
+                                step="0.1"
+                                value={formData.wallpaper_roll_width || ""}
+                                onChange={(e) => setFormData({ ...formData, wallpaper_roll_width: parseFloat(e.target.value) || 0 })}
+                                placeholder="53"
+                              />
+                              <Select
+                                value={formData.wallpaper_unit_of_measure}
+                                onValueChange={(value) => setFormData({ ...formData, wallpaper_unit_of_measure: value })}
+                              >
+                                <SelectTrigger className="w-24">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="cm">cm</SelectItem>
+                                  <SelectItem value="inch">inch</SelectItem>
+                                  <SelectItem value="mm">mm</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="flex items-center">
+                              <Label htmlFor="wallpaper_roll_length">Roll Length</Label>
+                              <FieldHelp content="The length of one wallpaper roll (typically 10m)" />
+                            </div>
+                            <div className="flex gap-2">
+                              <Input
+                                id="wallpaper_roll_length"
+                                type="number"
+                                step="0.1"
+                                value={formData.wallpaper_roll_length || ""}
+                                onChange={(e) => setFormData({ ...formData, wallpaper_roll_length: parseFloat(e.target.value) || 0 })}
+                                placeholder="10"
+                              />
+                              <div className="w-24 flex items-center justify-center text-sm text-muted-foreground">
+                                meters
+                              </div>
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="flex items-center">
+                              <Label htmlFor="wallpaper_sold_by">Sold By</Label>
+                              <FieldHelp content="How this wallpaper is sold - per roll, per unit, or per square meter" />
+                            </div>
+                            <Select
+                              value={formData.wallpaper_sold_by}
+                              onValueChange={(value) => setFormData({ ...formData, wallpaper_sold_by: value })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="per_roll">Per Roll</SelectItem>
+                                <SelectItem value="per_unit">Per Unit</SelectItem>
+                                <SelectItem value="per_sqm">Per Square Meter</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        {/* Calculation Preview */}
+                        {formData.wallpaper_roll_width > 0 && formData.wallpaper_roll_length > 0 && (
+                          <div className="mt-4 p-4 bg-muted rounded-lg">
+                            <h5 className="font-medium mb-2">Roll Coverage</h5>
+                            <p className="text-sm text-muted-foreground">
+                              Each roll covers approximately{" "}
+                              <strong>
+                                {((formData.wallpaper_roll_width / 100) * formData.wallpaper_roll_length).toFixed(2)} m²
+                              </strong>
+                              {" "}(based on {formData.wallpaper_roll_width}cm × {formData.wallpaper_roll_length}m)
+                            </p>
+                            {formData.pattern_repeat_vertical > 0 && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                With {formData.pattern_repeat_vertical}cm pattern repeat, actual coverage may be reduced
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+                    )}
+
                     {/* Roll Direction Info */}
-                    {formData.fabric_width > 0 && (
+                    {isFabric && formData.category !== "wallcovering" && formData.fabric_width > 0 && (
                       <CardContent>
                         <div className="p-4 bg-muted rounded-lg">
                           <div className="flex items-center gap-2 mb-2">
