@@ -21,12 +21,7 @@ export const useSurfaces = (projectId?: string) => {
       
       const { data, error } = await supabase
         .from("surfaces")
-        .select(`
-          *,
-          window_types (
-            visual_key
-          )
-        `)
+        .select("*")
         .eq("project_id", projectId)
         .order("created_at");
       

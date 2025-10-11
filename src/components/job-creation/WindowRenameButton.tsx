@@ -68,9 +68,9 @@ export const WindowRenameButton = ({ windowName, onRename, disabled }: WindowRen
           size="sm"
           variant="ghost"
           onClick={() => setIsEditing(true)}
-          className="h-8 w-8 p-0 text-muted-foreground hover:text-primary transition-colors"
+          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
         >
-          <Edit2 className="h-4 w-4" />
+          <Edit2 className="h-3 w-3" />
         </Button>
       )}
     </div>

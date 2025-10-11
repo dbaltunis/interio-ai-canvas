@@ -1,8 +1,8 @@
-import React, { useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Ruler } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { MeasurementBridge } from "../measurements/MeasurementBridge";
 import { convertLegacyToDynamic, validateMeasurement } from "../measurements/utils/measurementMigration";
@@ -10,7 +10,6 @@ import { TreatmentPricingForm } from "./TreatmentPricingForm";
 import { useInventory } from "@/hooks/useInventory";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { WindowRenameButton } from "./WindowRenameButton";
-import { useToast } from "@/hooks/use-toast";
 
 interface WindowManagementDialogProps {
   isOpen: boolean;
@@ -50,24 +49,9 @@ export const WindowManagementDialog = ({
   const [calculatedCost, setCalculatedCost] = useState(0);
   // Reference to access worksheet's save function
   const worksheetRef = useRef<any>(null);
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const { data: inventoryItems = [] } = useInventory();
   const { units } = useMeasurementUnits();
-
-  // Use state to track the current visual key
-  const [currentVisualKey, setCurrentVisualKey] = useState(
-    (surface?.window_types as any)?.visual_key || 'standard'
-  );
-
-  // Update visual key when surface prop changes
-  React.useEffect(() => {
-    const newVisualKey = (surface?.window_types as any)?.visual_key || 'standard';
-    setCurrentVisualKey(newVisualKey);
-  }, [surface?.window_types]);
-
-  const visualKey = currentVisualKey;
 
   // Filter inventory by category based on treatment type
   const getInventoryForTreatment = (treatmentType: string) => {
@@ -169,35 +153,19 @@ export const WindowManagementDialog = ({
       <Dialog open={isOpen} onOpenChange={handleDialogClose}>
         <DialogContent className="max-w-7xl max-h-[95vh] flex flex-col bg-background border-2">
           <DialogHeader className="flex-shrink-0 pb-4 border-b border-border">
-            <DialogTitle className="flex items-center gap-3 text-xl font-bold text-foreground group">
+            <DialogTitle className="flex items-center gap-2 text-xl font-bold text-foreground">
               <Ruler className="h-6 w-6 text-primary" />
-              <span>Design area: <span className="font-bold">{visualKey === 'room_wall' ? 'Room Wall' : 'Window'}</span> - </span>
+              Design area: {surface?.window_type === 'room_wall' ? 'Room Wall' : 'Window'} - 
               <WindowRenameButton 
                 windowName={surface?.name || 'Untitled'}
-                onRename={async (newName) => {
+                onRename={(newName) => {
                   // Update the surface name
                   if (surface?.id) {
-                    const { error } = await supabase
+                    supabase
                       .from('surfaces')
                       .update({ name: newName })
-                      .eq('id', surface.id);
-                    
-                    if (error) {
-                      console.error('Failed to update surface name:', error);
-                      toast({
-                        title: "Error",
-                        description: "Failed to update name. Please try again.",
-                        variant: "destructive"
-                      });
-                    } else {
-                      // Invalidate queries to refresh the data
-                      queryClient.invalidateQueries({ queryKey: ["surfaces"] });
-                      queryClient.invalidateQueries({ queryKey: ["surfaces", projectId] });
-                      toast({
-                        title: "Success",
-                        description: "Name updated successfully"
-                      });
-                    }
+                      .eq('id', surface.id)
+                      .then(() => console.log('Surface name updated'));
                   }
                 }}
               />
