@@ -9,6 +9,7 @@ import { convertLegacyToDynamic, validateMeasurement } from "../measurements/uti
 import { TreatmentPricingForm } from "./TreatmentPricingForm";
 import { useInventory } from "@/hooks/useInventory";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { WindowRenameButton } from "./WindowRenameButton";
 
 interface WindowManagementDialogProps {
   isOpen: boolean;
@@ -154,7 +155,20 @@ export const WindowManagementDialog = ({
           <DialogHeader className="flex-shrink-0 pb-4 border-b border-border">
             <DialogTitle className="flex items-center gap-2 text-xl font-bold text-foreground">
               <Ruler className="h-6 w-6 text-primary" />
-              Enhanced Window Management: {surface?.name}
+              Design area: {surface?.window_type === 'room_wall' ? 'Room Wall' : 'Window'} - 
+              <WindowRenameButton 
+                windowName={surface?.name || 'Untitled'}
+                onRename={(newName) => {
+                  // Update the surface name
+                  if (surface?.id) {
+                    supabase
+                      .from('surfaces')
+                      .update({ name: newName })
+                      .eq('id', surface.id)
+                      .then(() => console.log('Surface name updated'));
+                  }
+                }}
+              />
             </DialogTitle>
           </DialogHeader>
 
