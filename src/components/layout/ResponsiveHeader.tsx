@@ -17,7 +17,8 @@ import {
   Calendar,
   Menu,
   X,
-  MessageCircle
+  MessageCircle,
+  Calculator
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -33,6 +34,7 @@ const navItems = [
   { id: "quotes", label: "Emails", icon: FileText },
   { id: "calendar", label: "Calendar", icon: Calendar },
   { id: "inventory", label: "Library", icon: Package },
+  { id: "calculator", label: "Calculator", icon: Calculator },
 ];
 
 export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderProps) => {
