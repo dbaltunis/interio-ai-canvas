@@ -50,30 +50,24 @@ export function WindowSummaryCard({
   const { compact } = useCompactMode();
   const userCurrency = useUserCurrency();
 
-  // Detect treatment type - CORRECTED PRIORITY ORDER:
-  // The database was storing treatment types incorrectly (swapped fields)
-  // Now we prioritize treatment_type which is saved correctly by the worksheet
+  // Detect treatment type - PRIORITY ORDER:
+  // 1. Explicitly passed prop (from surface.treatment_type)
+  // 2. Treatment type from summary (most reliable)
+  // 3. Detect from fabric category (wallpaper only)
+  // 4. Default to curtains
   const detectTreatmentTypeFromFabric = () => {
     const category = summary?.fabric_details?.category?.toLowerCase() || '';
-    // Only use fabric category to detect wallpaper
+    // Only use fabric category to detect wallpaper, not other types
     if (category.includes('wallcover') || category.includes('wallpaper')) return 'wallpaper';
     return null;
   };
 
   const treatmentType = 
-    summary?.treatment_type ||               // PRIMARY: Treatment type from summary (now correctly saved)
-    propTreatmentType ||                     // SECONDARY: Explicitly passed prop
-    detectTreatmentTypeFromFabric() ||       // TERTIARY: Wallpaper detection from fabric
-    summary?.treatment_category ||           // QUATERNARY: Fallback to category
-    'curtains';                              // FINAL: Default fallback
-  
-  console.log('🔍 WindowSummaryCard treatment type detection:', {
-    detected: treatmentType,
-    from_summary_type: summary?.treatment_type,
-    from_prop: propTreatmentType,
-    from_fabric: detectTreatmentTypeFromFabric(),
-    from_category: summary?.treatment_category
-  });
+    propTreatmentType ||                    // Use prop if explicitly passed
+    summary?.treatment_type ||               // Use treatment_type from summary (MOST RELIABLE)
+    detectTreatmentTypeFromFabric() ||       // Only for wallpaper detection
+    summary?.treatment_category ||           // Fallback to category
+    'curtains';                              // Final fallback
 
   // Unit helpers
   const { convertToUserUnit, formatFabric } = useMeasurementUnits();
@@ -260,7 +254,7 @@ export function WindowSummaryCard({
             <div className="rounded-lg border bg-card">
               <div className="flex flex-col sm:flex-row gap-4 p-3 sm:p-4">
                 {/* Treatment Visualization - Clean product image only */}
-                <div className="w-full sm:w-48 h-48 sm:h-56 lg:w-56 lg:h-64 sm:flex-shrink-0 rounded-md overflow-hidden bg-muted/20 border">
+                <div className="w-full sm:w-40 h-40 sm:flex-shrink-0 rounded-md overflow-hidden bg-muted/20 border">
                   <TreatmentPreviewEngine
                     windowType={surface.window_type || 'standard'}
                     treatmentType={treatmentType}
