@@ -127,7 +127,8 @@ export const useQuotationSync = ({
             fabricName: fabricDetails.name,
             fabricPrice: fabricDetails.selling_price,
             treatmentCategory,
-            materialLabel: getMaterialLabel()
+            materialLabel: getMaterialLabel(),
+            wallpaperDetails: wallpaperDetails
           });
           
           // PARENT ITEM - Use actual product name
@@ -138,6 +139,13 @@ export const useQuotationSync = ({
           if (treatmentCategory === 'wallpaper' && wallpaperDetails.total_rolls) {
             description = `${wallpaperDetails.strips_needed || 0} strips × ${wallpaperDetails.strip_length_cm || 0}cm = ${wallpaperDetails.total_length_m || 0}m (${wallpaperDetails.total_rolls} rolls)`;
           }
+          
+          console.log('[QUOTE ITEM] Final item data:', {
+            productName,
+            description,
+            treatmentCategory,
+            isWallpaper: treatmentCategory === 'wallpaper'
+          });
           
           const parentItem = {
             id: window.window_id,
