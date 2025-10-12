@@ -147,58 +147,82 @@ export const DynamicWindowWorksheet = forwardRef<{
       const measurementsDetails = existingWindowSummary.measurements_details as any || {};
       const templateDetails = existingWindowSummary.template_details as any;
       const fabricDetails = existingWindowSummary.fabric_details as any;
-
-      // Set measurements from saved summary
-      if (measurementsDetails && typeof measurementsDetails === 'object') {
-        const loadedMeasurements = {
-          // Convert stored cm values back to user's preferred unit
-          rail_width: measurementsDetails.rail_width_cm ? convertLength(measurementsDetails.rail_width_cm, 'cm', units.length).toString() : measurementsDetails.rail_width?.toString() || "",
-          drop: measurementsDetails.drop_cm ? convertLength(measurementsDetails.drop_cm, 'cm', units.length).toString() : measurementsDetails.drop?.toString() || "",
-          ...measurementsDetails
+      
+      // STEP 1: Restore Window Type
+      if (existingWindowSummary.window_type_id) {
+        const windowTypeData = {
+          id: existingWindowSummary.window_type_id,
+          name: existingWindowSummary.window_type,
+          key: existingWindowSummary.window_type_key,
+          visual_key: existingWindowSummary.window_type_key
         };
-        setMeasurements(loadedMeasurements);
-        console.log("📊 Loaded measurements (converted to user units):", loadedMeasurements);
-
-        // Load heading and lining selections from measurements_details
-        if (measurementsDetails.selected_heading) {
-          setSelectedHeading(measurementsDetails.selected_heading);
-          console.log("📊 Loaded heading:", measurementsDetails.selected_heading);
-        }
-        if (measurementsDetails.selected_lining) {
-          setSelectedLining(measurementsDetails.selected_lining);
-          console.log("📊 Loaded lining:", measurementsDetails.selected_lining);
-        }
+        setSelectedWindowType(windowTypeData);
+        console.log("📊 Restored window type:", windowTypeData);
       }
-
-      // Set template from saved summary
-      if (templateDetails && typeof templateDetails === 'object') {
+      
+      // STEP 2: Restore Treatment/Template
+      if (templateDetails) {
         setSelectedTemplate(templateDetails);
-        setSelectedTreatmentType(templateDetails.curtain_type || "curtains");
-        // Detect treatment category
-        const detectedType = detectTreatmentType(templateDetails);
-        setTreatmentCategory(detectedType);
-        console.log("📊 Loaded template:", templateDetails.name, "Treatment type:", detectedType);
+        console.log("📊 Restored template:", templateDetails.name);
       }
-
-      // Set fabric from saved summary
-      if (fabricDetails && typeof fabricDetails === 'object') {
-        setSelectedItems(prev => ({
-          ...prev,
-          fabric: fabricDetails
-        }));
-        console.log("📊 Loaded fabric:", fabricDetails.name);
+      if (existingWindowSummary.treatment_type) {
+        setSelectedTreatmentType(existingWindowSummary.treatment_type);
       }
-
+      if (existingWindowSummary.treatment_category) {
+        setTreatmentCategory(existingWindowSummary.treatment_category as TreatmentCategory);
+      }
+      
+      // STEP 3: Restore Inventory Selections
+      const restoredItems: any = {};
+      
+      // Restore fabric selection
+      if (fabricDetails && fabricDetails.fabric_id) {
+        restoredItems.fabric = fabricDetails;
+        console.log("📊 Restored fabric:", fabricDetails.name || fabricDetails.fabric_id);
+      }
+      
+      // Restore hardware selection
+      if (existingWindowSummary.hardware_details) {
+        restoredItems.hardware = existingWindowSummary.hardware_details;
+        console.log("📊 Restored hardware:", existingWindowSummary.hardware_details);
+      }
+      
+      // Restore material selection
+      if (existingWindowSummary.material_details) {
+        restoredItems.material = existingWindowSummary.material_details;
+        console.log("📊 Restored material:", existingWindowSummary.material_details);
+      }
+      
+      if (Object.keys(restoredItems).length > 0) {
+        setSelectedItems(restoredItems);
+      }
+      
+      // Restore heading and lining
+      if (existingWindowSummary.selected_heading_id) {
+        setSelectedHeading(existingWindowSummary.selected_heading_id);
+        console.log("📊 Restored heading:", existingWindowSummary.selected_heading_id);
+      }
+      if (existingWindowSummary.selected_lining_type) {
+        setSelectedLining(existingWindowSummary.selected_lining_type);
+        console.log("📊 Restored lining:", existingWindowSummary.selected_lining_type);
+      }
+      
+      // STEP 4: Restore Measurements
+      if (measurementsDetails) {
+        setMeasurements(measurementsDetails);
+        console.log("📊 Restored measurements:", measurementsDetails);
+      }
+      
+      
       // Set fabric calculation if available
       if (existingWindowSummary.linear_meters && existingWindowSummary.fabric_cost) {
         setFabricCalculation({
           linearMeters: existingWindowSummary.linear_meters,
           totalCost: existingWindowSummary.fabric_cost,
-          // Use fabric_cost, not total_cost!
           pricePerMeter: existingWindowSummary.price_per_meter,
           widthsRequired: existingWindowSummary.widths_required
         });
-        console.log("📊 Loaded fabric calculation with correct fabric cost:", {
+        console.log("📊 Loaded fabric calculation:", {
           linearMeters: existingWindowSummary.linear_meters,
           fabricCost: existingWindowSummary.fabric_cost,
           totalCost: existingWindowSummary.total_cost
@@ -511,7 +535,7 @@ export const DynamicWindowWorksheet = forwardRef<{
           // Recalculate total cost with proper lining and heading costs
           const finalTotalCost = fabricCost + finalLiningCost + finalHeadingCost + manufacturingCost;
 
-          // Create summary data for windows_summary table
+          // Create summary data for windows_summary table - Save ALL 4 steps
           const summaryData = {
             window_id: surfaceId,
             linear_meters: linearMeters,
@@ -528,19 +552,39 @@ export const DynamicWindowWorksheet = forwardRef<{
             pricing_type: selectedTemplate?.pricing_type || 'per_metre',
             waste_percent: selectedTemplate?.waste_percent || 5,
             currency: 'USD',
-            // Detailed breakdown fields
+            
+            // STEP 1: Window Type Selection
+            window_type: selectedWindowType?.name || 'Standard Window',
+            window_type_key: selectedWindowType?.key || 'standard',
+            window_type_id: selectedWindowType?.id,
+            
+            // STEP 2: Treatment/Template Selection
             template_name: selectedTemplate?.name,
             template_details: selectedTemplate,
+            treatment_type: selectedTreatmentType,
+            treatment_category: treatmentCategory,
+            
+            // STEP 3: Inventory Selections (Fabric, Hardware, Materials)
             fabric_details: {
               ...selectedItems.fabric,
               fabric_id: selectedItems.fabric?.id,
               width_cm: selectedItems.fabric?.fabric_width || selectedItems.fabric?.wallpaper_roll_width || 140,
               width: selectedItems.fabric?.fabric_width || selectedItems.fabric?.wallpaper_roll_width || 140
             },
+            selected_fabric_id: selectedItems.fabric?.id,
+            selected_hardware_id: selectedItems.hardware?.id,
+            selected_material_id: selectedItems.material?.id,
+            hardware_details: selectedItems.hardware || null,
+            material_details: selectedItems.material || null,
+            
             heading_details: headingDetails,
+            selected_heading_id: selectedHeading,
+            selected_lining_type: selectedLining,
+            
             // Add wallpaper-specific details if applicable
             wallpaper_details: wallpaperDetails,
-            treatment_category: treatmentCategory,
+            
+            // STEP 4: Measurements - Store both raw and converted values
             measurements_details: {
               ...measurements,
               // Convert user input to centimeters for storage (always store in cm)
@@ -556,8 +600,8 @@ export const DynamicWindowWorksheet = forwardRef<{
               unit: units.length,
               surface_id: surfaceId,
               surface_name: surfaceData?.name,
-              curtain_type: selectedTemplate?.curtain_type || 'wallpaper',
-              fullness_ratio: selectedTemplate?.fullness_ratio || 1,
+              curtain_type: selectedTemplate?.curtain_type || (treatmentCategory === 'wallpaper' ? 'wallpaper' : 'single'),
+              fullness_ratio: selectedTemplate?.fullness_ratio || (treatmentCategory === 'wallpaper' ? 1 : 2),
               fabric_width_cm: selectedItems.fabric?.fabric_width || selectedItems.fabric?.wallpaper_roll_width || 140,
               window_type: selectedWindowType?.name || 'Room Wall',
               selected_heading: selectedHeading,
