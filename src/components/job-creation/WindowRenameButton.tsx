@@ -38,12 +38,14 @@ export const WindowRenameButton = ({ windowName, onRename, disabled }: WindowRen
           }}
           className="h-8 text-sm font-semibold"
           autoFocus
-          onBlur={handleSave}
         />
         <Button
           size="sm"
           variant="ghost"
-          onClick={handleSave}
+          onMouseDown={(e) => {
+            e.preventDefault(); // Prevent blur from firing
+            handleSave();
+          }}
           className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
         >
           <Check className="h-4 w-4" />
@@ -51,7 +53,10 @@ export const WindowRenameButton = ({ windowName, onRename, disabled }: WindowRen
         <Button
           size="sm"
           variant="ghost"
-          onClick={handleCancel}
+          onMouseDown={(e) => {
+            e.preventDefault(); // Prevent blur from firing
+            handleCancel();
+          }}
           className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
         >
           <X className="h-4 w-4" />
