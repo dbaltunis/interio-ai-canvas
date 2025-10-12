@@ -40,7 +40,7 @@ export function WindowSummaryCard({
   onRenameSurface, 
   isMainWindow = true,
   treatmentLabel,
-  treatmentType
+  treatmentType: propTreatmentType
 }: WindowSummaryCardProps) {
   // Use surface.id directly as the window_id - single source of truth
   const windowId = surface.id;
@@ -48,6 +48,15 @@ export function WindowSummaryCard({
   const [showBreakdown, setShowBreakdown] = useState(false);
   const { compact } = useCompactMode();
   const userCurrency = useUserCurrency();
+
+  // Detect treatment type from multiple sources
+  const treatmentType = 
+    propTreatmentType || 
+    summary?.treatment_type || 
+    summary?.treatment_category ||
+    (summary?.fabric_details?.category?.toLowerCase().includes('wallcover') ? 'wallpaper' : undefined) ||
+    (summary?.fabric_details?.category?.toLowerCase().includes('blind') ? 'blinds' : undefined) ||
+    'curtains';
 
   // Unit helpers
   const { convertToUserUnit, formatFabric } = useMeasurementUnits();
@@ -60,6 +69,10 @@ export function WindowSummaryCard({
     isLoading,
     error: error?.message,
     hasSummary: !!summary,
+    detectedTreatmentType: treatmentType,
+    propTreatmentType,
+    summaryTreatmentType: summary?.treatment_type,
+    fabricCategory: summary?.fabric_details?.category,
     fabricDetails: summary?.fabric_details,
     headingDetails: summary?.heading_details,
     liningDetails: summary?.lining_details,

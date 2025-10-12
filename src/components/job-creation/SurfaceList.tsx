@@ -190,6 +190,7 @@ export const SurfaceList = ({
                      onViewDetails={() => handleViewWindow(window.mainSurface)}
                      onRenameSurface={handleRenameSurface}
                      isMainWindow={true}
+                     treatmentType={window.mainSurface.treatment_type}
                    />
                   
                   {/* Additional treatments for the same window */}

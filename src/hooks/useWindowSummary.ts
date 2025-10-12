@@ -29,6 +29,9 @@ export interface WindowSummary {
   measurements_details?: any;
   hardware_details?: any;
   wallpaper_details?: any;
+  // Treatment type fields
+  treatment_type?: string;
+  treatment_category?: string;
 }
 
 export const useWindowSummary = (windowId: string | undefined) => {
