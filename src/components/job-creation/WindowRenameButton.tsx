@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Edit2, Check, X } from "lucide-react";
+import { Edit2, Check, X, Pencil } from "lucide-react";
 
 interface WindowRenameButtonProps {
   windowName: string;
@@ -70,7 +70,7 @@ export const WindowRenameButton = ({ windowName, onRename, disabled }: WindowRen
           onClick={() => setIsEditing(true)}
           className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
         >
-          <Edit2 className="h-3 w-3" />
+          <Pencil className="h-4 w-4" />
         </Button>
       )}
     </div>

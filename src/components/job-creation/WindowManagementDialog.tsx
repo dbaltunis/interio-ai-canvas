@@ -211,7 +211,6 @@ export const WindowManagementDialog = ({
           <DialogHeader className="flex-shrink-0 pb-4 border-b border-border">
             <DialogTitle className="flex items-center gap-2 text-xl font-bold text-foreground">
               <Ruler className="h-6 w-6 text-primary" />
-              Design area: {getDesignAreaType()} - 
               <WindowRenameButton 
                 windowName={surface?.name || 'Untitled'}
                 onRename={handleRename}
