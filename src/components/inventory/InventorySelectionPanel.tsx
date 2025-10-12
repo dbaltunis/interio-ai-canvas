@@ -255,7 +255,7 @@ export const InventorySelectionPanel = ({
         label
       }) => <TabsContent key={key} value={key} className="mt-3">
             <ScrollArea className="h-[300px]">
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 pr-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 pr-3">
                 {getInventoryByCategory(key).map(item => renderInventoryItem(item, key))}
               </div>
 

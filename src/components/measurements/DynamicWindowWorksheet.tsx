@@ -558,23 +558,23 @@ export const DynamicWindowWorksheet = forwardRef<{
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="window-type">
-            <Ruler className="h-4 w-4 mr-2" />
-            Select Type
+            <Ruler className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Select Type</span>
             {selectedWindowType && <span className="ml-1 text-xs">✓</span>}
           </TabsTrigger>
           <TabsTrigger value="treatment">
-            <Package className="h-4 w-4 mr-2" />
-            Treatment
+            <Package className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Treatment</span>
             {(selectedTemplate || isLayeredMode && layeredTreatments.length > 0) && <span className="ml-1 text-xs">✓</span>}
           </TabsTrigger>
           <TabsTrigger value="inventory">
-            <Package className="h-4 w-4 mr-2" />
-            Inventory
+            <Package className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Inventory</span>
             {Object.values(selectedItems).some(item => item) && <span className="ml-1 text-xs">✓</span>}
           </TabsTrigger>
           <TabsTrigger value="measurements">
-            <Ruler className="h-4 w-4 mr-2" />
-            Measurements
+            <Ruler className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Measurements</span>
             {measurements.rail_width && measurements.drop && <span className="ml-1 text-xs">✓</span>}
           </TabsTrigger>
         </TabsList>
