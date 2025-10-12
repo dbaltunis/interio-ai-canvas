@@ -113,21 +113,36 @@ export const useQuotationSync = ({
           const fabricDetails = summary.fabric_details || {};
           const liningDetails = summary.lining_details || {};
           const headingDetails = summary.heading_details || {};
+          const wallpaperDetails = summary.wallpaper_details || {};
+          const treatmentCategory = summary.treatment_category || summary.treatment_type || '';
+          
+          // Determine material type label
+          const getMaterialLabel = () => {
+            if (treatmentCategory === 'wallpaper' || fabricDetails.category === 'wallcovering' || fabricDetails.category === 'wallcover') return 'Wallpaper';
+            if (treatmentCategory?.includes('blind')) return 'Material';
+            return 'Fabric';
+          };
           
           console.log(`[QUOTE ITEM] Window ${window.surface_name}:`, {
             fabricName: fabricDetails.name,
             fabricPrice: fabricDetails.selling_price,
-            liningType: liningDetails.type,
-            headingName: headingDetails.heading_name
+            treatmentCategory,
+            materialLabel: getMaterialLabel()
           });
           
-          // PARENT ITEM - Use actual fabric name from fabric_details
-          const fabricName = fabricDetails.name || window.surface_name || 'Window Treatment';
+          // PARENT ITEM - Use actual product name
+          const productName = fabricDetails.name || window.surface_name || 'Window Treatment';
+          
+          // Build description based on treatment type
+          let description = productName;
+          if (treatmentCategory === 'wallpaper' && wallpaperDetails.total_rolls) {
+            description = `${wallpaperDetails.strips_needed || 0} strips × ${wallpaperDetails.strip_length_cm || 0}cm = ${wallpaperDetails.total_length_m || 0}m (${wallpaperDetails.total_rolls} rolls)`;
+          }
           
           const parentItem = {
             id: window.window_id,
-            name: fabricName,
-            description: `Auto-generated from ${window.surface_name || 'Window'} treatment`,
+            name: productName,
+            description,
             quantity: 1,
             unit_price: summary.total_cost,
             total: summary.total_cost,
@@ -141,14 +156,15 @@ export const useQuotationSync = ({
             children: [] as any[]
           };
 
-          // DETAILED BREAKDOWN - Fabric (use REAL fabric details)
+          // DETAILED BREAKDOWN - Material (dynamic label)
           if (summary.fabric_cost && summary.fabric_cost > 0) {
+            const materialLabel = getMaterialLabel();
             const fabricPricePerMetre = fabricDetails.selling_price || fabricDetails.unit_price || (summary.fabric_cost / (summary.linear_meters || 1));
             
             parentItem.children.push({
-              id: `${window.window_id}-fabric`,
-              name: 'Fabric',
-              description: fabricName, // Use actual fabric name
+              id: `${window.window_id}-material`,
+              name: materialLabel,
+              description: productName,
               quantity: summary.linear_meters || 0,
               unit: 'm',
               unit_price: fabricPricePerMetre,
@@ -157,8 +173,8 @@ export const useQuotationSync = ({
             });
           }
 
-          // DETAILED BREAKDOWN - Manufacturing
-          if (summary.manufacturing_cost && summary.manufacturing_cost > 0) {
+          // DETAILED BREAKDOWN - Manufacturing (skip for wallpaper)
+          if (summary.manufacturing_cost && summary.manufacturing_cost > 0 && treatmentCategory !== 'wallpaper') {
             parentItem.children.push({
               id: `${window.window_id}-manufacturing`,
               name: 'Manufacturing price',

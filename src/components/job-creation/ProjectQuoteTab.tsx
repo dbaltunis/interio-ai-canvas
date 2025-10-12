@@ -252,7 +252,8 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
         quotationData={quotationData}
         groupByRoom={true}
         showDetailedView={true}
-        currency="GBP"
+        currency={businessSettings?.measurement_units ? JSON.parse(businessSettings.measurement_units).currency : 'GBP'}
+        businessSettings={businessSettings}
       />
 
       {/* Client Information */}

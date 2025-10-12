@@ -14,6 +14,7 @@ interface DetailedQuotationTableProps {
   onToggleGroupByRoom?: () => void;
   onToggleDetailedView?: () => void;
   currency?: string;
+  businessSettings?: any;
 }
 
 export const DetailedQuotationTable: React.FC<DetailedQuotationTableProps> = ({
@@ -22,7 +23,8 @@ export const DetailedQuotationTable: React.FC<DetailedQuotationTableProps> = ({
   showDetailedView = true,
   onToggleGroupByRoom,
   onToggleDetailedView,
-  currency = 'GBP'
+  currency = 'GBP',
+  businessSettings
 }) => {
   const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
@@ -151,7 +153,7 @@ export const DetailedQuotationTable: React.FC<DetailedQuotationTableProps> = ({
 
         {/* Financial Summary */}
         <div className="border-t mt-6 pt-4">
-          <FinancialSummary quotationData={quotationData} currency={currency} />
+          <FinancialSummary quotationData={quotationData} currency={currency} businessSettings={businessSettings} />
         </div>
       </CardContent>
     </Card>
@@ -265,19 +267,23 @@ const QuotationItemRow: React.FC<{
   );
 };
 
-const FinancialSummary: React.FC<{ quotationData: any; currency: string }> = ({ quotationData, currency }) => {
+const FinancialSummary: React.FC<{ quotationData: any; currency: string; businessSettings?: any }> = ({ quotationData, currency, businessSettings }) => {
+  const taxLabel = businessSettings?.tax_type === 'vat' ? 'VAT' : 
+                   businessSettings?.tax_type === 'gst' ? 'GST' : 'Tax';
+  const taxRate = businessSettings?.tax_rate || 0;
+  
   return (
     <div className="space-y-2">
       <div className="flex justify-between text-foreground">
-        <span>Subtotal (excluding GST):</span>
+        <span>Subtotal (excluding {taxLabel}):</span>
         <span className="font-medium">{formatCurrency(quotationData.subtotal || 0, currency)}</span>
       </div>
       <div className="flex justify-between text-foreground">
-        <span>GST (10%):</span>
+        <span>{taxLabel} ({taxRate}%):</span>
         <span className="font-medium">{formatCurrency(quotationData.taxAmount || 0, currency)}</span>
       </div>
       <div className="border-t pt-2 flex justify-between text-lg font-bold text-foreground">
-        <span>Total (including GST):</span>
+        <span>Total (including {taxLabel}):</span>
         <span>{formatCurrency(quotationData.total || 0, currency)}</span>
       </div>
     </div>
