@@ -169,61 +169,45 @@ export const InventorySelectionPanel = ({
       </Card>;
   };
   const getTabsForTreatment = () => {
-    // Detect wallpaper treatments
-    const isWallpaper = treatmentType?.toLowerCase().includes('wallpaper') || 
-                        treatmentType?.toLowerCase().includes('wall') ||
-                        treatmentCategory === 'wallpaper';
-    
-    // Detect roller treatments
-    const isRoller = treatmentType?.toLowerCase().includes('roller') || 
-                     treatmentCategory === 'roller_blinds';
-    
-    // Detect blind treatments (checking string values)
-    const isBlinds = treatmentType?.toLowerCase().includes('blind') || 
-                     treatmentType?.toLowerCase().includes('venetian') ||
-                     treatmentType?.toLowerCase().includes('vertical');
-    
-    // Wallpaper: only wallpaper materials
-    if (isWallpaper) {
-      return [{
-        key: "material",
-        label: "Wallpaper",
-        icon: Package
-      }];
+    switch (treatmentType) {
+      case "curtains":
+        return [{
+          key: "fabric",
+          label: "Fabric",
+          icon: Palette
+        }, {
+          key: "hardware",
+          label: "Hardware",
+          icon: Wrench
+        }];
+      case "blinds":
+      case "venetian_blinds":
+      case "vertical_blinds":
+      case "roller_blinds":
+        return [{
+          key: "material",
+          label: "Material",
+          icon: Package
+        }, {
+          key: "hardware",
+          label: "Hardware",
+          icon: Wrench
+        }];
+      default:
+        return [{
+          key: "fabric",
+          label: "Fabric",
+          icon: Palette
+        }, {
+          key: "material",
+          label: "Material",
+          icon: Package
+        }, {
+          key: "hardware",
+          label: "Hardware",
+          icon: Wrench
+        }];
     }
-    
-    // Roller blinds: only roller fabrics
-    if (isRoller) {
-      return [{
-        key: "fabric",
-        label: "Roller Fabric",
-        icon: Palette
-      }];
-    }
-    
-    // Blinds: materials and hardware
-    if (isBlinds) {
-      return [{
-        key: "material",
-        label: "Material",
-        icon: Package
-      }, {
-        key: "hardware",
-        label: "Hardware",
-        icon: Wrench
-      }];
-    }
-    
-    // Curtains: fabrics and hardware (default)
-    return [{
-      key: "fabric",
-      label: "Fabric",
-      icon: Palette
-    }, {
-      key: "hardware",
-      label: "Hardware",
-      icon: Wrench
-    }];
   };
   const availableTabs = getTabsForTreatment();
   return <div className={`space-y-3 ${className}`}>
