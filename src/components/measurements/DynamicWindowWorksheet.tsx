@@ -650,6 +650,18 @@ export const DynamicWindowWorksheet = forwardRef<{
       ...prev,
       [category]: item
     }));
+    
+    // Auto-detect treatment type from fabric category
+    if (category === 'fabric' && item?.category) {
+      const fabricCat = item.category.toLowerCase();
+      if (fabricCat.includes('wallcover') || fabricCat.includes('wallpaper')) {
+        setSelectedTreatmentType('wallpaper');
+        setTreatmentCategory('wallpaper');
+      } else if (fabricCat.includes('blind')) {
+        setSelectedTreatmentType('blinds');
+        setTreatmentCategory('roller_blinds');
+      }
+    }
   };
   const handleItemDeselect = (category: string) => {
     setSelectedItems(prev => ({
@@ -659,7 +671,10 @@ export const DynamicWindowWorksheet = forwardRef<{
   };
   const handleTemplateSelect = (template: any) => {
     setSelectedTemplate(template);
-    setSelectedTreatmentType("curtains"); // Templates are typically for curtains
+    // Set treatment type based on template category
+    const category = template?.treatment_category || 'curtains';
+    setSelectedTreatmentType(category === 'wallpaper' ? 'wallpaper' : category);
+    setTreatmentCategory(category);
   };
   const canProceedToMeasurements = selectedWindowType && (selectedTemplate || selectedTreatmentType);
   const canShowPreview = canProceedToMeasurements && Object.keys(measurements).length > 0;

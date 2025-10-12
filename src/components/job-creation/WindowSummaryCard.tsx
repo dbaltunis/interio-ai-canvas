@@ -49,13 +49,19 @@ export function WindowSummaryCard({
   const { compact } = useCompactMode();
   const userCurrency = useUserCurrency();
 
-  // Detect treatment type from multiple sources
+  // Detect treatment type from multiple sources - prioritize fabric category detection
+  const detectTreatmentTypeFromFabric = () => {
+    const category = summary?.fabric_details?.category?.toLowerCase() || '';
+    if (category.includes('wallcover') || category.includes('wallpaper')) return 'wallpaper';
+    if (category.includes('blind')) return 'blinds';
+    return null;
+  };
+
   const treatmentType = 
     propTreatmentType || 
+    detectTreatmentTypeFromFabric() ||
     summary?.treatment_type || 
     summary?.treatment_category ||
-    (summary?.fabric_details?.category?.toLowerCase().includes('wallcover') ? 'wallpaper' : undefined) ||
-    (summary?.fabric_details?.category?.toLowerCase().includes('blind') ? 'blinds' : undefined) ||
     'curtains';
 
   // Unit helpers
