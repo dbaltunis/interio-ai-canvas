@@ -543,6 +543,27 @@ export const DynamicWindowWorksheet = forwardRef<{
           const finalTotalCost = fabricCost + finalLiningCost + finalHeadingCost + manufacturingCost;
 
           // Create summary data for windows_summary table - Save ALL 4 steps
+          
+          // Detect the specific treatment type (e.g., 'venetian_blinds', 'roller_blinds', etc.)
+          const specificTreatmentType = detectTreatmentType(selectedTemplate);
+          
+          // Get general category from specific type (e.g., 'venetian_blinds' -> 'blinds')
+          const generalCategory = specificTreatmentType.includes('blind') 
+            ? 'blinds' 
+            : specificTreatmentType.includes('shutter') 
+            ? 'shutters' 
+            : specificTreatmentType === 'wallpaper'
+            ? 'wallpaper'
+            : 'curtains';
+          
+          console.log('🎯 DynamicWorksheet treatment type detection for save:', {
+            specificTreatmentType,
+            generalCategory,
+            templateName: selectedTemplate?.name,
+            curtainType: selectedTemplate?.curtain_type,
+            treatmentCategory
+          });
+          
           const summaryData = {
             window_id: surfaceId,
             linear_meters: linearMeters,
@@ -568,15 +589,17 @@ export const DynamicWindowWorksheet = forwardRef<{
             // STEP 2: Treatment/Template Selection
             template_name: selectedTemplate?.name,
             template_details: selectedTemplate,
-            treatment_type: selectedTreatmentType,
-            treatment_category: treatmentCategory,
+            treatment_type: specificTreatmentType, // CRITICAL: Save specific type like 'venetian_blinds'
+            treatment_category: generalCategory, // Save general category like 'blinds'
             
             // STEP 3: Inventory Selections (Fabric, Hardware, Materials)
             fabric_details: {
               ...selectedItems.fabric,
               fabric_id: selectedItems.fabric?.id,
               width_cm: selectedItems.fabric?.fabric_width || selectedItems.fabric?.wallpaper_roll_width || 140,
-              width: selectedItems.fabric?.fabric_width || selectedItems.fabric?.wallpaper_roll_width || 140
+              width: selectedItems.fabric?.fabric_width || selectedItems.fabric?.wallpaper_roll_width || 140,
+              category: selectedItems.fabric?.category, // Include fabric category for detection
+              image_url: selectedItems.fabric?.image_url // Include image for display
             },
             selected_fabric_id: selectedItems.fabric?.id,
             selected_hardware_id: selectedItems.hardware?.id,
