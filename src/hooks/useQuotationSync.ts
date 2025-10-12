@@ -291,15 +291,7 @@ export const useQuotationSync = ({
     // Flatten room groups into a linear array for quotation
     Object.values(roomGroups).forEach((roomGroup: any) => {
       if (roomGroup.items.length > 0) {
-        // Add room header
-        items.push({
-          type: 'room_header',
-          id: `room-${roomGroup.room.id}`,
-          name: roomGroup.room.name,
-          isHeader: true
-        });
-        
-        // Add room items
+        // Add room items directly (room headers displayed in UI, not as items)
         items.push(...roomGroup.items);
       }
     });

@@ -598,7 +598,9 @@ const projectData = {
               taxAmount: quotationData.taxAmount || 0,
               total: quotationData.total || 0,
               markupPercentage: markupPercentage,
-              currency: (businessSettings?.measurement_units as any)?.currency || 'USD',
+              currency: (businessSettings?.measurement_units ? 
+                (typeof businessSettings.measurement_units === 'string' ? JSON.parse(businessSettings.measurement_units) : businessSettings.measurement_units).currency 
+                : null) || 'GBP',
               windowSummaries: projectSummaries?.windows || [],
               workshopItems: workshopItems || [],
               items: quotationData.items || [] // Pass the actual quote items

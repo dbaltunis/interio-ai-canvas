@@ -100,8 +100,8 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
       valid_until: projectData?.validUntil ? new Date(projectData.validUntil).toLocaleDateString() : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
       
       // Financial information with currency support
-      currency: projectData?.currency || 'USD',
-      currency_symbol: projectData?.currency === 'AUD' ? 'A$' : projectData?.currency === 'NZD' ? 'NZ$' : '$',
+      currency: projectData?.currency || 'GBP',
+      currency_symbol: projectData?.currency === 'GBP' ? '£' : projectData?.currency === 'EUR' ? '€' : projectData?.currency === 'AUD' ? 'A$' : projectData?.currency === 'NZD' ? 'NZ$' : projectData?.currency === 'USD' ? '$' : '£',
       subtotal: projectData?.subtotal ? `${projectData.currency === 'AUD' ? 'A$' : projectData.currency === 'NZD' ? 'NZ$' : '$'}${projectData.subtotal.toFixed(2)}` : '$0.00',
       tax_amount: projectData?.taxAmount ? `${projectData.currency === 'AUD' ? 'A$' : projectData.currency === 'NZD' ? 'NZ$' : '$'}${projectData.taxAmount.toFixed(2)}` : '$0.00',
       tax_rate: projectData?.taxRate ? `${(projectData.taxRate * 100).toFixed(1)}%` : '8.5%',
@@ -522,8 +522,8 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
       let projectItems = [];
       
       if (projectData?.items && projectData.items.length > 0) {
-        // Use formatted quotation items - these have correct room names, product names, descriptions, prices
-        projectItems = projectData.items;
+        // Use formatted quotation items - filter out any header items
+        projectItems = projectData.items.filter((item: any) => !item.isHeader && item.type !== 'room_header');
       } else if (workshopItems.length > 0 || surfaces.length > 0) {
         // Fallback to workshop items only if no formatted items exist
         const surfaceMap = new Map(surfaces.map((s: any) => [s.id, s]));
@@ -647,7 +647,7 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
       // Group items by room if enabled
       const groupedItems = groupByRoom && hasRealData ? 
         projectItems.reduce((acc: any, item: any) => {
-          const room = item.room_name || item.location || 'Main Area';
+          const room = item.room_name || item.location || 'Unassigned Room';
           if (!acc[room]) acc[room] = [];
           acc[room].push(item);
           return acc;
