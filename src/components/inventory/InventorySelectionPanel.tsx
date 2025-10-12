@@ -34,6 +34,7 @@ export const InventorySelectionPanel = ({
   treatmentCategory = 'curtains'
 }: InventorySelectionPanelProps) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
   const [activeCategory, setActiveCategory] = useState("fabric");
   const {
     data: inventory = []
@@ -210,9 +211,16 @@ export const InventorySelectionPanel = ({
   };
   const availableTabs = getTabsForTreatment();
   return <div className={`space-y-3 ${className}`}>
-      <div>
-        <h3 className="text-base font-medium mb-1">Select Materials & Hardware</h3>
-        
+      <div className="flex items-center justify-between">
+        <h3 className="text-base font-medium">Select Materials & Hardware</h3>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={() => setShowSearch(!showSearch)}
+          className="h-8 px-2"
+        >
+          <Search className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* Selected Items Inline Display */}
@@ -232,10 +240,16 @@ export const InventorySelectionPanel = ({
         </div>}
 
       {/* Search */}
-      <div className="relative">
+      {showSearch && <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search inventory..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 h-9" />
-      </div>
+        <Input 
+          placeholder="Search inventory..." 
+          value={searchTerm} 
+          onChange={e => setSearchTerm(e.target.value)} 
+          className="pl-10 h-9"
+          autoFocus
+        />
+      </div>}
 
       {/* Category tabs */}
       <Tabs value={activeCategory} onValueChange={setActiveCategory}>

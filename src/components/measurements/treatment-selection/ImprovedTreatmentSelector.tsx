@@ -18,6 +18,7 @@ export const ImprovedTreatmentSelector = ({
   visualKey
 }: ImprovedTreatmentSelectorProps) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
   const {
     data: curtainTemplates = [],
     isLoading
@@ -46,11 +47,18 @@ export const ImprovedTreatmentSelector = ({
     onCoveringSelect(null);
   };
   return <div className={`space-y-3 ${disabled ? "opacity-50" : ""}`}>
-      <div>
-        <h3 className="text-base font-medium mb-1">
+      <div className="flex items-center justify-between">
+        <h3 className="text-base font-medium">
           {visualKey === 'room_wall' ? 'Select Wall Covering & Template' : 'Select Treatment & Template'}
         </h3>
-        
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={() => setShowSearch(!showSearch)}
+          className="h-8 px-2"
+        >
+          <Search className="h-4 w-4" />
+        </Button>
       </div>
 
       {selectedCovering && <div className="flex items-center gap-2 p-2 bg-primary/10 rounded-lg border border-primary/20">
@@ -63,10 +71,16 @@ export const ImprovedTreatmentSelector = ({
           </div>
         </div>}
 
-      <div className="relative">
+      {showSearch && <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search treatments..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10 h-9" />
-      </div>
+        <Input 
+          placeholder="Search treatments..." 
+          value={searchQuery} 
+          onChange={e => setSearchQuery(e.target.value)} 
+          className="pl-10 h-9"
+          autoFocus
+        />
+      </div>}
 
       <ScrollArea className="h-[300px]">
         {isLoading ? <div className="flex items-center justify-center py-8">

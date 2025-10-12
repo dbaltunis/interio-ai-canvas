@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Loader2, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { DynamicWindowRenderer } from "./DynamicWindowRenderer";
 interface SimpleWindowType {
@@ -22,6 +24,8 @@ export const WindowTypeSelector = ({
 }: WindowTypeSelectorProps) => {
   const [windowTypes, setWindowTypes] = useState<SimpleWindowType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
 
   // Set default selection to standard window after loading
   useEffect(() => {
@@ -132,14 +136,38 @@ export const WindowTypeSelector = ({
         <span className="ml-2">Loading window types...</span>
       </div>;
   }
+  // Filter window types based on search
+  const filteredWindowTypes = windowTypes.filter(wt => 
+    wt.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    wt.key.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return <div className="space-y-3">
-      <div>
-        <h3 className="text-base font-medium mb-1">Select Window Type</h3>
-        
+      <div className="flex items-center justify-between">
+        <h3 className="text-base font-medium">Select Window Type</h3>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={() => setShowSearch(!showSearch)}
+          className="h-8 px-2"
+        >
+          <Search className="h-4 w-4" />
+        </Button>
       </div>
 
+      {showSearch && <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input 
+          placeholder="Search window types..." 
+          value={searchQuery} 
+          onChange={e => setSearchQuery(e.target.value)} 
+          className="pl-10 h-9"
+          autoFocus
+        />
+      </div>}
+
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-        {windowTypes.map(windowType => <Card key={windowType.id} className={`cursor-pointer transition-all duration-200 hover:shadow-sm ${selectedWindowType?.id === windowType.id ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/30'} ${readOnly ? 'opacity-60 cursor-not-allowed' : ''}`} onClick={() => !readOnly && onWindowTypeChange(windowType)}>
+        {filteredWindowTypes.map(windowType => <Card key={windowType.id} className={`cursor-pointer transition-all duration-200 hover:shadow-sm ${selectedWindowType?.id === windowType.id ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/30'} ${readOnly ? 'opacity-60 cursor-not-allowed' : ''}`} onClick={() => !readOnly && onWindowTypeChange(windowType)}>
             <CardContent className="p-4">
               <div className="flex flex-col items-center space-y-3">
                 {/* Enhanced visual preview with larger size and visible graphics */}
@@ -237,8 +265,10 @@ export const WindowTypeSelector = ({
           </Card>)}
       </div>
 
-      {windowTypes.length === 0 && !loading && <div className="text-center py-6">
-          <p className="text-sm text-muted-foreground">No window types available</p>
+      {filteredWindowTypes.length === 0 && !loading && <div className="text-center py-6">
+          <p className="text-sm text-muted-foreground">
+            {searchQuery ? "No window types match your search" : "No window types available"}
+          </p>
         </div>}
     </div>;
 };
