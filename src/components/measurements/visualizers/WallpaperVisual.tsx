@@ -18,20 +18,13 @@ interface WallpaperVisualProps {
   selectedWallpaper?: any;
   onMeasurementChange: (field: string, value: string) => void;
   readOnly?: boolean;
-  onCostCalculated?: (cost: {
-    materialCost: number;
-    totalCost: number;
-    rollsNeeded?: number;
-    metersNeeded?: number;
-  }) => void;
 }
 
 export const WallpaperVisual = ({
   measurements,
   selectedWallpaper,
   onMeasurementChange,
-  readOnly = false,
-  onCostCalculated
+  readOnly = false
 }: WallpaperVisualProps) => {
   const [isExplanationOpen, setIsExplanationOpen] = useStateReact(false);
   const wallWidth = parseFloat(measurements.wall_width) || 0;
@@ -49,13 +42,7 @@ export const WallpaperVisual = ({
   
   // Calculate wallpaper usage with CORRECTED logic
   const calculation = useMemo(() => {
-    if (!wallWidth || !wallHeight || !selectedWallpaper) {
-      // Clear costs if no calculation possible
-      if (onCostCalculated) {
-        onCostCalculated({ materialCost: 0, totalCost: 0 });
-      }
-      return null;
-    }
+    if (!wallWidth || !wallHeight || !selectedWallpaper) return null;
     
     const widthInCm = wallWidth;
     const heightInCm = wallHeight;
@@ -86,34 +73,10 @@ export const WallpaperVisual = ({
     const leftoverStrips = totalStripsFromRolls - stripsNeeded;
     const leftoverLengthM = leftoverStrips * lengthPerStripM;
     
-    // Calculate total meters needed
-    const totalMetersNeeded = stripsNeeded * lengthPerStripM;
-    
-    // Get price from inventory
-    const pricePerRoll = selectedWallpaper?.selling_price || selectedWallpaper?.cost_price || 0;
-    const soldBy = selectedWallpaper?.wallpaper_sold_by || 'per_roll';
-    
-    // Calculate material cost based on selling method
-    let materialCost = 0;
-    if (soldBy === 'per_roll') {
-      materialCost = rollsNeeded * pricePerRoll;
-    } else if (soldBy === 'per_unit') {
-      // Assume per_unit means per meter
-      materialCost = totalMetersNeeded * pricePerRoll;
-    } else if (soldBy === 'per_sqm') {
-      // Calculate square meters
-      const squareMeters = (widthInCm / 100) * (heightInCm / 100);
-      materialCost = squareMeters * pricePerRoll;
-    }
-    
-    // Apply waste factor to material cost
-    const wasteMultiplier = 1 + (wasteFactor / 100);
-    const totalCost = materialCost * wasteMultiplier;
-    
     // Calculate realistic waste (not inflated by pattern matching)
     const actualWastePercentage = wasteFactor; // Use configured waste factor
     
-    const result = {
+    return {
       stripsNeeded,
       rollsNeeded,
       lengthPerStripM: lengthPerStripM.toFixed(2),
@@ -123,26 +86,9 @@ export const WallpaperVisual = ({
       leftoverLengthM: leftoverLengthM.toFixed(2),
       wastePercentage: actualWastePercentage,
       patternRepeatsInStrip,
-      matchType,
-      materialCost,
-      totalCost,
-      totalMetersNeeded,
-      pricePerRoll,
-      soldBy
+      matchType
     };
-    
-    // Notify parent of cost calculation
-    if (onCostCalculated) {
-      onCostCalculated({
-        materialCost,
-        totalCost,
-        rollsNeeded: soldBy === 'per_roll' ? rollsNeeded : undefined,
-        metersNeeded: soldBy !== 'per_roll' ? totalMetersNeeded : undefined
-      });
-    }
-    
-    return result;
-  }, [wallWidth, wallHeight, rollWidth, rollLength, patternRepeat, matchType, wasteFactor, selectedWallpaper, onCostCalculated]);
+  }, [wallWidth, wallHeight, rollWidth, rollLength, patternRepeat, matchType, wasteFactor, selectedWallpaper]);
   
   // Create wallpaper pattern for visual
   const createWallpaperPattern = () => {
@@ -483,32 +429,6 @@ export const WallpaperVisual = ({
                     </TooltipProvider>
                   </div>
                   <span className="text-lg font-bold text-primary">{calculation.wastePercentage}%</span>
-                </div>
-              </div>
-
-              {/* Cost Summary */}
-              <div className="mt-4 pt-4 border-t bg-accent/30 p-4 rounded-lg">
-                <h4 className="font-semibold text-sm mb-3 text-card-foreground">Cost Summary</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">
-                      {calculation.soldBy === 'per_roll' 
-                        ? `${calculation.rollsNeeded} roll${calculation.rollsNeeded > 1 ? 's' : ''} @ ${new Intl.NumberFormat('en-NZ', { style: 'currency', currency: 'NZD' }).format(calculation.pricePerRoll)}/roll`
-                        : calculation.soldBy === 'per_sqm'
-                        ? `${((wallWidth / 100) * (wallHeight / 100)).toFixed(2)}m² @ ${new Intl.NumberFormat('en-NZ', { style: 'currency', currency: 'NZD' }).format(calculation.pricePerRoll)}/m²`
-                        : `${calculation.totalMetersNeeded.toFixed(2)}m @ ${new Intl.NumberFormat('en-NZ', { style: 'currency', currency: 'NZD' }).format(calculation.pricePerRoll)}/m`
-                      }
-                    </span>
-                    <span className="font-medium">{new Intl.NumberFormat('en-NZ', { style: 'currency', currency: 'NZD' }).format(calculation.materialCost)}</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">Waste allowance (+{calculation.wastePercentage}%)</span>
-                    <span className="font-medium">{new Intl.NumberFormat('en-NZ', { style: 'currency', currency: 'NZD' }).format(calculation.totalCost - calculation.materialCost)}</span>
-                  </div>
-                  <div className="flex justify-between pt-2 border-t text-base font-bold">
-                    <span className="text-card-foreground">Total Cost</span>
-                    <span className="text-primary">{new Intl.NumberFormat('en-NZ', { style: 'currency', currency: 'NZD' }).format(calculation.totalCost)}</span>
-                  </div>
                 </div>
               </div>
 
