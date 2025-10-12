@@ -120,6 +120,7 @@ export const TreatmentPreviewEngine = ({
             className={className}
             foldStyle={template?.fold_style || 'classic'}
             mounted={template?.mount_type || 'outside'}
+            hideDetails={hideDetails}
           />
         );
       
@@ -134,6 +135,7 @@ export const TreatmentPreviewEngine = ({
             slatSize={template?.slat_size || '25mm'}
             slatAngle={template?.default_angle || 45}
             mounted={template?.mount_type || 'inside'}
+            hideDetails={hideDetails}
           />
         );
       
@@ -150,6 +152,7 @@ export const TreatmentPreviewEngine = ({
             louverSize={template?.louver_size || '63mm'}
             frameStyle={template?.frame_style || 'L-frame'}
             mounted={template?.mount_type || 'inside'}
+            hideDetails={hideDetails}
           />
         );
       

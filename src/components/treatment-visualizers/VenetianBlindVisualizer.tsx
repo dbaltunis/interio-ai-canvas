@@ -9,6 +9,7 @@ interface VenetianBlindVisualizerProps {
   slatSize?: '25mm' | '35mm' | '50mm';
   slatAngle?: number; // 0-90 degrees
   mounted?: 'inside' | 'outside';
+  hideDetails?: boolean;
 }
 
 export const VenetianBlindVisualizer = ({
@@ -19,7 +20,8 @@ export const VenetianBlindVisualizer = ({
   className = "",
   slatSize = '25mm',
   slatAngle = 45,
-  mounted = 'inside'
+  mounted = 'inside',
+  hideDetails = false
 }: VenetianBlindVisualizerProps) => {
   
   const [currentAngle, setCurrentAngle] = useState(slatAngle);
@@ -73,25 +75,29 @@ export const VenetianBlindVisualizer = ({
         <line x1={50 + (width * 0.8) * 0.9} y1="54" x2={50 + (width * 0.8) * 0.9} y2="280" stroke="#E0E0E0" strokeWidth="2" />
         
         {/* Interactive angle control */}
-        <g transform="translate(320, 80)">
-          <circle cx="0" cy="0" r="25" fill="rgba(255,255,255,0.9)" stroke="#CCC" strokeWidth="2" />
-          <text x="-8" y="-30" fontSize="8" fill="#666">Tilt</text>
-          <line 
-            x1="0" y1="0" 
-            x2={20 * Math.cos((currentAngle - 90) * Math.PI / 180)} 
-            y2={20 * Math.sin((currentAngle - 90) * Math.PI / 180)} 
-            stroke="#333" 
-            strokeWidth="3" 
-            strokeLinecap="round"
-          />
-          <text x="-8" y="35" fontSize="8" fill="#666">{currentAngle}°</text>
-        </g>
-        
-        {/* Material info */}
-        <rect x="60" y="260" width="150" height="25" fill="rgba(255,255,255,0.9)" rx="4" />
-        <text x="70" y="275" fontSize="10" fill="#333">
-          {material?.name || 'Venetian Blind'} - {slatSize} slats
-        </text>
+        {!hideDetails && (
+          <>
+            <g transform="translate(320, 80)">
+              <circle cx="0" cy="0" r="25" fill="rgba(255,255,255,0.9)" stroke="#CCC" strokeWidth="2" />
+              <text x="-8" y="-30" fontSize="8" fill="#666">Tilt</text>
+              <line 
+                x1="0" y1="0" 
+                x2={20 * Math.cos((currentAngle - 90) * Math.PI / 180)} 
+                y2={20 * Math.sin((currentAngle - 90) * Math.PI / 180)} 
+                stroke="#333" 
+                strokeWidth="3" 
+                strokeLinecap="round"
+              />
+              <text x="-8" y="35" fontSize="8" fill="#666">{currentAngle}°</text>
+            </g>
+            
+            {/* Material info */}
+            <rect x="60" y="260" width="150" height="25" fill="rgba(255,255,255,0.9)" rx="4" />
+            <text x="70" y="275" fontSize="10" fill="#333">
+              {material?.name || 'Venetian Blind'} - {slatSize} slats
+            </text>
+          </>
+        )}
       </svg>
     );
   }, [windowType, measurements, material, slatSize, currentAngle, mounted]);
@@ -102,17 +108,19 @@ export const VenetianBlindVisualizer = ({
         {renderVenetianBlind}
         
         {/* Angle control slider */}
-        <div className="absolute bottom-4 left-4 bg-white/90 p-2 rounded">
-          <label className="text-xs text-gray-600 block mb-1">Slat Angle</label>
-          <input 
-            type="range" 
-            min="0" 
-            max="90" 
-            value={currentAngle}
-            onChange={(e) => setCurrentAngle(Number(e.target.value))}
-            className="w-20 h-2 bg-gray-200 rounded appearance-none cursor-pointer"
-          />
-        </div>
+        {!hideDetails && (
+          <div className="absolute bottom-4 left-4 bg-white/90 p-2 rounded">
+            <label className="text-xs text-gray-600 block mb-1">Slat Angle</label>
+            <input 
+              type="range" 
+              min="0" 
+              max="90" 
+              value={currentAngle}
+              onChange={(e) => setCurrentAngle(Number(e.target.value))}
+              className="w-20 h-2 bg-gray-200 rounded appearance-none cursor-pointer"
+            />
+          </div>
+        )}
       </div>
     </div>
   );

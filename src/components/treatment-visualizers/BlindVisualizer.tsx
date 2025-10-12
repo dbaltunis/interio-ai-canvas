@@ -195,7 +195,7 @@ export const BlindVisualizer = ({
       {renderBlindByType()}
       
       {/* Measurement indicators */}
-      {renderMeasurementIndicators()}
+      {!hideDetails && renderMeasurementIndicators()}
       
       {/* Treatment info - hide if hideDetails is true */}
       {!hideDetails && (

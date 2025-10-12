@@ -10,6 +10,7 @@ interface ShutterVisualizerProps {
   louverSize?: '47mm' | '63mm' | '89mm' | '114mm';
   frameStyle?: 'L-frame' | 'Z-frame' | 'deco';
   mounted?: 'inside' | 'outside';
+  hideDetails?: boolean;
 }
 
 export const ShutterVisualizer = ({
@@ -21,7 +22,8 @@ export const ShutterVisualizer = ({
   panelConfig = 'bifold',
   louverSize = '63mm',
   frameStyle = 'L-frame',
-  mounted = 'inside'
+  mounted = 'inside',
+  hideDetails = false
 }: ShutterVisualizerProps) => {
   
   const [louverAngle, setLouverAngle] = useState(45);
@@ -79,36 +81,40 @@ export const ShutterVisualizer = ({
         />
         
         {/* Panel control */}
-        <g transform="translate(320, 120)">
-          <rect x="-30" y="-40" width="60" height="80" fill="rgba(255,255,255,0.9)" stroke="#CCC" strokeWidth="1" rx="4" />
-          <text x="-25" y="-25" fontSize="8" fill="#666">Controls</text>
-          
-          {/* Louver angle control */}
-          <text x="-20" y="-10" fontSize="7" fill="#666">Louver</text>
-          <circle cx="0" cy="0" r="12" fill="rgba(240,240,240,0.9)" stroke="#AAA" strokeWidth="1" />
-          <line 
-            x1="0" y1="0" 
-            x2={10 * Math.cos((louverAngle - 90) * Math.PI / 180)} 
-            y2={10 * Math.sin((louverAngle - 90) * Math.PI / 180)} 
-            stroke="#333" 
-            strokeWidth="2" 
-            strokeLinecap="round"
-          />
-          
-          {/* Panel open control */}
-          <text x="-15" y="25" fontSize="7" fill="#666">Open</text>
-          <rect x="-15" y="30" width="30" height="6" fill="#DDD" stroke="#AAA" strokeWidth="1" rx="3" />
-          <rect x={-15 + (openPosition * 24 / 100)} y="31" width="6" height="4" fill="#666" rx="2" />
-        </g>
-        
-        {/* Material & config info */}
-        <rect x="60" y="250" width="180" height="35" fill="rgba(255,255,255,0.9)" rx="4" />
-        <text x="70" y="265" fontSize="9" fill="#333">
-          {material?.name || 'Plantation Shutters'}
-        </text>
-        <text x="70" y="275" fontSize="8" fill="#666">
-          {panelConfig.charAt(0).toUpperCase() + panelConfig.slice(1)} • {louverSize} louvers
-        </text>
+        {!hideDetails && (
+          <>
+            <g transform="translate(320, 120)">
+              <rect x="-30" y="-40" width="60" height="80" fill="rgba(255,255,255,0.9)" stroke="#CCC" strokeWidth="1" rx="4" />
+              <text x="-25" y="-25" fontSize="8" fill="#666">Controls</text>
+              
+              {/* Louver angle control */}
+              <text x="-20" y="-10" fontSize="7" fill="#666">Louver</text>
+              <circle cx="0" cy="0" r="12" fill="rgba(240,240,240,0.9)" stroke="#AAA" strokeWidth="1" />
+              <line 
+                x1="0" y1="0" 
+                x2={10 * Math.cos((louverAngle - 90) * Math.PI / 180)} 
+                y2={10 * Math.sin((louverAngle - 90) * Math.PI / 180)} 
+                stroke="#333" 
+                strokeWidth="2" 
+                strokeLinecap="round"
+              />
+              
+              {/* Panel open control */}
+              <text x="-15" y="25" fontSize="7" fill="#666">Open</text>
+              <rect x="-15" y="30" width="30" height="6" fill="#DDD" stroke="#AAA" strokeWidth="1" rx="3" />
+              <rect x={-15 + (openPosition * 24 / 100)} y="31" width="6" height="4" fill="#666" rx="2" />
+            </g>
+            
+            {/* Material & config info */}
+            <rect x="60" y="250" width="180" height="35" fill="rgba(255,255,255,0.9)" rx="4" />
+            <text x="70" y="265" fontSize="9" fill="#333">
+              {material?.name || 'Plantation Shutters'}
+            </text>
+            <text x="70" y="275" fontSize="8" fill="#666">
+              {panelConfig.charAt(0).toUpperCase() + panelConfig.slice(1)} • {louverSize} louvers
+            </text>
+          </>
+        )}
       </svg>
     );
   }, [windowType, measurements, material, panelConfig, louverSize, frameStyle, mounted, louverAngle, openPosition]);
@@ -119,30 +125,32 @@ export const ShutterVisualizer = ({
         {renderShutter}
         
         {/* Interactive controls */}
-        <div className="absolute bottom-4 left-4 bg-white/90 p-3 rounded space-y-2">
-          <div>
-            <label className="text-xs text-gray-600 block mb-1">Louver Angle</label>
-            <input 
-              type="range" 
-              min="0" 
-              max="90" 
-              value={louverAngle}
-              onChange={(e) => setLouverAngle(Number(e.target.value))}
-              className="w-24 h-2 bg-gray-200 rounded appearance-none cursor-pointer"
-            />
+        {!hideDetails && (
+          <div className="absolute bottom-4 left-4 bg-white/90 p-3 rounded space-y-2">
+            <div>
+              <label className="text-xs text-gray-600 block mb-1">Louver Angle</label>
+              <input 
+                type="range" 
+                min="0" 
+                max="90" 
+                value={louverAngle}
+                onChange={(e) => setLouverAngle(Number(e.target.value))}
+                className="w-24 h-2 bg-gray-200 rounded appearance-none cursor-pointer"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-600 block mb-1">Panel Opening</label>
+              <input 
+                type="range" 
+                min="0" 
+                max="100" 
+                value={openPosition}
+                onChange={(e) => setOpenPosition(Number(e.target.value))}
+                className="w-24 h-2 bg-gray-200 rounded appearance-none cursor-pointer"
+              />
+            </div>
           </div>
-          <div>
-            <label className="text-xs text-gray-600 block mb-1">Panel Opening</label>
-            <input 
-              type="range" 
-              min="0" 
-              max="100" 
-              value={openPosition}
-              onChange={(e) => setOpenPosition(Number(e.target.value))}
-              className="w-24 h-2 bg-gray-200 rounded appearance-none cursor-pointer"
-            />
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
