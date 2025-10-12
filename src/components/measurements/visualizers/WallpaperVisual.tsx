@@ -269,7 +269,18 @@ export const WallpaperVisual = ({
                       <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
-                      <p>Accurate calculations accounting for pattern matching and waste. Expand below for detailed breakdown.</p>
+                      <div className="space-y-2">
+                        <p className="font-semibold">Calculation Flow:</p>
+                        <ol className="list-decimal list-inside space-y-1 text-xs">
+                          <li>Wall height → Strip length needed (height + pattern repeat)</li>
+                          <li>Wall width ÷ Roll width → Number of strips</li>
+                          <li>Strips × Strip length → Total meters needed</li>
+                          {selectedWallpaper?.wallpaper_sold_by === 'per_roll' && (
+                            <li>Total meters ÷ Roll length → Rolls required</li>
+                          )}
+                        </ol>
+                        <p className="text-xs pt-1">Expand below for detailed breakdown.</p>
+                      </div>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -289,6 +300,16 @@ export const WallpaperVisual = ({
                     <p className="font-medium">{patternRepeat}cm ({matchType})</p>
                   </div>
                 )}
+              </div>
+              
+              {/* Selling method indicator */}
+              <div className="bg-blue-50 dark:bg-blue-950/30 p-2 rounded text-xs">
+                <p className="text-muted-foreground">
+                  <strong>Sold {selectedWallpaper?.wallpaper_sold_by === 'per_roll' ? 'by roll' : selectedWallpaper?.wallpaper_sold_by === 'per_sqm' ? 'per m²' : 'per meter'}:</strong> 
+                  {selectedWallpaper?.wallpaper_sold_by === 'per_roll' 
+                    ? ' Calculating total meters needed, then converting to rolls.'
+                    : ' Calculating total meters needed for direct ordering.'}
+                </p>
               </div>
               
               {/* Main calculations with tooltips */}
@@ -319,7 +340,8 @@ export const WallpaperVisual = ({
                           <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
-                          <p className="space-y-1">
+                          <div className="space-y-1">
+                            <p className="font-semibold text-xs mb-1">Using entered wall height:</p>
                             <span className="block">• Wall height: {wallHeight}cm</span>
                             {patternRepeat > 0 && matchType !== 'none' && matchType !== 'random' && (
                               <>
@@ -327,8 +349,8 @@ export const WallpaperVisual = ({
                                 <span className="block">• Pattern repeats in strip: {calculation.patternRepeatsInStrip}</span>
                               </>
                             )}
-                            <span className="block font-semibold">= {calculation.lengthPerStripCm}cm ({calculation.lengthPerStripM}m)</span>
-                          </p>
+                            <span className="block font-semibold pt-1">= {calculation.lengthPerStripCm}cm ({calculation.lengthPerStripM}m)</span>
+                          </div>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -339,19 +361,33 @@ export const WallpaperVisual = ({
 
                 <div className="space-y-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-sm text-muted-foreground">Rolls Required</span>
+                    <span className="text-sm text-muted-foreground">
+                      {selectedWallpaper?.wallpaper_sold_by === 'per_roll' ? 'Rolls Required' : 'Meters Required'}
+                    </span>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
-                          <p>Strips needed ({calculation.stripsNeeded}) ÷ Strips per roll ({calculation.stripsPerRoll}) = {calculation.rollsNeeded} rolls</p>
+                          {selectedWallpaper?.wallpaper_sold_by === 'per_roll' ? (
+                            <div className="space-y-1">
+                              <p className="font-semibold text-xs mb-1">From total meters to rolls:</p>
+                              <p>Total meters: {calculation.stripsNeeded} strips × {Number(calculation.lengthPerStripM)}m = {(calculation.stripsNeeded * Number(calculation.lengthPerStripM)).toFixed(2)}m</p>
+                              <p>Strips needed ({calculation.stripsNeeded}) ÷ Strips per roll ({calculation.stripsPerRoll}) = {calculation.rollsNeeded} rolls</p>
+                            </div>
+                          ) : (
+                            <p>Total meters: {calculation.stripsNeeded} strips × {Number(calculation.lengthPerStripM)}m = {(calculation.stripsNeeded * Number(calculation.lengthPerStripM)).toFixed(2)}m</p>
+                          )}
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-                  <p className="text-2xl font-bold text-primary">{calculation.rollsNeeded}</p>
+                  <p className="text-2xl font-bold text-primary">
+                    {selectedWallpaper?.wallpaper_sold_by === 'per_roll' 
+                      ? calculation.rollsNeeded 
+                      : `${(calculation.stripsNeeded * Number(calculation.lengthPerStripM)).toFixed(2)}m`}
+                  </p>
                 </div>
 
                 <div className="space-y-1">
