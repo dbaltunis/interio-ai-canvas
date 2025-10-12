@@ -559,7 +559,7 @@ export const DynamicWindowWorksheet = forwardRef<{
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="window-type">
             <Ruler className="h-4 w-4 mr-2" />
-            Window Type
+            Select Type
             {selectedWindowType && <span className="ml-1 text-xs">✓</span>}
           </TabsTrigger>
           <TabsTrigger value="treatment">
