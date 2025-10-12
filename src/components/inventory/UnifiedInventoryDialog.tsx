@@ -72,6 +72,10 @@ export const UnifiedInventoryDialog = ({
     wallpaper_roll_length: 0,
     wallpaper_sold_by: "per_roll",
     wallpaper_unit_of_measure: "cm",
+    wallpaper_match_type: "straight",
+    wallpaper_horizontal_repeat: 0,
+    wallpaper_waste_factor: 10,
+    wallpaper_pattern_offset: 0,
     // Shopify-compatible fields
     product_type: "",
     tags: "",
@@ -125,6 +129,10 @@ export const UnifiedInventoryDialog = ({
         wallpaper_roll_length: item.wallpaper_roll_length || 0,
         wallpaper_sold_by: item.wallpaper_sold_by || "per_roll",
         wallpaper_unit_of_measure: item.wallpaper_unit_of_measure || "cm",
+        wallpaper_match_type: item.wallpaper_match_type || "straight",
+        wallpaper_horizontal_repeat: item.wallpaper_horizontal_repeat || 0,
+        wallpaper_waste_factor: item.wallpaper_waste_factor || 10,
+        wallpaper_pattern_offset: item.wallpaper_pattern_offset || 0,
         product_type: item.product_type || "",
         tags: item.tags || "",
         barcode: item.barcode || ""
@@ -259,6 +267,10 @@ export const UnifiedInventoryDialog = ({
           wallpaper_roll_length: 0,
           wallpaper_sold_by: "per_roll",
           wallpaper_unit_of_measure: "cm",
+          wallpaper_match_type: "straight",
+          wallpaper_horizontal_repeat: 0,
+          wallpaper_waste_factor: 10,
+          wallpaper_pattern_offset: 0,
           product_type: "",
           tags: "",
           barcode: ""
@@ -673,6 +685,62 @@ export const UnifiedInventoryDialog = ({
                               </SelectContent>
                             </Select>
                           </div>
+
+                          <div>
+                            <div className="flex items-center">
+                              <Label htmlFor="wallpaper_match_type">Pattern Match Type</Label>
+                              <FieldHelp content="How the pattern aligns: Straight (side-by-side), Drop/Offset (diagonal), Random (no matching), or None (no pattern)" />
+                            </div>
+                            <Select
+                              value={formData.wallpaper_match_type}
+                              onValueChange={(value) => setFormData({ ...formData, wallpaper_match_type: value })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="straight">Straight Match</SelectItem>
+                                <SelectItem value="drop">Drop Match</SelectItem>
+                                <SelectItem value="offset">Offset Match</SelectItem>
+                                <SelectItem value="random">Random Match</SelectItem>
+                                <SelectItem value="none">No Pattern</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <div className="flex items-center">
+                              <Label htmlFor="wallpaper_waste_factor">Waste Factor (%)</Label>
+                              <FieldHelp content="Recommended extra material for cutting errors and future repairs (typically 10-15%)" />
+                            </div>
+                            <Input
+                              id="wallpaper_waste_factor"
+                              type="number"
+                              step="1"
+                              min="0"
+                              max="100"
+                              value={formData.wallpaper_waste_factor || ""}
+                              onChange={(e) => setFormData({ ...formData, wallpaper_waste_factor: parseFloat(e.target.value) || 10 })}
+                              placeholder="10"
+                            />
+                          </div>
+
+                          {(formData.wallpaper_match_type === 'drop' || formData.wallpaper_match_type === 'offset') && (
+                            <div>
+                              <div className="flex items-center">
+                                <Label htmlFor="wallpaper_horizontal_repeat">Horizontal Repeat (cm)</Label>
+                                <FieldHelp content="For drop/offset matches - how far the pattern shifts horizontally" />
+                              </div>
+                              <Input
+                                id="wallpaper_horizontal_repeat"
+                                type="number"
+                                step="0.1"
+                                value={formData.wallpaper_horizontal_repeat || ""}
+                                onChange={(e) => setFormData({ ...formData, wallpaper_horizontal_repeat: parseFloat(e.target.value) || 0 })}
+                                placeholder="26.5"
+                              />
+                            </div>
+                          )}
                         </div>
 
                         {/* Calculation Preview */}

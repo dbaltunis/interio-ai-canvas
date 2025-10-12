@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Ruler, Maximize2, Wallpaper as WallpaperIcon, Info, ChevronDown } from "lucide-react";
+import { Ruler, Maximize2, Info, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +12,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useState } from "react";
 
 interface WallpaperVisualProps {
   measurements: Record<string, any>;
@@ -35,62 +34,61 @@ export const WallpaperVisual = ({
   const rollWidth = selectedWallpaper?.wallpaper_roll_width || 53; // cm
   const rollLength = selectedWallpaper?.wallpaper_roll_length || 10; // meters
   const patternRepeat = selectedWallpaper?.pattern_repeat_vertical || 0; // cm
-  const soldBy = selectedWallpaper?.wallpaper_sold_by || 'per_roll';
+  const matchType = selectedWallpaper?.wallpaper_match_type || 'straight';
+  const wasteFactor = selectedWallpaper?.wallpaper_waste_factor || 10; // percentage
   
   // Check if we have measurements
   const hasMeasurements = wallWidth > 0 && wallHeight > 0;
   
-  // Calculate wallpaper usage
+  // Calculate wallpaper usage with CORRECTED logic
   const calculation = useMemo(() => {
     if (!wallWidth || !wallHeight || !selectedWallpaper) return null;
     
     const widthInCm = wallWidth;
-    const heightInM = wallHeight / 100; // Convert cm to meters
-    const rollWidthInM = rollWidth / 100; // Convert cm to meters
+    const heightInCm = wallHeight;
     
-    // Calculate number of strips needed (accounting for pattern repeat)
-    const stripsNeeded = Math.ceil(widthInCm / rollWidth);
+    // Calculate length per strip based on pattern matching
+    let lengthPerStripCm = heightInCm;
+    let patternRepeatsInStrip = 0;
     
-    // Calculate usable length per strip (accounting for pattern matching)
-    let lengthPerStrip = heightInM;
-    if (patternRepeat > 0) {
-      const repeatInM = patternRepeat / 100;
-      // Add one pattern repeat for matching at top of each strip
-      lengthPerStrip = heightInM + repeatInM;
-      // Round up to nearest pattern repeat
-      lengthPerStrip = Math.ceil(lengthPerStrip / repeatInM) * repeatInM;
+    if (patternRepeat > 0 && matchType !== 'none' && matchType !== 'random') {
+      // Add ONE pattern repeat for matching
+      lengthPerStripCm = heightInCm + patternRepeat;
+      patternRepeatsInStrip = Math.ceil(heightInCm / patternRepeat);
     }
     
-    // Calculate how many strips can be cut from one roll
-    const stripsPerRoll = Math.floor(rollLength / lengthPerStrip);
+    const lengthPerStripM = lengthPerStripCm / 100; // Convert to meters
     
-    // Calculate total rolls needed
-    const rollsNeeded = Math.ceil(stripsNeeded / stripsPerRoll);
+    // Calculate how many strips we need for the wall width
+    const stripsNeeded = Math.ceil(widthInCm / rollWidth);
     
-    // Calculate leftover from last roll
+    // Calculate how many strips we can get from one roll
+    const stripsPerRoll = Math.floor(rollLength / lengthPerStripM);
+    
+    // Calculate number of rolls needed
+    const rollsNeeded = stripsPerRoll > 0 ? Math.ceil(stripsNeeded / stripsPerRoll) : 0;
+    
+    // Calculate leftover material
     const totalStripsFromRolls = rollsNeeded * stripsPerRoll;
     const leftoverStrips = totalStripsFromRolls - stripsNeeded;
-    const leftoverLength = leftoverStrips * lengthPerStrip;
+    const leftoverLengthM = leftoverStrips * lengthPerStripM;
     
-    // Calculate total area
-    const wallArea = (widthInCm / 100) * (wallHeight / 100); // m²
-    const coverage = rollsNeeded * rollLength * rollWidthInM; // m²
-    const waste = coverage - wallArea;
-    const wastePercentage = (waste / wallArea) * 100;
+    // Calculate realistic waste (not inflated by pattern matching)
+    const actualWastePercentage = wasteFactor; // Use configured waste factor
     
     return {
       stripsNeeded,
       rollsNeeded,
-      lengthPerStrip: lengthPerStrip.toFixed(2),
+      lengthPerStripM: lengthPerStripM.toFixed(2),
+      lengthPerStripCm: lengthPerStripCm.toFixed(1),
       stripsPerRoll,
       leftoverStrips,
-      leftoverLength: leftoverLength.toFixed(2),
-      wallArea: wallArea.toFixed(2),
-      coverage: coverage.toFixed(2),
-      waste: waste.toFixed(2),
-      wastePercentage: wastePercentage.toFixed(1)
+      leftoverLengthM: leftoverLengthM.toFixed(2),
+      wastePercentage: actualWastePercentage,
+      patternRepeatsInStrip,
+      matchType
     };
-  }, [wallWidth, wallHeight, rollWidth, rollLength, patternRepeat, selectedWallpaper]);
+  }, [wallWidth, wallHeight, rollWidth, rollLength, patternRepeat, matchType, wasteFactor, selectedWallpaper]);
   
   // Create wallpaper pattern for visual
   const createWallpaperPattern = () => {
@@ -126,62 +124,34 @@ export const WallpaperVisual = ({
                 style={{ aspectRatio: '5/4' }}
               >
                 <defs>
-                  {/* Brick pattern */}
                   <pattern id="brick-pattern" x="0" y="0" width="80" height="40" patternUnits="userSpaceOnUse">
                     <rect width="80" height="40" fill="#d4a574" />
-                    {/* Horizontal mortar */}
                     <rect y="0" width="80" height="2" fill="#9e9e9e" />
                     <rect y="40" width="80" height="2" fill="#9e9e9e" />
-                    {/* Vertical mortar - offset pattern */}
                     <rect x="0" y="0" width="2" height="20" fill="#9e9e9e" />
                     <rect x="40" y="20" width="2" height="20" fill="#9e9e9e" />
                     <rect x="80" y="0" width="2" height="20" fill="#9e9e9e" />
-                    {/* Individual bricks for texture */}
                     <rect x="2" y="2" width="36" height="18" fill="#c4956a" />
                     <rect x="42" y="22" width="36" height="18" fill="#c4956a" />
                   </pattern>
                 </defs>
-                
-                {/* Background room */}
                 <rect x="0" y="0" width="400" height="320" fill="#f3f4f6" />
-                
-                {/* Floor */}
                 <rect x="0" y="280" width="400" height="40" fill="#8b7355" />
                 <rect x="0" y="280" width="400" height="3" fill="#6b5945" />
-                
-                {/* Brick wall */}
-                <rect 
-                  x="50" 
-                  y="40" 
-                  width="300" 
-                  height="240" 
-                  fill="url(#brick-pattern)"
-                  stroke="#7d7d7d" 
-                  strokeWidth="2"
-                />
-                
-                {/* Bucket on the left */}
+                <rect x="50" y="40" width="300" height="240" fill="url(#brick-pattern)" stroke="#7d7d7d" strokeWidth="2" />
                 <ellipse cx="90" cy="270" rx="20" ry="8" fill="#c0c0c0" />
                 <rect x="70" y="230" width="40" height="40" fill="#d0d0d0" rx="2" />
                 <ellipse cx="90" cy="230" rx="20" ry="8" fill="#e0e0e0" />
                 <rect x="75" y="235" width="30" height="25" fill="#87ceeb" opacity="0.6" />
-                
-                {/* Paste brush in bucket */}
                 <rect x="85" y="215" width="4" height="20" fill="#8b4513" />
                 <ellipse cx="87" cy="213" rx="6" ry="3" fill="#daa520" />
-                
-                {/* Smoothing tool on the right */}
                 <rect x="310" y="250" width="50" height="25" fill="#ffd700" rx="2" />
                 <rect x="315" y="255" width="40" height="15" fill="#ffed4e" />
                 <rect x="355" y="257" width="10" height="11" fill="#8b4513" />
-                
-                {/* Measuring tape */}
                 <ellipse cx="280" cy="270" rx="15" ry="15" fill="#ffeb3b" />
                 <ellipse cx="280" cy="270" rx="12" ry="12" fill="#fdd835" />
                 <rect x="278" y="260" width="4" height="8" fill="#333" />
                 <line x1="280" y1="268" x2="295" y2="268" stroke="#333" strokeWidth="2" />
-                
-                {/* Text prompt */}
                 <text x="200" y="150" textAnchor="middle" fill="#64748b" fontSize="16" fontWeight="600">
                   Ready to Wallpaper
                 </text>
@@ -206,44 +176,22 @@ export const WallpaperVisual = ({
                     <stop offset="100%" stopColor="rgba(0,0,0,0.1)" />
                   </linearGradient>
                 </defs>
-                
-                {/* Room perspective */}
                 <rect x="0" y="0" width="450" height="320" fill="#f9fafb" />
-                
-                {/* Floor */}
                 <rect x="0" y="280" width="450" height="40" fill="#d1d5db" />
-                
-                {/* Main wall - only show wallpaper if selected */}
-                <rect 
-                  x="50" 
-                  y="40" 
-                  width="300" 
-                  height="240" 
-                  fill={selectedWallpaper ? "url(#wallpaper-pattern)" : "#ffffff"}
-                  stroke="#9ca3af" 
-                  strokeWidth="2"
-                />
-                
-                {/* Wall shadow for depth */}
+                <rect x="50" y="40" width="300" height="240" fill={selectedWallpaper ? "url(#wallpaper-pattern)" : "#ffffff"} stroke="#9ca3af" strokeWidth="2" />
                 <rect x="50" y="40" width="300" height="240" fill="url(#wall-shadow)" opacity="0.3" />
-                
-                {/* Width measurement line */}
                 <line x1="50" y1="25" x2="350" y2="25" stroke="#3b82f6" strokeWidth="1.5" />
                 <polygon points="50,25 56,22 56,28" fill="#3b82f6" />
                 <polygon points="350,25 344,22 344,28" fill="#3b82f6" />
                 <text x="200" y="18" textAnchor="middle" fill="#3b82f6" fontSize="12" fontWeight="bold">
                   {wallWidth}cm
                 </text>
-                
-                {/* Height measurement line */}
                 <line x1="375" y1="40" x2="375" y2="280" stroke="#3b82f6" strokeWidth="1.5" />
                 <polygon points="375,40 372,46 378,46" fill="#3b82f6" />
                 <polygon points="375,280 372,274 378,274" fill="#3b82f6" />
                 <text x="390" y="160" textAnchor="start" fill="#3b82f6" fontSize="12" fontWeight="bold">
                   {wallHeight}cm
                 </text>
-                
-                {/* Pattern repeat indicator (if applicable) */}
                 {patternRepeat > 0 && selectedWallpaper && (
                   <>
                     <line x1="55" y1="40" x2="55" y2={40 + (patternRepeat * 240 / wallHeight)} stroke="#f59e0b" strokeWidth="2" strokeDasharray="4,4" />
@@ -290,7 +238,7 @@ export const WallpaperVisual = ({
                 type="number"
                 value={measurements.wall_width || ""}
                 onChange={(e) => onMeasurementChange("wall_width", e.target.value)}
-                placeholder="300"
+                placeholder="222"
                 disabled={readOnly}
               />
             </div>
@@ -301,7 +249,7 @@ export const WallpaperVisual = ({
                 type="number"
                 value={measurements.wall_height || ""}
                 onChange={(e) => onMeasurementChange("wall_height", e.target.value)}
-                placeholder="240"
+                placeholder="111"
                 disabled={readOnly}
               />
             </div>
@@ -315,19 +263,17 @@ export const WallpaperVisual = ({
               <h3 className="font-semibold flex items-center gap-2">
                 <Maximize2 className="h-4 w-4" />
                 Wallpaper Requirements
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>Accurate calculations accounting for pattern matching and waste. Expand below for detailed breakdown.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </h3>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6">
-                      <Info className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="left" className="max-w-xs">
-                    <p className="text-xs">These calculations account for pattern matching and cutting waste. Click "How it works" below for detailed explanation.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
             </div>
             
             <div className="space-y-3">
@@ -340,193 +286,235 @@ export const WallpaperVisual = ({
                 {patternRepeat > 0 && (
                   <div>
                     <span className="text-muted-foreground">Pattern Repeat:</span>
-                    <p className="font-medium">{patternRepeat}cm</p>
+                    <p className="font-medium">{patternRepeat}cm ({matchType})</p>
                   </div>
                 )}
               </div>
               
-              {/* Main calculation */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-muted-foreground">Strips Needed:</span>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="h-3 w-3 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            <p className="text-xs">Number of vertical strips to cover wall width ({wallWidth}cm ÷ {rollWidth}cm per strip)</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <p className="text-lg font-bold">{calculation.stripsNeeded}</p>
+              {/* Main calculations with tooltips */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm text-muted-foreground">Strips Needed</span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p>Wall width ({wallWidth}cm) ÷ Roll width ({rollWidth}cm) = {calculation.stripsNeeded} strips</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-muted-foreground">Length per Strip:</span>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="h-3 w-3 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            <p className="text-xs">Wall height ({wallHeight / 100}m) {patternRepeat > 0 ? `+ pattern repeat (${patternRepeat}cm) for matching` : ''}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <p className="font-medium">{calculation.lengthPerStrip}m</p>
-                  </div>
+                  <p className="text-2xl font-bold">{calculation.stripsNeeded}</p>
                 </div>
-                
-                <div className="space-y-2">
-                  <div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-muted-foreground">Rolls Required:</span>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="h-3 w-3 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            <p className="text-xs">Total rolls needed: {calculation.stripsNeeded} strips ÷ {calculation.stripsPerRoll} strips per roll = {calculation.rollsNeeded} rolls</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <p className="text-2xl font-bold text-primary">{calculation.rollsNeeded}</p>
+
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm text-muted-foreground">Length per Strip</span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p className="space-y-1">
+                            <span className="block">• Wall height: {wallHeight}cm</span>
+                            {patternRepeat > 0 && matchType !== 'none' && matchType !== 'random' && (
+                              <>
+                                <span className="block">• Pattern repeat: +{patternRepeat}cm</span>
+                                <span className="block">• Pattern repeats in strip: {calculation.patternRepeatsInStrip}</span>
+                              </>
+                            )}
+                            <span className="block font-semibold">= {calculation.lengthPerStripCm}cm ({calculation.lengthPerStripM}m)</span>
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-muted-foreground">Strips per Roll:</span>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="h-3 w-3 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            <p className="text-xs">How many strips can be cut from one {rollLength}m roll (roll length ÷ strip length)</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <p className="font-medium">{calculation.stripsPerRoll}</p>
+                  <p className="text-2xl font-bold">{calculation.lengthPerStripM}m</p>
+                  <p className="text-xs text-muted-foreground">({calculation.lengthPerStripCm}cm)</p>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm text-muted-foreground">Rolls Required</span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p>Strips needed ({calculation.stripsNeeded}) ÷ Strips per roll ({calculation.stripsPerRoll}) = {calculation.rollsNeeded} rolls</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
+                  <p className="text-2xl font-bold text-primary">{calculation.rollsNeeded}</p>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm text-muted-foreground">Strips per Roll</span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p>Roll length ({rollLength}m = {rollLength * 100}cm) ÷ Strip length ({calculation.lengthPerStripCm}cm) = {calculation.stripsPerRoll} complete strips</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <p className="text-2xl font-bold">{calculation.stripsPerRoll}</p>
                 </div>
               </div>
-              
-              {/* Leftover information */}
+
+              {/* Waste Factor */}
+              <div className="mt-4 pt-4 border-t">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-medium">Recommended Waste Allowance</span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p>Additional material recommended for cutting errors, pattern matching adjustments, and future repairs</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <span className="text-lg font-bold text-primary">{calculation.wastePercentage}%</span>
+                </div>
+              </div>
+
+              {/* Leftover Material */}
               {calculation.leftoverStrips > 0 && (
-                <div className="pt-3 border-t bg-amber-50 dark:bg-amber-950/20 -mx-4 px-4 py-2">
-                  <div className="flex items-start gap-2">
-                    <Info className="h-4 w-4 text-amber-600 dark:text-amber-500 mt-0.5 flex-shrink-0" />
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
-                        Leftover Material
-                      </p>
-                      <p className="text-xs text-amber-700 dark:text-amber-300">
-                        You will have <strong>{calculation.leftoverStrips} strip(s)</strong> ({calculation.leftoverLength}m) left over from the last roll. This can be reused for smaller walls or repairs.
-                      </p>
+                <div className="mt-4 pt-4 border-t">
+                  <h4 className="font-medium text-sm mb-2">Leftover Material from {calculation.rollsNeeded} Roll{calculation.rollsNeeded > 1 ? 's' : ''}</h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Leftover Strips:</span>
+                      <p className="font-semibold">{calculation.leftoverStrips}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Leftover Length:</span>
+                      <p className="font-semibold">{calculation.leftoverLengthM}m</p>
                     </div>
                   </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Can be used for smaller walls or kept for future repairs
+                  </p>
                 </div>
               )}
-              
-              {/* Coverage details */}
-              <div className="grid grid-cols-3 gap-2 pt-3 border-t text-xs">
-                <div>
-                  <span className="text-muted-foreground">Wall Area:</span>
-                  <p className="font-medium">{calculation.wallArea} m²</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Coverage:</span>
-                  <p className="font-medium">{calculation.coverage} m²</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Waste:</span>
-                  <Badge variant="secondary" className="text-xs">
-                    {calculation.wastePercentage}%
-                  </Badge>
-                </div>
-              </div>
-              
-              {/* Selling method */}
-              <div className="pt-2 border-t">
-                <span className="text-xs text-muted-foreground">Sold by:</span>
-                <Badge variant="outline" className="ml-2">
-                  {soldBy === 'per_roll' ? 'Per Roll' : soldBy === 'per_sqm' ? 'Per m²' : 'Per Unit'}
-                </Badge>
-              </div>
-              
-              {/* Detailed Explanation */}
-              <Collapsible open={isExplanationOpen} onOpenChange={setIsExplanationOpen} className="pt-3 border-t">
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="sm" className="w-full flex items-center justify-between">
-                    <span className="text-xs font-medium">How wallpaper calculations work</span>
-                    <ChevronDown className={`h-4 w-4 transition-transform ${isExplanationOpen ? 'rotate-180' : ''}`} />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-3 space-y-3 text-xs">
-                  <div className="space-y-2 bg-muted/50 p-3 rounded-lg">
-                    <h4 className="font-semibold text-sm">📏 How we calculate strips</h4>
-                    <p className="text-muted-foreground">
-                      We divide your wall width ({wallWidth}cm) by the wallpaper roll width ({rollWidth}cm) to determine how many vertical strips are needed to cover the wall.
-                    </p>
-                  </div>
-                  
-                  {patternRepeat > 0 && (
-                    <div className="space-y-2 bg-muted/50 p-3 rounded-lg">
-                      <h4 className="font-semibold text-sm">🎨 Pattern matching</h4>
-                      <p className="text-muted-foreground">
-                        This wallpaper has a {patternRepeat}cm pattern repeat. Each strip is cut {patternRepeat}cm longer than the wall height to ensure patterns align perfectly between strips. The first strip sets the pattern reference.
-                      </p>
-                    </div>
-                  )}
-                  
-                  <div className="space-y-2 bg-muted/50 p-3 rounded-lg">
-                    <h4 className="font-semibold text-sm">📦 Rolls needed</h4>
-                    <p className="text-muted-foreground">
-                      Each {rollLength}m roll provides {calculation.stripsPerRoll} strip(s) of {calculation.lengthPerStrip}m each. You need {calculation.stripsNeeded} strips total, requiring {calculation.rollsNeeded} roll(s).
-                    </p>
-                  </div>
-                  
-                  {calculation.leftoverStrips > 0 && (
-                    <div className="space-y-2 bg-muted/50 p-3 rounded-lg">
-                      <h4 className="font-semibold text-sm">♻️ Reusing leftovers</h4>
-                      <p className="text-muted-foreground">
-                        Your leftover material ({calculation.leftoverStrips} strip(s), {calculation.leftoverLength}m) can be used for:
-                      </p>
-                      <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
-                        <li>Additional smaller walls in the same room</li>
-                        <li>Future repairs or touch-ups</li>
-                        <li>Feature walls or accent areas</li>
-                      </ul>
-                      <p className="text-muted-foreground italic mt-2">
-                        Note: Pattern matching must still align when reusing leftovers on adjacent walls.
-                      </p>
-                    </div>
-                  )}
-                  
-                  <div className="space-y-2 bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-100">💡 Pro Tip</h4>
-                    <p className="text-blue-700 dark:text-blue-300">
-                      Always order an extra roll for repairs, mistakes, or future touch-ups. Wallpaper dye lots can vary between production runs.
-                    </p>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
             </div>
-          </Card>
-        )}
-        
-        {hasMeasurements && !selectedWallpaper && (
-          <Card className="p-4 bg-muted/30">
-            <p className="text-sm text-muted-foreground text-center">
-              Select a wallpaper from inventory to see usage calculations
-            </p>
+
+            {/* How Calculations Work - Expandable */}
+            <Collapsible
+              open={isExplanationOpen}
+              onOpenChange={setIsExplanationOpen}
+              className="mt-4 pt-4 border-t"
+            >
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center justify-between w-full p-0 hover:bg-transparent"
+                >
+                  <span className="text-sm font-medium">How wallpaper calculations work</span>
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${
+                      isExplanationOpen ? "transform rotate-180" : ""
+                    }`}
+                  />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-3 space-y-3 text-sm">
+                <ol className="space-y-3 list-decimal list-inside">
+                  <li className="text-sm">
+                    <strong>1. How strips are calculated:</strong>
+                    <p className="text-muted-foreground mt-1 ml-5">
+                      Wall width ({wallWidth}cm) ÷ Roll width ({rollWidth}cm) = <strong>{calculation.stripsNeeded} vertical strips</strong>
+                    </p>
+                  </li>
+
+                  <li className="text-sm">
+                    <strong>2. Strip length calculation:</strong>
+                    <p className="text-muted-foreground mt-1 ml-5">
+                      • Base wall height: {wallHeight}cm<br/>
+                      {patternRepeat > 0 && matchType !== 'none' && matchType !== 'random' ? (
+                        <>
+                          • Pattern matching type: <strong>{matchType}</strong><br/>
+                          • Pattern repeat: {patternRepeat}cm<br/>
+                          • We add <strong>ONE</strong> pattern repeat to the wall height for matching<br/>
+                          • Strip length needed: <strong>{calculation.lengthPerStripCm}cm ({calculation.lengthPerStripM}m)</strong>
+                        </>
+                      ) : (
+                        <>• No pattern matching needed<br/>• Strip length: <strong>{calculation.lengthPerStripCm}cm</strong></>
+                      )}
+                    </p>
+                  </li>
+
+                  {patternRepeat > 0 && matchType !== 'none' && matchType !== 'random' && (
+                    <li className="text-sm">
+                      <strong>3. Pattern matching explained:</strong>
+                      <p className="text-muted-foreground mt-1 ml-5">
+                        <strong>First strip:</strong> Starts from the ceiling with the pattern aligned to the top.
+                      </p>
+                      <p className="text-muted-foreground mt-1 ml-5">
+                        <strong>Subsequent strips:</strong> Each strip is cut slightly longer ({calculation.lengthPerStripCm}cm instead of {wallHeight}cm) so you can slide it up or down to match the pattern perfectly with the previous strip. The extra material is trimmed off at top and bottom after matching.
+                      </p>
+                      <p className="text-muted-foreground mt-1 ml-5">
+                        This {patternRepeat}cm extra per strip ensures seamless pattern continuity across your wall.
+                      </p>
+                    </li>
+                  )}
+
+                  <li className="text-sm">
+                    <strong>{patternRepeat > 0 ? '4' : '3'}. Rolls calculation:</strong>
+                    <p className="text-muted-foreground mt-1 ml-5">
+                      • Roll length: {rollLength}m ({rollLength * 100}cm)<br/>
+                      • Strips per roll: {rollLength * 100}cm ÷ {calculation.lengthPerStripCm}cm = <strong>{calculation.stripsPerRoll} complete strips</strong><br/>
+                      • Rolls needed: {calculation.stripsNeeded} strips ÷ {calculation.stripsPerRoll} strips/roll = <strong>{calculation.rollsNeeded} roll{calculation.rollsNeeded > 1 ? 's' : ''}</strong>
+                    </p>
+                  </li>
+
+                  <li className="text-sm">
+                    <strong>{patternRepeat > 0 ? '5' : '4'}. Reusing leftovers for other walls:</strong>
+                    <p className="text-muted-foreground mt-1 ml-5">
+                      <strong>Yes, you can reuse leftover strips!</strong> You have {calculation.leftoverStrips} leftover strip{calculation.leftoverStrips > 1 ? 's' : ''} ({calculation.leftoverLengthM}m total).
+                    </p>
+                    <p className="text-muted-foreground mt-1 ml-5">
+                      <strong>Requirements for reuse:</strong>
+                    </p>
+                    <ul className="list-disc list-inside mt-2 space-y-1 text-muted-foreground ml-9">
+                      <li>New wall must be ≤ {calculation.lengthPerStripCm}cm tall (your strip length)</li>
+                      {patternRepeat > 0 && matchType !== 'none' && matchType !== 'random' && (
+                        <li>For pattern matching: account for pattern alignment - you may need to trim extra at top/bottom</li>
+                      )}
+                      <li>Store strips flat and protected from moisture and sunlight</li>
+                      <li>Match dye lot numbers when combining with new rolls</li>
+                    </ul>
+                  </li>
+
+                  <li className="text-sm">
+                    <strong className="text-primary">Pro Tip:</strong>
+                    <p className="text-muted-foreground mt-1 ml-5">
+                      The {calculation.wastePercentage}% waste allowance is already factored into your order recommendation. However, consider ordering one extra roll if:
+                    </p>
+                    <ul className="list-disc list-inside mt-1 space-y-1 text-muted-foreground ml-9">
+                      <li>This is your first time installing wallpaper</li>
+                      <li>The wall has complex features (windows, doors, outlets)</li>
+                      <li>You want material for future repairs (dye lots vary between batches)</li>
+                    </ul>
+                  </li>
+                </ol>
+              </CollapsibleContent>
+            </Collapsible>
           </Card>
         )}
       </div>
