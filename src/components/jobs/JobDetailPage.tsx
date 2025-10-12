@@ -143,8 +143,8 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Standardized Tab Navigation */}
           <div className="bg-background border-b border-border/50">
-            <div className="px-4">
-              <div className="flex w-full justify-start gap-0">
+            <div className="px-2 sm:px-4">
+              <div className="flex w-full justify-start gap-0 overflow-x-auto scrollbar-hide">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -153,7 +153,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                       key={tab.id}
                       variant="ghost"
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 rounded-none ${
+                      className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-3 transition-all duration-200 text-xs sm:text-sm font-medium border-b-2 rounded-none whitespace-nowrap flex-shrink-0 ${
                         isActive
                           ? "border-primary text-foreground bg-primary/5 font-semibold"
                           : "border-transparent text-muted-foreground hover:text-foreground hover:border-border/50"
@@ -171,9 +171,9 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
 
           {/* Tab Content */}
           <div className="bg-background min-h-[calc(100vh-160px)]">
-            <div className="p-4">
+            <div className="p-2 sm:p-4">
               <TabsContent value="details" className="mt-0">
-                <div className="modern-card p-6">
+                <div className="modern-card p-3 sm:p-6">
                   <ProjectDetailsTab project={project} onUpdate={handleUpdateProject} />
                 </div>
               </TabsContent>

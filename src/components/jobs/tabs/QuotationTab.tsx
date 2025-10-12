@@ -469,27 +469,28 @@ const projectData = {
 };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Modern Compact Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold">Project Quotation</h2>
-          <p className="text-muted-foreground text-sm">
+          <h2 className="text-lg sm:text-xl font-semibold">Project Quotation</h2>
+          <p className="text-muted-foreground text-xs sm:text-sm">
             Manage quotes and generate professional documents
           </p>
         </div>
         
         {/* Compact Action Bar */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {/* View Quote Button */}
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowFullQuoteView(true)}
             disabled={!clientData}
+            className="flex-1 sm:flex-none"
           >
-            <Eye className="h-4 w-4 mr-2" />
-            View Quote
+            <Eye className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">View Quote</span>
           </Button>
 
           {/* Save PDF Button */}
@@ -498,17 +499,19 @@ const projectData = {
             size="sm"
             onClick={handlePrint}
             disabled={!clientData}
+            className="flex-1 sm:flex-none"
           >
-            <Download className="h-4 w-4 mr-2" />
-            Save PDF
+            <Download className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Save PDF</span>
           </Button>
 
-          {/* Email Button */}
+          {/* Email Button - Hidden on mobile, shown in dropdown */}
           <Button
             variant="outline"
             size="sm"
             onClick={() => setIsEmailModalOpen(true)}
             disabled={!clientData}
+            className="hidden sm:flex"
           >
             <Mail className="h-4 w-4 mr-2" />
             Email
@@ -522,6 +525,14 @@ const projectData = {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="z-50 bg-background border shadow-md">
+              <DropdownMenuItem 
+                onClick={() => setIsEmailModalOpen(true)}
+                disabled={!clientData}
+                className="sm:hidden"
+              >
+                <Mail className="mr-2 h-4 w-4" />
+                Email Quote
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleAddDiscount}>
                 <Percent className="h-4 w-4 mr-2" />
                 Add Discount
