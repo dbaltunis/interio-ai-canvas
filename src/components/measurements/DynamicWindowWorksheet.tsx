@@ -294,8 +294,15 @@ export const DynamicWindowWorksheet = forwardRef<{
   useEffect(() => {
     if (selectedTemplate) {
       const detectedType = detectTreatmentType(selectedTemplate);
+      const previousCategory = treatmentCategory;
       setTreatmentCategory(detectedType);
       console.log('🎯 Treatment type detected:', detectedType, 'for template:', selectedTemplate.name);
+      
+      // Clear selected items if treatment category changed (e.g., switching from roller blinds to curtains)
+      if (previousCategory !== detectedType) {
+        console.log('🔄 Treatment category changed from', previousCategory, 'to', detectedType, '- clearing selected items');
+        setSelectedItems({});
+      }
     }
   }, [selectedTemplate]);
 
