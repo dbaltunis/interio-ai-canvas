@@ -249,7 +249,7 @@ export function WindowSummaryCard({
             {/* Treatment Card with Visual & Details */}
             <div className="rounded-lg border bg-card">
               <div className="flex flex-col sm:flex-row gap-4 p-3 sm:p-4">
-                {/* Treatment Visualization - No measurements, just product */}
+                {/* Treatment Visualization - Clean product image only */}
                 <div className="w-full sm:w-40 h-40 sm:flex-shrink-0 rounded-md overflow-hidden bg-muted/20 border">
                   <TreatmentPreviewEngine
                     windowType={surface.window_type || 'standard'}
@@ -266,6 +266,8 @@ export function WindowSummaryCard({
                       hardware: summary.hardware_details,
                       material: summary.fabric_details
                     }}
+                    showProductOnly={true}
+                    hideDetails={true}
                     className="w-full h-full"
                   />
                 </div>

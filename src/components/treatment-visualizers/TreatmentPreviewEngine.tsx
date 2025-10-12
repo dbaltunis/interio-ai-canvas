@@ -32,6 +32,8 @@ interface TreatmentPreviewEngineProps {
   showWindowOnly?: boolean;
   className?: string;
   layeredTreatments?: LayeredTreatment[];
+  hideDetails?: boolean;  // New prop to hide text overlays
+  showProductOnly?: boolean;  // New prop to show only product image
 }
 
 export const TreatmentPreviewEngine = ({
@@ -42,8 +44,33 @@ export const TreatmentPreviewEngine = ({
   selectedItems = {},
   showWindowOnly = false,
   className = "",
-  layeredTreatments = []
+  layeredTreatments = [],
+  hideDetails = false,
+  showProductOnly = false
 }: TreatmentPreviewEngineProps) => {
+  
+  // If showing product only, display just the fabric/material image
+  if (showProductOnly && selectedItems.fabric) {
+    const fabricImage = selectedItems.fabric.image_url;
+    
+    return (
+      <div className={`relative w-full h-full ${className}`}>
+        {fabricImage ? (
+          <img 
+            src={fabricImage} 
+            alt={selectedItems.fabric.name || 'Product'} 
+            className="w-full h-full object-cover rounded-md"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50 rounded-md flex items-center justify-center">
+            <div className="text-center text-muted-foreground">
+              <p className="text-sm">No image available</p>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
   
   if (showWindowOnly) {
     return (
