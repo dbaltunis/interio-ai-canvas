@@ -255,9 +255,9 @@ export function WindowSummaryCard({
           <div className="space-y-3">
             {/* Treatment Card with Visual & Details */}
             <div className="rounded-lg border bg-card">
-              <div className="flex flex-col md:flex-row gap-6 p-4">
+              <div className="flex flex-col md:flex-row gap-4 p-4">
                 {/* LEFT: Clean Treatment Visualization Only */}
-                <div className="w-full md:w-64 h-64 flex-shrink-0 rounded-md overflow-hidden bg-gradient-to-br from-muted/10 to-muted/30 border-2 border-border/50">
+                <div className="w-full md:w-48 h-48 md:h-52 flex-shrink-0 rounded-md overflow-hidden bg-gradient-to-br from-muted/10 to-muted/30 border border-border/50">
                   <TreatmentPreviewEngine
                     windowType={surface.window_type || 'standard'}
                     treatmentType={treatmentType}
@@ -352,26 +352,32 @@ export function WindowSummaryCard({
                   </div>
 
                   {/* Options Selected */}
-                  {summary.heading_details || summary.lining_details || summary.hardware_details ? (
+                  {(summary.heading_details || summary.lining_details || summary.hardware_details) ? (
                     <div>
                       <h4 className="text-sm font-medium text-muted-foreground mb-2">Options Selected</h4>
-                      <div className="space-y-2">
-                        {treatmentType === 'curtains' && summary.heading_details && (
-                          <div className="flex items-center justify-between py-1.5 px-3 bg-muted/30 rounded">
-                            <span className="text-sm">Heading: {summary.heading_details.heading_name || 'Standard'}</span>
-                            <span className="text-sm font-medium">{formatCurrency(summary.heading_details.cost || 0, userCurrency)}</span>
+                      <div className="space-y-1.5">
+                        {treatmentType === 'curtains' && summary.heading_details?.heading_name && (
+                          <div className="flex items-center justify-between py-1.5 px-2.5 bg-muted/30 rounded text-sm">
+                            <span>Heading: {summary.heading_details.heading_name}</span>
+                            {summary.heading_details.cost > 0 && (
+                              <span className="font-medium">{formatCurrency(summary.heading_details.cost, userCurrency)}</span>
+                            )}
                           </div>
                         )}
-                        {treatmentType === 'curtains' && summary.lining_details && (
-                          <div className="flex items-center justify-between py-1.5 px-3 bg-muted/30 rounded">
-                            <span className="text-sm">Lining: {summary.lining_details.type || 'Standard'}</span>
-                            <span className="text-sm font-medium">{formatCurrency(summary.lining_cost || 0, userCurrency)}</span>
+                        {treatmentType === 'curtains' && summary.lining_details?.type && (
+                          <div className="flex items-center justify-between py-1.5 px-2.5 bg-muted/30 rounded text-sm">
+                            <span>Lining: {summary.lining_details.type}</span>
+                            {(summary.lining_cost || 0) > 0 && (
+                              <span className="font-medium">{formatCurrency(summary.lining_cost, userCurrency)}</span>
+                            )}
                           </div>
                         )}
-                        {summary.hardware_details && (
-                          <div className="flex items-center justify-between py-1.5 px-3 bg-muted/30 rounded">
-                            <span className="text-sm">Hardware: {summary.hardware_details.name}</span>
-                            <span className="text-sm font-medium">{formatCurrency(summary.hardware_details.price || 0, userCurrency)}</span>
+                        {summary.hardware_details?.name && (
+                          <div className="flex items-center justify-between py-1.5 px-2.5 bg-muted/30 rounded text-sm">
+                            <span>Hardware: {summary.hardware_details.name}</span>
+                            {(summary.hardware_details.price || 0) > 0 && (
+                              <span className="font-medium">{formatCurrency(summary.hardware_details.price, userCurrency)}</span>
+                            )}
                           </div>
                         )}
                       </div>
@@ -381,28 +387,28 @@ export function WindowSummaryCard({
                   {/* Inventory Products */}
                   <div>
                     <h4 className="text-sm font-medium text-muted-foreground mb-2">Inventory Products</h4>
-                    <div className="space-y-2">
-                      {summary.fabric_details && (
-                        <div className="flex items-center justify-between py-1.5 px-3 bg-muted/30 rounded">
+                    <div className="space-y-1.5">
+                      {summary.fabric_details?.name && (
+                        <div className="flex items-center justify-between py-1.5 px-2.5 bg-muted/30 rounded">
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-medium truncate">{summary.fabric_details.name}</div>
                             <div className="text-xs text-muted-foreground">
                               {treatmentType === 'wallpaper' 
                                 ? `${summary.widths_required || 1} roll(s)`
-                                : `${summary.linear_meters?.toFixed(2) || '0'} m • ${summary.widths_required || 1} width(s)`
+                                : `${(summary.linear_meters || 0).toFixed(2)} m • ${summary.widths_required || 1} width(s)`
                               }
                             </div>
                           </div>
-                          <span className="text-sm font-medium ml-2">{formatCurrency(summary.fabric_cost || 0, userCurrency)}</span>
+                          <span className="text-sm font-medium ml-2 flex-shrink-0">{formatCurrency(summary.fabric_cost || 0, userCurrency)}</span>
                         </div>
                       )}
-                      {summary.manufacturing_cost && treatmentType !== 'wallpaper' && (
-                        <div className="flex items-center justify-between py-1.5 px-3 bg-muted/30 rounded">
+                      {(summary.manufacturing_cost || 0) > 0 && treatmentType !== 'wallpaper' && (
+                        <div className="flex items-center justify-between py-1.5 px-2.5 bg-muted/30 rounded">
                           <div className="flex-1">
                             <div className="text-sm font-medium">Manufacturing</div>
                             <div className="text-xs text-muted-foreground">{summary.manufacturing_type || 'Machine made'}</div>
                           </div>
-                          <span className="text-sm font-medium">{formatCurrency(summary.manufacturing_cost || 0, userCurrency)}</span>
+                          <span className="text-sm font-medium flex-shrink-0">{formatCurrency(summary.manufacturing_cost, userCurrency)}</span>
                         </div>
                       )}
                     </div>
