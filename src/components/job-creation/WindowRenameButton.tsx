@@ -68,7 +68,7 @@ export const WindowRenameButton = ({ windowName, onRename, disabled }: WindowRen
           size="sm"
           variant="ghost"
           onClick={() => setIsEditing(true)}
-          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground transition-opacity"
         >
           <Pencil className="h-4 w-4" />
         </Button>
