@@ -169,56 +169,45 @@ export const InventorySelectionPanel = ({
       </Card>;
   };
   const getTabsForTreatment = () => {
-    const treatmentLower = treatmentType?.toLowerCase() || '';
-    const categoryLower = treatmentCategory?.toLowerCase() || '';
-    
-    // Check if it's wallpaper
-    const isWallpaper = treatmentLower.includes('wallpaper') || categoryLower.includes('wallpaper');
-    
-    // Check if it's roller blinds
-    const isRoller = treatmentLower.includes('roller');
-    
-    // Check if it's other blinds
-    const isBlinds = treatmentLower.includes('blind') || categoryLower.includes('blind');
-    
-    if (isWallpaper) {
-      return [{
-        key: "material",
-        label: "Wallpaper",
-        icon: Package
-      }];
+    switch (treatmentType) {
+      case "curtains":
+        return [{
+          key: "fabric",
+          label: "Fabric",
+          icon: Palette
+        }, {
+          key: "hardware",
+          label: "Hardware",
+          icon: Wrench
+        }];
+      case "blinds":
+      case "venetian_blinds":
+      case "vertical_blinds":
+      case "roller_blinds":
+        return [{
+          key: "material",
+          label: "Material",
+          icon: Package
+        }, {
+          key: "hardware",
+          label: "Hardware",
+          icon: Wrench
+        }];
+      default:
+        return [{
+          key: "fabric",
+          label: "Fabric",
+          icon: Palette
+        }, {
+          key: "material",
+          label: "Material",
+          icon: Package
+        }, {
+          key: "hardware",
+          label: "Hardware",
+          icon: Wrench
+        }];
     }
-    
-    if (isRoller) {
-      return [{
-        key: "fabric",
-        label: "Roller Fabric",
-        icon: Palette
-      }];
-    }
-    
-    if (isBlinds) {
-      return [{
-        key: "material",
-        label: "Material",
-        icon: Package
-      }, {
-        key: "hardware",
-        label: "Hardware",
-        icon: Wrench
-      }];
-    }
-    
-    // Default: Curtains or other treatments
-    return [{
-      key: "fabric",
-      label: "Fabric",
-      icon: Palette
-    }, {
-      key: "hardware",
-      label: "Hardware",
-      icon: Wrench
-    }];
   };
   const availableTabs = getTabsForTreatment();
   return <div className={`space-y-3 ${className}`}>
