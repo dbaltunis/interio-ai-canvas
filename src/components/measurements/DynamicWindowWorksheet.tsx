@@ -582,20 +582,21 @@ export const DynamicWindowWorksheet = forwardRef<{
         {/* Window Type Selection */}
         <TabsContent value="window-type" className="space-y-4">
           <Card>
-            <CardContent className="pt-6 min-h-[500px]">
+            <CardContent className="pt-6 min-h-[500px] flex flex-col">
               <WindowTypeSelector selectedWindowType={selectedWindowType} onWindowTypeChange={setSelectedWindowType} readOnly={readOnly} />
               
-              {selectedWindowType && <div className="mt-6 p-4 bg-primary/5 rounded-lg border">
-                  <h4 className="font-medium mb-2 flex items-center gap-2">
+              <div className="mt-auto space-y-3">
+                {selectedWindowType && <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 animate-fade-in">
+                  <h4 className="font-medium text-sm flex items-center gap-2">
                     <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                     Selected: {selectedWindowType.name}
                   </h4>
-                  <p className="text-xs text-muted-foreground mb-3">{selectedWindowType.description}</p>
-                  
-                  <Button className="w-full" onClick={() => setActiveTab("treatment")}>
-                    Continue to Treatment Selection
-                  </Button>
                 </div>}
+                
+                <Button className="w-full" onClick={() => setActiveTab("treatment")} disabled={!selectedWindowType}>
+                  Continue to Treatment Selection
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
