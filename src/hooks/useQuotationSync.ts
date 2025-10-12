@@ -161,6 +161,13 @@ export const useQuotationSync = ({
             const materialLabel = getMaterialLabel();
             const fabricPricePerMetre = fabricDetails.selling_price || fabricDetails.unit_price || (summary.fabric_cost / (summary.linear_meters || 1));
             
+            console.log('[QUOTE ITEM] Adding material child:', {
+              materialLabel,
+              productName,
+              treatmentCategory,
+              isWallpaper: treatmentCategory === 'wallpaper'
+            });
+            
             parentItem.children.push({
               id: `${window.window_id}-material`,
               name: materialLabel,
@@ -175,6 +182,7 @@ export const useQuotationSync = ({
 
           // DETAILED BREAKDOWN - Manufacturing (skip for wallpaper)
           if (summary.manufacturing_cost && summary.manufacturing_cost > 0 && treatmentCategory !== 'wallpaper') {
+            console.log('[QUOTE ITEM] Adding manufacturing (NOT wallpaper)');
             parentItem.children.push({
               id: `${window.window_id}-manufacturing`,
               name: 'Manufacturing price',
@@ -185,6 +193,8 @@ export const useQuotationSync = ({
               total: summary.manufacturing_cost,
               isChild: true
             });
+          } else if (treatmentCategory === 'wallpaper') {
+            console.log('[QUOTE ITEM] SKIPPING manufacturing for wallpaper');
           }
 
           // DETAILED BREAKDOWN - Lining (use REAL lining details)

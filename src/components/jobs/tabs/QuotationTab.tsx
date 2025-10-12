@@ -578,9 +578,9 @@ const projectData = {
         markupPercentage={markupPercentage}
       />
 
-      {/* Quote Document Preview */}
+      {/* Quote Document Preview - Force refresh with key */}
       {selectedTemplate && (
-        <section className="mt-6">
+        <section className="mt-6" key={`preview-${projectSummaries?.projectTotal}-${quotationData.total}-${selectedTemplateId}`}>
           <LivePreview
             blocks={templateBlocks}
             projectData={{
@@ -594,13 +594,14 @@ const projectData = {
               rooms: rooms || [],
               surfaces: surfaces || [],
               subtotal: quotationData.subtotal || 0,
-              taxRate: 0.08,
+              taxRate: businessSettings?.tax_rate ? businessSettings.tax_rate / 100 : 0.08,
               taxAmount: quotationData.taxAmount || 0,
               total: quotationData.total || 0,
-              markupPercentage: 25,
+              markupPercentage: markupPercentage,
               currency: (businessSettings?.measurement_units as any)?.currency || 'USD',
               windowSummaries: projectSummaries?.windows || [],
-              workshopItems: workshopItems || []
+              workshopItems: workshopItems || [],
+              items: quotationData.items || [] // Pass the actual quote items
             }}
             isEditable={false}
             onBlocksChange={(updatedBlocks) => {
