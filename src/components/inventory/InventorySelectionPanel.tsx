@@ -170,6 +170,12 @@ export const InventorySelectionPanel = ({
   };
   const getTabsForTreatment = () => {
     switch (treatmentType) {
+      case "wallpaper":
+        return [{
+          key: "fabric",
+          label: "Wallpaper",
+          icon: Palette
+        }];
       case "curtains":
         return [{
           key: "fabric",
