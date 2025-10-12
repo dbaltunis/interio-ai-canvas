@@ -8,7 +8,6 @@ interface RomanBlindVisualizerProps {
   className?: string;
   foldStyle?: 'classic' | 'relaxed' | 'hobbled';
   mounted?: 'inside' | 'outside';
-  hideDetails?: boolean;
 }
 
 export const RomanBlindVisualizer = ({
@@ -18,8 +17,7 @@ export const RomanBlindVisualizer = ({
   material,
   className = "",
   foldStyle = 'classic',
-  mounted = 'outside',
-  hideDetails = false
+  mounted = 'outside'
 }: RomanBlindVisualizerProps) => {
   
   const renderRomanBlind = useMemo(() => {
@@ -103,14 +101,10 @@ export const RomanBlindVisualizer = ({
         />
         
         {/* Material info badge */}
-        {!hideDetails && (
-          <>
-            <rect x="60" y="260" width="120" height="25" fill="rgba(255,255,255,0.9)" rx="4" />
-            <text x="70" y="275" fontSize="10" fill="#333">
-              {material?.name || 'Roman Blind'} - {foldStyle.charAt(0).toUpperCase() + foldStyle.slice(1)}
-            </text>
-          </>
-        )}
+        <rect x="60" y="260" width="120" height="25" fill="rgba(255,255,255,0.9)" rx="4" />
+        <text x="70" y="275" fontSize="10" fill="#333">
+          {material?.name || 'Roman Blind'} - {foldStyle.charAt(0).toUpperCase() + foldStyle.slice(1)}
+        </text>
       </svg>
     );
   }, [windowType, measurements, material, foldStyle, mounted]);

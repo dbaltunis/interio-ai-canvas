@@ -49,8 +49,8 @@ export const TreatmentPreviewEngine = ({
   showProductOnly = false
 }: TreatmentPreviewEngineProps) => {
   
-  // For wallpaper, show product image only
-  if (showProductOnly && treatmentType === 'wallpaper' && selectedItems.fabric) {
+  // If showing product only, display just the fabric/material image
+  if (showProductOnly && selectedItems.fabric) {
     const fabricImage = selectedItems.fabric.image_url;
     
     return (
@@ -106,7 +106,6 @@ export const TreatmentPreviewEngine = ({
             fabric={selectedItems.fabric}
             hardware={selectedItems.hardware}
             className={className}
-            hideDetails={hideDetails}
           />
         );
       
@@ -120,7 +119,6 @@ export const TreatmentPreviewEngine = ({
             className={className}
             foldStyle={template?.fold_style || 'classic'}
             mounted={template?.mount_type || 'outside'}
-            hideDetails={hideDetails}
           />
         );
       
@@ -135,7 +133,6 @@ export const TreatmentPreviewEngine = ({
             slatSize={template?.slat_size || '25mm'}
             slatAngle={template?.default_angle || 45}
             mounted={template?.mount_type || 'inside'}
-            hideDetails={hideDetails}
           />
         );
       
@@ -152,7 +149,6 @@ export const TreatmentPreviewEngine = ({
             louverSize={template?.louver_size || '63mm'}
             frameStyle={template?.frame_style || 'L-frame'}
             mounted={template?.mount_type || 'inside'}
-            hideDetails={hideDetails}
           />
         );
       
@@ -166,7 +162,6 @@ export const TreatmentPreviewEngine = ({
             template={template}
             material={selectedItems.material}
             className={className}
-            hideDetails={hideDetails}
           />
         );
       
@@ -184,22 +179,20 @@ export const TreatmentPreviewEngine = ({
   };
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative">
       {renderTreatmentVisualizer()}
       
-      {/* Treatment type indicator - hide if hideDetails is true */}
-      {!hideDetails && (
-        <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm rounded p-2 text-xs">
-          <div className="font-medium">
-            {treatmentType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-          </div>
-          {template?.name && (
-            <div className="text-muted-foreground">
-              {template.name}
-            </div>
-          )}
+      {/* Treatment type indicator */}
+      <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm rounded p-2 text-xs">
+        <div className="font-medium">
+          {treatmentType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
         </div>
-      )}
+        {template?.name && (
+          <div className="text-muted-foreground">
+            {template.name}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
