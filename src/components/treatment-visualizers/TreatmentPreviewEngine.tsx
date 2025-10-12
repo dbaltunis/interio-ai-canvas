@@ -49,8 +49,8 @@ export const TreatmentPreviewEngine = ({
   showProductOnly = false
 }: TreatmentPreviewEngineProps) => {
   
-  // If showing product only, display just the fabric/material image
-  if (showProductOnly && selectedItems.fabric) {
+  // For wallpaper, show product image only
+  if (showProductOnly && treatmentType === 'wallpaper' && selectedItems.fabric) {
     const fabricImage = selectedItems.fabric.image_url;
     
     return (
@@ -179,20 +179,22 @@ export const TreatmentPreviewEngine = ({
   };
 
   return (
-    <div className="relative">
+    <div className="relative w-full h-full">
       {renderTreatmentVisualizer()}
       
-      {/* Treatment type indicator */}
-      <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm rounded p-2 text-xs">
-        <div className="font-medium">
-          {treatmentType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-        </div>
-        {template?.name && (
-          <div className="text-muted-foreground">
-            {template.name}
+      {/* Treatment type indicator - hide if hideDetails is true */}
+      {!hideDetails && (
+        <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm rounded p-2 text-xs">
+          <div className="font-medium">
+            {treatmentType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
           </div>
-        )}
-      </div>
+          {template?.name && (
+            <div className="text-muted-foreground">
+              {template.name}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
