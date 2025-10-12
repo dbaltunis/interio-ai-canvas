@@ -582,7 +582,7 @@ export const DynamicWindowWorksheet = forwardRef<{
         {/* Window Type Selection */}
         <TabsContent value="window-type" className="space-y-4">
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 min-h-[500px]">
               <WindowTypeSelector selectedWindowType={selectedWindowType} onWindowTypeChange={setSelectedWindowType} readOnly={readOnly} />
               
               {selectedWindowType && <div className="mt-6 p-4 bg-primary/5 rounded-lg border">
@@ -603,8 +603,8 @@ export const DynamicWindowWorksheet = forwardRef<{
         {/* Treatment Selection */}
         <TabsContent value="treatment" className="space-y-4">
           <Card>
-            <CardContent className="pt-6">
-              <ImprovedTreatmentSelector 
+            <CardContent className="pt-6 min-h-[500px]">
+              <ImprovedTreatmentSelector
                 selectedCoveringId={selectedTemplate?.id || ""} 
                 onCoveringSelect={template => {
                   setSelectedTemplate(template);
@@ -625,7 +625,7 @@ export const DynamicWindowWorksheet = forwardRef<{
         {/* Inventory Selection */}
         <TabsContent value="inventory" className="space-y-4">
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 min-h-[500px]">
               <InventorySelectionPanel treatmentType={selectedTreatmentType} selectedItems={selectedItems} onItemSelect={handleItemSelect} onItemDeselect={handleItemDeselect} measurements={measurements} treatmentCategory={treatmentCategory} />
               
               <div className="mt-6">
