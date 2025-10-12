@@ -50,20 +50,24 @@ export function WindowSummaryCard({
   const { compact } = useCompactMode();
   const userCurrency = useUserCurrency();
 
-  // Detect treatment type from multiple sources - prioritize fabric category detection
+  // Detect treatment type - PRIORITY ORDER:
+  // 1. Explicitly passed prop (from surface.treatment_type)
+  // 2. Treatment type from summary (most reliable)
+  // 3. Detect from fabric category (wallpaper only)
+  // 4. Default to curtains
   const detectTreatmentTypeFromFabric = () => {
     const category = summary?.fabric_details?.category?.toLowerCase() || '';
+    // Only use fabric category to detect wallpaper, not other types
     if (category.includes('wallcover') || category.includes('wallpaper')) return 'wallpaper';
-    if (category.includes('blind')) return 'blinds';
     return null;
   };
 
   const treatmentType = 
-    propTreatmentType || 
-    detectTreatmentTypeFromFabric() ||
-    summary?.treatment_type || 
-    summary?.treatment_category ||
-    'curtains';
+    propTreatmentType ||                    // Use prop if explicitly passed
+    summary?.treatment_type ||               // Use treatment_type from summary (MOST RELIABLE)
+    detectTreatmentTypeFromFabric() ||       // Only for wallpaper detection
+    summary?.treatment_category ||           // Fallback to category
+    'curtains';                              // Final fallback
 
   // Unit helpers
   const { convertToUserUnit, formatFabric } = useMeasurementUnits();
@@ -277,10 +281,14 @@ export function WindowSummaryCard({
                   {/* Product Type Header */}
                   <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <h4 className="font-semibold text-base">
-                      {treatmentType === 'curtains' && 'Sheer curtain'}
+                      {treatmentType === 'curtains' && (summary.fabric_details?.name || 'Curtain')}
                       {treatmentType === 'wallpaper' && 'Wallpaper'}
-                      {treatmentType?.includes('blind') && summary.fabric_details?.name}
+                      {(treatmentType === 'blinds' || treatmentType === 'roller_blinds' || treatmentType === 'roman_blinds' || 
+                        treatmentType === 'venetian_blinds' || treatmentType === 'cellular_blinds' || treatmentType === 'vertical_blinds') && 
+                        (summary.fabric_details?.name || 'Blind')}
                       {treatmentType === 'shutters' && 'Plantation Shutters'}
+                      {!['curtains', 'wallpaper', 'shutters', 'blinds', 'roller_blinds', 'roman_blinds', 'venetian_blinds', 'cellular_blinds', 'vertical_blinds'].includes(treatmentType) && 
+                        (summary.fabric_details?.name || treatmentType)}
                     </h4>
                     <Button
                       variant="ghost"
