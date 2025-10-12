@@ -27,6 +27,7 @@ export const WallpaperVisual = ({
   readOnly = false
 }: WallpaperVisualProps) => {
   const [isExplanationOpen, setIsExplanationOpen] = useStateReact(false);
+  const [isCalcDetailsOpen, setIsCalcDetailsOpen] = useStateReact(false);
   const wallWidth = parseFloat(measurements.wall_width) || 0;
   const wallHeight = parseFloat(measurements.wall_height) || 0;
   
@@ -162,48 +163,96 @@ export const WallpaperVisual = ({
             </div>
           ) : (
             // Show visual when measurements exist
-            <div className="flex flex-col items-center justify-center h-full w-full">
-              <svg 
-                viewBox="0 0 450 320" 
-                className="w-full h-full"
-                preserveAspectRatio="xMidYMid meet"
-              >
-                <defs>
-                  {createWallpaperPattern()}
-                  <linearGradient id="wall-shadow" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="rgba(0,0,0,0.1)" />
-                    <stop offset="50%" stopColor="rgba(0,0,0,0)" />
-                    <stop offset="100%" stopColor="rgba(0,0,0,0.1)" />
-                  </linearGradient>
-                </defs>
-                <rect x="0" y="0" width="450" height="320" fill="#f9fafb" />
-                <rect x="0" y="280" width="450" height="40" fill="#d1d5db" />
-                <rect x="50" y="40" width="300" height="240" fill={selectedWallpaper ? "url(#wallpaper-pattern)" : "#ffffff"} stroke="#9ca3af" strokeWidth="2" />
-                <rect x="50" y="40" width="300" height="240" fill="url(#wall-shadow)" opacity="0.3" />
-                <line x1="50" y1="25" x2="350" y2="25" stroke="#3b82f6" strokeWidth="1.5" />
-                <polygon points="50,25 56,22 56,28" fill="#3b82f6" />
-                <polygon points="350,25 344,22 344,28" fill="#3b82f6" />
-                <text x="200" y="18" textAnchor="middle" fill="#3b82f6" fontSize="12" fontWeight="bold">
-                  {wallWidth}cm
-                </text>
-                <line x1="375" y1="40" x2="375" y2="280" stroke="#3b82f6" strokeWidth="1.5" />
-                <polygon points="375,40 372,46 378,46" fill="#3b82f6" />
-                <polygon points="375,280 372,274 378,274" fill="#3b82f6" />
-                <text x="390" y="160" textAnchor="start" fill="#3b82f6" fontSize="12" fontWeight="bold">
-                  {wallHeight}cm
-                </text>
-                {patternRepeat > 0 && selectedWallpaper && (
-                  <>
-                    <line x1="55" y1="40" x2="55" y2={40 + (patternRepeat * 240 / wallHeight)} stroke="#f59e0b" strokeWidth="2" strokeDasharray="4,4" />
-                    <text x="60" y={40 + (patternRepeat * 240 / wallHeight) / 2} fill="#f59e0b" fontSize="10" fontWeight="bold">
-                      {patternRepeat}cm repeat
-                    </text>
-                  </>
-                )}
-              </svg>
+            <div className="flex flex-col h-full w-full">
+              <div className="flex-1 flex items-center justify-center">
+                <svg 
+                  viewBox="0 0 450 320" 
+                  className="w-full h-full"
+                  preserveAspectRatio="xMidYMid meet"
+                >
+                  <defs>
+                    {createWallpaperPattern()}
+                    <linearGradient id="wall-shadow" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="rgba(0,0,0,0.1)" />
+                      <stop offset="50%" stopColor="rgba(0,0,0,0)" />
+                      <stop offset="100%" stopColor="rgba(0,0,0,0.1)" />
+                    </linearGradient>
+                  </defs>
+                  <rect x="0" y="0" width="450" height="320" fill="#f9fafb" />
+                  <rect x="0" y="280" width="450" height="40" fill="#d1d5db" />
+                  <rect x="50" y="40" width="300" height="240" fill={selectedWallpaper ? "url(#wallpaper-pattern)" : "#ffffff"} stroke="#9ca3af" strokeWidth="2" />
+                  <rect x="50" y="40" width="300" height="240" fill="url(#wall-shadow)" opacity="0.3" />
+                  <line x1="50" y1="25" x2="350" y2="25" stroke="#3b82f6" strokeWidth="1.5" />
+                  <polygon points="50,25 56,22 56,28" fill="#3b82f6" />
+                  <polygon points="350,25 344,22 344,28" fill="#3b82f6" />
+                  <text x="200" y="18" textAnchor="middle" fill="#3b82f6" fontSize="12" fontWeight="bold">
+                    {wallWidth}cm
+                  </text>
+                  <line x1="375" y1="40" x2="375" y2="280" stroke="#3b82f6" strokeWidth="1.5" />
+                  <polygon points="375,40 372,46 378,46" fill="#3b82f6" />
+                  <polygon points="375,280 372,274 378,274" fill="#3b82f6" />
+                  <text x="390" y="160" textAnchor="start" fill="#3b82f6" fontSize="12" fontWeight="bold">
+                    {wallHeight}cm
+                  </text>
+                  {patternRepeat > 0 && selectedWallpaper && (
+                    <>
+                      <line x1="55" y1="40" x2="55" y2={40 + (patternRepeat * 240 / wallHeight)} stroke="#f59e0b" strokeWidth="2" strokeDasharray="4,4" />
+                      <text x="60" y={40 + (patternRepeat * 240 / wallHeight) / 2} fill="#f59e0b" fontSize="10" fontWeight="bold">
+                        {patternRepeat}cm repeat
+                      </text>
+                    </>
+                  )}
+                </svg>
+              </div>
+              
+              {/* Compact info overlay on visual */}
+              {calculation && (
+                <div className="mt-2 px-3">
+                  <Collapsible open={isCalcDetailsOpen} onOpenChange={setIsCalcDetailsOpen}>
+                    <CollapsibleTrigger className="w-full">
+                      <div className="bg-blue-50 dark:bg-blue-950/30 p-2 rounded text-sm flex items-center justify-between hover:bg-blue-100 dark:hover:bg-blue-950/50 transition-colors">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="text-xs">
+                            {selectedWallpaper?.wallpaper_sold_by === 'per_roll' ? 'Sold by Roll' : 
+                             selectedWallpaper?.wallpaper_sold_by === 'per_sqm' ? 'Sold per m²' : 'Sold per Meter'}
+                          </Badge>
+                          <span className="text-xs font-medium">
+                            {calculation.stripsNeeded} strips × {calculation.lengthPerStripCm}cm = {(calculation.stripsNeeded * Number(calculation.lengthPerStripM)).toFixed(2)}m
+                            {selectedWallpaper?.wallpaper_sold_by === 'per_roll' && ` (${calculation.rollsNeeded} roll${calculation.rollsNeeded > 1 ? 's' : ''})`}
+                          </span>
+                        </div>
+                        <ChevronDown className={`h-4 w-4 transition-transform ${isCalcDetailsOpen ? 'rotate-180' : ''}`} />
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-b border-t border-blue-200 dark:border-blue-800 text-xs space-y-1">
+                        <p className="text-muted-foreground leading-relaxed">
+                          <strong>Detailed Calculation:</strong>
+                        </p>
+                        <p className="text-muted-foreground leading-relaxed ml-2">
+                          • Wall height: {wallHeight}cm
+                          {patternRepeat > 0 && matchType !== 'none' && matchType !== 'random' && (
+                            <> + Pattern repeat: {patternRepeat}cm</>
+                          )}
+                        </p>
+                        <p className="text-muted-foreground leading-relaxed ml-2">
+                          • Strip length: {calculation.lengthPerStripCm}cm ({calculation.lengthPerStripM}m)
+                        </p>
+                        <p className="text-muted-foreground leading-relaxed ml-2">
+                          • Strips needed: {calculation.stripsNeeded} (wall width {wallWidth}cm ÷ roll width {rollWidth}cm)
+                        </p>
+                        <p className="font-medium ml-2">
+                          = Total: {(calculation.stripsNeeded * Number(calculation.lengthPerStripM)).toFixed(2)}m
+                          {selectedWallpaper?.wallpaper_sold_by === 'per_roll' && ` ≈ ${calculation.rollsNeeded} roll${calculation.rollsNeeded > 1 ? 's' : ''}`}
+                        </p>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
+              )}
               
               {/* Legend */}
-              <div className="mt-4 flex flex-wrap gap-4 justify-center text-xs">
+              <div className="mt-3 flex flex-wrap gap-4 justify-center text-xs px-3 pb-2">
                 {selectedWallpaper && (
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border border-border" style={{ background: 'url(#wallpaper-pattern)' }}></div>
@@ -302,21 +351,7 @@ export const WallpaperVisual = ({
                 )}
               </div>
               
-              {/* Selling method indicator with ACTUAL calculation values */}
-              <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded text-sm space-y-1">
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-xs">
-                    {selectedWallpaper?.wallpaper_sold_by === 'per_roll' ? 'Sold by Roll' : 
-                     selectedWallpaper?.wallpaper_sold_by === 'per_sqm' ? 'Sold per m²' : 'Sold per Meter'}
-                  </Badge>
-                </div>
-                <p className="text-muted-foreground text-xs leading-relaxed">
-                  <strong>Calculation:</strong> {wallHeight}cm wall height{patternRepeat > 0 && matchType !== 'none' && matchType !== 'random' ? ` + ${patternRepeat}cm pattern` : ''} = {calculation.lengthPerStripCm}cm per strip × {calculation.stripsNeeded} strips = <strong>{(calculation.stripsNeeded * Number(calculation.lengthPerStripM)).toFixed(2)}m total</strong>
-                  {selectedWallpaper?.wallpaper_sold_by === 'per_roll' && ` ≈ ${calculation.rollsNeeded} roll${calculation.rollsNeeded > 1 ? 's' : ''}`}
-                </p>
-              </div>
-              
-              {/* Main calculations with tooltips */}
+              {/* Main calculations with tooltips - removing redundant selling info */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center gap-1.5">
