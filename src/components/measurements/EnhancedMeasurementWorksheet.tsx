@@ -773,6 +773,18 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       if (surfaceId) {
         console.log('💾 Saving window summary with selected_options from state:', selectedOptions);
         
+        // Detect correct treatment type from template
+        const detectedType = detectTreatmentType(selectedCovering);
+        const treatmentCategory = detectedType || 'curtains';
+        
+        // Map specific types to categories
+        const getCategoryFromType = (type: string) => {
+          if (type.includes('blind')) return 'blinds';
+          if (type.includes('shutter')) return 'shutters';
+          if (type === 'wallpaper') return 'wallpaper';
+          return 'curtains';
+        };
+        
         await saveWindowSummary.mutateAsync({
           window_id: surfaceId,
           linear_meters: linearMeters,
@@ -789,6 +801,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
           currency: units.currency,
           template_name: selectedCovering.name,
           template_details: selectedCovering as any,
+          treatment_type: treatmentCategory,  // Specific type (e.g., 'venetian_blinds', 'roller_blinds', 'curtains')
+          treatment_category: getCategoryFromType(treatmentCategory), // General category ('blinds', 'curtains', 'shutters', 'wallpaper')
           fabric_details: { 
             id: fabricItem.id, 
             name: fabricItem.name, 
@@ -797,7 +811,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
             width_cm: (fabricItem as any).fabric_width,
             fabric_width: (fabricItem as any).fabric_width,
             pattern_repeat_vertical: (fabricItem as any).pattern_repeat_vertical,
-            pattern_repeat_horizontal: (fabricItem as any).pattern_repeat_horizontal
+            pattern_repeat_horizontal: (fabricItem as any).pattern_repeat_horizontal,
+            category: (fabricItem as any).category  // Include fabric category for additional context
           },
           lining_details: liningDetails,
           heading_details: { id: selectedHeading },
@@ -808,6 +823,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
             selected_options: selectedOptions  // Use the tracked state with actual prices from database
           }
         } as any);
+        
+        console.log('✅ Saved window summary with treatment_type:', treatmentCategory, 'and category:', getCategoryFromType(treatmentCategory));
       }
     } catch (e) {
       console.error('Failed to save window summary:', e);
