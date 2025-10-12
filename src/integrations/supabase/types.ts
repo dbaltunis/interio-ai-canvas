@@ -2064,6 +2064,10 @@ export type Database = {
           updated_at: string
           user_id: string
           vendor_id: string | null
+          wallpaper_roll_length: number | null
+          wallpaper_roll_width: number | null
+          wallpaper_sold_by: string | null
+          wallpaper_unit_of_measure: string | null
           weight: number | null
           width: number | null
         }
@@ -2126,6 +2130,10 @@ export type Database = {
           updated_at?: string
           user_id: string
           vendor_id?: string | null
+          wallpaper_roll_length?: number | null
+          wallpaper_roll_width?: number | null
+          wallpaper_sold_by?: string | null
+          wallpaper_unit_of_measure?: string | null
           weight?: number | null
           width?: number | null
         }
@@ -2188,6 +2196,10 @@ export type Database = {
           updated_at?: string
           user_id?: string
           vendor_id?: string | null
+          wallpaper_roll_length?: number | null
+          wallpaper_roll_width?: number | null
+          wallpaper_sold_by?: string | null
+          wallpaper_unit_of_measure?: string | null
           weight?: number | null
           width?: number | null
         }
