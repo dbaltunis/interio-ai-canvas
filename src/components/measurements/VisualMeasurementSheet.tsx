@@ -68,6 +68,12 @@ export const VisualMeasurementSheet = ({
   const treatmentType = treatmentCategory || detectTreatmentType(selectedTemplate);
   const treatmentConfig = getTreatmentConfig(treatmentType);
   
+  // Add safety check for treatmentConfig
+  if (!treatmentConfig) {
+    console.error('❌ VisualMeasurementSheet: Invalid treatment type:', treatmentType);
+    return null;
+  }
+  
   console.log("🎯 VisualMeasurementSheet - Treatment Detection:", {
     treatmentCategory,
     detectedType: detectTreatmentType(selectedTemplate),

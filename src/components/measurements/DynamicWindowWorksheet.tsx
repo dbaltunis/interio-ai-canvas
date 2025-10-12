@@ -593,15 +593,15 @@ export const DynamicWindowWorksheet = forwardRef<{
             treatment_category: generalCategory, // Save general category like 'blinds'
             
             // STEP 3: Inventory Selections (Fabric, Hardware, Materials)
-            fabric_details: {
+            fabric_details: selectedItems.fabric ? {
               ...selectedItems.fabric,
-              fabric_id: selectedItems.fabric?.id,
-              width_cm: selectedItems.fabric?.fabric_width || selectedItems.fabric?.wallpaper_roll_width || 140,
-              width: selectedItems.fabric?.fabric_width || selectedItems.fabric?.wallpaper_roll_width || 140,
-              category: selectedItems.fabric?.category, // Include fabric category for detection
-              image_url: selectedItems.fabric?.image_url // Include image for display
-            },
-            selected_fabric_id: selectedItems.fabric?.id,
+              fabric_id: selectedItems.fabric.id,
+              width_cm: selectedItems.fabric.fabric_width || selectedItems.fabric.wallpaper_roll_width || 140,
+              width: selectedItems.fabric.fabric_width || selectedItems.fabric.wallpaper_roll_width || 140,
+              category: selectedItems.fabric.category, // Include fabric category for detection
+              image_url: selectedItems.fabric.image_url // Include image for display
+            } : null,
+            selected_fabric_id: selectedItems.fabric?.id || null,
             selected_hardware_id: selectedItems.hardware?.id,
             selected_material_id: selectedItems.material?.id,
             hardware_details: selectedItems.hardware || null,
