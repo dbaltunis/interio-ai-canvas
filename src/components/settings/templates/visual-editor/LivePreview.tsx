@@ -518,20 +518,20 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
       const workshopItems = projectData?.workshopItems || [];
       const surfaces = projectData?.surfaces || [];
       
-      // Merge workshop items with surfaces to show all windows, even those without treatments
+      // ALWAYS use projectData.items as the PRIMARY source - it has correct room names, prices, currency
       let projectItems = [];
-      if (workshopItems.length > 0 || surfaces.length > 0) {
-        // Create a map of surfaces by id
+      
+      if (projectData?.items && projectData.items.length > 0) {
+        // Use formatted quotation items - these have correct room names, product names, descriptions, prices
+        projectItems = projectData.items;
+      } else if (workshopItems.length > 0 || surfaces.length > 0) {
+        // Fallback to workshop items only if no formatted items exist
         const surfaceMap = new Map(surfaces.map((s: any) => [s.id, s]));
-        
-        // Start with all workshop items
         projectItems = [...workshopItems];
         
-        // Add surfaces that don't have workshop items
         const workshopSurfaceIds = new Set(workshopItems.map((wi: any) => wi.window_id).filter(Boolean));
         surfaces.forEach((surface: any) => {
           if (!workshopSurfaceIds.has(surface.id)) {
-            // Add placeholder for surface without treatment
             projectItems.push({
               id: surface.id,
               surface_name: surface.name,
@@ -545,12 +545,9 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
             });
           }
         });
-      } else {
-        // Prioritize formatted quotation items if available
-        projectItems = projectData?.items || projectData?.treatments || projectData?.windowSummaries || [];
       }
       
-      const hasRealData = workshopItems.length > 0;
+      const hasRealData = projectItems.length > 0 && !projectItems.every((item: any) => item._isPending);
 
       // Enrich workshop item with windows_summary data for accurate breakdown
       const enrichWorkshopItemWithSummary = (item: any) => {
@@ -730,23 +727,22 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
                         // Detailed view with itemization
                         const itemizedComponents = getItemizedBreakdown(item);
                         return (
-                          <React.Fragment key={`item-${roomName}-${itemIndex}`}>
+                            <React.Fragment key={`item-${roomName}-${itemIndex}`}>
                             {/* Main product row */}
                             <tr className="border-t">
                               <td className="p-1 text-xs font-medium" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{itemNumber}</td>
                               <td className="p-1 text-xs font-medium" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
-                                {item.name || item.fabric_details?.name || item.treatment_name || 'Window Treatment'}
-                                {item.window_number && ` - ${item.window_number}`}
+                                {item.name || 'Window Treatment'}
                               </td>
                               <td className="p-1 text-xs" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
-                                {item.description || item.notes || item.room_name || 'Custom Treatment'}
+                                {item.description || ''}
                               </td>
                               <td className="p-1 text-center text-xs" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{item.quantity || 1}</td>
                               <td className="p-1 text-right text-xs" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
-                                {renderTokenValue('currency_symbol')}{(item.unit_price || item.total_cost || item.total_price || 0).toFixed(2)}
+                                {renderTokenValue('currency_symbol')}{(item.unit_price || 0).toFixed(2)}
                               </td>
                               <td className="p-1 text-right font-medium text-xs" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
-                                {renderTokenValue('currency_symbol')}{(item.total || item.total_cost || item.total_price || 0).toFixed(2)}
+                                {renderTokenValue('currency_symbol')}{(item.total || 0).toFixed(2)}
                               </td>
                             </tr>
                             {/* Itemized component rows with smaller font and indentation */}
@@ -768,18 +764,17 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
                           <tr key={`simple-${roomName}-${itemIndex}`} className="border-t">
                             <td className="p-2 text-xs" style={{ wordWrap: 'break-word' }}>{itemNumber}</td>
                             <td className="p-2 text-xs" style={{ wordWrap: 'break-word' }}>
-                              {item.name || item.fabric_details?.name || item.treatment_name || 'Window Treatment'}
-                              {item.window_number && ` - ${item.window_number}`}
+                              {item.name || 'Window Treatment'}
                             </td>
                             <td className="p-2 text-xs text-gray-600" style={{ wordWrap: 'break-word' }}>
-                              {item.description || item.notes || item.room_name || `${item.width || 0}" x ${item.height || 0}"`}
+                              {item.description || ''}
                             </td>
                             <td className="p-2 text-center text-xs" style={{ wordWrap: 'break-word' }}>{item.quantity || 1}</td>
                             <td className="p-2 text-right text-xs" style={{ wordWrap: 'break-word' }}>
-                              {renderTokenValue('currency_symbol')}{(item.unit_price || item.total || item.cost_per_unit || 0).toFixed(2)}
+                              {renderTokenValue('currency_symbol')}{(item.unit_price || 0).toFixed(2)}
                             </td>
                             <td className="p-2 text-right font-medium text-xs" style={{ wordWrap: 'break-word' }}>
-                              {renderTokenValue('currency_symbol')}{(item.total || item.total_cost || item.total_price || 0).toFixed(2)}
+                              {renderTokenValue('currency_symbol')}{(item.total || 0).toFixed(2)}
                             </td>
                           </tr>
                         );
