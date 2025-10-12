@@ -11,7 +11,6 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { supabase } from "@/integrations/supabase/client";
 import { TreatmentCategory, getTreatmentConfig } from "@/utils/treatmentTypeDetection";
 import { useTreatmentSpecificFabrics } from "@/hooks/useTreatmentSpecificFabrics";
-
 interface InventorySelectionPanelProps {
   treatmentType: string;
   selectedItems: {
@@ -25,7 +24,6 @@ interface InventorySelectionPanelProps {
   className?: string;
   treatmentCategory?: TreatmentCategory;
 }
-
 export const InventorySelectionPanel = ({
   treatmentType,
   selectedItems,
@@ -37,21 +35,26 @@ export const InventorySelectionPanel = ({
 }: InventorySelectionPanelProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("fabric");
-  
-  const { data: inventory = [] } = useEnhancedInventory();
-  const { units, formatLength } = useMeasurementUnits();
+  const {
+    data: inventory = []
+  } = useEnhancedInventory();
+  const {
+    units,
+    formatLength
+  } = useMeasurementUnits();
   const treatmentConfig = getTreatmentConfig(treatmentCategory);
-  
+
   // Use treatment-specific fabrics
-  const { data: treatmentFabrics = [] } = useTreatmentSpecificFabrics(treatmentCategory);
+  const {
+    data: treatmentFabrics = []
+  } = useTreatmentSpecificFabrics(treatmentCategory);
 
   // Filter inventory by treatment type and category
   const getInventoryByCategory = (category: string) => {
     // For fabric category, ALWAYS use treatment-specific fabrics
     if (category === "fabric") {
       return treatmentFabrics.filter(item => {
-        const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                             item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || item.description?.toLowerCase().includes(searchTerm.toLowerCase());
         return matchesSearch;
       });
     }
@@ -61,13 +64,9 @@ export const InventorySelectionPanel = ({
       hardware: ["Hardware", "hardware", "Track", "Rod", "Pole"],
       material: ["Material", "material", "Blind Material", "Blind_Material"]
     };
-
     return inventory.filter(item => {
-      const matchesCategory = categoryMap[category]?.some(cat => 
-        item.category?.toLowerCase().includes(cat.toLowerCase())
-      );
-      const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = categoryMap[category]?.some(cat => item.category?.toLowerCase().includes(cat.toLowerCase()));
+      const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || item.description?.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesCategory && matchesSearch;
     });
   };
@@ -75,96 +74,67 @@ export const InventorySelectionPanel = ({
   // Calculate estimated cost for an item
   const calculateEstimatedCost = (item: any, category: string) => {
     if (!measurements.rail_width || !measurements.drop) return 0;
-
     const width = parseFloat(measurements.rail_width) / 100; // Convert to meters
     const height = parseFloat(measurements.drop) / 100;
     const area = width * height;
-
     const price = item.selling_price || item.unit_price || item.price_per_meter || 0;
-
     switch (category) {
       case "fabric":
         // For fabric, calculate based on linear meters needed
         const linearMeters = height * 2.5; // Approximate with fullness
         return linearMeters * price;
-      
       case "hardware":
         // For hardware, typically per linear meter of width
         return width * price;
-      
       case "material":
         // For blind materials, calculate based on area
         return area * price;
-      
       default:
         return price;
     }
   };
-
   const renderInventoryItem = (item: any, category: string) => {
     const estimatedCost = calculateEstimatedCost(item, category);
     const isSelected = selectedItems[category as keyof typeof selectedItems]?.id === item.id;
     const price = item.selling_price || item.unit_price || item.price_per_meter || 0;
-    
+
     // Get the image URL - try multiple storage buckets
     const getImageUrl = () => {
       if (!item.images || item.images.length === 0) return null;
-      
       const imagePath = item.images[0];
-      
+
       // If it's already a full URL, return it
       if (imagePath?.startsWith('http')) return imagePath;
-      
+
       // Try different storage buckets
       const bucketsToTry = ['business-assets', 'project-images', 'inventory-images'];
-      
+
       // Return the first available public URL
       for (const bucket of bucketsToTry) {
         try {
-          const { data } = supabase.storage.from(bucket).getPublicUrl(imagePath);
+          const {
+            data
+          } = supabase.storage.from(bucket).getPublicUrl(imagePath);
           if (data?.publicUrl) return data.publicUrl;
         } catch (e) {
           continue;
         }
       }
-      
       return null;
     };
-    
     const imageUrl = getImageUrl();
-
-    return (
-      <Card 
-        key={item.id}
-        className={`cursor-pointer transition-all duration-200 hover:shadow-sm ${
-          isSelected 
-            ? 'border-primary bg-primary/5 shadow-sm' 
-            : 'border-border hover:border-primary/30'
-        }`}
-        onClick={() => isSelected ? onItemDeselect(category) : onItemSelect(category, item)}
-      >
+    return <Card key={item.id} className={`cursor-pointer transition-all duration-200 hover:shadow-sm ${isSelected ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/30'}`} onClick={() => isSelected ? onItemDeselect(category) : onItemSelect(category, item)}>
         <CardContent className="p-2">
           <div className="flex flex-col space-y-2">
             {/* Image */}
             <div className="h-16 w-full bg-gray-50 border border-gray-200 rounded overflow-hidden relative">
-              {imageUrl ? (
-                <img 
-                  src={imageUrl} 
-                  alt={item.name}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    console.error('Image failed to load:', imageUrl);
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400 text-[10px]">
+              {imageUrl ? <img src={imageUrl} alt={item.name} className="w-full h-full object-cover" onError={e => {
+              console.error('Image failed to load:', imageUrl);
+              e.currentTarget.style.display = 'none';
+            }} /> : <div className="flex items-center justify-center h-full text-gray-400 text-[10px]">
                   No image
-                </div>
-              )}
-              {isSelected && (
-                <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
-              )}
+                </div>}
+              {isSelected && <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />}
             </div>
             
             {/* Item details */}
@@ -172,23 +142,15 @@ export const InventorySelectionPanel = ({
               <h4 className="font-semibold text-xs line-clamp-1">{item.name}</h4>
               
               {/* Fabric-specific info */}
-              {category === "fabric" && (
-                <div className="space-y-0.5 text-[10px] text-muted-foreground">
-                  {item.fabric_width > 0 && (
-                    <div className="flex items-center gap-1">
+              {category === "fabric" && <div className="space-y-0.5 text-[10px] text-muted-foreground">
+                  {item.fabric_width > 0 && <div className="flex items-center gap-1">
                       <span>📏 {item.fabric_width}cm wide</span>
-                    </div>
-                  )}
-                  {item.composition && (
-                    <div className="truncate">Comp: {item.composition}</div>
-                  )}
-                  {(item.pattern_repeat_vertical > 0 || item.pattern_repeat_horizontal > 0) && (
-                    <div>
+                    </div>}
+                  {item.composition && <div className="truncate">Comp: {item.composition}</div>}
+                  {(item.pattern_repeat_vertical > 0 || item.pattern_repeat_horizontal > 0) && <div>
                       Repeat: {item.pattern_repeat_vertical || 0}×{item.pattern_repeat_horizontal || 0}cm
-                    </div>
-                  )}
-                </div>
-              )}
+                    </div>}
+                </div>}
               
               {/* Price and stock */}
               <div className="flex items-center justify-between gap-1 pt-0.5">
@@ -196,128 +158,116 @@ export const InventorySelectionPanel = ({
                   ${price.toFixed(2)}
                   {item.unit && <span className="text-[9px] text-muted-foreground">/{item.unit}</span>}
                 </span>
-                {item.quantity !== undefined && (
-                  <Badge 
-                    variant={item.quantity > 0 ? "secondary" : "destructive"} 
-                    className="text-[9px] px-1 py-0 h-3.5"
-                  >
+                {item.quantity !== undefined && <Badge variant={item.quantity > 0 ? "secondary" : "destructive"} className="text-[9px] px-1 py-0 h-3.5">
                     {item.quantity > 0 ? `${item.quantity} ${item.unit || 'm'}` : 'Out'}
-                  </Badge>
-                )}
+                  </Badge>}
               </div>
             </div>
           </div>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   };
-
   const getTabsForTreatment = () => {
     switch (treatmentType) {
       case "curtains":
-        return [
-          { key: "fabric", label: "Fabric", icon: Palette },
-          { key: "hardware", label: "Hardware", icon: Wrench }
-        ];
-      
+        return [{
+          key: "fabric",
+          label: "Fabric",
+          icon: Palette
+        }, {
+          key: "hardware",
+          label: "Hardware",
+          icon: Wrench
+        }];
       case "blinds":
       case "venetian_blinds":
       case "vertical_blinds":
       case "roller_blinds":
-        return [
-          { key: "material", label: "Material", icon: Package },
-          { key: "hardware", label: "Hardware", icon: Wrench }
-        ];
-      
+        return [{
+          key: "material",
+          label: "Material",
+          icon: Package
+        }, {
+          key: "hardware",
+          label: "Hardware",
+          icon: Wrench
+        }];
       default:
-        return [
-          { key: "fabric", label: "Fabric", icon: Palette },
-          { key: "material", label: "Material", icon: Package },
-          { key: "hardware", label: "Hardware", icon: Wrench }
-        ];
+        return [{
+          key: "fabric",
+          label: "Fabric",
+          icon: Palette
+        }, {
+          key: "material",
+          label: "Material",
+          icon: Package
+        }, {
+          key: "hardware",
+          label: "Hardware",
+          icon: Wrench
+        }];
     }
   };
-
   const availableTabs = getTabsForTreatment();
-
-  return (
-    <div className={`space-y-3 ${className}`}>
+  return <div className={`space-y-3 ${className}`}>
       <div>
         <h3 className="text-base font-medium mb-1">Select Materials & Hardware</h3>
-        <p className="text-sm text-muted-foreground">
-          Choose materials and hardware below
-        </p>
+        
       </div>
 
       {/* Selected Items Inline Display */}
-      {Object.values(selectedItems).some(item => item) && (
-        <div className="flex items-center gap-2 p-2 bg-primary/10 rounded-lg border border-primary/20">
+      {Object.values(selectedItems).some(item => item) && <div className="flex items-center gap-2 p-2 bg-primary/10 rounded-lg border border-primary/20">
           <div className="flex-1 flex flex-wrap items-center gap-2">
-            {Object.entries(selectedItems).map(([category, item]) => 
-              item && (
-                <div key={category} className="flex items-center gap-1.5 px-2 py-1 bg-background rounded border">
+            {Object.entries(selectedItems).map(([category, item]) => item && <div key={category} className="flex items-center gap-1.5 px-2 py-1 bg-background rounded border">
                   <span className="text-xs font-medium capitalize">{category}:</span>
                   <span className="text-xs">{item.name}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onItemDeselect(category);
-                    }}
-                    className="h-4 w-4 p-0 hover:bg-destructive/10"
-                  >
+                  <Button variant="ghost" size="sm" onClick={e => {
+            e.stopPropagation();
+            onItemDeselect(category);
+          }} className="h-4 w-4 p-0 hover:bg-destructive/10">
                     <X className="h-3 w-3 text-destructive" />
                   </Button>
-                </div>
-              )
-            )}
+                </div>)}
           </div>
-        </div>
-      )}
+        </div>}
 
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search inventory..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 h-9"
-        />
+        <Input placeholder="Search inventory..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 h-9" />
       </div>
 
       {/* Category tabs */}
       <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-        <TabsList className="grid w-full h-9" style={{ gridTemplateColumns: `repeat(${availableTabs.length}, 1fr)` }}>
-          {availableTabs.map(({ key, label, icon: Icon }) => (
-            <TabsTrigger key={key} value={key} className="flex items-center gap-1.5 text-xs">
+        <TabsList className="grid w-full h-9" style={{
+        gridTemplateColumns: `repeat(${availableTabs.length}, 1fr)`
+      }}>
+          {availableTabs.map(({
+          key,
+          label,
+          icon: Icon
+        }) => <TabsTrigger key={key} value={key} className="flex items-center gap-1.5 text-xs">
               <Icon className="h-3.5 w-3.5" />
               {label}
-            </TabsTrigger>
-          ))}
+            </TabsTrigger>)}
         </TabsList>
 
-        {availableTabs.map(({ key, label }) => (
-          <TabsContent key={key} value={key} className="mt-3">
+        {availableTabs.map(({
+        key,
+        label
+      }) => <TabsContent key={key} value={key} className="mt-3">
             <ScrollArea className="h-[300px]">
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 pr-3">
                 {getInventoryByCategory(key).map(item => renderInventoryItem(item, key))}
               </div>
 
-              {getInventoryByCategory(key).length === 0 && (
-                <div className="text-center py-12 text-muted-foreground">
+              {getInventoryByCategory(key).length === 0 && <div className="text-center py-12 text-muted-foreground">
                   <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
                   <p className="text-sm">No {label.toLowerCase()} items found</p>
-                  {searchTerm && (
-                    <p className="text-xs mt-1">Try different search terms</p>
-                  )}
-                </div>
-              )}
+                  {searchTerm && <p className="text-xs mt-1">Try different search terms</p>}
+                </div>}
             </ScrollArea>
-          </TabsContent>
-        ))}
+          </TabsContent>)}
       </Tabs>
-    </div>
-  );
+    </div>;
 };
