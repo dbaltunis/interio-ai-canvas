@@ -71,6 +71,184 @@ export const UnifiedInventoryDialog = ({
     product_type: "",
     tags: "",
     barcode: ""
+  });
+
+  // Load draft data on mount for create mode
+  useEffect(() => {
+    if (mode === "create" && open) {
+      const savedDraft = localStorage.getItem(STORAGE_KEY);
+      if (savedDraft) {
+        try {
+          const parsed = JSON.parse(savedDraft);
+          setFormData(parsed.formData);
+          setTrackInventory(parsed.trackInventory);
+          setActiveTab(parsed.activeTab || "basic");
+          toast({
+            title: "Draft Restored",
+            description: "Your unsaved work has been restored.",
+          });
+        } catch (error) {
+          console.error("Failed to restore draft:", error);
+        }
+      }
+    } else if (mode === "edit" && item) {
+      setFormData({
+        name: item.name || "",
+        description: item.description || "",
+        sku: item.sku || "",
+        category: item.category || "",
+        quantity: item.quantity || 0,
+        unit: item.unit || "meters",
+        cost_price: item.cost_price || 0,
+        selling_price: item.selling_price || 0,
+        supplier: item.supplier || "",
+        vendor_id: item.vendor_id || "",
+        location: item.location || "",
+        reorder_point: item.reorder_point || 5,
+        fabric_width: item.fabric_width || 0,
+        pattern_repeat_vertical: item.pattern_repeat_vertical || 0,
+        pattern_repeat_horizontal: item.pattern_repeat_horizontal || 0,
+        fabric_composition: item.fabric_composition || "",
+        fabric_care_instructions: item.fabric_care_instructions || "",
+        collection_name: item.collection_name || "",
+        color: item.color || "",
+        image_url: item.image_url || "",
+        hardware_finish: item.hardware_finish || "",
+        hardware_material: item.hardware_material || "",
+        weight: item.weight || 0,
+        product_type: item.product_type || "",
+        tags: item.tags || "",
+        barcode: item.barcode || ""
+      });
+      setTrackInventory(item.quantity > 0);
+    }
+  }, [mode, item, open, toast]);
+
+  // Save draft when form data changes (only for create mode)
+  const saveDraft = useCallback(() => {
+    if (mode === "create" && open && formData.name) {
+      const draftData = {
+        formData,
+        trackInventory,
+        activeTab,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(draftData));
+    }
+  }, [mode, open, formData, trackInventory, activeTab]);
+
+  // Auto-save draft periodically
+  useEffect(() => {
+    const interval = setInterval(saveDraft, 2000); // Save every 2 seconds
+    return () => clearInterval(interval);
+  }, [saveDraft]);
+
+  // Save before page unload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      saveDraft();
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [saveDraft]);
+
+  // Prevent dialog from closing when user switches tabs/windows
+  useEffect(() => {
+    if (!open || mode === "edit") return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Save that dialog should remain open
+        sessionStorage.setItem('inventory_dialog_open', 'true');
+      }
+    };
+
+    const handleFocus = () => {
+      // Ensure dialog stays open when returning to tab
+      const shouldBeOpen = sessionStorage.getItem('inventory_dialog_open');
+      if (shouldBeOpen === 'true' && !open) {
+        // Dialog was force-closed, notify parent to reopen
+        console.log('[Dialog] Preventing unexpected close on tab return');
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    // Mark dialog as open
+    if (open) {
+      sessionStorage.setItem('inventory_dialog_open', 'true');
+    }
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      if (!open) {
+        sessionStorage.removeItem('inventory_dialog_open');
+      }
+    };
+  }, [open, mode]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const cleanData = {
+        ...formData,
+        cost_price: formData.cost_price || 0,
+        selling_price: formData.selling_price || 0,
+        quantity: trackInventory ? formData.quantity : 0,
+        reorder_point: trackInventory ? formData.reorder_point : 0
+      };
+      
+      // Remove empty fields
+      Object.keys(cleanData).forEach(key => {
+        if (cleanData[key] === "" || cleanData[key] === undefined || cleanData[key] === null) {
+          delete cleanData[key];
+        }
+      });
+      
+      if (mode === "create") {
+        await createMutation.mutateAsync({ ...cleanData, active: true });
+        // Clear draft on successful creation
+        localStorage.removeItem(STORAGE_KEY);
+      } else {
+        await updateMutation.mutateAsync({ id: item.id, ...cleanData });
+      }
+      
+      onOpenChange(false);
+      onSuccess?.();
+      
+      if (mode === "create") {
+        // Reset form for create mode
+        setFormData({
+          name: "",
+          description: "",
+          sku: "",
+          category: "",
+          quantity: 0,
+          unit: "meters",
+          cost_price: 0,
+          selling_price: 0,
+          supplier: "",
+          vendor_id: "",
+          location: "",
+          reorder_point: 5,
+          fabric_width: 0,
+          pattern_repeat_vertical: 0,
+          pattern_repeat_horizontal: 0,
+          fabric_composition: "",
+          fabric_care_instructions: "",
+          collection_name: "",
+          color: "",
+          image_url: "",
+          hardware_finish: "",
+          hardware_material: "",
+          weight: 0,
+          product_type: "",
+          tags: "",
+          barcode: ""
         });
         setTrackInventory(false);
       }
@@ -408,102 +586,6 @@ export const UnifiedInventoryDialog = ({
                       </div>
                     </CardContent>
 
-                    {/* Wallpaper-specific fields */}
-                    {formData.category === "wallcovering" && (
-                      <CardContent className="border-t">
-                        <h4 className="font-medium mb-4">Wallpaper Specifications</h4>
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <div>
-                            <div className="flex items-center">
-                              <Label htmlFor="wallpaper_roll_width">Roll Width</Label>
-                              <FieldHelp content="The width of one wallpaper roll (typically 53cm or 68cm)" />
-                            </div>
-                            <div className="flex gap-2">
-                              <Input
-                                id="wallpaper_roll_width"
-                                type="number"
-                                step="0.1"
-                                value={formData.wallpaper_roll_width || ""}
-                                onChange={(e) => setFormData({ ...formData, wallpaper_roll_width: parseFloat(e.target.value) || 0 })}
-                                placeholder="53"
-                              />
-                              <Select
-                                value={formData.wallpaper_unit_of_measure}
-                                onValueChange={(value) => setFormData({ ...formData, wallpaper_unit_of_measure: value })}
-                              >
-                                <SelectTrigger className="w-24">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="cm">cm</SelectItem>
-                                  <SelectItem value="inch">inch</SelectItem>
-                                  <SelectItem value="mm">mm</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-
-                          <div>
-                            <div className="flex items-center">
-                              <Label htmlFor="wallpaper_roll_length">Roll Length</Label>
-                              <FieldHelp content="The length of one wallpaper roll (typically 10m)" />
-                            </div>
-                            <div className="flex gap-2">
-                              <Input
-                                id="wallpaper_roll_length"
-                                type="number"
-                                step="0.1"
-                                value={formData.wallpaper_roll_length || ""}
-                                onChange={(e) => setFormData({ ...formData, wallpaper_roll_length: parseFloat(e.target.value) || 0 })}
-                                placeholder="10"
-                              />
-                              <div className="w-24 flex items-center justify-center text-sm text-muted-foreground">
-                                meters
-                              </div>
-                            </div>
-                          </div>
-
-                          <div>
-                            <div className="flex items-center">
-                              <Label htmlFor="wallpaper_sold_by">Sold By</Label>
-                              <FieldHelp content="How this wallpaper is sold - per roll, per unit, or per square meter" />
-                            </div>
-                            <Select
-                              value={formData.wallpaper_sold_by}
-                              onValueChange={(value) => setFormData({ ...formData, wallpaper_sold_by: value })}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="per_roll">Per Roll</SelectItem>
-                                <SelectItem value="per_unit">Per Unit</SelectItem>
-                                <SelectItem value="per_sqm">Per Square Meter</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-
-                        {/* Calculation Preview */}
-                        {formData.wallpaper_roll_width > 0 && formData.wallpaper_roll_length > 0 && (
-                          <div className="mt-4 p-4 bg-muted rounded-lg">
-                            <h5 className="font-medium mb-2">Roll Coverage</h5>
-                            <p className="text-sm text-muted-foreground">
-                              Each roll covers approximately{" "}
-                              <strong>
-                                {((formData.wallpaper_roll_width / 100) * formData.wallpaper_roll_length).toFixed(2)} m²
-                              </strong>
-                              {" "}(based on {formData.wallpaper_roll_width}cm × {formData.wallpaper_roll_length}m)
-                            </p>
-                            {formData.pattern_repeat_vertical > 0 && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                With {formData.pattern_repeat_vertical}cm pattern repeat, actual coverage may be reduced
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </CardContent>
-                    )}
 
                     {/* Roll Direction Info */}
                     {isFabric && formData.category !== "wallcovering" && formData.fabric_width > 0 && (
