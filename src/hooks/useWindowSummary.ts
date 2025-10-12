@@ -27,6 +27,8 @@ export interface WindowSummary {
   extras_details?: any[];
   cost_breakdown?: any[];
   measurements_details?: any;
+  hardware_details?: any;
+  wallpaper_details?: any;
 }
 
 export const useWindowSummary = (windowId: string | undefined) => {

@@ -260,30 +260,64 @@ export function WindowSummaryCard({
                 <div className="flex items-center gap-3">
                   <span className="font-medium">{treatmentType || 'Curtains'}</span>
                   {summary.fabric_details?.name && (
-                    <span>Fabric: {summary.fabric_details.name}</span>
+                    <span>
+                      {treatmentType === 'wallpaper' ? 'Wallpaper' : 'Fabric'}: {summary.fabric_details.name}
+                    </span>
                   )}
                 </div>
-                <div className="flex items-center gap-3">
-                  <span>{Math.round(summary.fabric_details?.fabric_width || summary.fabric_details?.width_cm || summary.fabric_details?.width || 137)}cm @ {formatCurrency(summary.fabric_details?.selling_price || 45, userCurrency)}/m</span>
-                  <span>{summary.widths_required || 1} width(s)</span>
-                </div>
+                
+                {/* Curtains-specific info */}
+                {(treatmentType === 'curtains' || !treatmentType) && (
+                  <div className="flex items-center gap-3">
+                    <span>{Math.round(summary.fabric_details?.fabric_width || summary.fabric_details?.width_cm || summary.fabric_details?.width || 137)}cm @ {formatCurrency(summary.fabric_details?.selling_price || 45, userCurrency)}/m</span>
+                    <span>{summary.widths_required || 1} width(s)</span>
+                  </div>
+                )}
+                
+                {/* Wallpaper-specific info */}
+                {treatmentType === 'wallpaper' && (
+                  <div className="flex items-center gap-3">
+                    <span>Roll width: {Math.round(summary.fabric_details?.width_cm || 53)}cm</span>
+                    <span>{summary.widths_required || 1} roll(s)</span>
+                  </div>
+                )}
+                
+                {/* Blinds-specific info */}
+                {(treatmentType?.includes('blind') || treatmentType?.includes('shutter')) && (
+                  <div className="flex items-center gap-3">
+                    <span>Material: {summary.fabric_details?.material || summary.fabric_details?.name}</span>
+                    {summary.fabric_details?.selling_price && (
+                      <span>@ {formatCurrency(summary.fabric_details.selling_price, userCurrency)}/m</span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Cost Breakdown - Only show when expanded */}
             {showBreakdown && (
               <div className="space-y-2">
-                {/* Fabric/Material */}
+                {/* Fabric/Material/Wallpaper */}
                 <div className="border rounded-lg p-3">
                   <SummaryItem
-                    title={summary.fabric_details?.category?.includes('blind') ? 'Blind Fabric' : 'Fabric'}
+                    title={
+                      treatmentType === 'wallpaper' 
+                        ? 'Wallpaper' 
+                        : treatmentType?.includes('blind') 
+                          ? 'Material' 
+                          : 'Fabric'
+                    }
                     main={formatCurrency(summary.fabric_cost, userCurrency)}
-                    sub={`${summary.linear_meters?.toFixed(1) || '0'} m • ${summary.widths_required || 1} width(s)`}
+                    sub={
+                      treatmentType === 'wallpaper'
+                        ? `${summary.widths_required || 1} roll(s)`
+                        : `${summary.linear_meters?.toFixed(1) || '0'} m • ${summary.widths_required || 1} width(s)`
+                    }
                   />
                 </div>
 
-                {/* For curtains: show lining and heading */}
-                {treatmentType === 'curtains' || !summary.fabric_details?.category?.includes('blind') ? (
+                {/* Curtains-specific items */}
+                {(treatmentType === 'curtains' || !treatmentType) && (
                   <>
                     {Number(summary.lining_cost) > 0 && (
                       <div className="border rounded-lg p-3">
@@ -305,7 +339,37 @@ export function WindowSummaryCard({
                       </div>
                     )}
                   </>
-                ) : null}
+                )}
+
+                {/* Blinds-specific items */}
+                {(treatmentType?.includes('blind') || treatmentType?.includes('shutter')) && (
+                  <>
+                    {summary.hardware_details && (
+                      <div className="border rounded-lg p-3">
+                        <SummaryItem
+                          title="Hardware/Mechanism"
+                          main={formatCurrency(summary.hardware_details?.price || 0, userCurrency)}
+                          sub={summary.hardware_details?.name || 'Control mechanism'}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Wallpaper-specific items */}
+                {treatmentType === 'wallpaper' && (
+                  <>
+                    {summary.wallpaper_details?.adhesive_cost && (
+                      <div className="border rounded-lg p-3">
+                        <SummaryItem
+                          title="Adhesive"
+                          main={formatCurrency(summary.wallpaper_details.adhesive_cost, userCurrency)}
+                          sub="Installation adhesive"
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
 
                 {/* Selected Options - show ALL options (even zero-price) */}
                 {enrichedBreakdown
@@ -320,14 +384,16 @@ export function WindowSummaryCard({
                     </div>
                   ))}
 
-                {/* Manufacturing */}
-                <div className="border rounded-lg p-3">
-                  <SummaryItem
-                    title="Manufacturing"
-                    main={formatCurrency(summary.manufacturing_cost, userCurrency)}
-                    sub={summary.manufacturing_type || 'machine'}
-                  />
-                </div>
+                {/* Manufacturing (show for curtains and blinds, not wallpaper) */}
+                {treatmentType !== 'wallpaper' && (
+                  <div className="border rounded-lg p-3">
+                    <SummaryItem
+                      title="Manufacturing"
+                      main={formatCurrency(summary.manufacturing_cost, userCurrency)}
+                      sub={summary.manufacturing_type || 'machine'}
+                    />
+                  </div>
+                )}
               </div>
             )}
           </div>
