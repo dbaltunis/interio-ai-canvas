@@ -276,39 +276,53 @@ export function WindowSummaryCard({
               
               {/* Essential info only */}
               <div className="text-xs text-muted-foreground space-y-1">
-                <div className="flex items-center gap-3">
-                  <span className="font-medium">{treatmentType || 'Curtains'}</span>
-                  {summary.fabric_details?.name && (
-                    <span>
-                      {treatmentType === 'wallpaper' ? 'Wallpaper' : 'Fabric'}: {summary.fabric_details.name}
-                    </span>
-                  )}
-                </div>
-                
-                {/* Curtains-specific info */}
-                {(treatmentType === 'curtains' || !treatmentType) && (
-                  <div className="flex items-center gap-3">
-                    <span>{Math.round(summary.fabric_details?.fabric_width || summary.fabric_details?.width_cm || summary.fabric_details?.width || 137)}cm @ {formatCurrency(summary.fabric_details?.selling_price || 45, userCurrency)}/m</span>
-                    <span>{summary.widths_required || 1} width(s)</span>
-                  </div>
-                )}
-                
-                {/* Wallpaper-specific info */}
-                {treatmentType === 'wallpaper' && (
-                  <div className="flex items-center gap-3">
-                    <span>Roll width: {Math.round(summary.fabric_details?.width_cm || 53)}cm</span>
-                    <span>{summary.widths_required || 1} roll(s)</span>
-                  </div>
-                )}
-                
-                {/* Blinds-specific info */}
-                {(treatmentType?.includes('blind') || treatmentType?.includes('shutter')) && (
-                  <div className="flex items-center gap-3">
-                    <span>Material: {summary.fabric_details?.material || summary.fabric_details?.name}</span>
-                    {summary.fabric_details?.selling_price && (
-                      <span>@ {formatCurrency(summary.fabric_details.selling_price, userCurrency)}/m</span>
+                {/* Wallpaper-specific display */}
+                {treatmentType === 'wallpaper' ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Wallpaper: {summary.fabric_details?.name || 'Untitled'}</span>
+                    </div>
+                    {summary.wallpaper_details && (
+                      <div className="text-xs space-y-0.5 mt-1">
+                        <div>Sold by {summary.wallpaper_details.sold_by || 'Roll'}</div>
+                        {summary.wallpaper_details.strips_needed && summary.wallpaper_details.strip_length && (
+                          <div>
+                            {summary.wallpaper_details.strips_needed} strips × {summary.wallpaper_details.strip_length}cm = {summary.wallpaper_details.total_meters}m ({summary.wallpaper_details.rolls_needed} rolls)
+                          </div>
+                        )}
+                      </div>
                     )}
-                  </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Curtains/Blinds display */}
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium">{treatmentType || 'Curtains'}</span>
+                      {summary.fabric_details?.name && (
+                        <span>
+                          {treatmentType?.includes('blind') ? 'Material' : 'Fabric'}: {summary.fabric_details.name}
+                        </span>
+                      )}
+                    </div>
+                    
+                    {/* Curtains-specific info */}
+                    {(treatmentType === 'curtains' || !treatmentType) && (
+                      <div className="flex items-center gap-3">
+                        <span>{Math.round(summary.fabric_details?.fabric_width || summary.fabric_details?.width_cm || summary.fabric_details?.width || 137)}cm @ {formatCurrency(summary.fabric_details?.selling_price || 45, userCurrency)}/m</span>
+                        <span>{summary.widths_required || 1} width(s)</span>
+                      </div>
+                    )}
+                    
+                    {/* Blinds-specific info */}
+                    {treatmentType?.includes('blind') && (
+                      <div className="flex items-center gap-3">
+                        <span>Material: {summary.fabric_details?.material || summary.fabric_details?.name}</span>
+                        {summary.fabric_details?.selling_price && (
+                          <span>@ {formatCurrency(summary.fabric_details.selling_price, userCurrency)}/m</span>
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
