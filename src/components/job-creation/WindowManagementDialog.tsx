@@ -53,6 +53,29 @@ export const WindowManagementDialog = ({
 
   const { data: inventoryItems = [] } = useInventory();
   const { units } = useMeasurementUnits();
+  
+  // Fetch window type to get visual_key for dynamic display
+  const { data: windowTypeData } = useQuery({
+    queryKey: ['window-type', surface?.window_type_id],
+    queryFn: async () => {
+      if (!surface?.window_type_id) return null;
+      const { data } = await supabase
+        .from('window_types')
+        .select('visual_key, name')
+        .eq('id', surface.window_type_id)
+        .single();
+      return data;
+    },
+    enabled: !!surface?.window_type_id
+  });
+
+  // Determine display text based on visual_key
+  const getDesignAreaType = () => {
+    if (windowTypeData?.visual_key === 'room_wall') {
+      return 'Wall';
+    }
+    return 'Window';
+  };
 
   // Filter inventory by category based on treatment type
   const getInventoryForTreatment = (treatmentType: string) => {
@@ -188,7 +211,7 @@ export const WindowManagementDialog = ({
           <DialogHeader className="flex-shrink-0 pb-4 border-b border-border">
             <DialogTitle className="flex items-center gap-2 text-xl font-bold text-foreground">
               <Ruler className="h-6 w-6 text-primary" />
-              Design area: {surface?.window_type === 'room_wall' ? 'Room Wall' : 'Window'} - 
+              Design area: {getDesignAreaType()} - 
               <WindowRenameButton 
                 windowName={surface?.name || 'Untitled'}
                 onRename={handleRename}
