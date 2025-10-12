@@ -75,8 +75,7 @@ export const UnifiedInventoryDialog = ({
     // Shopify-compatible fields
     product_type: "",
     tags: "",
-    barcode: "",
-    compare_at_price: 0
+    barcode: ""
   });
 
   // Load draft data on mount for create mode
@@ -128,8 +127,7 @@ export const UnifiedInventoryDialog = ({
         wallpaper_unit_of_measure: item.wallpaper_unit_of_measure || "cm",
         product_type: item.product_type || "",
         tags: item.tags || "",
-        barcode: item.barcode || "",
-        compare_at_price: item.compare_at_price || 0
+        barcode: item.barcode || ""
       });
       setTrackInventory(item.quantity > 0);
     }
@@ -263,8 +261,7 @@ export const UnifiedInventoryDialog = ({
           wallpaper_unit_of_measure: "cm",
           product_type: "",
           tags: "",
-          barcode: "",
-          compare_at_price: 0
+          barcode: ""
         });
         setTrackInventory(false);
       }
