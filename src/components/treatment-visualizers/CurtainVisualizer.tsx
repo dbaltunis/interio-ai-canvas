@@ -5,6 +5,7 @@ interface CurtainVisualizerProps {
   fabric?: any;
   hardware?: any;
   className?: string;
+  hideDetails?: boolean;
 }
 
 export const CurtainVisualizer = ({
@@ -13,7 +14,8 @@ export const CurtainVisualizer = ({
   template,
   fabric,
   hardware,
-  className = ""
+  className = "",
+  hideDetails = false
 }: CurtainVisualizerProps) => {
   const curtainType = template?.curtain_type || "pair";
   const hardwareType = hardware?.type || "rod";
@@ -177,14 +179,16 @@ export const CurtainVisualizer = ({
         </span>
       </div>
       
-      {/* Treatment info */}
-      <div className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm rounded p-2 text-xs space-y-1">
-        <div className="font-medium">Curtain Details</div>
-        <div>Type: {curtainType}</div>
-        <div>Hardware: {hardwareType}</div>
-        <div>Fullness: {fullnessRatio}x</div>
-        {hasPooling && <div>Pooling: {poolingAmount}cm</div>}
-      </div>
+      {/* Treatment info - hide if hideDetails is true */}
+      {!hideDetails && (
+        <div className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm rounded p-2 text-xs space-y-1">
+          <div className="font-medium">Curtain Details</div>
+          <div>Type: {curtainType}</div>
+          <div>Hardware: {hardwareType}</div>
+          <div>Fullness: {fullnessRatio}x</div>
+          {hasPooling && <div>Pooling: {poolingAmount}cm</div>}
+        </div>
+      )}
     </div>
   );
 };

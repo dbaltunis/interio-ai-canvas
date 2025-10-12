@@ -106,6 +106,7 @@ export const TreatmentPreviewEngine = ({
             fabric={selectedItems.fabric}
             hardware={selectedItems.hardware}
             className={className}
+            hideDetails={hideDetails}
           />
         );
       
@@ -162,6 +163,7 @@ export const TreatmentPreviewEngine = ({
             template={template}
             material={selectedItems.material}
             className={className}
+            hideDetails={hideDetails}
           />
         );
       
