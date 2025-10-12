@@ -166,39 +166,68 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="space-y-1">
+                        {/* Selling Unit Badge */}
+                        {(item as any).wallpaper_sold_by && (
+                          <div className="flex justify-between text-sm items-center">
+                            <span className="text-muted-foreground">Sold By:</span>
+                            <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20">
+                              {(item as any).wallpaper_sold_by === 'per_roll' ? 'Per Roll' : 
+                               (item as any).wallpaper_sold_by === 'per_unit' ? 'Per Meter' : 
+                               (item as any).wallpaper_sold_by === 'per_sqm' ? 'Per m²' : 'Per Unit'}
+                            </Badge>
+                          </div>
+                        )}
                         {item.supplier && (
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Supplier:</span>
                             <span className="font-medium">{item.supplier}</span>
                           </div>
                         )}
-                        {(item as any).wallpaper_roll_width && (item as any).wallpaper_roll_length && (
+                        {(item as any).wallpaper_roll_width && (item as any).wallpaper_roll_length ? (
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Roll Size:</span>
                             <span className="font-medium">
                               {(item as any).wallpaper_roll_width}cm × {(item as any).wallpaper_roll_length}m
                             </span>
                           </div>
+                        ) : (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Roll Size:</span>
+                            <Badge variant="secondary" className="text-xs">Not specified</Badge>
+                          </div>
                         )}
-                        {item.pattern_repeat_vertical && (
+                        {item.pattern_repeat_vertical ? (
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Pattern Repeat:</span>
                             <span className="font-medium">{item.pattern_repeat_vertical}cm</span>
                           </div>
-                        )}
+                        ) : null}
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Price:</span>
                           <span className="font-bold text-primary">
                             {formatPrice(item.price_per_meter || item.selling_price || 0)}
+                            {(item as any).wallpaper_sold_by && (
+                              <span className="text-xs text-muted-foreground ml-1">
+                                /{(item as any).wallpaper_sold_by === 'per_roll' ? 'roll' : 
+                                  (item as any).wallpaper_sold_by === 'per_unit' ? 'm' : 
+                                  (item as any).wallpaper_sold_by === 'per_sqm' ? 'm²' : 'unit'}
+                              </span>
+                            )}
                           </span>
                         </div>
                       </div>
                       <div className="pt-2 border-t">
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">Stock:</span>
-                          <Badge variant={(item as any).stock_quantity && (item as any).stock_quantity > 0 ? "default" : "secondary"}>
-                            {(item as any).stock_quantity || 0} rolls
-                          </Badge>
+                          {item.quantity > 0 || (item as any).stock_quantity > 0 ? (
+                            <Badge variant="default" className="bg-green-500/10 text-green-600 border-green-500/20">
+                              {(item as any).stock_quantity || item.quantity || 0} {(item as any).wallpaper_sold_by === 'per_roll' ? 'rolls' : 'units'}
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
+                              Not tracked
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -214,6 +243,7 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
                       <th className="px-4 py-3 text-left text-sm font-medium">Name</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">SKU</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Supplier</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">Sold By</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Roll Size</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Pattern Repeat</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Price</th>
@@ -236,21 +266,49 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
                         <td className="px-4 py-3 font-medium">{item.name}</td>
                         <td className="px-4 py-3 text-sm text-muted-foreground">{item.sku || '-'}</td>
                         <td className="px-4 py-3 text-sm">{item.supplier || '-'}</td>
+                        <td className="px-4 py-3">
+                          {(item as any).wallpaper_sold_by ? (
+                            <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-xs">
+                              {(item as any).wallpaper_sold_by === 'per_roll' ? 'Per Roll' : 
+                               (item as any).wallpaper_sold_by === 'per_unit' ? 'Per Meter' : 
+                               (item as any).wallpaper_sold_by === 'per_sqm' ? 'Per m²' : 'Per Unit'}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-sm">
                           {(item as any).wallpaper_roll_width && (item as any).wallpaper_roll_length ? (
                             <span>{(item as any).wallpaper_roll_width}cm × {(item as any).wallpaper_roll_length}m</span>
-                          ) : '-'}
+                          ) : (
+                            <Badge variant="secondary" className="text-xs">Not specified</Badge>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-sm">
                           {item.pattern_repeat_vertical ? `${item.pattern_repeat_vertical}cm` : '-'}
                         </td>
                         <td className="px-4 py-3 font-medium">
-                          {formatPrice(item.price_per_meter || item.selling_price || 0)}
+                          <div className="flex flex-col">
+                            <span>{formatPrice(item.price_per_meter || item.selling_price || 0)}</span>
+                            {(item as any).wallpaper_sold_by && (
+                              <span className="text-xs text-muted-foreground">
+                                per {(item as any).wallpaper_sold_by === 'per_roll' ? 'roll' : 
+                                     (item as any).wallpaper_sold_by === 'per_unit' ? 'meter' : 
+                                     (item as any).wallpaper_sold_by === 'per_sqm' ? 'm²' : 'unit'}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
-                          <Badge variant={(item as any).stock_quantity && (item as any).stock_quantity > 0 ? "default" : "secondary"}>
-                            {(item as any).stock_quantity || 0} rolls
-                          </Badge>
+                          {item.quantity > 0 || (item as any).stock_quantity > 0 ? (
+                            <Badge variant="default" className="bg-green-500/10 text-green-600 border-green-500/20">
+                              {(item as any).stock_quantity || item.quantity || 0} {(item as any).wallpaper_sold_by === 'per_roll' ? 'rolls' : 'units'}
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
+                              Not tracked
+                            </Badge>
+                          )}
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1">
