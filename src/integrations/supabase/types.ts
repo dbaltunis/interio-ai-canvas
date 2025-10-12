@@ -5683,6 +5683,7 @@ export type Database = {
           extras_details: Json | null
           fabric_cost: number | null
           fabric_details: Json | null
+          hardware_details: Json | null
           heading_details: Json | null
           linear_meters: number | null
           lining_cost: number | null
@@ -5690,17 +5691,29 @@ export type Database = {
           lining_type: string | null
           manufacturing_cost: number | null
           manufacturing_type: string | null
+          material_details: Json | null
           measurements_details: Json | null
           price_per_meter: number | null
           pricing_type: string | null
+          selected_fabric_id: string | null
+          selected_hardware_id: string | null
+          selected_heading_id: string | null
+          selected_lining_type: string | null
+          selected_material_id: string | null
           template_details: Json | null
           template_id: string | null
           template_name: string | null
           total_cost: number | null
+          treatment_category: string | null
+          treatment_type: string | null
           updated_at: string | null
+          wallpaper_details: Json | null
           waste_percent: number | null
           widths_required: number | null
           window_id: string
+          window_type: string | null
+          window_type_id: string | null
+          window_type_key: string | null
         }
         Insert: {
           cost_breakdown?: Json | null
@@ -5708,6 +5721,7 @@ export type Database = {
           extras_details?: Json | null
           fabric_cost?: number | null
           fabric_details?: Json | null
+          hardware_details?: Json | null
           heading_details?: Json | null
           linear_meters?: number | null
           lining_cost?: number | null
@@ -5715,17 +5729,29 @@ export type Database = {
           lining_type?: string | null
           manufacturing_cost?: number | null
           manufacturing_type?: string | null
+          material_details?: Json | null
           measurements_details?: Json | null
           price_per_meter?: number | null
           pricing_type?: string | null
+          selected_fabric_id?: string | null
+          selected_hardware_id?: string | null
+          selected_heading_id?: string | null
+          selected_lining_type?: string | null
+          selected_material_id?: string | null
           template_details?: Json | null
           template_id?: string | null
           template_name?: string | null
           total_cost?: number | null
+          treatment_category?: string | null
+          treatment_type?: string | null
           updated_at?: string | null
+          wallpaper_details?: Json | null
           waste_percent?: number | null
           widths_required?: number | null
           window_id: string
+          window_type?: string | null
+          window_type_id?: string | null
+          window_type_key?: string | null
         }
         Update: {
           cost_breakdown?: Json | null
@@ -5733,6 +5759,7 @@ export type Database = {
           extras_details?: Json | null
           fabric_cost?: number | null
           fabric_details?: Json | null
+          hardware_details?: Json | null
           heading_details?: Json | null
           linear_meters?: number | null
           lining_cost?: number | null
@@ -5740,17 +5767,29 @@ export type Database = {
           lining_type?: string | null
           manufacturing_cost?: number | null
           manufacturing_type?: string | null
+          material_details?: Json | null
           measurements_details?: Json | null
           price_per_meter?: number | null
           pricing_type?: string | null
+          selected_fabric_id?: string | null
+          selected_hardware_id?: string | null
+          selected_heading_id?: string | null
+          selected_lining_type?: string | null
+          selected_material_id?: string | null
           template_details?: Json | null
           template_id?: string | null
           template_name?: string | null
           total_cost?: number | null
+          treatment_category?: string | null
+          treatment_type?: string | null
           updated_at?: string | null
+          wallpaper_details?: Json | null
           waste_percent?: number | null
           widths_required?: number | null
           window_id?: string
+          window_type?: string | null
+          window_type_id?: string | null
+          window_type_key?: string | null
         }
         Relationships: []
       }
