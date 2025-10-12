@@ -480,27 +480,69 @@ export const CostCalculationSummary = ({
 
   // Wallpaper simplified view
   if (isWallpaper) {
-    const wallpaperCalc = measurements.wallpaper_calculation;
-    const metersNeeded = wallpaperCalc?.totalMeters || 0;
-    const rollsNeeded = wallpaperCalc?.rollsNeeded || 0;
+    // Calculate wallpaper requirements from measurements
+    const wallWidth = parseFloat(measurements.wall_width || '0');
+    const wallHeight = parseFloat(measurements.wall_height || '0');
+    
+    // Get wallpaper specs from selected fabric
+    const rollWidth = selectedFabric?.wallpaper_roll_width || 53; // cm
+    const rollLength = selectedFabric?.wallpaper_roll_length || 10; // meters
+    const patternRepeat = selectedFabric?.pattern_repeat_vertical || 0; // cm
+    const matchType = selectedFabric?.wallpaper_match_type || 'straight';
+    
+    // Calculate length per strip based on pattern matching
+    let lengthPerStripCm = wallHeight;
+    if (patternRepeat > 0 && matchType !== 'none' && matchType !== 'random') {
+      lengthPerStripCm = wallHeight + patternRepeat;
+    }
+    const lengthPerStripM = lengthPerStripCm / 100;
+    
+    // Calculate strips needed
+    const stripsNeeded = Math.ceil(wallWidth / rollWidth);
+    
+    // Calculate total meters needed
+    const totalMeters = stripsNeeded * lengthPerStripM;
+    
+    // Calculate rolls needed
+    const stripsPerRoll = Math.floor(rollLength / lengthPerStripM);
+    const rollsNeeded = stripsPerRoll > 0 ? Math.ceil(stripsNeeded / stripsPerRoll) : 0;
+    
     const pricePerUnit = selectedFabric?.unit_price || selectedFabric?.selling_price || selectedFabric?.price_per_meter || 0;
     const soldBy = selectedFabric?.wallpaper_sold_by || 'per_meter';
     
-    let quantity = metersNeeded;
+    let quantity = totalMeters;
     let unitLabel = 'meter';
     
     if (soldBy === 'per_roll') {
       quantity = rollsNeeded;
       unitLabel = 'roll';
     } else if (soldBy === 'per_sqm') {
-      const wallWidth = parseFloat(measurements.wall_width || '0') / 100; // Convert cm to m
-      const wallHeight = parseFloat(measurements.wall_height || '0') / 100;
-      quantity = wallWidth * wallHeight;
+      const wallWidthM = wallWidth / 100;
+      const wallHeightM = wallHeight / 100;
+      quantity = wallWidthM * wallHeightM;
       unitLabel = 'm²';
     }
     
     const wallpaperCost = quantity * pricePerUnit;
     const finalTotal = wallpaperCost + optionsCost;
+    
+    console.log('💰 Wallpaper cost calculation:', {
+      wallWidth,
+      wallHeight,
+      rollWidth,
+      rollLength,
+      patternRepeat,
+      lengthPerStripM,
+      stripsNeeded,
+      totalMeters,
+      rollsNeeded,
+      soldBy,
+      quantity,
+      pricePerUnit,
+      wallpaperCost,
+      optionsCost,
+      finalTotal
+    });
     
     return (
       <div className="bg-card border border-border rounded-lg p-3 space-y-3">
