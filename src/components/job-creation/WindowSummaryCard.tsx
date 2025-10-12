@@ -300,11 +300,25 @@ export function WindowSummaryCard({
                       <>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Rail width</span>
-                          <span className="font-medium">{fmtFabric(surface.rail_width || surface.width)}</span>
+                          <span className="font-medium">
+                            {fmtFabric(
+                              summary.measurements_details?.rail_width || 
+                              surface.rail_width || 
+                              surface.measurement_a || 
+                              surface.width
+                            )}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Curtain drop</span>
-                          <span className="font-medium">{fmtFabric(surface.drop || surface.height)}</span>
+                          <span className="font-medium">
+                            {fmtFabric(
+                              summary.measurements_details?.drop || 
+                              surface.drop || 
+                              surface.measurement_b || 
+                              surface.height
+                            )}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Heading name</span>
@@ -319,22 +333,20 @@ export function WindowSummaryCard({
                           <span className="font-medium truncate">{summary.fabric_details?.name || '—'}</span>
                         </div>
                         <div className="flex justify-between">
+                          <span className="text-muted-foreground">Fabric quantity</span>
+                          <span className="font-medium">{fmtFabric(summary.linear_meters) || '—'}</span>
+                        </div>
+                        <div className="flex justify-between">
                           <span className="text-muted-foreground">Fabric price</span>
-                          <span className="font-medium">{formatCurrency(summary.fabric_cost, userCurrency)}</span>
+                          <span className="font-medium">{formatCurrency(summary.fabric_cost || 0, userCurrency)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Manufacturing price</span>
-                          <span className="font-medium">{formatCurrency(summary.manufacturing_cost, userCurrency)}</span>
+                          <span className="font-medium">{formatCurrency(summary.manufacturing_cost || 0, userCurrency)}</span>
                         </div>
                         <div className="flex justify-between font-semibold">
                           <span>Total price</span>
-                          <span>{(() => {
-                            const fabricCost = Number(summary.fabric_cost) || 0;
-                            const liningCost = Number(summary.lining_cost) || 0;
-                            const manufacturingCost = Number(summary.manufacturing_cost) || 0;
-                            const headingCost = summary.heading_details?.cost ? Number(summary.heading_details.cost) : 0;
-                            return formatCurrency(fabricCost + liningCost + manufacturingCost + headingCost, userCurrency);
-                          })()}</span>
+                          <span>{formatCurrency(summary.total_cost || 0, userCurrency)}</span>
                         </div>
                       </>
                     )}
@@ -344,49 +356,53 @@ export function WindowSummaryCard({
                       <>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Width</span>
-                          <span className="font-medium">{fmtFabric(surface.measurement_a || surface.width)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Height</span>
-                          <span className="font-medium">{fmtFabric(surface.measurement_b || surface.height)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Type</span>
                           <span className="font-medium">
-                            {treatmentType === 'roller_blinds' && 'Roller'}
-                            {treatmentType === 'roman_blinds' && 'Roman'}
-                            {treatmentType === 'venetian_blinds' && 'Venetian'}
-                            {treatmentType === 'cellular_blinds' && 'Cellular'}
-                            {treatmentType === 'vertical_blinds' && 'Vertical'}
+                            {fmtFabric(
+                              summary.measurements_details?.width || 
+                              summary.measurements_details?.measurement_a || 
+                              surface.measurement_a || 
+                              surface.width
+                            )}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Operation</span>
-                          <span className="font-medium">{summary.hardware_details?.name || 'Manual'}</span>
+                          <span className="text-muted-foreground">Height</span>
+                          <span className="font-medium">
+                            {fmtFabric(
+                              summary.measurements_details?.height || 
+                              summary.measurements_details?.measurement_b || 
+                              surface.measurement_b || 
+                              surface.height
+                            )}
+                          </span>
                         </div>
-                        {treatmentType === 'cellular_blinds' && (
+                        {summary.hardware_details?.name && (
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">Pleat cell size</span>
-                            <span className="font-medium">25mm</span>
-                          </div>
-                        )}
-                        {treatmentType === 'venetian_blinds' && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Slat size</span>
-                            <span className="font-medium">25mm</span>
+                            <span className="text-muted-foreground">Hardware</span>
+                            <span className="font-medium">{summary.hardware_details.name}</span>
                           </div>
                         )}
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Material</span>
                           <span className="font-medium truncate">{summary.fabric_details?.name || '—'}</span>
                         </div>
+                        {summary.linear_meters && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Fabric quantity</span>
+                            <span className="font-medium">{fmtFabric(summary.linear_meters)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Fabric price</span>
+                          <span className="font-medium">{formatCurrency(summary.fabric_cost || 0, userCurrency)}</span>
+                        </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Manufacturing price</span>
-                          <span className="font-medium">{formatCurrency(summary.manufacturing_cost, userCurrency)}</span>
+                          <span className="font-medium">{formatCurrency(summary.manufacturing_cost || 0, userCurrency)}</span>
                         </div>
                         <div className="flex justify-between font-semibold">
                           <span>Total price</span>
-                          <span>{formatCurrency((Number(summary.fabric_cost) || 0) + (Number(summary.manufacturing_cost) || 0), userCurrency)}</span>
+                          <span>{formatCurrency(summary.total_cost || 0, userCurrency)}</span>
                         </div>
                       </>
                     )}
@@ -396,39 +412,57 @@ export function WindowSummaryCard({
                       <>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Width</span>
-                          <span className="font-medium">{fmtFabric(surface.measurement_a || surface.width)}</span>
+                          <span className="font-medium">
+                            {fmtFabric(
+                              summary.measurements_details?.width || 
+                              summary.measurements_details?.measurement_a || 
+                              surface.measurement_a || 
+                              surface.width
+                            )}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Height</span>
-                          <span className="font-medium">{fmtFabric(surface.measurement_b || surface.height)}</span>
+                          <span className="font-medium">
+                            {fmtFabric(
+                              summary.measurements_details?.height || 
+                              summary.measurements_details?.measurement_b || 
+                              surface.measurement_b || 
+                              surface.height
+                            )}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Wallpaper article</span>
                           <span className="font-medium truncate">{summary.fabric_details?.name || '—'}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Sold by</span>
-                          <span className="font-medium">{summary.wallpaper_details?.sold_by || 'Roll'}</span>
-                        </div>
+                        {summary.wallpaper_details?.sold_by && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Sold by</span>
+                            <span className="font-medium">{summary.wallpaper_details.sold_by}</span>
+                          </div>
+                        )}
                         {summary.wallpaper_details?.rolls_needed && (
                           <>
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Rolls needed</span>
                               <span className="font-medium">{summary.wallpaper_details.rolls_needed}</span>
                             </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Coverage</span>
-                              <span className="font-medium">{summary.wallpaper_details.total_meters}m</span>
-                            </div>
+                            {summary.wallpaper_details.total_meters && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Coverage</span>
+                                <span className="font-medium">{summary.wallpaper_details.total_meters}m</span>
+                              </div>
+                            )}
                           </>
                         )}
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Wallpaper price</span>
-                          <span className="font-medium">{formatCurrency(summary.fabric_cost, userCurrency)}</span>
+                          <span className="font-medium">{formatCurrency(summary.fabric_cost || 0, userCurrency)}</span>
                         </div>
                         <div className="flex justify-between font-semibold">
                           <span>Total price</span>
-                          <span>{formatCurrency(Number(summary.fabric_cost) || 0, userCurrency)}</span>
+                          <span>{formatCurrency(summary.total_cost || 0, userCurrency)}</span>
                         </div>
                       </>
                     )}
