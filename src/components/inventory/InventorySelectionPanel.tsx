@@ -62,14 +62,21 @@ export const InventorySelectionPanel = ({
 
     // For other categories, use general inventory
     const categoryMap: Record<string, string[]> = {
-      hardware: ["Hardware", "hardware", "Track", "Rod", "Pole"],
-      material: ["Material", "material", "Blind Material", "Blind_Material"]
+      hardware: ["treatment_option", "top_system", "hardware", "track", "pole", "motor", "bracket"],
+      material: ["Material", "material", "blind_material", "cellular_fabric", "panel_fabric", "shutter_material"]
     };
-    return inventory.filter(item => {
+    
+    console.log('🔍 Filtering inventory for category:', category, 'Treatment:', treatmentCategory);
+    const filtered = inventory.filter(item => {
       const matchesCategory = categoryMap[category]?.some(cat => item.category?.toLowerCase().includes(cat.toLowerCase()));
       const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || item.description?.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesCategory && matchesSearch;
     });
+    
+    console.log(`📦 Found ${filtered.length} items for category "${category}". Item categories:`, 
+      [...new Set(filtered.map(i => i.category))]);
+    
+    return filtered;
   };
 
   // Calculate estimated cost for an item
@@ -169,51 +176,64 @@ export const InventorySelectionPanel = ({
       </Card>;
   };
   const getTabsForTreatment = () => {
-    switch (treatmentType) {
-      case "wallpaper":
-        return [{
-          key: "fabric",
-          label: "Wallpaper",
-          icon: Palette
-        }];
-      case "curtains":
-        return [{
-          key: "fabric",
-          label: "Fabric",
-          icon: Palette
-        }, {
-          key: "hardware",
-          label: "Hardware",
-          icon: Wrench
-        }];
-      case "blinds":
-      case "venetian_blinds":
-      case "vertical_blinds":
-      case "roller_blinds":
-        return [{
-          key: "material",
-          label: "Material",
-          icon: Package
-        }, {
-          key: "hardware",
-          label: "Hardware",
-          icon: Wrench
-        }];
-      default:
-        return [{
-          key: "fabric",
-          label: "Fabric",
-          icon: Palette
-        }, {
-          key: "material",
-          label: "Material",
-          icon: Package
-        }, {
-          key: "hardware",
-          label: "Hardware",
-          icon: Wrench
-        }];
+    // Wallpaper only needs wallcovering
+    if (treatmentCategory === 'wallpaper') {
+      return [{ key: "fabric", label: "Wallpaper", icon: Palette }];
     }
+    
+    // Curtains need fabric + hardware
+    if (treatmentCategory === 'curtains') {
+      return [
+        { key: "fabric", label: "Fabric", icon: Palette },
+        { key: "hardware", label: "Hardware", icon: Wrench }
+      ];
+    }
+    
+    // Roman blinds can use fabrics
+    if (treatmentCategory === 'roman_blinds') {
+      return [
+        { key: "fabric", label: "Fabric", icon: Palette },
+        { key: "hardware", label: "Hardware", icon: Wrench }
+      ];
+    }
+    
+    // Roller blinds use fabric
+    if (treatmentCategory === 'roller_blinds') {
+      return [
+        { key: "fabric", label: "Fabric", icon: Palette },
+        { key: "hardware", label: "Hardware", icon: Wrench }
+      ];
+    }
+    
+    // Panel glide uses fabric
+    if (treatmentCategory === 'panel_glide') {
+      return [
+        { key: "fabric", label: "Fabric", icon: Palette },
+        { key: "hardware", label: "Hardware", icon: Wrench }
+      ];
+    }
+    
+    // Other blinds need materials (if available) or hardware
+    if (['venetian_blinds', 'vertical_blinds', 'cellular_blinds'].includes(treatmentCategory)) {
+      return [
+        { key: "material", label: "Material", icon: Package },
+        { key: "hardware", label: "Hardware", icon: Wrench }
+      ];
+    }
+    
+    // Shutters
+    if (treatmentCategory === 'shutters' || treatmentCategory === 'plantation_shutters') {
+      return [
+        { key: "material", label: "Material", icon: Package },
+        { key: "hardware", label: "Hardware", icon: Wrench }
+      ];
+    }
+    
+    // Default: show fabric + hardware
+    return [
+      { key: "fabric", label: "Fabric", icon: Palette },
+      { key: "hardware", label: "Hardware", icon: Wrench }
+    ];
   };
   const availableTabs = getTabsForTreatment();
   return <div className={`space-y-3 ${className}`}>
@@ -267,7 +287,15 @@ export const InventorySelectionPanel = ({
 
               {getInventoryByCategory(key).length === 0 && <div className="text-center py-12 text-muted-foreground">
                   <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                  <p className="text-sm">No {label.toLowerCase()} items found</p>
+                  <p className="text-sm">
+                    {treatmentCategory === 'wallpaper' && key === 'fabric' 
+                      ? 'No wallpaper items found. Add items with category "wallcovering" in inventory.'
+                      : ['venetian_blinds', 'vertical_blinds', 'cellular_blinds', 'shutters', 'plantation_shutters'].includes(treatmentCategory) && key === 'material'
+                      ? `No ${label.toLowerCase()} found. Add items with category "${treatmentConfig.inventoryCategory}" in inventory.`
+                      : key === 'hardware'
+                      ? 'No hardware found. Add items with category "treatment_option", "top_system", "track", or "pole" in inventory.'
+                      : `No ${label.toLowerCase()} items found`}
+                  </p>
                   {searchTerm && <p className="text-xs mt-1">Try different search terms</p>}
                 </div>}
             </ScrollArea>

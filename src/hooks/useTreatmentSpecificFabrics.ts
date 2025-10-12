@@ -11,10 +11,12 @@ export const useTreatmentSpecificFabrics = (treatmentCategory: TreatmentCategory
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Roman blinds can use both curtain_fabric and blind_fabric
-      const categories = treatmentCategory === 'roman_blinds' 
-        ? ['curtain_fabric', 'blind_fabric']
+      // Many blind types can use curtain fabrics
+      const categories = ['roman_blinds', 'roller_blinds', 'panel_glide'].includes(treatmentCategory)
+        ? ['curtain_fabric', 'roller_blind_fabric']
         : [config.inventoryCategory];
+      
+      console.log('🔍 Fetching fabrics for treatment:', treatmentCategory, 'with categories:', categories);
 
       const { data, error } = await supabase
         .from("enhanced_inventory_items")
