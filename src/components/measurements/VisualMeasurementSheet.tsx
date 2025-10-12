@@ -307,6 +307,11 @@ export const VisualMeasurementSheet = ({
               selectedWallpaper={selectedFabric ? inventory.find(item => item.id === selectedFabric) : undefined}
               onMeasurementChange={handleInputChange}
               readOnly={readOnly}
+              onCostCalculated={(cost) => {
+                // Store wallpaper cost in measurements for the cost summary
+                handleInputChange('wallpaper_material_cost', cost.materialCost.toString());
+                handleInputChange('wallpaper_total_cost', cost.totalCost.toString());
+              }}
             />
           ) : (
             /* Other treatments use the standard 2/5 + 3/5 layout */
