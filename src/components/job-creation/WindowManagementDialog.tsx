@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Ruler } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { MeasurementBridge } from "../measurements/MeasurementBridge";
 import { convertLegacyToDynamic, validateMeasurement } from "../measurements/utils/measurementMigration";
@@ -10,6 +10,7 @@ import { TreatmentPricingForm } from "./TreatmentPricingForm";
 import { useInventory } from "@/hooks/useInventory";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { WindowRenameButton } from "./WindowRenameButton";
+import { useToast } from "@/hooks/use-toast";
 
 interface WindowManagementDialogProps {
   isOpen: boolean;
@@ -146,6 +147,38 @@ export const WindowManagementDialog = ({
     }
   };
 
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const handleRename = async (newName: string) => {
+    if (!surface?.id) return;
+    
+    try {
+      const { error } = await supabase
+        .from('surfaces')
+        .update({ name: newName })
+        .eq('id', surface.id);
+
+      if (error) throw error;
+
+      // Invalidate queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ["surfaces"] });
+      queryClient.invalidateQueries({ queryKey: ["surfaces", projectId] });
+      
+      toast({
+        title: "Success",
+        description: "Surface name updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating surface name:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update surface name",
+        variant: "destructive",
+      });
+    }
+  };
+
   const hasMeasurements = existingMeasurement && Object.keys(existingMeasurement.measurements || {}).length > 0;
 
   return (
@@ -158,16 +191,7 @@ export const WindowManagementDialog = ({
               Design area: {surface?.window_type === 'room_wall' ? 'Room Wall' : 'Window'} - 
               <WindowRenameButton 
                 windowName={surface?.name || 'Untitled'}
-                onRename={(newName) => {
-                  // Update the surface name
-                  if (surface?.id) {
-                    supabase
-                      .from('surfaces')
-                      .update({ name: newName })
-                      .eq('id', surface.id)
-                      .then(() => console.log('Surface name updated'));
-                  }
-                }}
+                onRename={handleRename}
               />
             </DialogTitle>
           </DialogHeader>
