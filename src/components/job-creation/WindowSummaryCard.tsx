@@ -246,11 +246,11 @@ export function WindowSummaryCard({
 
         {summary && (
           <div className="space-y-3">
-            {/* Treatment Preview with Details */}
-            <div className="rounded-lg border p-3">
-              <div className="flex gap-4">
-                {/* Mini Treatment Visualization */}
-                <div className="w-32 h-32 flex-shrink-0 rounded-lg overflow-hidden border bg-muted/30">
+            {/* Treatment Card with Visual & Details */}
+            <div className="rounded-lg border bg-card">
+              <div className="flex gap-4 p-4">
+                {/* Treatment Visualization - No measurements, just product */}
+                <div className="w-40 h-40 flex-shrink-0 rounded-md overflow-hidden bg-muted/20 border">
                   <TreatmentPreviewEngine
                     windowType={surface.window_type || 'standard'}
                     treatmentType={treatmentType}
@@ -270,164 +270,202 @@ export function WindowSummaryCard({
                   />
                 </div>
 
-                {/* Product Details */}
-                <div className="flex-1 min-w-0 space-y-2">
-                  {/* Total Cost */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="text-xs text-muted-foreground">Total Cost</div>
-                      <div className="text-xl font-semibold">
-                        {(() => {
-                          const fabricCost = Number(summary.fabric_cost) || 0;
-                          const liningCost = Number(summary.lining_cost) || 0;
-                          const manufacturingCost = Number(summary.manufacturing_cost) || 0;
-                          const headingCost = summary.heading_details?.cost ? Number(summary.heading_details.cost) : 0;
-                          const calculatedTotal = fabricCost + liningCost + manufacturingCost + headingCost;
-                          return formatCurrency(calculatedTotal, userCurrency);
-                        })()}
-                      </div>
-                    </div>
+                {/* Product Details Grid */}
+                <div className="flex-1 min-w-0">
+                  {/* Product Type Header */}
+                  <div className="mb-3 flex items-center justify-between">
+                    <h4 className="font-semibold text-base">
+                      {treatmentType === 'curtains' && 'Sheer curtain'}
+                      {treatmentType === 'wallpaper' && 'Wallpaper'}
+                      {treatmentType?.includes('blind') && summary.fabric_details?.name}
+                      {treatmentType === 'shutters' && 'Plantation Shutters'}
+                    </h4>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setShowBreakdown(!showBreakdown)}
-                      className="text-muted-foreground hover:text-foreground"
+                      className="text-primary hover:text-primary/80"
                     >
-                      <span className="text-xs mr-1">Details</span>
-                      {showBreakdown ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                      <span className="text-sm">Full details</span>
+                      {showBreakdown ? <ChevronDown className="h-4 w-4 ml-1" /> : <ChevronRight className="h-4 w-4 ml-1" />}
                     </Button>
                   </div>
 
-                  {/* Treatment-Specific Information */}
-                  <div className="text-xs space-y-1.5">
-                    {/* Curtains Information */}
+                  {/* Details Grid - 2 Columns */}
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                    {/* Curtains Details */}
                     {(treatmentType === 'curtains' || !treatmentType) && (
                       <>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-foreground">Measurements:</span>
-                          <span className="text-muted-foreground">
-                            {fmtFabric(surface.rail_width || surface.width)} × {fmtFabric(surface.drop || surface.height)}
-                          </span>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Rail width</span>
+                          <span className="font-medium">{fmtFabric(surface.rail_width || surface.width)}</span>
                         </div>
-                        {summary.fabric_details?.name && (
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-foreground">Fabric:</span>
-                            <span className="text-muted-foreground truncate">{summary.fabric_details.name}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-foreground">Width:</span>
-                          <span className="text-muted-foreground">
-                            {Math.round(summary.fabric_details?.fabric_width || 137)}cm @ {formatCurrency(summary.fabric_details?.selling_price || 0, userCurrency)}/m
-                          </span>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Curtain drop</span>
+                          <span className="font-medium">{fmtFabric(surface.drop || surface.height)}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-foreground">Usage:</span>
-                          <span className="text-muted-foreground">
-                            {summary.linear_meters?.toFixed(1)}m • {summary.widths_required} width(s)
-                          </span>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Heading name</span>
+                          <span className="font-medium">{summary.heading_details?.heading_name || 'Standard'}</span>
                         </div>
-                        {summary.heading_details?.heading_name && (
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-foreground">Heading:</span>
-                            <span className="text-muted-foreground">{summary.heading_details.heading_name}</span>
-                          </div>
-                        )}
-                        {summary.lining_details?.type && (
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-foreground">Lining:</span>
-                            <span className="text-muted-foreground">{summary.lining_details.type}</span>
-                          </div>
-                        )}
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Lining</span>
+                          <span className="font-medium">{summary.lining_details?.type || 'Unlined'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Fabric article</span>
+                          <span className="font-medium truncate">{summary.fabric_details?.name || '—'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Fabric price</span>
+                          <span className="font-medium">{formatCurrency(summary.fabric_cost, userCurrency)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Manufacturing price</span>
+                          <span className="font-medium">{formatCurrency(summary.manufacturing_cost, userCurrency)}</span>
+                        </div>
+                        <div className="flex justify-between font-semibold">
+                          <span>Total price</span>
+                          <span>{(() => {
+                            const fabricCost = Number(summary.fabric_cost) || 0;
+                            const liningCost = Number(summary.lining_cost) || 0;
+                            const manufacturingCost = Number(summary.manufacturing_cost) || 0;
+                            const headingCost = summary.heading_details?.cost ? Number(summary.heading_details.cost) : 0;
+                            return formatCurrency(fabricCost + liningCost + manufacturingCost + headingCost, userCurrency);
+                          })()}</span>
+                        </div>
                       </>
                     )}
 
-                    {/* Blinds Information */}
+                    {/* Blinds Details */}
                     {treatmentType?.includes('blind') && (
                       <>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-foreground">Measurements:</span>
-                          <span className="text-muted-foreground">
-                            {fmtFabric(surface.measurement_a || surface.width)} × {fmtFabric(surface.measurement_b || surface.height)}
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Width</span>
+                          <span className="font-medium">{fmtFabric(surface.measurement_a || surface.width)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Height</span>
+                          <span className="font-medium">{fmtFabric(surface.measurement_b || surface.height)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Type</span>
+                          <span className="font-medium">
+                            {treatmentType === 'roller_blinds' && 'Roller'}
+                            {treatmentType === 'roman_blinds' && 'Roman'}
+                            {treatmentType === 'venetian_blinds' && 'Venetian'}
+                            {treatmentType === 'cellular_blinds' && 'Cellular'}
+                            {treatmentType === 'vertical_blinds' && 'Vertical'}
                           </span>
                         </div>
-                        {summary.fabric_details?.name && (
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-foreground">Material:</span>
-                            <span className="text-muted-foreground truncate">{summary.fabric_details.name}</span>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Operation</span>
+                          <span className="font-medium">{summary.hardware_details?.name || 'Manual'}</span>
+                        </div>
+                        {treatmentType === 'cellular_blinds' && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Pleat cell size</span>
+                            <span className="font-medium">25mm</span>
                           </div>
                         )}
-                        {summary.fabric_details?.selling_price && (
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-foreground">Price:</span>
-                            <span className="text-muted-foreground">
-                              {formatCurrency(summary.fabric_details.selling_price, userCurrency)}/m
-                            </span>
+                        {treatmentType === 'venetian_blinds' && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Slat size</span>
+                            <span className="font-medium">25mm</span>
                           </div>
                         )}
-                        {summary.hardware_details?.name && (
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-foreground">Hardware:</span>
-                            <span className="text-muted-foreground truncate">{summary.hardware_details.name}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-foreground">Total Area:</span>
-                          <span className="text-muted-foreground">
-                            {summary.linear_meters?.toFixed(2)}m²
-                          </span>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Material</span>
+                          <span className="font-medium truncate">{summary.fabric_details?.name || '—'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Manufacturing price</span>
+                          <span className="font-medium">{formatCurrency(summary.manufacturing_cost, userCurrency)}</span>
+                        </div>
+                        <div className="flex justify-between font-semibold">
+                          <span>Total price</span>
+                          <span>{formatCurrency((Number(summary.fabric_cost) || 0) + (Number(summary.manufacturing_cost) || 0), userCurrency)}</span>
                         </div>
                       </>
                     )}
 
-                    {/* Wallpaper Information */}
+                    {/* Wallpaper Details */}
                     {treatmentType === 'wallpaper' && (
                       <>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-foreground">Measurements:</span>
-                          <span className="text-muted-foreground">
-                            {fmtFabric(surface.measurement_a || surface.width)} × {fmtFabric(surface.measurement_b || surface.height)}
-                          </span>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Width</span>
+                          <span className="font-medium">{fmtFabric(surface.measurement_a || surface.width)}</span>
                         </div>
-                        {summary.fabric_details?.name && (
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-foreground">Wallpaper:</span>
-                            <span className="text-muted-foreground truncate">{summary.fabric_details.name}</span>
-                          </div>
-                        )}
-                        {summary.wallpaper_details && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Height</span>
+                          <span className="font-medium">{fmtFabric(surface.measurement_b || surface.height)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Wallpaper article</span>
+                          <span className="font-medium truncate">{summary.fabric_details?.name || '—'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Sold by</span>
+                          <span className="font-medium">{summary.wallpaper_details?.sold_by || 'Roll'}</span>
+                        </div>
+                        {summary.wallpaper_details?.rolls_needed && (
                           <>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-foreground">Sold by:</span>
-                              <span className="text-muted-foreground">{summary.wallpaper_details.sold_by || 'Roll'}</span>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Rolls needed</span>
+                              <span className="font-medium">{summary.wallpaper_details.rolls_needed}</span>
                             </div>
-                            {summary.wallpaper_details.strips_needed && (
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-foreground">Coverage:</span>
-                                <span className="text-muted-foreground">
-                                  {summary.wallpaper_details.strips_needed} strips × {summary.wallpaper_details.strip_length}cm
-                                </span>
-                              </div>
-                            )}
-                            {summary.wallpaper_details.rolls_needed && (
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-foreground">Rolls:</span>
-                                <span className="text-muted-foreground">
-                                  {summary.wallpaper_details.rolls_needed} roll(s) • {summary.wallpaper_details.total_meters}m total
-                                </span>
-                              </div>
-                            )}
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Coverage</span>
+                              <span className="font-medium">{summary.wallpaper_details.total_meters}m</span>
+                            </div>
                           </>
                         )}
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Wallpaper price</span>
+                          <span className="font-medium">{formatCurrency(summary.fabric_cost, userCurrency)}</span>
+                        </div>
+                        <div className="flex justify-between font-semibold">
+                          <span>Total price</span>
+                          <span>{formatCurrency(Number(summary.fabric_cost) || 0, userCurrency)}</span>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Shutters Details */}
+                    {(treatmentType === 'shutters' || treatmentType === 'plantation_shutters') && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Width</span>
+                          <span className="font-medium">{fmtFabric(surface.measurement_a || surface.width)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Height</span>
+                          <span className="font-medium">{fmtFabric(surface.measurement_b || surface.height)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Material</span>
+                          <span className="font-medium">{summary.fabric_details?.name || 'Basswood'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Louver size</span>
+                          <span className="font-medium">63mm</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Manufacturing price</span>
+                          <span className="font-medium">{formatCurrency(summary.manufacturing_cost, userCurrency)}</span>
+                        </div>
+                        <div className="flex justify-between font-semibold">
+                          <span>Total price</span>
+                          <span>{formatCurrency((Number(summary.fabric_cost) || 0) + (Number(summary.manufacturing_cost) || 0), userCurrency)}</span>
+                        </div>
                       </>
                     )}
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Cost Breakdown - Only show when expanded */}
-            {showBreakdown && (
+              {/* Cost Breakdown - Only show when expanded */}
+              {showBreakdown && (
               <div className="space-y-2">
                 {/* Fabric/Material/Wallpaper */}
                 <div className="border rounded-lg p-3">
@@ -526,8 +564,9 @@ export function WindowSummaryCard({
                     />
                   </div>
                 )}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </CardContent>
