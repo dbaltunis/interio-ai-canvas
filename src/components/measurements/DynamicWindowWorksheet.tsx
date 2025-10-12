@@ -306,11 +306,89 @@ export const DynamicWindowWorksheet = forwardRef<{
           }
 
           // Calculate comprehensive costs including all components
-          const fabricCost = fabricCalculation?.totalCost || 0;
+          let fabricCost = 0;
+          let totalCost = 0;
+          let linearMeters = 0;
+          let wallpaperDetails = null;
+          
+          // Handle wallpaper calculations
+          if (treatmentCategory === 'wallpaper') {
+            const wallWidth = parseFloat(measurements.wall_width || '0');
+            const wallHeight = parseFloat(measurements.wall_height || '0');
+            
+            if (wallWidth > 0 && wallHeight > 0 && selectedItems.fabric) {
+              // Get wallpaper specs
+              const rollWidth = selectedItems.fabric.wallpaper_roll_width || 53;
+              const rollLength = selectedItems.fabric.wallpaper_roll_length || 10;
+              const patternRepeat = selectedItems.fabric.pattern_repeat_vertical || 0;
+              const matchType = selectedItems.fabric.wallpaper_match_type || 'straight';
+              
+              // Calculate length per strip based on pattern matching
+              let lengthPerStripCm = wallHeight;
+              if (patternRepeat > 0 && matchType !== 'none' && matchType !== 'random') {
+                lengthPerStripCm = wallHeight + patternRepeat;
+              }
+              const lengthPerStripM = lengthPerStripCm / 100;
+              
+              // Calculate strips needed
+              const stripsNeeded = Math.ceil(wallWidth / rollWidth);
+              
+              // Calculate total meters needed
+              const totalMeters = stripsNeeded * lengthPerStripM;
+              
+              // Calculate rolls needed
+              const stripsPerRoll = Math.floor(rollLength / lengthPerStripM);
+              const rollsNeeded = stripsPerRoll > 0 ? Math.ceil(stripsNeeded / stripsPerRoll) : 0;
+              
+              const pricePerUnit = selectedItems.fabric.unit_price || selectedItems.fabric.selling_price || selectedItems.fabric.price_per_meter || 0;
+              const soldBy = selectedItems.fabric.wallpaper_sold_by || 'per_meter';
+              
+              let quantity = totalMeters;
+              let unitLabel = 'meter';
+              
+              if (soldBy === 'per_roll') {
+                quantity = rollsNeeded;
+                unitLabel = 'roll';
+              } else if (soldBy === 'per_sqm') {
+                const wallWidthM = wallWidth / 100;
+                const wallHeightM = wallHeight / 100;
+                quantity = wallWidthM * wallHeightM;
+                unitLabel = 'm²';
+              }
+              
+              fabricCost = quantity * pricePerUnit;
+              totalCost = fabricCost;
+              linearMeters = totalMeters;
+              
+              wallpaperDetails = {
+                wall_width: wallWidth,
+                wall_height: wallHeight,
+                roll_width: rollWidth,
+                roll_length: rollLength,
+                pattern_repeat: patternRepeat,
+                match_type: matchType,
+                length_per_strip_m: lengthPerStripM,
+                strips_needed: stripsNeeded,
+                total_meters: totalMeters,
+                rolls_needed: rollsNeeded,
+                sold_by: soldBy,
+                quantity: quantity,
+                unit_label: unitLabel,
+                price_per_unit: pricePerUnit,
+                wallpaper_cost: fabricCost
+              };
+              
+              console.log("💰 Wallpaper autoSave calculation:", wallpaperDetails);
+            }
+          } else {
+            // Original curtain/blind calculations
+            fabricCost = fabricCalculation?.totalCost || 0;
+            linearMeters = fabricCalculation?.linearMeters || 0;
+          }
 
-          // Calculate lining cost if selected
+          // Calculate lining cost (for curtains only)
           let liningCost = 0;
-          if (selectedLining && selectedLining !== 'none' && selectedTemplate && fabricCalculation) {
+          if (treatmentCategory !== 'wallpaper' && selectedLining && selectedLining !== 'none' && selectedTemplate && fabricCalculation) {
             const liningTypes = selectedTemplate.lining_types || [];
             const liningOption = liningTypes.find(l => l.type === selectedLining);
             if (liningOption) {
@@ -320,65 +398,71 @@ export const DynamicWindowWorksheet = forwardRef<{
             }
           }
 
-          // Calculate heading cost if selected
+          // Calculate heading cost (for curtains only)
           let headingCost = 0;
           let headingName = 'Standard';
-          console.log("🎯 AutoSave heading calculation:", {
-            selectedHeading,
-            headingOptionsFromSettings: headingOptionsFromSettings.length,
-            headingInventory: headingInventory?.length,
-            railWidth: measurements.rail_width
-          });
-          if (selectedHeading && selectedHeading !== 'standard' && selectedTemplate && fabricCalculation) {
-            const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
-            const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
-            headingCost = headingUpchargePerCurtain + headingUpchargePerMetre * fabricCalculation.linearMeters;
-
-            // Add additional heading costs from settings/inventory
-            const headingOptionFromSettings = headingOptionsFromSettings.find(h => h.id === selectedHeading);
-            console.log("🎯 Found heading in settings:", headingOptionFromSettings);
-            if (headingOptionFromSettings) {
-              const width = parseFloat(measurements.rail_width) || 0;
-              const additionalCost = headingOptionFromSettings.price * width / 100; // Convert cm to m
-              headingCost += additionalCost;
-              headingName = headingOptionFromSettings.name;
-              console.log("🎯 Settings heading cost:", additionalCost, "name:", headingName);
-            } else {
-              const headingItem = headingInventory?.find(item => item.id === selectedHeading);
-              console.log("🎯 Found heading in inventory:", headingItem);
-              if (headingItem) {
-                const width = parseFloat(measurements.rail_width) || 0;
-                const additionalCost = (headingItem.price_per_meter || headingItem.selling_price || 0) * width / 100;
-                headingCost += additionalCost;
-                headingName = headingItem.name;
-                console.log("🎯 Inventory heading cost:", additionalCost, "name:", headingName);
-              } else {
-                // Use getHeadingName helper as fallback
-                headingName = getHeadingName(selectedHeading);
-                console.log("🎯 Fallback heading name:", headingName);
-              }
-            }
-            console.log("🎯 Final heading calculation:", {
-              headingCost,
-              headingName,
-              selectedHeading
+          if (treatmentCategory !== 'wallpaper') {
+            console.log("🎯 AutoSave heading calculation:", {
+              selectedHeading,
+              headingOptionsFromSettings: headingOptionsFromSettings.length,
+              headingInventory: headingInventory?.length,
+              railWidth: measurements.rail_width
             });
+            if (selectedHeading && selectedHeading !== 'standard' && selectedTemplate && fabricCalculation) {
+              const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
+              const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
+              headingCost = headingUpchargePerCurtain + headingUpchargePerMetre * fabricCalculation.linearMeters;
+
+              // Add additional heading costs from settings/inventory
+              const headingOptionFromSettings = headingOptionsFromSettings.find(h => h.id === selectedHeading);
+              console.log("🎯 Found heading in settings:", headingOptionFromSettings);
+              if (headingOptionFromSettings) {
+                const width = parseFloat(measurements.rail_width) || 0;
+                const additionalCost = headingOptionFromSettings.price * width / 100; // Convert cm to m
+                headingCost += additionalCost;
+                headingName = headingOptionFromSettings.name;
+                console.log("🎯 Settings heading cost:", additionalCost, "name:", headingName);
+              } else {
+                const headingItem = headingInventory?.find(item => item.id === selectedHeading);
+                console.log("🎯 Found heading in inventory:", headingItem);
+                if (headingItem) {
+                  const width = parseFloat(measurements.rail_width) || 0;
+                  const additionalCost = (headingItem.price_per_meter || headingItem.selling_price || 0) * width / 100;
+                  headingCost += additionalCost;
+                  headingName = headingItem.name;
+                  console.log("🎯 Inventory heading cost:", additionalCost, "name:", headingName);
+                } else {
+                  // Use getHeadingName helper as fallback
+                  headingName = getHeadingName(selectedHeading);
+                  console.log("🎯 Fallback heading name:", headingName);
+                }
+              }
+              console.log("🎯 Final heading calculation:", {
+                headingCost,
+                headingName,
+                selectedHeading
+              });
+            }
           }
 
-          // Calculate manufacturing cost
+          // Calculate manufacturing cost (for curtains/blinds only)
           let manufacturingCost = 0;
-          if (selectedTemplate && fabricCalculation) {
+          if (treatmentCategory !== 'wallpaper' && selectedTemplate && fabricCalculation) {
             const manufacturingType = selectedTemplate.manufacturing_type || 'machine';
-            const linearMeters = fabricCalculation.linearMeters || 0;
+            const linearMetersForManufacturing = fabricCalculation.linearMeters || 0;
             if (manufacturingType === 'machine') {
-              manufacturingCost = (selectedTemplate.machine_price_per_metre || 0) * linearMeters;
+              manufacturingCost = (selectedTemplate.machine_price_per_metre || 0) * linearMetersForManufacturing;
             } else if (manufacturingType === 'hand') {
-              manufacturingCost = (selectedTemplate.hand_price_per_metre || 0) * linearMeters;
+              manufacturingCost = (selectedTemplate.hand_price_per_metre || 0) * linearMetersForManufacturing;
             }
           }
 
           // Calculate total cost
-          const totalCost = fabricCost + liningCost + headingCost + manufacturingCost;
+          if (treatmentCategory === 'wallpaper') {
+            totalCost = fabricCost; // Already calculated above for wallpaper
+          } else {
+            totalCost = fabricCost + liningCost + headingCost + manufacturingCost;
+          }
 
           // Create comprehensive calculation object for display consistency
           const calculation = {
@@ -386,7 +470,8 @@ export const DynamicWindowWorksheet = forwardRef<{
             liningCost,
             headingCost,
             manufacturingCost,
-            totalCost
+            totalCost,
+            wallpaperDetails
           };
 
           // Use existing calculated costs and add proper details storage
@@ -429,9 +514,9 @@ export const DynamicWindowWorksheet = forwardRef<{
           // Create summary data for windows_summary table
           const summaryData = {
             window_id: surfaceId,
-            linear_meters: fabricCalculation?.linearMeters || 0,
+            linear_meters: linearMeters,
             widths_required: fabricCalculation?.widthsRequired || 0,
-            price_per_meter: fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || 0,
+            price_per_meter: fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || selectedItems.fabric?.unit_price || 0,
             fabric_cost: fabricCost,
             lining_type: selectedLining || 'none',
             lining_cost: finalLiningCost,
@@ -449,25 +534,32 @@ export const DynamicWindowWorksheet = forwardRef<{
             fabric_details: {
               ...selectedItems.fabric,
               fabric_id: selectedItems.fabric?.id,
-              width_cm: selectedItems.fabric?.fabric_width || 140,
-              width: selectedItems.fabric?.fabric_width || 140
+              width_cm: selectedItems.fabric?.fabric_width || selectedItems.fabric?.wallpaper_roll_width || 140,
+              width: selectedItems.fabric?.fabric_width || selectedItems.fabric?.wallpaper_roll_width || 140
             },
             heading_details: headingDetails,
+            // Add wallpaper-specific details if applicable
+            wallpaper_details: wallpaperDetails,
+            treatment_category: treatmentCategory,
             measurements_details: {
               ...measurements,
               // Convert user input to centimeters for storage (always store in cm)
               rail_width_cm: measurements.rail_width ? convertLength(parseFloat(measurements.rail_width), units.length, 'cm') : 0,
               drop_cm: measurements.drop ? convertLength(parseFloat(measurements.drop), units.length, 'cm') : 0,
+              wall_width_cm: measurements.wall_width ? parseFloat(measurements.wall_width) : 0,
+              wall_height_cm: measurements.wall_height ? parseFloat(measurements.wall_height) : 0,
               // Store original values with unit for reference
               rail_width: measurements.rail_width,
               drop: measurements.drop,
+              wall_width: measurements.wall_width,
+              wall_height: measurements.wall_height,
               unit: units.length,
               surface_id: surfaceId,
               surface_name: surfaceData?.name,
-              curtain_type: selectedTemplate?.curtain_type || 'single',
-              fullness_ratio: selectedTemplate?.fullness_ratio || 2,
-              fabric_width_cm: selectedItems.fabric?.fabric_width || 140,
-              window_type: selectedWindowType?.name || 'Standard Window',
+              curtain_type: selectedTemplate?.curtain_type || 'wallpaper',
+              fullness_ratio: selectedTemplate?.fullness_ratio || 1,
+              fabric_width_cm: selectedItems.fabric?.fabric_width || selectedItems.fabric?.wallpaper_roll_width || 140,
+              window_type: selectedWindowType?.name || 'Room Wall',
               selected_heading: selectedHeading,
               selected_lining: selectedLining
             }
