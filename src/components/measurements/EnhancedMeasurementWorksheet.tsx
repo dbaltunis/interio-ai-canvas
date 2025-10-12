@@ -773,6 +773,25 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       if (surfaceId) {
         console.log('💾 Saving window summary with selected_options from state:', selectedOptions);
         
+        // Detect the specific treatment type (e.g., 'venetian_blinds', 'roller_blinds', etc.)
+        const specificTreatmentType = detectTreatmentType(selectedCovering);
+        
+        // Get general category from specific type (e.g., 'venetian_blinds' -> 'blinds')
+        const generalCategory = specificTreatmentType.includes('blind') 
+          ? 'blinds' 
+          : specificTreatmentType.includes('shutter') 
+          ? 'shutters' 
+          : specificTreatmentType === 'wallpaper'
+          ? 'wallpaper'
+          : 'curtains';
+        
+        console.log('🎯 Treatment type detection for save:', {
+          specificTreatmentType,
+          generalCategory,
+          templateName: selectedCovering.name,
+          curtainType: selectedCovering.curtain_type
+        });
+        
         await saveWindowSummary.mutateAsync({
           window_id: surfaceId,
           linear_meters: linearMeters,
@@ -789,6 +808,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
           currency: units.currency,
           template_name: selectedCovering.name,
           template_details: selectedCovering as any,
+          treatment_type: specificTreatmentType, // CRITICAL: Save specific type like 'venetian_blinds'
+          treatment_category: generalCategory, // Save general category like 'blinds'
           fabric_details: { 
             id: fabricItem.id, 
             name: fabricItem.name, 
@@ -797,7 +818,9 @@ export const EnhancedMeasurementWorksheet = forwardRef<
             width_cm: (fabricItem as any).fabric_width,
             fabric_width: (fabricItem as any).fabric_width,
             pattern_repeat_vertical: (fabricItem as any).pattern_repeat_vertical,
-            pattern_repeat_horizontal: (fabricItem as any).pattern_repeat_horizontal
+            pattern_repeat_horizontal: (fabricItem as any).pattern_repeat_horizontal,
+            category: (fabricItem as any).category, // Include fabric category for detection
+            image_url: (fabricItem as any).image_url // Include image for display
           },
           lining_details: liningDetails,
           heading_details: { id: selectedHeading },
