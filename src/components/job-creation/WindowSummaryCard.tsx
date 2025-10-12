@@ -10,6 +10,7 @@ import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { WindowRenameButton } from "./WindowRenameButton";
 import { TreatmentTypeIndicator } from "../measurements/TreatmentTypeIndicator";
+import { TreatmentPreviewEngine } from "@/components/treatment-visualizers/TreatmentPreviewEngine";
 
 interface WindowSummaryCardProps {
   surface: any;
@@ -245,85 +246,183 @@ export function WindowSummaryCard({
 
         {summary && (
           <div className="space-y-3">
-            {/* Summary Header - Compact */}
+            {/* Treatment Preview with Details */}
             <div className="rounded-lg border p-3">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <div className="text-sm text-muted-foreground">Total Cost</div>
-                  <div className="text-2xl font-semibold">
-                    {(() => {
-                      // Calculate total including heading cost
-                      const fabricCost = Number(summary.fabric_cost) || 0;
-                      const liningCost = Number(summary.lining_cost) || 0;
-                      const manufacturingCost = Number(summary.manufacturing_cost) || 0;
-                      const headingCost = summary.heading_details?.cost ? Number(summary.heading_details.cost) : 0;
-                      const calculatedTotal = fabricCost + liningCost + manufacturingCost + headingCost;
-                      
-                      return formatCurrency(calculatedTotal, userCurrency);
-                    })()}
-                  </div>
+              <div className="flex gap-4">
+                {/* Mini Treatment Visualization */}
+                <div className="w-32 h-32 flex-shrink-0 rounded-lg overflow-hidden border bg-muted/30">
+                  <TreatmentPreviewEngine
+                    windowType={surface.window_type || 'standard'}
+                    treatmentType={treatmentType}
+                    measurements={{
+                      measurement_a: surface.measurement_a || surface.width || 200,
+                      measurement_b: surface.measurement_b || surface.height || 250,
+                      rail_width: surface.rail_width || surface.width || 200,
+                      drop: surface.drop || surface.height || 250,
+                      ...surface
+                    }}
+                    selectedItems={{
+                      fabric: summary.fabric_details,
+                      hardware: summary.hardware_details,
+                      material: summary.fabric_details
+                    }}
+                    className="w-full h-full"
+                  />
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowBreakdown(!showBreakdown)}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <span className="text-xs mr-1">Details</span>
-                  {showBreakdown ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                </Button>
-              </div>
-              
-              {/* Essential info only */}
-              <div className="text-xs text-muted-foreground space-y-1">
-                {/* Wallpaper-specific display */}
-                {treatmentType === 'wallpaper' ? (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Wallpaper: {summary.fabric_details?.name || 'Untitled'}</span>
+
+                {/* Product Details */}
+                <div className="flex-1 min-w-0 space-y-2">
+                  {/* Total Cost */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="text-xs text-muted-foreground">Total Cost</div>
+                      <div className="text-xl font-semibold">
+                        {(() => {
+                          const fabricCost = Number(summary.fabric_cost) || 0;
+                          const liningCost = Number(summary.lining_cost) || 0;
+                          const manufacturingCost = Number(summary.manufacturing_cost) || 0;
+                          const headingCost = summary.heading_details?.cost ? Number(summary.heading_details.cost) : 0;
+                          const calculatedTotal = fabricCost + liningCost + manufacturingCost + headingCost;
+                          return formatCurrency(calculatedTotal, userCurrency);
+                        })()}
+                      </div>
                     </div>
-                    {summary.wallpaper_details && (
-                      <div className="text-xs space-y-0.5 mt-1">
-                        <div>Sold by {summary.wallpaper_details.sold_by || 'Roll'}</div>
-                        {summary.wallpaper_details.strips_needed && summary.wallpaper_details.strip_length && (
-                          <div>
-                            {summary.wallpaper_details.strips_needed} strips × {summary.wallpaper_details.strip_length}cm = {summary.wallpaper_details.total_meters}m ({summary.wallpaper_details.rolls_needed} rolls)
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowBreakdown(!showBreakdown)}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <span className="text-xs mr-1">Details</span>
+                      {showBreakdown ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                    </Button>
+                  </div>
+
+                  {/* Treatment-Specific Information */}
+                  <div className="text-xs space-y-1.5">
+                    {/* Curtains Information */}
+                    {(treatmentType === 'curtains' || !treatmentType) && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-foreground">Measurements:</span>
+                          <span className="text-muted-foreground">
+                            {fmtFabric(surface.rail_width || surface.width)} × {fmtFabric(surface.drop || surface.height)}
+                          </span>
+                        </div>
+                        {summary.fabric_details?.name && (
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-foreground">Fabric:</span>
+                            <span className="text-muted-foreground truncate">{summary.fabric_details.name}</span>
                           </div>
                         )}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    {/* Curtains/Blinds display */}
-                    <div className="flex items-center gap-3">
-                      <span className="font-medium">{treatmentType || 'Curtains'}</span>
-                      {summary.fabric_details?.name && (
-                        <span>
-                          {treatmentType?.includes('blind') ? 'Material' : 'Fabric'}: {summary.fabric_details.name}
-                        </span>
-                      )}
-                    </div>
-                    
-                    {/* Curtains-specific info */}
-                    {(treatmentType === 'curtains' || !treatmentType) && (
-                      <div className="flex items-center gap-3">
-                        <span>{Math.round(summary.fabric_details?.fabric_width || summary.fabric_details?.width_cm || summary.fabric_details?.width || 137)}cm @ {formatCurrency(summary.fabric_details?.selling_price || 45, userCurrency)}/m</span>
-                        <span>{summary.widths_required || 1} width(s)</span>
-                      </div>
-                    )}
-                    
-                    {/* Blinds-specific info */}
-                    {treatmentType?.includes('blind') && (
-                      <div className="flex items-center gap-3">
-                        <span>Material: {summary.fabric_details?.material || summary.fabric_details?.name}</span>
-                        {summary.fabric_details?.selling_price && (
-                          <span>@ {formatCurrency(summary.fabric_details.selling_price, userCurrency)}/m</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-foreground">Width:</span>
+                          <span className="text-muted-foreground">
+                            {Math.round(summary.fabric_details?.fabric_width || 137)}cm @ {formatCurrency(summary.fabric_details?.selling_price || 0, userCurrency)}/m
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-foreground">Usage:</span>
+                          <span className="text-muted-foreground">
+                            {summary.linear_meters?.toFixed(1)}m • {summary.widths_required} width(s)
+                          </span>
+                        </div>
+                        {summary.heading_details?.heading_name && (
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-foreground">Heading:</span>
+                            <span className="text-muted-foreground">{summary.heading_details.heading_name}</span>
+                          </div>
                         )}
-                      </div>
+                        {summary.lining_details?.type && (
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-foreground">Lining:</span>
+                            <span className="text-muted-foreground">{summary.lining_details.type}</span>
+                          </div>
+                        )}
+                      </>
                     )}
-                  </>
-                )}
+
+                    {/* Blinds Information */}
+                    {treatmentType?.includes('blind') && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-foreground">Measurements:</span>
+                          <span className="text-muted-foreground">
+                            {fmtFabric(surface.measurement_a || surface.width)} × {fmtFabric(surface.measurement_b || surface.height)}
+                          </span>
+                        </div>
+                        {summary.fabric_details?.name && (
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-foreground">Material:</span>
+                            <span className="text-muted-foreground truncate">{summary.fabric_details.name}</span>
+                          </div>
+                        )}
+                        {summary.fabric_details?.selling_price && (
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-foreground">Price:</span>
+                            <span className="text-muted-foreground">
+                              {formatCurrency(summary.fabric_details.selling_price, userCurrency)}/m
+                            </span>
+                          </div>
+                        )}
+                        {summary.hardware_details?.name && (
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-foreground">Hardware:</span>
+                            <span className="text-muted-foreground truncate">{summary.hardware_details.name}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-foreground">Total Area:</span>
+                          <span className="text-muted-foreground">
+                            {summary.linear_meters?.toFixed(2)}m²
+                          </span>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Wallpaper Information */}
+                    {treatmentType === 'wallpaper' && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-foreground">Measurements:</span>
+                          <span className="text-muted-foreground">
+                            {fmtFabric(surface.measurement_a || surface.width)} × {fmtFabric(surface.measurement_b || surface.height)}
+                          </span>
+                        </div>
+                        {summary.fabric_details?.name && (
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-foreground">Wallpaper:</span>
+                            <span className="text-muted-foreground truncate">{summary.fabric_details.name}</span>
+                          </div>
+                        )}
+                        {summary.wallpaper_details && (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-foreground">Sold by:</span>
+                              <span className="text-muted-foreground">{summary.wallpaper_details.sold_by || 'Roll'}</span>
+                            </div>
+                            {summary.wallpaper_details.strips_needed && (
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-foreground">Coverage:</span>
+                                <span className="text-muted-foreground">
+                                  {summary.wallpaper_details.strips_needed} strips × {summary.wallpaper_details.strip_length}cm
+                                </span>
+                              </div>
+                            )}
+                            {summary.wallpaper_details.rolls_needed && (
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-foreground">Rolls:</span>
+                                <span className="text-muted-foreground">
+                                  {summary.wallpaper_details.rolls_needed} roll(s) • {summary.wallpaper_details.total_meters}m total
+                                </span>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
