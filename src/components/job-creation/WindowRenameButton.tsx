@@ -18,7 +18,6 @@ export const WindowRenameButton = ({ windowName, onRename, disabled }: WindowRen
       onRename(editName.trim());
     }
     setIsEditing(false);
-    setEditName(windowName);
   };
 
   const handleCancel = () => {
