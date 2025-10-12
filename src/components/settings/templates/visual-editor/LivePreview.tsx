@@ -700,22 +700,22 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
 
           <div className="border rounded-lg overflow-hidden w-full" style={{ maxWidth: '100%' }}>
             <table className="w-full border-collapse" style={{ tableLayout: 'fixed', maxWidth: '100%' }}>
-              <thead className="bg-gray-50 border-b-2 border-gray-300">
+              <thead className="bg-gray-100 border-b-2 border-gray-400">
                 <tr>
-                  <th className="text-left p-1 text-xs font-medium" style={{ width: '6%' }}>#</th>
-                  <th className="text-left p-1 text-xs font-medium" style={{ width: '24%' }}>Product/Service</th>
-                  <th className="text-left p-1 text-xs font-medium" style={{ width: '28%' }}>Description</th>
-                  <th className="text-center p-1 text-xs font-medium" style={{ width: '10%' }}>Qty</th>
-                  <th className="text-right p-1 text-xs font-medium" style={{ width: '15%' }}>Price</th>
-                  <th className="text-right p-1 text-xs font-medium" style={{ width: '17%' }}>Total</th>
+                  <th className="text-left px-2 py-2 text-sm font-semibold text-gray-700" style={{ width: '6%' }}>#</th>
+                  <th className="text-left px-2 py-2 text-sm font-semibold text-gray-700" style={{ width: '24%' }}>Product/Service</th>
+                  <th className="text-left px-2 py-2 text-sm font-semibold text-gray-700" style={{ width: '28%' }}>Description</th>
+                  <th className="text-center px-2 py-2 text-sm font-semibold text-gray-700" style={{ width: '10%' }}>Quantity</th>
+                  <th className="text-right px-2 py-2 text-sm font-semibold text-gray-700" style={{ width: '15%' }}>Price rate</th>
+                  <th className="text-right px-2 py-2 text-sm font-semibold text-gray-700" style={{ width: '17%' }}>Total without {renderTokenValue('tax_label')}</th>
                 </tr>
               </thead>
               <tbody>
                 {Object.entries(groupedItems).map(([roomName, items]: [string, any]) => (
                   <React.Fragment key={roomName}>
                     {groupByRoom && hasRealData && (
-                      <tr className="bg-gray-100 border-t-2 border-gray-300">
-                        <td colSpan={6} className="p-2 font-medium text-sm text-gray-800" style={{ wordWrap: 'break-word' }}>
+                      <tr className="border-t-2 border-gray-400">
+                        <td colSpan={6} className="px-3 py-3 font-semibold text-base text-gray-900 bg-gray-50" style={{ wordWrap: 'break-word' }}>
                           {roomName}
                         </td>
                       </tr>
@@ -729,51 +729,55 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
                         return (
                             <React.Fragment key={`item-${roomName}-${itemIndex}`}>
                             {/* Main product row */}
-                            <tr className="border-t">
-                              <td className="p-1 text-xs font-medium" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{itemNumber}</td>
-                              <td className="p-1 text-xs font-medium" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
+                            <tr className="border-t border-gray-300">
+                              <td className="px-2 py-2 text-sm font-semibold align-top" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{itemNumber}</td>
+                              <td className="px-2 py-2 text-sm font-semibold align-top" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
                                 {item.name || 'Window Treatment'}
                               </td>
-                              <td className="p-1 text-xs" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
-                                {item.description || ''}
+                              <td className="px-2 py-2 text-sm align-top" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
+                                {item.description || item.treatment_type || ''}
                               </td>
-                              <td className="p-1 text-center text-xs" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{item.quantity || 1}</td>
-                              <td className="p-1 text-right text-xs" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
+                              <td className="px-2 py-2 text-center text-sm align-top" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{item.quantity || 1}</td>
+                              <td className="px-2 py-2 text-right text-sm align-top" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
                                 {renderTokenValue('currency_symbol')}{(item.unit_price || 0).toFixed(2)}
                               </td>
-                              <td className="p-1 text-right font-medium text-xs" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
+                              <td className="px-2 py-2 text-right font-semibold text-sm align-top" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
                                 {renderTokenValue('currency_symbol')}{(item.total || 0).toFixed(2)}
                               </td>
                             </tr>
                             {/* Itemized component rows with smaller font and indentation */}
                             {itemizedComponents.map((component, compIndex) => (
                               <tr key={`comp-${roomName}-${itemIndex}-${compIndex}`} className="border-t border-gray-100">
-                                <td className="p-1"></td>
-                                <td className="p-1 pl-4 text-xs text-gray-600" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{component.type}</td>
-                                <td className="p-1 text-xs text-gray-600" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{component.description}</td>
-                                <td className="p-1 text-center text-xs text-gray-600" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{component.quantity} {component.unit}</td>
-                                <td className="p-1 text-right text-xs text-gray-600" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>${component.rate}</td>
-                                <td className="p-1 text-right text-xs text-gray-600" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>${component.total}</td>
+                                <td className="px-2 py-1"></td>
+                                <td className="px-2 py-1 pl-6 text-sm text-gray-700" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{component.type}</td>
+                                <td className="px-2 py-1 text-sm text-gray-700" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{component.description}</td>
+                                <td className="px-2 py-1 text-center text-sm text-gray-700" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{component.quantity} {component.unit}</td>
+                                <td className="px-2 py-1 text-right text-sm text-gray-700" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{renderTokenValue('currency_symbol')}{component.rate}</td>
+                                <td className="px-2 py-1 text-right text-sm text-gray-700" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{renderTokenValue('currency_symbol')}{component.total}</td>
                               </tr>
                             ))}
                           </React.Fragment>
                         );
                       } else {
-                        // Simple view
+                        // Simple view - show compact summary with room location
+                        const locationInfo = item.room_name || item.location || '';
                         return (
-                          <tr key={`simple-${roomName}-${itemIndex}`} className="border-t">
-                            <td className="p-2 text-xs" style={{ wordWrap: 'break-word' }}>{itemNumber}</td>
-                            <td className="p-2 text-xs" style={{ wordWrap: 'break-word' }}>
-                              {item.name || 'Window Treatment'}
+                          <tr key={`simple-${roomName}-${itemIndex}`} className="border-t border-gray-300">
+                            <td className="px-2 py-2 text-sm align-top" style={{ wordWrap: 'break-word' }}>{itemNumber}</td>
+                            <td className="px-2 py-2 text-sm font-medium align-top" style={{ wordWrap: 'break-word' }}>
+                              {item.name || item.treatment_type || 'Window Treatment'}
+                              {!groupByRoom && locationInfo && (
+                                <div className="text-xs text-gray-500 font-normal mt-0.5">{locationInfo}</div>
+                              )}
                             </td>
-                            <td className="p-2 text-xs text-gray-600" style={{ wordWrap: 'break-word' }}>
-                              {item.description || ''}
+                            <td className="px-2 py-2 text-sm text-gray-700 align-top" style={{ wordWrap: 'break-word' }}>
+                              {item.description || item.treatment_type || ''}
                             </td>
-                            <td className="p-2 text-center text-xs" style={{ wordWrap: 'break-word' }}>{item.quantity || 1}</td>
-                            <td className="p-2 text-right text-xs" style={{ wordWrap: 'break-word' }}>
+                            <td className="px-2 py-2 text-center text-sm align-top" style={{ wordWrap: 'break-word' }}>{item.quantity || 1}</td>
+                            <td className="px-2 py-2 text-right text-sm align-top" style={{ wordWrap: 'break-word' }}>
                               {renderTokenValue('currency_symbol')}{(item.unit_price || 0).toFixed(2)}
                             </td>
-                            <td className="p-2 text-right font-medium text-xs" style={{ wordWrap: 'break-word' }}>
+                            <td className="px-2 py-2 text-right font-medium text-sm align-top" style={{ wordWrap: 'break-word' }}>
                               {renderTokenValue('currency_symbol')}{(item.total || 0).toFixed(2)}
                             </td>
                           </tr>
