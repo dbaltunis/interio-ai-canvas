@@ -546,8 +546,8 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
           }
         });
       } else {
-        // Fallback to treatments if available
-        projectItems = projectData?.treatments || projectData?.windowSummaries || [];
+        // Prioritize formatted quotation items if available
+        projectItems = projectData?.items || projectData?.treatments || projectData?.windowSummaries || [];
       }
       
       const hasRealData = workshopItems.length > 0;
@@ -735,7 +735,7 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
                             <tr className="border-t">
                               <td className="p-1 text-xs font-medium" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{itemNumber}</td>
                               <td className="p-1 text-xs font-medium" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
-                                {item.fabric_details?.name || item.treatment_name || item.name || 'Window Treatment'}
+                                {item.name || item.fabric_details?.name || item.treatment_name || 'Window Treatment'}
                                 {item.window_number && ` - ${item.window_number}`}
                               </td>
                               <td className="p-1 text-xs" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
@@ -743,10 +743,10 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
                               </td>
                               <td className="p-1 text-center text-xs" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{item.quantity || 1}</td>
                               <td className="p-1 text-right text-xs" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
-                                ${(item.total_cost || item.total_price || 0).toFixed(2)}
+                                {renderTokenValue('currency_symbol')}{(item.unit_price || item.total_cost || item.total_price || 0).toFixed(2)}
                               </td>
                               <td className="p-1 text-right font-medium text-xs" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
-                                ${((item.total_cost || item.total_price || 0) * (item.quantity || 1)).toFixed(2)}
+                                {renderTokenValue('currency_symbol')}{(item.total || item.total_cost || item.total_price || 0).toFixed(2)}
                               </td>
                             </tr>
                             {/* Itemized component rows with smaller font and indentation */}
@@ -768,16 +768,18 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
                           <tr key={`simple-${roomName}-${itemIndex}`} className="border-t">
                             <td className="p-2 text-xs" style={{ wordWrap: 'break-word' }}>{itemNumber}</td>
                             <td className="p-2 text-xs" style={{ wordWrap: 'break-word' }}>
-                              {item.fabric_details?.name || item.treatment_name || item.name || 'Window Treatment'}
+                              {item.name || item.fabric_details?.name || item.treatment_name || 'Window Treatment'}
                               {item.window_number && ` - ${item.window_number}`}
                             </td>
                             <td className="p-2 text-xs text-gray-600" style={{ wordWrap: 'break-word' }}>
                               {item.description || item.notes || item.room_name || `${item.width || 0}" x ${item.height || 0}"`}
                             </td>
                             <td className="p-2 text-center text-xs" style={{ wordWrap: 'break-word' }}>{item.quantity || 1}</td>
-                            <td className="p-2 text-right text-xs" style={{ wordWrap: 'break-word' }}>${(item.unit_price || item.cost_per_unit || 0).toFixed(2)}</td>
+                            <td className="p-2 text-right text-xs" style={{ wordWrap: 'break-word' }}>
+                              {renderTokenValue('currency_symbol')}{(item.unit_price || item.total || item.cost_per_unit || 0).toFixed(2)}
+                            </td>
                             <td className="p-2 text-right font-medium text-xs" style={{ wordWrap: 'break-word' }}>
-                              ${(item.total_cost || item.total_price || 0).toFixed(2)}
+                              {renderTokenValue('currency_symbol')}{(item.total || item.total_cost || item.total_price || 0).toFixed(2)}
                             </td>
                           </tr>
                         );
