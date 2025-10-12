@@ -61,16 +61,6 @@ export const ImprovedTreatmentSelector = ({
         </Button>
       </div>
 
-      {selectedCovering && <div className="flex items-center gap-2 p-2 bg-primary/10 rounded-lg border border-primary/20">
-          <div className="flex-1 flex items-center gap-1.5 px-2 py-1 bg-background rounded border">
-            <span className="text-xs font-medium">Selected:</span>
-            <span className="text-xs">{selectedCovering.name}</span>
-            <Button variant="ghost" size="sm" onClick={handleClearSelection} className="h-4 w-4 p-0 ml-1 hover:bg-destructive/10">
-              <X className="h-3 w-3 text-destructive" />
-            </Button>
-          </div>
-        </div>}
-
       {showSearch && <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input 

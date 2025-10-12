@@ -547,8 +547,8 @@ export const DynamicWindowWorksheet = forwardRef<{
           }
         })();
         return <div key={step} className="flex items-center">
-              <button onClick={() => setActiveTab(step)} disabled={readOnly} className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${activeTab === step ? 'bg-primary text-primary-foreground' : isCompleted ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-muted text-muted-foreground hover:bg-muted/80'} ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`} title={`${stepNames[index]} ${isCompleted ? '(Completed)' : ''}`}>
-                {isCompleted ? '✓' : index + 1}
+              <button onClick={() => setActiveTab(step)} disabled={readOnly} className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-300 ${activeTab === step ? 'bg-primary text-primary-foreground' : isCompleted ? 'bg-green-100 text-green-700 hover:bg-green-200 animate-scale-in' : 'bg-muted text-muted-foreground hover:bg-muted/80'} ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`} title={`${stepNames[index]} ${isCompleted ? '(Completed)' : ''}`}>
+                {isCompleted ? <span className="animate-fade-in">✓</span> : index + 1}
               </button>
               {index < 3 && <div className="w-8 h-px bg-border mx-2" />}
             </div>;
@@ -603,8 +603,8 @@ export const DynamicWindowWorksheet = forwardRef<{
         {/* Treatment Selection */}
         <TabsContent value="treatment" className="space-y-4">
           <Card>
-            <CardContent className="pt-6 min-h-[500px]">
-              <ImprovedTreatmentSelector
+            <CardContent className="pt-6 min-h-[500px] flex flex-col">
+              <ImprovedTreatmentSelector 
                 selectedCoveringId={selectedTemplate?.id || ""} 
                 onCoveringSelect={template => {
                   setSelectedTemplate(template);
@@ -613,7 +613,14 @@ export const DynamicWindowWorksheet = forwardRef<{
                 visualKey={selectedWindowType?.visual_key}
               />
               
-              <div className="mt-4">
+              <div className="mt-auto space-y-3">
+                {selectedTemplate && <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 animate-fade-in">
+                  <h4 className="font-medium text-sm flex items-center gap-2">
+                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    Selected: {selectedTemplate.name}
+                  </h4>
+                </div>}
+                
                 <Button onClick={() => setActiveTab("inventory")} disabled={!selectedTemplate} className="w-full">
                   Continue to Inventory Selection
                 </Button>
@@ -625,10 +632,21 @@ export const DynamicWindowWorksheet = forwardRef<{
         {/* Inventory Selection */}
         <TabsContent value="inventory" className="space-y-4">
           <Card>
-            <CardContent className="pt-6 min-h-[500px]">
+            <CardContent className="pt-6 min-h-[500px] flex flex-col">
               <InventorySelectionPanel treatmentType={selectedTreatmentType} selectedItems={selectedItems} onItemSelect={handleItemSelect} onItemDeselect={handleItemDeselect} measurements={measurements} treatmentCategory={treatmentCategory} />
               
-              <div className="mt-6">
+              <div className="mt-auto space-y-3">
+                {Object.values(selectedItems).some(item => item) && <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 animate-fade-in">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    {Object.entries(selectedItems).map(([category, item]) => item && (
+                      <span key={category} className="text-xs">
+                        <span className="font-medium capitalize">{category}:</span> {item.name}
+                      </span>
+                    )).filter(Boolean).reduce((prev, curr) => [prev, ' • ', curr] as any)}
+                  </div>
+                </div>}
+                
                 <Button onClick={() => setActiveTab("measurements")} disabled={!Object.values(selectedItems).some(item => item)} className="w-full">
                   Continue to Measurements
                 </Button>

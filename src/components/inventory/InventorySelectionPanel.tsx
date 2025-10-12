@@ -223,22 +223,6 @@ export const InventorySelectionPanel = ({
         </Button>
       </div>
 
-      {/* Selected Items Inline Display */}
-      {Object.values(selectedItems).some(item => item) && <div className="flex items-center gap-2 p-2 bg-primary/10 rounded-lg border border-primary/20">
-          <div className="flex-1 flex flex-wrap items-center gap-2">
-            {Object.entries(selectedItems).map(([category, item]) => item && <div key={category} className="flex items-center gap-1.5 px-2 py-1 bg-background rounded border">
-                  <span className="text-xs font-medium capitalize">{category}:</span>
-                  <span className="text-xs">{item.name}</span>
-                  <Button variant="ghost" size="sm" onClick={e => {
-            e.stopPropagation();
-            onItemDeselect(category);
-          }} className="h-4 w-4 p-0 hover:bg-destructive/10">
-                    <X className="h-3 w-3 text-destructive" />
-                  </Button>
-                </div>)}
-          </div>
-        </div>}
-
       {/* Search */}
       {showSearch && <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
