@@ -687,25 +687,57 @@ export const UnifiedInventoryDialog = ({
                           </div>
 
                           <div>
-                            <div className="flex items-center">
+                            <div className="flex items-center gap-2">
                               <Label htmlFor="wallpaper_match_type">Pattern Match Type</Label>
-                              <FieldHelp content="How the pattern aligns: Straight (side-by-side), Drop/Offset (diagonal), Random (no matching), or None (no pattern)" />
+                              <FieldHelp content="This determines how the wallpaper pattern aligns between strips and directly affects how much material is needed. Pattern matching requires extra wallpaper to align the design properly." />
                             </div>
                             <Select
                               value={formData.wallpaper_match_type}
                               onValueChange={(value) => setFormData({ ...formData, wallpaper_match_type: value })}
                             >
                               <SelectTrigger>
-                                <SelectValue />
+                                <SelectValue placeholder="Select pattern type..." />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="straight">Straight Match</SelectItem>
-                                <SelectItem value="drop">Drop Match</SelectItem>
-                                <SelectItem value="offset">Offset Match</SelectItem>
-                                <SelectItem value="random">Random Match</SelectItem>
-                                <SelectItem value="none">No Pattern</SelectItem>
+                                <SelectItem value="straight">
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">Straight Match</span>
+                                    <span className="text-xs text-muted-foreground">Pattern aligns horizontally - adds 1 repeat per strip</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="drop">
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">Drop Match (Half Drop)</span>
+                                    <span className="text-xs text-muted-foreground">Pattern drops by half - adds 1 repeat per strip</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="offset">
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">Offset Match</span>
+                                    <span className="text-xs text-muted-foreground">Pattern offset diagonally - adds 1 repeat per strip</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="random">
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">Random Match</span>
+                                    <span className="text-xs text-muted-foreground">No pattern to match - most efficient, no extra needed</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="none">
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">No Pattern (Plain)</span>
+                                    <span className="text-xs text-muted-foreground">Solid color/texture - most efficient, no extra needed</span>
+                                  </div>
+                                </SelectItem>
                               </SelectContent>
                             </Select>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              💡 {formData.wallpaper_match_type === 'straight' || formData.wallpaper_match_type === 'drop' || formData.wallpaper_match_type === 'offset' 
+                                ? 'Pattern matching adds one vertical repeat to each strip length for alignment'
+                                : formData.wallpaper_match_type === 'random' || formData.wallpaper_match_type === 'none'
+                                ? 'No extra material needed - strips can be cut to exact height'
+                                : 'Select a pattern type to see how it affects material calculations'}
+                            </p>
                           </div>
 
                           <div>
