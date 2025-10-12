@@ -229,6 +229,7 @@ export const WindowManagementDialog = ({
               surfaceId={surface?.id}
               surfaceData={surface}
               currentRoomId={surface?.room_id}
+              visualKey={windowTypeData?.visual_key}
               existingMeasurement={existingMeasurement}
               existingTreatments={existingTreatments}
               onSave={handleSaveData}

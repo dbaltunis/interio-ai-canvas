@@ -9,6 +9,7 @@ interface MeasurementBridgeProps {
   surfaceId?: string;
   surfaceData?: any;
   currentRoomId?: string;
+  visualKey?: string;
   existingMeasurement?: any;
   existingTreatments?: any[];
   onSave?: () => void;
@@ -31,6 +32,7 @@ export const MeasurementBridge = forwardRef<
   surfaceId,
   surfaceData,
   currentRoomId,
+  visualKey,
   existingMeasurement,
   existingTreatments = [],
   onSave,
@@ -92,6 +94,7 @@ export const MeasurementBridge = forwardRef<
       projectId={projectId}
       surfaceId={surfaceId}
       surfaceData={surfaceData}
+      visualKey={visualKey}
       existingMeasurement={existingMeasurement}
       existingTreatments={existingTreatments}
       onSave={onSave}

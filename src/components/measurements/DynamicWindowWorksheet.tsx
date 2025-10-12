@@ -24,6 +24,7 @@ interface DynamicWindowWorksheetProps {
   projectId?: string;
   surfaceId?: string;
   surfaceData?: any;
+  visualKey?: string;
   existingMeasurement?: any;
   existingTreatments?: any[];
   onSave?: () => void;
@@ -38,6 +39,7 @@ export const DynamicWindowWorksheet = forwardRef<{
   projectId,
   surfaceId,
   surfaceData,
+  visualKey,
   existingMeasurement,
   existingTreatments = [],
   onSave,
@@ -602,9 +604,14 @@ export const DynamicWindowWorksheet = forwardRef<{
         <TabsContent value="treatment" className="space-y-4">
           <Card>
             <CardContent className="pt-6">
-              <ImprovedTreatmentSelector selectedCoveringId={selectedTemplate?.id || ""} onCoveringSelect={template => {
-              setSelectedTemplate(template);
-            }} disabled={readOnly} />
+              <ImprovedTreatmentSelector 
+                selectedCoveringId={selectedTemplate?.id || ""} 
+                onCoveringSelect={template => {
+                  setSelectedTemplate(template);
+                }} 
+                disabled={readOnly}
+                visualKey={selectedWindowType?.visual_key}
+              />
               
               <div className="mt-4">
                 <Button onClick={() => setActiveTab("inventory")} disabled={!selectedTemplate} className="w-full">

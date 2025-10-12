@@ -10,22 +10,35 @@ interface ImprovedTreatmentSelectorProps {
   selectedCoveringId?: string;
   onCoveringSelect: (covering: CurtainTemplate | null) => void;
   disabled?: boolean;
+  visualKey?: string; // 'room_wall' or other window types
 }
 
 export const ImprovedTreatmentSelector = ({
   selectedCoveringId,
   onCoveringSelect,
-  disabled
+  disabled,
+  visualKey
 }: ImprovedTreatmentSelectorProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const { data: curtainTemplates = [], isLoading } = useCurtainTemplates();
   
-  // Debug: Log loaded templates
-  console.log("📋 Loaded treatment templates:", curtainTemplates);
-  console.log("📋 Total templates count:", curtainTemplates.length);
-  console.log("📋 Roller blind templates:", curtainTemplates.filter(t => t.curtain_type === 'roller_blind'));
+  // Filter treatments based on window type
+  const filteredTemplates = curtainTemplates.filter(template => {
+    if (visualKey === 'room_wall') {
+      // For room wall: show only wallpapers and wall coverings
+      return template.curtain_type === 'wallpaper';
+    } else {
+      // For standard windows: show all window treatments (exclude wallpaper)
+      return template.curtain_type !== 'wallpaper';
+    }
+  });
   
-  const selectedCovering = curtainTemplates.find(c => c.id === selectedCoveringId);
+  // Debug: Log loaded templates
+  console.log("📋 Loaded treatment templates:", filteredTemplates);
+  console.log("📋 Total templates count:", filteredTemplates.length);
+  console.log("📋 Visual key:", visualKey);
+  
+  const selectedCovering = filteredTemplates.find(c => c.id === selectedCoveringId);
 
   const handleTreatmentSelect = (treatment: CurtainTemplate) => {
     onCoveringSelect(treatment);
@@ -38,9 +51,11 @@ export const ImprovedTreatmentSelector = ({
   return (
     <div className={`space-y-3 ${disabled ? "opacity-50" : ""}`}>
       <div>
-        <h3 className="text-base font-medium mb-1">Select Treatment & Template</h3>
+        <h3 className="text-base font-medium mb-1">
+          {visualKey === 'room_wall' ? 'Select Wall Covering & Template' : 'Select Treatment & Template'}
+        </h3>
         <p className="text-sm text-muted-foreground">
-          Choose a treatment type below
+          {visualKey === 'room_wall' ? 'Choose a wall covering type below' : 'Choose a treatment type below'}
         </p>
       </div>
 
@@ -80,7 +95,7 @@ export const ImprovedTreatmentSelector = ({
         ) : (
           <div className="pr-3">
             <TreatmentTypeGrid
-              treatments={curtainTemplates}
+              treatments={filteredTemplates}
               selectedId={selectedCoveringId}
               onSelect={handleTreatmentSelect}
               searchQuery={searchQuery}
