@@ -461,6 +461,7 @@ export const CostCalculationSummary = ({
   const productCategory = (template as any).category?.toLowerCase() || template.name?.toLowerCase() || '';
   const isBlind = productCategory.includes('blind') || productCategory.includes('shade');
   const isRollerBlind = productCategory.includes('roller');
+  const isWallpaper = productCategory.includes('wallpaper') || productCategory.includes('wall covering');
   const panelCount = initialPanelConfig === 'pair' ? 2 : 1;
 
   // Dynamic labels based on product type
@@ -477,6 +478,87 @@ export const CostCalculationSummary = ({
 
   const ManufacturingIcon = isBlind ? AssemblyIcon : SewingMachineIcon;
 
+  // Wallpaper simplified view
+  if (isWallpaper) {
+    const wallpaperCalc = measurements.wallpaper_calculation;
+    const metersNeeded = wallpaperCalc?.totalMeters || 0;
+    const rollsNeeded = wallpaperCalc?.rollsNeeded || 0;
+    const pricePerUnit = selectedFabric?.unit_price || selectedFabric?.selling_price || selectedFabric?.price_per_meter || 0;
+    const soldBy = selectedFabric?.wallpaper_sold_by || 'per_meter';
+    
+    let quantity = metersNeeded;
+    let unitLabel = 'meter';
+    
+    if (soldBy === 'per_roll') {
+      quantity = rollsNeeded;
+      unitLabel = 'roll';
+    } else if (soldBy === 'per_sqm') {
+      const wallWidth = parseFloat(measurements.wall_width || '0') / 100; // Convert cm to m
+      const wallHeight = parseFloat(measurements.wall_height || '0') / 100;
+      quantity = wallWidth * wallHeight;
+      unitLabel = 'm²';
+    }
+    
+    const wallpaperCost = quantity * pricePerUnit;
+    const finalTotal = wallpaperCost + optionsCost;
+    
+    return (
+      <div className="bg-card border border-border rounded-lg p-3 space-y-3">
+        {/* Header */}
+        <div className="flex items-center gap-2 pb-2 border-b border-border">
+          <Calculator className="h-4 w-4 text-primary" />
+          <h3 className="text-base font-semibold text-card-foreground">Cost Summary</h3>
+        </div>
+
+        {/* Cost Breakdown */}
+        <div className="grid gap-1.5 text-sm">
+          {/* Wallpaper Cost */}
+          <div className="flex items-center justify-between p-2 bg-muted/30 rounded">
+            <div className="flex items-center gap-2">
+              <FabricSwatchIcon className="h-4 w-4 text-primary" />
+              <span className="font-medium">Wallpaper</span>
+            </div>
+            <span className="font-semibold">{formatPrice(wallpaperCost)}</span>
+          </div>
+          <div className="text-xs text-muted-foreground pl-8 pb-2">
+            {quantity.toFixed(2)} {unitLabel}{quantity !== 1 ? 's' : ''} × {formatPrice(pricePerUnit)}/{unitLabel}
+            {selectedFabric?.name && <div className="mt-0.5">"{selectedFabric.name}"</div>}
+          </div>
+
+          {/* Options if any */}
+          {optionsCost > 0 && (
+            <>
+              <div className="flex items-center justify-between p-2 bg-muted/30 rounded">
+                <div className="flex items-center gap-2">
+                  <Settings className="h-4 w-4 text-primary" />
+                  <span className="font-medium">Options</span>
+                </div>
+                <span className="font-semibold">{formatPrice(optionsCost)}</span>
+              </div>
+              {selectedOptions.length > 0 && (
+                <div className="text-xs text-muted-foreground pl-8 pb-2 space-y-0.5">
+                  {selectedOptions.map((option, idx) => (
+                    <div key={idx}>• {option.name} - {formatPrice(option.price || 0)}</div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Total */}
+        <div className="flex items-center justify-between pt-2 border-t border-border">
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4 text-primary" />
+            <span className="font-semibold">Total</span>
+          </div>
+          <span className="font-bold text-lg text-primary">{formatPrice(finalTotal)}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Original detailed view for curtains and blinds
   return (
     <div className="bg-card border border-border rounded-lg p-3 space-y-3">
       {/* Header */}
