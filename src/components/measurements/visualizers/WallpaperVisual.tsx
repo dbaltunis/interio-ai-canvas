@@ -302,13 +302,17 @@ export const WallpaperVisual = ({
                 )}
               </div>
               
-              {/* Selling method indicator */}
-              <div className="bg-blue-50 dark:bg-blue-950/30 p-2 rounded text-xs">
-                <p className="text-muted-foreground">
-                  <strong>Sold {selectedWallpaper?.wallpaper_sold_by === 'per_roll' ? 'by roll' : selectedWallpaper?.wallpaper_sold_by === 'per_sqm' ? 'per m²' : 'per meter'}:</strong> 
-                  {selectedWallpaper?.wallpaper_sold_by === 'per_roll' 
-                    ? ' Calculating total meters needed, then converting to rolls.'
-                    : ' Calculating total meters needed for direct ordering.'}
+              {/* Selling method indicator with ACTUAL calculation values */}
+              <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded text-sm space-y-1">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-xs">
+                    {selectedWallpaper?.wallpaper_sold_by === 'per_roll' ? 'Sold by Roll' : 
+                     selectedWallpaper?.wallpaper_sold_by === 'per_sqm' ? 'Sold per m²' : 'Sold per Meter'}
+                  </Badge>
+                </div>
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  <strong>Calculation:</strong> {wallHeight}cm wall height{patternRepeat > 0 && matchType !== 'none' && matchType !== 'random' ? ` + ${patternRepeat}cm pattern` : ''} = {calculation.lengthPerStripCm}cm per strip × {calculation.stripsNeeded} strips = <strong>{(calculation.stripsNeeded * Number(calculation.lengthPerStripM)).toFixed(2)}m total</strong>
+                  {selectedWallpaper?.wallpaper_sold_by === 'per_roll' && ` ≈ ${calculation.rollsNeeded} roll${calculation.rollsNeeded > 1 ? 's' : ''}`}
                 </p>
               </div>
               
