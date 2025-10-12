@@ -248,9 +248,9 @@ export function WindowSummaryCard({
           <div className="space-y-3">
             {/* Treatment Card with Visual & Details */}
             <div className="rounded-lg border bg-card">
-              <div className="flex gap-4 p-4">
+              <div className="flex flex-col sm:flex-row gap-4 p-3 sm:p-4">
                 {/* Treatment Visualization - No measurements, just product */}
-                <div className="w-40 h-40 flex-shrink-0 rounded-md overflow-hidden bg-muted/20 border">
+                <div className="w-full sm:w-40 h-40 sm:flex-shrink-0 rounded-md overflow-hidden bg-muted/20 border">
                   <TreatmentPreviewEngine
                     windowType={surface.window_type || 'standard'}
                     treatmentType={treatmentType}
@@ -273,7 +273,7 @@ export function WindowSummaryCard({
                 {/* Product Details Grid */}
                 <div className="flex-1 min-w-0">
                   {/* Product Type Header */}
-                  <div className="mb-3 flex items-center justify-between">
+                  <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <h4 className="font-semibold text-base">
                       {treatmentType === 'curtains' && 'Sheer curtain'}
                       {treatmentType === 'wallpaper' && 'Wallpaper'}
@@ -284,15 +284,15 @@ export function WindowSummaryCard({
                       variant="ghost"
                       size="sm"
                       onClick={() => setShowBreakdown(!showBreakdown)}
-                      className="text-primary hover:text-primary/80"
+                      className="text-primary hover:text-primary/80 self-start sm:self-auto"
                     >
                       <span className="text-sm">Full details</span>
                       {showBreakdown ? <ChevronDown className="h-4 w-4 ml-1" /> : <ChevronRight className="h-4 w-4 ml-1" />}
                     </Button>
                   </div>
 
-                  {/* Details Grid - 2 Columns */}
-                  <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                  {/* Details Grid - 2 Columns on desktop, 1 on mobile */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 sm:gap-x-8 gap-y-2 text-sm">
                     {/* Curtains Details */}
                     {(treatmentType === 'curtains' || !treatmentType) && (
                       <>
