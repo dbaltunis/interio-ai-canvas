@@ -12,7 +12,9 @@ export const toTreatmentVisualizerData = (item: WorkshopRoomItem) => {
     unit: item.measurements?.unit,
   } as any;
 
-  const coveringName = item.treatmentType || item.surface?.surface_type || item.surface?.type || "Curtains";
+  // CRITICAL: Use specific treatment_type from summary first (e.g., 'venetian_blinds'), not general category
+  const specificType = item.summary?.treatment_type || item.treatmentType;
+  const coveringName = specificType || item.surface?.surface_type || item.surface?.type || "Curtains";
   const covering = { id: String(coveringName), name: String(coveringName) };
 
   // Attempt to pull some helpful fields from summary if present

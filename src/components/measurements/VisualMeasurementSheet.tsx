@@ -68,20 +68,20 @@ export const VisualMeasurementSheet = ({
   const treatmentType = treatmentCategory || detectTreatmentType(selectedTemplate);
   const treatmentConfig = getTreatmentConfig(treatmentType);
   
-  // Add safety check for treatmentConfig
-  if (!treatmentConfig) {
-    console.error('❌ VisualMeasurementSheet: Invalid treatment type:', treatmentType);
-    return null;
-  }
-  
   console.log("🎯 VisualMeasurementSheet - Treatment Detection:", {
     treatmentCategory,
     detectedType: detectTreatmentType(selectedTemplate),
     finalTreatmentType: treatmentType,
     selectedTemplate: selectedTemplate?.name,
     curtainType: selectedTemplate?.curtain_type,
-    requiresHardwareType: treatmentConfig.requiresHardwareType
+    hasConfig: !!treatmentConfig
   });
+  
+  // Handle invalid treatment config - render after hooks to avoid breaking Rules of Hooks
+  if (!treatmentConfig) {
+    console.error('❌ VisualMeasurementSheet: Invalid treatment type:', treatmentType);
+    return <div className="p-4 text-destructive">Invalid treatment type: {treatmentType}</div>;
+  }
   const handleInputChange = (field: string, value: string) => {
     if (!readOnly) {
       console.log(`🔧 VisualMeasurementSheet: Changing ${field} to:`, value);
