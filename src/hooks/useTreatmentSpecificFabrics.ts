@@ -11,6 +11,12 @@ export const useTreatmentSpecificFabrics = (treatmentCategory: TreatmentCategory
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Blinds that don't use fabric (venetian, vertical, cellular) return empty
+      if (config.inventoryCategory === 'none') {
+        console.log('🔍 Treatment does not use fabric inventory:', treatmentCategory);
+        return [];
+      }
+
       // Many blind types can use curtain fabrics
       const categories = ['roman_blinds', 'roller_blinds', 'panel_glide'].includes(treatmentCategory)
         ? ['curtain_fabric', 'roller_blind_fabric']

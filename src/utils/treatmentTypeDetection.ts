@@ -105,9 +105,9 @@ export const getTreatmentConfig = (category: TreatmentCategory): TreatmentConfig
       requiresHeading: false,
       requiresLining: false,
       showPooling: false,
-      inventoryCategory: 'blind_material',
+      inventoryCategory: 'none', // Venetian blinds don't use fabric inventory
       specificFields: ['slat_size', 'slat_material', 'control_type'],
-      visualComponent: 'RollerBlindVisualizer',
+      visualComponent: 'VenetianBlindVisualizer',
     },
     vertical_blinds: {
       requiresFullness: false,
@@ -116,9 +116,9 @@ export const getTreatmentConfig = (category: TreatmentCategory): TreatmentConfig
       requiresHeading: false,
       requiresLining: false,
       showPooling: false,
-      inventoryCategory: 'blind_material',
+      inventoryCategory: 'none', // Vertical blinds don't use fabric inventory
       specificFields: ['louvre_width', 'headrail_type', 'control_type'],
-      visualComponent: 'RollerBlindVisualizer',
+      visualComponent: 'BlindVisualizer',
     },
     cellular_blinds: {
       requiresFullness: false,
@@ -127,9 +127,9 @@ export const getTreatmentConfig = (category: TreatmentCategory): TreatmentConfig
       requiresHeading: false,
       requiresLining: false,
       showPooling: false,
-      inventoryCategory: 'cellular_fabric',
+      inventoryCategory: 'none', // Cellular blinds don't use fabric inventory
       specificFields: ['cell_size', 'headrail_type', 'control_type', 'mount_type'],
-      visualComponent: 'RollerBlindVisualizer',
+      visualComponent: 'BlindVisualizer',
     },
     panel_glide: {
       requiresFullness: false,
