@@ -726,7 +726,12 @@ export const DynamicWindowWorksheet = forwardRef<{
                       variant: "destructive"
                     });
                   }
-                }} disabled={!measurements.rail_width || !measurements.drop} className="w-full">
+                }} disabled={
+                  // For wallpaper, check wall_width and wall_height
+                  treatmentCategory === 'wallpaper' 
+                    ? (!measurements.wall_width || !measurements.wall_height)
+                    : (!measurements.rail_width || !measurements.drop)
+                } className="w-full">
                     <Save className="h-4 w-4 mr-2" />
                     Save Configuration
                   </Button>
