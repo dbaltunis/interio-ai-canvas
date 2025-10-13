@@ -840,7 +840,7 @@ export const VisualMeasurementSheet = ({
                     <DynamicCurtainOptions
                       measurements={measurements}
                       onChange={handleInputChange}
-                      templateId={selectedTemplate?.id}
+                      template={selectedTemplate}
                       readOnly={readOnly}
                       onOptionPriceChange={handleOptionPriceChange}
                       selectedOptions={selectedOptions}
