@@ -741,6 +741,31 @@ export const VisualMeasurementSheet = ({
                   )}
                 </div>
               </div>
+
+              {/* CURTAIN OPTIONS - Right below visual */}
+              {treatmentType === 'curtains' && selectedTemplate && (
+                <div className="mt-4 bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/30 rounded-xl p-4 shadow-sm">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center shadow-sm">
+                      <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-bold text-primary">Curtain Options</h4>
+                      <p className="text-xs text-muted-foreground">Configure from your template settings</p>
+                    </div>
+                  </div>
+                  <DynamicCurtainOptions
+                    measurements={measurements}
+                    onChange={handleInputChange}
+                    template={selectedTemplate}
+                    readOnly={readOnly}
+                    onOptionPriceChange={handleOptionPriceChange}
+                    selectedOptions={selectedOptions}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Measurement Inputs Section */}
@@ -829,25 +854,6 @@ export const VisualMeasurementSheet = ({
               )}
               {/* End Essential Measurements */}
 
-              {/* CURTAIN-SPECIFIC FIELDS - Dynamic Options from Template */}
-              {treatmentType === 'curtains' && (
-                <Card className="border-primary/20 bg-primary/5">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Curtain Options</CardTitle>
-                    <p className="text-xs text-muted-foreground">Configure options from your template settings</p>
-                  </CardHeader>
-                  <CardContent className="space-y-3 pt-2">
-                    <DynamicCurtainOptions
-                      measurements={measurements}
-                      onChange={handleInputChange}
-                      template={selectedTemplate}
-                      readOnly={readOnly}
-                      onOptionPriceChange={handleOptionPriceChange}
-                      selectedOptions={selectedOptions}
-                    />
-                  </CardContent>
-                </Card>
-              )}
 
               {/* BLIND-SPECIFIC FIELDS - Dynamic Options */}
               {(treatmentType === 'roller_blinds' || 
