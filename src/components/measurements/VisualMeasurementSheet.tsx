@@ -11,6 +11,7 @@ import { useMemo, useEffect, useRef } from "react";
 import { FabricSelectionSection } from "./dynamic-options/FabricSelectionSection";
 import { LiningOptionsSection } from "./dynamic-options/LiningOptionsSection";
 import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
+import { DynamicCurtainOptions } from "./dynamic-options/DynamicCurtainOptions";
 import { calculateFabricUsage } from "../job-creation/treatment-pricing/fabric-calculation/fabricUsageCalculator";
 import { TreatmentPreviewEngine } from "../treatment-visualizers/TreatmentPreviewEngine";
 import { detectTreatmentType, getTreatmentConfig } from "@/utils/treatmentTypeDetection";
@@ -828,18 +829,18 @@ export const VisualMeasurementSheet = ({
               )}
               {/* End Essential Measurements */}
 
-              {/* CURTAIN-SPECIFIC FIELDS - Dynamic Options */}
+              {/* CURTAIN-SPECIFIC FIELDS - Dynamic Options from Template */}
               {treatmentType === 'curtains' && (
                 <Card className="border-primary/20 bg-primary/5">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Curtain Configuration</CardTitle>
+                    <CardTitle className="text-sm">Curtain Options</CardTitle>
+                    <p className="text-xs text-muted-foreground">Configure options from your template settings</p>
                   </CardHeader>
                   <CardContent className="space-y-3 pt-2">
-                    <DynamicRollerBlindFields
+                    <DynamicCurtainOptions
                       measurements={measurements}
                       onChange={handleInputChange}
                       templateId={selectedTemplate?.id}
-                      treatmentCategory={treatmentType}
                       readOnly={readOnly}
                       onOptionPriceChange={handleOptionPriceChange}
                       selectedOptions={selectedOptions}
