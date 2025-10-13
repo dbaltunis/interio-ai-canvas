@@ -424,6 +424,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         price_rules: formData.price_rules,
         unit_price: formData.machine_price_per_metre ? parseFloat(formData.machine_price_per_metre.toString()) : undefined,
         pricing_grid_data: formData.pricing_grid_data || {},
+        pricing_methods: formData.pricing_methods || [],
+        complexity_pricing_tiers: formData.complexity_pricing_tiers || [],
         manufacturing_type: "machine" as 'machine' | 'hand', // Default to machine
         hand_finished_upcharge_fixed: undefined,
         hand_finished_upcharge_percentage: undefined,
