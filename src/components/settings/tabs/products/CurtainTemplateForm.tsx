@@ -39,6 +39,7 @@ import { PerMetrePricing } from "./pricing/PerMetrePricing";
 import { PerPanelPricing } from "./pricing/PerPanelPricing";
 import { HeightBasedPricingRanges } from "./pricing/HeightBasedPricingRanges";
 import { ComplexityBasedPricing } from "./pricing/ComplexityBasedPricing";
+import { MultiplePricingMethodsManager } from "./pricing/MultiplePricingMethodsManager";
 
 interface CurtainTemplateFormProps {
   template?: CurtainTemplate;
@@ -1161,68 +1162,95 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                     />
                   )}
 
-                  <PricingMethodSelector
-                    value={formData.pricing_type}
-                    onChange={(value) => handleInputChange("pricing_type", value)}
-                />
-
-                  {/* Fabric width setting for drop calculations only */}
-                  {formData.pricing_type === "per_drop" && (
-                    <FabricWidthSelector
-                      value={formData.fabric_width_type}
-                      onChange={(value) => handleInputChange("fabric_width_type", value)}
-                    />
-                  )}
-
-                  {/* Per-metre pricing */}
-                  {formData.pricing_type === "per_metre" && !formData.uses_height_pricing && (
-                    <PerMetrePricing
-                      machinePricePerMetre={formData.machine_price_per_metre}
-                      handPricePerMetre={formData.hand_price_per_metre}
-                      offersHandFinished={formData.offers_hand_finished}
-                      onInputChange={handleInputChange}
-                    />
-                  )}
-
-                  {/* Per-drop pricing */}
-                  {formData.pricing_type === "per_drop" && (
-                    <PerDropPricing
-                      machinePricePerDrop={formData.machine_price_per_drop}
-                      handPricePerDrop={formData.hand_price_per_drop}
-                      offersHandFinished={formData.offers_hand_finished}
-                      dropHeightRanges={formData.drop_height_ranges}
-                      machineDropHeightPrices={formData.machine_drop_height_prices}
-                      handDropHeightPrices={formData.hand_drop_height_prices}
-                      onInputChange={handleInputChange}
-                    />
-                  )}
-
-                  {/* Per-panel pricing */}
-                  {formData.pricing_type === "per_panel" && (
-                    <PerPanelPricing
-                      machinePricePerPanel={formData.machine_price_per_panel}
-                      handPricePerPanel={formData.hand_price_per_panel}
-                      offersHandFinished={formData.offers_hand_finished}
-                      onInputChange={handleInputChange}
-                    />
-                  )}
-
-                  {formData.pricing_type === "complexity_based" && (
-                    <ComplexityBasedPricing
-                      tiers={formData.complexity_pricing_tiers}
-                      offersHandFinished={formData.offers_hand_finished}
-                      onTiersChange={(tiers) => handleInputChange("complexity_pricing_tiers", tiers)}
-                    />
-                  )}
-
-                  {formData.pricing_type === "pricing_grid" && (
-                    <div className="space-y-4">
-                      <PricingGridUploader 
-                        initialData={formData.pricing_grid_data}
-                        onDataChange={(data) => handleInputChange("pricing_grid_data", data)}
+                  {/* Multiple Pricing Methods */}
+                  <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm">Multiple Pricing Methods</CardTitle>
+                      <CardDescription className="text-xs">
+                        Create different pricing methods for different fabrics (wide vs narrow) or situations (standard vs premium)
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <MultiplePricingMethodsManager
+                        pricingMethods={formData.pricing_methods}
+                        offersHandFinished={formData.offers_hand_finished}
+                        onPricingMethodsChange={(methods) => handleInputChange("pricing_methods", methods)}
                       />
-                    </div>
-                  )}
+                    </CardContent>
+                  </Card>
+
+                  <Separator className="my-6" />
+                  
+                  <div className="bg-amber-50/50 dark:bg-amber-950/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <h5 className="font-medium text-sm text-amber-900 dark:text-amber-100 mb-2">Legacy Single Pricing Method</h5>
+                    <p className="text-xs text-amber-800 dark:text-amber-200 mb-3">
+                      This is the old single pricing method. If you have multiple pricing methods above, this will be ignored. 
+                      The section below is kept for backward compatibility.
+                    </p>
+
+                    <PricingMethodSelector
+                      value={formData.pricing_type}
+                      onChange={(value) => handleInputChange("pricing_type", value)}
+                    />
+
+                    {/* Fabric width setting for drop calculations only */}
+                    {formData.pricing_type === "per_drop" && (
+                      <FabricWidthSelector
+                        value={formData.fabric_width_type}
+                        onChange={(value) => handleInputChange("fabric_width_type", value)}
+                      />
+                    )}
+
+                    {/* Per-metre pricing */}
+                    {formData.pricing_type === "per_metre" && !formData.uses_height_pricing && (
+                      <PerMetrePricing
+                        machinePricePerMetre={formData.machine_price_per_metre}
+                        handPricePerMetre={formData.hand_price_per_metre}
+                        offersHandFinished={formData.offers_hand_finished}
+                        onInputChange={handleInputChange}
+                      />
+                    )}
+
+                    {/* Per-drop pricing */}
+                    {formData.pricing_type === "per_drop" && (
+                      <PerDropPricing
+                        machinePricePerDrop={formData.machine_price_per_drop}
+                        handPricePerDrop={formData.hand_price_per_drop}
+                        offersHandFinished={formData.offers_hand_finished}
+                        dropHeightRanges={formData.drop_height_ranges}
+                        machineDropHeightPrices={formData.machine_drop_height_prices}
+                        handDropHeightPrices={formData.hand_drop_height_prices}
+                        onInputChange={handleInputChange}
+                      />
+                    )}
+
+                    {/* Per-panel pricing */}
+                    {formData.pricing_type === "per_panel" && (
+                      <PerPanelPricing
+                        machinePricePerPanel={formData.machine_price_per_panel}
+                        handPricePerPanel={formData.hand_price_per_panel}
+                        offersHandFinished={formData.offers_hand_finished}
+                        onInputChange={handleInputChange}
+                      />
+                    )}
+
+                    {formData.pricing_type === "complexity_based" && (
+                      <ComplexityBasedPricing
+                        tiers={formData.complexity_pricing_tiers}
+                        offersHandFinished={formData.offers_hand_finished}
+                        onTiersChange={(tiers) => handleInputChange("complexity_pricing_tiers", tiers)}
+                      />
+                    )}
+
+                    {formData.pricing_type === "pricing_grid" && (
+                      <div className="space-y-4">
+                        <PricingGridUploader 
+                          initialData={formData.pricing_grid_data}
+                          onDataChange={(data) => handleInputChange("pricing_grid_data", data)}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             )}
