@@ -94,12 +94,15 @@ export const DynamicCurtainOptions = ({
           <Select
             value={measurements.selected_heading || ''}
             onValueChange={handleHeadingChange}
-            disabled={readOnly}
           >
             <SelectTrigger className="bg-background border-input">
               <SelectValue placeholder="Select heading type" />
             </SelectTrigger>
-            <SelectContent className="bg-popover border-border z-[100]">
+            <SelectContent 
+              className="bg-popover border-border"
+              position="popper"
+              sideOffset={5}
+            >
               {availableHeadings.map(heading => (
                 <SelectItem key={heading.id} value={heading.id}>
                   <div className="flex items-center justify-between w-full gap-4">
@@ -127,12 +130,15 @@ export const DynamicCurtainOptions = ({
           <Select
             value={measurements.selected_lining || ''}
             onValueChange={handleLiningChange}
-            disabled={readOnly}
           >
             <SelectTrigger className="bg-background border-input">
               <SelectValue placeholder="Select lining (optional)" />
             </SelectTrigger>
-            <SelectContent className="bg-popover border-border z-[100]">
+            <SelectContent 
+              className="bg-popover border-border"
+              position="popper"
+              sideOffset={5}
+            >
               <SelectItem value="none">No Lining</SelectItem>
               {template.lining_types.map((lining: any, index: number) => (
                 <SelectItem key={index} value={lining.type}>
@@ -159,12 +165,15 @@ export const DynamicCurtainOptions = ({
           <Select
             value={measurements.selected_pricing_method || ''}
             onValueChange={handlePricingMethodChange}
-            disabled={readOnly}
           >
             <SelectTrigger className="bg-background border-input">
               <SelectValue placeholder="Select pricing method" />
             </SelectTrigger>
-            <SelectContent className="bg-popover border-border z-[100]">
+            <SelectContent 
+              className="bg-popover border-border"
+              position="popper"
+              sideOffset={5}
+            >
               {template.pricing_methods.map((method: any) => (
                 <SelectItem key={method.id} value={method.id}>
                   <div className="flex items-center justify-between w-full gap-4">
