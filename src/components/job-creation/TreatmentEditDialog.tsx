@@ -36,7 +36,7 @@ export const TreatmentEditDialog = ({
       fabric_type: '',
       fabric_code: '',
       heading_fullness: ''
-    },
+    } as any,
     measurements: {
       rail_width: 0,
       drop: 0,
@@ -53,11 +53,11 @@ export const TreatmentEditDialog = ({
         labor_cost: treatment.labor_cost || 0,
         total_price: treatment.total_price || 0,
         notes: treatment.notes || '',
-        fabric_details: {
+        fabric_details: treatment.fabric_details ? {
           fabric_type: treatment.fabric_details?.fabric_type || '',
           fabric_code: treatment.fabric_details?.fabric_code || '',
           heading_fullness: treatment.fabric_details?.heading_fullness || ''
-        },
+        } : null,
         measurements: {
           rail_width: treatment.measurements?.rail_width || 0,
           drop: treatment.measurements?.drop || 0,
@@ -219,54 +219,56 @@ export const TreatmentEditDialog = ({
             </div>
           </div>
 
-          {/* Fabric Details */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Fabric Details</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="fabric_type">Fabric Type</Label>
-                <Input
-                  id="fabric_type"
-                  value={formData.fabric_details.fabric_type}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    fabric_details: {
-                      ...formData.fabric_details,
-                      fabric_type: e.target.value
-                    }
-                  })}
-                />
+          {/* Fabric Details - Only show for treatments that use fabric */}
+          {formData.fabric_details && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Fabric Details</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="fabric_type">Fabric Type</Label>
+                  <Input
+                    id="fabric_type"
+                    value={formData.fabric_details.fabric_type || ''}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      fabric_details: {
+                        ...formData.fabric_details,
+                        fabric_type: e.target.value
+                      }
+                    })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="fabric_code">Fabric Code</Label>
+                  <Input
+                    id="fabric_code"
+                    value={formData.fabric_details.fabric_code || ''}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      fabric_details: {
+                        ...formData.fabric_details,
+                        fabric_code: e.target.value
+                      }
+                    })}
+                  />
+                </div>
               </div>
               <div>
-                <Label htmlFor="fabric_code">Fabric Code</Label>
+                <Label htmlFor="heading_fullness">Heading Fullness</Label>
                 <Input
-                  id="fabric_code"
-                  value={formData.fabric_details.fabric_code}
+                  id="heading_fullness"
+                  value={formData.fabric_details.heading_fullness || ''}
                   onChange={(e) => setFormData({
                     ...formData,
                     fabric_details: {
                       ...formData.fabric_details,
-                      fabric_code: e.target.value
+                      heading_fullness: e.target.value
                     }
                   })}
                 />
               </div>
             </div>
-            <div>
-              <Label htmlFor="heading_fullness">Heading Fullness</Label>
-              <Input
-                id="heading_fullness"
-                value={formData.fabric_details.heading_fullness}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  fabric_details: {
-                    ...formData.fabric_details,
-                    heading_fullness: e.target.value
-                  }
-                })}
-              />
-            </div>
-          </div>
+          )}
 
           {/* Notes */}
           <div>
