@@ -828,26 +828,24 @@ export const VisualMeasurementSheet = ({
               )}
               {/* End Essential Measurements */}
 
-              {/* CURTAIN-SPECIFIC FIELDS */}
-              {treatmentConfig.requiresHardwareType && treatmentType === 'curtains' && (
-                <div className="bg-muted/20 border border-border rounded-lg p-3">
-                  <h4 className="font-medium mb-2 text-sm text-foreground">Hardware Type</h4>
-                  <RadioGroup 
-                    value={hardwareType} 
-                    onValueChange={(value) => handleInputChange("hardware_type", value)}
-                    disabled={readOnly}
-                    className="flex flex-row space-x-4"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="rod" id="rod" />
-                      <Label htmlFor="rod">Rod</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="track" id="track" />
-                      <Label htmlFor="track">Track</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
+              {/* CURTAIN-SPECIFIC FIELDS - Dynamic Options */}
+              {treatmentType === 'curtains' && (
+                <Card className="border-primary/20 bg-primary/5">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Curtain Configuration</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 pt-2">
+                    <DynamicRollerBlindFields
+                      measurements={measurements}
+                      onChange={handleInputChange}
+                      templateId={selectedTemplate?.id}
+                      treatmentCategory={treatmentType}
+                      readOnly={readOnly}
+                      onOptionPriceChange={handleOptionPriceChange}
+                      selectedOptions={selectedOptions}
+                    />
+                  </CardContent>
+                </Card>
               )}
 
               {/* BLIND-SPECIFIC FIELDS - Dynamic Options */}
