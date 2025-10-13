@@ -1154,7 +1154,7 @@ export const VisualMeasurementSheet = ({
             )}
 
             {/* Pooling Configuration - ONLY for curtains */}
-            {treatmentType === 'curtains' && (
+            {treatmentCategory === 'curtains' && (
               <div className="container-level-1 rounded-lg p-3">
                 <h4 className="text-base font-bold text-card-foreground mb-3">Pooling Configuration</h4>
                 <div className="space-y-4">
