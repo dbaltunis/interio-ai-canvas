@@ -52,7 +52,7 @@ export interface CurtainTemplate {
   compatible_hardware: string[];
   
   // Make-Up Pricing
-  pricing_type: 'per_metre' | 'per_drop' | 'per_panel' | 'pricing_grid';
+  pricing_type: 'per_metre' | 'per_drop' | 'per_panel' | 'pricing_grid' | 'complexity_based';
   offers_hand_finished?: boolean;
   machine_price_per_metre?: number;
   hand_price_per_metre?: number;
@@ -84,6 +84,14 @@ export interface CurtainTemplate {
   
   unit_price?: number;
   pricing_grid_data?: any;
+  
+  // Complexity-based pricing
+  complexity_pricing_tiers?: Array<{
+    fabric_type: string;
+    complexity: string;
+    machine_price: number;
+    hand_price: number;
+  }>;
   
   // Manufacturing
   manufacturing_type: 'machine' | 'hand';

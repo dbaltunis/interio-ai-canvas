@@ -38,6 +38,7 @@ import { PerDropPricing } from "./pricing/PerDropPricing";
 import { PerMetrePricing } from "./pricing/PerMetrePricing";
 import { PerPanelPricing } from "./pricing/PerPanelPricing";
 import { HeightBasedPricingRanges } from "./pricing/HeightBasedPricingRanges";
+import { ComplexityBasedPricing } from "./pricing/ComplexityBasedPricing";
 
 interface CurtainTemplateFormProps {
   template?: CurtainTemplate;
@@ -135,7 +136,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     compatible_hardware: template?.compatible_hardware || [],
     
     // Make-Up Pricing with machine/hand conditions
-    pricing_type: template?.pricing_type || "per_metre" as 'per_metre' | 'per_drop' | 'per_panel' | 'pricing_grid' | 'per_sqm' | 'per_unit',
+    pricing_type: template?.pricing_type || "per_metre" as 'per_metre' | 'per_drop' | 'per_panel' | 'pricing_grid' | 'per_sqm' | 'per_unit' | 'complexity_based',
     offers_hand_finished: false,
     machine_price_per_metre: template?.unit_price?.toString() || "",
     hand_price_per_metre: "",
@@ -156,6 +157,9 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     drop_height_ranges: template?.drop_height_ranges || [],
     machine_drop_height_prices: template?.machine_drop_height_prices || [],
     hand_drop_height_prices: template?.hand_drop_height_prices || [],
+    
+    // Complexity-based pricing tiers
+    complexity_pricing_tiers: (template as any)?.complexity_pricing_tiers || [],
     
     // Option Categories Integration
     selected_option_categories: template?.compatible_hardware || []  // Temporarily use this field
@@ -1197,6 +1201,14 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                       handPricePerPanel={formData.hand_price_per_panel}
                       offersHandFinished={formData.offers_hand_finished}
                       onInputChange={handleInputChange}
+                    />
+                  )}
+
+                  {formData.pricing_type === "complexity_based" && (
+                    <ComplexityBasedPricing
+                      tiers={formData.complexity_pricing_tiers}
+                      offersHandFinished={formData.offers_hand_finished}
+                      onTiersChange={(tiers) => handleInputChange("complexity_pricing_tiers", tiers)}
                     />
                   )}
 

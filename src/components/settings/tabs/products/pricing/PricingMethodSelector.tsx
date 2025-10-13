@@ -18,6 +18,7 @@ export const PricingMethodSelector = ({ value, onChange }: PricingMethodSelector
           <SelectItem value="per_metre">Per Running Metre/Yard</SelectItem>
           <SelectItem value="per_drop">Per Drop - Price multiplies by fabric pieces needed</SelectItem>
           <SelectItem value="per_panel">Per Panel - Fixed price per finished curtain</SelectItem>
+          <SelectItem value="complexity_based">Complexity-Based - Varies by fabric type & sewing complexity</SelectItem>
           <SelectItem value="pricing_grid">Pricing Grid (Upload)</SelectItem>
         </SelectContent>
       </Select>
