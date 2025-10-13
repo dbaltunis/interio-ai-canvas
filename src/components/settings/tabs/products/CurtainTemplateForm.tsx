@@ -161,6 +161,9 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     // Complexity-based pricing tiers
     complexity_pricing_tiers: (template as any)?.complexity_pricing_tiers || [],
     
+    // Multiple pricing methods
+    pricing_methods: (template as any)?.pricing_methods || [],
+    
     // Option Categories Integration
     selected_option_categories: template?.compatible_hardware || []  // Temporarily use this field
   });
