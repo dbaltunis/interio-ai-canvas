@@ -655,22 +655,41 @@ export const VisualMeasurementSheet = ({
                 </>
               ) : (
                 /* Single Panel - Consistent with pair styling */
-                <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} ${curtainSide === "left" ? "left-12" : "right-12"} w-12 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>
+                <div 
+                  className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} ${curtainSide === "left" ? "left-12" : "right-12"} w-12 ${getCurtainBottomPosition()} rounded-sm shadow-lg overflow-hidden`}
+                  style={{
+                    backgroundColor: fabricImageUrl ? 'transparent' : fabricColor,
+                    backgroundImage: fabricImageUrl ? `url(${fabricImageUrl})` : undefined,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    opacity: 0.9
+                  }}
+                >
                   <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-foreground rounded-full"></div>
-                  <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-primary/80"></div>
-                  <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-primary/60"></div>
-                  <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-primary/50"></div>
-                  <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-primary/40"></div>
-                  <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-primary/30"></div>
-                  <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-primary/20"></div>
-                  <div className="absolute top-2 bottom-2 left-7 w-0.5 bg-primary/80"></div>
-                  <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-primary/60"></div>
-                  <div className="absolute top-2 bottom-2 left-9 w-0.5 bg-primary/50"></div>
-                  <div className="absolute top-2 bottom-2 left-10 w-0.5 bg-primary/40"></div>
+                  {/* Pleat lines for depth effect */}
+                  <div className="absolute top-2 bottom-2 left-1 w-0.5 bg-black/20"></div>
+                  <div className="absolute top-2 bottom-2 left-2 w-0.5 bg-black/15"></div>
+                  <div className="absolute top-2 bottom-2 left-3 w-0.5 bg-black/10"></div>
+                  <div className="absolute top-2 bottom-2 left-4 w-0.5 bg-black/8"></div>
+                  <div className="absolute top-2 bottom-2 left-5 w-0.5 bg-black/6"></div>
+                  <div className="absolute top-2 bottom-2 left-6 w-0.5 bg-black/4"></div>
+                  <div className="absolute top-2 bottom-2 left-7 w-0.5 bg-black/20"></div>
+                  <div className="absolute top-2 bottom-2 left-8 w-0.5 bg-black/15"></div>
+                  <div className="absolute top-2 bottom-2 left-9 w-0.5 bg-black/10"></div>
+                  <div className="absolute top-2 bottom-2 left-10 w-0.5 bg-black/8"></div>
                   
                   {/* Pooling visual effect */}
                   {poolingOption === "below_floor" && hasValue(poolingAmount) && (
-                    <div className="absolute -bottom-4 left-0 w-full h-4 bg-primary/60 rounded-b-lg"></div>
+                    <div 
+                      className="absolute -bottom-4 left-0 w-full h-4 rounded-b-lg"
+                      style={{
+                        backgroundColor: fabricImageUrl ? 'transparent' : fabricColor,
+                        backgroundImage: fabricImageUrl ? `url(${fabricImageUrl})` : undefined,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        opacity: 0.7
+                      }}
+                    ></div>
                   )}
                 </div>
               )}
