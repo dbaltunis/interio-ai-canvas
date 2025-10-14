@@ -194,15 +194,6 @@ export const BlindVisualizer = ({
       
       {/* Measurement indicators */}
       {renderMeasurementIndicators()}
-      
-      {/* Treatment info */}
-      <div className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm rounded p-2 text-xs space-y-1">
-        <div className="font-medium">Blind Details</div>
-        <div>Type: {blindType}</div>
-        <div>Mount: {mountType}</div>
-        <div>Control: {controlSide}</div>
-        {slatWidth && <div>Slat: {slatWidth}mm</div>}
-      </div>
     </div>
   );
 };
