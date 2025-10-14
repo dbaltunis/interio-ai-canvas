@@ -854,19 +854,9 @@ export const DynamicWindowWorksheet = forwardRef<{
                   </div>
                 </div>}
                 
-                <Button onClick={async () => {
-                  // Save fabric selection before moving to measurements tab
-                  try {
-                    console.log("💾 Saving fabric selection before proceeding to measurements...");
-                    const currentRef = ref as React.MutableRefObject<{
-                      autoSave: () => Promise<void>;
-                    }>;
-                    if (currentRef?.current) {
-                      await currentRef.current.autoSave();
-                    }
-                  } catch (error) {
-                    console.error("Failed to save fabric selection:", error);
-                  }
+                <Button onClick={() => {
+                  // Simply change tab - let the Measurements tab handle its own data
+                  console.log("📍 Navigating to measurements tab with items:", selectedItems);
                   setActiveTab("measurements");
                 }} disabled={!Object.values(selectedItems).some(item => item)} className="w-full">
                   Continue to Measurements
