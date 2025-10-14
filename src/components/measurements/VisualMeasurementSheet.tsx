@@ -192,29 +192,45 @@ export const VisualMeasurementSheet = ({
       const isNarrowFabric = fabricWidthCm < 250;
       const isWideFabric = fabricWidthCm >= 250;
       
-      // NARROW FABRICS (< 250cm): VERTICAL/STANDARD by default - fabric height = curtain drop, widths seamed for curtain width
-      // WIDE FABRICS (>= 250cm): HORIZONTAL/RAILROADED by default - fabric width = curtain drop, length = curtain width
-      // User can rotate narrow fabrics to railroaded if drop fits within fabric width
-      const useHorizontalOrientation = isWideFabric || (isNarrowFabric && fabricRotated);
+      // Calculate total drop to check if railroading is possible
+      const totalDrop = height + headerHem + bottomHem + pooling;
+      const wasteMultiplier = 1 + ((selectedTemplate.waste_percent || 0) / 100);
+      
+      // Determine if we can use horizontal/railroaded orientation:
+      // - Drop must fit within fabric width
+      // - User must want it (fabricRotated = true for narrow, or it's a wide fabric and not explicitly rotated off)
+      const canRailroad = totalDrop <= fabricWidthCm;
+      
+      // Orientation logic:
+      // - Wide fabrics: railroaded by default UNLESS user turns rotation OFF
+      // - Narrow fabrics: vertical by default UNLESS user turns rotation ON (and it's possible)
+      let useHorizontalOrientation;
+      if (isWideFabric) {
+        // Wide fabrics: rotation toggle OFF means switch to vertical
+        useHorizontalOrientation = fabricRotated !== false && canRailroad;
+      } else {
+        // Narrow fabrics: rotation toggle ON means switch to railroaded (if possible)
+        useHorizontalOrientation = fabricRotated && canRailroad;
+      }
       
       console.log("🔄 Fabric Calculation:", {
         fabricRotated,
         isNarrowFabric,
         isWideFabric,
+        canRailroad,
         useHorizontalOrientation,
         fabricWidthCm,
-        totalDropWillBe: height + headerHem + bottomHem + pooling
+        totalDrop
       });
+      
       
       let widthsRequired, totalSeamAllowance, linearMeters;
       
-      // Calculate total drop for both orientations
-      const totalDrop = height + headerHem + bottomHem + pooling;
-      const wasteMultiplier = 1 + ((selectedTemplate.waste_percent || 0) / 100);
-      
-      if (useHorizontalOrientation && totalDrop <= fabricWidthCm) {
-        // Railroaded/Horizontal: Drop fits within fabric width, we buy by the curtain width
-        // Fabric is used sideways: fabric WIDTH = curtain DROP, fabric LENGTH = curtain WIDTH
+      if (useHorizontalOrientation) {
+        // RAILROADED/HORIZONTAL (wide fabrics by default OR rotated narrow fabrics if drop fits):
+        // - Fabric WIDTH is used for the curtain DROP
+        // - Fabric LENGTH (from roll) is used for the curtain WIDTH
+        // - We buy LENGTH equal to curtain width needed
         const totalWidthNeeded = requiredWidth + returnLeft + returnRight + totalSideHems;
         
         widthsRequired = 1; // Only 1 "width" needed because fabric is railroaded
@@ -230,8 +246,10 @@ export const VisualMeasurementSheet = ({
           totalSeamAllowance
         });
       } else {
-        // Standard/Vertical: Traditional calculation
-        // Fabric WIDTH is used for curtain width, fabric LENGTH is used for drop
+        // STANDARD/VERTICAL (narrow fabrics by default OR wide fabrics rotated to vertical):
+        // - Fabric WIDTH determines how many panels (drops) fit across
+        // - Fabric HEIGHT (length from roll) is used for curtain DROP
+        // - We buy DROPS (heights) and seam them together for curtain width
         const totalWidthWithAllowances = requiredWidth + returnLeft + returnRight + totalSideHems;
         
         // How many fabric widths (drops) do we need to cover the curtain width?
@@ -1103,30 +1121,59 @@ export const VisualMeasurementSheet = ({
                             // Use consistent thresholds with calculation logic
                             const isNarrowFabric = fabricWidthCm < 250;
                             const isWideFabric = fabricWidthCm >= 250;
-                            const canRotate = totalDrop <= fabricWidthCm;
+                            const canRailroad = totalDrop <= fabricWidthCm;
                             const fabricRotated = measurements.fabric_rotated === true || measurements.fabric_rotated === 'true';
                             
                             if (isWideFabric) {
-                              return (
-                                <>
-                                  <p>✓ Wide fabric ({fabricWidthCm}cm) - railroaded by default</p>
-                                  <p className="text-primary">Fabric width used for drop, length used for curtain width</p>
-                                </>
-                              );
-                            } else if (isNarrowFabric && canRotate) {
-                              return (
-                                <>
-                                  <p>Narrow fabric ({fabricWidthCm}cm) - {fabricRotated ? 'railroaded' : 'standard orientation'}</p>
-                                  <p className="text-primary">💡 {fabricRotated ? 'Rotated: Buying LENGTH for width, width for drop' : 'Standard: Buying DROPS, seaming for width'}</p>
-                                </>
-                              );
-                            } else if (isNarrowFabric && !canRotate) {
-                              return (
-                                <>
-                                  <p>⚠ Narrow fabric ({fabricWidthCm}cm) - standard orientation</p>
-                                  <p className="text-amber-600">Total drop ({totalDrop.toFixed(0)}cm) exceeds fabric width - rotation not possible</p>
-                                </>
-                              );
+                              if (fabricRotated) {
+                                if (canRailroad) {
+                                  return (
+                                    <>
+                                      <p>✓ Wide fabric ({fabricWidthCm}cm) - railroaded (default)</p>
+                                      <p className="text-primary">Fabric width for drop, buying length for curtain width</p>
+                                    </>
+                                  );
+                                } else {
+                                  return (
+                                    <>
+                                      <p>⚠ Wide fabric ({fabricWidthCm}cm) - using vertical orientation</p>
+                                      <p className="text-amber-600">Drop ({totalDrop.toFixed(0)}cm) exceeds fabric width - buying drops and seaming</p>
+                                    </>
+                                  );
+                                }
+                              } else {
+                                return (
+                                  <>
+                                    <p>Wide fabric ({fabricWidthCm}cm) - rotated to vertical</p>
+                                    <p className="text-primary">Buying drops of fabric, seaming for width</p>
+                                  </>
+                                );
+                              }
+                            } else if (isNarrowFabric) {
+                              if (fabricRotated) {
+                                if (canRailroad) {
+                                  return (
+                                    <>
+                                      <p>Narrow fabric ({fabricWidthCm}cm) - rotated to railroaded</p>
+                                      <p className="text-primary">Fabric width for drop, buying length for curtain width</p>
+                                    </>
+                                  );
+                                } else {
+                                  return (
+                                    <>
+                                      <p>⚠ Narrow fabric ({fabricWidthCm}cm) - standard orientation</p>
+                                      <p className="text-amber-600">Drop ({totalDrop.toFixed(0)}cm) exceeds fabric width - cannot railroad</p>
+                                    </>
+                                  );
+                                }
+                              } else {
+                                return (
+                                  <>
+                                    <p>✓ Narrow fabric ({fabricWidthCm}cm) - standard vertical (default)</p>
+                                    <p className="text-primary">Buying drops for height, seaming widths for curtain width</p>
+                                  </>
+                                );
+                              }
                             }
                             return <p>Standard fabric orientation</p>;
                           })()}
