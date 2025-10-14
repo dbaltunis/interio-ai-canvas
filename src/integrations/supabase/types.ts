@@ -1423,6 +1423,7 @@ export type Database = {
           price_above_breakpoint_multiplier: number | null
           price_rules: Json | null
           pricing_grid_data: Json | null
+          pricing_methods: Json | null
           pricing_type: string
           return_left: number | null
           return_right: number | null
@@ -1483,6 +1484,7 @@ export type Database = {
           price_above_breakpoint_multiplier?: number | null
           price_rules?: Json | null
           pricing_grid_data?: Json | null
+          pricing_methods?: Json | null
           pricing_type?: string
           return_left?: number | null
           return_right?: number | null
@@ -1543,6 +1545,7 @@ export type Database = {
           price_above_breakpoint_multiplier?: number | null
           price_rules?: Json | null
           pricing_grid_data?: Json | null
+          pricing_methods?: Json | null
           pricing_type?: string
           return_left?: number | null
           return_right?: number | null
