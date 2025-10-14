@@ -49,7 +49,7 @@ export const TreatmentPreviewEngine = ({
   showProductOnly = false
 }: TreatmentPreviewEngineProps) => {
   
-  // If showing product only, display the template image or fabric/material image
+  // If showing product only, display images in priority order: template -> fabric/material -> treatment visual
   if (showProductOnly) {
     const productImage = template?.image_url || selectedItems.fabric?.image_url || selectedItems.material?.image_url;
     const productName = template?.name || selectedItems.fabric?.name || selectedItems.material?.name || 'Product';
@@ -58,30 +58,28 @@ export const TreatmentPreviewEngine = ({
       templateImage: template?.image_url?.substring(0, 50), 
       fabricImage: selectedItems.fabric?.image_url?.substring(0, 50),
       materialImage: selectedItems.material?.image_url?.substring(0, 50),
-      productName 
+      productName,
+      hasFallback: !productImage
     });
     
-    return (
-      <div className={`relative w-full h-full ${className}`}>
-        {productImage ? (
+    // If we have a product image, display it
+    if (productImage) {
+      return (
+        <div className={`relative w-full h-full ${className}`}>
           <img 
             src={productImage} 
             alt={productName} 
             className="w-full h-full object-cover rounded-md"
             onError={(e) => {
               console.error("❌ Failed to load image:", productImage?.substring(0, 100));
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.nextElementSibling?.classList.remove('hidden');
             }}
           />
-        ) : null}
-        <div className={`w-full h-full bg-gradient-to-br from-muted to-muted/50 rounded-md flex items-center justify-center ${productImage ? 'hidden' : ''}`}>
-          <div className="text-center text-muted-foreground">
-            <p className="text-sm">No image available</p>
-          </div>
         </div>
-      </div>
-    );
+      );
+    }
+    
+    // Fallback to treatment visualizer if no product image is available
+    // This ensures the image area is never empty
   }
   
   if (showWindowOnly) {
