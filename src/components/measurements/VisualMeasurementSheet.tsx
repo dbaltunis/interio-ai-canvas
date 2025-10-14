@@ -1163,7 +1163,9 @@ export const VisualMeasurementSheet = ({
                             const fabricRotated = measurements.fabric_rotated === true || measurements.fabric_rotated === 'true';
                             
                             if (isWideFabric) {
-                              if (fabricRotated) {
+                              // For wide fabrics: toggle ON = railroaded (default), toggle OFF = vertical
+                              if (fabricRotated !== false) {
+                                // Toggle is ON (default for wide fabrics)
                                 if (canRailroad) {
                                   return (
                                     <>
@@ -1174,21 +1176,24 @@ export const VisualMeasurementSheet = ({
                                 } else {
                                   return (
                                     <>
-                                      <p>⚠ Wide fabric ({fabricWidthCm}cm) - using vertical orientation</p>
-                                      <p className="text-amber-600">Drop ({totalDrop.toFixed(0)}cm) exceeds fabric width - buying drops and seaming</p>
+                                      <p>⚠ Wide fabric ({fabricWidthCm}cm) - cannot railroad</p>
+                                      <p className="text-amber-600">Drop ({totalDrop.toFixed(0)}cm) exceeds fabric width - switch to vertical orientation</p>
                                     </>
                                   );
                                 }
                               } else {
+                                // Toggle is OFF - user manually switched to vertical
                                 return (
                                   <>
-                                    <p>Wide fabric ({fabricWidthCm}cm) - rotated to vertical</p>
+                                    <p>Wide fabric ({fabricWidthCm}cm) - switched to vertical orientation</p>
                                     <p className="text-primary">Buying drops of fabric, seaming for width</p>
                                   </>
                                 );
                               }
                             } else if (isNarrowFabric) {
+                              // For narrow fabrics: toggle OFF = vertical (default), toggle ON = railroaded
                               if (fabricRotated) {
+                                // Toggle is ON - user wants to railroad
                                 if (canRailroad) {
                                   return (
                                     <>
@@ -1199,12 +1204,13 @@ export const VisualMeasurementSheet = ({
                                 } else {
                                   return (
                                     <>
-                                      <p>⚠ Narrow fabric ({fabricWidthCm}cm) - standard orientation</p>
-                                      <p className="text-amber-600">Drop ({totalDrop.toFixed(0)}cm) exceeds fabric width - cannot railroad</p>
+                                      <p>⚠ Narrow fabric ({fabricWidthCm}cm) - cannot railroad</p>
+                                      <p className="text-amber-600">Drop ({totalDrop.toFixed(0)}cm) exceeds fabric width ({fabricWidthCm}cm)</p>
                                     </>
                                   );
                                 }
                               } else {
+                                // Toggle is OFF (default for narrow fabrics) - vertical orientation
                                 return (
                                   <>
                                     <p>✓ Narrow fabric ({fabricWidthCm}cm) - standard vertical (default)</p>
