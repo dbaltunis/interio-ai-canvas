@@ -271,32 +271,51 @@ export const CostCalculationSummary = ({
       return gridPrice;
     }
     
+    // Get the selected pricing method from measurements or use first method as default
+    const pricingMethods = (template as any).pricing_methods || [];
+    const selectedMethodId = measurements.selected_pricing_method;
+    const selectedMethod = pricingMethods.find((m: any) => m.id === selectedMethodId) || pricingMethods[0];
+    
     // Determine manufacturing type from measurements or template
     const manufacturingType = measurements.manufacturing_type || template.manufacturing_type || 'machine';
     const isHandFinished = manufacturingType === 'hand';
     
-    console.log('🏭 Manufacturing type for pricing:', manufacturingType, {
-      fromMeasurements: measurements.manufacturing_type,
-      fromTemplate: template.manufacturing_type,
+    console.log('🏭 Manufacturing cost calculation:', {
+      selectedMethodId,
+      selectedMethod: selectedMethod ? {
+        id: selectedMethod.id,
+        name: selectedMethod.name,
+        pricing_type: selectedMethod.pricing_type
+      } : null,
+      manufacturingType,
       isHandFinished
     });
     
-    // Get the appropriate pricing based on manufacturing type
+    // Get prices from the selected pricing method, fallback to template level
     const pricePerMetre = isHandFinished 
-      ? (template.hand_price_per_metre || template.machine_price_per_metre || 0)
-      : (template.machine_price_per_metre || 0);
+      ? (selectedMethod?.hand_price_per_metre || template.hand_price_per_metre || 0)
+      : (selectedMethod?.machine_price_per_metre || template.machine_price_per_metre || 0);
     
     const pricePerDrop = isHandFinished
-      ? (template.hand_price_per_drop || template.machine_price_per_drop || 0)
-      : (template.machine_price_per_drop || 0);
+      ? (selectedMethod?.hand_price_per_drop || template.hand_price_per_drop || 0)
+      : (selectedMethod?.machine_price_per_drop || template.machine_price_per_drop || 0);
     
     const pricePerPanel = isHandFinished
-      ? (template.hand_price_per_panel || template.machine_price_per_panel || 0)
-      : (template.machine_price_per_panel || 0);
+      ? (selectedMethod?.hand_price_per_panel || template.hand_price_per_panel || 0)
+      : (selectedMethod?.machine_price_per_panel || template.machine_price_per_panel || 0);
+    
+    console.log('💰 Makeup prices from method:', {
+      methodId: selectedMethod?.id,
+      methodName: selectedMethod?.name,
+      pricePerMetre,
+      pricePerDrop,
+      pricePerPanel,
+      source: selectedMethod ? 'pricing_method' : 'template_fallback'
+    });
     
     // FALLBACK: Check if any pricing is available
     if (!pricePerMetre && !pricePerDrop && !pricePerPanel) {
-      console.warn('⚠️ No makeup pricing found for', manufacturingType, 'finishing');
+      console.warn('⚠️ No makeup pricing found for', manufacturingType, 'finishing in method or template');
       return 0;
     }
 
