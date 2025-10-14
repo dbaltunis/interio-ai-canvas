@@ -120,6 +120,7 @@ export const VisualMeasurementSheet = ({
   console.log("🎯 Specific values - rail_width:", measurements.rail_width, "drop:", measurements.drop);
 
   // Use measurements as the source of truth for UI state, with fallbacks to template defaults
+  // Default to "pair" if no curtain type is specified
   const curtainType = measurements.curtain_type || (selectedTemplate as any)?.panel_configuration || selectedTemplate?.curtain_type || "pair";
   const curtainSide = measurements.curtain_side || "left";
   const hardwareType = selectedTemplate?.compatible_hardware?.[0]?.toLowerCase() || measurements.hardware_type || "rod";
@@ -147,6 +148,24 @@ export const VisualMeasurementSheet = ({
   const fabricColor = selectedFabricItem?.color || 'hsl(var(--primary))';
   
   console.log("🎨 Fabric visualization data:", { selectedFabricItem, fabricImageUrl, fabricColor });
+  
+  // Auto-set curtain type to "pair" if not already set
+  useEffect(() => {
+    if (!measurements.curtain_type && !readOnly) {
+      handleInputChange("curtain_type", "pair");
+    }
+  }, []);
+  
+  // Auto-set fabric rotation based on fabric width when fabric is first selected
+  useEffect(() => {
+    if (selectedFabricItem && measurements.fabric_rotated === undefined && !readOnly) {
+      const fabricWidthCm = selectedFabricItem.fabric_width || 137;
+      const isWideFabric = fabricWidthCm >= 250;
+      // Wide fabrics (≥250cm) default to horizontal/railroaded (true)
+      // Narrow fabrics (<250cm) default to vertical/standard (false)
+      handleInputChange("fabric_rotated", isWideFabric.toString());
+    }
+  }, [selectedFabricItem]);
 
   // Calculate fabric usage when measurements and fabric change
   const fabricCalculation = useMemo(() => {
