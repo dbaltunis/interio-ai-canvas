@@ -208,6 +208,23 @@ export const DynamicTreatmentVisualizer = ({
       case 'roman_blinds':
         return renderRomanBlindVisualization();
       
+      case 'venetian_blinds':
+      case 'vertical_blinds':
+      case 'cellular_blinds':
+      case 'cellular_shades':
+      case 'panel_glide':
+      case 'plantation_shutters':
+      case 'shutters':
+        return (
+          <RollerBlindVisualizer
+            measurements={measurements}
+            selectedFabric={selectedFabric}
+            controlPosition={measurements.control_position}
+            mountingType={measurements.mounting_type}
+            transparency={measurements.fabric_transparency}
+          />
+        );
+      
       case 'curtains':
       default:
         return renderCurtainVisualization();
