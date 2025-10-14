@@ -334,140 +334,7 @@ export const VisualMeasurementSheet = ({
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Visual Diagram */}
               <div className="lg:w-2/5 flex-shrink-0 space-y-4">
-                
-                {/* Fabric & Pricing Calculations Section */}
-                {fabricCalculation && selectedFabricItem && (
-                  <Card className="container-level-2">
-                    <Accordion type="single" collapsible className="w-full">
-                      <AccordionItem value="fabric-calculations" className="border-none">
-                        <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                          <div className="flex items-center gap-2">
-                            <Ruler className="w-4 h-4 text-primary" />
-                            <span className="font-semibold">Fabric & Pricing Calculations</span>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 pb-4">
-                          <div className="space-y-4">
-                            {/* Fabric Information */}
-                            <div className="container-level-3 rounded-md p-3 space-y-2">
-                              <h4 className="font-semibold text-sm flex items-center gap-2">
-                                <Calculator className="w-3.5 h-3.5" />
-                                Selected Fabric
-                              </h4>
-                              <div className="text-xs space-y-1 text-muted-foreground">
-                                <div className="flex justify-between">
-                                  <span>Fabric:</span>
-                                  <span className="font-medium text-foreground">{selectedFabricItem.name}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span>Width:</span>
-                                  <span className="font-medium text-foreground">{selectedFabricItem.fabric_width || 137}cm</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span>Price/meter:</span>
-                                  <span className="font-medium text-foreground">{formatPrice(fabricCalculation.pricePerMeter)}</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Fabric Usage Breakdown */}
-                            <div className="container-level-3 rounded-md p-3 space-y-2">
-                              <h4 className="font-semibold text-sm">Fabric Usage Breakdown</h4>
-                              <div className="text-xs space-y-1 text-muted-foreground">
-                                <div className="flex justify-between">
-                                  <span>Rail Width:</span>
-                                  <span className="font-medium text-foreground">{fabricCalculation.railWidth}cm</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span>Fullness Ratio:</span>
-                                  <span className="font-medium text-foreground">{fabricCalculation.fullnessRatio}x</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span>Required Width:</span>
-                                  <span className="font-medium text-foreground">{(fabricCalculation.railWidth * fabricCalculation.fullnessRatio).toFixed(1)}cm</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span>Returns (L+R):</span>
-                                  <span className="font-medium text-foreground">{fabricCalculation.returns}cm</span>
-                                </div>
-                                {fabricCalculation.totalSideHems > 0 && (
-                                  <div className="flex justify-between">
-                                    <span>Side Hems:</span>
-                                    <span className="font-medium text-foreground">{fabricCalculation.totalSideHems}cm</span>
-                                  </div>
-                                )}
-                                <div className="flex justify-between border-t border-border pt-1 mt-1">
-                                  <span>Widths Required:</span>
-                                  <span className="font-medium text-foreground">{fabricCalculation.widthsRequired} width(s)</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Height Calculations */}
-                            <div className="container-level-3 rounded-md p-3 space-y-2">
-                              <h4 className="font-semibold text-sm">Height Breakdown</h4>
-                              <div className="text-xs space-y-1 text-muted-foreground">
-                                <div className="flex justify-between">
-                                  <span>Drop Height:</span>
-                                  <span className="font-medium text-foreground">{fabricCalculation.drop}cm</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span>Header Hem:</span>
-                                  <span className="font-medium text-foreground">+{fabricCalculation.headerHem}cm</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span>Bottom Hem:</span>
-                                  <span className="font-medium text-foreground">+{fabricCalculation.bottomHem}cm</span>
-                                </div>
-                                {fabricCalculation.pooling > 0 && (
-                                  <div className="flex justify-between">
-                                    <span>Pooling:</span>
-                                    <span className="font-medium text-foreground">+{fabricCalculation.pooling}cm</span>
-                                  </div>
-                                )}
-                                {fabricCalculation.totalSeamAllowance > 0 && (
-                                  <div className="flex justify-between">
-                                    <span>Seam Allowances:</span>
-                                    <span className="font-medium text-foreground">+{fabricCalculation.totalSeamAllowance.toFixed(1)}cm</span>
-                                  </div>
-                                )}
-                                <div className="flex justify-between border-t border-border pt-1 mt-1">
-                                  <span>Total Drop:</span>
-                                  <span className="font-medium text-foreground">{fabricCalculation.totalDrop.toFixed(1)}cm</span>
-                                </div>
-                                {fabricCalculation.wastePercent > 0 && (
-                                  <div className="flex justify-between">
-                                    <span>Waste ({fabricCalculation.wastePercent}%):</span>
-                                    <span className="font-medium text-foreground">+{((fabricCalculation.linearMeters / (1 + fabricCalculation.wastePercent / 100)) * (fabricCalculation.wastePercent / 100)).toFixed(2)}m</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Final Totals */}
-                            <div className="bg-primary/10 rounded-md p-3 space-y-2">
-                              <div className="text-xs space-y-1.5">
-                                <div className="flex justify-between items-center">
-                                  <span className="font-semibold">Linear Meters Required:</span>
-                                  <span className="font-bold text-primary text-base">{fabricCalculation.linearMeters.toFixed(2)}m</span>
-                                </div>
-                                <div className="flex justify-between items-center border-t border-primary/20 pt-1.5">
-                                  <span className="font-semibold">Fabric Cost:</span>
-                                  <span className="font-bold text-primary text-base">{formatPrice(fabricCalculation.totalCost)}</span>
-                                </div>
-                              </div>
-                              <div className="text-[10px] text-muted-foreground mt-2 pt-2 border-t border-primary/20">
-                                Calculation: {fabricCalculation.linearMeters.toFixed(2)}m × {formatPrice(fabricCalculation.pricePerMeter)}/m
-                              </div>
-                            </div>
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
-                  </Card>
-                )}
-                
-                {/* Original Visual Diagram below calculations */}
+                {/* Original Visual Diagram first */}
                 {/* Blinds visual */}
                 {(treatmentCategory === 'roller_blinds' || 
                   treatmentCategory === 'venetian_blinds' || 
@@ -877,6 +744,138 @@ export const VisualMeasurementSheet = ({
                   )}
                 </div>
               </div>
+              
+              {/* Fabric & Pricing Calculations Section - Below Visual */}
+              {fabricCalculation && selectedFabricItem && (
+                <Card className="container-level-2">
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="fabric-calculations" className="border-none">
+                      <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                        <div className="flex items-center gap-2">
+                          <Ruler className="w-4 h-4 text-primary" />
+                          <span className="font-semibold">Fabric & Pricing Calculations</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-4 pb-4">
+                        <div className="space-y-4">
+                          {/* Fabric Information */}
+                          <div className="container-level-3 rounded-md p-3 space-y-2">
+                            <h4 className="font-semibold text-sm flex items-center gap-2">
+                              <Calculator className="w-3.5 h-3.5" />
+                              Selected Fabric
+                            </h4>
+                            <div className="text-xs space-y-1 text-muted-foreground">
+                              <div className="flex justify-between">
+                                <span>Fabric:</span>
+                                <span className="font-medium text-foreground">{selectedFabricItem.name}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Width:</span>
+                                <span className="font-medium text-foreground">{selectedFabricItem.fabric_width || 137}cm</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Price/meter:</span>
+                                <span className="font-medium text-foreground">{formatPrice(fabricCalculation.pricePerMeter)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Fabric Usage Breakdown */}
+                          <div className="container-level-3 rounded-md p-3 space-y-2">
+                            <h4 className="font-semibold text-sm">Fabric Usage Breakdown</h4>
+                            <div className="text-xs space-y-1 text-muted-foreground">
+                              <div className="flex justify-between">
+                                <span>Rail Width:</span>
+                                <span className="font-medium text-foreground">{fabricCalculation.railWidth}cm</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Fullness Ratio:</span>
+                                <span className="font-medium text-foreground">{fabricCalculation.fullnessRatio}x</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Required Width:</span>
+                                <span className="font-medium text-foreground">{(fabricCalculation.railWidth * fabricCalculation.fullnessRatio).toFixed(1)}cm</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Returns (L+R):</span>
+                                <span className="font-medium text-foreground">{fabricCalculation.returns}cm</span>
+                              </div>
+                              {fabricCalculation.totalSideHems > 0 && (
+                                <div className="flex justify-between">
+                                  <span>Side Hems:</span>
+                                  <span className="font-medium text-foreground">{fabricCalculation.totalSideHems}cm</span>
+                                </div>
+                              )}
+                              <div className="flex justify-between border-t border-border pt-1 mt-1">
+                                <span>Widths Required:</span>
+                                <span className="font-medium text-foreground">{fabricCalculation.widthsRequired} width(s)</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Height Calculations */}
+                          <div className="container-level-3 rounded-md p-3 space-y-2">
+                            <h4 className="font-semibold text-sm">Height Breakdown</h4>
+                            <div className="text-xs space-y-1 text-muted-foreground">
+                              <div className="flex justify-between">
+                                <span>Drop Height:</span>
+                                <span className="font-medium text-foreground">{fabricCalculation.drop}cm</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Header Hem:</span>
+                                <span className="font-medium text-foreground">+{fabricCalculation.headerHem}cm</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Bottom Hem:</span>
+                                <span className="font-medium text-foreground">+{fabricCalculation.bottomHem}cm</span>
+                              </div>
+                              {fabricCalculation.pooling > 0 && (
+                                <div className="flex justify-between">
+                                  <span>Pooling:</span>
+                                  <span className="font-medium text-foreground">+{fabricCalculation.pooling}cm</span>
+                                </div>
+                              )}
+                              {fabricCalculation.totalSeamAllowance > 0 && (
+                                <div className="flex justify-between">
+                                  <span>Seam Allowances:</span>
+                                  <span className="font-medium text-foreground">+{fabricCalculation.totalSeamAllowance.toFixed(1)}cm</span>
+                                </div>
+                              )}
+                              <div className="flex justify-between border-t border-border pt-1 mt-1">
+                                <span>Total Drop:</span>
+                                <span className="font-medium text-foreground">{fabricCalculation.totalDrop.toFixed(1)}cm</span>
+                              </div>
+                              {fabricCalculation.wastePercent > 0 && (
+                                <div className="flex justify-between">
+                                  <span>Waste ({fabricCalculation.wastePercent}%):</span>
+                                  <span className="font-medium text-foreground">+{((fabricCalculation.linearMeters / (1 + fabricCalculation.wastePercent / 100)) * (fabricCalculation.wastePercent / 100)).toFixed(2)}m</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Final Totals */}
+                          <div className="bg-primary/10 rounded-md p-3 space-y-2">
+                            <div className="text-xs space-y-1.5">
+                              <div className="flex justify-between items-center">
+                                <span className="font-semibold">Linear Meters Required:</span>
+                                <span className="font-bold text-primary text-base">{fabricCalculation.linearMeters.toFixed(2)}m</span>
+                              </div>
+                              <div className="flex justify-between items-center border-t border-primary/20 pt-1.5">
+                                <span className="font-semibold">Fabric Cost:</span>
+                                <span className="font-bold text-primary text-base">{formatPrice(fabricCalculation.totalCost)}</span>
+                              </div>
+                            </div>
+                            <div className="text-[10px] text-muted-foreground mt-2 pt-2 border-t border-primary/20">
+                              Calculation: {fabricCalculation.linearMeters.toFixed(2)}m × {formatPrice(fabricCalculation.pricePerMeter)}/m
+                            </div>
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </Card>
+              )}
             </div>
 
             {/* Measurement Inputs Section */}
