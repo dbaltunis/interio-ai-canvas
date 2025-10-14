@@ -663,9 +663,9 @@ export const CostCalculationSummary = ({
         {/* Fabric */}
         <div className="flex items-center justify-between py-1.5">
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <CurtainIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+            <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
             <div className="flex flex-col min-w-0">
-              <span className="text-card-foreground font-medium">Fabric</span>
+              <span className="text-card-foreground font-medium">Fabric Material</span>
               <span className="text-xs text-muted-foreground truncate">
                 {finalLinearMeters.toFixed(2)}{units.fabric === 'yards' ? 'yd' : 'm'} × {formatPrice(fabricPriceDisplay)}/{units.fabric === 'yards' ? 'yd' : 'm'}
               </span>
@@ -702,12 +702,32 @@ export const CostCalculationSummary = ({
           </div>
         )}
 
-        {/* Manufacturing/Assembly */}
+        {/* Manufacturing/Assembly with detailed breakdown */}
         {manufacturingCost > 0 && (
           <div className="flex items-center justify-between py-1.5">
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              <ManufacturingIcon className="h-3.5 w-3.5 text-primary shrink-0" />
-              <span className="text-card-foreground font-medium">{getManufacturingLabel()}</span>
+              <SewingMachineIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+              <div className="flex flex-col min-w-0">
+                <span className="text-card-foreground font-medium">{getManufacturingLabel()}</span>
+                <span className="text-xs text-muted-foreground truncate">
+                  {(() => {
+                    const manufacturingType = measurements.manufacturing_type || template.manufacturing_type || 'machine';
+                    const isHandFinished = manufacturingType === 'hand';
+                    const pricingMethods = (template as any).pricing_methods || [];
+                    const selectedMethodId = measurements.selected_pricing_method;
+                    const selectedMethod = pricingMethods.find((m: any) => m.id === selectedMethodId) || pricingMethods[0];
+                    
+                    const pricePerMetre = isHandFinished 
+                      ? (selectedMethod?.hand_price_per_metre || template.hand_price_per_metre || 0)
+                      : (selectedMethod?.machine_price_per_metre || template.machine_price_per_metre || 0);
+                    
+                    if (pricePerMetre > 0) {
+                      return `${finalLinearMeters.toFixed(2)}${units.fabric === 'yards' ? 'yd' : 'm'} × ${formatPrice(pricePerMetre)}/${units.fabric === 'yards' ? 'yd' : 'm'} sewing`;
+                    }
+                    return 'Makeup service';
+                  })()}
+                </span>
+              </div>
             </div>
             <span className="font-medium text-card-foreground ml-2">{formatPrice(manufacturingCost)}</span>
           </div>
