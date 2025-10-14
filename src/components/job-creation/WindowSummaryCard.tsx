@@ -272,9 +272,11 @@ export function WindowSummaryCard({
                       ...surface
                     }}
                     selectedItems={{
-                      fabric: summary.fabric_details,
+                      fabric: treatmentType === 'curtains' ? summary.fabric_details : null,
                       hardware: summary.hardware_details,
-                      material: summary.fabric_details
+                      material: treatmentType?.includes('blind') || treatmentType === 'shutters' 
+                        ? summary.material_details 
+                        : summary.fabric_details
                     }}
                     showProductOnly={true}
                     hideDetails={true}
@@ -289,8 +291,8 @@ export function WindowSummaryCard({
                     <h4 className="font-semibold text-base">
                       {treatmentType === 'curtains' && 'Sheer curtain'}
                       {treatmentType === 'wallpaper' && 'Wallpaper'}
-                      {treatmentType?.includes('blind') && summary.fabric_details?.name}
-                      {treatmentType === 'shutters' && 'Plantation Shutters'}
+                      {treatmentType?.includes('blind') && (summary.material_details?.name || summary.fabric_details?.name)}
+                      {treatmentType === 'shutters' && (summary.material_details?.name || 'Plantation Shutters')}
                     </h4>
                     <Button
                       variant="ghost"

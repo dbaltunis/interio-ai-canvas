@@ -638,15 +638,14 @@ export const DynamicWindowWorksheet = forwardRef<{
             selected_heading_id: selectedHeading,
             selected_lining_type: selectedLining,
             
-            // CRITICAL: Save selected options for blinds/shutters
-            selected_options: selectedOptions,
-            
             // Add wallpaper-specific details if applicable
             wallpaper_details: wallpaperDetails,
             
-            // STEP 4: Measurements - Store both raw and converted values
+            // STEP 4: Measurements - Store both raw and converted values INCLUDING selected_options
             measurements_details: {
               ...measurements,
+              // CRITICAL: Store selected options for blinds/shutters inside measurements_details
+              selected_options: selectedOptions,
               // Convert user input to centimeters for storage (always store in cm)
               rail_width_cm: measurements.rail_width ? convertLength(parseFloat(measurements.rail_width), units.length, 'cm') : 0,
               drop_cm: measurements.drop ? convertLength(parseFloat(measurements.drop), units.length, 'cm') : 0,

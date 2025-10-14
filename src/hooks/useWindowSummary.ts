@@ -28,6 +28,7 @@ export interface WindowSummary {
   cost_breakdown?: any[];
   measurements_details?: any;
   hardware_details?: any;
+  material_details?: any;
   wallpaper_details?: any;
   // Treatment type fields
   treatment_type?: string;
