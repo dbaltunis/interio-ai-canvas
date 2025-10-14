@@ -176,27 +176,43 @@ export const DynamicWindowWorksheet = forwardRef<{
       const restoredItems: any = {};
       
       // Restore fabric selection - set both full object AND id
-      if (fabricDetails && fabricDetails.fabric_id) {
+      if (fabricDetails && (fabricDetails.fabric_id || fabricDetails.id)) {
         restoredItems.fabric = {
-          id: fabricDetails.fabric_id,
+          id: fabricDetails.fabric_id || fabricDetails.id,
           ...fabricDetails
         };
-        console.log("📊 Restored fabric with ID:", fabricDetails.fabric_id, fabricDetails.name);
+        console.log("📊 Restored fabric with ID:", fabricDetails.fabric_id || fabricDetails.id, fabricDetails.name);
+      } else if (existingWindowSummary.selected_fabric_id && fabricDetails) {
+        // Fallback: try using selected_fabric_id
+        restoredItems.fabric = {
+          id: existingWindowSummary.selected_fabric_id,
+          ...fabricDetails
+        };
+        console.log("📊 Restored fabric using selected_fabric_id:", existingWindowSummary.selected_fabric_id);
       }
       
       // Restore hardware selection
-      if (existingWindowSummary.hardware_details) {
-        restoredItems.hardware = existingWindowSummary.hardware_details;
-        console.log("📊 Restored hardware:", existingWindowSummary.hardware_details);
+      if (existingWindowSummary.hardware_details && typeof existingWindowSummary.hardware_details === 'object') {
+        const hardwareDetails = existingWindowSummary.hardware_details as any;
+        restoredItems.hardware = {
+          id: existingWindowSummary.selected_hardware_id || hardwareDetails.id,
+          ...hardwareDetails
+        };
+        console.log("📊 Restored hardware:", restoredItems.hardware.id, restoredItems.hardware.name);
       }
       
       // Restore material selection
-      if (existingWindowSummary.material_details) {
-        restoredItems.material = existingWindowSummary.material_details;
-        console.log("📊 Restored material:", existingWindowSummary.material_details);
+      if (existingWindowSummary.material_details && typeof existingWindowSummary.material_details === 'object') {
+        const materialDetails = existingWindowSummary.material_details as any;
+        restoredItems.material = {
+          id: existingWindowSummary.selected_material_id || materialDetails.id,
+          ...materialDetails
+        };
+        console.log("📊 Restored material:", restoredItems.material.id, restoredItems.material.name);
       }
       
       if (Object.keys(restoredItems).length > 0) {
+        console.log("📊 Setting restored items:", restoredItems);
         setSelectedItems(restoredItems);
       }
       
