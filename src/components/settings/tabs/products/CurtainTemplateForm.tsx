@@ -138,13 +138,13 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     
     // Make-Up Pricing with machine/hand conditions
     pricing_type: template?.pricing_type || "per_metre" as 'per_metre' | 'per_drop' | 'per_panel' | 'pricing_grid' | 'per_sqm' | 'per_unit' | 'complexity_based',
-    offers_hand_finished: false,
-    machine_price_per_metre: template?.unit_price?.toString() || "",
-    hand_price_per_metre: "",
-    machine_price_per_drop: "",
-    hand_price_per_drop: "",
-    machine_price_per_panel: "",
-    hand_price_per_panel: "",
+    offers_hand_finished: template?.offers_hand_finished || false,
+    machine_price_per_metre: template?.machine_price_per_metre?.toString() || template?.unit_price?.toString() || "",
+    hand_price_per_metre: template?.hand_price_per_metre?.toString() || "",
+    machine_price_per_drop: template?.machine_price_per_drop?.toString() || "",
+    hand_price_per_drop: template?.hand_price_per_drop?.toString() || "",
+    machine_price_per_panel: template?.machine_price_per_panel?.toString() || "",
+    hand_price_per_panel: template?.hand_price_per_panel?.toString() || "",
     average_drop_width: "140", // Default average drop width in cm
     // Height range pricing
     uses_height_pricing: false,
