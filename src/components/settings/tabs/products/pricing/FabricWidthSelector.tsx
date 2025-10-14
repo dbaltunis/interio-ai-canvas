@@ -11,20 +11,39 @@ export const FabricWidthSelector = ({ value, onChange }: FabricWidthSelectorProp
   return (
     <Card className="p-3 bg-muted/30">
       <h5 className="font-medium text-sm mb-2">Fabric Width Configuration</h5>
-      <div>
-        <Label htmlFor="fabric_width_type">Standard Fabric Width</Label>
-        <Select value={value} onValueChange={onChange}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select fabric width" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="narrow">Narrow Width (140cm) - More drops needed for wide curtains</SelectItem>
-            <SelectItem value="wide">Wide Width (280cm) - Fewer drops needed</SelectItem>
-          </SelectContent>
-        </Select>
-        <p className="text-xs text-muted-foreground mt-1">
-          This determines how many fabric pieces (drops) are needed, which affects the total price
-        </p>
+      <div className="space-y-3">
+        <div>
+          <Label htmlFor="fabric_width_type">Standard Fabric Width</Label>
+          <Select value={value} onValueChange={onChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select fabric width" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="narrow">
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-medium">Standard/Narrow Width (140-150cm)</span>
+                  <span className="text-xs text-muted-foreground">Pattern runs vertically - requires seams for wide curtains</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="wide">
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-medium">Railroaded/Wide Width (280cm+)</span>
+                  <span className="text-xs text-muted-foreground">Pattern runs horizontally - no vertical seams needed</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="text-xs text-muted-foreground space-y-2 p-2 bg-background/50 rounded border border-border/50">
+          <p className="font-medium text-foreground">Understanding Fabric Orientation:</p>
+          <div>
+            <span className="font-medium">• Standard Fabric:</span> Pattern runs along the length (vertically). Multiple drops sewn together with seams for wide curtains.
+          </div>
+          <div>
+            <span className="font-medium">• Railroaded Fabric:</span> Pattern runs across the width (horizontally). Can make wide curtains without vertical seams.
+          </div>
+        </div>
       </div>
     </Card>
   );

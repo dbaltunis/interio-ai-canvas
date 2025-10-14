@@ -759,21 +759,36 @@ export const UnifiedInventoryDialog = ({
                     {/* Roll Direction Info */}
                     {isFabric && formData.category !== "wallcovering" && formData.fabric_width > 0 && (
                       <CardContent>
-                        <div className="p-4 bg-muted rounded-lg">
+                        <div className="p-4 bg-muted rounded-lg space-y-3">
                           <div className="flex items-center gap-2 mb-2">
-                            <h4 className="font-medium">Roll Direction</h4>
+                            <h4 className="font-medium">Fabric Orientation</h4>
                             <Badge variant={formData.fabric_width <= 200 ? "default" : "secondary"}>
-                              {formData.fabric_width <= 200 ? "Vertical" : "Horizontal"}
+                              {formData.fabric_width <= 200 ? "Standard/Narrow" : "Railroaded/Wide"}
                             </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            Based on fabric width of {formData.fabric_width}cm, this fabric will be used in{" "}
-                            <strong>{formData.fabric_width <= 200 ? "vertical" : "horizontal"}</strong> orientation for optimal fabric utilization.
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            • Narrow fabrics (≤200cm): Used vertically for better fabric efficiency
-                            • Wide fabrics ({">"}200cm): Used horizontally for standard curtain making
-                          </p>
+                          
+                          <div className="text-sm space-y-2">
+                            <p className="text-muted-foreground">
+                              This {formData.fabric_width}cm fabric is classified as <strong>{formData.fabric_width <= 200 ? "Standard/Narrow" : "Railroaded/Wide"}</strong> width.
+                            </p>
+                            
+                            <div className="p-3 bg-background/50 rounded border border-border/50 space-y-2 text-xs">
+                              <div>
+                                <span className="font-medium text-foreground">Standard/Narrow (140-150cm):</span>
+                                <p className="text-muted-foreground mt-0.5">Pattern runs vertically along the roll length. For wide curtains, multiple drops are sewn together with vertical seams.</p>
+                              </div>
+                              <div>
+                                <span className="font-medium text-foreground">Railroaded/Wide (280cm+):</span>
+                                <p className="text-muted-foreground mt-0.5">Pattern runs horizontally across the roll width. Allows wide curtains without vertical seams - fabric is turned sideways.</p>
+                              </div>
+                            </div>
+                            
+                            <p className="text-xs text-muted-foreground italic">
+                              {formData.fabric_width <= 200 
+                                ? "For a 450cm wide rail, this fabric will require multiple drops joined with seams." 
+                                : "Wide enough to make large curtains without vertical joins."}
+                            </p>
+                          </div>
                         </div>
                       </CardContent>
                     )}
