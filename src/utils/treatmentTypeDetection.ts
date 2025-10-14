@@ -1,4 +1,4 @@
-export type TreatmentCategory = 'curtains' | 'blinds' | 'roller_blinds' | 'roman_blinds' | 'venetian_blinds' | 'vertical_blinds' | 'cellular_blinds' | 'panel_glide' | 'plantation_shutters' | 'shutters' | 'wallpaper';
+export type TreatmentCategory = 'curtains' | 'blinds' | 'roller_blinds' | 'roman_blinds' | 'venetian_blinds' | 'vertical_blinds' | 'cellular_blinds' | 'cellular_shades' | 'panel_glide' | 'plantation_shutters' | 'shutters' | 'wallpaper';
 
 export interface TreatmentConfig {
   requiresFullness: boolean;
@@ -15,7 +15,10 @@ export interface TreatmentConfig {
 export const detectTreatmentType = (template: any): TreatmentCategory => {
   // Priority 1: Check if template has explicit treatment_category field
   if (template?.treatment_category) {
-    return template.treatment_category as TreatmentCategory;
+    const category = template.treatment_category;
+    // Map database categories to internal categories
+    if (category === 'cellular_shades') return 'cellular_shades';
+    return category as TreatmentCategory;
   }
   
   // Priority 2: Check curtain_type field (from curtain_templates table)
@@ -33,8 +36,8 @@ export const detectTreatmentType = (template: any): TreatmentCategory => {
     if (curtainType === 'vertical_blind' || curtainType === 'vertical blind' || curtainType.includes('vertical')) {
       return 'vertical_blinds';
     }
-    if (curtainType === 'cellular_blind' || curtainType === 'cellular' || curtainType.includes('cellular')) {
-      return 'cellular_blinds';
+    if (curtainType === 'cellular_shade' || curtainType === 'cellular_blind' || curtainType === 'cellular' || curtainType.includes('cellular') || curtainType.includes('honeycomb')) {
+      return 'cellular_shades';
     }
     if (curtainType === 'panel_glide' || curtainType.includes('panel')) {
       return 'panel_glide';
@@ -55,6 +58,7 @@ export const detectTreatmentType = (template: any): TreatmentCategory => {
   const name = template?.name?.toLowerCase() || '';
   const description = template?.description?.toLowerCase() || '';
   
+  if (name.includes('honeycomb') || name.includes('cellular')) return 'cellular_shades';
   if (name.includes('roller') || description.includes('roller blind')) return 'roller_blinds';
   if (name.includes('roman') || description.includes('roman blind')) return 'roman_blinds';
   if (name.includes('venetian')) return 'venetian_blinds';
@@ -142,6 +146,17 @@ export const getTreatmentConfig = (category: TreatmentCategory): TreatmentConfig
       specificFields: ['cell_size', 'headrail_type', 'control_type', 'mount_type'],
       visualComponent: 'BlindVisualizer',
     },
+    cellular_shades: {
+      requiresFullness: false,
+      requiresHardwareType: false,
+      requiresFabricOrientation: false,
+      requiresHeading: false,
+      requiresLining: false,
+      showPooling: false,
+      inventoryCategory: 'none', // Cellular shades don't use fabric inventory
+      specificFields: ['cell_type', 'opacity', 'control_type', 'mount_type'],
+      visualComponent: 'BlindVisualizer',
+    },
     panel_glide: {
       requiresFullness: false,
       requiresHardwareType: false,
@@ -200,6 +215,7 @@ export const getTreatmentDisplayName = (category: TreatmentCategory): string => 
     venetian_blinds: 'Venetian Blinds',
     vertical_blinds: 'Vertical Blinds',
     cellular_blinds: 'Cellular Shades',
+    cellular_shades: 'Honeycomb Shades',
     panel_glide: 'Panel Glide',
     plantation_shutters: 'Plantation Shutters',
     shutters: 'Shutters',
