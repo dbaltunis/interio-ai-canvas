@@ -271,8 +271,32 @@ export const CostCalculationSummary = ({
       return gridPrice;
     }
     
-    // FALLBACK: Original pricing logic
-    if (!template.machine_price_per_metre && !template.machine_price_per_drop && !template.machine_price_per_panel) {
+    // Determine manufacturing type from measurements or template
+    const manufacturingType = measurements.manufacturing_type || template.manufacturing_type || 'machine';
+    const isHandFinished = manufacturingType === 'hand';
+    
+    console.log('🏭 Manufacturing type for pricing:', manufacturingType, {
+      fromMeasurements: measurements.manufacturing_type,
+      fromTemplate: template.manufacturing_type,
+      isHandFinished
+    });
+    
+    // Get the appropriate pricing based on manufacturing type
+    const pricePerMetre = isHandFinished 
+      ? (template.hand_price_per_metre || template.machine_price_per_metre || 0)
+      : (template.machine_price_per_metre || 0);
+    
+    const pricePerDrop = isHandFinished
+      ? (template.hand_price_per_drop || template.machine_price_per_drop || 0)
+      : (template.machine_price_per_drop || 0);
+    
+    const pricePerPanel = isHandFinished
+      ? (template.hand_price_per_panel || template.machine_price_per_panel || 0)
+      : (template.machine_price_per_panel || 0);
+    
+    // FALLBACK: Check if any pricing is available
+    if (!pricePerMetre && !pricePerDrop && !pricePerPanel) {
+      console.warn('⚠️ No makeup pricing found for', manufacturingType, 'finishing');
       return 0;
     }
 
@@ -282,20 +306,26 @@ export const CostCalculationSummary = ({
     const fabricUsage = calculateFabricUsage();
 
     // Cost per metre of fabric used
-    if (template.machine_price_per_metre) {
-      cost += template.machine_price_per_metre * fabricUsage.linearMeters;
+    if (pricePerMetre) {
+      cost += pricePerMetre * fabricUsage.linearMeters;
+      console.log(`💰 ${manufacturingType} cost/metre: ${pricePerMetre} × ${fabricUsage.linearMeters}m = ${cost}`);
     }
     
     // Cost per curtain drop (per panel)
-    if (template.machine_price_per_drop) {
-      cost += template.machine_price_per_drop * curtainCount;
+    if (pricePerDrop) {
+      const dropCost = pricePerDrop * curtainCount;
+      cost += dropCost;
+      console.log(`💰 ${manufacturingType} cost/drop: ${pricePerDrop} × ${curtainCount} = ${dropCost}`);
     }
     
     // Cost per curtain panel
-    if (template.machine_price_per_panel) {
-      cost += template.machine_price_per_panel * curtainCount;
+    if (pricePerPanel) {
+      const panelCost = pricePerPanel * curtainCount;
+      cost += panelCost;
+      console.log(`💰 ${manufacturingType} cost/panel: ${pricePerPanel} × ${curtainCount} = ${panelCost}`);
     }
 
+    console.log(`🏭 Total ${manufacturingType} finished makeup cost:`, cost);
     return cost;
   };
 

@@ -61,6 +61,11 @@ export const DynamicCurtainOptions = ({
     }
   };
 
+  const handleManufacturingTypeChange = (type: 'machine' | 'hand') => {
+    onChange('manufacturing_type', type);
+    console.log('🏭 Manufacturing type changed to:', type);
+  };
+
   if (headingsLoading) {
     return (
       <div className="p-6 flex items-center justify-center">
@@ -189,6 +194,60 @@ export const DynamicCurtainOptions = ({
               ))}
             </SelectContent>
           </Select>
+        </div>
+      )}
+
+      {/* Manufacturing Type Selection - Machine vs Hand Finished */}
+      {template.offers_hand_finished && (
+        <div className="space-y-2">
+          <Label className="text-sm font-medium flex items-center gap-2">
+            Make-Up Type
+            <Badge variant="secondary" className="text-xs">Affects pricing</Badge>
+          </Label>
+          <RadioGroup
+            value={measurements.manufacturing_type || template.manufacturing_type || 'machine'}
+            onValueChange={handleManufacturingTypeChange}
+            className="grid grid-cols-2 gap-3"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="machine" id="machine" />
+              <Label 
+                htmlFor="machine" 
+                className="cursor-pointer flex flex-col flex-1"
+              >
+                <span className="font-medium">Machine Finished</span>
+                {template.machine_price_per_metre && (
+                  <span className="text-xs text-muted-foreground">
+                    {formatCurrency(template.machine_price_per_metre)}/m
+                  </span>
+                )}
+                {template.machine_price_per_drop && (
+                  <span className="text-xs text-muted-foreground">
+                    {formatCurrency(template.machine_price_per_drop)}/drop
+                  </span>
+                )}
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="hand" id="hand" />
+              <Label 
+                htmlFor="hand" 
+                className="cursor-pointer flex flex-col flex-1"
+              >
+                <span className="font-medium">Hand Finished</span>
+                {template.hand_price_per_metre && (
+                  <span className="text-xs text-muted-foreground">
+                    {formatCurrency(template.hand_price_per_metre)}/m
+                  </span>
+                )}
+                {template.hand_price_per_drop && (
+                  <span className="text-xs text-muted-foreground">
+                    {formatCurrency(template.hand_price_per_drop)}/drop
+                  </span>
+                )}
+              </Label>
+            </div>
+          </RadioGroup>
         </div>
       )}
 
