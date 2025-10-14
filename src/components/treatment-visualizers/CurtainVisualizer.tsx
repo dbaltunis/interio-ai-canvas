@@ -15,7 +15,7 @@ export const CurtainVisualizer = ({
   hardware,
   className = ""
 }: CurtainVisualizerProps) => {
-  const curtainType = template?.curtain_type || "pair";
+  const curtainType = measurements.curtain_type || template?.curtain_type || "pair";
   const hardwareType = hardware?.type || "rod";
   const fullnessRatio = template?.fullness_ratio || 2.0;
   const poolingAmount = parseFloat(measurements.pooling_amount || "0");

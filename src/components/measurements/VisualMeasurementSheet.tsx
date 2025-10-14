@@ -179,7 +179,8 @@ export const VisualMeasurementSheet = ({
       const requiredWidth = width * selectedTemplate.fullness_ratio;
       
       // Add side hems to width calculation (for curtain pairs, each curtain needs side hems)
-      const panelConfig = (selectedTemplate as any).panel_configuration || selectedTemplate.curtain_type;
+      // Use measurements.curtain_type as the source of truth, fallback to template
+      const panelConfig = measurements.curtain_type || (selectedTemplate as any).panel_configuration || selectedTemplate.curtain_type;
       const curtainCount = panelConfig === 'pair' ? 2 : 1;
       const totalSideHems = sideHems * 2 * curtainCount; // Both sides of each curtain
       
