@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
+import { Switch } from "@/components/ui/switch";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useMemo, useEffect, useRef } from "react";
@@ -184,14 +185,27 @@ export const VisualMeasurementSheet = ({
       const curtainCount = panelConfig === 'pair' ? 2 : 1;
       const totalSideHems = sideHems * 2 * curtainCount; // Both sides of each curtain
       
-      // Calculate total width including returns and side hems
-      const totalWidthWithAllowances = requiredWidth + returnLeft + returnRight + totalSideHems;
+      // Check if fabric is rotated (user preference)
+      const fabricRotated = measurements.fabric_rotated === true || measurements.fabric_rotated === 'true';
+      const isNarrowFabric = fabricWidthCm <= 200;
+      const isWideFabric = fabricWidthCm >= 280;
       
-      // Calculate how many fabric widths are needed (including all width allowances)
-      const widthsRequired = Math.ceil(totalWidthWithAllowances / fabricWidthCm);
+      // Determine orientation: wide fabrics are railroaded by default, narrow can be rotated by user choice
+      const useHorizontalOrientation = isWideFabric || (isNarrowFabric && fabricRotated);
       
-      // Calculate seam allowances for joining fabric pieces (when multiple widths needed)
-      const totalSeamAllowance = widthsRequired > 1 ? (widthsRequired - 1) * seamHems * 2 : 0; // Both sides of each seam
+      let widthsRequired, totalSeamAllowance;
+      
+      if (useHorizontalOrientation && height < fabricWidthCm) {
+        // Railroaded/Rotated: drop fits within fabric width, rail width determines length needed
+        const totalWidthNeeded = requiredWidth + returnLeft + returnRight + totalSideHems;
+        widthsRequired = Math.ceil(totalWidthNeeded / height); // How many drops fit in the length
+        totalSeamAllowance = widthsRequired > 1 ? (widthsRequired - 1) * seamHems * 2 : 0;
+      } else {
+        // Standard vertical: traditional calculation
+        const totalWidthWithAllowances = requiredWidth + returnLeft + returnRight + totalSideHems;
+        widthsRequired = Math.ceil(totalWidthWithAllowances / fabricWidthCm);
+        totalSeamAllowance = widthsRequired > 1 ? (widthsRequired - 1) * seamHems * 2 : 0;
+      }
       
       // Include pooling and vertical allowances in the total drop calculation  
       const totalDrop = height + headerHem + bottomHem + pooling;
@@ -210,13 +224,16 @@ export const VisualMeasurementSheet = ({
         height,
         pooling,
         requiredWidth,
-        totalWidthWithAllowances,
         totalDrop,
         widthsRequired,
         linearMeters,
         pricePerMeter,
         fabricWidthCm,
         curtainCount,
+        fabricRotated,
+        useHorizontalOrientation: useHorizontalOrientation && height < fabricWidthCm,
+        isNarrowFabric,
+        isWideFabric,
         fullnessRatio: selectedTemplate.fullness_ratio,
         wastePercent: selectedTemplate.waste_percent,
         manufacturingAllowances: {
@@ -252,15 +269,16 @@ export const VisualMeasurementSheet = ({
         returnLeft: returnLeft,
         returnRight: returnRight,
         curtainCount: curtainCount,
-        curtainType: (selectedTemplate as any).panel_configuration || selectedTemplate.curtain_type,
-        totalWidthWithAllowances: totalWidthWithAllowances
+        curtainType: panelConfig,
+        fabricRotated: fabricRotated,
+        fabricOrientation: useHorizontalOrientation && height < fabricWidthCm ? 'horizontal' : 'vertical'
       };
     } catch (error) {
       console.error('Error calculating fabric usage:', error);
     }
 
     return null;
-  }, [selectedFabric, measurements.rail_width, measurements.drop, selectedTemplate, inventory]);
+  }, [selectedFabric, measurements.rail_width, measurements.drop, measurements.curtain_type, measurements.fabric_rotated, selectedTemplate, inventory]);
 
   // Notify parent when fabric calculation changes
   useEffect(() => {
@@ -1024,6 +1042,55 @@ export const VisualMeasurementSheet = ({
                         </div>
                       </div>
                     </RadioGroup>
+                  </div>
+                )}
+
+                {/* Fabric Rotation Toggle */}
+                {selectedFabricItem && measurements.rail_width && measurements.drop && (
+                  <div className="mt-4 pt-3 border-t border-border">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <Label className="text-xs font-semibold text-card-foreground cursor-pointer">
+                          Rotate Fabric 90°
+                        </Label>
+                        <div className="text-[10px] text-muted-foreground mt-1 space-y-1">
+                          {(() => {
+                            const fabricWidthCm = selectedFabricItem.fabric_width || 137;
+                            const drop = parseFloat(measurements.drop) || 0;
+                            const isNarrowFabric = fabricWidthCm <= 200;
+                            const isWideFabric = fabricWidthCm >= 280;
+                            const canRotate = drop < fabricWidthCm;
+                            const fabricRotated = measurements.fabric_rotated === true || measurements.fabric_rotated === 'true';
+                            
+                            if (isWideFabric) {
+                              return <p>✓ Wide fabric ({fabricWidthCm}cm) - railroaded orientation recommended</p>;
+                            } else if (isNarrowFabric && canRotate) {
+                              return (
+                                <>
+                                  <p>Narrow fabric ({fabricWidthCm}cm) - rotation {canRotate ? 'possible' : 'not possible'}</p>
+                                  <p className="text-primary">💡 {fabricRotated ? 'Rotated: Drop uses fabric width' : 'Standard: May need more fabric widths'}</p>
+                                </>
+                              );
+                            } else if (isNarrowFabric && !canRotate) {
+                              return <p>⚠ Drop ({drop}cm) exceeds fabric width ({fabricWidthCm}cm) - rotation not possible</p>;
+                            }
+                            return <p>Standard fabric orientation</p>;
+                          })()}
+                        </div>
+                      </div>
+                      <Switch
+                        checked={measurements.fabric_rotated === true || measurements.fabric_rotated === 'true'}
+                        onCheckedChange={(checked) => {
+                          console.log("Fabric rotation changed to:", checked);
+                          handleInputChange("fabric_rotated", checked.toString());
+                        }}
+                        disabled={readOnly || !selectedFabricItem || (() => {
+                          const fabricWidthCm = selectedFabricItem.fabric_width || 137;
+                          const drop = parseFloat(measurements.drop) || 0;
+                          return drop >= fabricWidthCm;
+                        })()}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
