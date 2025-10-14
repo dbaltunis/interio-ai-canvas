@@ -6,7 +6,9 @@ import { Plus, Trash2 } from "lucide-react";
 interface PriceRange {
   min_height: number;
   max_height: number;
-  price: number;
+  machine_price: number;
+  hand_price?: number;
+  price?: number; // Legacy field for backward compatibility
 }
 
 interface PerMetrePricingProps {
@@ -36,9 +38,19 @@ export const PerMetrePricing = ({
   };
 
   const addRange = () => {
+    // Auto-calculate min_height from previous range's max_height + 1
+    const lastRange = heightPriceRanges[heightPriceRanges.length - 1];
+    const newMinHeight = lastRange ? lastRange.max_height + 1 : 1;
+    const newMaxHeight = lastRange ? lastRange.max_height + 100 : 200;
+    
     const updated = [
       ...heightPriceRanges,
-      { min_height: 1, max_height: 200, price: parseFloat(machinePricePerMetre) || 0 }
+      { 
+        min_height: newMinHeight, 
+        max_height: newMaxHeight, 
+        machine_price: parseFloat(machinePricePerMetre) || 0,
+        hand_price: offersHandFinished ? (parseFloat(handPricePerMetre) || 0) : undefined
+      }
     ];
     onInputChange('height_price_ranges', JSON.stringify(updated));
   };
@@ -90,48 +102,73 @@ export const PerMetrePricing = ({
         </p>
 
         {heightPriceRanges.map((range, index) => (
-          <div key={index} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end">
-            <div>
-              <Label className="text-xs">Min Height (cm)</Label>
-              <Input
-                type="number"
-                step="1"
-                value={range.min_height}
-                onChange={(e) => updateRange(index, 'min_height', parseFloat(e.target.value) || 0)}
-                placeholder="1"
-              />
+          <div key={index} className="space-y-3 p-4 border rounded-lg bg-muted/30">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Min Height (cm)</Label>
+                <Input
+                  type="number"
+                  step="1"
+                  value={range.min_height}
+                  onChange={(e) => updateRange(index, 'min_height', parseFloat(e.target.value) || 0)}
+                  placeholder="1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Max Height (cm)</Label>
+                <Input
+                  type="number"
+                  step="1"
+                  value={range.max_height}
+                  onChange={(e) => updateRange(index, 'max_height', parseFloat(e.target.value) || 0)}
+                  placeholder="200"
+                />
+              </div>
             </div>
-            <div>
-              <Label className="text-xs">Max Height (cm)</Label>
-              <Input
-                type="number"
-                step="1"
-                value={range.max_height}
-                onChange={(e) => updateRange(index, 'max_height', parseFloat(e.target.value) || 0)}
-                placeholder="200"
-              />
+            
+            <div className={`grid gap-3 ${offersHandFinished ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              <div>
+                <Label className="text-xs">Machine Per Metre Rate (£)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={range.machine_price || range.price || 0}
+                  onChange={(e) => updateRange(index, 'machine_price', parseFloat(e.target.value) || 0)}
+                  placeholder="24"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Per metre rate for this height range (replaces standard rate)
+                </p>
+              </div>
+              
+              {offersHandFinished && (
+                <div>
+                  <Label className="text-xs">Hand-Finished Per Metre Rate (£)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={range.hand_price || 0}
+                    onChange={(e) => updateRange(index, 'hand_price', parseFloat(e.target.value) || 0)}
+                    placeholder="35"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Hand-finished rate for this height range
+                  </p>
+                </div>
+              )}
             </div>
-            <div>
-              <Label className="text-xs">Per Metre Rate (£)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={range.price}
-                onChange={(e) => updateRange(index, 'price', parseFloat(e.target.value) || 0)}
-                placeholder="24"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Per metre rate for this height range (replaces standard rate)
-              </p>
+            
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => removeRange(index)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Remove Range
+              </Button>
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => removeRange(index)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
           </div>
         ))}
       </div>

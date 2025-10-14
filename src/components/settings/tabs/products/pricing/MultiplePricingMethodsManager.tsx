@@ -27,7 +27,9 @@ interface PricingMethod {
   height_price_ranges?: Array<{
     min_height: number;
     max_height: number;
-    price: number;
+    machine_price: number;
+    hand_price?: number;
+    price?: number; // Legacy
   }>;
 }
 
