@@ -110,6 +110,24 @@ const pick = (...vals: any[]): number | undefined => {
 };
 
 const enrichSummaryForPersistence = (summary: Omit<WindowSummary, "updated_at">) => {
+  const treatmentCategory = (summary as any).treatment_category;
+  
+  // For blinds, shutters, and wallpaper: Skip curtain-specific enrichment
+  // Their calculations are already complete from DynamicWindowWorksheet
+  if (treatmentCategory === 'blinds' || treatmentCategory === 'shutters' || treatmentCategory === 'wallpaper') {
+    console.log('⚡ Skipping curtain enrichment for:', treatmentCategory, {
+      total_cost: (summary as any).total_cost,
+      fabric_cost: (summary as any).fabric_cost
+    });
+    return {
+      ...summary,
+      // Preserve fabric_details and measurements_details as-is
+      fabric_details: (summary as any).fabric_details || {},
+      measurements_details: (summary as any).measurements_details || {}
+    };
+  }
+  
+  // Continue with existing curtain enrichment logic
   const template = (summary as any).template_details || {};
   const incomingMd = (summary as any).measurements_details;
   let md: Record<string, any> =
@@ -224,8 +242,24 @@ export const useSaveWindowSummary = () => {
 
   return useMutation({
     mutationFn: async (summary: Omit<WindowSummary, "updated_at">) => {
+      // Debug: Log before enrichment
+      console.log('📥 Before enrichment:', {
+        treatment_category: summary.treatment_category,
+        total_cost: summary.total_cost,
+        fabric_cost: summary.fabric_cost,
+        manufacturing_cost: summary.manufacturing_cost
+      });
+      
       // Enrich with derived worksheet steps and ensure fabric width is present
       const enriched = enrichSummaryForPersistence(summary);
+      
+      // Debug: Log after enrichment
+      console.log('📤 After enrichment:', {
+        treatment_category: (enriched as any).treatment_category,
+        total_cost: (enriched as any).total_cost,
+        fabric_cost: (enriched as any).fabric_cost,
+        manufacturing_cost: (enriched as any).manufacturing_cost
+      });
 
       const { data, error } = await supabase
         .from("windows_summary")
