@@ -396,10 +396,10 @@ export function WindowSummaryCard({
                           <span className="text-muted-foreground">Material</span>
                           <span className="font-medium truncate">{summary.fabric_details?.name || '—'}</span>
                         </div>
-                        {summary.linear_meters && (
+                        {summary.linear_meters > 0 && (
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Fabric quantity</span>
-                            <span className="font-medium">{fmtMeasurement(Number(summary.linear_meters) || 0)}</span>
+                            <span className="font-medium">{fmtMeasurement(Number(summary.linear_meters))}</span>
                           </div>
                         )}
                         <div className="flex justify-between">
