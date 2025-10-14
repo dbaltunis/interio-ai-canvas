@@ -75,14 +75,7 @@ export const CostCalculationSummary = ({
   fabricCalculation,
   selectedOptions = []
 }: CostCalculationSummaryProps) => {
-  const { units } = useMeasurementUnits();
-  const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
-
-  const width = parseFloat(measurements.rail_width || measurements.measurement_a || '0');
-  const height = parseFloat(measurements.drop || measurements.measurement_b || '0');
-  const pooling = parseFloat(measurements.pooling_amount || '0');
-  
-  // Early return if template is null
+  // Early return BEFORE hooks if template is null - this prevents hooks violation
   if (!template) {
     return (
       <div className="p-4 border rounded-lg bg-muted/50">
@@ -92,6 +85,14 @@ export const CostCalculationSummary = ({
       </div>
     );
   }
+
+  // Hooks MUST be called after early returns are handled
+  const { units } = useMeasurementUnits();
+  const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
+
+  const width = parseFloat(measurements.rail_width || measurements.measurement_a || '0');
+  const height = parseFloat(measurements.drop || measurements.measurement_b || '0');
+  const pooling = parseFloat(measurements.pooling_amount || '0');
 
   // Manufacturing allowances from template
   const initialPanelConfig = (template as any).panel_configuration || template.curtain_type;
