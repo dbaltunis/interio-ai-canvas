@@ -187,10 +187,14 @@ export const VisualMeasurementSheet = ({
       
       // Check if fabric is rotated (user preference)
       const fabricRotated = measurements.fabric_rotated === true || measurements.fabric_rotated === 'true';
-      const isNarrowFabric = fabricWidthCm <= 200;
-      const isWideFabric = fabricWidthCm >= 280;
       
-      // Determine orientation: wide fabrics are railroaded by default, narrow can be rotated by user choice
+      // Use consistent thresholds: narrow fabrics < 250cm, wide fabrics >= 250cm
+      const isNarrowFabric = fabricWidthCm < 250;
+      const isWideFabric = fabricWidthCm >= 250;
+      
+      // NARROW FABRICS (< 250cm): VERTICAL/STANDARD by default - fabric height = curtain drop, widths seamed for curtain width
+      // WIDE FABRICS (>= 250cm): HORIZONTAL/RAILROADED by default - fabric width = curtain drop, length = curtain width
+      // User can rotate narrow fabrics to railroaded if drop fits within fabric width
       const useHorizontalOrientation = isWideFabric || (isNarrowFabric && fabricRotated);
       
       console.log("🔄 Fabric Calculation:", {
@@ -1091,22 +1095,38 @@ export const VisualMeasurementSheet = ({
                           {(() => {
                             const fabricWidthCm = selectedFabricItem.fabric_width || 137;
                             const drop = parseFloat(measurements.drop) || 0;
-                            const isNarrowFabric = fabricWidthCm <= 200;
-                            const isWideFabric = fabricWidthCm >= 280;
-                            const canRotate = drop < fabricWidthCm;
+                            const headerHem = parseFloat(measurements.header_allowance_cm) || 8;
+                            const bottomHem = parseFloat(measurements.bottom_hem_cm) || 15;
+                            const pooling = parseFloat(measurements.pooling_amount_cm) || 0;
+                            const totalDrop = drop + headerHem + bottomHem + pooling;
+                            
+                            // Use consistent thresholds with calculation logic
+                            const isNarrowFabric = fabricWidthCm < 250;
+                            const isWideFabric = fabricWidthCm >= 250;
+                            const canRotate = totalDrop <= fabricWidthCm;
                             const fabricRotated = measurements.fabric_rotated === true || measurements.fabric_rotated === 'true';
                             
                             if (isWideFabric) {
-                              return <p>✓ Wide fabric ({fabricWidthCm}cm) - railroaded orientation recommended</p>;
+                              return (
+                                <>
+                                  <p>✓ Wide fabric ({fabricWidthCm}cm) - railroaded by default</p>
+                                  <p className="text-primary">Fabric width used for drop, length used for curtain width</p>
+                                </>
+                              );
                             } else if (isNarrowFabric && canRotate) {
                               return (
                                 <>
-                                  <p>Narrow fabric ({fabricWidthCm}cm) - rotation {canRotate ? 'possible' : 'not possible'}</p>
-                                  <p className="text-primary">💡 {fabricRotated ? 'Rotated: Drop uses fabric width' : 'Standard: May need more fabric widths'}</p>
+                                  <p>Narrow fabric ({fabricWidthCm}cm) - {fabricRotated ? 'railroaded' : 'standard orientation'}</p>
+                                  <p className="text-primary">💡 {fabricRotated ? 'Rotated: Buying LENGTH for width, width for drop' : 'Standard: Buying DROPS, seaming for width'}</p>
                                 </>
                               );
                             } else if (isNarrowFabric && !canRotate) {
-                              return <p>⚠ Drop ({drop}cm) exceeds fabric width ({fabricWidthCm}cm) - rotation not possible</p>;
+                              return (
+                                <>
+                                  <p>⚠ Narrow fabric ({fabricWidthCm}cm) - standard orientation</p>
+                                  <p className="text-amber-600">Total drop ({totalDrop.toFixed(0)}cm) exceeds fabric width - rotation not possible</p>
+                                </>
+                              );
                             }
                             return <p>Standard fabric orientation</p>;
                           })()}
