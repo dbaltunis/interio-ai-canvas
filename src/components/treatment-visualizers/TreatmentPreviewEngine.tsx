@@ -49,16 +49,17 @@ export const TreatmentPreviewEngine = ({
   showProductOnly = false
 }: TreatmentPreviewEngineProps) => {
   
-  // If showing product only, display just the fabric/material image
-  if (showProductOnly && selectedItems.fabric) {
-    const fabricImage = selectedItems.fabric.image_url;
+  // If showing product only, display the template image or fabric/material image
+  if (showProductOnly) {
+    const productImage = template?.image_url || selectedItems.fabric?.image_url || selectedItems.material?.image_url;
+    const productName = template?.name || selectedItems.fabric?.name || selectedItems.material?.name || 'Product';
     
     return (
       <div className={`relative w-full h-full ${className}`}>
-        {fabricImage ? (
+        {productImage ? (
           <img 
-            src={fabricImage} 
-            alt={selectedItems.fabric.name || 'Product'} 
+            src={productImage} 
+            alt={productName} 
             className="w-full h-full object-cover rounded-md"
           />
         ) : (
