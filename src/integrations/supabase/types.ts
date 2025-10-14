@@ -1408,6 +1408,7 @@ export type Database = {
           height_price_ranges: Json | null
           horizontal_repeat: number | null
           id: string
+          image_url: string | null
           is_railroadable: boolean | null
           is_system_default: boolean | null
           lining_types: Json | null
@@ -1469,6 +1470,7 @@ export type Database = {
           height_price_ranges?: Json | null
           horizontal_repeat?: number | null
           id?: string
+          image_url?: string | null
           is_railroadable?: boolean | null
           is_system_default?: boolean | null
           lining_types?: Json | null
@@ -1530,6 +1532,7 @@ export type Database = {
           height_price_ranges?: Json | null
           horizontal_repeat?: number | null
           id?: string
+          image_url?: string | null
           is_railroadable?: boolean | null
           is_system_default?: boolean | null
           lining_types?: Json | null

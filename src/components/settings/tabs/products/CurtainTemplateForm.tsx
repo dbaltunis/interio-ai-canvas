@@ -343,6 +343,42 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid File",
+        description: "Please select an image file",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Image must be less than 5MB",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Convert to base64 for now (can be changed to storage upload later)
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData(prev => ({ ...prev, image_url: reader.result as string }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = () => {
+    setFormData(prev => ({ ...prev, image_url: "" }));
+  };
+
   const handleSave = async () => {
     if (!formData.name.trim()) {
       toast({
@@ -519,26 +555,17 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                           variant="destructive"
                           size="icon"
                           className="absolute -top-2 -right-2 h-6 w-6"
-                          onClick={() => handleInputChange("image_url", "")}
+                          onClick={handleRemoveImage}
                         >
                           <X className="h-3 w-3" />
                         </Button>
                       </div>
                     ) : (
-                      <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                       <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
                         <input
                           type="file"
                           accept="image/*"
-                          onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onload = (event) => {
-                                handleInputChange("image_url", event.target?.result as string);
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }}
+                          onChange={handleImageUpload}
                           className="hidden"
                           id="product_image"
                         />
@@ -548,7 +575,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                             Click to upload product image
                           </p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            Will be displayed in rooms and quotes
+                            Will be displayed in rooms and quotes (max 5MB)
                           </p>
                         </label>
                       </div>
