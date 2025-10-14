@@ -963,6 +963,73 @@ export const VisualMeasurementSheet = ({
               )}
               {/* End Essential Measurements */}
 
+              {/* Curtain Configuration - Panel Setup (Only for curtains) */}
+              {treatmentCategory === 'curtains' && (
+              <div className="container-level-1 rounded-lg p-3">
+              <h4 className="text-base font-bold text-card-foreground mb-3">Curtain Configuration</h4>
+              
+              <div className="space-y-2">
+                <div>
+                  <Label className="text-xs font-semibold mb-2 block text-card-foreground">Curtain Type</Label>
+                  <div className="text-[10px] text-muted-foreground mb-2">
+                    Pair = 2 panels (4 side hems) | Single = 1 panel (2 side hems)
+                  </div>
+                  <RadioGroup 
+                    value={curtainType} 
+                    onValueChange={(value) => {
+                      console.log("Curtain type changed to:", value);
+                      handleInputChange("curtain_type", value);
+                    }}
+                    disabled={readOnly}
+                    className="grid grid-cols-2 gap-2"
+                  >
+                    <div className="container-level-3 rounded-lg p-2 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="pair" id="pair" className="w-4 h-4" />
+                        <Label htmlFor="pair" className="text-xs font-medium text-card-foreground cursor-pointer flex-1">Pair (Two panels)</Label>
+                      </div>
+                    </div>
+                    <div className="container-level-3 rounded-lg p-2 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="single" id="single" className="w-4 h-4" />
+                        <Label htmlFor="single" className="text-xs font-medium text-card-foreground cursor-pointer flex-1">Single (One panel)</Label>
+                      </div>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {curtainType === "single" && (
+                  <div>
+                    <Label className="text-xs font-semibold mb-2 block text-card-foreground">Panel Position</Label>
+                    <RadioGroup 
+                      value={curtainSide} 
+                      onValueChange={(value) => {
+                        console.log("Panel side changed to:", value);
+                        handleInputChange("curtain_side", value);
+                      }}
+                      disabled={readOnly}
+                      className="grid grid-cols-2 gap-2"
+                    >
+                      <div className="container-level-3 rounded-lg p-2 hover:bg-muted/30 transition-colors">
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="left" id="left" className="w-4 h-4" />
+                          <Label htmlFor="left" className="text-xs font-medium text-card-foreground cursor-pointer flex-1">Left side</Label>
+                        </div>
+                      </div>
+                      <div className="container-level-3 rounded-lg p-2 hover:bg-muted/30 transition-colors">
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="right" id="right" className="w-4 h-4" />
+                          <Label htmlFor="right" className="text-xs font-medium text-card-foreground cursor-pointer flex-1">Right side</Label>
+                        </div>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                )}
+              </div>
+            </div>
+            )}
+
+
               {/* CURTAIN-SPECIFIC FIELDS - Dynamic Options from Template */}
               {treatmentType === 'curtains' && (
                 <Card className="border-primary/20 bg-primary/5">
@@ -1224,71 +1291,6 @@ export const VisualMeasurementSheet = ({
               </details>
               )}
 
-              {/* Curtain Configuration - Professional Design (Only for curtains) */}
-              {treatmentCategory === 'curtains' && (
-              <div className="container-level-1 rounded-lg p-3">
-              <h4 className="text-base font-bold text-card-foreground mb-3">Curtain Configuration</h4>
-              
-              <div className="space-y-2">
-                <div>
-                  <Label className="text-xs font-semibold mb-2 block text-card-foreground">Curtain Type</Label>
-                  <div className="text-[10px] text-muted-foreground mb-2">
-                    Pair = 2 panels (4 side hems) | Single = 1 panel (2 side hems)
-                  </div>
-                  <RadioGroup 
-                    value={curtainType} 
-                    onValueChange={(value) => {
-                      console.log("Curtain type changed to:", value);
-                      handleInputChange("curtain_type", value);
-                    }}
-                    disabled={readOnly}
-                    className="grid grid-cols-2 gap-2"
-                  >
-                    <div className="container-level-3 rounded-lg p-2 hover:bg-muted/30 transition-colors">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="pair" id="pair" className="w-4 h-4" />
-                        <Label htmlFor="pair" className="text-xs font-medium text-card-foreground cursor-pointer flex-1">Pair (Two panels)</Label>
-                      </div>
-                    </div>
-                    <div className="container-level-3 rounded-lg p-2 hover:bg-muted/30 transition-colors">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="single" id="single" className="w-4 h-4" />
-                        <Label htmlFor="single" className="text-xs font-medium text-card-foreground cursor-pointer flex-1">Single (One panel)</Label>
-                      </div>
-                    </div>
-                  </RadioGroup>
-                </div>
-
-                {curtainType === "single" && (
-                  <div>
-                    <Label className="text-xs font-semibold mb-2 block text-card-foreground">Panel Position</Label>
-                    <RadioGroup 
-                      value={curtainSide} 
-                      onValueChange={(value) => {
-                        console.log("Panel side changed to:", value);
-                        handleInputChange("curtain_side", value);
-                      }}
-                      disabled={readOnly}
-                      className="grid grid-cols-2 gap-2"
-                    >
-                      <div className="container-level-3 rounded-lg p-2 hover:bg-muted/30 transition-colors">
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="left" id="left" className="w-4 h-4" />
-                          <Label htmlFor="left" className="text-xs font-medium text-card-foreground cursor-pointer flex-1">Left side</Label>
-                        </div>
-                      </div>
-                      <div className="container-level-3 rounded-lg p-2 hover:bg-muted/30 transition-colors">
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="right" id="right" className="w-4 h-4" />
-                          <Label htmlFor="right" className="text-xs font-medium text-card-foreground cursor-pointer flex-1">Right side</Label>
-                        </div>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                )}
-              </div>
-            </div>
-            )}
 
             {/* Pooling Configuration - ONLY for curtains */}
             {treatmentCategory === 'curtains' && (
