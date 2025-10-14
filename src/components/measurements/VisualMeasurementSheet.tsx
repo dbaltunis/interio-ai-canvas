@@ -118,9 +118,8 @@ export const VisualMeasurementSheet = ({
   console.log("🎯 VisualMeasurementSheet received measurements:", measurements);
   console.log("🎯 Specific values - rail_width:", measurements.rail_width, "drop:", measurements.drop);
 
-  // Use template data if available, fallback to measurements
-  const panelConfig = (selectedTemplate as any)?.panel_configuration || selectedTemplate?.curtain_type || measurements.curtain_type || "pair";
-  const curtainType = panelConfig;
+  // Use measurements as the source of truth for UI state, with fallbacks to template defaults
+  const curtainType = measurements.curtain_type || (selectedTemplate as any)?.panel_configuration || selectedTemplate?.curtain_type || "pair";
   const curtainSide = measurements.curtain_side || "left";
   const hardwareType = selectedTemplate?.compatible_hardware?.[0]?.toLowerCase() || measurements.hardware_type || "rod";
   const poolingOption = measurements.pooling_option || "above_floor";
