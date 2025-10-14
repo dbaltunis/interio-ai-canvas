@@ -67,7 +67,11 @@ export function WindowSummaryCard({
 
   // Unit helpers - measurements are already in cm, just format them
   const { formatLength } = useMeasurementUnits();
-  const fmtMeasurement = (cm?: number) => (cm !== undefined ? formatLength(cm) : undefined);
+  const fmtMeasurement = (cm?: number) => {
+    if (cm === undefined || cm === null) return undefined;
+    const numValue = Number(cm);
+    return isNaN(numValue) ? undefined : formatLength(numValue);
+  };
 
   // Debug logging
   console.log('📊 CARD: WindowSummaryCard render:', {
