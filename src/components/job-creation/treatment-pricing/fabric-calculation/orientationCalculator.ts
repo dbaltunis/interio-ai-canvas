@@ -35,39 +35,46 @@ export const calculateOrientation = (
   const totalDropRaw = drop + pooling + headerHem + bottomHem; // cm
   // Side hems: pair of curtains = 2 panels × 2 sides = 4 side hems; single = 1 panel × 2 sides = 2 side hems
   const numberOfSideHems = quantity * 2;
-  const totalWidthRaw = railWidth * fullness + returnLeft + returnRight + (sideHem * numberOfSideHems); // cm
+  const totalSideHemAllowance = sideHem * numberOfSideHems; // Total cm needed for all side hems
+  const totalWidthRaw = railWidth * fullness + returnLeft + returnRight; // cm (side hems handled separately per orientation)
 
   if (orientation === 'horizontal') {
-    // Standard orientation: fabric width used across width; lengths run along the bolt
+    // Railroaded/Wide fabric: fabric runs horizontally (sideways)
+    // - Drop (height) fits within the fabric WIDTH
+    // - Rail width determines fabric LENGTH needed
     effectiveFabricWidth = fabricWidth;
 
     const requiredLengthUnrounded = totalDropRaw;
     requiredLength = vRepeat > 0 ? Math.ceil(requiredLengthUnrounded / vRepeat) * vRepeat : requiredLengthUnrounded;
 
-    const requiredWidthUnrounded = totalWidthRaw;
+    // For horizontal: the width we cut is the rail width with fullness + returns + side hems
+    const requiredWidthUnrounded = totalWidthRaw + totalSideHemAllowance;
     requiredWidth = hRepeat > 0 ? Math.ceil(requiredWidthUnrounded / hRepeat) * hRepeat : requiredWidthUnrounded;
     
-    // Check feasibility: length must not exceed fabric width in horizontal orientation
+    // Check feasibility: drop (length cut) must fit within fabric width
     if (requiredLength > fabricWidth) {
-      warnings.push(`Curtain drop (${requiredLength.toFixed(0)}cm incl. repeats) exceeds fabric width (${fabricWidth}cm). Not feasible in horizontal orientation.`);
+      warnings.push(`Curtain drop (${requiredLength.toFixed(0)}cm incl. repeats) exceeds fabric width (${fabricWidth}cm). Not feasible in horizontal/railroaded orientation.`);
       feasible = false;
     }
   } else {
-    // Vertical/Rotated orientation: fabric width used along the drop; panels are cut across width
+    // Vertical/Standard fabric: fabric runs vertically (normal orientation)
+    // - Fabric width determines how many panels can be cut across
+    // - Drop determines the length per panel
     effectiveFabricWidth = fabricWidth;
 
-    // Panel width (across the fabric) equals the drop with hems (and repeat rounding)
-    const requiredPanelWidthUnrounded = totalDropRaw + (sideHem * 2);
-    const requiredPanelWidth = vRepeat > 0 ? Math.ceil(requiredPanelWidthUnrounded / vRepeat) * vRepeat : requiredPanelWidthUnrounded;
-    requiredWidth = requiredPanelWidth;
+    // Each panel needs: drop + header + bottom hems (side hems are along the edges, not added to width)
+    const requiredPanelLengthUnrounded = totalDropRaw;
+    const requiredPanelLength = vRepeat > 0 ? Math.ceil(requiredPanelLengthUnrounded / vRepeat) * vRepeat : requiredPanelLengthUnrounded;
+    requiredLength = requiredPanelLength;
 
-    // The running length along the bolt covers the rail width with returns (and horizontal repeat rounding)
-    const requiredLengthUnrounded = railWidth * fullness + returnLeft + returnRight;
-    requiredLength = hRepeat > 0 ? Math.ceil(requiredLengthUnrounded / hRepeat) * hRepeat : requiredLengthUnrounded;
+    // Width per panel: (rail width × fullness + returns) / number of panels + side hems per panel
+    const widthPerPanel = (totalWidthRaw / quantity) + (sideHem * 2); // Each panel gets 2 side hems
+    const requiredWidthUnrounded = widthPerPanel;
+    requiredWidth = hRepeat > 0 ? Math.ceil(requiredWidthUnrounded / hRepeat) * hRepeat : requiredWidthUnrounded;
     
-    // Feasibility: panel width must fit within the fabric width when rotated
-    if (requiredPanelWidth > fabricWidth) {
-      warnings.push(`Required panel width (${requiredPanelWidth.toFixed(0)}cm incl. repeats) exceeds fabric width (${fabricWidth}cm) in vertical orientation.`);
+    // Feasibility: panel width must fit within the fabric width
+    if (requiredWidth > fabricWidth) {
+      warnings.push(`Required panel width (${requiredWidth.toFixed(0)}cm incl. repeats) exceeds fabric width (${fabricWidth}cm) in vertical/standard orientation.`);
       feasible = false;
     }
   }
