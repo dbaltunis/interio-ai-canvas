@@ -363,10 +363,21 @@ export const DynamicWindowWorksheet = forwardRef<{
             throw new Error("User not authenticated");
           }
 
+          // Detect the specific treatment type early for calculations
+          const specificTreatmentType = detectTreatmentType(selectedTemplate);
+          const generalCategory = specificTreatmentType.includes('blind') 
+            ? 'blinds' 
+            : specificTreatmentType.includes('shutter') 
+            ? 'shutters' 
+            : specificTreatmentType === 'wallpaper'
+            ? 'wallpaper'
+            : 'curtains';
+          
           // Calculate comprehensive costs including all components
           let fabricCost = 0;
           let totalCost = 0;
           let linearMeters = 0;
+          let manufacturingCost = 0;
           let wallpaperDetails = null;
           
           // Handle wallpaper calculations
@@ -438,8 +449,40 @@ export const DynamicWindowWorksheet = forwardRef<{
               
               console.log("💰 Wallpaper autoSave calculation:", wallpaperDetails);
             }
+          } else if (generalCategory === 'blinds' || generalCategory === 'shutters') {
+            // BLIND/SHUTTER CALCULATIONS
+            const width = parseFloat(measurements.rail_width) || 0;
+            const height = parseFloat(measurements.drop) || 0;
+            
+            // Import blind calculation utility
+            const { calculateBlindCost, calculateShutterCost } = await import('@/utils/blindCostCalculations');
+            
+            // Use material or template for pricing
+            const materialForCalc = selectedItems.material || (selectedTemplate ? {
+              unit_price: selectedTemplate.unit_price || 0,
+              selling_price: selectedTemplate.unit_price || 0
+            } : null);
+            
+            console.log('🎯 Calculating blind cost:', {
+              width,
+              height,
+              template: selectedTemplate?.name,
+              material: materialForCalc,
+              category: generalCategory
+            });
+            
+            const blindCalc = generalCategory === 'shutters' 
+              ? calculateShutterCost(width, height, selectedTemplate, materialForCalc, selectedOptions || [])
+              : calculateBlindCost(width, height, selectedTemplate, materialForCalc, selectedOptions || []);
+            
+            fabricCost = blindCalc.fabricCost;
+            manufacturingCost = blindCalc.manufacturingCost;
+            linearMeters = blindCalc.linearMeters;
+            totalCost = blindCalc.totalCost;
+            
+            console.log('💰 Blind calculation result:', blindCalc);
           } else {
-            // Original curtain/blind calculations
+            // Original curtain calculations  
             fabricCost = fabricCalculation?.totalCost || 0;
             linearMeters = fabricCalculation?.linearMeters || 0;
           }
@@ -503,9 +546,8 @@ export const DynamicWindowWorksheet = forwardRef<{
             }
           }
 
-          // Calculate manufacturing cost (for curtains/blinds only)
-          let manufacturingCost = 0;
-          if (treatmentCategory !== 'wallpaper' && selectedTemplate && fabricCalculation) {
+          // Calculate manufacturing cost (for curtains only - blinds already calculated)
+          if (generalCategory === 'curtains' && selectedTemplate && fabricCalculation) {
             const manufacturingType = selectedTemplate.manufacturing_type || 'machine';
             const linearMetersForManufacturing = fabricCalculation.linearMeters || 0;
             if (manufacturingType === 'machine') {
@@ -570,18 +612,7 @@ export const DynamicWindowWorksheet = forwardRef<{
           const finalTotalCost = fabricCost + finalLiningCost + finalHeadingCost + manufacturingCost;
 
           // Create summary data for windows_summary table - Save ALL 4 steps
-          
-          // Detect the specific treatment type (e.g., 'venetian_blinds', 'roller_blinds', etc.)
-          const specificTreatmentType = detectTreatmentType(selectedTemplate);
-          
-          // Get general category from specific type (e.g., 'venetian_blinds' -> 'blinds')
-          const generalCategory = specificTreatmentType.includes('blind') 
-            ? 'blinds' 
-            : specificTreatmentType.includes('shutter') 
-            ? 'shutters' 
-            : specificTreatmentType === 'wallpaper'
-            ? 'wallpaper'
-            : 'curtains';
+          // Note: specificTreatmentType and generalCategory already declared earlier
           
           console.log('🎯 DynamicWorksheet treatment type detection for save:', {
             specificTreatmentType,
