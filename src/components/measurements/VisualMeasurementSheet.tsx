@@ -69,6 +69,11 @@ export const VisualMeasurementSheet = ({
     selectedOptionsRef.current = selectedOptions;
   }, [selectedOptions]);
   
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
+  const { data: curtainTemplates = [] } = useCurtainTemplates();
+  const { units } = useMeasurementUnits();
+  const { data: inventory = [] } = useEnhancedInventory();
+  
   // Detect treatment type - use treatmentCategory prop if provided, otherwise detect from template
   const treatmentType = treatmentCategory || detectTreatmentType(selectedTemplate);
   const treatmentConfig = getTreatmentConfig(treatmentType);
@@ -82,11 +87,12 @@ export const VisualMeasurementSheet = ({
     hasConfig: !!treatmentConfig
   });
   
-  // Handle invalid treatment config - render after hooks to avoid breaking Rules of Hooks
+  // Handle invalid treatment config - NOW SAFE TO RETURN AFTER ALL HOOKS
   if (!treatmentConfig) {
     console.error('❌ VisualMeasurementSheet: Invalid treatment type:', treatmentType);
     return <div className="p-4 text-destructive">Invalid treatment type: {treatmentType}</div>;
   }
+  
   const handleInputChange = (field: string, value: string) => {
     if (!readOnly) {
       console.log(`🔧 VisualMeasurementSheet: Changing ${field} to:`, value);
@@ -133,11 +139,7 @@ export const VisualMeasurementSheet = ({
   console.log("Current hardware type:", hardwareType);
   console.log("Current pooling option:", poolingOption);
   console.log("Current pooling amount:", poolingAmount);
-
-  const { data: curtainTemplates = [] } = useCurtainTemplates();
-  const { units } = useMeasurementUnits();
   console.log("🎯 Current measurement units from settings:", units);
-  const { data: inventory = [] } = useEnhancedInventory();
   
   // Get selected fabric details for visualization
   const selectedFabricItem = selectedFabric ? inventory.find((item: any) => item.id === selectedFabric) : undefined;
