@@ -126,13 +126,6 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     maximum_height: (template as any)?.maximum_height?.toString() || "300",
     stack_allowance: (template as any)?.stack_allowance?.toString() || "0",
     
-    // Roller Blind-specific: Production conditions
-    fabric_tolerance: (template as any)?.fabric_tolerance?.toString() || "",
-    tube_diameter: (template as any)?.tube_diameter?.toString() || "",
-    control_side: (template as any)?.control_side || "right",
-    roll_direction: (template as any)?.roll_direction || "standard",
-    production_notes: (template as any)?.production_notes || "",
-    
     // Lining Selection - Pre-created with pricing (for curtains)
     lining_types: template?.lining_types || [
       { type: "Standard", price_per_metre: 15, labour_per_curtain: 25 },
@@ -444,12 +437,6 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         header_allowance: parseFloat(formData.header_allowance.toString()) || 8,
         waste_percent: parseFloat(formData.waste_percent.toString()) || 5,
         is_railroadable: formData.is_railroadable,
-        // Production conditions for blinds
-        fabric_tolerance: formData.fabric_tolerance ? parseFloat(formData.fabric_tolerance.toString()) : undefined,
-        tube_diameter: formData.tube_diameter ? parseFloat(formData.tube_diameter.toString()) : undefined,
-        control_side: formData.control_side || undefined,
-        roll_direction: formData.roll_direction || undefined,
-        production_notes: formData.production_notes || undefined,
         active: true
       };
 
@@ -1051,12 +1038,12 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
               </Card>
             )}
 
-            {/* Blind/Shutter Manufacturing/Production Configuration */}
+            {/* Blind/Shutter Manufacturing Configuration */}
             {formData.curtain_type !== 'curtain' && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Production Specifications</CardTitle>
-                  <CardDescription>Manufacturing constraints and production requirements for {formData.curtain_type.replace('_', ' ')}</CardDescription>
+                  <CardTitle className="text-base">Manufacturing Specifications</CardTitle>
+                  <CardDescription>Size constraints and deductions for {formData.curtain_type.replace('_', ' ')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Bracket Deduction */}
@@ -1073,7 +1060,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                       </Tooltip>
                     </div>
                     <div>
-                      <Label htmlFor="bracket_deduction">Deduction per Side ({units.length})</Label>
+                      <Label htmlFor="bracket_deduction">Deduction per Side (cm)</Label>
                       <Input
                         id="bracket_deduction"
                         type="number"
@@ -1090,19 +1077,19 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                   {/* Size Constraints */}
                   <div className="space-y-4">
                     <div className="flex items-center gap-2">
-                      <h4 className="font-medium">Size Restrictions</h4>
+                      <h4 className="font-medium">Size Constraints</h4>
                       <Tooltip>
                         <TooltipTrigger>
                           <Info className="h-4 w-4 text-muted-foreground" />
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Manufacturing limitations - min/max dimensions this product can be produced in</p>
+                          <p>Minimum and maximum dimensions for this product</p>
                         </TooltipContent>
                       </Tooltip>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="minimum_width">Min Width ({units.length})</Label>
+                        <Label htmlFor="minimum_width">Min Width (cm)</Label>
                         <Input
                           id="minimum_width"
                           type="number"
@@ -1111,10 +1098,9 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                           onChange={(e) => handleInputChange("minimum_width", e.target.value)}
                           placeholder="30"
                         />
-                        <p className="text-xs text-muted-foreground mt-1">Narrower orders will be rejected</p>
                       </div>
                       <div>
-                        <Label htmlFor="maximum_width">Max Width ({units.length})</Label>
+                        <Label htmlFor="maximum_width">Max Width (cm)</Label>
                         <Input
                           id="maximum_width"
                           type="number"
@@ -1123,10 +1109,9 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                           onChange={(e) => handleInputChange("maximum_width", e.target.value)}
                           placeholder="300"
                         />
-                        <p className="text-xs text-muted-foreground mt-1">Wider orders will be rejected</p>
                       </div>
                       <div>
-                        <Label htmlFor="minimum_height">Min Height ({units.length})</Label>
+                        <Label htmlFor="minimum_height">Min Height (cm)</Label>
                         <Input
                           id="minimum_height"
                           type="number"
@@ -1135,10 +1120,9 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                           onChange={(e) => handleInputChange("minimum_height", e.target.value)}
                           placeholder="30"
                         />
-                        <p className="text-xs text-muted-foreground mt-1">Shorter orders will be rejected</p>
                       </div>
                       <div>
-                        <Label htmlFor="maximum_height">Max Height ({units.length})</Label>
+                        <Label htmlFor="maximum_height">Max Height (cm)</Label>
                         <Input
                           id="maximum_height"
                           type="number"
@@ -1147,7 +1131,6 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                           onChange={(e) => handleInputChange("maximum_height", e.target.value)}
                           placeholder="300"
                         />
-                        <p className="text-xs text-muted-foreground mt-1">Taller orders will be rejected</p>
                       </div>
                     </div>
                   </div>
@@ -1168,7 +1151,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                       </Tooltip>
                     </div>
                     <div>
-                      <Label htmlFor="stack_allowance">Stack Height ({units.length})</Label>
+                      <Label htmlFor="stack_allowance">Stack Height (cm)</Label>
                       <Input
                         id="stack_allowance"
                         type="number"
@@ -1177,106 +1160,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                         onChange={(e) => handleInputChange("stack_allowance", e.target.value)}
                         placeholder="0"
                       />
-                      <p className="text-xs text-muted-foreground mt-1">For Roman blinds: height added when raised</p>
                     </div>
                   </div>
-
-                  {/* Roller Blind Specific Settings */}
-                  {(formData.curtain_type === 'roller_blind' || formData.curtain_type === 'roman_blind') && (
-                    <>
-                      <Separator />
-                      
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-medium">Production Conditions</h4>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Info className="h-4 w-4 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Additional manufacturing requirements and tolerances</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="fabric_tolerance">Fabric Tolerance ({units.length})</Label>
-                            <Input
-                              id="fabric_tolerance"
-                              type="number"
-                              step="0.5"
-                              value={formData.fabric_tolerance || ""}
-                              onChange={(e) => handleInputChange("fabric_tolerance", e.target.value)}
-                              placeholder="1.0"
-                            />
-                            <p className="text-xs text-muted-foreground mt-1">Allowance for fabric variations</p>
-                          </div>
-                          
-                          <div>
-                            <Label htmlFor="tube_diameter">Tube Diameter ({units.length})</Label>
-                            <Input
-                              id="tube_diameter"
-                              type="number"
-                              step="0.5"
-                              value={formData.tube_diameter || ""}
-                              onChange={(e) => handleInputChange("tube_diameter", e.target.value)}
-                              placeholder="38"
-                            />
-                            <p className="text-xs text-muted-foreground mt-1">Standard roller tube size</p>
-                          </div>
-                          
-                          <div>
-                            <Label htmlFor="control_side">Default Control Side</Label>
-                            <Select 
-                              value={formData.control_side || "right"} 
-                              onValueChange={(value) => handleInputChange("control_side", value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select side" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="left">Left</SelectItem>
-                                <SelectItem value="right">Right</SelectItem>
-                                <SelectItem value="center">Center</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <p className="text-xs text-muted-foreground mt-1">Can be changed per order</p>
-                          </div>
-                          
-                          <div>
-                            <Label htmlFor="roll_direction">Roll Direction</Label>
-                            <Select 
-                              value={formData.roll_direction || "standard"} 
-                              onValueChange={(value) => handleInputChange("roll_direction", value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select direction" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="standard">Standard Roll</SelectItem>
-                                <SelectItem value="reverse">Reverse Roll</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <p className="text-xs text-muted-foreground mt-1">Fabric rolling orientation</p>
-                          </div>
-                        </div>
-                        
-                        {/* Production Notes */}
-                        <div>
-                          <Label htmlFor="production_notes">Production Notes</Label>
-                          <Textarea
-                            id="production_notes"
-                            value={formData.production_notes || ""}
-                            onChange={(e) => handleInputChange("production_notes", e.target.value)}
-                            placeholder="Special manufacturing instructions, handling requirements, etc."
-                            rows={3}
-                          />
-                          <p className="text-xs text-muted-foreground mt-1">Internal notes for production team</p>
-                        </div>
-                      </div>
-                    </>
-                  )}
                 </CardContent>
               </Card>
             )}
