@@ -557,10 +557,14 @@ export const DynamicWindowWorksheet = forwardRef<{
             }
           }
 
-          // Calculate total cost
+          // Calculate total cost (blinds already have totalCost calculated)
           if (treatmentCategory === 'wallpaper') {
             totalCost = fabricCost; // Already calculated above for wallpaper
+          } else if (generalCategory === 'blinds' || generalCategory === 'shutters') {
+            // Don't recalculate - blind totalCost already includes everything
+            // totalCost already set from blindCalc.totalCost above
           } else {
+            // Curtains
             totalCost = fabricCost + liningCost + headingCost + manufacturingCost;
           }
 
