@@ -5934,6 +5934,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      create_comprehensive_blind_templates: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       create_system_blind_templates: {
         Args: Record<PropertyKey, never>
         Returns: undefined
