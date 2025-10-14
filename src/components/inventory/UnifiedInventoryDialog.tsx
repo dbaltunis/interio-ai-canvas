@@ -75,11 +75,7 @@ export const UnifiedInventoryDialog = ({
     wallpaper_match_type: "straight",
     wallpaper_horizontal_repeat: 0,
     wallpaper_waste_factor: 10,
-    wallpaper_pattern_offset: 0,
-    // Shopify-compatible fields
-    product_type: "",
-    tags: "",
-    barcode: ""
+    wallpaper_pattern_offset: 0
   });
 
   // Load draft data on mount for create mode
@@ -132,10 +128,7 @@ export const UnifiedInventoryDialog = ({
         wallpaper_match_type: item.wallpaper_match_type || "straight",
         wallpaper_horizontal_repeat: item.wallpaper_horizontal_repeat || 0,
         wallpaper_waste_factor: item.wallpaper_waste_factor || 10,
-        wallpaper_pattern_offset: item.wallpaper_pattern_offset || 0,
-        product_type: item.product_type || "",
-        tags: item.tags || "",
-        barcode: item.barcode || ""
+        wallpaper_pattern_offset: item.wallpaper_pattern_offset || 0
       });
       setTrackInventory(item.quantity > 0);
     }
@@ -270,10 +263,7 @@ export const UnifiedInventoryDialog = ({
           wallpaper_match_type: "straight",
           wallpaper_horizontal_repeat: 0,
           wallpaper_waste_factor: 10,
-          wallpaper_pattern_offset: 0,
-          product_type: "",
-          tags: "",
-          barcode: ""
+          wallpaper_pattern_offset: 0
         });
         setTrackInventory(false);
       }
@@ -424,14 +414,15 @@ export const UnifiedInventoryDialog = ({
                     {/* Category selection - both create and edit modes */}
                     <div>
                       <Label htmlFor="category">Category</Label>
+                      <FieldHelp content="Choose the specific fabric or hardware type for better organization" />
                       <Select
                         value={formData.category}
                         onValueChange={(value) => setFormData({ ...formData, category: value })}
                       >
-                        <SelectTrigger id="category">
+                        <SelectTrigger id="category" className="bg-background">
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
-                        <SelectContent className="bg-background z-50">
+                        <SelectContent className="bg-popover border border-border z-[100]" position="popper" sideOffset={4}>
                           <SelectItem value="fabric">Fabric (General)</SelectItem>
                           <SelectItem value="curtain_fabric">Curtain Fabrics</SelectItem>
                           <SelectItem value="roller_fabric">Roller Fabrics</SelectItem>
@@ -461,39 +452,6 @@ export const UnifiedInventoryDialog = ({
                     </div>
 
                     {/* Shopify-compatible Product Type */}
-                    <div>
-                      <Label htmlFor="product_type">Product Type (Shopify)</Label>
-                      <Input
-                        id="product_type"
-                        value={formData.product_type}
-                        onChange={(e) => setFormData({ ...formData, product_type: e.target.value })}
-                        placeholder="e.g., Curtains, Blinds, Hardware"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">Used for Shopify product categorization</p>
-                    </div>
-
-                    {/* Tags for filtering and Shopify */}
-                    <div>
-                      <Label htmlFor="tags">Tags (Shopify)</Label>
-                      <Input
-                        id="tags"
-                        value={formData.tags}
-                        onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                        placeholder="e.g., luxury, modern, blackout"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">Comma-separated tags for Shopify</p>
-                    </div>
-
-                    {/* Barcode for inventory tracking */}
-                    <div>
-                      <Label htmlFor="barcode">Barcode/UPC</Label>
-                      <Input
-                        id="barcode"
-                        value={formData.barcode}
-                        onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
-                        placeholder="Barcode or UPC"
-                      />
-                    </div>
 
                     <div className="md:col-span-2">
                       <Label htmlFor="description">Description</Label>
