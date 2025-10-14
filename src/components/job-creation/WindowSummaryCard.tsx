@@ -112,8 +112,8 @@ export function WindowSummaryCard({
       id: 'fabric',
       name: summary.fabric_details?.name || 'Fabric',
       description: summary.fabric_details?.name
-        ? `${summary.fabric_details.name} • ${fmtMeasurement(summary.linear_meters) || ''} • ${summary.widths_required} width(s)`
-        : `${fmtMeasurement(summary.linear_meters) || ''} • ${summary.widths_required} width(s)`,
+        ? `${summary.fabric_details.name} • ${fmtMeasurement(Number(summary.linear_meters)) || '0.00cm'} • ${summary.widths_required || 0} width(s)`
+        : `${fmtMeasurement(Number(summary.linear_meters)) || '0.00cm'} • ${summary.widths_required || 0} width(s)`,
       quantity: Number(summary.linear_meters) || 0,
       unit: 'm',
       unit_price: Number(summary.price_per_meter) || 0,
@@ -306,22 +306,22 @@ export function WindowSummaryCard({
                           <span className="text-muted-foreground">Rail width</span>
                           <span className="font-medium">
                             {fmtMeasurement(
-                              summary.measurements_details?.rail_width || 
-                              surface.rail_width || 
-                              surface.measurement_a || 
-                              surface.width
-                            )}
+                              Number(summary.measurements_details?.rail_width) || 
+                              Number(surface.rail_width) || 
+                              Number(surface.measurement_a) || 
+                              Number(surface.width) || 0
+                            ) || '—'}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Curtain drop</span>
                           <span className="font-medium">
                             {fmtMeasurement(
-                              summary.measurements_details?.drop || 
-                              surface.drop || 
-                              surface.measurement_b || 
-                              surface.height
-                            )}
+                              Number(summary.measurements_details?.drop) || 
+                              Number(surface.drop) || 
+                              Number(surface.measurement_b) || 
+                              Number(surface.height) || 0
+                            ) || '—'}
                           </span>
                         </div>
                         <div className="flex justify-between">
@@ -338,7 +338,7 @@ export function WindowSummaryCard({
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Fabric quantity</span>
-                          <span className="font-medium">{fmtMeasurement(summary.linear_meters) || '—'}</span>
+                          <span className="font-medium">{fmtMeasurement(Number(summary.linear_meters) || 0) || '—'}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Fabric price</span>
@@ -362,22 +362,22 @@ export function WindowSummaryCard({
                           <span className="text-muted-foreground">Width</span>
                           <span className="font-medium">
                             {fmtMeasurement(
-                              summary.measurements_details?.width || 
-                              summary.measurements_details?.measurement_a || 
-                              surface.measurement_a || 
-                              surface.width
-                            )}
+                              Number(summary.measurements_details?.width) || 
+                              Number(summary.measurements_details?.measurement_a) || 
+                              Number(surface.measurement_a) || 
+                              Number(surface.width) || 0
+                            ) || '—'}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Height</span>
                           <span className="font-medium">
                             {fmtMeasurement(
-                              summary.measurements_details?.height || 
-                              summary.measurements_details?.measurement_b || 
-                              surface.measurement_b || 
-                              surface.height
-                            )}
+                              Number(summary.measurements_details?.height) || 
+                              Number(summary.measurements_details?.measurement_b) || 
+                              Number(surface.measurement_b) || 
+                              Number(surface.height) || 0
+                            ) || '—'}
                           </span>
                         </div>
                         {summary.hardware_details?.name && (
@@ -393,7 +393,7 @@ export function WindowSummaryCard({
                         {summary.linear_meters && (
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Fabric quantity</span>
-                            <span className="font-medium">{fmtMeasurement(summary.linear_meters)}</span>
+                            <span className="font-medium">{fmtMeasurement(Number(summary.linear_meters) || 0)}</span>
                           </div>
                         )}
                         <div className="flex justify-between">
@@ -418,22 +418,22 @@ export function WindowSummaryCard({
                           <span className="text-muted-foreground">Width</span>
                           <span className="font-medium">
                             {fmtMeasurement(
-                              summary.measurements_details?.width || 
-                              summary.measurements_details?.measurement_a || 
-                              surface.measurement_a || 
-                              surface.width
-                            )}
+                              Number(summary.measurements_details?.width) || 
+                              Number(summary.measurements_details?.measurement_a) || 
+                              Number(surface.measurement_a) || 
+                              Number(surface.width) || 0
+                            ) || '—'}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Height</span>
                           <span className="font-medium">
                             {fmtMeasurement(
-                              summary.measurements_details?.height || 
-                              summary.measurements_details?.measurement_b || 
-                              surface.measurement_b || 
-                              surface.height
-                            )}
+                              Number(summary.measurements_details?.height) || 
+                              Number(summary.measurements_details?.measurement_b) || 
+                              Number(surface.measurement_b) || 
+                              Number(surface.height) || 0
+                            ) || '—'}
                           </span>
                         </div>
                         <div className="flex justify-between">
@@ -476,11 +476,11 @@ export function WindowSummaryCard({
                       <>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Width</span>
-                          <span className="font-medium">{fmtMeasurement(surface.measurement_a || surface.width)}</span>
+                          <span className="font-medium">{fmtMeasurement(Number(surface.measurement_a) || Number(surface.width) || 0) || '—'}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Height</span>
-                          <span className="font-medium">{fmtMeasurement(surface.measurement_b || surface.height)}</span>
+                          <span className="font-medium">{fmtMeasurement(Number(surface.measurement_b) || Number(surface.height) || 0) || '—'}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Material</span>
