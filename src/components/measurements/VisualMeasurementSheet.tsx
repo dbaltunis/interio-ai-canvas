@@ -1147,36 +1147,33 @@ export const VisualMeasurementSheet = ({
 
               {/* BLIND-SPECIFIC FIELDS - Dynamic Options */}
               {(treatmentType === 'roller_blinds' || 
+                treatmentType === 'blinds' ||
+                treatmentType === 'venetian_blinds' ||
+                treatmentType === 'roman_blinds' ||
+                treatmentType === 'vertical_blinds' ||
+                treatmentType === 'cellular_blinds' ||
+                treatmentType === 'panel_glide' ||
+                treatmentType === 'plantation_shutters' ||
                 selectedTemplate?.curtain_type === 'roller_blind' ||
                 selectedTemplate?.curtain_type === 'venetian_blind' ||
                 selectedTemplate?.curtain_type === 'vertical_blind') && (
-                <>
-                  {/* Show dynamic blind fields for ALL blind types */}
-                  {(treatmentType === 'roller_blinds' || 
-                    treatmentType === 'venetian_blinds' ||
-                    treatmentType === 'roman_blinds' ||
-                    treatmentType === 'vertical_blinds' ||
-                    treatmentType === 'cellular_blinds' ||
-                    treatmentType === 'panel_glide' ||
-                    treatmentType === 'plantation_shutters') && (
-                    <Card className="border-primary/20 bg-primary/5">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm">Blind Configuration</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-3 pt-2">
-                        <DynamicRollerBlindFields
-                          measurements={measurements}
-                          onChange={handleInputChange}
-                          templateId={selectedTemplate?.id}
-                          treatmentCategory={treatmentType}
-                          readOnly={readOnly}
-                          onOptionPriceChange={handleOptionPriceChange}
-                          selectedOptions={selectedOptions}
-                        />
-                      </CardContent>
-                    </Card>
-                  )}
-                </>
+                <Card className="border-primary/20 bg-primary/5">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Blind Configuration</CardTitle>
+                    <p className="text-xs text-muted-foreground">Configure options for your blind</p>
+                  </CardHeader>
+                  <CardContent className="space-y-3 pt-2">
+                    <DynamicRollerBlindFields
+                      measurements={measurements}
+                      onChange={handleInputChange}
+                      templateId={selectedTemplate?.id}
+                      treatmentCategory={treatmentType}
+                      readOnly={readOnly}
+                      onOptionPriceChange={handleOptionPriceChange}
+                      selectedOptions={selectedOptions}
+                    />
+                  </CardContent>
+                </Card>
               )}
 
               {/* Additional Measurements for Curtain Makers - ONLY show for curtains */}

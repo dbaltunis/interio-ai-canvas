@@ -175,10 +175,13 @@ export const DynamicWindowWorksheet = forwardRef<{
       // STEP 3: Restore Inventory Selections
       const restoredItems: any = {};
       
-      // Restore fabric selection
+      // Restore fabric selection - set both full object AND id
       if (fabricDetails && fabricDetails.fabric_id) {
-        restoredItems.fabric = fabricDetails;
-        console.log("📊 Restored fabric:", fabricDetails.name || fabricDetails.fabric_id);
+        restoredItems.fabric = {
+          id: fabricDetails.fabric_id,
+          ...fabricDetails
+        };
+        console.log("📊 Restored fabric with ID:", fabricDetails.fabric_id, fabricDetails.name);
       }
       
       // Restore hardware selection
