@@ -193,6 +193,15 @@ export const VisualMeasurementSheet = ({
       // Determine orientation: wide fabrics are railroaded by default, narrow can be rotated by user choice
       const useHorizontalOrientation = isWideFabric || (isNarrowFabric && fabricRotated);
       
+      console.log("🔄 Fabric Calculation:", {
+        fabricRotated,
+        isNarrowFabric,
+        isWideFabric,
+        useHorizontalOrientation,
+        fabricWidthCm,
+        totalDropWillBe: height + headerHem + bottomHem + pooling
+      });
+      
       let widthsRequired, totalSeamAllowance, linearMeters;
       
       // Calculate total drop for both orientations
@@ -209,6 +218,13 @@ export const VisualMeasurementSheet = ({
         
         // Linear meters = the total curtain width we need
         linearMeters = (totalWidthNeeded / 100) * wasteMultiplier;
+        
+        console.log("✅ HORIZONTAL/RAILROADED calculation:", {
+          totalWidthNeeded,
+          widthsRequired,
+          linearMeters,
+          totalSeamAllowance
+        });
       } else {
         // Standard/Vertical: Traditional calculation
         // Fabric WIDTH is used for curtain width, fabric LENGTH is used for drop
@@ -222,6 +238,14 @@ export const VisualMeasurementSheet = ({
         
         // Linear meters = drop length × number of widths (drops)
         linearMeters = ((totalDrop + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier;
+        
+        console.log("✅ VERTICAL/STANDARD calculation:", {
+          totalWidthWithAllowances,
+          widthsRequired,
+          linearMeters,
+          totalDrop,
+          totalSeamAllowance
+        });
       }
       
       // Get price per meter from various possible fields
