@@ -1,4 +1,4 @@
-export type TreatmentCategory = 'curtains' | 'roller_blinds' | 'roman_blinds' | 'venetian_blinds' | 'vertical_blinds' | 'cellular_blinds' | 'panel_glide' | 'plantation_shutters' | 'shutters' | 'wallpaper';
+export type TreatmentCategory = 'curtains' | 'blinds' | 'roller_blinds' | 'roman_blinds' | 'venetian_blinds' | 'vertical_blinds' | 'cellular_blinds' | 'panel_glide' | 'plantation_shutters' | 'shutters' | 'wallpaper';
 
 export interface TreatmentConfig {
   requiresFullness: boolean;
@@ -75,6 +75,17 @@ export const getTreatmentConfig = (category: TreatmentCategory): TreatmentConfig
       showPooling: true,
       inventoryCategory: 'curtain_fabric',
       visualComponent: 'CurtainVisualizer',
+    },
+    blinds: {
+      requiresFullness: false,
+      requiresHardwareType: false,
+      requiresFabricOrientation: false,
+      requiresHeading: false,
+      requiresLining: false,
+      showPooling: false,
+      inventoryCategory: 'roller_blind_fabric',
+      specificFields: ['control_position', 'mounting_type'],
+      visualComponent: 'BlindVisualizer',
     },
     roller_blinds: {
       requiresFullness: false,
@@ -183,6 +194,7 @@ export const getTreatmentConfig = (category: TreatmentCategory): TreatmentConfig
 export const getTreatmentDisplayName = (category: TreatmentCategory): string => {
   const names: Record<TreatmentCategory, string> = {
     curtains: 'Curtains',
+    blinds: 'Blinds',
     roller_blinds: 'Roller Blinds',
     roman_blinds: 'Roman Blinds',
     venetian_blinds: 'Venetian Blinds',
