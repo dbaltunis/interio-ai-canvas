@@ -199,30 +199,29 @@ export const VisualMeasurementSheet = ({
       const totalDrop = height + headerHem + bottomHem + pooling;
       const wasteMultiplier = 1 + ((selectedTemplate.waste_percent || 0) / 100);
       
-      if (useHorizontalOrientation && height < fabricWidthCm) {
-        // Railroaded/Rotated: drop fits within fabric width, rail width determines length needed
-        // In this orientation, we cut panels across the width of the fabric
+      if (useHorizontalOrientation && totalDrop <= fabricWidthCm) {
+        // Railroaded/Horizontal: Drop fits within fabric width, we buy by the curtain width
+        // Fabric is used sideways: fabric WIDTH = curtain DROP, fabric LENGTH = curtain WIDTH
         const totalWidthNeeded = requiredWidth + returnLeft + returnRight + totalSideHems;
         
-        // How many panels can we fit in one length? Each panel width = drop height
-        const panelsPerLength = Math.floor(fabricWidthCm / totalDrop);
+        widthsRequired = 1; // Only 1 "width" needed because fabric is railroaded
+        totalSeamAllowance = 0; // No seams in railroaded orientation
         
-        // How many lengths do we need to get enough panels?
-        const lengthsNeeded = Math.ceil(curtainCount / Math.max(1, panelsPerLength));
-        
-        widthsRequired = lengthsNeeded;
-        totalSeamAllowance = 0; // No seams in railroaded orientation typically
-        
-        // Linear meters = the total width needed for the curtains
-        linearMeters = (totalWidthNeeded / 100) * lengthsNeeded * wasteMultiplier;
+        // Linear meters = the total curtain width we need
+        linearMeters = (totalWidthNeeded / 100) * wasteMultiplier;
       } else {
-        // Standard vertical: traditional calculation
+        // Standard/Vertical: Traditional calculation
+        // Fabric WIDTH is used for curtain width, fabric LENGTH is used for drop
         const totalWidthWithAllowances = requiredWidth + returnLeft + returnRight + totalSideHems;
+        
+        // How many fabric widths (drops) do we need to cover the curtain width?
         widthsRequired = Math.ceil(totalWidthWithAllowances / fabricWidthCm);
+        
+        // Seams between widths
         totalSeamAllowance = widthsRequired > 1 ? (widthsRequired - 1) * seamHems * 2 : 0;
         
-        // Calculate linear metres needed (drop + seam allowances) × number of widths
-        linearMeters = ((totalDrop + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier; // Convert cm to m
+        // Linear meters = drop length × number of widths (drops)
+        linearMeters = ((totalDrop + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier;
       }
       
       // Get price per meter from various possible fields
