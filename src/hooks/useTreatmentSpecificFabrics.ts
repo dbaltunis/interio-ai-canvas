@@ -19,7 +19,7 @@ export const useTreatmentSpecificFabrics = (treatmentCategory: TreatmentCategory
 
       // Each treatment type should only see its specific fabric category
       const categories = treatmentCategory === 'roller_blinds'
-        ? ['roller_blind_fabric']
+        ? ['roller_fabric', 'roller_blind_fabric'] // Support both naming conventions
         : treatmentCategory === 'roman_blinds'
         ? ['roman_blind_fabric', 'curtain_fabric'] // Roman blinds can share curtain fabrics
         : treatmentCategory === 'panel_glide'
