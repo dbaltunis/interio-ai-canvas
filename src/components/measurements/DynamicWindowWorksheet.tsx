@@ -870,11 +870,19 @@ export const DynamicWindowWorksheet = forwardRef<{
                   </div>
                 </div>}
                 
-                <Button onClick={() => {
-                  // Simply change tab - let the Measurements tab handle its own data
-                  console.log("📍 Navigating to measurements tab with items:", selectedItems);
-                  setActiveTab("measurements");
-                }} disabled={!Object.values(selectedItems).some(item => item)} className="w-full">
+                {!Object.values(selectedItems).some(item => item) && <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    No inventory selection required for this treatment. Click continue to proceed to measurements.
+                  </p>
+                </div>}
+                
+                <Button 
+                  onClick={() => {
+                    console.log("📍 Navigating to measurements tab with items:", selectedItems);
+                    setActiveTab("measurements");
+                  }} 
+                  className="w-full"
+                >
                   Continue to Measurements
                 </Button>
               </div>
