@@ -637,7 +637,6 @@ export const DynamicWindowWorksheet = forwardRef<{
             heading_details: headingDetails,
             selected_heading_id: selectedHeading,
             selected_lining_type: selectedLining,
-            heading_cost: finalHeadingCost,
             
             // CRITICAL: Save selected options for blinds/shutters
             selected_options: selectedOptions,
