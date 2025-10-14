@@ -25,6 +25,16 @@ export const DynamicCurtainOptions = ({
   onOptionPriceChange,
   selectedOptions = []
 }: DynamicCurtainOptionsProps) => {
+  // Early returns MUST come before hooks to prevent violations
+  if (!template) {
+    return (
+      <div className="text-sm text-muted-foreground">
+        Please select a curtain template first
+      </div>
+    );
+  }
+
+  // Hooks MUST be called unconditionally after early returns
   const { units } = useMeasurementUnits();
   const { data: headingOptions = [], isLoading: headingsLoading } = useHeadingInventory();
 
@@ -70,14 +80,6 @@ export const DynamicCurtainOptions = ({
     return (
       <div className="p-6 flex items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (!template) {
-    return (
-      <div className="text-sm text-muted-foreground">
-        Please select a curtain template first
       </div>
     );
   }
