@@ -82,6 +82,43 @@ export const DynamicCurtainOptions = ({
     );
   }
 
+  // Get the selected pricing method to display correct prices
+  const selectedPricingMethod = measurements.selected_pricing_method 
+    ? template.pricing_methods?.find((m: any) => m.id === measurements.selected_pricing_method)
+    : template.pricing_methods?.[0]; // Default to first method
+
+  // Debug: Log template pricing to see what values we're getting
+  console.log('💰 DynamicCurtainOptions pricing debug:', {
+    templateName: template.name,
+    selectedPricingMethodId: measurements.selected_pricing_method,
+    selectedMethod: selectedPricingMethod,
+    templateLevelPrices: {
+      machine_price_per_metre: template.machine_price_per_metre,
+      hand_price_per_metre: template.hand_price_per_metre,
+      machine_price_per_drop: template.machine_price_per_drop,
+      hand_price_per_drop: template.hand_price_per_drop,
+    },
+    methodLevelPrices: selectedPricingMethod ? {
+      machine_price_per_metre: selectedPricingMethod.machine_price_per_metre,
+      hand_price_per_metre: selectedPricingMethod.hand_price_per_metre,
+      machine_price_per_drop: selectedPricingMethod.machine_price_per_drop,
+      hand_price_per_drop: selectedPricingMethod.hand_price_per_drop,
+      machine_price_per_panel: selectedPricingMethod.machine_price_per_panel,
+      hand_price_per_panel: selectedPricingMethod.hand_price_per_panel,
+    } : null,
+    offers_hand_finished: template.offers_hand_finished,
+    manufacturing_type: template.manufacturing_type,
+    pricing_type: template.pricing_type
+  });
+
+  // Determine which prices to use - prefer pricing method prices, fallback to template prices
+  const machinePricePerMetre = selectedPricingMethod?.machine_price_per_metre ?? template.machine_price_per_metre;
+  const handPricePerMetre = selectedPricingMethod?.hand_price_per_metre ?? template.hand_price_per_metre;
+  const machinePricePerDrop = selectedPricingMethod?.machine_price_per_drop ?? template.machine_price_per_drop;
+  const handPricePerDrop = selectedPricingMethod?.hand_price_per_drop ?? template.hand_price_per_drop;
+  const machinePricePerPanel = selectedPricingMethod?.machine_price_per_panel ?? template.machine_price_per_panel;
+  const handPricePerPanel = selectedPricingMethod?.hand_price_per_panel ?? template.hand_price_per_panel;
+
   // Filter headings based on template's selected_heading_ids
   const availableHeadings = template.selected_heading_ids && template.selected_heading_ids.length > 0
     ? headingOptions.filter(h => template.selected_heading_ids.includes(h.id))
@@ -216,15 +253,23 @@ export const DynamicCurtainOptions = ({
                 className="cursor-pointer flex flex-col flex-1"
               >
                 <span className="font-medium">Machine Finished</span>
-                {template.machine_price_per_metre && (
+                {machinePricePerMetre && machinePricePerMetre > 0 && (
                   <span className="text-xs text-muted-foreground">
-                    {formatCurrency(template.machine_price_per_metre)}/m
+                    {formatCurrency(machinePricePerMetre)}/m
                   </span>
                 )}
-                {template.machine_price_per_drop && (
+                {machinePricePerDrop && machinePricePerDrop > 0 && (
                   <span className="text-xs text-muted-foreground">
-                    {formatCurrency(template.machine_price_per_drop)}/drop
+                    {formatCurrency(machinePricePerDrop)}/drop
                   </span>
+                )}
+                {machinePricePerPanel && machinePricePerPanel > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {formatCurrency(machinePricePerPanel)}/panel
+                  </span>
+                )}
+                {!machinePricePerMetre && !machinePricePerDrop && !machinePricePerPanel && (
+                  <span className="text-xs text-destructive">No price set</span>
                 )}
               </Label>
             </div>
@@ -235,15 +280,23 @@ export const DynamicCurtainOptions = ({
                 className="cursor-pointer flex flex-col flex-1"
               >
                 <span className="font-medium">Hand Finished</span>
-                {template.hand_price_per_metre && (
+                {handPricePerMetre && handPricePerMetre > 0 && (
                   <span className="text-xs text-muted-foreground">
-                    {formatCurrency(template.hand_price_per_metre)}/m
+                    {formatCurrency(handPricePerMetre)}/m
                   </span>
                 )}
-                {template.hand_price_per_drop && (
+                {handPricePerDrop && handPricePerDrop > 0 && (
                   <span className="text-xs text-muted-foreground">
-                    {formatCurrency(template.hand_price_per_drop)}/drop
+                    {formatCurrency(handPricePerDrop)}/drop
                   </span>
+                )}
+                {handPricePerPanel && handPricePerPanel > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {formatCurrency(handPricePerPanel)}/panel
+                  </span>
+                )}
+                {!handPricePerMetre && !handPricePerDrop && !handPricePerPanel && (
+                  <span className="text-xs text-destructive">No price set</span>
                 )}
               </Label>
             </div>
