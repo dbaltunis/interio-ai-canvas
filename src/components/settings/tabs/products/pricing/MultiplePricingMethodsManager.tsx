@@ -35,12 +35,14 @@ interface MultiplePricingMethodsManagerProps {
   pricingMethods: PricingMethod[];
   offersHandFinished: boolean;
   onPricingMethodsChange: (methods: PricingMethod[]) => void;
+  onSave?: () => void;
 }
 
 export const MultiplePricingMethodsManager = ({
   pricingMethods,
   offersHandFinished,
-  onPricingMethodsChange
+  onPricingMethodsChange,
+  onSave
 }: MultiplePricingMethodsManagerProps) => {
   const addPricingMethod = () => {
     const newMethod: PricingMethod = {
@@ -188,6 +190,14 @@ export const MultiplePricingMethodsManager = ({
           </div>
         </Card>
       ))}
+
+      {pricingMethods.length > 0 && onSave && (
+        <div className="flex justify-end pt-4">
+          <Button onClick={onSave} className="gap-2">
+            Save Pricing Methods
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
