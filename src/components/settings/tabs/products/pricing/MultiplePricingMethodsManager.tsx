@@ -191,11 +191,15 @@ export const MultiplePricingMethodsManager = ({
         </Card>
       ))}
 
-      {pricingMethods.length > 0 && onSave && (
-        <div className="flex justify-end pt-4">
-          <Button onClick={onSave} className="gap-2">
-            Save Pricing Methods
-          </Button>
+      {pricingMethods.length > 0 && (
+        <div className="bg-muted/50 p-4 rounded-lg border mt-4">
+          <p className="text-sm text-muted-foreground mb-3">
+            💡 Your pricing methods have been configured. Click the <strong>"Save Template"</strong> button at the bottom of the form to save all changes.
+          </p>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="font-medium">Configured Methods:</span>
+            <span>{pricingMethods.length} method{pricingMethods.length !== 1 ? 's' : ''}</span>
+          </div>
         </div>
       )}
     </div>
