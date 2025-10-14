@@ -467,8 +467,11 @@ export const DynamicWindowWorksheet = forwardRef<{
               width,
               height,
               template: selectedTemplate?.name,
+              templateMachinePrice: selectedTemplate?.machine_price_per_metre,
+              templateUnitPrice: selectedTemplate?.unit_price,
               material: materialForCalc,
-              category: generalCategory
+              category: generalCategory,
+              selectedOptions
             });
             
             const blindCalc = generalCategory === 'shutters' 
@@ -480,7 +483,13 @@ export const DynamicWindowWorksheet = forwardRef<{
             linearMeters = blindCalc.linearMeters;
             totalCost = blindCalc.totalCost;
             
-            console.log('💰 Blind calculation result:', blindCalc);
+            console.log('💰 Blind calculation result:', {
+              fabricCost: blindCalc.fabricCost,
+              manufacturingCost: blindCalc.manufacturingCost,
+              optionsCost: blindCalc.optionsCost,
+              linearMeters: blindCalc.linearMeters,
+              totalCost: blindCalc.totalCost
+            });
           } else {
             // Original curtain calculations  
             fabricCost = fabricCalculation?.totalCost || 0;
@@ -721,9 +730,14 @@ export const DynamicWindowWorksheet = forwardRef<{
           // Debug: Log what we're about to save
           console.log("💾 About to save summary data:", {
             window_id: summaryData.window_id,
+            treatment_type: summaryData.treatment_type,
+            treatment_category: summaryData.treatment_category,
+            fabric_cost: summaryData.fabric_cost,
+            manufacturing_cost: summaryData.manufacturing_cost,
+            total_cost: summaryData.total_cost,
+            linear_meters: summaryData.linear_meters,
             selected_fabric_id: summaryData.selected_fabric_id,
-            fabric_details_exists: !!summaryData.fabric_details,
-            fabric_details: summaryData.fabric_details
+            material_details: summaryData.material_details
           });
 
           // Save to windows_summary table
