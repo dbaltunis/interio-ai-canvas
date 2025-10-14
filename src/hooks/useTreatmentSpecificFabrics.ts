@@ -17,9 +17,13 @@ export const useTreatmentSpecificFabrics = (treatmentCategory: TreatmentCategory
         return [];
       }
 
-      // Many blind types can use curtain fabrics
-      const categories = ['roman_blinds', 'roller_blinds', 'panel_glide'].includes(treatmentCategory)
-        ? ['curtain_fabric', 'roller_blind_fabric']
+      // Each treatment type should only see its specific fabric category
+      const categories = treatmentCategory === 'roller_blinds'
+        ? ['roller_blind_fabric']
+        : treatmentCategory === 'roman_blinds'
+        ? ['roman_blind_fabric', 'curtain_fabric'] // Roman blinds can share curtain fabrics
+        : treatmentCategory === 'panel_glide'
+        ? ['panel_glide_fabric', 'curtain_fabric']
         : [config.inventoryCategory];
       
       console.log('🔍 Fetching fabrics for treatment:', treatmentCategory, 'with categories:', categories);
