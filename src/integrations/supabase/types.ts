@@ -1382,6 +1382,7 @@ export type Database = {
           average_drop_width: number | null
           bottom_hem: number
           compatible_hardware: string[] | null
+          complexity_pricing_tiers: Json | null
           created_at: string
           curtain_type: string
           description: string | null
@@ -1441,6 +1442,7 @@ export type Database = {
           average_drop_width?: number | null
           bottom_hem?: number
           compatible_hardware?: string[] | null
+          complexity_pricing_tiers?: Json | null
           created_at?: string
           curtain_type?: string
           description?: string | null
@@ -1500,6 +1502,7 @@ export type Database = {
           average_drop_width?: number | null
           bottom_hem?: number
           compatible_hardware?: string[] | null
+          complexity_pricing_tiers?: Json | null
           created_at?: string
           curtain_type?: string
           description?: string | null
