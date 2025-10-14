@@ -632,7 +632,22 @@ export const DynamicWindowWorksheet = forwardRef<{
             selected_hardware_id: selectedItems.hardware?.id || null,
             selected_material_id: selectedItems.material?.id || null,
             hardware_details: selectedItems.hardware || null,
-            material_details: selectedItems.material || null,
+            // For blinds/shutters: Use template data as material if no material selected
+            material_details: selectedItems.material || (
+              (generalCategory === 'blinds' || generalCategory === 'shutters') && selectedTemplate
+                ? {
+                    id: selectedTemplate.id,
+                    name: selectedTemplate.name,
+                    description: selectedTemplate.description,
+                    image_url: selectedTemplate.image_url,
+                    category: treatmentCategory,
+                    treatment_type: specificTreatmentType,
+                    template_based: true, // Flag to indicate this is from template
+                    pricing_type: selectedTemplate.pricing_type,
+                    unit_price: selectedTemplate.unit_price || 0
+                  }
+                : null
+            ),
             
             heading_details: headingDetails,
             selected_heading_id: selectedHeading,
