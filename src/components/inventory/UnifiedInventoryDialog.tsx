@@ -290,6 +290,8 @@ export const UnifiedInventoryDialog = ({
     }
   };
 
+  const isRollerBlindFabric = formData.category === "roller_blind_fabric";
+  const isCurtainOrBlindFabric = ["curtain_fabric", "blind_fabric"].includes(formData.category);
   const isFabric = ["curtain_fabric", "roller_blind_fabric", "blind_fabric", "venetian_slats", "shutter_panels", "wallcovering"].includes(formData.category);
   const isHardware = ["track", "rod", "bracket", "motor", "accessory"].includes(formData.category);
 
@@ -470,8 +472,87 @@ export const UnifiedInventoryDialog = ({
 
               {/* SPECIFICATIONS TAB */}
               <TabsContent value="specifications" className="space-y-4">
-                {/* Fabric Specifications */}
-                {isFabric && (
+                {/* Roller Blind Fabric Specifications */}
+                {isRollerBlindFabric && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Ruler className="h-5 w-5" />
+                        Roller Blind Fabric Specifications
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <Label htmlFor="fabric_width">Fabric Roll Width (cm)</Label>
+                        <Input
+                          id="fabric_width"
+                          type="number"
+                          step="0.1"
+                          value={formData.fabric_width || ""}
+                          onChange={(e) => setFormData({ ...formData, fabric_width: parseFloat(e.target.value) || 0 })}
+                          placeholder="240"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="fabric_composition">Composition</Label>
+                        <Input
+                          id="fabric_composition"
+                          value={formData.fabric_composition}
+                          onChange={(e) => setFormData({ ...formData, fabric_composition: e.target.value })}
+                          placeholder="e.g., 100% Polyester"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="color">Color</Label>
+                        <Input
+                          id="color"
+                          value={formData.color}
+                          onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                          placeholder="e.g., Pearl White"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="collection_name">Collection</Label>
+                        <Input
+                          id="collection_name"
+                          value={formData.collection_name}
+                          onChange={(e) => setFormData({ ...formData, collection_name: e.target.value })}
+                          placeholder="e.g., Sunscreen Collection"
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <div className="flex items-center gap-2">
+                          <ImageIcon className="h-4 w-4" />
+                          <Label htmlFor="image_url">Image URL</Label>
+                        </div>
+                        <Input
+                          id="image_url"
+                          value={formData.image_url}
+                          onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                          placeholder="https://example.com/fabric-image.jpg"
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <Label htmlFor="fabric_care_instructions">Care Instructions</Label>
+                        <Textarea
+                          id="fabric_care_instructions"
+                          value={formData.fabric_care_instructions}
+                          onChange={(e) => setFormData({ ...formData, fabric_care_instructions: e.target.value })}
+                          placeholder="e.g., Wipe clean with damp cloth"
+                          rows={2}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Curtain/Roman Blind Fabric Specifications */}
+                {isCurtainOrBlindFabric && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
