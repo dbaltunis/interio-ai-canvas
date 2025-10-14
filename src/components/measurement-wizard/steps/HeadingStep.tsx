@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -19,6 +19,16 @@ export const HeadingStep: React.FC = () => {
     { value: 'hand_finished', label: 'Hand Finished' },
     { value: 'contrast_trim', label: 'Contrast Trim' }
   ];
+
+  // Auto-select first option if none selected
+  useEffect(() => {
+    if (!selectedHeading && headingOptions.length > 0) {
+      setHeading(headingOptions[0].value);
+    }
+    if (!selectedFinish && finishOptions.length > 0) {
+      setFinish(finishOptions[0].value);
+    }
+  }, [selectedHeading, selectedFinish, setHeading, setFinish]);
 
   return (
     <div className="space-y-6">
