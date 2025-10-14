@@ -33,7 +33,9 @@ export const calculateOrientation = (
   const hRepeat = horizontalPatternRepeatCm > 0 ? horizontalPatternRepeatCm : 0;
 
   const totalDropRaw = drop + pooling + headerHem + bottomHem; // cm
-  const totalWidthRaw = railWidth * fullness + returnLeft + returnRight + (sideHem * 2); // cm
+  // Side hems: pair of curtains = 2 panels × 2 sides = 4 side hems; single = 1 panel × 2 sides = 2 side hems
+  const numberOfSideHems = quantity * 2;
+  const totalWidthRaw = railWidth * fullness + returnLeft + returnRight + (sideHem * numberOfSideHems); // cm
 
   if (orientation === 'horizontal') {
     // Standard orientation: fabric width used across width; lengths run along the bolt
