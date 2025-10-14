@@ -413,8 +413,10 @@ export const UnifiedInventoryDialog = ({
 
                     {/* Category selection - both create and edit modes */}
                     <div>
-                      <Label htmlFor="category">Category</Label>
-                      <FieldHelp content="Choose the specific fabric or hardware type for better organization" />
+                      <div className="flex items-center gap-1 mb-2">
+                        <Label htmlFor="category">Category</Label>
+                        <FieldHelp content="Choose the specific fabric or hardware type for better organization" />
+                      </div>
                       <Select
                         value={formData.category}
                         onValueChange={(value) => setFormData({ ...formData, category: value })}
