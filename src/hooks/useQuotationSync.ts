@@ -109,12 +109,16 @@ export const useQuotationSync = ({
           const breakdown = buildClientBreakdown(window.summary);
           const summary = window.summary;
           
-          // Extract REAL fabric details from JSON
+          // Extract REAL details from JSON - handle both fabric and material
+          const treatmentCategory = summary.treatment_category || summary.treatment_type || '';
+          const isBlindsOrShutters = treatmentCategory?.includes('blind') || treatmentCategory?.includes('shutter');
+          
+          // For blinds/shutters, use material_details; for curtains/wallpaper, use fabric_details
+          const materialDetails = isBlindsOrShutters ? (summary.material_details || {}) : (summary.fabric_details || {});
           const fabricDetails = summary.fabric_details || {};
           const liningDetails = summary.lining_details || {};
           const headingDetails = summary.heading_details || {};
           const wallpaperDetails = summary.wallpaper_details || {};
-          const treatmentCategory = summary.treatment_category || summary.treatment_type || '';
           
           // Determine material type label
           const getMaterialLabel = () => {
@@ -125,14 +129,15 @@ export const useQuotationSync = ({
           
           console.log(`[QUOTE ITEM] Window ${window.surface_name}:`, {
             fabricName: fabricDetails.name,
-            fabricPrice: fabricDetails.selling_price,
+            materialName: materialDetails.name,
+            isBlindsOrShutters,
             treatmentCategory,
             materialLabel: getMaterialLabel(),
             wallpaperDetails: wallpaperDetails
           });
           
-          // PARENT ITEM - Use actual product name
-          const productName = fabricDetails.name || window.surface_name || 'Window Treatment';
+          // PARENT ITEM - Use actual product name from material_details (blinds) or fabric_details (curtains)
+          const productName = materialDetails.name || fabricDetails.name || window.surface_name || 'Window Treatment';
           
           // Build description based on treatment type
           let description = productName;
@@ -167,7 +172,10 @@ export const useQuotationSync = ({
           // DETAILED BREAKDOWN - Material (dynamic label)
           if (summary.fabric_cost && summary.fabric_cost > 0) {
             const materialLabel = getMaterialLabel();
-            const fabricPricePerMetre = fabricDetails.selling_price || fabricDetails.unit_price || (summary.fabric_cost / (summary.linear_meters || 1));
+            // Use material_details for blinds/shutters, fabric_details for curtains
+            const pricePerMetre = materialDetails.selling_price || materialDetails.unit_price || 
+                                 fabricDetails.selling_price || fabricDetails.unit_price || 
+                                 (summary.fabric_cost / (summary.linear_meters || 1));
             
             console.log('[QUOTE ITEM] Adding material child:', {
               materialLabel,
@@ -182,7 +190,7 @@ export const useQuotationSync = ({
               description: productName,
               quantity: summary.linear_meters || 0,
               unit: 'm',
-              unit_price: fabricPricePerMetre,
+              unit_price: pricePerMetre,
               total: summary.fabric_cost,
               isChild: true
             });
