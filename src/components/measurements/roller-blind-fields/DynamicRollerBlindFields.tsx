@@ -74,15 +74,28 @@ export const DynamicRollerBlindFields = ({
 
   // Initialize selected options from existing measurements on load
   useEffect(() => {
-    if (!onOptionPriceChange || treatmentOptions.length === 0) return;
+    if (treatmentOptions.length === 0) return;
     
     treatmentOptions.forEach(option => {
-      const value = measurements[option.key];
-      if (value && option.option_values) {
+      const optionValues = getOptionValues(option);
+      if (optionValues.length === 0) return;
+      
+      const currentValue = measurements[option.key];
+      const defaultValue = optionValues[0];
+      
+      // If no value is set, auto-select the first option
+      if (!currentValue && defaultValue) {
+        onChange(option.key, defaultValue.value);
+        
+        // Also notify parent of the price for cost summary
+        if (onOptionPriceChange) {
+          onOptionPriceChange(option.key, defaultValue.price, defaultValue.label);
+        }
+      } else if (currentValue && onOptionPriceChange) {
+        // If value exists, ensure it's in the cost summary
         const alreadySelected = selectedOptions.some(opt => opt.name.startsWith(option.key + ':'));
         if (!alreadySelected) {
-          const optionValues = getOptionValues(option);
-          const selectedOption = optionValues.find(opt => opt.value === value);
+          const selectedOption = optionValues.find(opt => opt.value === currentValue);
           if (selectedOption) {
             onOptionPriceChange(option.key, selectedOption.price, selectedOption.label);
           }

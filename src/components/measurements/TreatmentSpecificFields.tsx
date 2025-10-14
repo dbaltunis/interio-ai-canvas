@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { useEffect } from "react";
 
 interface TreatmentSpecificFieldsProps {
   covering: any;
@@ -21,6 +22,21 @@ export const TreatmentSpecificFields = ({
   readOnly = false
 }: TreatmentSpecificFieldsProps) => {
   const { units } = useMeasurementUnits();
+
+  // Auto-select first options on mount for blinds
+  useEffect(() => {
+    if (!readOnly && covering?.name?.toLowerCase().includes('blind')) {
+      if (!treatmentData.mounting_type) {
+        onTreatmentDataChange("mounting_type", "inside");
+      }
+      if (!treatmentData.control_type) {
+        onTreatmentDataChange("control_type", "cord");
+      }
+      if (!treatmentData.slat_size) {
+        onTreatmentDataChange("slat_size", "2");
+      }
+    }
+  }, [covering?.name, readOnly]);
 
   const renderCurtainFields = () => (
     <div className="space-y-4">
