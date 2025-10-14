@@ -76,6 +76,8 @@ export const DynamicRollerBlindFields = ({
   useEffect(() => {
     if (treatmentOptions.length === 0) return;
     
+    console.log('🔄 DynamicRollerBlindFields: Initializing options for treatment:', treatmentCategory || templateId);
+    
     treatmentOptions.forEach(option => {
       const optionValues = getOptionValues(option);
       if (optionValues.length === 0) return;
@@ -85,6 +87,7 @@ export const DynamicRollerBlindFields = ({
       
       // If no value is set, auto-select the first option
       if (!currentValue && defaultValue) {
+        console.log(`  Setting default ${option.key} = ${defaultValue.value}`);
         onChange(option.key, defaultValue.value);
         
         // Also notify parent of the price for cost summary
@@ -97,12 +100,13 @@ export const DynamicRollerBlindFields = ({
         if (!alreadySelected) {
           const selectedOption = optionValues.find(opt => opt.value === currentValue);
           if (selectedOption) {
+            console.log(`  Re-adding existing ${option.key} = ${currentValue} to cost summary`);
             onOptionPriceChange(option.key, selectedOption.price, selectedOption.label);
           }
         }
       }
     });
-  }, [treatmentOptions.length]);
+  }, [treatmentOptions.length, treatmentCategory, templateId]); // Re-run when treatment changes
 
   if (isLoading) {
     return (
