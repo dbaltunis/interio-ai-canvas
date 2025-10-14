@@ -28,6 +28,7 @@ export const calculateBlindCost = (
     width,
     height,
     template: template?.name,
+    pricing_type: template?.pricing_type,
     fabricPrice: fabricItem?.selling_price,
     options: selectedOptions
   });
@@ -38,34 +39,52 @@ export const calculateBlindCost = (
   const squareMeters = widthM * heightM;
   const linearMeters = heightM; // For blinds, linear meters typically = height
   
-  // Calculate fabric/material cost
+  // PRICING GRID: If using pricing grid, the grid price IS the total cost (includes everything)
+  // Set fabric cost to 0 to avoid double-counting when fabric is already in the grid
   let fabricCost = 0;
-  if (fabricItem) {
-    const pricePerUnit = fabricItem.selling_price || fabricItem.unit_price || fabricItem.cost_price || 0;
-    const soldBy = fabricItem.sold_by_unit || 'per_meter';
-    
-    if (soldBy === 'per_sqm' || soldBy === 'per_square_meter') {
-      fabricCost = squareMeters * pricePerUnit;
-    } else {
-      // Default to per linear meter (height)
-      fabricCost = linearMeters * pricePerUnit;
-    }
-  } else if (template?.unit_price) {
-    // Use template unit price as fallback
-    fabricCost = squareMeters * template.unit_price;
-  }
-  
-  // Calculate manufacturing cost from template
   let manufacturingCost = 0;
-  if (template?.manufacturing_type === 'hand') {
-    manufacturingCost = template.hand_price_per_panel || template.hand_price_per_metre * linearMeters || 0;
-  } else {
-    manufacturingCost = template.machine_price_per_panel || template.machine_price_per_metre * linearMeters || 0;
-  }
   
-  // If no panel/metre pricing, use unit_price * area as manufacturing cost
-  if (manufacturingCost === 0 && template?.unit_price) {
-    manufacturingCost = template.unit_price * squareMeters * 0.5; // 50% of material for labor
+  if (template?.pricing_type === 'pricing_grid') {
+    console.log('💡 Using PRICING GRID - grid price includes fabric + manufacturing');
+    
+    // Grid price will be calculated as manufacturingCost (but it's actually total)
+    // Set fabricCost to 0 to avoid adding fabric cost separately
+    fabricCost = 0;
+    
+    // Manufacturing cost will be set from grid price in the component
+    // This is just a placeholder - actual grid lookup happens in CostCalculationSummary
+    manufacturingCost = 0;
+  } else {
+    // Standard pricing: Calculate fabric and manufacturing separately
+    console.log('💡 Using STANDARD pricing - calculating fabric + manufacturing separately');
+    
+    // Calculate fabric/material cost
+    if (fabricItem) {
+      const pricePerUnit = fabricItem.selling_price || fabricItem.unit_price || fabricItem.cost_price || 0;
+      const soldBy = fabricItem.sold_by_unit || 'per_meter';
+      
+      if (soldBy === 'per_sqm' || soldBy === 'per_square_meter') {
+        fabricCost = squareMeters * pricePerUnit;
+      } else {
+        // Default to per linear meter (height)
+        fabricCost = linearMeters * pricePerUnit;
+      }
+    } else if (template?.unit_price) {
+      // Use template unit price as fallback
+      fabricCost = squareMeters * template.unit_price;
+    }
+    
+    // Calculate manufacturing cost from template
+    if (template?.manufacturing_type === 'hand') {
+      manufacturingCost = template.hand_price_per_panel || template.hand_price_per_metre * linearMeters || 0;
+    } else {
+      manufacturingCost = template.machine_price_per_panel || template.machine_price_per_metre * linearMeters || 0;
+    }
+    
+    // If no panel/metre pricing, use unit_price * area as manufacturing cost
+    if (manufacturingCost === 0 && template?.unit_price) {
+      manufacturingCost = template.unit_price * squareMeters * 0.5; // 50% of material for labor
+    }
   }
   
   // Calculate hardware cost (brackets, rails, controls)
