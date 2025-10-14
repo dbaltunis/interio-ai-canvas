@@ -43,6 +43,12 @@ export function WindowSummaryCard({
   treatmentLabel,
   treatmentType: propTreatmentType
 }: WindowSummaryCardProps) {
+  // Add defensive check for surface data
+  if (!surface || !surface.id) {
+    console.error('WindowSummaryCard: Invalid surface data', surface);
+    return null;
+  }
+  
   // Use surface.id directly as the window_id - single source of truth
   const windowId = surface.id;
   const { data: summary, isLoading, error } = useWindowSummary(windowId);

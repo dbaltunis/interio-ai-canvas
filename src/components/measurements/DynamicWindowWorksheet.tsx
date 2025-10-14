@@ -929,9 +929,12 @@ export const DynamicWindowWorksheet = forwardRef<{
                       title: "✅ Configuration Saved",
                       description: "Your window configuration has been saved successfully"
                     });
-                    setTimeout(() => {
-                      onClose?.();
-                    }, 500);
+                    
+                    // Wait a bit longer before closing to ensure state updates complete
+                    await new Promise(resolve => setTimeout(resolve, 800));
+                    
+                    // Close dialog
+                    onClose?.();
                   } catch (error) {
                     console.error("Save failed:", error);
                     const {
@@ -939,7 +942,7 @@ export const DynamicWindowWorksheet = forwardRef<{
                     } = await import("@/hooks/use-toast");
                     toast({
                       title: "❌ Save Failed",
-                      description: "There was an error saving your configuration.",
+                      description: error instanceof Error ? error.message : "There was an error saving your configuration.",
                       variant: "destructive"
                     });
                   }
