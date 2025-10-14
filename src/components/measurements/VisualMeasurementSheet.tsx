@@ -1245,18 +1245,18 @@ export const VisualMeasurementSheet = ({
                     disabled={readOnly}
                     className="grid grid-cols-2 gap-2"
                   >
-                    <Label htmlFor="pair" className="container-level-3 rounded-lg p-2 hover:bg-muted/30 transition-colors cursor-pointer block">
+                    <div className="container-level-3 rounded-lg p-2 hover:bg-muted/30 transition-colors">
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="pair" id="pair" className="w-4 h-4" />
-                        <span className="text-xs font-medium text-card-foreground flex-1">Pair (Two panels)</span>
+                        <Label htmlFor="pair" className="text-xs font-medium text-card-foreground cursor-pointer flex-1">Pair (Two panels)</Label>
                       </div>
-                    </Label>
-                    <Label htmlFor="single" className="container-level-3 rounded-lg p-2 hover:bg-muted/30 transition-colors cursor-pointer block">
+                    </div>
+                    <div className="container-level-3 rounded-lg p-2 hover:bg-muted/30 transition-colors">
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="single" id="single" className="w-4 h-4" />
-                        <span className="text-xs font-medium text-card-foreground flex-1">Single (One panel)</span>
+                        <Label htmlFor="single" className="text-xs font-medium text-card-foreground cursor-pointer flex-1">Single (One panel)</Label>
                       </div>
-                    </Label>
+                    </div>
                   </RadioGroup>
                 </div>
 
@@ -1272,18 +1272,18 @@ export const VisualMeasurementSheet = ({
                       disabled={readOnly}
                       className="grid grid-cols-2 gap-2"
                     >
-                      <Label htmlFor="left" className="container-level-3 rounded-lg p-2 hover:bg-muted/30 transition-colors cursor-pointer block">
+                      <div className="container-level-3 rounded-lg p-2 hover:bg-muted/30 transition-colors">
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="left" id="left" className="w-4 h-4" />
-                          <span className="text-xs font-medium text-card-foreground flex-1">Left side</span>
+                          <Label htmlFor="left" className="text-xs font-medium text-card-foreground cursor-pointer flex-1">Left side</Label>
                         </div>
-                      </Label>
-                      <Label htmlFor="right" className="container-level-3 rounded-lg p-2 hover:bg-muted/30 transition-colors cursor-pointer block">
+                      </div>
+                      <div className="container-level-3 rounded-lg p-2 hover:bg-muted/30 transition-colors">
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="right" id="right" className="w-4 h-4" />
-                          <span className="text-xs font-medium text-card-foreground flex-1">Right side</span>
+                          <Label htmlFor="right" className="text-xs font-medium text-card-foreground cursor-pointer flex-1">Right side</Label>
                         </div>
-                      </Label>
+                      </div>
                     </RadioGroup>
                   </div>
                 )}
