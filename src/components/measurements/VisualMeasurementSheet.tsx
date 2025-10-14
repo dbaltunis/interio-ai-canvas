@@ -193,26 +193,37 @@ export const VisualMeasurementSheet = ({
       // Determine orientation: wide fabrics are railroaded by default, narrow can be rotated by user choice
       const useHorizontalOrientation = isWideFabric || (isNarrowFabric && fabricRotated);
       
-      let widthsRequired, totalSeamAllowance;
+      let widthsRequired, totalSeamAllowance, linearMeters;
+      
+      // Calculate total drop for both orientations
+      const totalDrop = height + headerHem + bottomHem + pooling;
+      const wasteMultiplier = 1 + ((selectedTemplate.waste_percent || 0) / 100);
       
       if (useHorizontalOrientation && height < fabricWidthCm) {
         // Railroaded/Rotated: drop fits within fabric width, rail width determines length needed
+        // In this orientation, we cut panels across the width of the fabric
         const totalWidthNeeded = requiredWidth + returnLeft + returnRight + totalSideHems;
-        widthsRequired = Math.ceil(totalWidthNeeded / height); // How many drops fit in the length
-        totalSeamAllowance = widthsRequired > 1 ? (widthsRequired - 1) * seamHems * 2 : 0;
+        
+        // How many panels can we fit in one length? Each panel width = drop height
+        const panelsPerLength = Math.floor(fabricWidthCm / totalDrop);
+        
+        // How many lengths do we need to get enough panels?
+        const lengthsNeeded = Math.ceil(curtainCount / Math.max(1, panelsPerLength));
+        
+        widthsRequired = lengthsNeeded;
+        totalSeamAllowance = 0; // No seams in railroaded orientation typically
+        
+        // Linear meters = the total width needed for the curtains
+        linearMeters = (totalWidthNeeded / 100) * lengthsNeeded * wasteMultiplier;
       } else {
         // Standard vertical: traditional calculation
         const totalWidthWithAllowances = requiredWidth + returnLeft + returnRight + totalSideHems;
         widthsRequired = Math.ceil(totalWidthWithAllowances / fabricWidthCm);
         totalSeamAllowance = widthsRequired > 1 ? (widthsRequired - 1) * seamHems * 2 : 0;
+        
+        // Calculate linear metres needed (drop + seam allowances) × number of widths
+        linearMeters = ((totalDrop + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier; // Convert cm to m
       }
-      
-      // Include pooling and vertical allowances in the total drop calculation  
-      const totalDrop = height + headerHem + bottomHem + pooling;
-      const wasteMultiplier = 1 + ((selectedTemplate.waste_percent || 0) / 100);
-      
-      // Calculate linear metres needed (drop + seam allowances) × number of widths
-      const linearMeters = ((totalDrop + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier; // Convert cm to m
       
       // Get price per meter from various possible fields
       const pricePerMeter = selectedFabricItem.price_per_meter || 
