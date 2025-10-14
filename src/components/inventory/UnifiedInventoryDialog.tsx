@@ -344,10 +344,10 @@ export const UnifiedInventoryDialog = ({
               </CardHeader>
               <CardContent>
                 <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background">
                     <SelectValue placeholder="Select product type" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-popover border border-border max-h-[300px]" position="popper" sideOffset={4}>
                     <SelectItem value="curtain_fabric">Curtain Fabric</SelectItem>
                     <SelectItem value="roller_blind_fabric">Roller Blind Fabric</SelectItem>
                     <SelectItem value="blind_fabric">Roman Blind Fabric</SelectItem>
@@ -421,10 +421,10 @@ export const UnifiedInventoryDialog = ({
                         value={formData.category}
                         onValueChange={(value) => setFormData({ ...formData, category: value })}
                       >
-                        <SelectTrigger id="category" className="bg-background">
+                        <SelectTrigger id="category" className="bg-background hover:bg-accent cursor-pointer">
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
-                        <SelectContent className="bg-popover border border-border z-[100]" position="popper" sideOffset={4}>
+                        <SelectContent className="bg-popover border border-border max-h-[300px]" position="popper" sideOffset={4}>
                           <SelectItem value="fabric">Fabric (General)</SelectItem>
                           <SelectItem value="curtain_fabric">Curtain Fabrics</SelectItem>
                           <SelectItem value="roller_fabric">Roller Fabrics</SelectItem>
