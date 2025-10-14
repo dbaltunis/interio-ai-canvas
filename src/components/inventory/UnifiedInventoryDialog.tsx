@@ -10,12 +10,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Plus, DollarSign, Ruler, Package, Store, TrendingUp, Trash2, ImageIcon } from "lucide-react";
+import { Plus, DollarSign, Ruler, Package, Store, TrendingUp, Trash2, ImageIcon, Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateEnhancedInventoryItem, useUpdateEnhancedInventoryItem, useDeleteEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { useVendors } from "@/hooks/useVendors";
 import { useUserRole } from "@/hooks/useUserRole";
 import { FieldHelp } from "@/components/ui/field-help";
+import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "inventory_draft_data";
 
@@ -36,6 +37,7 @@ export const UnifiedInventoryDialog = ({
 }: UnifiedInventoryDialogProps) => {
   const [activeTab, setActiveTab] = useState("basic");
   const [trackInventory, setTrackInventory] = useState(mode === "edit" ? (item?.quantity > 0) : false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const { toast } = useToast();
   const createMutation = useCreateEnhancedInventoryItem();
   const updateMutation = useUpdateEnhancedInventoryItem();
@@ -162,6 +164,54 @@ export const UnifiedInventoryDialog = ({
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [saveDraft]);
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('You must be logged in to upload images');
+      }
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `inventory-${user.id}-${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('project-images')
+        .upload(fileName, file);
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('project-images')
+        .getPublicUrl(fileName);
+
+      setFormData({ ...formData, image_url: publicUrl });
+      toast({
+        title: "Image uploaded successfully",
+        description: "The product image has been uploaded.",
+      });
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const removeImage = () => {
+    setFormData({ ...formData, image_url: "" });
+  };
 
   // Prevent dialog from closing when user switches tabs/windows
   useEffect(() => {
@@ -525,16 +575,49 @@ export const UnifiedInventoryDialog = ({
                       </div>
 
                       <div className="md:col-span-2">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 mb-2">
                           <ImageIcon className="h-4 w-4" />
-                          <Label htmlFor="image_url">Image URL</Label>
+                          <Label>Product Image</Label>
                         </div>
-                        <Input
-                          id="image_url"
-                          value={formData.image_url}
-                          onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                          placeholder="https://example.com/fabric-image.jpg"
-                        />
+                        
+                        {formData.image_url ? (
+                          <div className="relative">
+                            <img 
+                              src={formData.image_url} 
+                              alt="Product preview" 
+                              className="w-full h-32 object-cover rounded-md border"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-2 right-2"
+                              onClick={removeImage}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => document.getElementById('image-upload-input')?.click()}
+                              disabled={uploadingImage}
+                              className="flex-1"
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                            </Button>
+                            <input
+                              id="image-upload-input"
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageUpload}
+                              className="hidden"
+                            />
+                          </div>
+                        )}
                       </div>
 
                       <div className="md:col-span-2">
@@ -628,16 +711,49 @@ export const UnifiedInventoryDialog = ({
                       </div>
 
                       <div className="md:col-span-2">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 mb-2">
                           <ImageIcon className="h-4 w-4" />
-                          <Label htmlFor="image_url">Image URL</Label>
+                          <Label>Product Image</Label>
                         </div>
-                        <Input
-                          id="image_url"
-                          value={formData.image_url}
-                          onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                          placeholder="https://example.com/fabric-image.jpg"
-                        />
+                        
+                        {formData.image_url ? (
+                          <div className="relative">
+                            <img 
+                              src={formData.image_url} 
+                              alt="Product preview" 
+                              className="w-full h-32 object-cover rounded-md border"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-2 right-2"
+                              onClick={removeImage}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => document.getElementById('image-upload-input-hardware')?.click()}
+                              disabled={uploadingImage}
+                              className="flex-1"
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                            </Button>
+                            <input
+                              id="image-upload-input-hardware"
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageUpload}
+                              className="hidden"
+                            />
+                          </div>
+                        )}
                       </div>
 
                       <div className="md:col-span-2">
