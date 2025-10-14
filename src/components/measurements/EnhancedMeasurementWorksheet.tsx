@@ -208,8 +208,40 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     ""
   );
   
-  // Track selected options with prices from window covering settings
-  const [selectedOptions, setSelectedOptions] = useState<Array<{ name: string; price: number }>>([]);
+  // Track selected options with prices from window covering settings - load from saved data if available
+  const [selectedOptions, setSelectedOptions] = useState<Array<{ name: string; price: number }>>(() => {
+    // Try to load from saved summary first
+    const savedOptions = savedSummary?.measurements_details?.selected_options;
+    if (savedOptions && Array.isArray(savedOptions)) {
+      console.log("📦 Loading selectedOptions from saved summary:", savedOptions);
+      return savedOptions;
+    }
+    
+    // Try to load from existing measurement
+    const measurementOptions = safeExistingMeasurement?.measurements?.selected_options;
+    if (measurementOptions && Array.isArray(measurementOptions)) {
+      console.log("📦 Loading selectedOptions from measurement:", measurementOptions);
+      return measurementOptions;
+    }
+    
+    // Try to load from existing treatment
+    try {
+      const treatmentMeasurements = safeExistingTreatments?.[0]?.measurements;
+      const parsedMeasurements = typeof treatmentMeasurements === 'string' 
+        ? JSON.parse(treatmentMeasurements) 
+        : treatmentMeasurements;
+      
+      if (parsedMeasurements?.selected_options && Array.isArray(parsedMeasurements.selected_options)) {
+        console.log("📦 Loading selectedOptions from treatment:", parsedMeasurements.selected_options);
+        return parsedMeasurements.selected_options;
+      }
+    } catch (e) {
+      console.warn("Failed to parse treatment measurements for selectedOptions:", e);
+    }
+    
+    console.log("📦 No saved selectedOptions found, starting with empty array");
+    return [];
+  });
 
   // Get treatments data early so it can be used in the effect
   const { data: allProjectTreatments = [] } = useTreatments(projectId);
@@ -227,6 +259,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     let headingValue = "standard";
     let liningValue = "none";
     let treatmentTypeValue = "";
+    let loadedOptions: Array<{ name: string; price: number }> = [];
     
     // Load from saved treatment first (highest priority)
     const savedTreatment = allProjectTreatments.find(t => t.window_id === surfaceId);
@@ -265,11 +298,18 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                       treatmentMeasurements.selected_lining || 
                       treatmentMeasurements.lining_type || "none";
         
+        // Load selected options from treatment measurements
+        if (treatmentMeasurements.selected_options && Array.isArray(treatmentMeasurements.selected_options)) {
+          loadedOptions = treatmentMeasurements.selected_options;
+          console.log("📦 Loaded selectedOptions from treatment measurements:", loadedOptions);
+        }
+        
         windowCoveringId = treatmentDetails.window_covering?.id || savedTreatment.treatment_type || "no_covering";
         treatmentTypeValue = savedTreatment.treatment_type || "";
         
         console.log("📦 Loaded from saved treatment:", {
           fabricId, headingValue, liningValue, windowCoveringId, treatmentTypeValue,
+          selectedOptions: loadedOptions,
           sources: {
             fabricDetails: Object.keys(fabricDetails),
             treatmentDetails: Object.keys(treatmentDetails),
@@ -289,8 +329,15 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       liningValue = measurementData.selected_lining || "none";
       windowCoveringId = measurementData.window_covering_id || "no_covering";
       
+      // Load selected options from measurement
+      if (measurementData.selected_options && Array.isArray(measurementData.selected_options)) {
+        loadedOptions = measurementData.selected_options;
+        console.log("📦 Loaded selectedOptions from measurement:", loadedOptions);
+      }
+      
       console.log("📋 Loaded from measurements:", {
-        fabricId, headingValue, liningValue, windowCoveringId
+        fabricId, headingValue, liningValue, windowCoveringId,
+        selectedOptions: loadedOptions
       });
     }
     
@@ -310,6 +357,12 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       if (headingValue === "standard") headingValue = savedSummary.heading_details?.heading_name || savedSummary.heading_details?.id || "standard";
       if (liningValue === "none") liningValue = savedSummary.lining_type || "none";
       treatmentTypeValue = savedSummary.template_details?.curtain_type || "";
+      
+      // Load selected options from saved summary
+      if (!loadedOptions.length && savedSummary.measurements_details.selected_options && Array.isArray(savedSummary.measurements_details.selected_options)) {
+        loadedOptions = savedSummary.measurements_details.selected_options;
+        console.log("📦 Loaded selectedOptions from saved summary:", loadedOptions);
+      }
     } else if (shouldUseSavedData && savedSummary?.measurements_details && savedTreatment) {
       console.log("✅ PRIORITY 1: Loading measurements from saved summary but keeping treatment fabric/lining");
       // Use measurements from summary but preserve treatment fabric/lining selections
@@ -341,6 +394,12 @@ export const EnhancedMeasurementWorksheet = forwardRef<
         headingValue = treatmentDetails?.selected_heading || existingTreatment.selected_heading || headingValue;
         liningValue = treatmentDetails?.selected_lining || existingTreatment.selected_lining || liningValue;
         treatmentTypeValue = existingTreatment.treatment_type || treatmentTypeValue;
+        
+        // Load selected options from existing treatment
+        if (!loadedOptions.length && treatmentMeasurements.selected_options && Array.isArray(treatmentMeasurements.selected_options)) {
+          loadedOptions = treatmentMeasurements.selected_options;
+          console.log("📦 Loaded selectedOptions from existing treatment:", loadedOptions);
+        }
       } catch (e) {
         console.warn("Failed to parse treatment data:", e);
       }
@@ -367,7 +426,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       fabricId,
       headingValue,
       liningValue,
-      treatmentTypeValue
+      treatmentTypeValue,
+      selectedOptions: loadedOptions
     });
     
     setMeasurements(measurements);
@@ -401,6 +461,12 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     console.log("🎯 Setting selectedLining to:", liningValue);
     setSelectedLining(liningValue);
     
+    // Set selected options - CRITICAL FIX
+    if (loadedOptions.length > 0) {
+      console.log("🎯 Setting selectedOptions to:", loadedOptions);
+      setSelectedOptions(loadedOptions);
+    }
+    
     // Set other form fields
     setWindowType(existingMeasurement?.measurement_type || "standard");
     setSelectedRoom(existingMeasurement?.room_id || surfaceData?.room_id || currentRoomId || "no_room");
@@ -424,7 +490,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
         selectedFabric,
         selectedLining,
         selectedHeading,
-        selectedWindowCovering
+        selectedWindowCovering,
+        selectedOptions: loadedOptions
       });
     }, 100);
   }, [surfaceId, shouldUseSavedData, savedSummary, existingMeasurement, existingTreatments, currentRoomId, surfaceData]);
@@ -680,7 +747,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
           product_name: selectedCovering.name,
           measurements: JSON.stringify({
             ...measurements,
-            ...treatmentData.measurements
+            ...treatmentData.measurements,
+            selected_options: selectedOptions  // Include selected options in treatment measurements
           }),
           fabric_details: JSON.stringify({
             fabric_id: fabricItem?.id || null,
