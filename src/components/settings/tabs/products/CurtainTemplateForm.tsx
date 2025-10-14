@@ -88,6 +88,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     // Basic Information
     name: template?.name || "",
     description: template?.description || "",
+    image_url: (template as any)?.image_url || "",
     
     // Curtain Type
     curtain_type: template?.curtain_type || "curtain",
@@ -390,6 +391,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         user_id: user.id,
         name: formData.name,
         description: formData.description,
+        image_url: formData.image_url,
         curtain_type: formData.curtain_type,
         treatment_category: treatmentCategory,
         selected_heading_ids: formData.selected_heading_ids,
@@ -500,6 +502,60 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                     rows={3}
                   />
                 </div>
+                
+                {/* Product Image Upload */}
+                <div>
+                  <Label htmlFor="product_image">Product Image</Label>
+                  <div className="space-y-3">
+                    {formData.image_url ? (
+                      <div className="relative inline-block">
+                        <img 
+                          src={formData.image_url} 
+                          alt={formData.name || 'Product'}
+                          className="w-32 h-32 object-cover rounded-lg border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute -top-2 -right-2 h-6 w-6"
+                          onClick={() => handleInputChange("image_url", "")}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                handleInputChange("image_url", event.target?.result as string);
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                          className="hidden"
+                          id="product_image"
+                        />
+                        <label htmlFor="product_image" className="cursor-pointer">
+                          <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
+                          <p className="mt-2 text-sm text-muted-foreground">
+                            Click to upload product image
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Will be displayed in rooms and quotes
+                          </p>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
                 <div>
                   <Label htmlFor="window_covering_type">Window Covering Type</Label>
                   <Select value={formData.curtain_type} onValueChange={(value) => handleInputChange("curtain_type", value)}>
