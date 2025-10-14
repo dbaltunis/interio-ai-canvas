@@ -310,10 +310,18 @@ export const DynamicWindowWorksheet = forwardRef<{
   useImperativeHandle(ref, () => ({
     autoSave: async () => {
       try {
-        console.log("🔄 DynamicWindowWorksheet: Starting auto-save for surface:", surfaceId);
+          console.log("🔄 DynamicWindowWorksheet: Starting auto-save for surface:", surfaceId);
+          
+          // Log fabric selection state for debugging
+          console.log("📦 Fabric selection state:", {
+            hasFabric: !!selectedItems.fabric,
+            fabricId: selectedItems.fabric?.id,
+            fabricName: selectedItems.fabric?.name,
+            fabricCategory: selectedItems.fabric?.category
+          });
 
-        // Only save if we have meaningful data
-        if (Object.keys(measurements).length > 0 || selectedWindowType || selectedTemplate) {
+          // Only save if we have meaningful data
+          if (Object.keys(measurements).length > 0 || selectedWindowType || selectedTemplate) {
           console.log("🔄 DynamicWindowWorksheet: Saving measurement data:", {
             measurements,
             selectedTemplate,
@@ -602,8 +610,8 @@ export const DynamicWindowWorksheet = forwardRef<{
               image_url: selectedItems.fabric.image_url // Include image for display
             } : null,
             selected_fabric_id: selectedItems.fabric?.id || null,
-            selected_hardware_id: selectedItems.hardware?.id,
-            selected_material_id: selectedItems.material?.id,
+            selected_hardware_id: selectedItems.hardware?.id || null,
+            selected_material_id: selectedItems.material?.id || null,
             hardware_details: selectedItems.hardware || null,
             material_details: selectedItems.material || null,
             
@@ -639,16 +647,30 @@ export const DynamicWindowWorksheet = forwardRef<{
             }
           };
 
+          // Debug: Log what we're about to save
+          console.log("💾 About to save summary data:", {
+            window_id: summaryData.window_id,
+            selected_fabric_id: summaryData.selected_fabric_id,
+            fabric_details_exists: !!summaryData.fabric_details,
+            fabric_details: summaryData.fabric_details
+          });
+
           // Save to windows_summary table
           const {
             data,
             error
           } = await supabase.from('windows_summary').upsert(summaryData, {
             onConflict: 'window_id'
-          }).select().single();
+          }).select().maybeSingle();
+          
           if (error) {
             console.error("❌ DynamicWindowWorksheet: Database save error:", error);
             throw error;
+          }
+          
+          if (!data) {
+            console.error("❌ DynamicWindowWorksheet: No data returned after save");
+            throw new Error("Failed to save window summary - no data returned");
           }
 
           // Invalidate cache to refresh UI
