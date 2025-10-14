@@ -24,6 +24,11 @@ interface PricingMethod {
   machine_price_per_panel?: number;
   hand_price_per_panel?: number;
   complexity_pricing_tiers?: any[];
+  height_price_ranges?: Array<{
+    min_height: number;
+    max_height: number;
+    price: number;
+  }>;
 }
 
 interface MultiplePricingMethodsManagerProps {
@@ -127,11 +132,14 @@ export const MultiplePricingMethodsManager = ({
                 machinePricePerMetre={method.machine_price_per_metre?.toString() || ''}
                 handPricePerMetre={method.hand_price_per_metre?.toString() || ''}
                 offersHandFinished={offersHandFinished}
+                heightPriceRanges={method.height_price_ranges || []}
                 onInputChange={(field, value) => {
                   if (field === 'machine_price_per_metre') {
                     updatePricingMethod(method.id, { machine_price_per_metre: parseFloat(value) || 0 });
                   } else if (field === 'hand_price_per_metre') {
                     updatePricingMethod(method.id, { hand_price_per_metre: parseFloat(value) || 0 });
+                  } else if (field === 'height_price_ranges') {
+                    updatePricingMethod(method.id, { height_price_ranges: JSON.parse(value) });
                   }
                 }}
               />
