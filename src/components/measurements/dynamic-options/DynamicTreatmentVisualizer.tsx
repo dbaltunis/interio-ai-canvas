@@ -4,6 +4,12 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 import { detectTreatmentType, getTreatmentConfig, getTreatmentDisplayName } from "@/utils/treatmentTypeDetection";
 import { RollerBlindVisualizer } from "./RollerBlindVisualizer";
+import { CellularShadeVisualizer } from "@/components/treatment-visualizers/CellularShadeVisualizer";
+import { VerticalBlindVisualizer } from "@/components/treatment-visualizers/VerticalBlindVisualizer";
+import { PanelGlideVisualizer } from "@/components/treatment-visualizers/PanelGlideVisualizer";
+import { VenetianBlindVisualizer } from "@/components/treatment-visualizers/VenetianBlindVisualizer";
+import { ShutterVisualizer } from "@/components/treatment-visualizers/ShutterVisualizer";
+import { AwningVisualizer } from "@/components/treatment-visualizers/AwningVisualizer";
 
 interface DynamicTreatmentVisualizerProps {
   template: CurtainTemplate;
@@ -208,20 +214,83 @@ export const DynamicTreatmentVisualizer = ({
       case 'roman_blinds':
         return renderRomanBlindVisualization();
       
-      case 'venetian_blinds':
-      case 'vertical_blinds':
       case 'cellular_blinds':
       case 'cellular_shades':
-      case 'panel_glide':
-      case 'plantation_shutters':
-      case 'shutters':
         return (
-          <RollerBlindVisualizer
-            measurements={measurements}
-            selectedFabric={selectedFabric}
-            controlPosition={measurements.control_position}
-            mountingType={measurements.mounting_type}
-            transparency={measurements.fabric_transparency}
+          <CellularShadeVisualizer
+            windowType="standard"
+            measurements={{
+              width: width,
+              height: height,
+              drop: height
+            }}
+            template={template}
+            material={selectedFabric}
+            cellSize={(template as any).cell_size || 'double'}
+            mounted={(template as any).mount_type || 'inside'}
+          />
+        );
+      
+      case 'vertical_blinds':
+        return (
+          <VerticalBlindVisualizer
+            windowType="standard"
+            measurements={{
+              width: width,
+              height: height
+            }}
+            template={template}
+            material={selectedFabric}
+            slatWidth={(template as any).slat_width || 89}
+            controlSide={(template as any).control_side || 'left'}
+          />
+        );
+      
+      case 'venetian_blinds':
+        return (
+          <VenetianBlindVisualizer
+            windowType="standard"
+            measurements={{
+              width: width,
+              height: height
+            }}
+            template={template}
+            material={selectedFabric}
+            slatSize={(template as any).slat_size || '25mm'}
+            slatAngle={(template as any).default_angle || 45}
+            mounted={(template as any).mount_type || 'inside'}
+          />
+        );
+      
+      case 'panel_glide':
+        return (
+          <PanelGlideVisualizer
+            windowType="standard"
+            measurements={{
+              width: width,
+              height: height
+            }}
+            template={template}
+            material={selectedFabric}
+            numPanels={(template as any).num_panels || 4}
+          />
+        );
+      
+      case 'shutters':
+      case 'plantation_shutters':
+        return (
+          <ShutterVisualizer
+            windowType="standard"
+            measurements={{
+              width: width,
+              height: height
+            }}
+            template={template}
+            material={selectedFabric}
+            panelConfig={(template as any).panel_config || 'bifold'}
+            louverSize={(template as any).louver_size || '63mm'}
+            frameStyle={(template as any).frame_style || 'L-frame'}
+            mounted={(template as any).mount_type || 'inside'}
           />
         );
       
