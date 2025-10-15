@@ -165,6 +165,10 @@ export const TreatmentPreviewEngine = ({
       case "blinds":
       case "vertical_blinds":
       case "roller_blinds":
+      case "cellular_blinds":
+      case "cellular_shades":
+      case "panel_glide":
+      case "awning":
         return (
           <BlindVisualizer
             windowType={windowType}
