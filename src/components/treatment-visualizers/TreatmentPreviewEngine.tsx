@@ -3,6 +3,10 @@ import { BlindVisualizer } from "./BlindVisualizer";
 import { RomanBlindVisualizer } from "./RomanBlindVisualizer";
 import { VenetianBlindVisualizer } from "./VenetianBlindVisualizer";
 import { ShutterVisualizer } from "./ShutterVisualizer";
+import { CellularShadeVisualizer } from "./CellularShadeVisualizer";
+import { VerticalBlindVisualizer } from "./VerticalBlindVisualizer";
+import { PanelGlideVisualizer } from "./PanelGlideVisualizer";
+import { AwningVisualizer } from "./AwningVisualizer";
 import { LayeredTreatmentVisualizer } from "./LayeredTreatmentVisualizer";
 import { DynamicWindowRenderer } from "../window-types/DynamicWindowRenderer";
 
@@ -162,13 +166,59 @@ export const TreatmentPreviewEngine = ({
           />
         );
       
-      case "blinds":
-      case "vertical_blinds":
-      case "roller_blinds":
       case "cellular_blinds":
       case "cellular_shades":
+        return (
+          <CellularShadeVisualizer
+            windowType={windowType}
+            measurements={measurements}
+            template={template}
+            material={selectedItems.material}
+            className={className}
+            cellSize={template?.cell_size || 'double'}
+            mounted={template?.mount_type || 'inside'}
+          />
+        );
+      
+      case "vertical_blinds":
+        return (
+          <VerticalBlindVisualizer
+            windowType={windowType}
+            measurements={measurements}
+            template={template}
+            material={selectedItems.material}
+            className={className}
+            slatWidth={template?.slat_width || 89}
+            controlSide={template?.control_side || 'left'}
+          />
+        );
+      
       case "panel_glide":
+        return (
+          <PanelGlideVisualizer
+            windowType={windowType}
+            measurements={measurements}
+            template={template}
+            material={selectedItems.material}
+            className={className}
+            numPanels={template?.num_panels || 4}
+          />
+        );
+      
       case "awning":
+        return (
+          <AwningVisualizer
+            windowType={windowType}
+            measurements={measurements}
+            template={template}
+            material={selectedItems.material}
+            className={className}
+            isRetractable={template?.retractable !== false}
+          />
+        );
+      
+      case "blinds":
+      case "roller_blinds":
         return (
           <BlindVisualizer
             windowType={windowType}
