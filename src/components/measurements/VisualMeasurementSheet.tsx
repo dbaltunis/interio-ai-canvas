@@ -952,14 +952,17 @@ export const VisualMeasurementSheet = ({
 
               {/* BLIND-SPECIFIC FIELDS - Dynamic Options */}
               {/* Show dynamic options for all blind and shutter types */}
-              {(treatmentType === 'roller_blinds' || 
+              {(treatmentType === 'blinds' ||
+                treatmentType === 'roller_blinds' || 
                 treatmentType === 'venetian_blinds' || 
                 treatmentType === 'roman_blinds' || 
                 treatmentType === 'vertical_blinds' || 
                 treatmentType === 'cellular_blinds' || 
+                treatmentType === 'cellular_shades' || 
                 treatmentType === 'panel_glide' || 
                 treatmentType === 'plantation_shutters' ||
-                treatmentType === 'shutters') && (
+                treatmentType === 'shutters' ||
+                treatmentType === 'awning') && (
                 <Card className="border-primary/20 bg-primary/5">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm">Treatment Configuration</CardTitle>

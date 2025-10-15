@@ -1,4 +1,4 @@
-export type TreatmentCategory = 'curtains' | 'blinds' | 'roller_blinds' | 'roman_blinds' | 'venetian_blinds' | 'vertical_blinds' | 'cellular_blinds' | 'cellular_shades' | 'panel_glide' | 'plantation_shutters' | 'shutters' | 'wallpaper';
+export type TreatmentCategory = 'curtains' | 'blinds' | 'roller_blinds' | 'roman_blinds' | 'venetian_blinds' | 'vertical_blinds' | 'cellular_blinds' | 'cellular_shades' | 'panel_glide' | 'plantation_shutters' | 'shutters' | 'awning' | 'wallpaper';
 
 export interface TreatmentConfig {
   requiresFullness: boolean;
@@ -47,6 +47,9 @@ export const detectTreatmentType = (template: any): TreatmentCategory => {
     }
     if (curtainType.includes('shutter')) {
       return 'shutters';
+    }
+    if (curtainType === 'awning' || curtainType.includes('awning')) {
+      return 'awning';
     }
     // Default to curtains for 'curtain', 'single', 'pair', etc.
     if (curtainType === 'curtain' || curtainType === 'single' || curtainType === 'pair') {
@@ -190,6 +193,17 @@ export const getTreatmentConfig = (category: TreatmentCategory): TreatmentConfig
       specificFields: ['louver_size', 'panel_config', 'frame_type'],
       visualComponent: 'RollerBlindVisualizer',
     },
+    awning: {
+      requiresFullness: false,
+      requiresHardwareType: false,
+      requiresFabricOrientation: false,
+      requiresHeading: false,
+      requiresLining: false,
+      showPooling: false,
+      inventoryCategory: 'awning_fabric',
+      specificFields: ['projection', 'valance', 'control_type'],
+      visualComponent: 'AwningVisualizer',
+    },
     wallpaper: {
       requiresFullness: false,
       requiresHardwareType: false,
@@ -219,6 +233,7 @@ export const getTreatmentDisplayName = (category: TreatmentCategory): string => 
     panel_glide: 'Panel Glide',
     plantation_shutters: 'Plantation Shutters',
     shutters: 'Shutters',
+    awning: 'Awning',
     wallpaper: 'Wallpaper',
   };
   return names[category];
