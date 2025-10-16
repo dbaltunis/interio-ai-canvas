@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { formatJobNumber } from "@/lib/format-job-number";
 import { useCreateProject, useProjects } from "@/hooks/useProjects";
 import { useCreateQuote } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
@@ -196,7 +197,7 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
             <div className="h-6 w-px bg-gray-300" />
             <div>
               <h1 className="text-xl font-semibold text-gray-900">New Project</h1>
-              <p className="text-sm text-gray-500">#{currentProject?.job_number || '10030'}</p>
+              <p className="text-sm text-gray-500">#{formatJobNumber(currentProject?.job_number || '10030')}</p>
             </div>
           </div>
           

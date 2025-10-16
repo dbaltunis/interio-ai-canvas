@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { formatJobNumber } from "@/lib/format-job-number";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -104,7 +105,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                 </h1>
                 <div className="flex items-center gap-2 mt-0.5">
                   <Badge variant="outline" className="font-mono text-xs px-2 py-0.5 bg-muted/50">
-                    #{project.job_number}
+                    #{formatJobNumber(project.job_number)}
                   </Badge>
                   {client && (
                     <span className="text-xs text-muted-foreground truncate hidden sm:inline">

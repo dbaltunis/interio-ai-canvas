@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { formatJobNumber } from "@/lib/format-job-number";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Edit2, Check, X } from "lucide-react";
@@ -125,7 +126,7 @@ export const ProjectJobsHeader = ({
             )}
           </div>
           <div className="flex items-center space-x-4 text-white/80">
-            <span className="text-sm">Job #{jobNumber}</span>
+            <span className="text-sm">Job #{formatJobNumber(jobNumber)}</span>
             <span className="text-2xl font-semibold">
               Total: {formatCurrency(totalAmount)}
             </span>

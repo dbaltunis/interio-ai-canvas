@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye, Edit, Phone, Mail, MapPin, Building2, User, Calendar, DollarSign, FileText, Clock, Home, Square, Palette } from "lucide-react";
+import { formatJobNumber } from "@/lib/format-job-number";
 import { formatDistanceToNow } from "date-fns";
 import { JobActionsMenu } from "./JobActionsMenu";
 import { useRooms } from "@/hooks/useRooms";
@@ -193,7 +194,7 @@ export const JobCard = ({
                   <span className="font-medium">{project.name}</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Job #{project.job_number || 'N/A'}
+                  Job #{formatJobNumber(project.job_number)}
                 </p>
                 {project.due_date && (
                   <p className="text-xs text-orange-600 flex items-center">

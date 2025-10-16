@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Calendar, DollarSign, AlertCircle, CheckCircle, Clock, ExternalLink } from "lucide-react";
 import { useClientJobs } from "@/hooks/useClientJobs";
 import { useSearchParams } from "react-router-dom";
+import { formatJobNumber } from "@/lib/format-job-number";
 
 interface ClientProjectsListProps {
   clientId: string;
@@ -131,7 +132,7 @@ export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsList
                       <div className="font-medium">{project.name}</div>
                       {project.job_number && (
                         <div className="text-sm text-muted-foreground">
-                          Job #{project.job_number}
+                          Job #{formatJobNumber(project.job_number)}
                         </div>
                       )}
                       {project.description && (

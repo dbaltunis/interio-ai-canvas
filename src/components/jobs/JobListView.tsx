@@ -1,5 +1,5 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+import { formatJobNumber } from "@/lib/format-job-number";
 import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, Eye, Edit, Copy, Calendar, User, DollarSign } from "lucide-react";
 import { JobActionsMenu } from "./JobActionsMenu";
@@ -107,7 +107,7 @@ export const JobListView = ({ jobs, onJobEdit, onJobView, onJobCopy }: JobListVi
                 className="font-medium text-primary hover:underline"
                 onClick={() => onJobView(job.id)}
               >
-                #{job.job_number}
+                #{formatJobNumber(job.job_number)}
               </TableCell>
               
               <TableCell 

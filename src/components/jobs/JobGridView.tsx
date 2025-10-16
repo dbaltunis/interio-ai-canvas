@@ -1,5 +1,5 @@
-
 import { Card, CardContent } from "@/components/ui/card";
+import { formatJobNumber } from "@/lib/format-job-number";
 import { User, Calendar, DollarSign, FileText } from "lucide-react";
 import { JobStatusBadge } from "./JobStatusBadge";
 import { JobActionsMenu } from "./JobActionsMenu";
@@ -29,7 +29,7 @@ export const JobGridView = ({ jobs, onJobView, onJobEdit, onJobCopy }: JobGridVi
                 <div className="flex items-center gap-2 mb-1">
                   <FileText className="h-4 w-4 text-gray-400" />
                   <span className="font-semibold text-lg text-gray-900">
-                    {job.job_number}
+                    {formatJobNumber(job.job_number)}
                   </span>
                 </div>
                 <JobStatusBadge status={job.status} />

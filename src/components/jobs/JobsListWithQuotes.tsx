@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { formatJobNumber } from "@/lib/format-job-number";
 import { 
   ChevronDown, 
   ChevronRight, 
-  Plus, 
+  Plus,
   Send, 
   Eye, 
   MoreHorizontal,
@@ -199,7 +200,7 @@ export const JobsListWithQuotes = ({
                         <div>
                           <CardTitle className="text-lg flex items-center space-x-2">
                             <span className="font-mono">
-                              {project.job_number || `JOB-${project.id.slice(-4)}`}
+                              {formatJobNumber(project.job_number || `JOB-${project.id.slice(-4)}`)}
                             </span>
                             <span className="text-base font-normal">
                               {project.name}

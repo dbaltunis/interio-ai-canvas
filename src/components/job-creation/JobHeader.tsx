@@ -2,6 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { formatJobNumber } from "@/lib/format-job-number";
 
 interface JobHeaderProps {
   jobNumber: string;
@@ -16,7 +17,7 @@ export const JobHeader = ({ jobNumber, totalAmount, onCreateRoom, isCreatingRoom
       <CardHeader className="bg-brand-primary text-brand-light rounded-t-lg">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-2xl font-bold">Job #{jobNumber}</CardTitle>
+            <CardTitle className="text-2xl font-bold">Job #{formatJobNumber(jobNumber)}</CardTitle>
             <p className="text-brand-light/80 text-lg mt-1">
               Total: ${totalAmount.toFixed(2)}
             </p>

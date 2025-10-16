@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { formatJobNumber } from "@/lib/format-job-number";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,7 @@ export const EnhancedJobsView = ({ job, onEdit, onViewDetails }: EnhancedJobsVie
               {job.name}
             </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Job #{job.job_number || 'N/A'} • Client: {job.client?.name || 'No client'}
+              Job #{formatJobNumber(job.job_number)} • Client: {job.client?.name || 'No client'}
             </p>
           </div>
           <div className="flex gap-2">
