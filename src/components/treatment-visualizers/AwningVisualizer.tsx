@@ -9,6 +9,10 @@ interface AwningVisualizerProps {
   className?: string;
   projection?: number;
   isRetractable?: boolean;
+  frameType?: string;
+  controlType?: string;
+  fabricPattern?: string;
+  valanceStyle?: string;
 }
 
 export const AwningVisualizer = ({
@@ -18,7 +22,11 @@ export const AwningVisualizer = ({
   material,
   className = "",
   projection: initialProjection = 70,
-  isRetractable = true
+  isRetractable = true,
+  frameType = 'retractable',
+  controlType = 'manual',
+  fabricPattern = 'striped',
+  valanceStyle = 'scalloped'
 }: AwningVisualizerProps) => {
   
   const [extension, setExtension] = useState(initialProjection);
@@ -37,6 +45,12 @@ export const AwningVisualizer = ({
   const stripeWidth = 40;
   const stripeColor1 = materialColor;
   const stripeColor2 = `color-mix(in srgb, ${materialColor} 80%, white)`;
+  
+  // Determine if awning should show as fixed or retractable based on frameType
+  const showRetractable = frameType !== 'fixed' && isRetractable;
+  
+  // Valance scallop count based on style
+  const valanceScallops = valanceStyle === 'straight' ? 0 : valanceStyle === 'scalloped' ? 10 : 15;
   
   return (
     <div className={`relative w-full h-full bg-gradient-to-b from-sky-100 to-sky-50 rounded-lg overflow-hidden ${className}`}>
@@ -127,10 +141,21 @@ export const AwningVisualizer = ({
             
             {/* Awning fabric with stripes */}
             <defs>
-              <pattern id="awningStripes" x="0" y="0" width={stripeWidth * 2} height="100" patternUnits="userSpaceOnUse">
-                <rect x="0" y="0" width={stripeWidth} height="100" fill={stripeColor1} />
-                <rect x={stripeWidth} y="0" width={stripeWidth} height="100" fill={stripeColor2} />
-              </pattern>
+              {fabricPattern === 'striped' ? (
+                <pattern id="awningStripes" x="0" y="0" width={stripeWidth * 2} height="100" patternUnits="userSpaceOnUse">
+                  <rect x="0" y="0" width={stripeWidth} height="100" fill={stripeColor1} />
+                  <rect x={stripeWidth} y="0" width={stripeWidth} height="100" fill={stripeColor2} />
+                </pattern>
+              ) : fabricPattern === 'solid' ? (
+                <pattern id="awningStripes" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+                  <rect x="0" y="0" width="100" height="100" fill={stripeColor1} />
+                </pattern>
+              ) : (
+                <pattern id="awningStripes" x="0" y="0" width="30" height="30" patternUnits="userSpaceOnUse">
+                  <rect x="0" y="0" width="30" height="30" fill={stripeColor1} />
+                  <circle cx="15" cy="15" r="3" fill={stripeColor2} />
+                </pattern>
+              )}
               
               {/* Shadow gradient */}
               <linearGradient id="awningGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -162,20 +187,33 @@ export const AwningVisualizer = ({
             />
             
             {/* Valance (decorative bottom edge) */}
-            <path
-              d={`M ${frameThickness} ${casseteHeight + casseteHeight + currentProjection}
-                  ${Array.from({ length: 10 }).map((_, i) => {
-                    const x = frameThickness + ((width - frameThickness * 2) / 10) * (i + 0.5);
-                    const y = casseteHeight + casseteHeight + currentProjection + 15;
-                    return `Q ${x} ${y}`;
-                  }).join(' ')}
-                  ${width - frameThickness} ${casseteHeight + casseteHeight + currentProjection}
-                  Z`}
-              fill={stripeColor1}
-              stroke="hsl(var(--border))"
-              strokeWidth={1}
-              opacity={0.9}
-            />
+            {valanceScallops > 0 ? (
+              <path
+                d={`M ${frameThickness} ${casseteHeight + casseteHeight + currentProjection}
+                    ${Array.from({ length: valanceScallops }).map((_, i) => {
+                      const x = frameThickness + ((width - frameThickness * 2) / valanceScallops) * (i + 0.5);
+                      const y = casseteHeight + casseteHeight + currentProjection + (valanceStyle === 'deep_scallop' ? 20 : 15);
+                      return `Q ${x} ${y}`;
+                    }).join(' ')}
+                    ${width - frameThickness} ${casseteHeight + casseteHeight + currentProjection}
+                    Z`}
+                fill={stripeColor1}
+                stroke="hsl(var(--border))"
+                strokeWidth={1}
+                opacity={0.9}
+              />
+            ) : (
+              <rect
+                x={frameThickness}
+                y={casseteHeight + casseteHeight + currentProjection}
+                width={width - frameThickness * 2}
+                height={10}
+                fill={stripeColor1}
+                stroke="hsl(var(--border))"
+                strokeWidth={1}
+                opacity={0.9}
+              />
+            )}
             
             {/* Front bar */}
             <rect
@@ -230,10 +268,12 @@ export const AwningVisualizer = ({
       </svg>
       
       {/* Extension control (only if retractable) */}
-      {isRetractable && (
+      {showRetractable && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-64 bg-background/95 backdrop-blur-sm rounded-lg p-4 border">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium">Extension</span>
+            <span className="text-xs font-medium">
+              {controlType === 'motorized' ? '🔌 Motorized' : '↕️ Manual'} Extension
+            </span>
             <span className="text-xs text-muted-foreground">{extension}%</span>
           </div>
           <Slider

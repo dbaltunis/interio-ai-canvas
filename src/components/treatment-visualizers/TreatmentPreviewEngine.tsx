@@ -214,6 +214,11 @@ export const TreatmentPreviewEngine = ({
             material={selectedItems.material}
             className={className}
             isRetractable={template?.retractable !== false}
+            frameType={measurements.frame_type || template?.frame_type || 'retractable'}
+            controlType={measurements.control_type || template?.control_type || 'manual'}
+            fabricPattern={measurements.fabric_pattern || template?.fabric_pattern || 'striped'}
+            valanceStyle={measurements.valance_style || template?.valance_style || 'scalloped'}
+            projection={measurements.projection ? parseFloat(measurements.projection) : undefined}
           />
         );
       
