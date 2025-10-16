@@ -150,7 +150,9 @@ const CalendarView = () => {
         status: 'scheduled',
         color: newEvent.color || undefined,
         team_member_ids: validTeamMemberIds.length > 0 ? validTeamMemberIds : undefined,
-        invited_client_emails: newEvent.inviteClientEmail ? [newEvent.inviteClientEmail] : undefined
+        invited_client_emails: newEvent.inviteClientEmail ? [newEvent.inviteClientEmail] : undefined,
+        notification_enabled: newEvent.enableNotifications,
+        notification_minutes: parseInt(newEvent.notificationTiming)
       });
 
       // Show CalDAV sync dialog for new appointment
