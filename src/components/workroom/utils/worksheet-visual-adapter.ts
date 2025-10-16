@@ -1,6 +1,6 @@
 import type { WorkshopRoomItem } from "@/hooks/useWorkshopData";
 
-// Map WorkshopRoomItem to the shape expected by WorksheetVisual
+// Map WorkshopRoomItem to the shape expected by WorksheetVisual and RollerBlindVisual
 export const toWorksheetVisualData = (item: WorkshopRoomItem) => {
   const width = item.measurements?.width;
   const height = item.measurements?.height;
@@ -28,14 +28,27 @@ export const toWorksheetVisualData = (item: WorkshopRoomItem) => {
     curtain_type: md.curtain_type ?? s.curtain_type,
     curtain_side: md.curtain_side ?? s.curtain_side,
     hardware_type: (md.hardware_type ?? s.hardware_type)?.toLowerCase?.(),
+    
+    // CRITICAL: Include blind/shutter specific details
+    control_side: md.control_side ?? s.control_side,
+    mounting_type: md.mounting_type ?? s.mounting_type,
+    slat_size: md.slat_size ?? s.slat_size,
+    louver_size: md.louver_size ?? s.louver_size,
+    panel_config: md.panel_config ?? s.panel_config,
+    fold_style: md.fold_style ?? s.fold_style,
+    bracket_type: md.bracket_type ?? s.bracket_type,
+    valance_style: md.valance_style ?? s.valance_style,
 
     unit: item.measurements?.unit,
   };
 
-  const windowType = item.surface?.window_type || item.surface?.type || item.name || "Window";
+  const windowType = s.window_type || item.surface?.window_type || item.surface?.type || item.name || "Window";
 
-  // If you later add template support, pass it through here
-  const selectedTemplate = undefined;
+  // CRITICAL: Pass through the saved template from summary
+  const selectedTemplate = s.template_details || s.template || undefined;
+  
+  // Pass through material details for blinds/shutters
+  const material = s.material_details || s.fabric_details || undefined;
 
-  return { windowType, measurements, selectedTemplate } as const;
+  return { windowType, measurements, selectedTemplate, material } as const;
 };
