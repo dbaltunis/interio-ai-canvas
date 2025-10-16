@@ -344,7 +344,27 @@ export const WindowTreatmentOptionsManager = () => {
           </Select>
         </div>
 
-        <Tabs value={activeOptionType} onValueChange={(v) => setActiveOptionType(v)} className="w-full">
+        {optionTypeCategories.length === 0 ? (
+          <div className="text-center py-12 border-2 border-dashed rounded-lg">
+            <div className="text-muted-foreground">
+              <p className="font-medium text-lg">No option types configured</p>
+              <p className="text-sm mt-2">
+                Option types for {getTreatmentLabel(activeTreatment)} have been initialized.
+              </p>
+              <p className="text-xs mt-1">
+                Refresh the page or click below to start adding option values.
+              </p>
+              <Button 
+                className="mt-4"
+                onClick={() => setShowCreateOptionTypeDialog(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Custom Option Type
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Tabs value={activeOptionType} onValueChange={(v) => setActiveOptionType(v)} className="w-full">
           <div className="relative flex items-center gap-2">
             <Button
               variant="outline"
@@ -555,6 +575,7 @@ export const WindowTreatmentOptionsManager = () => {
           );
         })}
         </Tabs>
+        )}
 
         {/* Create Option Type Dialog */}
         <Dialog open={showCreateOptionTypeDialog} onOpenChange={setShowCreateOptionTypeDialog}>
