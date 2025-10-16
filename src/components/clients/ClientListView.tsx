@@ -119,6 +119,7 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-border/50">
+                  <TableHead className="text-muted-foreground font-medium w-16">#</TableHead>
                   <TableHead className="text-muted-foreground font-medium">Client</TableHead>
                   <TableHead className="text-muted-foreground font-medium">Stage</TableHead>
                   <TableHead className="text-muted-foreground font-medium">Deal Value</TableHead>
@@ -131,33 +132,39 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {clients.map((client) => (
+                {clients.map((client, index) => (
                   <TableRow 
                     key={client.id} 
                     className="hover:bg-muted/50 cursor-pointer border-border/50"
                     onClick={() => onClientClick(client)}
                   >
-                    <TableCell className="font-medium">
+                    <TableCell className="text-muted-foreground font-medium">
+                      {index + 1}
+                    </TableCell>
+                    
+                    <TableCell className="font-medium max-w-[280px]">
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9">
+                        <Avatar className="h-9 w-9 flex-shrink-0">
                           <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                             {((client.client_type === 'B2B' ? client.company_name : client.name) || 'U').substring(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <div className="font-semibold text-foreground truncate flex items-center gap-2">
-                            {client.client_type === 'B2B' ? client.company_name : client.name}
+                            <span className="truncate max-w-[200px]">
+                              {client.client_type === 'B2B' ? client.company_name : client.name}
+                            </span>
                             {(client.lead_score && isHotLead(client.lead_score)) && (
                               <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
                             )}
                           </div>
                           {client.client_type === 'B2B' && client.contact_person && (
-                            <div className="text-sm text-muted-foreground truncate">
+                            <div className="text-sm text-muted-foreground truncate max-w-[200px]">
                               {client.contact_person}
                             </div>
                           )}
                           {client.email && (
-                            <div className="text-xs text-muted-foreground truncate">
+                            <div className="text-xs text-muted-foreground truncate max-w-[200px]">
                               {client.email}
                             </div>
                           )}

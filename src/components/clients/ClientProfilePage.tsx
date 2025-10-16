@@ -1,19 +1,28 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Mail, Phone, MapPin, Building2, User, Edit, Calendar, FileText, DollarSign, Star, TrendingUp, Clock, AlertCircle, Target, Percent } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
+import { 
+  ArrowLeft, Mail, Phone, MapPin, Building2, User, Edit, Calendar, 
+  FileText, DollarSign, Star, TrendingUp, Clock, Save, X, Briefcase,
+  MessageSquare, Package, CheckCircle
+} from "lucide-react";
 import { useClient, useUpdateClient } from "@/hooks/useClients";
 import { useClientJobs } from "@/hooks/useClientJobs";
 import { ClientEmailHistory } from "./ClientEmailHistory";
 import { ClientProjectsList } from "./ClientProjectsList";
 import { MeasurementsList } from "../measurements/MeasurementsList";
 import { EmailComposer } from "../jobs/email/EmailComposer";
-import { ClientFormWithLeadIntelligence } from "./ClientFormWithLeadIntelligence";
 import { FollowUpManager } from "./FollowUpManager";
+import { useToast } from "@/hooks/use-toast";
+import { formatDistanceToNow } from "date-fns";
 
 interface ClientProfilePageProps {
   clientId: string;
@@ -22,19 +31,20 @@ interface ClientProfilePageProps {
   onTabChange?: (tab: string) => void;
 }
 
-export const ClientProfilePage = ({ clientId, onBack, onEdit, onTabChange }: ClientProfilePageProps) => {
+export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfilePageProps) => {
   const { data: client, isLoading: clientLoading } = useClient(clientId);
   const { data: projects } = useClientJobs(clientId);
+  const updateClient = useUpdateClient();
+  const { toast } = useToast();
+  
+  const [isEditing, setIsEditing] = useState(false);
   const [showEmailComposer, setShowEmailComposer] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editedClient, setEditedClient] = useState<any>(null);
 
   if (clientLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto"></div>
-          <p className="text-muted-foreground">Loading client profile...</p>
-        </div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
       </div>
     );
   }
@@ -51,346 +61,467 @@ export const ClientProfilePage = ({ clientId, onBack, onEdit, onTabChange }: Cli
     );
   }
 
-  const getTypeColor = (type: string) => {
-    return type === "B2B"
-      ? "bg-primary/10 text-primary border-primary/20"
-      : "bg-secondary text-secondary-foreground border-secondary";
+  const handleEdit = () => {
+    setEditedClient({ ...client });
+    setIsEditing(true);
   };
 
-  const getTypeIcon = (type: string) => {
-    return type === "B2B" ? <Building2 className="h-4 w-4" /> : <User className="h-4 w-4" />;
+  const handleSave = async () => {
+    try {
+      await updateClient.mutateAsync({
+        id: client.id,
+        ...editedClient,
+      });
+      toast({
+        title: "Success",
+        description: "Client updated successfully",
+      });
+      setIsEditing(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update client",
+        variant: "destructive",
+      });
+    }
   };
 
-  const clientDisplayName = client.client_type === 'B2B' ? client.company_name : client.name;
-
-  // Calculate total project value from completed projects - temporarily disable until proper cost tracking
-  const totalProjectValue = client.deal_value || 0;
-
-  const getStageColor = (stage: string) => {
-    const colors = {
-      'lead': 'bg-gray-100 text-gray-800',
-      'qualification': 'bg-blue-100 text-blue-800',
-      'proposal': 'bg-yellow-100 text-yellow-800',
-      'negotiation': 'bg-orange-100 text-orange-800',
-      'closed_won': 'bg-green-100 text-green-800',
-      'closed_lost': 'bg-red-100 text-red-800'
-    };
-    return colors[stage as keyof typeof colors] || colors.lead;
+  const handleCancel = () => {
+    setEditedClient(null);
+    setIsEditing(false);
   };
 
-  const getPriorityColor = (priority: string) => {
-    const colors = {
-      'low': 'bg-gray-100 text-gray-600',
-      'medium': 'bg-blue-100 text-blue-600',
-      'high': 'bg-orange-100 text-orange-600',
-      'urgent': 'bg-red-100 text-red-600'
-    };
-    return colors[priority as keyof typeof colors] || colors.medium;
-  };
-
-  const getPriorityIcon = (priority: string) => {
-    const icons = {
-      'low': <TrendingUp className="h-3 w-3" />,
-      'medium': <Target className="h-3 w-3" />,
-      'high': <AlertCircle className="h-3 w-3" />,
-      'urgent': <AlertCircle className="h-3 w-3" />
-    };
-    return icons[priority as keyof typeof icons] || icons.medium;
-  };
-
-  const getLeadScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    if (score >= 40) return 'text-orange-600';
-    return 'text-gray-600';
-  };
-
-  const isHotLead = (score: number) => score >= 70;
+  const currentClient = isEditing ? editedClient : client;
+  const clientDisplayName = currentClient.client_type === 'B2B' 
+    ? currentClient.company_name 
+    : currentClient.name;
 
   return (
-    <div className="liquid-glass rounded-xl p-6 space-y-6">
+    <div className="min-h-screen bg-background p-6 space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
-            onClick={onBack}
-            className=""
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to CRM
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div className="flex items-center gap-2">
-            {(client.lead_score && isHotLead(client.lead_score)) && (
-              <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-            )}
-            <h1 className="text-3xl font-bold text-brand-primary">
-              {clientDisplayName}
-            </h1>
-          </div>
-          <div className="flex items-center gap-3 mt-2">
-            <Badge className={`${getTypeColor(client.client_type || 'B2C')} border flex items-center space-x-1`} variant="secondary">
-              {getTypeIcon(client.client_type || 'B2C')}
-              <span>{client.client_type || 'B2C'}</span>
-            </Badge>
-            
-            <Badge className={`${getStageColor(client.funnel_stage || 'lead')} border-0 text-xs`} variant="outline">
-              {(client.funnel_stage || 'lead').replace('_', ' ').toUpperCase()}
-            </Badge>
-            
-            <Badge className={`${getPriorityColor(client.priority_level || 'medium')} border-0 flex items-center gap-1 text-xs`} variant="outline">
-              {getPriorityIcon(client.priority_level || 'medium')}
-              <span>{(client.priority_level || 'medium').toUpperCase()}</span>
-            </Badge>
-            
-            {client.client_type === 'B2B' && client.contact_person && (
-              <span className="text-muted-foreground">Contact: {client.contact_person}</span>
-            )}
-          </div>
-          {client.lead_source && (
-            <div className="text-sm text-muted-foreground mt-1">
-              Lead Source: {client.lead_source}
+          <Avatar className="h-16 w-16">
+            <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl">
+              {(clientDisplayName || 'U').substring(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <h1 className="text-2xl font-bold">{clientDisplayName}</h1>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant="secondary" className="flex items-center gap-1">
+                {currentClient.client_type === 'B2B' ? <Building2 className="h-3 w-3" /> : <User className="h-3 w-3" />}
+                {currentClient.client_type || 'B2C'}
+              </Badge>
+              {currentClient.lead_score && currentClient.lead_score >= 70 && (
+                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">
+                  <Star className="h-3 w-3 mr-1 fill-yellow-500" />
+                  Hot Lead
+                </Badge>
+              )}
             </div>
-          )}
+          </div>
         </div>
         
-        <Button onClick={() => setShowEditDialog(true)} variant="brand">
-          <Edit className="h-4 w-4 mr-2" />
-          Edit Client
-        </Button>
+        <div className="flex items-center gap-2">
+          {!isEditing ? (
+            <>
+              <Button variant="outline" size="sm" onClick={() => setShowEmailComposer(true)}>
+                <Mail className="h-4 w-4 mr-2" />
+                Email
+              </Button>
+              <Button variant="outline" size="sm">
+                <Phone className="h-4 w-4 mr-2" />
+                Call
+              </Button>
+              <Button size="sm" onClick={handleEdit}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" size="sm" onClick={handleCancel}>
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+              <Button size="sm" onClick={handleSave}>
+                <Save className="h-4 w-4 mr-2" />
+                Save Changes
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Client Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Lead Score</p>
-                <div className="flex items-center gap-2">
-                  <p className={`text-2xl font-bold ${getLeadScoreColor(client.lead_score || 0)}`}>
-                    {client.lead_score || 0}
-                  </p>
-                  <div className="w-16 bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-primary h-2 rounded-full transition-all" 
-                      style={{ width: `${Math.min((client.lead_score || 0), 100)}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-              <Star className="h-8 w-8 text-yellow-500 opacity-75" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Deal Value</p>
-                <p className="text-2xl font-bold text-green-600">
-                  ${totalProjectValue.toLocaleString()}
-                </p>
-                {client.conversion_probability && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Percent className="h-3 w-3" />
-                    {client.conversion_probability}% probability
-                  </p>
-                )}
+                <p className="text-2xl font-bold">${(currentClient.deal_value || 0).toLocaleString()}</p>
               </div>
-              <DollarSign className="h-8 w-8 text-green-600 opacity-75" />
+              <DollarSign className="h-8 w-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
-
+        
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Projects</p>
-                <p className="text-2xl font-bold text-brand-primary">{projects?.length || 0}</p>
+                <p className="text-sm text-muted-foreground">Projects</p>
+                <p className="text-2xl font-bold">{projects?.length || 0}</p>
               </div>
-              <FileText className="h-8 w-8 text-brand-primary opacity-75" />
+              <Briefcase className="h-8 w-8 text-blue-600" />
             </div>
           </CardContent>
         </Card>
-
+        
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Last Contact</p>
-                <p className="text-2xl font-bold text-primary">
-                  {client.last_contact_date 
-                    ? new Date(client.last_contact_date).toLocaleDateString()
-                    : '--'
-                  }
-                </p>
-                {client.follow_up_date && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    Follow-up: {new Date(client.follow_up_date).toLocaleDateString()}
-                  </p>
-                )}
+                <p className="text-sm text-muted-foreground">Lead Score</p>
+                <p className="text-2xl font-bold">{currentClient.lead_score || 0}</p>
               </div>
-              <Mail className="h-8 w-8 text-primary opacity-75" />
+              <TrendingUp className="h-8 w-8 text-orange-600" />
             </div>
           </CardContent>
         </Card>
-
+        
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Client Since</p>
-                <p className="text-2xl font-bold text-secondary">
-                  {new Date(client.created_at).toLocaleDateString()}
-                </p>
+                <p className="text-sm text-muted-foreground">Conversion</p>
+                <p className="text-2xl font-bold">{currentClient.conversion_probability || 0}%</p>
               </div>
-              <Calendar className="h-8 w-8 text-secondary opacity-75" />
+              <CheckCircle className="h-8 w-8 text-purple-600" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Client Details */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Client Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Mail className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium">{client.email || 'Not provided'}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Info Card */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Client Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {isEditing ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name *</Label>
+                  <Input
+                    id="name"
+                    value={editedClient.name || ''}
+                    onChange={(e) => setEditedClient({ ...editedClient, name: e.target.value })}
+                  />
+                </div>
+                
+                {editedClient.client_type === 'B2B' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="company_name">Company Name</Label>
+                      <Input
+                        id="company_name"
+                        value={editedClient.company_name || ''}
+                        onChange={(e) => setEditedClient({ ...editedClient, company_name: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="contact_person">Contact Person</Label>
+                      <Input
+                        id="contact_person"
+                        value={editedClient.contact_person || ''}
+                        onChange={(e) => setEditedClient({ ...editedClient, contact_person: e.target.value })}
+                      />
+                    </div>
+                  </>
+                )}
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={editedClient.email || ''}
+                    onChange={(e) => setEditedClient({ ...editedClient, email: e.target.value })}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input
+                    id="phone"
+                    value={editedClient.phone || ''}
+                    onChange={(e) => setEditedClient({ ...editedClient, phone: e.target.value })}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="funnel_stage">Stage</Label>
+                  <Select
+                    value={editedClient.funnel_stage || 'lead'}
+                    onValueChange={(value) => setEditedClient({ ...editedClient, funnel_stage: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="lead">Lead</SelectItem>
+                      <SelectItem value="contacted">Contacted</SelectItem>
+                      <SelectItem value="measuring_scheduled">Measuring Scheduled</SelectItem>
+                      <SelectItem value="quoted">Quoted</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="lost">Lost</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="priority_level">Priority</Label>
+                  <Select
+                    value={editedClient.priority_level || 'medium'}
+                    onValueChange={(value) => setEditedClient({ ...editedClient, priority_level: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="urgent">Urgent</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="lead_source">Lead Source</Label>
+                  <Select
+                    value={editedClient.lead_source || 'other'}
+                    onValueChange={(value) => setEditedClient({ ...editedClient, lead_source: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="website">Website</SelectItem>
+                      <SelectItem value="referral">Referral</SelectItem>
+                      <SelectItem value="social_media">Social Media</SelectItem>
+                      <SelectItem value="advertisement">Advertisement</SelectItem>
+                      <SelectItem value="direct">Direct</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="deal_value">Deal Value ($)</Label>
+                  <Input
+                    id="deal_value"
+                    type="number"
+                    value={editedClient.deal_value || 0}
+                    onChange={(e) => setEditedClient({ ...editedClient, deal_value: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="conversion_probability">Conversion Probability (%)</Label>
+                  <Input
+                    id="conversion_probability"
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={editedClient.conversion_probability || 0}
+                    onChange={(e) => setEditedClient({ ...editedClient, conversion_probability: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Input
+                    id="address"
+                    value={editedClient.address || ''}
+                    onChange={(e) => setEditedClient({ ...editedClient, address: e.target.value })}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    value={editedClient.city || ''}
+                    onChange={(e) => setEditedClient({ ...editedClient, city: e.target.value })}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="state">State</Label>
+                  <Input
+                    id="state"
+                    value={editedClient.state || ''}
+                    onChange={(e) => setEditedClient({ ...editedClient, state: e.target.value })}
+                  />
+                </div>
+                
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    rows={4}
+                    value={editedClient.notes || ''}
+                    onChange={(e) => setEditedClient({ ...editedClient, notes: e.target.value })}
+                  />
                 </div>
               </div>
-              
-              <div className="flex items-center gap-3">
-                <Phone className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Phone</p>
-                  <p className="font-medium">{client.phone || 'Not provided'}</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  {currentClient.email && (
+                    <div className="flex items-center gap-3">
+                      <Mail className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Email</p>
+                        <p className="font-medium">{currentClient.email}</p>
+                      </div>
+                    </div>
+                  )}
+                  {currentClient.phone && (
+                    <div className="flex items-center gap-3">
+                      <Phone className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Phone</p>
+                        <p className="font-medium">{currentClient.phone}</p>
+                      </div>
+                    </div>
+                  )}
+                  {(currentClient.address || currentClient.city) && (
+                    <div className="flex items-center gap-3">
+                      <MapPin className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Address</p>
+                        <p className="font-medium">
+                          {currentClient.address || ''}
+                          {currentClient.city && `, ${currentClient.city}`}
+                          {currentClient.state && `, ${currentClient.state}`}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-muted-foreground mt-1" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Address</p>
-                  <div className="font-medium">
-                    {client.address && (
-                      <p>{client.address}</p>
-                    )}
-                    {(client.city || client.state) && (
-                      <p>{client.city && client.state ? `${client.city}, ${client.state}` : client.city || client.state}</p>
-                    )}
-                    {client.zip_code && (
-                      <p>{client.zip_code}</p>
-                    )}
-                    {!client.address && !client.city && !client.state && !client.zip_code && (
-                      <p>Not provided</p>
-                    )}
+                
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Stage</p>
+                    <Badge variant="outline">
+                      {(currentClient.funnel_stage || 'lead').replace('_', ' ').toUpperCase()}
+                    </Badge>
                   </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Priority</p>
+                    <Badge variant="outline">
+                      {(currentClient.priority_level || 'medium').toUpperCase()}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Lead Source</p>
+                    <Badge variant="secondary">
+                      {(currentClient.lead_source || 'other').replace('_', ' ')}
+                    </Badge>
+                  </div>
+                  {currentClient.last_contact_date && (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Last Contact</p>
+                      <p className="font-medium text-sm">
+                        {formatDistanceToNow(new Date(currentClient.last_contact_date), { addSuffix: true })}
+                      </p>
+                    </div>
+                  )}
                 </div>
+                
+                {currentClient.notes && (
+                  <div className="md:col-span-2">
+                    <p className="text-sm text-muted-foreground mb-2">Notes</p>
+                    <p className="text-sm">{currentClient.notes}</p>
+                  </div>
+                )}
               </div>
-            </div>
-          </div>
-          
-          {(client.tags && client.tags.length > 0) && (
-            <div className="mt-6 pt-6 border-t">
-              <p className="text-sm text-muted-foreground mb-2">Tags</p>
-              <div className="flex flex-wrap gap-2">
-                {client.tags.map((tag) => (
-                  <Badge key={tag} variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {client.referral_source && (
-            <div className="mt-6 pt-6 border-t">
-              <p className="text-sm text-muted-foreground mb-2">Referral Source</p>
-              <p className="text-foreground">{client.referral_source}</p>
-            </div>
-          )}
-          
-          {client.notes && (
-            <div className="mt-6 pt-6 border-t">
-              <p className="text-sm text-muted-foreground mb-2">Notes</p>
-              <p className="text-foreground">{client.notes}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* Main Content Tabs */}
-      <Tabs defaultValue="measurements" className="space-y-6">
-        <TabsList className="bg-background border-b border-border/50 rounded-none p-0 h-auto flex w-full justify-start gap-0">
-          <TabsTrigger value="measurements" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">Measurements</TabsTrigger>
-          <TabsTrigger value="projects" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">Projects & Jobs</TabsTrigger>
-          <TabsTrigger value="followups" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">Follow-ups</TabsTrigger>
-          <TabsTrigger value="emails" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">Email History</TabsTrigger>
+        {/* Side Panel */}
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Conversion Probability</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Probability</span>
+                  <span className="font-semibold">{currentClient.conversion_probability || 0}%</span>
+                </div>
+                <Progress value={currentClient.conversion_probability || 0} className="h-2" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <FollowUpManager clientId={clientId} />
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <Tabs defaultValue="projects" className="w-full">
+        <TabsList>
+          <TabsTrigger value="projects">Projects</TabsTrigger>
+          <TabsTrigger value="emails">Emails</TabsTrigger>
+          <TabsTrigger value="measurements">Measurements</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="measurements" className="space-y-4">
-          <MeasurementsList 
-            clientId={clientId}
-            onViewMeasurement={(measurement) => console.log('View measurement:', measurement)}
-            onEditMeasurement={(measurement) => console.log('Edit measurement:', measurement)}
-          />
-        </TabsContent>
-        
-        <TabsContent value="projects" className="space-y-4">
+
+        <TabsContent value="projects" className="mt-6">
           <ClientProjectsList clientId={clientId} onTabChange={onTabChange} />
         </TabsContent>
-        
-        <TabsContent value="followups" className="space-y-4">
-          <FollowUpManager clientId={clientId} />
+
+        <TabsContent value="emails" className="mt-6">
+          <ClientEmailHistory clientId={clientId} />
         </TabsContent>
-        
-        <TabsContent value="emails" className="space-y-4">
-          <ClientEmailHistory 
-            clientId={clientId} 
-            clientEmail={client.email}
-            onComposeEmail={() => setShowEmailComposer(true)}
+
+        <TabsContent value="measurements" className="mt-6">
+          <MeasurementsList 
+            clientId={clientId}
+            onViewMeasurement={() => {}}
+            onEditMeasurement={() => {}}
           />
+        </TabsContent>
+
+        <TabsContent value="documents" className="mt-6">
+          <Card>
+            <CardContent className="p-12 text-center">
+              <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">No documents uploaded yet</p>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
       {/* Email Composer Dialog */}
       {showEmailComposer && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
-          <div className="bg-background rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto m-4">
-            <EmailComposer 
-              clientId={clientId}
-              onClose={() => setShowEmailComposer(false)}
-            />
-          </div>
-        </div>
+        <EmailComposer
+          clientId={clientId}
+          onClose={() => setShowEmailComposer(false)}
+        />
       )}
-
-      {/* Edit Client Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Client</DialogTitle>
-          </DialogHeader>
-          <ClientFormWithLeadIntelligence 
-            editingClient={client}
-            onCancel={() => setShowEditDialog(false)}
-            onSuccess={() => setShowEditDialog(false)}
-          />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
