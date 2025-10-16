@@ -333,14 +333,14 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/30 hover:bg-muted/30">
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Job Number</TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Emails</TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Client</TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Status</TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Total</TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Owner</TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Created</TableHead>
-              <TableHead className="w-[70px]">Actions</TableHead>
+              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Job No</TableHead>
+              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Emails</TableHead>
+              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Client</TableHead>
+              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Status</TableHead>
+              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Total</TableHead>
+              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Owner</TableHead>
+              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Created</TableHead>
+              <TableHead className="w-[70px] font-normal">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
