@@ -560,14 +560,14 @@ const CalendarView = () => {
 
       {/* New Event Dialog */}
       <Dialog open={showNewEventDialog} onOpenChange={setShowNewEventDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full bg-primary" />
               Create New Event
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-6">
+          <div className="space-y-6 overflow-y-auto max-h-[calc(90vh-8rem)] pr-2">
             {/* Event Details */}
             <div className="space-y-4">
               <div>

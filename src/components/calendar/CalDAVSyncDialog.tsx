@@ -43,14 +43,13 @@ export const CalDAVSyncDialog = ({
         appointment,
         calendarIds: selectedCalendars
       });
-
-      // Close dialog and reset state after successful sync
+    } catch (error) {
+      console.error("Sync failed:", error);
+    } finally {
+      // Always close dialog and reset state, regardless of success or failure
       setSelectedCalendars([]);
       onSyncComplete?.();
       onOpenChange(false);
-    } catch (error) {
-      console.error("Sync failed:", error);
-      // Keep dialog open on error so user can retry
     }
   };
 
