@@ -104,10 +104,10 @@ export const JobListView = ({ jobs, onJobEdit, onJobView, onJobCopy }: JobListVi
           {jobs.map((job) => (
             <TableRow key={job.id} className="hover:bg-muted/50 cursor-pointer group">
               <TableCell 
-                className="font-medium text-primary hover:underline"
+                className="text-xs text-muted-foreground font-mono hover:underline cursor-pointer"
                 onClick={() => onJobView(job.id)}
               >
-                #{formatJobNumber(job.job_number)}
+                {formatJobNumber(job.job_number)}
               </TableCell>
               
               <TableCell 

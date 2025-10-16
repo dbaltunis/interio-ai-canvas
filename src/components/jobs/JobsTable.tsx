@@ -108,8 +108,8 @@ export const JobsTable = ({
               className="grid grid-cols-8 gap-4 p-4 items-center hover:bg-gray-50 cursor-pointer"
               onClick={() => onJobSelect?.(quote.id)}
             >
-              <div className="font-medium text-gray-900">
-                <div>#{formatJobNumber(project?.job_number)}</div>
+              <div>
+                <div className="text-xs text-muted-foreground font-mono">{formatJobNumber(project?.job_number)}</div>
                 <div className="text-xs text-gray-500">{quote.quote_number}</div>
               </div>
               <div className="font-medium">${quote.total_amount?.toFixed(2) || '0.00'}</div>

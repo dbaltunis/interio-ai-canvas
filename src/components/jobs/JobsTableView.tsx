@@ -357,12 +357,12 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => onJobSelect({ id: project.id, projects: project })}
                     >
-                    <TableCell className="font-medium">
+                    <TableCell>
                       <span 
                         title={project.job_number}
-                        className="font-mono text-sm font-bold"
+                        className="font-mono text-xs text-muted-foreground"
                       >
-                        #{formatJobNumber(project.job_number || `JOB-${project.id.slice(-4)}`)}
+                        {formatJobNumber(project.job_number || `JOB-${project.id.slice(-4)}`)}
                       </span>
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
