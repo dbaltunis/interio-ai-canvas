@@ -127,9 +127,9 @@ export default {
 				'radius-sm': 'calc(var(--radius) - 4px)'
 			},
 			boxShadow: {
-				sm: '0 1px 3px rgba(0,0,0,0.10)',
-				md: '0 4px 6px rgba(0,0,0,0.10)',
-				lg: '0 10px 15px rgba(0,0,0,0.15)',
+				sm: 'none',
+				md: 'none',
+				lg: 'none',
 			},
 			keyframes: {
 				'accordion-down': {

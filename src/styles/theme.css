@@ -199,7 +199,6 @@
 .interio-card {
   background: var(--interio-white);
   border: 1px solid var(--interio-sage);
-  box-shadow: 0 2px 8px rgba(65, 94, 107, 0.1);
 }
 
 .interio-button-primary {

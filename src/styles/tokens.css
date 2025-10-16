@@ -33,10 +33,10 @@
   --error: #EF4444;
   --info: #3B82F6;
   
-  /* ========== Shadow System ========== */
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.10);
-  --shadow-md: 0 4px 6px rgba(0,0,0,0.10);
-  --shadow-lg: 0 10px 15px rgba(0,0,0,0.15);
+  /* ========== Shadow System - AI Clean Style ========== */
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
   
   /* ========== Border Radius System ========== */
   --radius-sm: 6px;

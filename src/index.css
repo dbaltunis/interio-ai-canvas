@@ -215,32 +215,22 @@
   font-weight: 600;
 }
 
-/* Modern Card System - Clean & Beautiful */
+/* Modern Card System - AI Clean Style (No Shadows) */
 .modern-card {
   background: hsl(var(--card));
-  border: 1px solid hsl(var(--border) / 0.8);
+  border: 1px solid hsl(var(--border));
   border-radius: calc(var(--radius) + 2px);
-  box-shadow: 
-    0 1px 3px hsl(220 15% 15% / 0.06),
-    0 1px 2px hsl(220 15% 15% / 0.08);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .modern-card:hover {
-  box-shadow: 
-    0 8px 25px hsl(220 15% 15% / 0.08),
-    0 4px 10px hsl(220 15% 15% / 0.1);
-  transform: translateY(-2px);
-  border-color: hsl(var(--company-secondary) / 0.3);
+  border-color: hsl(var(--company-secondary) / 0.4);
 }
 
 .modern-card-elevated {
   background: hsl(var(--card));
-  border: 1px solid hsl(var(--border) / 0.6);
+  border: 1px solid hsl(var(--border));
   border-radius: calc(var(--radius) + 4px);
-  box-shadow: 
-    0 4px 16px hsl(220 15% 15% / 0.08),
-    0 2px 8px hsl(220 15% 15% / 0.1);
 }
 
 .interactive-card {
@@ -252,11 +242,7 @@
 }
 
 .interactive-card:hover {
-  border-color: hsl(var(--company-secondary) / 0.5);
-  box-shadow: 
-    0 8px 25px hsl(220 15% 15% / 0.1),
-    0 4px 10px hsl(220 15% 15% / 0.12);
-  transform: translateY(-1px);
+  border-color: hsl(var(--company-secondary) / 0.6);
 }
 
 .team-card {
@@ -363,60 +349,38 @@
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Glassmorphism Effects */
+/* Glassmorphism Effects - AI Clean Style */
 .glass-morphism {
-  background: linear-gradient(180deg,
-    hsl(var(--background) / 0.60) 0%,
-    hsl(var(--background) / 0.50) 100%
-  );
-  border: 1px solid hsl(var(--border) / 0.40);
+  background: hsl(var(--card) / 0.95);
+  border: 1px solid hsl(var(--border));
   backdrop-filter: blur(16px) saturate(1.1);
   -webkit-backdrop-filter: blur(16px) saturate(1.1);
-  box-shadow: 0 8px 24px hsl(var(--company-primary) / 0.10);
 }
 
 .dark .glass-morphism {
-  background: linear-gradient(180deg,
-    hsl(var(--background) / 0.18) 0%,
-    hsl(var(--background) / 0.14) 100%
-  );
-  border-color: hsl(var(--border) / 0.25);
-  box-shadow: 0 10px 30px hsl(var(--company-primary) / 0.35);
+  background: hsl(var(--card) / 0.90);
+  border-color: hsl(var(--border));
 }
 
 .glass-morphism-strong {
-  background: linear-gradient(180deg,
-    hsl(var(--background) / 0.75) 0%,
-    hsl(var(--background) / 0.60) 100%
-  );
-  border: 1px solid hsl(var(--border) / 0.50);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   backdrop-filter: blur(20px) saturate(1.2);
   -webkit-backdrop-filter: blur(20px) saturate(1.2);
-  box-shadow: 0 12px 36px hsl(var(--company-primary) / 0.18);
 }
 
 .dark .glass-morphism-strong {
-  background: linear-gradient(180deg,
-    hsl(var(--background) / 0.22) 0%,
-    hsl(var(--background) / 0.18) 100%
-  );
-  border-color: hsl(var(--border) / 0.35);
-  box-shadow: 0 16px 40px hsl(var(--company-primary) / 0.45);
+  background: hsl(var(--card) / 0.95);
+  border-color: hsl(var(--border));
 }
 
-/* Premium liquid glass variant */
+/* Premium liquid glass variant - AI Clean Style */
 .liquid-glass, .surface, .panel {
   position: relative;
-  background: linear-gradient(180deg,
-    hsl(var(--background) / 0.65) 0%,
-    hsl(var(--background) / 0.50) 100%
-  );
-  border: 1px solid hsl(var(--border) / 0.45);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   backdrop-filter: blur(18px) saturate(1.25);
   -webkit-backdrop-filter: blur(18px) saturate(1.25);
-  box-shadow:
-    0 12px 30px hsl(var(--company-primary) / 0.20),
-    inset 0 1px 0 hsl(var(--company-secondary) / 0.35);
 }
 
 .liquid-glass::before, .surface::before, .panel::before {
@@ -425,49 +389,35 @@
   inset: 0;
   border-radius: inherit;
   background:
-    radial-gradient(120% 60% at 10% -10%, hsl(var(--company-secondary) / 0.25), transparent 40%),
-    radial-gradient(100% 40% at 100% 0%, hsl(var(--company-primary) / 0.15), transparent 45%);
+    radial-gradient(120% 60% at 10% -10%, hsl(var(--company-secondary) / 0.08), transparent 40%),
+    radial-gradient(100% 40% at 100% 0%, hsl(var(--company-primary) / 0.05), transparent 45%);
   pointer-events: none;
 }
 
 .dark .liquid-glass, .dark .surface, .dark .panel {
-  background: linear-gradient(180deg,
-    hsl(var(--background) / 0.22) 0%,
-    hsl(var(--background) / 0.16) 100%
-  );
-  border-color: hsl(var(--border) / 0.30);
-  box-shadow:
-    0 16px 40px hsl(var(--company-primary) / 0.45),
-    inset 0 1px 0 hsl(var(--company-secondary) / 0.25);
+  background: hsl(var(--card));
+  border-color: hsl(var(--border));
 }
 
 .dark .liquid-glass::before, .dark .surface::before, .dark .panel::before {
   background:
-    radial-gradient(120% 60% at 10% -10%, hsl(var(--company-secondary) / 0.20), transparent 40%),
-    radial-gradient(100% 40% at 100% 0%, hsl(var(--company-primary) / 0.12), transparent 45%);
+    radial-gradient(120% 60% at 10% -10%, hsl(var(--company-secondary) / 0.10), transparent 40%),
+    radial-gradient(100% 40% at 100% 0%, hsl(var(--company-primary) / 0.06), transparent 45%);
 }
 
-/* Dark Mode Modern Cards */
+/* Dark Mode Modern Cards - AI Clean Style */
 .dark .modern-card {
   background: hsl(var(--card));
-  border: 1px solid hsl(var(--border) / 0.6);
-  box-shadow: 
-    0 2px 8px hsl(0 0% 0% / 0.15),
-    0 1px 4px hsl(0 0% 0% / 0.2);
+  border: 1px solid hsl(var(--border));
 }
 
 .dark .modern-card:hover {
-  box-shadow: 
-    0 8px 24px hsl(0 0% 0% / 0.2),
-    0 4px 12px hsl(0 0% 0% / 0.25);
+  border-color: hsl(var(--company-secondary) / 0.4);
 }
 
 .dark .modern-card-elevated {
   background: hsl(var(--card));
-  border: 1px solid hsl(var(--border) / 0.4);
-  box-shadow: 
-    0 8px 32px hsl(0 0% 0% / 0.25),
-    0 4px 16px hsl(0 0% 0% / 0.3);
+  border: 1px solid hsl(var(--border));
 }
 
 /* Beautiful Gradients */
