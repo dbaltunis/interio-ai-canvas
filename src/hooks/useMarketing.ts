@@ -22,7 +22,7 @@ export const useFollowUpReminders = () => {
     queryKey: ["follow-up-reminders"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("follow_up_reminders")
+        .from("reminders" as any)
         .select(`
           *,
           clients:client_id (
@@ -31,12 +31,6 @@ export const useFollowUpReminders = () => {
             company_name,
             client_type,
             email
-          ),
-          deals:deal_id (
-            id,
-            title,
-            deal_value,
-            stage
           )
         `)
         .eq("status", "pending")
@@ -216,8 +210,8 @@ export const useMarkReminderCompleted = () => {
   return useMutation({
     mutationFn: async (reminderId: string) => {
       const { data, error } = await supabase
-        .from("follow_up_reminders")
-        .update({ status: "sent" })
+        .from("reminders" as any)
+        .update({ status: "completed" })
         .eq("id", reminderId)
         .select()
         .single();

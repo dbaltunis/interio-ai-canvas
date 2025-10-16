@@ -12,6 +12,7 @@ import { PipelineChart } from "./PipelineChart";
 import { LeadSourceChart } from "./LeadSourceChart";
 import { ConversionFunnel } from "./ConversionFunnel";
 import { CRMAlerts } from "./CRMAlerts";
+import { LeadFunnelVisualization } from "./LeadFunnelVisualization";
 import { Button } from "@/components/ui/button";
 import { Plus, Settings, Download, Target, Zap, Mail } from "lucide-react";
 import { useState } from "react";
@@ -76,9 +77,15 @@ export const CRMDashboard = () => {
             <LeadSourceChart />
           </div>
           
-          {/* Conversion Funnel and Hot Leads */}
+          {/* Lead Funnel and Conversion */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <LeadFunnelVisualization />
             <ConversionFunnel />
+          </div>
+          
+          {/* Follow-Ups and Hot Leads */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <FollowUpReminders />
             <HotLeadsList />
           </div>
         </TabsContent>

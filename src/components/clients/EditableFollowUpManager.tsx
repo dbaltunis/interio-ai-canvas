@@ -33,7 +33,7 @@ export const EditableFollowUpManager = ({ clientId }: EditableFollowUpManagerPro
   });
 
   const reminders = clientId 
-    ? allReminders?.filter(r => r.client_id === clientId)
+    ? (allReminders as any[])?.filter((r: any) => r.client_id === clientId)
     : allReminders;
 
   const handleAddReminder = async () => {
@@ -144,8 +144,8 @@ export const EditableFollowUpManager = ({ clientId }: EditableFollowUpManagerPro
     );
   }
 
-  const overdueReminders = reminders?.filter(r => new Date(r.scheduled_for) < new Date()) || [];
-  const upcomingReminders = reminders?.filter(r => new Date(r.scheduled_for) >= new Date()) || [];
+  const overdueReminders = (reminders as any[])?.filter((r: any) => new Date(r.scheduled_for) < new Date()) || [];
+  const upcomingReminders = (reminders as any[])?.filter((r: any) => new Date(r.scheduled_for) >= new Date()) || [];
 
   return (
     <Card>
@@ -224,7 +224,7 @@ export const EditableFollowUpManager = ({ clientId }: EditableFollowUpManagerPro
                   Overdue ({overdueReminders.length})
                 </h4>
                 <div className="space-y-2">
-                  {overdueReminders.map((reminder) => (
+                  {overdueReminders.map((reminder: any) => (
                     <ReminderCard
                       key={reminder.id}
                       reminder={reminder}
@@ -244,7 +244,7 @@ export const EditableFollowUpManager = ({ clientId }: EditableFollowUpManagerPro
                   Upcoming ({upcomingReminders.length})
                 </h4>
                 <div className="space-y-2">
-                  {upcomingReminders.map((reminder) => (
+                  {upcomingReminders.map((reminder: any) => (
                     <ReminderCard
                       key={reminder.id}
                       reminder={reminder}

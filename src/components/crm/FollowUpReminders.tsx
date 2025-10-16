@@ -43,8 +43,8 @@ export const FollowUpReminders = () => {
     );
   }
 
-  const overdueReminders = reminders.filter(r => new Date(r.scheduled_for) < new Date());
-  const upcomingReminders = reminders.filter(r => new Date(r.scheduled_for) >= new Date());
+  const overdueReminders = (reminders as any[])?.filter((r: any) => new Date(r.scheduled_for) < new Date()) || [];
+  const upcomingReminders = (reminders as any[])?.filter((r: any) => new Date(r.scheduled_for) >= new Date()) || [];
 
   return (
     <Card>
@@ -59,7 +59,7 @@ export const FollowUpReminders = () => {
           <div>
             <h4 className="text-sm font-medium text-red-600 mb-2">Overdue ({overdueReminders.length})</h4>
             <div className="space-y-3">
-              {overdueReminders.map((reminder) => (
+              {overdueReminders.map((reminder: any) => (
                 <ReminderCard key={reminder.id} reminder={reminder} markCompleted={markCompleted} isOverdue />
               ))}
             </div>
@@ -70,7 +70,7 @@ export const FollowUpReminders = () => {
           <div>
             <h4 className="text-sm font-medium text-blue-600 mb-2">Upcoming ({upcomingReminders.length})</h4>
             <div className="space-y-3">
-              {upcomingReminders.slice(0, 5).map((reminder) => (
+              {upcomingReminders.slice(0, 5).map((reminder: any) => (
                 <ReminderCard key={reminder.id} reminder={reminder} markCompleted={markCompleted} />
               ))}
             </div>
