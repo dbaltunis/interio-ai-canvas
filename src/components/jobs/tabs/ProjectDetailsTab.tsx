@@ -35,6 +35,8 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   const [selectedQuote, setSelectedQuote] = useState<any | null>(null);
   const [notesOpen, setNotesOpen] = useState(false);
   const [formData, setFormData] = useState({
+    name: project.name || "",
+    description: project.description || "",
     priority: project.priority || "medium",
     client_id: project.client_id || null,
     start_date: project.start_date || "",
@@ -87,6 +89,8 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
       
       const updateData = {
         id: project.id,
+        name: formData.name,
+        description: formData.description,
         priority: formData.priority,
         client_id: formData.client_id,
         start_date: formData.start_date || null,
@@ -135,6 +139,8 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
 
   const handleCancel = () => {
     setFormData({
+      name: project.name || "",
+      description: project.description || "",
       priority: project.priority || "medium",
       client_id: project.client_id || null,
       start_date: project.start_date || "",
@@ -220,9 +226,15 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
     return client.name;
   };
 
-  // Get current active quote value or latest quote
+  // Get current active quote value or latest quote, fallback to client deal value
   const getCurrentQuoteDisplay = () => {
-    if (quotes.length === 0) return "No quotes";
+    if (quotes.length === 0) {
+      // Fallback to client deal value if available
+      if (selectedClient?.deal_value && selectedClient.deal_value > 0) {
+        return formatCurrency(selectedClient.deal_value) + " (Est.)";
+      }
+      return "No quote";
+    }
     
     // Find the most recent quote or active quote
     const latestQuote = quotes.reduce((latest, quote) => {
@@ -230,7 +242,13 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
       return new Date(quote.created_at) > new Date(latest.created_at) ? quote : latest;
     }, null);
     
-    if (!latestQuote || !latestQuote.total_amount) return "No quote value";
+    if (!latestQuote || !latestQuote.total_amount) {
+      // Fallback to client deal value
+      if (selectedClient?.deal_value && selectedClient.deal_value > 0) {
+        return formatCurrency(selectedClient.deal_value) + " (Est.)";
+      }
+      return "No quote value";
+    }
     return formatCurrency(latestQuote.total_amount);
   };
 
@@ -447,6 +465,34 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
               </div>
             )}
           </div>
+          
+          {/* Project Name and Description */}
+          {isEditing && (
+            <div className="space-y-4 mt-3 pb-4 border-b border-border">
+              <div>
+                <Label htmlFor="project_name" className="text-xs text-muted-foreground">Project Name</Label>
+                <Input
+                  id="project_name"
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => updateFormData("name", e.target.value)}
+                  className="mt-1"
+                  placeholder="Enter project name..."
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="project_description" className="text-xs text-muted-foreground">Description</Label>
+                <Textarea
+                  id="project_description"
+                  value={formData.description}
+                  onChange={(e) => updateFormData("description", e.target.value)}
+                  className="mt-1 min-h-[80px]"
+                  placeholder="Enter project description..."
+                />
+              </div>
+            </div>
+          )}
           
           {/* Compact Dates Row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
