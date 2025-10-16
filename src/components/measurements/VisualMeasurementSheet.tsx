@@ -416,9 +416,15 @@ export const VisualMeasurementSheet = ({
                     windowType={windowType}
                     treatmentType={treatmentType}
                     measurements={{
+                      ...measurements,
                       width: parseFloat(measurements.rail_width || measurements.width || '200'),
                       height: parseFloat(measurements.drop || measurements.height || '200'),
-                      drop: parseFloat(measurements.drop || measurements.height || '200')
+                      drop: parseFloat(measurements.drop || measurements.height || '200'),
+                      frame_type: measurements.frame_type,
+                      control_type: measurements.control_type,
+                      fabric_pattern: measurements.fabric_pattern,
+                      valance_style: measurements.valance_style,
+                      projection: measurements.projection
                     }}
                     template={selectedTemplate}
                     selectedItems={{
