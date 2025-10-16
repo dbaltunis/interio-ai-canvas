@@ -114,6 +114,16 @@ const CalendarView = () => {
       const startDateTime = new Date(`${newEvent.date}T${newEvent.startTime}`);
       const endDateTime = new Date(`${newEvent.date}T${newEvent.endTime}`);
       
+      // Validate that end time is after start time
+      if (endDateTime <= startDateTime) {
+        toast({
+          title: "Invalid Time",
+          description: "End time must be after start time",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       // Helper function to check if a string is a valid UUID
       const isValidUUID = (str: string) => {
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -168,10 +178,11 @@ const CalendarView = () => {
         notificationTiming: '15',
         customNotificationMessage: ''
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error creating appointment:", error);
       toast({
         title: "Error",
-        description: "Failed to create appointment",
+        description: error?.message || "Failed to create appointment",
         variant: "destructive",
       });
     }
