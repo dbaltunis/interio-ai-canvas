@@ -30,16 +30,16 @@
     --accent: var(--company-secondary);
     --accent-foreground: var(--company-primary);
     
-    --background: 0 0% 100%;
+    --background: 216 20% 97%; /* Light gray background for contrast */
     --foreground: 220 15% 15%; /* Dark text for clarity */
-    --muted: 210 40% 98%;
+    --muted: 210 20% 96%;
     --muted-foreground: 220 15% 45%;
-    --popover: 0 0% 100%;
+    --popover: 0 0% 100%; /* Bright white */
     --popover-foreground: var(--company-primary);
-    --card: 0 0% 100%;
+    --card: 0 0% 100%; /* Bright white */
     --card-foreground: 220 15% 15%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
+    --border: 220 13% 88%; /* Slightly darker border for visibility */
+    --input: 0 0% 100%; /* Bright white inputs */
     --ring: var(--company-primary);
     --destructive: var(--company-error);
     --destructive-foreground: 0 0% 100%;

@@ -34,9 +34,9 @@ export default {
 					500: '#9bb6bc',
 					600: '#87a2a8',
 				},
-				bg:      '#F9FAFB',
-				surface: '#FFFFFF',
-				border:  '#E5E7EB',
+				bg:      '#F5F5F7', /* Subtle gray background */
+				surface: '#FFFFFF', /* Bright white */
+				border:  '#DADCE0', /* Darker border */
 				text:    '#111827',
 				muted:   '#6B7280',
 				success: '#10B981',

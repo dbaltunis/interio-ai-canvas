@@ -26,14 +26,14 @@
   --muted-foreground: 0 0% 35%;
   
   /* Update existing CSS variables for shadcn components */
-  --background: 0 0% 100%;
+  --background: 216 20% 97%; /* Light gray background */
   --foreground: 0 0% 22%;
-  --card: 0 0% 100%;
+  --card: 0 0% 100%; /* Bright white */
   --card-foreground: 0 0% 22%;
-  --popover: 0 0% 100%;
+  --popover: 0 0% 100%; /* Bright white */
   --popover-foreground: 0 0% 22%;
-  --border: 220 13% 91%;
-  --input: 220 13% 91%;
+  --border: 220 13% 88%;
+  --input: 0 0% 100%; /* Bright white */
   --ring: 200 26% 34%;
 }
 

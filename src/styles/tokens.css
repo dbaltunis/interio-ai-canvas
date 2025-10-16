@@ -17,9 +17,9 @@
   --accent-600: #87a2a8;
   
   /* Background & Surface - Light Mode */
-  --bg: #F9FAFB;
-  --surface: #FFFFFF;
-  --border: #E5E7EB;
+  --bg: #F5F5F7; /* Subtle gray background */
+  --surface: #FFFFFF; /* Bright white */
+  --border: #DADCE0; /* Darker border for visibility */
   
   /* Text Colors - Light Mode */
   --text: #111827;
@@ -100,20 +100,20 @@
   --accent: 188 24% 67%;
   --accent-foreground: 202 29% 34%;
   
-  --background: 210 20% 98%; /* #F9FAFB converted to HSL */
+  --background: 216 20% 97%; /* Light gray background */
   --foreground: 220 26% 14%; /* #111827 converted to HSL */
   
-  --card: 0 0% 100%; /* #FFFFFF */
+  --card: 0 0% 100%; /* Bright white #FFFFFF */
   --card-foreground: 220 26% 14%;
   
-  --popover: 0 0% 100%;
+  --popover: 0 0% 100%; /* Bright white */
   --popover-foreground: 220 26% 14%;
   
-  --muted: 210 17% 95%; /* #F3F4F6 converted to HSL */
+  --muted: 210 20% 96%; /* Lighter muted */
   --muted-foreground: 215 16% 47%; /* #6B7280 converted to HSL */
   
-  --border: 220 13% 91%; /* #E5E7EB converted to HSL */
-  --input: 220 13% 91%;
+  --border: 220 13% 88%; /* Darker border */
+  --input: 0 0% 100%; /* Bright white inputs */
   
   --ring: 202 29% 34%;
   
