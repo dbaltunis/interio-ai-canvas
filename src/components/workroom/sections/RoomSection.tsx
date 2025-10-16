@@ -6,9 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Camera, Trash2 } from "lucide-react";
 import { WorkshopRoomSection } from "@/hooks/useWorkshopData";
 import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown";
-import { TreatmentVisualizer } from "@/components/measurements/TreatmentVisualizer";
+import { TreatmentPreviewEngine } from "@/components/treatment-visualizers/TreatmentPreviewEngine";
 import { WorkItemPhotoGallery } from "@/components/workroom/components/WorkItemPhotoGallery";
-import { toTreatmentVisualizerData } from "@/components/workroom/utils/visual-adapter";
 
 interface RoomSectionProps {
   section: WorkshopRoomSection;
@@ -152,7 +151,27 @@ export const RoomSection: React.FC<RoomSectionProps> = ({ section }) => {
                 <div className="space-y-2">
                   <div className="text-sm font-medium">{item.name}</div>
                   <WorkItemPhotoGallery itemId={item.id} />
-                  <TreatmentVisualizer {...toTreatmentVisualizerData(item)} />
+                  <div className="rounded-lg border overflow-hidden bg-card">
+                    <TreatmentPreviewEngine
+                      windowType={item.surface?.window_type || item.surface?.type || 'standard'}
+                      treatmentType={item.summary?.treatment_type || item.treatmentType || 'curtains'}
+                      measurements={{
+                        measurement_a: item.measurements?.width,
+                        measurement_b: item.measurements?.height,
+                        rail_width: item.measurements?.width,
+                        drop: item.measurements?.height,
+                        unit: item.measurements?.unit,
+                        ...(item.summary?.measurements_details as Record<string, any> || {})
+                      }}
+                      template={item.summary?.template}
+                      selectedItems={{
+                        fabric: item.summary?.fabric,
+                        material: item.summary?.material || item.summary?.fabric
+                      }}
+                      className="min-h-[200px]"
+                      hideDetails
+                    />
+                  </div>
                   <div className="text-xs text-muted-foreground">
                     {item.treatmentType ?? "—"} • Qty: {item.quantity ?? 1}
                   </div>
