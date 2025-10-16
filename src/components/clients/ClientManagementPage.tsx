@@ -204,51 +204,49 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
   return (
     <div className="bg-background min-h-screen animate-fade-in">
       <div className="space-y-6 p-6">
-        {/* Header */}
+        {/* Header - matching Projects page style */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-primary/10 rounded-lg">
               <Users className="h-6 w-6 text-primary" />
             </div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-h1 text-foreground">Clients</h1>
-              <HelpIcon onClick={() => setShowHelp(true)} />
-            </div>
-            <Badge className="bg-secondary/10 text-secondary border-secondary/20">
+            <h1 className="text-h1 text-foreground">CRM</h1>
+            <HelpIcon onClick={() => setShowHelp(true)} />
+            <Badge variant="secondary" className="bg-secondary/10 text-secondary border-secondary/20">
               {totalItems} clients
             </Badge>
           </div>
         
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-            className="p-2"
-            title="Filter"
-          >
-            <Filter className="h-4 w-4" />
-          </Button>
-          
-          <Button
-            variant="outline"
-            onClick={() => setShowImportExport(true)}
-            className="p-2"
-            title="Import/Export"
-          >
-            <Download className="h-4 w-4" />
-          </Button>
-          
-          {canCreateClients && (
-            <Button 
-              onClick={() => setShowCreateForm(true)}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              size="icon"
+              title="Filter"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              New Client
+              <Filter className="h-4 w-4" />
             </Button>
-          )}
+            
+            <Button
+              variant="outline"
+              onClick={() => setShowImportExport(true)}
+              size="icon"
+              title="Import/Export"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+            
+            {canCreateClients && (
+              <Button 
+                onClick={() => setShowCreateForm(true)}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Client
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
 
       {/* Filters */}
       {showFilters && (
