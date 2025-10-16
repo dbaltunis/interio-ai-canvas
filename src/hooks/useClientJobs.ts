@@ -108,3 +108,34 @@ export const useClientEmails = (clientId: string) => {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
+
+export const useClientQuotes = (clientId: string) => {
+  return useQuery({
+    queryKey: ["client-quotes", clientId],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data: quotes, error } = await supabase
+        .from("quotes")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("client_id", clientId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return quotes || [];
+    },
+    enabled: !!clientId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+// Calculate total value from all quotes for a client
+export const calculateClientDealValue = (quotes: any[]) => {
+  if (!quotes || quotes.length === 0) return 0;
+  
+  return quotes.reduce((sum, quote) => {
+    return sum + (parseFloat(quote.total_amount?.toString() || '0'));
+  }, 0);
+};

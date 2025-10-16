@@ -15,7 +15,7 @@ import {
   MessageSquare, Package, CheckCircle
 } from "lucide-react";
 import { useClient, useUpdateClient } from "@/hooks/useClients";
-import { useClientJobs } from "@/hooks/useClientJobs";
+import { useClientJobs, useClientQuotes, calculateClientDealValue } from "@/hooks/useClientJobs";
 import { ClientEmailHistory } from "./ClientEmailHistory";
 import { ClientProjectsList } from "./ClientProjectsList";
 import { MeasurementsList } from "../measurements/MeasurementsList";
@@ -34,12 +34,16 @@ interface ClientProfilePageProps {
 export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfilePageProps) => {
   const { data: client, isLoading: clientLoading } = useClient(clientId);
   const { data: projects } = useClientJobs(clientId);
+  const { data: quotes } = useClientQuotes(clientId);
   const updateClient = useUpdateClient();
   const { toast } = useToast();
   
   const [isEditing, setIsEditing] = useState(false);
   const [showEmailComposer, setShowEmailComposer] = useState(false);
   const [editedClient, setEditedClient] = useState<any>(null);
+  
+  // Calculate total value from quotes
+  const calculatedDealValue = calculateClientDealValue(quotes || []);
 
   if (clientLoading) {
     return (
@@ -81,6 +85,22 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
       toast({
         title: "Error",
         description: "Failed to update client",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSyncDealValue = async () => {
+    if (calculatedDealValue > 0) {
+      setEditedClient({ ...editedClient, deal_value: calculatedDealValue });
+      toast({
+        title: "Deal value updated",
+        description: `Set to $${calculatedDealValue.toLocaleString()} from project quotes`,
+      });
+    } else {
+      toast({
+        title: "No quotes found",
+        description: "Create quotes for this client's projects to calculate deal value",
         variant: "destructive",
       });
     }
@@ -325,7 +345,21 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="deal_value">Deal Value ($)</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="deal_value">Deal Value ($)</Label>
+                    {calculatedDealValue > 0 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleSyncDealValue}
+                        className="text-xs h-6 px-2"
+                      >
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                        Use ${calculatedDealValue.toLocaleString()} from quotes
+                      </Button>
+                    )}
+                  </div>
                   <Input
                     id="deal_value"
                     type="number"
