@@ -360,7 +360,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                     <TableCell>
                       <span 
                         title={project.job_number}
-                        className="font-mono text-xs text-muted-foreground"
+                        className="font-mono text-xs text-muted-foreground whitespace-nowrap"
                       >
                         {formatJobNumber(project.job_number || `JOB-${project.id.slice(-4)}`)}
                       </span>
@@ -424,7 +424,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                             );
                           })()}
                         </Avatar>
-                        <span className="text-sm text-muted-foreground truncate">
+                        <span className="text-sm text-muted-foreground truncate max-w-[100px]" title={getOwnerInfo({ user_id: project.user_id }).firstName}>
                           {getOwnerInfo({ user_id: project.user_id }).firstName}
                         </span>
                       </div>
