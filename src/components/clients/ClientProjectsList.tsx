@@ -59,10 +59,10 @@ export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsList
   };
 
   const handleViewProject = (projectId: string) => {
-    // Set URL params to navigate to projects tab with the specific project
+    // Set URL params to navigate to projects tab with the specific job
     const newParams = new URLSearchParams(searchParams);
     newParams.set('tab', 'projects');
-    newParams.set('project', projectId);
+    newParams.set('jobId', projectId); // Changed from 'project' to 'jobId'
     setSearchParams(newParams);
     
     // If onTabChange is provided, use it to navigate
