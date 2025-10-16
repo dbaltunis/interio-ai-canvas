@@ -508,10 +508,17 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                                <Eye className="mr-2 h-4 w-4" />
                                View Job
                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleNotesClick({ id: project.id, project: project })}>
-                                <StickyNote className="mr-2 h-4 w-4" />
-                                Write Note
-                              </DropdownMenuItem>
+                               <DropdownMenuItem onClick={() => handleNotesClick({ id: project.id, project: project })} className="relative">
+                                 <StickyNote className="mr-2 h-4 w-4" />
+                                 Write Note
+                                 {projectNotes[project.id] > 0 && (
+                                   <div className="ml-auto flex items-center">
+                                     <div className="h-5 w-5 bg-blue-500 rounded-full flex items-center justify-center">
+                                       <span className="text-[10px] font-semibold text-white">{projectNotes[project.id]}</span>
+                                     </div>
+                                   </div>
+                                 )}
+                               </DropdownMenuItem>
                              <DropdownMenuItem onClick={() => onJobSelect({ id: project.id, projects: project })}>
                                <Copy className="mr-2 h-4 w-4" />
                                New Quote
