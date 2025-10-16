@@ -509,7 +509,8 @@ export const CostCalculationSummary = ({
 
   // Detect product type for dynamic labels
   const productCategory = (template as any).category?.toLowerCase() || template.name?.toLowerCase() || '';
-  const isBlind = productCategory.includes('blind') || productCategory.includes('shade');
+  const templateType = (template as any).template_type?.toLowerCase() || '';
+  const isBlind = productCategory.includes('blind') || productCategory.includes('shade') || templateType.includes('blind') || templateType.includes('shade');
   const isRollerBlind = productCategory.includes('roller');
   const isWallpaper = productCategory.includes('wallpaper') || productCategory.includes('wall covering');
   const panelCount = initialPanelConfig === 'pair' ? 2 : 1;
