@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Camera, Trash2 } from "lucide-react";
 import { WorkshopRoomSection } from "@/hooks/useWorkshopData";
 import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown";
-import { TreatmentPreviewEngine } from "@/components/treatment-visualizers/TreatmentPreviewEngine";
+import { WorksheetVisual } from "@/components/worksheet/WorksheetVisual";
+import { RollerBlindVisual } from "@/components/measurements/visualizers/RollerBlindVisual";
 import { WorkItemPhotoGallery } from "@/components/workroom/components/WorkItemPhotoGallery";
+import { toWorksheetVisualData } from "@/components/workroom/utils/worksheet-visual-adapter";
 
 interface RoomSectionProps {
   section: WorkshopRoomSection;
@@ -144,41 +146,41 @@ export const RoomSection: React.FC<RoomSectionProps> = ({ section }) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {section.items.map((item) => (
-            <div key={item.id} className="rounded-md border p-3 bg-background">
-              <div className="grid gap-4 md:grid-cols-3">
-                {/* Left: Visual */}
-                <div className="space-y-2">
-                  <div className="text-sm font-medium">{item.name}</div>
-                  <WorkItemPhotoGallery itemId={item.id} />
-                  <div className="rounded-lg border overflow-hidden bg-card">
-                    <TreatmentPreviewEngine
-                      windowType={item.surface?.window_type || item.surface?.type || 'standard'}
-                      treatmentType={item.summary?.treatment_type || item.treatmentType || 'curtains'}
-                      measurements={{
-                        measurement_a: item.measurements?.width,
-                        measurement_b: item.measurements?.height,
-                        rail_width: item.measurements?.width,
-                        drop: item.measurements?.height,
-                        unit: item.measurements?.unit,
-                        ...(item.summary?.measurements_details as Record<string, any> || {})
-                      }}
-                      template={item.summary?.template}
-                      selectedItems={{
-                        fabric: item.summary?.fabric,
-                        material: item.summary?.material || item.summary?.fabric
-                      }}
-                      className="min-h-[200px]"
-                      hideDetails
-                    />
+          {section.items.map((item) => {
+            const wsProps = toWorksheetVisualData(item);
+            const treatmentType = item.summary?.treatment_type || item.treatmentType || 'curtains';
+            const isRollerBlind = treatmentType.toLowerCase().includes('roller');
+            
+            return (
+              <div key={item.id} className="rounded-md border p-3 bg-background">
+                <div className="grid gap-4 md:grid-cols-3">
+                  {/* Left: Visual */}
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">{item.name}</div>
+                    <WorkItemPhotoGallery itemId={item.id} />
+                    <div className="rounded-lg border overflow-hidden bg-card">
+                      {isRollerBlind ? (
+                        <RollerBlindVisual
+                          windowType={wsProps.windowType}
+                          measurements={wsProps.measurements}
+                          template={wsProps.selectedTemplate}
+                          material={item.summary?.fabric || item.summary?.material}
+                        />
+                      ) : (
+                        <WorksheetVisual
+                          windowType={wsProps.windowType}
+                          measurements={wsProps.measurements}
+                          selectedTemplate={wsProps.selectedTemplate}
+                        />
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {item.treatmentType ?? "—"} • Qty: {item.quantity ?? 1}
+                    </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {item.treatmentType ?? "—"} • Qty: {item.quantity ?? 1}
-                  </div>
-                </div>
 
-                {/* Right: All measurements & breakdown */}
-                <div className="md:col-span-2">
+                  {/* Right: All measurements & breakdown */}
+                  <div className="md:col-span-2">
                   {item.summary ? (
                     <CalculationBreakdown
                       summary={item.summary}
@@ -192,10 +194,11 @@ export const RoomSection: React.FC<RoomSectionProps> = ({ section }) => {
                   ) : (
                     <div className="text-sm text-muted-foreground">No worksheet data saved yet.</div>
                   )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>
