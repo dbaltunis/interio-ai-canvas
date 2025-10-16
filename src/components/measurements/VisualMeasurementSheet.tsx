@@ -414,7 +414,7 @@ export const VisualMeasurementSheet = ({
                 {(treatmentCategory === 'panel_glide' || treatmentCategory === 'plantation_shutters' || treatmentCategory === 'shutters' || treatmentCategory === 'awning') ? (
                   <TreatmentPreviewEngine
                     windowType={windowType}
-                    treatmentType={treatmentType}
+                    treatmentType={treatmentCategory || treatmentType}
                     measurements={{
                       ...measurements,
                       width: parseFloat(measurements.rail_width || measurements.width || '200'),

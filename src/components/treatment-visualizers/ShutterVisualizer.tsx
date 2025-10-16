@@ -1,5 +1,22 @@
 import { useMemo, useState } from "react";
 
+// Helper functions defined at the top
+const lightenColor = (color: string, percent: number): string => {
+  return color.replace(/[0-9A-F]/gi, (char) => {
+    const num = parseInt(char, 16);
+    const lightened = Math.min(15, num + Math.floor(percent * 15 / 100));
+    return lightened.toString(16).toUpperCase();
+  });
+};
+
+const darkenColor = (color: string, percent: number): string => {
+  return color.replace(/[0-9A-F]/gi, (char) => {
+    const num = parseInt(char, 16);
+    const darkened = Math.max(0, num - Math.floor(percent * 15 / 100));
+    return darkened.toString(16).toUpperCase();
+  });
+};
+
 interface ShutterVisualizerProps {
   windowType: string;
   measurements: Record<string, any>;
@@ -354,20 +371,4 @@ const getLouverHeight = (size: '47mm' | '63mm' | '89mm' | '114mm'): number => {
     case '114mm': return 28;
     default: return 16;
   }
-};
-
-const lightenColor = (color: string, percent: number): string => {
-  return color.replace(/[0-9A-F]/gi, (char) => {
-    const num = parseInt(char, 16);
-    const lightened = Math.min(15, num + Math.floor(percent * 15 / 100));
-    return lightened.toString(16).toUpperCase();
-  });
-};
-
-const darkenColor = (color: string, percent: number): string => {
-  return color.replace(/[0-9A-F]/gi, (char) => {
-    const num = parseInt(char, 16);
-    const darkened = Math.max(0, num - Math.floor(percent * 15 / 100));
-    return darkened.toString(16).toUpperCase();
-  });
 };
