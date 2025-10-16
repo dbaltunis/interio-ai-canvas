@@ -513,6 +513,7 @@ export const CostCalculationSummary = ({
   const isBlind = productCategory.includes('blind') || productCategory.includes('shade') || templateType.includes('blind') || templateType.includes('shade');
   const isRollerBlind = productCategory.includes('roller');
   const isWallpaper = productCategory.includes('wallpaper') || productCategory.includes('wall covering');
+  const isCurtain = productCategory.includes('curtain') || (!isBlind && !isWallpaper);
   const panelCount = initialPanelConfig === 'pair' ? 2 : 1;
 
   // Dynamic labels based on product type
@@ -753,7 +754,7 @@ export const CostCalculationSummary = ({
           <span className="text-base font-semibold text-card-foreground">Total</span>
           <span className="text-lg font-bold text-primary">{formatPrice(totalCost)}</span>
         </div>
-        {panelCount > 1 && !isBlind && (
+        {isCurtain && panelCount > 1 && (
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>{getPerUnitLabel()}</span>
             <span>{formatPrice(totalCost / panelCount)}</span>
