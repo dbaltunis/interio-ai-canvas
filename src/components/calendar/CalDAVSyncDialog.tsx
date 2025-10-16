@@ -38,14 +38,20 @@ export const CalDAVSyncDialog = ({
   const handleSync = async () => {
     if (selectedCalendars.length === 0) return;
 
-    await syncAppointmentToCalDAV.mutateAsync({
-      appointment,
-      calendarIds: selectedCalendars
-    });
+    try {
+      await syncAppointmentToCalDAV.mutateAsync({
+        appointment,
+        calendarIds: selectedCalendars
+      });
 
-    onSyncComplete?.();
-    onOpenChange(false);
-    setSelectedCalendars([]);
+      // Close dialog and reset state after successful sync
+      setSelectedCalendars([]);
+      onSyncComplete?.();
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Sync failed:", error);
+      // Keep dialog open on error so user can retry
+    }
   };
 
   const handleSelectAll = () => {
