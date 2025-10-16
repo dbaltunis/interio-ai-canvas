@@ -9,6 +9,7 @@ import { FileUpload } from "@/components/files/FileUpload";
 import { ProjectTimeline } from "./ProjectTimeline";
 import { ProjectTeam } from "./ProjectTeam";
 import { ProjectNotes } from "./ProjectNotes";
+import { formatJobNumber } from "@/lib/format-job-number";
 
 interface ProjectDetailsViewProps {
   project: any;
@@ -149,7 +150,7 @@ export const ProjectDetailsView = ({ project, onBack, onEdit }: ProjectDetailsVi
               <CardContent className="space-y-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Job Number</label>
-                  <p className="font-mono">{project.job_number || 'Not assigned'}</p>
+                  <p className="font-mono">#{formatJobNumber(project.job_number)}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Description</label>

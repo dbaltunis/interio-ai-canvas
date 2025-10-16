@@ -17,6 +17,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useClients } from "@/hooks/useClients";
+import { formatJobNumber } from "@/lib/format-job-number";
 
 export const SimplifiedJobsDashboard = () => {
   const { data: projects = [] } = useProjects();
@@ -125,7 +126,7 @@ export const SimplifiedJobsDashboard = () => {
                     <div>
                       <h4 className="font-medium">{project.name}</h4>
                       <p className="text-sm text-muted-foreground">
-                        {project.job_number || `JOB-${project.id.slice(-4)}`} • {clientName}
+                        Job #{formatJobNumber(project.job_number || `JOB-${project.id.slice(-4)}`)} • {clientName}
                       </p>
                     </div>
                   </div>

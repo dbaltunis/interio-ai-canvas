@@ -9,6 +9,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { PermissionGuard } from "@/components/common/PermissionGuard";
+import { formatJobNumber } from "@/lib/format-job-number";
 
 interface ProjectManagementProps {
   onViewProject?: (project: any) => void;
@@ -214,7 +215,7 @@ export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocume
                         <div className="text-sm text-muted-foreground line-clamp-1">{project.description}</div>
                       )}
                       {project.job_number && (
-                        <div className="text-xs text-muted-foreground font-mono">{project.job_number}</div>
+                        <div className="text-xs text-muted-foreground font-mono">#{formatJobNumber(project.job_number)}</div>
                       )}
                     </TableCell>
                     <TableCell>Client #{project.client_id?.slice(0, 8) || 'Unassigned'}</TableCell>

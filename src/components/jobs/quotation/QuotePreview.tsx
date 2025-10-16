@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { FileText } from "lucide-react";
+import { formatJobNumber } from "@/lib/format-job-number";
 
 interface QuotePreviewProps {
   project: any;
@@ -69,7 +70,7 @@ export const QuotePreview = ({
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">QUOTATION</h1>
                 <p className="text-gray-600">Project: {project.name}</p>
-                <p className="text-gray-600">Job #: {project.job_number || 'TBD'}</p>
+                <p className="text-gray-600">Job #: {formatJobNumber(project.job_number)}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray-600">Date: {today}</p>

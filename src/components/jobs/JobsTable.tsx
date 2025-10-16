@@ -6,6 +6,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
 import { FileText } from "lucide-react";
 import { JobActionsMenu } from "./JobActionsMenu";
+import { formatJobNumber } from "@/lib/format-job-number";
 
 interface JobsTableProps {
   searchClient: string;
@@ -108,7 +109,7 @@ export const JobsTable = ({
               onClick={() => onJobSelect?.(quote.id)}
             >
               <div className="font-medium text-gray-900">
-                <div>{project?.job_number || 'No Job #'}</div>
+                <div>#{formatJobNumber(project?.job_number)}</div>
                 <div className="text-xs text-gray-500">{quote.quote_number}</div>
               </div>
               <div className="font-medium">${quote.total_amount?.toFixed(2) || '0.00'}</div>

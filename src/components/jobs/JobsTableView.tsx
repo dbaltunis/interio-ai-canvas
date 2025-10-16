@@ -16,7 +16,8 @@ import { useClients } from "@/hooks/useClients";
 import { useUsers } from "@/hooks/useUsers";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
-import { 
+import { formatJobNumber } from "@/lib/format-job-number";
+import {
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
@@ -361,7 +362,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                         title={project.job_number}
                         className="font-mono text-sm font-bold"
                       >
-                        {project.job_number || `JOB-${project.id.slice(-4)}`}
+                        #{formatJobNumber(project.job_number || `JOB-${project.id.slice(-4)}`)}
                       </span>
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
