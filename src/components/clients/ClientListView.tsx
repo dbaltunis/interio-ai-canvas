@@ -103,7 +103,7 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
   }
 
   return (
-    <Card>
+    <Card className="border-border/50">
       <CardContent className="p-0">
         {!clients || clients.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
@@ -114,146 +114,112 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
         ) : (
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead className="font-semibold">Client Info</TableHead>
-                <TableHead className="font-semibold">Type & Tags</TableHead>
-                <TableHead className="font-semibold">Stage</TableHead>
-                <TableHead className="font-semibold">Lead Score</TableHead>
-                <TableHead className="font-semibold">Priority</TableHead>
-                <TableHead className="font-semibold">Deal Value</TableHead>
-                <TableHead className="font-semibold">Contact</TableHead>
-                <TableHead className="font-semibold">Actions</TableHead>
+              <TableRow className="hover:bg-transparent border-border/50">
+                <TableHead className="text-muted-foreground font-medium">Client</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Type</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Stage</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Score</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Priority</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Deal Value</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Contact</TableHead>
+                <TableHead className="text-muted-foreground font-medium text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {clients.map((client) => (
                 <TableRow 
                   key={client.id} 
-                  className="hover:bg-muted/50 cursor-pointer"
+                  className="hover:bg-muted/50 cursor-pointer border-border/50"
                   onClick={() => onClientClick(client)}
                 >
-                  <TableCell>
-                    <div className="flex items-center gap-2">
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-3">
                       {(client.lead_score && isHotLead(client.lead_score)) && (
-                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 flex-shrink-0" />
                       )}
-                      <div>
-                        <div className="font-medium text-foreground">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-foreground truncate">
                           {client.client_type === 'B2B' ? client.company_name : client.name}
                         </div>
                         {client.client_type === 'B2B' && client.contact_person && (
-                          <div className="text-sm text-muted-foreground">
-                            Contact: {client.contact_person}
-                          </div>
-                        )}
-                        {client.lead_source && (
-                          <div className="text-xs text-muted-foreground">
-                            Source: {client.lead_source}
-                          </div>
-                        )}
-                        {client.follow_up_date && (
-                          <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                            <Clock className="h-3 w-3" />
-                            Follow-up: {new Date(client.follow_up_date).toLocaleDateString()}
+                          <div className="text-sm text-muted-foreground truncate">
+                            {client.contact_person}
                           </div>
                         )}
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="space-y-2">
-                      <Badge className={`${getTypeColor(client.client_type || 'B2C')} border-0 flex items-center space-x-1 w-fit`} variant="secondary">
-                        {getTypeIcon(client.client_type || 'B2C')}
-                        <span>{client.client_type || 'B2C'}</span>
-                      </Badge>
-                      {client.tags && client.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {client.tags.slice(0, 2).map((tag) => (
-                            <Badge key={tag} variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20">
-                              {tag}
-                            </Badge>
-                          ))}
-                          {client.tags.length > 2 && (
-                            <Badge variant="outline" className="text-xs bg-muted text-muted-foreground">
-                              +{client.tags.length - 2}
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                    <Badge className={`${getTypeColor(client.client_type || 'B2C')} border-0 flex items-center gap-1 w-fit`} variant="secondary">
+                      {getTypeIcon(client.client_type || 'B2C')}
+                      <span className="text-xs font-medium">{client.client_type || 'B2C'}</span>
+                    </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge className={`${getStageColor(client.funnel_stage || 'lead')} border-0 text-xs`} variant="outline">
+                    <Badge className={`${getStageColor(client.funnel_stage || 'lead')} border-0 text-xs font-medium`} variant="outline">
                       {(client.funnel_stage || 'lead').replace('_', ' ').toUpperCase()}
                     </Badge>
-                    {client.conversion_probability && (
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {client.conversion_probability}% probability
-                      </div>
-                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <span className={`font-medium ${getLeadScoreColor(client.lead_score || 0)}`}>
+                      <span className={`font-semibold text-sm ${getLeadScoreColor(client.lead_score || 0)}`}>
                         {client.lead_score || 0}
                       </span>
-                      <div className="w-16 bg-gray-200 rounded-full h-2">
+                      <div className="w-12 bg-muted rounded-full h-1.5">
                         <div 
-                          className="bg-primary h-2 rounded-full transition-all" 
+                          className="bg-primary h-1.5 rounded-full transition-all" 
                           style={{ width: `${Math.min((client.lead_score || 0), 100)}%` }}
                         />
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge className={`${getPriorityColor(client.priority_level || 'medium')} border-0 flex items-center gap-1 w-fit text-xs`} variant="outline">
+                    <Badge className={`${getPriorityColor(client.priority_level || 'medium')} border-0 flex items-center gap-1 w-fit text-xs font-medium`} variant="outline">
                       {getPriorityIcon(client.priority_level || 'medium')}
                       <span>{(client.priority_level || 'medium').toUpperCase()}</span>
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm">
-                      {client.deal_value && client.deal_value > 0 ? (
-                        <div className="font-medium text-green-600">
-                          ${client.deal_value.toLocaleString()}
-                        </div>
-                      ) : (
-                        <div className="text-muted-foreground">No deal set</div>
-                      )}
-                      <div className="text-xs text-muted-foreground">
-                        {client.projectCount || 0} projects
+                    {client.deal_value && client.deal_value > 0 ? (
+                      <div className="font-semibold text-foreground">
+                        ${client.deal_value.toLocaleString()}
                       </div>
+                    ) : (
+                      <div className="text-muted-foreground text-sm">—</div>
+                    )}
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {client.projectCount || 0} {client.projectCount === 1 ? 'project' : 'projects'}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="space-y-1">
+                    <div className="space-y-1 min-w-0">
                       {client.email && (
-                        <div className="flex items-center text-sm text-foreground">
-                          <Mail className="mr-2 h-3 w-3 text-muted-foreground" />
-                          <span className="truncate max-w-xs">{client.email}</span>
+                        <div className="flex items-center text-sm text-foreground gap-2">
+                          <Mail className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                          <span className="truncate">{client.email}</span>
                         </div>
                       )}
                       {client.phone && (
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Phone className="mr-2 h-3 w-3 text-muted-foreground" />
-                          {client.phone}
+                        <div className="flex items-center text-sm text-muted-foreground gap-2">
+                          <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+                          <span>{client.phone}</span>
                         </div>
                       )}
-                      {client.city && client.state && (
-                        <div className="text-xs text-muted-foreground">
-                          {client.city}, {client.state}
+                      {client.city && (
+                        <div className="text-xs text-muted-foreground truncate">
+                          {client.city}{client.state && `, ${client.state}`}
                         </div>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuContent align="end" className="w-48 bg-popover z-50">
                         <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
                           <Mail className="mr-2 h-4 w-4" />
                           Send Email
@@ -264,7 +230,7 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
                           <User className="mr-2 h-4 w-4" />
-                          Edit Client
+                          View Details
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
