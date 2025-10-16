@@ -110,12 +110,17 @@ const CalendarView = () => {
   });
 
   const handleCreateEvent = async () => {
+    console.log("handleCreateEvent called", newEvent);
     try {
       const startDateTime = new Date(`${newEvent.date}T${newEvent.startTime}`);
       const endDateTime = new Date(`${newEvent.date}T${newEvent.endTime}`);
       
+      console.log("Start time:", startDateTime);
+      console.log("End time:", endDateTime);
+      
       // Validate that end time is after start time
       if (endDateTime <= startDateTime) {
+        console.log("Validation failed: end time before start time");
         toast({
           title: "Invalid Time",
           description: "End time must be after start time",
@@ -123,6 +128,8 @@ const CalendarView = () => {
         });
         return;
       }
+      
+      console.log("Validation passed, creating appointment...");
       
       // Helper function to check if a string is a valid UUID
       const isValidUUID = (str: string) => {
