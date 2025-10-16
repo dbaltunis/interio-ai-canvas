@@ -375,10 +375,10 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                       <div className="flex items-center space-x-2">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback className={`${getClientAvatarColor(clientName)} text-primary-foreground text-xs font-medium`}>
-                            {getClientInitials(clientName)}
+                            {clientName === 'No Client' ? '—' : getClientInitials(clientName)}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-sm font-medium">{clientName}</span>
+                        <span className="text-sm font-medium">{clientName === 'No Client' ? '—' : clientName}</span>
                       </div>
                     </TableCell>
                     <TableCell>
