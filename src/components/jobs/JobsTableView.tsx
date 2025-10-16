@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Eye, MoreHorizontal, Trash2, StickyNote, User, Copy } from "lucide-react";
+import { Eye, MoreHorizontal, Trash2, StickyNote, User, Copy, Calendar } from "lucide-react";
 import { useQuotes, useDeleteQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useProjects } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
@@ -17,6 +17,7 @@ import { useUsers } from "@/hooks/useUsers";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
 import { formatJobNumber } from "@/lib/format-job-number";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu, 
   DropdownMenuContent, 
@@ -66,6 +67,8 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
   const [selectedQuoteForNotes, setSelectedQuoteForNotes] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
+  const [projectNotes, setProjectNotes] = useState<Record<string, number>>({});
+  const [projectAppointments, setProjectAppointments] = useState<Record<string, boolean>>({});
 
   const toggleJobExpansion = (jobId: string) => {
     const newExpanded = new Set(expandedJobs);
@@ -81,6 +84,40 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
+
+  // Fetch notes and appointments count for projects
+  useEffect(() => {
+    const fetchIndicators = async () => {
+      const projectIds = projects.map(p => p.id);
+      if (projectIds.length === 0) return;
+
+      // Fetch notes count
+      const { data: notesData } = await (supabase as any)
+        .from('project_notes')
+        .select('project_id', { count: 'exact', head: false })
+        .in('project_id', projectIds);
+
+      const notesCount: Record<string, number> = {};
+      (notesData || []).forEach((note: any) => {
+        notesCount[note.project_id] = (notesCount[note.project_id] || 0) + 1;
+      });
+      setProjectNotes(notesCount);
+
+      // Fetch appointments
+      const { data: appointmentsData } = await supabase
+        .from('appointments')
+        .select('project_id')
+        .in('project_id', projectIds);
+
+      const appointmentsMap: Record<string, boolean> = {};
+      (appointmentsData || []).forEach((apt: any) => {
+        appointmentsMap[apt.project_id] = true;
+      });
+      setProjectAppointments(appointmentsMap);
+    };
+
+    fetchIndicators();
+  }, [projects]);
 
   // Group quotes by project and filter
   const groupedData = projects.map(project => {
@@ -412,7 +449,15 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                       <JobStatusBadge status={project.status || 'draft'} />
                     </TableCell>
                     <TableCell>
-                      {new Date(project.created_at).toLocaleDateString()}
+                      <div className="flex items-center space-x-2">
+                        <span>{new Date(project.created_at).toLocaleDateString()}</span>
+                        {projectAppointments[project.id] && (
+                          <div className="relative">
+                            <Calendar className="h-3.5 w-3.5 text-green-600" />
+                            <div className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-green-500 rounded-full border border-white" />
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <EmailStatusDisplay 
@@ -446,11 +491,16 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div onClick={(e) => e.stopPropagation()}>
+                      <div onClick={(e) => e.stopPropagation()} className="relative">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 relative">
                               <MoreHorizontal className="h-4 w-4" />
+                              {projectNotes[project.id] > 0 && (
+                                <div className="absolute -top-1 -right-1 h-3 w-3 bg-blue-500 rounded-full border border-white flex items-center justify-center">
+                                  <StickyNote className="h-2 w-2 text-white" />
+                                </div>
+                              )}
                             </Button>
                           </DropdownMenuTrigger>
                            <DropdownMenuContent align="end" className="w-48 bg-popover text-popover-foreground border shadow-lg z-50">
