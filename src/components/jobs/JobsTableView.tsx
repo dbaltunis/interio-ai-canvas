@@ -334,12 +334,12 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
           <TableHeader>
             <TableRow className="bg-muted/30 hover:bg-muted/30">
               <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Job No</TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Emails</TableHead>
               <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Client</TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Status</TableHead>
               <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Total</TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Owner</TableHead>
+              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Status</TableHead>
               <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Created</TableHead>
+              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Emails</TableHead>
+              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Owner</TableHead>
               <TableHead className="w-[70px] font-normal">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -365,12 +365,6 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                         {formatJobNumber(project.job_number || `JOB-${project.id.slice(-4)}`)}
                       </span>
                     </TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <EmailStatusDisplay 
-                        jobId={project.id}
-                        clientEmail={client?.email}
-                      />
-                    </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <Avatar className="h-8 w-8">
@@ -380,9 +374,6 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                         </Avatar>
                         <span className="text-sm font-medium">{clientName === 'No Client' ? '—' : clientName}</span>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <JobStatusBadge status={project.status || 'draft'} />
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
@@ -403,6 +394,18 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                           </Button>
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <JobStatusBadge status={project.status || 'draft'} />
+                    </TableCell>
+                    <TableCell>
+                      {new Date(project.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <EmailStatusDisplay 
+                        jobId={project.id}
+                        clientEmail={client?.email}
+                      />
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
@@ -428,9 +431,6 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                           {getOwnerInfo({ user_id: project.user_id }).firstName}
                         </span>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(project.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
                       <div onClick={(e) => e.stopPropagation()}>
