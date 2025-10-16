@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ClientCreateForm } from "./ClientCreateForm";
 import { ClientProfilePage } from "./ClientProfilePage";
 import { ClientListView } from "./ClientListView";
-import { ClientFilters } from "./ClientFilters";
+import { CRMFilters } from "../crm/CRMFilters";
 import { ClientImportExport } from "./ClientImportExport";
 import { ClientFormWithLeadIntelligence } from "./ClientFormWithLeadIntelligence";
 import { JobsPagination } from "../jobs/JobsPagination";
@@ -30,16 +30,19 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
   const [showImportExport, setShowImportExport] = useState(false);
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
-  const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [clientType, setClientType] = useState("all");
-  const [activityFilter, setActivityFilter] = useState("all");
-  const [leadSourceFilter, setLeadSourceFilter] = useState("all");
-  const [priorityFilter, setPriorityFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [showHelp, setShowHelp] = useState(false);
   const itemsPerPage = 20;
+  
+  // CRM Filters
+  const [filters, setFilters] = useState({
+    stage: "all",
+    source: "all",
+    dateRange: "all",
+    minDealValue: "",
+    maxDealValue: "",
+    assignedTo: "all",
+  });
 
   // Permission checks
   const canViewClients = useHasPermission('view_clients');
@@ -107,35 +110,24 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
       client.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesType = clientType === 'all' || client.client_type === clientType;
+    const matchesStage = filters.stage === 'all' || client.funnel_stage === filters.stage;
+    const matchesSource = filters.source === 'all' || client.lead_source === filters.source;
     
-    const matchesLeadSource = leadSourceFilter === 'all' || client.lead_source === leadSourceFilter;
-    
-    const matchesPriority = priorityFilter === 'all' || client.priority_level === priorityFilter;
-    
-    const matchesTags = selectedTags.length === 0 || 
-      selectedTags.some(tag => client.tags?.includes(tag));
-    
-    // Activity filter logic
-    let matchesActivity = true;
-    if (activityFilter !== 'all') {
-      switch (activityFilter) {
-        case 'active_projects':
-          matchesActivity = client.projectCount > 0;
-          break;
-        case 'pending_quotes':
-          matchesActivity = (client.quotesData?.draft || 0) + (client.quotesData?.sent || 0) > 0;
-          break;
-        case 'high_value':
-          matchesActivity = client.totalValue > 5000;
-          break;
-        case 'inactive':
-          matchesActivity = client.projectCount === 0 && (client.quotesData?.total || 0) === 0;
-          break;
-      }
+    // Date range filter
+    let matchesDateRange = true;
+    if (filters.dateRange !== 'all') {
+      const createdDate = new Date(client.created_at);
+      const daysAgo = parseInt(filters.dateRange);
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - daysAgo);
+      matchesDateRange = createdDate >= cutoffDate;
     }
     
-    return matchesSearch && matchesType && matchesActivity && matchesLeadSource && matchesPriority && matchesTags;
+    // Deal value filter
+    const matchesMinValue = !filters.minDealValue || (client.deal_value || 0) >= parseFloat(filters.minDealValue);
+    const matchesMaxValue = !filters.maxDealValue || (client.deal_value || 0) <= parseFloat(filters.maxDealValue);
+    
+    return matchesSearch && matchesStage && matchesSource && matchesDateRange && matchesMinValue && matchesMaxValue;
   });
 
   // Pagination logic
@@ -151,13 +143,19 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
 
   const clearFilters = () => {
     setSearchTerm("");
-    setSelectedStatuses([]);
-    setSelectedProjects([]);
-    setSelectedTags([]);
-    setClientType("all");
-    setActivityFilter("all");
-    setLeadSourceFilter("all");
-    setPriorityFilter("all");
+    setFilters({
+      stage: "all",
+      source: "all",
+      dateRange: "all",
+      minDealValue: "",
+      maxDealValue: "",
+      assignedTo: "all",
+    });
+    setCurrentPage(1);
+  };
+  
+  const handleFilterChange = (key: string, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
     setCurrentPage(1);
   };
 
@@ -250,27 +248,11 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
 
       {/* Filters */}
       {showFilters && (
-        <div className="bg-card p-4 rounded-lg border border-border">
-          <ClientFilters
-            searchTerm={searchTerm}
-            setSearchTerm={handleSearchChange}
-            selectedStatuses={selectedStatuses}
-            setSelectedStatuses={setSelectedStatuses}
-            selectedProjects={selectedProjects}
-            setSelectedProjects={setSelectedProjects}
-            selectedTags={selectedTags}
-            setSelectedTags={setSelectedTags}
-            clientType={clientType}
-            setClientType={setClientType}
-            activityFilter={activityFilter}
-            setActivityFilter={setActivityFilter}
-            leadSourceFilter={leadSourceFilter}
-            setLeadSourceFilter={setLeadSourceFilter}
-            priorityFilter={priorityFilter}
-            setPriorityFilter={setPriorityFilter}
-            onClearFilters={clearFilters}
-          />
-        </div>
+        <CRMFilters
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onReset={clearFilters}
+        />
       )}
 
       {/* Client List */}

@@ -438,6 +438,13 @@ export type Database = {
             foreignKeyName: "appointments_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "client_stats_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -1094,6 +1101,13 @@ export type Database = {
             foreignKeyName: "client_activity_log_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "client_stats_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_activity_log_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -1179,6 +1193,13 @@ export type Database = {
           window_covering_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "client_measurements_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_stats_mv"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "client_measurements_client_id_fkey"
             columns: ["client_id"]
@@ -1669,6 +1690,13 @@ export type Database = {
             foreignKeyName: "deals_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "client_stats_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -2008,6 +2036,13 @@ export type Database = {
             foreignKeyName: "emails_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "client_stats_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emails_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -2276,6 +2311,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "follow_up_reminders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_stats_mv"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "follow_up_reminders_client_id_fkey"
             columns: ["client_id"]
@@ -4080,6 +4122,13 @@ export type Database = {
             foreignKeyName: "projects_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "client_stats_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -4245,6 +4294,13 @@ export type Database = {
           version?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "quotes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_stats_mv"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quotes_client_id_fkey"
             columns: ["client_id"]
@@ -5876,6 +5932,28 @@ export type Database = {
       }
     }
     Views: {
+      client_stats_mv: {
+        Row: {
+          appointment_count: number | null
+          assigned_to: string | null
+          company_name: string | null
+          conversion_probability: number | null
+          deal_value: number | null
+          email_count: number | null
+          follow_up_date: string | null
+          funnel_stage: string | null
+          id: string | null
+          last_activity: string | null
+          last_contact_date: string | null
+          lead_score: number | null
+          lead_source: string | null
+          name: string | null
+          project_count: number | null
+          total_deal_value: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
       user_presence_view: {
         Row: {
           display_name: string | null
@@ -6067,6 +6145,10 @@ export type Database = {
       normalize_treatment_category: {
         Args: { category_input: string }
         Returns: string
+      }
+      refresh_client_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       sanitize_text_input: {
         Args: { input_text: string }

@@ -7,6 +7,11 @@ import { DealForm } from "./DealForm";
 import { FollowUpReminders } from "./FollowUpReminders";
 import { AutomationWorkflows } from "./AutomationWorkflows";
 import { EmailSequenceForm } from "./EmailSequenceForm";
+import { CRMSummaryCards } from "./CRMSummaryCards";
+import { PipelineChart } from "./PipelineChart";
+import { LeadSourceChart } from "./LeadSourceChart";
+import { ConversionFunnel } from "./ConversionFunnel";
+import { CRMAlerts } from "./CRMAlerts";
 import { Button } from "@/components/ui/button";
 import { Plus, Settings, Download, Target, Zap, Mail } from "lucide-react";
 import { useState } from "react";
@@ -49,25 +54,48 @@ export const CRMDashboard = () => {
         </div>
       </div>
 
+      {/* Summary Cards */}
+      <CRMSummaryCards />
+
       <Tabs defaultValue="overview" className="w-full">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="pipeline">Sales Pipeline</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="automation">Automation</TabsTrigger>
           <TabsTrigger value="hot-leads">Hot Leads</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
+          {/* Action Center */}
+          <CRMAlerts />
+          
+          {/* Analytics Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <HotLeadsList />
-            <FollowUpReminders />
+            <PipelineChart />
+            <LeadSourceChart />
           </div>
-          <SalesPipelineBoard />
+          
+          {/* Conversion Funnel and Hot Leads */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ConversionFunnel />
+            <HotLeadsList />
+          </div>
         </TabsContent>
 
         <TabsContent value="pipeline" className="space-y-6">
           <SalesPipelineBoard />
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <PipelineChart />
+            <LeadSourceChart />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ConversionFunnel />
+            <LeadSourceAnalytics />
+          </div>
         </TabsContent>
 
         <TabsContent value="automation" className="space-y-6">
@@ -79,10 +107,6 @@ export const CRMDashboard = () => {
 
         <TabsContent value="hot-leads" className="space-y-6">
           <HotLeadsList />
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-6">
-          <LeadSourceAnalytics />
         </TabsContent>
       </Tabs>
 
