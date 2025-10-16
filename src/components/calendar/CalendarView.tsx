@@ -45,7 +45,11 @@ import { TimezoneUtils } from "@/utils/timezoneUtils";
 
 type CalendarView = 'month' | 'week' | 'day';
 
-const CalendarView = () => {
+interface CalendarViewProps {
+  projectId?: string;
+}
+
+const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const isMobile = useIsMobile();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date()); // Pre-select today
@@ -152,7 +156,8 @@ const CalendarView = () => {
         team_member_ids: validTeamMemberIds.length > 0 ? validTeamMemberIds : undefined,
         invited_client_emails: newEvent.inviteClientEmail ? [newEvent.inviteClientEmail] : undefined,
         notification_enabled: newEvent.enableNotifications,
-        notification_minutes: parseInt(newEvent.notificationTiming)
+        notification_minutes: parseInt(newEvent.notificationTiming),
+        project_id: projectId || undefined
       });
 
       // Show CalDAV sync dialog for new appointment
@@ -318,7 +323,7 @@ const CalendarView = () => {
                             backgroundColor: event.color || undefined
                           }}
                         />
-                        <div className="truncate text-foreground group-hover:text-foreground/80">
+                        <div className="truncate text-foreground group-hover:text-foreground/80 flex-1">
                           <span className="font-semibold">
                             {format(new Date(event.start_time), 'HH:mm')}
                           </span>
@@ -326,6 +331,9 @@ const CalendarView = () => {
                             {event.title}
                           </span>
                         </div>
+                        {event.notification_enabled && (
+                          <Bell className="h-3 w-3 text-primary flex-shrink-0" />
+                        )}
                       </div>
                     </div>
                   ))}

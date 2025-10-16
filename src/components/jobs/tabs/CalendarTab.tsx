@@ -8,7 +8,7 @@ interface CalendarTabProps {
 export const CalendarTab = ({ projectId }: CalendarTabProps) => {
   return (
     <div className="h-full">
-      <CalendarView />
+      <CalendarView projectId={projectId} />
     </div>
   );
 };

@@ -272,9 +272,24 @@ export const UnifiedAppointmentDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CalendarDays className="w-5 h-5" />
-            {isEditing ? 'Edit Appointment' : 'Create New Event'}
+          <DialogTitle className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="w-5 h-5" />
+              {isEditing ? 'Edit Appointment' : 'Create New Event'}
+            </div>
+            {appointment?.project_id && (
+              <div className="text-sm font-normal text-muted-foreground flex items-center gap-2">
+                <Badge variant="outline" className="font-normal">
+                  Job #{appointment.project_id.slice(0, 8)}
+                </Badge>
+                {appointment.notification_enabled && (
+                  <Badge variant="secondary" className="font-normal flex items-center gap-1">
+                    <Bell className="h-3 w-3" />
+                    Notification {appointment.notification_minutes}min before
+                  </Badge>
+                )}
+              </div>
+            )}
           </DialogTitle>
         </DialogHeader>
         
