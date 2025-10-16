@@ -20,7 +20,7 @@ import { ClientEmailHistory } from "./ClientEmailHistory";
 import { ClientProjectsList } from "./ClientProjectsList";
 import { MeasurementsList } from "../measurements/MeasurementsList";
 import { EmailComposer } from "../jobs/email/EmailComposer";
-import { FollowUpManager } from "./FollowUpManager";
+import { EditableFollowUpManager } from "./EditableFollowUpManager";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 
@@ -208,9 +208,9 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Main Info Card */}
-        <Card className="lg:col-span-2">
+        <Card className="xl:col-span-2">
           <CardHeader>
             <CardTitle>Client Information</CardTitle>
           </CardHeader>
@@ -476,7 +476,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
             </CardContent>
           </Card>
           
-          <FollowUpManager clientId={clientId} />
+          <EditableFollowUpManager clientId={clientId} />
         </div>
       </div>
 
