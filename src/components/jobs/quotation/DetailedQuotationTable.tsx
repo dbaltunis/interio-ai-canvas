@@ -271,11 +271,13 @@ const FinancialSummary: React.FC<{ quotationData: any; currency: string; busines
   const taxLabel = businessSettings?.tax_type === 'vat' ? 'VAT' : 
                    businessSettings?.tax_type === 'gst' ? 'GST' : 'Tax';
   const taxRate = businessSettings?.tax_rate || 0;
+  const pricingSettings = businessSettings?.pricing_settings as any;
+  const taxInclusive = pricingSettings?.tax_inclusive || false;
   
   return (
     <div className="space-y-2">
       <div className="flex justify-between text-foreground">
-        <span>Subtotal (excluding {taxLabel}):</span>
+        <span>Subtotal ({taxInclusive ? 'excluding' : 'excluding'} {taxLabel}):</span>
         <span className="font-medium">{formatCurrency(quotationData.subtotal || 0, currency)}</span>
       </div>
       <div className="flex justify-between text-foreground">

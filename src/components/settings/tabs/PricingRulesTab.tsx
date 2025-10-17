@@ -170,12 +170,17 @@ export const PricingRulesTab = () => {
                 />
               </div>
             </div>
-            <div className="text-xs text-muted-foreground bg-background/50 rounded p-2">
-              <strong>Example:</strong> If you set a price of $100 and tax is 20%:
-              <ul className="mt-1 ml-4 list-disc">
-                <li><strong>Inclusive ON:</strong> Customer pays $100 total (includes $16.67 tax)</li>
-                <li><strong>Inclusive OFF:</strong> Customer pays $120 total ($100 + $20 tax)</li>
-              </ul>
+            <div className="text-xs text-muted-foreground bg-background/50 rounded p-2 space-y-2">
+              <div>
+                <strong>Example:</strong> If you set a price of $100 and tax is 20%:
+                <ul className="mt-1 ml-4 list-disc">
+                  <li><strong>Inclusive ON:</strong> Customer pays $100 total (includes $16.67 tax)</li>
+                  <li><strong>Inclusive OFF:</strong> Customer pays $120 total ($100 + $20 tax)</li>
+                </ul>
+              </div>
+              <div className="border-t pt-2">
+                <strong>Note:</strong> Existing projects and quotes will automatically recalculate with the new setting when you make any changes to them (e.g., add/edit treatments, update measurements).
+              </div>
             </div>
           </div>
           

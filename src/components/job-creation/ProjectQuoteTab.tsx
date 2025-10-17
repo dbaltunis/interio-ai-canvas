@@ -218,6 +218,11 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
                 Subtotal (excl. {taxType === 'vat' ? 'VAT' : taxType === 'gst' ? 'GST' : 'Tax'})
               </p>
               <p className="text-lg font-semibold">{formatCurrency(subtotal)}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {(businessSettings?.pricing_settings as any)?.tax_inclusive ? 
+                  'Prices shown above include tax' : 
+                  'Tax will be added to these prices'}
+              </p>
             </div>
           </div>
         </Card>
