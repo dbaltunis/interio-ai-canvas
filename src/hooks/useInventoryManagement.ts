@@ -1,6 +1,6 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Inventory {
   id: string;
@@ -13,7 +13,7 @@ interface Inventory {
   unit?: string;
   cost_price?: number;
   selling_price?: number;
-  unit_price?: number; // Added this property
+  unit_price?: number;
   supplier?: string;
   location?: string;
   width?: number;
@@ -23,53 +23,58 @@ interface Inventory {
   updated_at: string;
 }
 
-// Mock data store
-let mockInventory: Inventory[] = [
-  {
-    id: "inv-1",
-    user_id: "mock-user",
-    name: "Curtain Rails - White",
-    description: "Premium white curtain rails",
-    sku: "CR-WHT-001",
-    category: "Hardware",
-    quantity: 25,
-    unit: "pieces",
-    cost_price: 15.50,
-    selling_price: 25.00,
-    unit_price: 25.00,
-    supplier: "Hardware Plus",
-    location: "Warehouse A",
-    width: 200,
-    reorder_point: 5,
-    active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }
-];
-
 export const useInventory = () => {
   return useQuery({
     queryKey: ["inventory"],
     queryFn: async () => {
-      // Mock implementation with enhanced data
-      return mockInventory.map(item => ({
-        ...item,
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) throw new Error("User not authenticated");
+      
+      const { data, error } = await supabase
+        .from("enhanced_inventory_items")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("active", true)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      // Map enhanced_inventory_items to match existing interface
+      return (data || []).map((item) => ({
+        id: item.id,
+        user_id: item.user_id,
+        name: item.name,
+        description: item.description || '',
+        sku: item.sku || '',
+        category: item.category,
+        quantity: item.quantity || 0,
+        unit: item.unit || '',
+        cost_price: item.cost_price,
+        selling_price: item.selling_price,
+        unit_price: item.selling_price || item.cost_price || 0,
+        supplier: item.supplier || '',
+        location: item.location || '',
+        width: item.fabric_width || item.width || 0,
+        reorder_point: item.reorder_point || 0,
+        active: item.active ?? true,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
         vendor: item.supplier ? { 
           name: item.supplier, 
           email: `${item.supplier.toLowerCase().replace(/\s+/g, '')}@example.com`,
           phone: "555-0000"
         } : null,
         collection: { 
-          name: "Default Collection", 
+          name: item.collection_name || "Default Collection", 
           season: "All Season", 
           year: 2024 
         },
         product_code: item.sku,
-        fabric_width: item.width,
+        fabric_width: item.fabric_width || item.width,
         tags: [],
         images: [],
         specifications: {},
-        status: item.quantity > 0 ? 'in_stock' : 'out_of_stock'
+        status: (item.quantity || 0) > 0 ? 'in_stock' : 'out_of_stock'
       }));
     },
   });
@@ -80,20 +85,35 @@ export const useCreateInventoryItem = () => {
 
   return useMutation({
     mutationFn: async (item: Omit<Inventory, "id" | "user_id" | "created_at" | "updated_at">) => {
-      // Mock implementation
-      const newItem: Inventory = {
-        ...item,
-        id: `inv-${Date.now()}`,
-        user_id: 'mock-user',
-        unit_price: item.selling_price || item.cost_price || 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) throw new Error("User not authenticated");
+      
+      const { data, error } = await supabase
+        .from("enhanced_inventory_items")
+        .insert({
+          user_id: user.id,
+          name: item.name,
+          description: item.description || '',
+          sku: item.sku || '',
+          category: item.category || 'fabric',
+          quantity: item.quantity,
+          unit: item.unit || 'yard',
+          cost_price: item.cost_price || 0,
+          selling_price: item.selling_price || 0,
+          supplier: item.supplier || '',
+          location: item.location || '',
+          fabric_width: item.width || 0,
+          width: item.width || 0,
+          reorder_point: item.reorder_point || 0,
+          active: item.active ?? true,
+        })
+        .select()
+        .single();
 
-      mockInventory.push(newItem);
+      if (error) throw error;
       
       toast.success("Inventory item created successfully");
-      return newItem;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory"] });
@@ -106,20 +126,39 @@ export const useUpdateInventoryItem = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...item }: Partial<Inventory> & { id: string }) => {
-      // Mock implementation
-      const index = mockInventory.findIndex(inv => inv.id === id);
-      if (index !== -1) {
-        mockInventory[index] = {
-          ...mockInventory[index],
-          ...item,
-          unit_price: item.selling_price || item.cost_price || mockInventory[index].unit_price || 0,
-          updated_at: new Date().toISOString()
-        };
-        
-        toast.success("Inventory item updated successfully");
-        return mockInventory[index];
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) throw new Error("User not authenticated");
+      
+      const updateData: any = {};
+      if (item.name !== undefined) updateData.name = item.name;
+      if (item.description !== undefined) updateData.description = item.description;
+      if (item.sku !== undefined) updateData.sku = item.sku;
+      if (item.category !== undefined) updateData.category = item.category;
+      if (item.quantity !== undefined) updateData.quantity = item.quantity;
+      if (item.unit !== undefined) updateData.unit = item.unit;
+      if (item.cost_price !== undefined) updateData.cost_price = item.cost_price;
+      if (item.selling_price !== undefined) updateData.selling_price = item.selling_price;
+      if (item.supplier !== undefined) updateData.supplier = item.supplier;
+      if (item.location !== undefined) updateData.location = item.location;
+      if (item.width !== undefined) {
+        updateData.fabric_width = item.width;
+        updateData.width = item.width;
       }
-      throw new Error("Item not found");
+      if (item.reorder_point !== undefined) updateData.reorder_point = item.reorder_point;
+      if (item.active !== undefined) updateData.active = item.active;
+
+      const { data, error } = await supabase
+        .from("enhanced_inventory_items")
+        .update(updateData)
+        .eq("id", id)
+        .eq("user_id", user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      toast.success("Inventory item updated successfully");
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory"] });
@@ -132,12 +171,18 @@ export const useDeleteInventoryItem = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      // Mock implementation
-      const index = mockInventory.findIndex(inv => inv.id === id);
-      if (index !== -1) {
-        mockInventory.splice(index, 1);
-        toast.success("Inventory item deleted successfully");
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) throw new Error("User not authenticated");
+      
+      const { error } = await supabase
+        .from("enhanced_inventory_items")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      
+      toast.success("Inventory item deleted successfully");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory"] });

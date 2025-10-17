@@ -10,6 +10,7 @@ import { Globe, Mail, Bell, Shield, Database, Download } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useCompactMode } from "@/hooks/useCompactMode";
+import { FeatureFlagsSettings } from "@/components/settings/FeatureFlagsSettings";
 
 export const SystemSettingsTab = () => {
   const [notifications, setNotifications] = useState({
@@ -33,6 +34,9 @@ export const SystemSettingsTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Feature Flags & Inventory Configuration */}
+      <FeatureFlagsSettings />
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Appearance */}
         <Card>
