@@ -178,12 +178,6 @@ const ReminderCard = ({ reminder, markCompleted, snoozeReminder, deleteReminder,
               <User className="h-3 w-3" />
               {client?.client_type === 'B2B' ? client?.company_name : client?.name}
             </div>
-            {deal && (
-              <div className="flex items-center gap-1">
-                <Target className="h-3 w-3" />
-                {deal.title}
-              </div>
-            )}
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -246,7 +240,6 @@ const ReminderCard = ({ reminder, markCompleted, snoozeReminder, deleteReminder,
 const CompletedReminderCard = ({ reminder }: { reminder: any }) => {
   const updatedDate = new Date(reminder.updated_at);
   const client = reminder.clients;
-  const deal = reminder.deals;
 
   return (
     <div className="p-3 border rounded-lg bg-muted/50">
@@ -258,12 +251,6 @@ const CompletedReminderCard = ({ reminder }: { reminder: any }) => {
               <User className="h-3 w-3" />
               {client?.client_type === 'B2B' ? client?.company_name : client?.name}
             </div>
-            {deal && (
-              <div className="flex items-center gap-1">
-                <Target className="h-3 w-3" />
-                {deal.title}
-              </div>
-            )}
           </div>
         </div>
         <Badge variant="secondary" className="shrink-0">

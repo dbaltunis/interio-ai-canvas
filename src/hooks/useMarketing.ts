@@ -34,10 +34,6 @@ export const useFollowUpReminders = () => {
             company_name,
             client_type,
             email
-          ),
-          deals:deal_id (
-            id,
-            title
           )
         `)
         .eq("user_id", user.id)
@@ -328,10 +324,6 @@ export const useCompletedReminders = () => {
             company_name,
             client_type,
             email
-          ),
-          deals:deal_id (
-            id,
-            title
           )
         `)
         .eq('user_id', user.id)
