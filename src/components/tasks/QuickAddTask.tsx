@@ -8,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCreateTask, TaskPriority } from "@/hooks/useTasks";
-import { CalendarIcon, Plus, Zap } from "lucide-react";
+import { CalendarIcon, Plus, Zap, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { TimePicker } from "@/components/calendar/TimePicker";
 
 interface QuickAddTaskProps {
   clientId?: string;
@@ -23,6 +24,7 @@ export const QuickAddTask = ({ clientId, projectId, trigger }: QuickAddTaskProps
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState<Date | undefined>();
+  const [dueTime, setDueTime] = useState("09:00");
   const [priority, setPriority] = useState<TaskPriority>("medium");
   
   const createTask = useCreateTask();
@@ -30,12 +32,16 @@ export const QuickAddTask = ({ clientId, projectId, trigger }: QuickAddTaskProps
   const handleSubmit = async () => {
     if (!title.trim()) return;
 
+    const dueDateWithTime = dueDate 
+      ? new Date(`${format(dueDate, "yyyy-MM-dd")}T${dueTime}:00`)
+      : undefined;
+
     await createTask.mutateAsync({
       title: title.trim(),
       description: description.trim() || undefined,
       client_id: clientId,
       project_id: projectId,
-      due_date: dueDate ? format(dueDate, "yyyy-MM-dd'T'HH:mm:ssXXX") : undefined,
+      due_date: dueDateWithTime ? format(dueDateWithTime, "yyyy-MM-dd'T'HH:mm:ssXXX") : undefined,
       priority,
     });
 
@@ -43,6 +49,7 @@ export const QuickAddTask = ({ clientId, projectId, trigger }: QuickAddTaskProps
     setTitle("");
     setDescription("");
     setDueDate(undefined);
+    setDueTime("09:00");
     setPriority("medium");
     setOpen(false);
   };
@@ -94,7 +101,7 @@ export const QuickAddTask = ({ clientId, projectId, trigger }: QuickAddTaskProps
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label>Due date</Label>
               <Popover>
@@ -117,47 +124,60 @@ export const QuickAddTask = ({ clientId, projectId, trigger }: QuickAddTaskProps
                     selected={dueDate}
                     onSelect={setDueDate}
                     initialFocus
+                    className="pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
             </div>
 
-            <div className="space-y-2">
-              <Label>Priority</Label>
-              <Select value={priority} onValueChange={(value) => setPriority(value as TaskPriority)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">
-                    <span className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-blue-500"></span>
-                      Low
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="medium">
-                    <span className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-yellow-500"></span>
-                      Medium
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="high">
-                    <span className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-orange-500"></span>
-                      High
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="urgent">
-                    <span className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-red-500"></span>
-                      Urgent
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Due time</Label>
+                <TimePicker
+                  label=""
+                  value={dueTime}
+                  onChange={setDueTime}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Priority</Label>
+                <Select value={priority} onValueChange={(value) => setPriority(value as TaskPriority)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">
+                      <span className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-blue-500"></span>
+                        Low
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="medium">
+                      <span className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-yellow-500"></span>
+                        Medium
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="high">
+                      <span className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-orange-500"></span>
+                        High
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="urgent">
+                      <span className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                        Urgent
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </div>
+
 
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => setOpen(false)}>
