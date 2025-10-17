@@ -8,6 +8,7 @@ import { formatCurrency } from "@/utils/currency";
 import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
 import { useWorkroomSync } from "@/hooks/useWorkroomSync";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 interface RoomsTabProps {
   projectId: string;
@@ -19,6 +20,7 @@ export const RoomsTab = ({ projectId }: RoomsTabProps) => {
   const { data: rooms } = useRooms(projectId);
   const { data: surfaces } = useSurfaces(projectId);
 const { data: projectSummaries } = useProjectWindowSummaries(projectId);
+  const { data: businessSettings } = useBusinessSettings();
   const project = projects?.find(p => p.id === projectId);
 
   // Auto-sync room and treatment data to quotations and workroom
@@ -89,6 +91,11 @@ const { data: projectSummaries } = useProjectWindowSummaries(projectId);
           </div>
           <p className="text-xs text-muted-foreground">
             Base Project Cost
+            {businessSettings?.tax_type && businessSettings.tax_type !== 'none' ? (
+              (businessSettings.pricing_settings as any)?.tax_inclusive ? 
+                ` (incl. ${businessSettings.tax_type?.toUpperCase()})` : 
+                ` (excl. ${businessSettings.tax_type?.toUpperCase()})`
+            ) : ' (no tax)'}
             {quotationSync.isLoading && ' • Syncing...'}
           </p>
         </div>
