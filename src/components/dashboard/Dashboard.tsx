@@ -1,22 +1,28 @@
-
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Users, 
   FileText, 
   Package, 
   TrendingUp,
   Calendar,
-  DollarSign
+  DollarSign,
+  LayoutGrid,
+  Table
 } from "lucide-react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useUserCurrency, formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
 import { ProtectedAnalytics } from "./ProtectedAnalytics";
 import { PermissionGuard } from "@/components/common/PermissionGuard";
 import { TeamPresenceCard } from "@/components/team/TeamPresenceCard";
+import { EnhancedDashboard } from "./EnhancedDashboard";
 
 const Dashboard = () => {
   const { data: stats, isLoading } = useDashboardStats();
   const userCurrency = useUserCurrency();
+  const [viewMode, setViewMode] = useState<'classic' | 'crm'>('crm');
 
   if (isLoading) {
     return (
@@ -43,39 +49,31 @@ const Dashboard = () => {
     );
   }
 
-  const metrics = [
-    {
-      title: "Total Clients",
-      value: stats?.totalClients || 0,
-      icon: Users,
-      description: "Active clients"
-    },
-    {
-      title: "Pending Quotes",
-      value: stats?.pendingQuotes || 0,
-      icon: FileText,
-      description: "Awaiting response"
-    },
-    {
-      title: "Low Stock Items",
-      value: stats?.lowStockItems || 0,
-      icon: Package,
-      description: "Need reordering"
-    },
-    {
-      title: "Total Revenue",
-      value: formatCurrency(stats?.totalRevenue || 0, userCurrency),
-      icon: DollarSign,
-      description: "This month"
-    }
-  ];
+  // Show CRM view by default
+  if (viewMode === 'crm') {
+    return <EnhancedDashboard />;
+  }
 
   return (
     <div className="p-6 space-y-8 animate-fade-in">
-      {/* Modern Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground text-lg">Welcome back! Here's what's happening with your business.</p>
+      {/* View Mode Toggle */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground text-lg">Welcome back! Here's what's happening with your business.</p>
+        </div>
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as any)} className="w-auto">
+          <TabsList className="grid w-[240px] grid-cols-2">
+            <TabsTrigger value="crm" className="gap-2">
+              <Table className="h-4 w-4" />
+              CRM View
+            </TabsTrigger>
+            <TabsTrigger value="classic" className="gap-2">
+              <LayoutGrid className="h-4 w-4" />
+              Classic
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       {/* Enhanced Key Metrics */}
