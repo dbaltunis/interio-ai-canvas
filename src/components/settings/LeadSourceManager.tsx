@@ -119,37 +119,29 @@ export const LeadSourceManager = () => {
   }
 
   return (
-    <Card style={{
-      backgroundColor: 'hsl(var(--card))',
-      borderColor: 'hsl(var(--border))'
-    }}>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle style={{ color: 'hsl(var(--foreground))' }}>Lead Sources</CardTitle>
-            <CardDescription>
-              Manage custom lead sources for tracking where your clients come from
-            </CardDescription>
-          </div>
-          <Dialog open={isDialogOpen} onOpenChange={(open) => {
-            setIsDialogOpen(open);
-            if (!open) resetForm();
-          }}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Source
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px] z-50" style={{
-              backgroundColor: 'hsl(var(--background))',
-              color: 'hsl(var(--foreground))',
-              borderColor: 'hsl(var(--border))'
-            }}>
-              <DialogHeader>
-                <DialogTitle style={{ color: 'hsl(var(--foreground))' }}>
-                  {editingSource ? "Edit Lead Source" : "Add Lead Source"}
-                </DialogTitle>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold" style={{ color: '#111827' }}>Lead Sources</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Manage custom lead sources for tracking where your clients come from
+          </p>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) resetForm();
+        }}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Source
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px] z-50">
+            <DialogHeader>
+              <DialogTitle>
+                {editingSource ? "Edit Lead Source" : "Add Lead Source"}
+              </DialogTitle>
                 <DialogDescription>
                   Create a custom lead source to track client origins
                 </DialogDescription>
@@ -233,27 +225,27 @@ export const LeadSourceManager = () => {
                 </div>
               </form>
             </DialogContent>
-          </Dialog>
-        </div>
-      </CardHeader>
-      <CardContent>
+        </Dialog>
+      </div>
+
+      <div className="rounded-md border border-gray-200" style={{ backgroundColor: 'white' }}>
         <Table>
           <TableHeader>
-            <TableRow style={{ borderColor: 'hsl(var(--border))' }}>
+            <TableRow style={{ borderColor: '#e5e7eb' }}>
               <TableHead className="w-12"></TableHead>
-              <TableHead style={{ color: 'hsl(var(--foreground))' }}>Name</TableHead>
-              <TableHead style={{ color: 'hsl(var(--foreground))' }}>Description</TableHead>
-              <TableHead style={{ color: 'hsl(var(--foreground))' }}>Status</TableHead>
-              <TableHead className="text-right" style={{ color: 'hsl(var(--foreground))' }}>Actions</TableHead>
+              <TableHead style={{ color: '#111827' }}>Name</TableHead>
+              <TableHead style={{ color: '#111827' }}>Description</TableHead>
+              <TableHead style={{ color: '#111827' }}>Status</TableHead>
+              <TableHead className="text-right" style={{ color: '#111827' }}>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sources?.map((source) => (
-              <TableRow key={source.id} style={{ borderColor: 'hsl(var(--border))' }}>
+              <TableRow key={source.id} style={{ borderColor: '#e5e7eb' }}>
                 <TableCell>
-                  <GripVertical className="h-4 w-4 text-muted-foreground" />
+                  <GripVertical className="h-4 w-4 text-gray-400" />
                 </TableCell>
-                <TableCell style={{ color: 'hsl(var(--foreground))' }}>
+                <TableCell style={{ color: '#111827' }}>
                   <div className="flex items-center gap-2">
                     <div
                       className="w-2 h-2 rounded-full"
@@ -262,7 +254,7 @@ export const LeadSourceManager = () => {
                     <span className="font-medium">{source.name}</span>
                   </div>
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className="text-sm" style={{ color: '#6b7280' }}>
                   {source.description || "—"}
                 </TableCell>
                 <TableCell>
@@ -293,14 +285,14 @@ export const LeadSourceManager = () => {
             ))}
             {!sources?.length && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={5} className="text-center py-8" style={{ color: '#6b7280' }}>
                   No lead sources found. Add your first source to get started.
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };

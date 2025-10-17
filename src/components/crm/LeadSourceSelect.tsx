@@ -75,13 +75,9 @@ export const LeadSourceSelect = ({ value, onValueChange, placeholder = "Select s
               <Settings className="h-4 w-4" />
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto z-50" style={{
-            backgroundColor: 'hsl(var(--background))',
-            color: 'hsl(var(--foreground))',
-            borderColor: 'hsl(var(--border))'
-          }}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto z-50">
             <DialogHeader>
-              <DialogTitle style={{ color: 'hsl(var(--foreground))' }}>Manage Lead Sources</DialogTitle>
+              <DialogTitle>Manage Lead Sources</DialogTitle>
             </DialogHeader>
             <LeadSourceManager />
           </DialogContent>
