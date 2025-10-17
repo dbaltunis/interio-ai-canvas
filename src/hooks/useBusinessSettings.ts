@@ -3,6 +3,22 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 // Define the business settings interface directly since tables don't exist
+export interface FeatureFlags {
+  inventory_management: boolean;
+  auto_extract_materials: boolean;
+  leftover_tracking: boolean;
+  order_batching: boolean;
+  multi_location_inventory: boolean;
+}
+
+export interface InventoryConfig {
+  track_leftovers: boolean;
+  waste_buffer_percentage: number;
+  auto_reorder_enabled: boolean;
+  reorder_threshold_percentage: number;
+  default_location: string;
+}
+
 export interface BusinessSettings {
   id: string;
   user_id: string;
@@ -25,6 +41,8 @@ export interface BusinessSettings {
   default_profit_margin_percentage?: number;
   minimum_profit_margin_percentage?: number;
   show_profit_margins_to_staff?: boolean;
+  features_enabled?: FeatureFlags;
+  inventory_config?: InventoryConfig;
   created_at: string;
   updated_at: string;
 }
@@ -103,7 +121,9 @@ export const useCreateBusinessSettings = () => {
         .from('business_settings')
         .insert({
           ...settings,
-          user_id: user.id
+          user_id: user.id,
+          features_enabled: settings.features_enabled as any,
+          inventory_config: settings.inventory_config as any,
         })
         .select()
         .single();
@@ -125,9 +145,17 @@ export const useUpdateBusinessSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      const updateData: any = { ...settings };
+      if (settings.features_enabled) {
+        updateData.features_enabled = settings.features_enabled as any;
+      }
+      if (settings.inventory_config) {
+        updateData.inventory_config = settings.inventory_config as any;
+      }
+
       const { data, error } = await supabase
         .from('business_settings')
-        .update(settings)
+        .update(updateData)
         .eq('id', id)
         .eq('user_id', user.id)
         .select()

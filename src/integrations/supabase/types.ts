@@ -815,7 +815,9 @@ export type Database = {
           country: string | null
           created_at: string
           default_profit_margin_percentage: number | null
+          features_enabled: Json | null
           id: string
+          inventory_config: Json | null
           measurement_units: string | null
           minimum_profit_margin_percentage: number | null
           pricing_settings: Json | null
@@ -840,7 +842,9 @@ export type Database = {
           country?: string | null
           created_at?: string
           default_profit_margin_percentage?: number | null
+          features_enabled?: Json | null
           id?: string
+          inventory_config?: Json | null
           measurement_units?: string | null
           minimum_profit_margin_percentage?: number | null
           pricing_settings?: Json | null
@@ -865,7 +869,9 @@ export type Database = {
           country?: string | null
           created_at?: string
           default_profit_margin_percentage?: number | null
+          features_enabled?: Json | null
           id?: string
+          inventory_config?: Json | null
           measurement_units?: string | null
           minimum_profit_margin_percentage?: number | null
           pricing_settings?: Json | null
@@ -3858,6 +3864,59 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "product_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_order_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          notes: string | null
+          order_id: string
+          product_name: string
+          product_type: string
+          quantity: number
+          supplier: string | null
+          total_price: number | null
+          unit: string
+          unit_price: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          order_id: string
+          product_name: string
+          product_type: string
+          quantity: number
+          supplier?: string | null
+          total_price?: number | null
+          unit: string
+          unit_price?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string
+          product_name?: string
+          product_type?: string
+          quantity?: number
+          supplier?: string | null
+          total_price?: number | null
+          unit?: string
+          unit_price?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "product_orders"
             referencedColumns: ["id"]
           },
         ]
