@@ -127,11 +127,13 @@ export const AddActivityDialog = ({ clientId, open, onOpenChange }: AddActivityD
                   {followUpDate ? format(followUpDate, "PPP") : "Select date"}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 z-[10000]" align="start">
+              <PopoverContent className="w-auto p-0 z-[10000]" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
                 <Calendar
                   mode="single"
                   selected={followUpDate}
-                  onSelect={setFollowUpDate}
+                  onSelect={(date) => {
+                    setFollowUpDate(date);
+                  }}
                   initialFocus
                 />
               </PopoverContent>
