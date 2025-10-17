@@ -20,7 +20,7 @@ import { ClientEmailHistory } from "./ClientEmailHistory";
 import { ClientProjectsList } from "./ClientProjectsList";
 import { MeasurementsList } from "../measurements/MeasurementsList";
 import { EmailComposer } from "../jobs/email/EmailComposer";
-import { EditableFollowUpManager } from "./EditableFollowUpManager";
+import { TasksList } from "../tasks/TasksList";
 import { ClientActivityLog } from "./ClientActivityLog";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
@@ -511,7 +511,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
             </CardContent>
           </Card>
           
-          <EditableFollowUpManager clientId={clientId} />
+          <TasksList clientId={clientId} />
         </div>
       </div>
 

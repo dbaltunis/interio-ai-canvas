@@ -11,7 +11,8 @@ export type ActivityType =
   | "project_started"
   | "note_added"
   | "reminder_snoozed"
-  | "stage_changed";
+  | "stage_changed"
+  | "task_completed";
 
 export interface ClientActivity {
   id: string;

@@ -24,6 +24,7 @@ const activityIcons: Record<ActivityType, any> = {
   note_added: StickyNote,
   reminder_snoozed: Clock,
   stage_changed: TrendingUp,
+  task_completed: CheckCircle,
 };
 
 const activityColors: Record<ActivityType, string> = {
@@ -36,6 +37,7 @@ const activityColors: Record<ActivityType, string> = {
   note_added: "bg-yellow-100 text-yellow-700 border-yellow-300",
   reminder_snoozed: "bg-gray-100 text-gray-700 border-gray-300",
   stage_changed: "bg-pink-100 text-pink-700 border-pink-300",
+  task_completed: "bg-green-100 text-green-700 border-green-300",
 };
 
 export const ClientActivityLog = ({ clientId }: ClientActivityLogProps) => {
