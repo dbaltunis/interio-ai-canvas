@@ -216,6 +216,8 @@ export const useMarkReminderCompleted = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      console.log("Marking reminder as completed:", reminderId);
+
       // Get reminder details first
       const { data: reminder, error: fetchError } = await supabase
         .from("follow_up_reminders")
@@ -230,11 +232,18 @@ export const useMarkReminderCompleted = () => {
         .eq("id", reminderId)
         .single();
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error("Failed to fetch reminder:", fetchError);
+        throw fetchError;
+      }
+
+      console.log("Reminder details:", reminder);
 
       // Log activity in client_activity_log BEFORE marking as dismissed
       if (reminder?.clients?.id) {
-        const { error: activityError } = await supabase
+        console.log("Attempting to log activity for client:", reminder.clients.id);
+        
+        const { data: activityData, error: activityError } = await supabase
           .from("client_activity_log")
           .insert({
             client_id: reminder.clients.id,
@@ -242,11 +251,18 @@ export const useMarkReminderCompleted = () => {
             activity_type: "follow_up_completed",
             title: "Follow-up Completed",
             description: reminder.message || "Follow-up reminder marked as completed"
-          });
+          })
+          .select()
+          .single();
 
         if (activityError) {
-          console.error("Activity log error:", activityError);
+          console.error("❌ Activity log error:", activityError);
+          // Don't throw - we still want to mark the reminder as done
+        } else {
+          console.log("✓ Activity logged successfully:", activityData);
         }
+      } else {
+        console.warn("No client ID found for reminder");
       }
 
       // Mark reminder as dismissed
@@ -260,19 +276,25 @@ export const useMarkReminderCompleted = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Failed to update reminder:", error);
+        throw error;
+      }
 
+      console.log("✓ Reminder marked as dismissed:", data);
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["follow-up-reminders"] });
       queryClient.invalidateQueries({ queryKey: ["completed-reminders"] });
+      queryClient.invalidateQueries({ queryKey: ["client-activities"] });
       toast({
         title: "✓ Task completed",
-        description: "View in the Completed tab",
+        description: "Activity has been logged and reminder completed",
       });
     },
     onError: (error: Error) => {
+      console.error("useMarkReminderCompleted error:", error);
       toast({
         title: "Error",
         description: error.message,

@@ -21,6 +21,7 @@ import { ClientProjectsList } from "./ClientProjectsList";
 import { MeasurementsList } from "../measurements/MeasurementsList";
 import { EmailComposer } from "../jobs/email/EmailComposer";
 import { EditableFollowUpManager } from "./EditableFollowUpManager";
+import { ClientActivityLog } from "./ClientActivityLog";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 
@@ -518,6 +519,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
       <Tabs defaultValue="projects" className="w-full">
         <TabsList>
           <TabsTrigger value="projects">Projects</TabsTrigger>
+          <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="emails">Emails</TabsTrigger>
           <TabsTrigger value="measurements">Measurements</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
@@ -525,6 +527,10 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
 
         <TabsContent value="projects" className="mt-6">
           <ClientProjectsList clientId={clientId} onTabChange={onTabChange} />
+        </TabsContent>
+
+        <TabsContent value="activity" className="mt-6">
+          <ClientActivityLog clientId={clientId} />
         </TabsContent>
 
         <TabsContent value="emails" className="mt-6">
