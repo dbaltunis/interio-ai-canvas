@@ -96,17 +96,33 @@ export const useProjectData = (projectId?: string) => {
         // Get tax rate from business settings or default
         let taxRate = 0.085; // Default 8.5%
         let markupPercentage = 45; // Default 45%
+        let taxInclusive = false;
         
         if (businessSettings && businessSettings.pricing_settings) {
           const settings = businessSettings.pricing_settings as any;
           if (settings && typeof settings === 'object') {
             taxRate = Number(settings.tax_rate) || 0.085;
             markupPercentage = Number(settings.default_markup_percentage) || 45;
+            taxInclusive = settings.tax_inclusive || false;
           }
         }
         
-        const taxAmount = subtotal * taxRate;
-        const total = subtotal + taxAmount;
+        // Calculate tax based on tax_inclusive setting
+        let taxAmount: number;
+        let total: number;
+        let finalSubtotal: number;
+        
+        if (taxInclusive) {
+          // Prices already include tax
+          total = subtotal;
+          finalSubtotal = subtotal / (1 + taxRate);
+          taxAmount = total - finalSubtotal;
+        } else {
+          // Prices exclude tax
+          finalSubtotal = subtotal;
+          taxAmount = subtotal * taxRate;
+          total = subtotal + taxAmount;
+        }
 
         return {
           project,
@@ -114,7 +130,7 @@ export const useProjectData = (projectId?: string) => {
           windowSummaries: windowSummaryData || [],
           rooms: [],
           surfaces: [],
-          subtotal,
+          subtotal: finalSubtotal,
           taxRate,
           taxAmount,
           total,

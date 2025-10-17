@@ -304,15 +304,30 @@ export const useQuotationSync = ({
       }
     });
 
-    // Prices from window summaries already include all markup/selling prices
-    // So we only need to add tax on top
-    const taxAmount = baseSubtotal * taxRate;
-    const total = baseSubtotal + taxAmount;
+    // Calculate tax based on tax_inclusive setting
+    const pricingSettings = businessSettings?.pricing_settings as any;
+    const taxInclusive = pricingSettings?.tax_inclusive || false;
+    
+    let taxAmount: number;
+    let total: number;
+    let subtotal: number;
+    
+    if (taxInclusive) {
+      // Prices already include tax, so extract tax from total
+      total = baseSubtotal;
+      subtotal = baseSubtotal / (1 + taxRate);
+      taxAmount = total - subtotal;
+    } else {
+      // Prices exclude tax, so add tax on top
+      subtotal = baseSubtotal;
+      taxAmount = subtotal * taxRate;
+      total = subtotal + taxAmount;
+    }
 
     return {
       items,
       baseSubtotal,
-      subtotal: baseSubtotal, // NO additional markup
+      subtotal,
       taxAmount,
       total
     };

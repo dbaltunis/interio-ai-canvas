@@ -71,11 +71,26 @@ export const useTemplateData = (projectId?: string, useRealData: boolean = false
           }));
 
           // Calculate totals
-          const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+          const baseTotal = items.reduce((sum, item) => sum + item.total, 0);
           const pricingSettings = businessSettings?.pricing_settings as any;
           const taxRate = pricingSettings?.tax_rate || 0.10;
-          const taxAmount = subtotal * taxRate;
-          const total = subtotal + taxAmount;
+          const taxInclusive = pricingSettings?.tax_inclusive || false;
+          
+          let subtotal: number;
+          let taxAmount: number;
+          let total: number;
+          
+          if (taxInclusive) {
+            // Prices already include tax
+            total = baseTotal;
+            subtotal = baseTotal / (1 + taxRate);
+            taxAmount = total - subtotal;
+          } else {
+            // Prices exclude tax
+            subtotal = baseTotal;
+            taxAmount = subtotal * taxRate;
+            total = subtotal + taxAmount;
+          }
 
           const measurementUnits = businessSettings?.measurement_units as any;
 

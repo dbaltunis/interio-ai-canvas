@@ -82,10 +82,24 @@ export const generateQuoteNumber = (): string => {
   return `QT-${timestamp}${random}`;
 };
 
-export const calculateTotals = (items: TemplateData['items'], taxRate: number = 0.08) => {
-  const subtotal = items.reduce((sum, item) => sum + item.total, 0);
-  const tax_amount = subtotal * taxRate;
-  const total = subtotal + tax_amount;
+export const calculateTotals = (items: TemplateData['items'], taxRate: number = 0.08, taxInclusive: boolean = false) => {
+  const baseTotal = items.reduce((sum, item) => sum + item.total, 0);
+  
+  let subtotal: number;
+  let tax_amount: number;
+  let total: number;
+  
+  if (taxInclusive) {
+    // Prices already include tax
+    total = baseTotal;
+    subtotal = baseTotal / (1 + taxRate);
+    tax_amount = total - subtotal;
+  } else {
+    // Prices exclude tax
+    subtotal = baseTotal;
+    tax_amount = subtotal * taxRate;
+    total = subtotal + tax_amount;
+  }
   
   return { subtotal, tax_amount, total };
 };

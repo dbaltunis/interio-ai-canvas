@@ -44,6 +44,8 @@ export const QuoteManagement = ({ quote, onBack }: QuoteManagementProps) => {
   const selectedClient = quote.client_id ? clients?.find(c => c.id === quote.client_id) : null;
 
   // Calculate totals
+  // Note: For quotes, we typically show prices as exclusive and add tax on top
+  // But this should respect business settings if needed
   const subtotal = lineItems.reduce((sum, item) => sum + item.total, 0);
   const taxAmount = subtotal * taxRate;
   const total = subtotal + taxAmount;
