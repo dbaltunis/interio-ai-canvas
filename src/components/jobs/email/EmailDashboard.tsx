@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,13 +18,14 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { EmailDashboardSkeleton } from "./skeleton/EmailDashboardSkeleton";
-
 interface EmailDashboardProps {
   showFilters?: boolean;
   setShowFilters?: (show: boolean) => void;
 }
-
-export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDashboardProps = {}) => {
+export const EmailDashboard = ({
+  showFilters = false,
+  setShowFilters
+}: EmailDashboardProps = {}) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [clientFilter, setClientFilter] = useState("all");
@@ -33,62 +33,74 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
   const [selectedEmail, setSelectedEmail] = useState<any>(null);
   const [showEmailDetail, setShowEmailDetail] = useState(false);
   const [followUpEmailId, setFollowUpEmailId] = useState<string | null>(null);
-
-  const { data: emails = [], isLoading: emailsLoading, refetch: refetchEmails } = useEmails();
-  const { data: kpis, isLoading: kpiLoading, refetch: refetchKpis } = useEmailKPIs();
+  const {
+    data: emails = [],
+    isLoading: emailsLoading,
+    refetch: refetchEmails
+  } = useEmails();
+  const {
+    data: kpis,
+    isLoading: kpiLoading,
+    refetch: refetchKpis
+  } = useEmailKPIs();
 
   // Add manual refresh functionality
   const handleRefresh = async () => {
     console.log('Manually refreshing email data...');
     await Promise.all([refetchEmails(), refetchKpis()]);
   };
-  const { data: clients = [], isLoading: clientsLoading } = useClients();
-  const { data: projects = [], isLoading: projectsLoading } = useProjects();
+  const {
+    data: clients = [],
+    isLoading: clientsLoading
+  } = useClients();
+  const {
+    data: projects = [],
+    isLoading: projectsLoading
+  } = useProjects();
   const sendEmailMutation = useSendEmail();
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const queryClient = useQueryClient();
 
   // Set up real-time subscriptions for email updates
   useEffect(() => {
-    const channelName = `email-updates-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
-    const emailChannel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
-          schema: 'public',
-          table: 'emails'
-        },
-        (payload) => {
-          console.log('Email table change detected:', payload);
-          // Invalidate email queries to refresh data
-          queryClient.invalidateQueries({ queryKey: ['emails'] });
-          queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'email_analytics'
-        },
-        (payload) => {
-          console.log('Email analytics change detected:', payload);
-          // Invalidate all email-related queries
-          queryClient.invalidateQueries({ queryKey: ['emails'] });
-          queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
-          queryClient.invalidateQueries({ queryKey: ['email-analytics'] });
-        }
-      )
-      .subscribe();
-
+    const channelName = `email-updates-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const emailChannel = supabase.channel(channelName).on('postgres_changes', {
+      event: '*',
+      // Listen to all events (INSERT, UPDATE, DELETE)
+      schema: 'public',
+      table: 'emails'
+    }, payload => {
+      console.log('Email table change detected:', payload);
+      // Invalidate email queries to refresh data
+      queryClient.invalidateQueries({
+        queryKey: ['emails']
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['email-kpis']
+      });
+    }).on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'email_analytics'
+    }, payload => {
+      console.log('Email analytics change detected:', payload);
+      // Invalidate all email-related queries
+      queryClient.invalidateQueries({
+        queryKey: ['emails']
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['email-kpis']
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['email-analytics']
+      });
+    }).subscribe();
     return () => {
       supabase.removeChannel(emailChannel);
     };
   }, [queryClient]);
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'queued':
@@ -119,61 +131,53 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
         return "bg-gray-400/20 text-gray-700 dark:text-gray-300 border-gray-400/20";
     }
   };
-
   const filteredEmails = emails.filter(email => {
-    const matchesSearch = email.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         email.recipient_email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = email.subject.toLowerCase().includes(searchTerm.toLowerCase()) || email.recipient_email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || email.status === statusFilter;
     const matchesClient = clientFilter === "all" || email.client_id === clientFilter;
-    const matchesProject = projectFilter === "all" || 
-                          projects.find(p => p.client_id === email.client_id)?.id === projectFilter;
-    
+    const matchesProject = projectFilter === "all" || projects.find(p => p.client_id === email.client_id)?.id === projectFilter;
     return matchesSearch && matchesStatus && matchesClient && matchesProject;
   });
-
   const handleViewEmail = (email: any) => {
     setSelectedEmail(email);
     setShowEmailDetail(true);
   };
-
   const handleStartFollowUp = (emailId: string) => {
     setFollowUpEmailId(emailId);
   };
-
-  const handleSendFollowUp = async (emailId: string, followUpData: { subject: string; content: string }) => {
+  const handleSendFollowUp = async (emailId: string, followUpData: {
+    subject: string;
+    content: string;
+  }) => {
     const originalEmail = emails.find(e => e.id === emailId);
     if (!originalEmail) return;
-
     try {
       await sendEmailMutation.mutateAsync({
         to: originalEmail.recipient_email,
         subject: followUpData.subject,
         content: followUpData.content,
-        client_id: originalEmail.client_id,
+        client_id: originalEmail.client_id
       });
-      
       setFollowUpEmailId(null);
       toast({
         title: "Follow-up Sent",
-        description: "Your follow-up email has been sent successfully",
+        description: "Your follow-up email has been sent successfully"
       });
     } catch (error) {
       console.error("Failed to send follow-up:", error);
     }
   };
-
   const handleResendEmail = async (email: any) => {
     try {
       await sendEmailMutation.mutateAsync({
         to: email.recipient_email,
         subject: email.subject,
         content: email.content,
-        client_id: email.client_id,
+        client_id: email.client_id
       });
-      
       toast({
         title: "Email Resent",
-        description: "The email has been resent successfully",
+        description: "The email has been resent successfully"
       });
     } catch (error) {
       console.error("Failed to resend email:", error);
@@ -187,13 +191,11 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
   const deletedEmails = emails.filter(e => ['dropped', 'spam_reported'].includes(e.status)).length;
   const openedEmails = emails.filter(e => e.open_count > 0).length;
   const clickedEmails = emails.filter(e => e.click_count > 0).length;
-
-  const deliveryRate = totalEmails > 0 ? Math.round((deliveredEmails / totalEmails) * 100) : 0;
-  const bounceRate = totalEmails > 0 ? Math.round((bouncedEmails / totalEmails) * 100) : 0;
-  const deleteRate = totalEmails > 0 ? Math.round((deletedEmails / totalEmails) * 100) : 0;
-  const openRate = deliveredEmails > 0 ? Math.round((openedEmails / deliveredEmails) * 100) : 0;
-  const clickRate = deliveredEmails > 0 ? Math.round((clickedEmails / deliveredEmails) * 100) : 0;
-
+  const deliveryRate = totalEmails > 0 ? Math.round(deliveredEmails / totalEmails * 100) : 0;
+  const bounceRate = totalEmails > 0 ? Math.round(bouncedEmails / totalEmails * 100) : 0;
+  const deleteRate = totalEmails > 0 ? Math.round(deletedEmails / totalEmails * 100) : 0;
+  const openRate = deliveredEmails > 0 ? Math.round(openedEmails / deliveredEmails * 100) : 0;
+  const clickRate = deliveredEmails > 0 ? Math.round(clickedEmails / deliveredEmails * 100) : 0;
   const handleKPIClick = (kpiType: string) => {
     switch (kpiType) {
       case 'deleted':
@@ -212,93 +214,16 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
         setStatusFilter('all');
     }
   };
-
   const loading = emailsLoading || kpiLoading || clientsLoading || projectsLoading;
-
   if (loading) {
     return <EmailDashboardSkeleton />;
   }
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       {/* KPI Dashboard - Compact View */}
-      <Card className="liquid-glass p-2 rounded-xl border">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-sm font-medium text-muted-foreground">Email Statistics</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleRefresh}
-            className="h-8 w-8 p-0 hover:bg-muted"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-          <div 
-            className="flex flex-col items-center text-center p-1.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
-            onClick={() => handleKPIClick('total')}
-          >
-            <div className="flex items-center gap-1 mb-0.5">
-              <Users className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
-              <span className="text-xs font-medium text-muted-foreground">Total</span>
-            </div>
-            <div className="text-lg font-bold">{totalEmails}</div>
-          </div>
-
-          <div 
-            className="flex flex-col items-center text-center p-1.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
-            onClick={() => handleKPIClick('delivered')}
-          >
-            <div className="flex items-center gap-1 mb-0.5">
-              <CheckCircle className="h-3 w-3 text-green-600 group-hover:text-green-700 transition-colors" />
-              <span className="text-xs font-medium text-muted-foreground">Delivered</span>
-            </div>
-            <div className="text-lg font-bold text-green-600">{deliveredEmails}</div>
-            <span className="text-xs text-muted-foreground">{deliveryRate}%</span>
-          </div>
-
-          <div 
-            className="flex flex-col items-center text-center p-1.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
-            onClick={() => handleKPIClick('opened')}
-          >
-            <div className="flex items-center gap-1 mb-0.5">
-              <Eye className="h-3 w-3 text-primary group-hover:text-primary/80 transition-colors" />
-              <span className="text-xs font-medium text-muted-foreground">Opened</span>
-            </div>
-            <div className="text-lg font-bold text-primary">{openedEmails}</div>
-            <span className="text-xs text-muted-foreground">{openRate}%</span>
-          </div>
-
-          <div 
-            className="flex flex-col items-center text-center p-1.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
-            onClick={() => handleKPIClick('bounced')}
-          >
-            <div className="flex items-center gap-1 mb-0.5">
-              <XCircle className="h-3 w-3 text-red-600 group-hover:text-red-700 transition-colors" />
-              <span className="text-xs font-medium text-muted-foreground">Bounced</span>
-            </div>
-            <div className="text-lg font-bold text-red-600">{bouncedEmails}</div>
-            <span className="text-xs text-muted-foreground">{bounceRate}%</span>
-          </div>
-
-          <div 
-            className="flex flex-col items-center text-center p-1.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
-            onClick={() => handleKPIClick('deleted')}
-          >
-            <div className="flex items-center gap-1 mb-0.5">
-              <Trash2 className="h-3 w-3 text-orange-600 group-hover:text-orange-700 transition-colors" />
-              <span className="text-xs font-medium text-muted-foreground">Deleted</span>
-            </div>
-            <div className="text-lg font-bold text-orange-600">{deletedEmails}</div>
-            <span className="text-xs text-muted-foreground">{deleteRate}%</span>
-          </div>
-        </div>
-      </Card>
+      
 
       {/* Filters */}
-      {showFilters && (
-        <Card className="liquid-glass rounded-xl border">
+      {showFilters && <Card className="liquid-glass rounded-xl border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Filter className="h-5 w-5" />
@@ -310,12 +235,7 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
               <div className="flex-1 min-w-[200px]">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input
-                    placeholder="Search emails..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
+                  <Input placeholder="Search emails..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
                 </div>
               </div>
               
@@ -345,11 +265,9 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Clients</SelectItem>
-                  {clients.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
+                  {clients.map(client => <SelectItem key={client.id} value={client.id}>
                       {client.name}
-                    </SelectItem>
-                  ))}
+                    </SelectItem>)}
                 </SelectContent>
               </Select>
 
@@ -359,29 +277,23 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Projects</SelectItem>
-                  {projects.map((project) => (
-                    <SelectItem key={project.id} value={project.id}>
+                  {projects.map(project => <SelectItem key={project.id} value={project.id}>
                       {project.name}
-                    </SelectItem>
-                  ))}
+                    </SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
           </CardContent>
-        </Card>
-      )}
+        </Card>}
 
       {/* Email List */}
       <Card className="liquid-glass rounded-xl border overflow-hidden">
         <CardContent className="p-0">
-          {filteredEmails.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
+          {filteredEmails.length === 0 ? <div className="text-center py-12 text-muted-foreground">
               <Mail className="mx-auto h-12 w-12 mb-4 text-muted-foreground" />
               <h3 className="text-lg font-medium mb-2">No emails found</h3>
               <p className="text-muted-foreground mb-4">No emails match your current filters.</p>
-            </div>
-          ) : (
-            <Table>
+            </div> : <Table>
               <TableHeader>
                 <TableRow className="bg-muted/30 hover:bg-muted/30">
                   <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Subject</TableHead>
@@ -393,31 +305,18 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredEmails.map((email) => (
-                  <TableRow 
-                    key={email.id} 
-                    className="hover:bg-muted/50 cursor-pointer"
-                    onClick={() => handleViewEmail(email)}
-                  >
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => handleViewEmail(email)}
-                        className="font-medium text-foreground hover:text-primary text-left"
-                      >
+                {filteredEmails.map(email => <TableRow key={email.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => handleViewEmail(email)}>
+                    <TableCell onClick={e => e.stopPropagation()}>
+                      <button onClick={() => handleViewEmail(email)} className="font-medium text-foreground hover:text-primary text-left">
                         {email.subject}
                       </button>
                     </TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => handleViewEmail(email)}
-                        className="text-sm hover:text-primary text-left"
-                      >
+                    <TableCell onClick={e => e.stopPropagation()}>
+                      <button onClick={() => handleViewEmail(email)} className="text-sm hover:text-primary text-left">
                         <div>{email.recipient_email}</div>
-                        {email.client_id && (
-                          <div className="text-xs text-muted-foreground">
+                        {email.client_id && <div className="text-xs text-muted-foreground">
                             {clients.find(c => c.id === email.client_id)?.name}
-                          </div>
-                        )}
+                          </div>}
                       </button>
                     </TableCell>
                      <TableCell>
@@ -433,76 +332,44 @@ export const EmailDashboard = ({ showFilters = false, setShowFilters }: EmailDas
                     <TableCell>
                       <div className="flex items-center space-x-2 text-xs">
                         {/* Always show open count for sent/delivered emails */}
-                        {['sent', 'delivered', 'opened'].includes(email.status) && (
-                          <div className="flex items-center space-x-1">
+                        {['sent', 'delivered', 'opened'].includes(email.status) && <div className="flex items-center space-x-1">
                             <Eye className="h-3 w-3 text-primary" />
                               <span className={`font-medium ${email.open_count > 0 ? 'text-accent' : 'text-muted-foreground'}`}>
                                 {email.open_count} {email.open_count === 1 ? 'open' : 'opens'}
                               </span>
-                          </div>
-                        )}
+                          </div>}
                         
                         {/* Show clicks if any */}
-                        {email.click_count > 0 && (
-                          <div className="flex items-center space-x-1">
+                        {email.click_count > 0 && <div className="flex items-center space-x-1">
                             <MousePointer className="h-3 w-3 text-primary" />
                             <span className="text-primary font-medium">
                               {email.click_count} {email.click_count === 1 ? 'click' : 'clicks'}
                             </span>
-                          </div>
-                        )}
+                          </div>}
                         
                         {/* Status indicators for non-trackable emails */}
-                        {email.status === 'failed' && (
-                          <span className="text-destructive text-xs">❌ Failed to send</span>
-                        )}
-                        {email.status === 'queued' && (
-                          <span className="text-muted-foreground text-xs">⏳ Queued</span>
-                        )}
-                        {email.status === 'bounced' && (
-                          <span className="text-destructive text-xs">↩️ Bounced</span>
-                        )}
+                        {email.status === 'failed' && <span className="text-destructive text-xs">❌ Failed to send</span>}
+                        {email.status === 'queued' && <span className="text-muted-foreground text-xs">⏳ Queued</span>}
+                        {email.status === 'bounced' && <span className="text-destructive text-xs">↩️ Bounced</span>}
                       </div>
                     </TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <EmailRowActions
-                        email={email}
-                        onView={() => handleViewEmail(email)}
-                        onFollowUp={() => handleStartFollowUp(email.id)}
-                        onResend={() => handleResendEmail(email)}
-                        isResending={sendEmailMutation.isPending}
-                      />
+                    <TableCell onClick={e => e.stopPropagation()}>
+                      <EmailRowActions email={email} onView={() => handleViewEmail(email)} onFollowUp={() => handleStartFollowUp(email.id)} onResend={() => handleResendEmail(email)} isResending={sendEmailMutation.isPending} />
                     </TableCell>
-                  </TableRow>
-                ))}
+                  </TableRow>)}
               </TableBody>
-            </Table>
-          )}
+            </Table>}
         </CardContent>
       </Card>
 
       {/* Follow-up Composer */}
-      {followUpEmailId && (
-        <Card>
+      {followUpEmailId && <Card>
           <CardContent className="p-4">
-            <FollowUpComposer
-              email={emails.find(e => e.id === followUpEmailId)!}
-              onSend={(followUpData) => handleSendFollowUp(followUpEmailId, followUpData)}
-              onCancel={() => setFollowUpEmailId(null)}
-              isSending={sendEmailMutation.isPending}
-            />
+            <FollowUpComposer email={emails.find(e => e.id === followUpEmailId)!} onSend={followUpData => handleSendFollowUp(followUpEmailId, followUpData)} onCancel={() => setFollowUpEmailId(null)} isSending={sendEmailMutation.isPending} />
           </CardContent>
-        </Card>
-      )}
+        </Card>}
 
       {/* Email Detail Dialog */}
-      <EmailDetailDialog
-        open={showEmailDetail}
-        onOpenChange={setShowEmailDetail}
-        email={selectedEmail}
-        onResendEmail={handleResendEmail}
-        isResending={sendEmailMutation.isPending}
-      />
-    </div>
-  );
+      <EmailDetailDialog open={showEmailDetail} onOpenChange={setShowEmailDetail} email={selectedEmail} onResendEmail={handleResendEmail} isResending={sendEmailMutation.isPending} />
+    </div>;
 };
