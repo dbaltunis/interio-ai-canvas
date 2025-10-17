@@ -221,10 +221,116 @@ export const useMarkReminderCompleted = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["follow-up-reminders"] });
+      queryClient.invalidateQueries({ queryKey: ["completed-reminders"] });
       toast({
-        title: "Success",
-        description: "Reminder marked as completed",
+        title: "Task completed",
+        description: "Follow-up reminder marked as done",
       });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useSnoozeReminder = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ reminderId, days }: { reminderId: string; days: number }) => {
+      const newDate = new Date();
+      newDate.setDate(newDate.getDate() + days);
+
+      const { error } = await supabase
+        .from("reminders" as any)
+        .update({ scheduled_for: newDate.toISOString() })
+        .eq("id", reminderId);
+
+      if (error) throw error;
+      return days;
+    },
+    onSuccess: (days) => {
+      queryClient.invalidateQueries({ queryKey: ["follow-up-reminders"] });
+      toast({
+        title: "Reminder snoozed",
+        description: `Rescheduled for ${days} day${days > 1 ? 's' : ''} from now`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useDeleteReminder = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (reminderId: string) => {
+      const { error } = await supabase
+        .from("reminders" as any)
+        .delete()
+        .eq("id", reminderId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["follow-up-reminders"] });
+      toast({
+        title: "Reminder deleted",
+        description: "Follow-up reminder has been removed",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useCompletedReminders = () => {
+  return useQuery({
+    queryKey: ['completed-reminders'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('reminders' as any)
+        .select(`
+          *,
+          clients:client_id (
+            id,
+            name,
+            company_name,
+            client_type,
+            email
+          ),
+          deals:deal_id (
+            id,
+            title
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('status', 'completed')
+        .order('updated_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      return data || [];
     },
   });
 };
