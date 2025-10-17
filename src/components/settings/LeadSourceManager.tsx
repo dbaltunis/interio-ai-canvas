@@ -120,19 +120,17 @@ export const LeadSourceManager = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold" style={{ color: '#111827' }}>Lead Sources</h2>
-          <p className="text-sm text-gray-600 mt-1">
-            Manage custom lead sources for tracking where your clients come from
-          </p>
-        </div>
-        <Dialog open={isDialogOpen} onOpenChange={(open) => {
-          setIsDialogOpen(open);
-          if (!open) resetForm();
-        }}>
-          <DialogTrigger asChild>
+      {!isDialogOpen ? (
+        <>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold" style={{ color: '#111827' }}>Lead Sources</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Manage custom lead sources for tracking where your clients come from
+              </p>
+            </div>
             <button
+              onClick={() => setIsDialogOpen(true)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -157,232 +155,240 @@ export const LeadSourceManager = () => {
               <Plus className="w-4 h-4" />
               Add Source
             </button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px] z-50">
-            <DialogHeader>
-              <DialogTitle>
-                {editingSource ? "Edit Lead Source" : "Add Lead Source"}
-              </DialogTitle>
-                <DialogDescription>
-                  Create a custom lead source to track client origins
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="e.g., LinkedIn"
-                    required
-                  />
-                </div>
+          </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Brief description of this lead source"
-                    rows={2}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Color</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {COLOR_OPTIONS.map((color) => (
-                        <button
-                          key={color}
-                          type="button"
-                          className={`w-8 h-8 rounded-md border-2 ${
-                            formData.color === color ? "border-foreground" : "border-transparent"
-                          }`}
-                          style={{ backgroundColor: color }}
-                          onClick={() => setFormData({ ...formData, color })}
+          <div className="rounded-md border border-gray-200" style={{ backgroundColor: 'white' }}>
+            <Table>
+              <TableHeader>
+                <TableRow style={{ borderColor: '#e5e7eb' }}>
+                  <TableHead className="w-12"></TableHead>
+                  <TableHead style={{ color: '#111827' }}>Name</TableHead>
+                  <TableHead style={{ color: '#111827' }}>Description</TableHead>
+                  <TableHead style={{ color: '#111827' }}>Status</TableHead>
+                  <TableHead className="text-right" style={{ color: '#111827' }}>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sources?.map((source) => (
+                  <TableRow key={source.id} style={{ borderColor: '#e5e7eb' }}>
+                    <TableCell>
+                      <GripVertical className="h-4 w-4 text-gray-400" />
+                    </TableCell>
+                    <TableCell style={{ color: '#111827' }}>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: source.color }}
                         />
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Icon</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {ICON_OPTIONS.slice(0, 6).map((icon) => (
+                        <span className="font-medium">{source.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm" style={{ color: '#6b7280' }}>
+                      {source.description || "—"}
+                    </TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={source.is_active}
+                        onCheckedChange={() => handleToggleActive(source)}
+                      />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
                         <button
-                          key={icon}
-                          type="button"
-                          className={`w-8 h-8 rounded-md border flex items-center justify-center ${
-                            formData.icon === icon ? "border-primary bg-primary/10" : "border-border"
-                          }`}
-                          onClick={() => setFormData({ ...formData, icon })}
+                          onClick={() => handleEdit(source)}
+                          style={{
+                            padding: '6px',
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#f3f4f6';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
                         >
-                          <span className="text-sm">{icon.charAt(0)}</span>
+                          <Edit className="h-4 w-4" style={{ color: '#6b7280' }} />
                         </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                        <button
+                          onClick={() => handleDelete(source.id)}
+                          style={{
+                            padding: '6px',
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#fee2e2';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" style={{ color: '#ef4444' }} />
+                        </button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {!sources?.length && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8" style={{ color: '#6b7280' }}>
+                      No lead sources found. Add your first source to get started.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </>
+      ) : (
+        <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px' }}>
+          <div className="mb-6">
+            <h3 className="text-xl font-semibold" style={{ color: '#111827' }}>
+              {editingSource ? "Edit Lead Source" : "Add Lead Source"}
+            </h3>
+            <p className="text-sm" style={{ color: '#6b7280', marginTop: '4px' }}>
+              Create a custom lead source to track client origins
+            </p>
+          </div>
+          
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="e.g., LinkedIn"
+                required
+              />
+            </div>
 
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="is_active"
-                    checked={formData.is_active}
-                    onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                  />
-                  <Label htmlFor="is_active">Active</Label>
-                </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Brief description of this lead source"
+                rows={2}
+              />
+            </div>
 
-                <div className="flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsDialogOpen(false)}
-                    style={{
-                      padding: '8px 16px',
-                      backgroundColor: '#ffffff',
-                      color: '#111827',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#f3f4f6';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = '#ffffff';
-                    }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    style={{
-                      padding: '8px 16px',
-                      backgroundColor: '#111827',
-                      color: '#ffffff',
-                      border: 'none',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#1f2937';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = '#111827';
-                    }}
-                  >
-                    {editingSource ? "Update" : "Create"}
-                  </button>
-                </div>
-              </form>
-            </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="rounded-md border border-gray-200" style={{ backgroundColor: 'white' }}>
-        <Table>
-          <TableHeader>
-            <TableRow style={{ borderColor: '#e5e7eb' }}>
-              <TableHead className="w-12"></TableHead>
-              <TableHead style={{ color: '#111827' }}>Name</TableHead>
-              <TableHead style={{ color: '#111827' }}>Description</TableHead>
-              <TableHead style={{ color: '#111827' }}>Status</TableHead>
-              <TableHead className="text-right" style={{ color: '#111827' }}>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sources?.map((source) => (
-              <TableRow key={source.id} style={{ borderColor: '#e5e7eb' }}>
-                <TableCell>
-                  <GripVertical className="h-4 w-4 text-gray-400" />
-                </TableCell>
-                <TableCell style={{ color: '#111827' }}>
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: source.color }}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Color</Label>
+                <div className="flex flex-wrap gap-2">
+                  {COLOR_OPTIONS.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      className={`w-8 h-8 rounded-md border-2`}
+                      style={{ 
+                        backgroundColor: color,
+                        borderColor: formData.color === color ? '#111827' : 'transparent'
+                      }}
+                      onClick={() => setFormData({ ...formData, color })}
                     />
-                    <span className="font-medium">{source.name}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-sm" style={{ color: '#6b7280' }}>
-                  {source.description || "—"}
-                </TableCell>
-                <TableCell>
-                  <Switch
-                    checked={source.is_active}
-                    onCheckedChange={() => handleToggleActive(source)}
-                  />
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-2">
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Icon</Label>
+                <div className="flex flex-wrap gap-2">
+                  {ICON_OPTIONS.slice(0, 6).map((icon) => (
                     <button
-                      onClick={() => handleEdit(source)}
+                      key={icon}
+                      type="button"
+                      className="w-8 h-8 rounded-md border flex items-center justify-center"
                       style={{
-                        padding: '6px',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'all 0.2s'
+                        borderColor: formData.icon === icon ? '#111827' : '#d1d5db',
+                        backgroundColor: formData.icon === icon ? '#f3f4f6' : 'transparent'
                       }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#f3f4f6';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
+                      onClick={() => setFormData({ ...formData, icon })}
                     >
-                      <Edit className="h-4 w-4" style={{ color: '#6b7280' }} />
+                      <span className="text-sm">{icon.charAt(0)}</span>
                     </button>
-                    <button
-                      onClick={() => handleDelete(source.id)}
-                      style={{
-                        padding: '6px',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#fee2e2';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" style={{ color: '#ef4444' }} />
-                    </button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            {!sources?.length && (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-8" style={{ color: '#6b7280' }}>
-                  No lead sources found. Add your first source to get started.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="is_active"
+                checked={formData.is_active}
+                onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+              />
+              <Label htmlFor="is_active">Active</Label>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDialogOpen(false);
+                  resetForm();
+                }}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#ffffff',
+                  color: '#111827',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f3f4f6';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#ffffff';
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#111827',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#1f2937';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#111827';
+                }}
+              >
+                {editingSource ? "Update" : "Create"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };
