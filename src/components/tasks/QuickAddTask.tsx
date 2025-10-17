@@ -100,9 +100,10 @@ export const QuickAddTask = ({ clientId, projectId, trigger }: QuickAddTaskProps
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
+                    type="button"
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal",
+                      "w-full justify-start text-left font-normal pointer-events-auto",
                       !dueDate && "text-muted-foreground"
                     )}
                   >
@@ -110,7 +111,7 @@ export const QuickAddTask = ({ clientId, projectId, trigger }: QuickAddTaskProps
                     {dueDate ? format(dueDate, "PPP") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
                   <Calendar
                     mode="single"
                     selected={dueDate}
