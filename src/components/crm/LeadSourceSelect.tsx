@@ -9,7 +9,8 @@ import {
 } from "@/components/ui/select";
 import { useLeadSources } from "@/hooks/useLeadSources";
 import { LeadSourceDialog } from "./LeadSourceDialog";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface LeadSourceSelectProps {
   value: string;
@@ -18,8 +19,17 @@ interface LeadSourceSelectProps {
 }
 
 export const LeadSourceSelect = ({ value, onValueChange, placeholder = "Select source" }: LeadSourceSelectProps) => {
-  const { data: sources, isLoading } = useLeadSources();
+  const { data: sources, isLoading, refetch } = useLeadSources();
   const [showManager, setShowManager] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleCloseManager = () => {
+    setShowManager(false);
+    // Invalidate and refetch the lead sources when closing the manager
+    queryClient.invalidateQueries({ queryKey: ["lead-sources"] });
+    queryClient.invalidateQueries({ queryKey: ["all-lead-sources"] });
+    refetch();
+  };
 
   return (
     <div className="space-y-2">
@@ -69,7 +79,7 @@ export const LeadSourceSelect = ({ value, onValueChange, placeholder = "Select s
 
         <LeadSourceDialog 
           open={showManager} 
-          onClose={() => setShowManager(false)} 
+          onClose={handleCloseManager} 
         />
       </div>
     </div>
