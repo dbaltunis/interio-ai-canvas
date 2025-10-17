@@ -7,15 +7,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { useLeadSources } from "@/hooks/useLeadSources";
-import { LeadSourceManager } from "@/components/settings/LeadSourceManager";
+import { LeadSourceDialog } from "./LeadSourceDialog";
 import { useState } from "react";
 
 interface LeadSourceSelectProps {
@@ -63,25 +56,21 @@ export const LeadSourceSelect = ({ value, onValueChange, placeholder = "Select s
           </SelectContent>
         </Select>
         
-        <Dialog open={showManager} onOpenChange={setShowManager}>
-          <DialogTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              type="button"
-              className="flex-shrink-0"
-              title="Manage lead sources"
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto z-50">
-            <DialogHeader>
-              <DialogTitle>Manage Lead Sources</DialogTitle>
-            </DialogHeader>
-            <LeadSourceManager />
-          </DialogContent>
-        </Dialog>
+        <Button 
+          variant="outline" 
+          size="icon" 
+          type="button"
+          className="flex-shrink-0"
+          title="Manage lead sources"
+          onClick={() => setShowManager(true)}
+        >
+          <Settings className="h-4 w-4" />
+        </Button>
+
+        <LeadSourceDialog 
+          open={showManager} 
+          onClose={() => setShowManager(false)} 
+        />
       </div>
     </div>
   );
