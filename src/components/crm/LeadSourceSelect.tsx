@@ -65,7 +65,13 @@ export const LeadSourceSelect = ({ value, onValueChange, placeholder = "Select s
         
         <Dialog open={showManager} onOpenChange={setShowManager}>
           <DialogTrigger asChild>
-            <Button variant="outline" size="icon" title="Manage lead sources">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              type="button"
+              className="flex-shrink-0"
+              title="Manage lead sources"
+            >
               <Settings className="h-4 w-4" />
             </Button>
           </DialogTrigger>
