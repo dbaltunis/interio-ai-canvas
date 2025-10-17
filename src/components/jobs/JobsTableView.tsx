@@ -9,6 +9,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Eye, MoreHorizontal, Trash2, StickyNote, User, Copy, Calendar } from "lucide-react";
 import { useQuotes, useDeleteQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useProjects } from "@/hooks/useProjects";
@@ -68,7 +73,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
   const [projectNotes, setProjectNotes] = useState<Record<string, number>>({});
-  const [projectAppointments, setProjectAppointments] = useState<Record<string, boolean>>({});
+  const [projectAppointments, setProjectAppointments] = useState<Record<string, any[]>>({});
 
   const toggleJobExpansion = (jobId: string) => {
     const newExpanded = new Set(expandedJobs);
@@ -106,12 +111,15 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
       // Fetch appointments
       const { data: appointmentsData } = await supabase
         .from('appointments')
-        .select('project_id')
+        .select('*')
         .in('project_id', projectIds);
 
-      const appointmentsMap: Record<string, boolean> = {};
+      const appointmentsMap: Record<string, any[]> = {};
       (appointmentsData || []).forEach((apt: any) => {
-        appointmentsMap[apt.project_id] = true;
+        if (!appointmentsMap[apt.project_id]) {
+          appointmentsMap[apt.project_id] = [];
+        }
+        appointmentsMap[apt.project_id].push(apt);
       });
       setProjectAppointments(appointmentsMap);
     };
@@ -451,11 +459,42 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <span>{new Date(project.created_at).toLocaleDateString()}</span>
-                        {projectAppointments[project.id] && (
-                          <div className="relative">
-                            <Calendar className="h-3.5 w-3.5 text-green-600" />
-                            <div className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-green-500 rounded-full border border-white" />
-                          </div>
+                        {projectAppointments[project.id] && projectAppointments[project.id].length > 0 && (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button 
+                                className="relative hover:scale-110 transition-transform cursor-pointer"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Calendar className="h-3.5 w-3.5 text-green-600" />
+                                <div className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-green-500 rounded-full border border-white" />
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80 p-0 pointer-events-auto z-[200]" align="start">
+                              <div className="p-4">
+                                <h4 className="font-semibold mb-3">Scheduled Appointments</h4>
+                                <div className="space-y-2">
+                                  {projectAppointments[project.id].map((appointment: any) => (
+                                    <div key={appointment.id} className="p-3 bg-muted rounded-md">
+                                      <div className="flex items-start justify-between">
+                                        <div className="flex-1">
+                                          <p className="font-medium text-sm">{appointment.title}</p>
+                                          <p className="text-xs text-muted-foreground mt-1">
+                                            {new Date(appointment.start_time).toLocaleString()}
+                                          </p>
+                                          {appointment.description && (
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                              {appointment.description}
+                                            </p>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
                         )}
                       </div>
                     </TableCell>
