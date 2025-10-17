@@ -26,15 +26,17 @@ import {
   Space
 } from "lucide-react";
 import { SignatureCanvas } from './SignatureCanvas';
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 interface LivePreviewBlockProps {
   block: any;
   projectData?: any;
   isEditable?: boolean;
   isPrintMode?: boolean;
+  userBusinessSettings?: any;
 }
 
-const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false }: LivePreviewBlockProps) => {
+const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false, userBusinessSettings }: LivePreviewBlockProps) => {
   const content = block.content || {};
   const style = content.style || {};
   
@@ -811,7 +813,11 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false 
               )}
               {content.showTax && (
                 <div className="flex justify-between py-2">
-                  <span className="text-gray-600">Tax ({renderTokenValue('tax_rate')}):</span>
+                  <span className="text-gray-600">
+                    {userBusinessSettings?.tax_type && userBusinessSettings.tax_type !== 'none' 
+                      ? userBusinessSettings.tax_type.toUpperCase() 
+                      : 'Tax'} ({renderTokenValue('tax_rate')}):
+                  </span>
                   <span className="font-medium">{renderTokenValue('tax_amount')}</span>
                 </div>
               )}
@@ -1213,6 +1219,7 @@ export const LivePreview = ({
   containerStyles,
   onContainerStylesChange 
 }: LivePreviewProps) => {
+  const { data: businessSettings } = useBusinessSettings();
   console.log('LivePreview rendering with blocks:', blocks?.length || 0);
 
   // If editable and we have update functions, use the editable version
@@ -1299,6 +1306,7 @@ export const LivePreview = ({
                 projectData={projectData}
                 isEditable={isEditable}
                 isPrintMode={isPrintMode}
+                userBusinessSettings={businessSettings}
               />
             ))}
           </div>
