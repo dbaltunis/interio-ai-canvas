@@ -23,6 +23,7 @@ export const PricingRulesTab = () => {
   const [formData, setFormData] = useState<MarkupSettings | null>(null);
   const [taxRate, setTaxRate] = useState<number>(0);
   const [taxType, setTaxType] = useState<'none' | 'vat' | 'gst' | 'sales_tax'>('none');
+  const [taxInclusive, setTaxInclusive] = useState<boolean>(false);
 
   useEffect(() => {
     if (markupSettings) {
@@ -37,6 +38,9 @@ export const PricingRulesTab = () => {
       if (['none', 'vat', 'gst', 'sales_tax'].includes(validTaxType)) {
         setTaxType(validTaxType as 'none' | 'vat' | 'gst' | 'sales_tax');
       }
+      // Get tax_inclusive from pricing_settings
+      const pricingSettings = businessSettings.pricing_settings as any;
+      setTaxInclusive(pricingSettings?.tax_inclusive || false);
     }
   }, [businessSettings]);
 
@@ -65,10 +69,18 @@ export const PricingRulesTab = () => {
   const handleSaveTaxSettings = async () => {
     if (!businessSettings?.id) return;
     
+    // Get current pricing_settings and update tax_inclusive
+    const currentPricingSettings = (businessSettings.pricing_settings as any) || {};
+    const updatedPricingSettings = {
+      ...currentPricingSettings,
+      tax_inclusive: taxInclusive
+    };
+    
     await updateBusinessSettings.mutateAsync({
       id: businessSettings.id,
       tax_rate: taxRate,
-      tax_type: taxType
+      tax_type: taxType,
+      pricing_settings: updatedPricingSettings
     });
   };
 
@@ -134,6 +146,25 @@ export const PricingRulesTab = () => {
               />
             </div>
           </div>
+          
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5">
+              <Label htmlFor="taxInclusive" className="text-base font-medium">
+                Tax Inclusive Pricing
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {taxInclusive 
+                  ? "Prices shown include tax (tax is part of the price)" 
+                  : "Prices shown exclude tax (tax is added to the price)"}
+              </p>
+            </div>
+            <Switch 
+              id="taxInclusive"
+              checked={taxInclusive}
+              onCheckedChange={setTaxInclusive}
+            />
+          </div>
+          
           <p className="text-sm text-muted-foreground">
             Common rates: Australia/NZ GST = 10-15%, UK VAT = 20%, EU VAT = 15-27%
           </p>
