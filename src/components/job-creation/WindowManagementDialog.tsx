@@ -1,7 +1,8 @@
 import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Ruler } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Ruler, Save } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { MeasurementBridge } from "../measurements/MeasurementBridge";
@@ -209,14 +210,20 @@ export const WindowManagementDialog = ({
       <Dialog open={isOpen} onOpenChange={handleDialogClose}>
         <DialogContent className="max-w-7xl max-h-[95vh] flex flex-col bg-background border-2">
           <DialogHeader className="flex-shrink-0 pb-4 border-b border-border">
-            <DialogTitle className="flex items-center gap-2 text-xl font-bold text-foreground">
-              <Ruler className="h-6 w-6 text-primary" />
-              Design area: 
-              <WindowRenameButton 
-                windowName={surface?.name || 'Untitled'}
-                onRename={handleRename}
-              />
-            </DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2 text-xl font-bold text-foreground">
+                <Ruler className="h-6 w-6 text-primary" />
+                Design area: 
+                <WindowRenameButton 
+                  windowName={surface?.name || 'Untitled'}
+                  onRename={handleRename}
+                />
+              </DialogTitle>
+              <Button onClick={handleSaveData} variant="default" size="sm">
+                <Save className="h-4 w-4 mr-2" />
+                Save
+              </Button>
+            </div>
           </DialogHeader>
 
           <div className="flex-1 min-h-0 overflow-y-auto bg-background/50 rounded-md p-4">
