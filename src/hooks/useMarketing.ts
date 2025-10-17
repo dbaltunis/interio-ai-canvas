@@ -213,6 +213,9 @@ export const useMarkReminderCompleted = () => {
 
   return useMutation({
     mutationFn: async (reminderId: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
       // Get reminder details first
       const { data: reminder, error: fetchError } = await supabase
         .from("follow_up_reminders")
@@ -229,30 +232,35 @@ export const useMarkReminderCompleted = () => {
 
       if (fetchError) throw fetchError;
 
+      // Log activity in client_activity_log BEFORE marking as dismissed
+      if (reminder?.clients?.id) {
+        const { error: activityError } = await supabase
+          .from("client_activity_log")
+          .insert({
+            client_id: reminder.clients.id,
+            user_id: user.id,
+            activity_type: "follow_up_completed",
+            title: "Follow-up Completed",
+            description: reminder.message || "Follow-up reminder marked as completed"
+          });
+
+        if (activityError) {
+          console.error("Activity log error:", activityError);
+        }
+      }
+
       // Mark reminder as dismissed
       const { data, error } = await supabase
         .from("follow_up_reminders")
         .update({ 
-          status: "dismissed"
+          status: "dismissed",
+          updated_at: new Date().toISOString()
         })
         .eq("id", reminderId)
         .select()
         .single();
 
       if (error) throw error;
-
-      // Log activity in client_activity_log
-      if (reminder?.clients?.id) {
-        await supabase
-          .from("client_activity_log")
-          .insert({
-            client_id: reminder.clients.id,
-            user_id: reminder.clients.user_id,
-            activity_type: "follow_up_completed",
-            title: "Follow-up Completed",
-            description: reminder.message || "Follow-up reminder marked as completed"
-          });
-      }
 
       return data;
     },
