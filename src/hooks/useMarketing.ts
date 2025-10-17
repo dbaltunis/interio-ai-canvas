@@ -269,8 +269,7 @@ export const useMarkReminderCompleted = () => {
       const { data, error } = await supabase
         .from("follow_up_reminders")
         .update({ 
-          status: "dismissed",
-          updated_at: new Date().toISOString()
+          status: "dismissed"
         })
         .eq("id", reminderId)
         .select()
