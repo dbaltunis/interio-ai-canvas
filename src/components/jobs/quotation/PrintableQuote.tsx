@@ -5,10 +5,12 @@ interface PrintableQuoteProps {
   blocks: any[];
   projectData: any;
   isPrintMode?: boolean;
+  showDetailedBreakdown?: boolean;
+  showImages?: boolean;
 }
 
 export const PrintableQuote = React.forwardRef<HTMLDivElement, PrintableQuoteProps>(
-  ({ blocks, projectData, isPrintMode = true }, ref) => {
+  ({ blocks, projectData, isPrintMode = true, showDetailedBreakdown, showImages }, ref) => {
     return (
       <div 
         ref={ref}

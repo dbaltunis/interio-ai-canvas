@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { SignatureCanvas } from './SignatureCanvas';
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { QuoteItemImage } from "@/components/quotes/QuoteItemImage";
+import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
 
 interface LivePreviewBlockProps {
   block: any;
@@ -46,6 +48,9 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false,
   );
   const [groupByRoom, setGroupByRoom] = React.useState(
     content.groupByRoom !== undefined ? content.groupByRoom : false
+  );
+  const [showImages, setShowImages] = React.useState(
+    content.showImages !== undefined ? content.showImages : false
   );
   
   // Trim and normalize block type to prevent matching issues
@@ -516,18 +521,18 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false,
       );
 
     case 'products':
-      // Get real workshop items data which has the detailed breakdown
+      // Get real data
       const workshopItems = projectData?.workshopItems || [];
       const surfaces = projectData?.surfaces || [];
+      const rooms = projectData?.rooms || [];
+      const windowSummaries = projectData?.windowSummaries?.windows || [];
       
-      // ALWAYS use projectData.items as the PRIMARY source - it has correct room names, prices, currency
+      // Use projectData.items as PRIMARY source
       let projectItems = [];
       
       if (projectData?.items && projectData.items.length > 0) {
-        // Use formatted quotation items - filter out any header items
         projectItems = projectData.items.filter((item: any) => !item.isHeader && item.type !== 'room_header');
       } else if (workshopItems.length > 0 || surfaces.length > 0) {
-        // Fallback to workshop items only if no formatted items exist
         const surfaceMap = new Map(surfaces.map((s: any) => [s.id, s]));
         projectItems = [...workshopItems];
         
@@ -551,99 +556,15 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false,
       
       const hasRealData = projectItems.length > 0 && !projectItems.every((item: any) => item._isPending);
 
-      // Enrich workshop item with windows_summary data for accurate breakdown
-      const enrichWorkshopItemWithSummary = (item: any) => {
-        if (!item?.window_id) return item;
-        
-        // Find the matching window summary from projectData
-        const windowSummary = (projectData?.windowSummaries || []).find(
-          (ws: any) => ws.window_id === item.window_id
-        );
-        
-        if (!windowSummary?.summary) return item;
-        
-        const summary = windowSummary.summary;
-        
-        // Merge exact values from windows_summary into item
-        return {
-          ...item,
-          fabric_cost: summary.fabric_cost || item.fabric_cost || 0,
-          lining_cost: summary.lining_cost || item.lining_cost || 0,
-          manufacturing_cost: summary.manufacturing_cost || item.manufacturing_cost || 0,
-          heading_cost: summary.heading_cost || item.heading_cost || 0,
-          heading_details: summary.heading_details || item.heading_details || null,
-          lining_details: summary.lining_details || item.lining_details || null,
-          fabric_name: summary.fabric_name || item.fabric_name,
-          lining_name: summary.lining_name || item.lining_name,
-          linear_meters: summary.linear_meters || item.linear_meters || 0,
-          fabric_metres: summary.fabric_metres || item.fabric_metres || 0,
-        };
-      };
-
-      // Function to get itemized breakdown for a workshop item - USING EXACT DATABASE VALUES
+      // Get comprehensive breakdown using buildClientBreakdown
       const getItemizedBreakdown = (item: any) => {
-        // Enrich item with windows_summary data first
-        const enrichedItem = enrichWorkshopItemWithSummary(item);
-        const components = [];
+        const windowSummary = windowSummaries.find((ws: any) => ws.window_id === item.id);
         
-        const linearMeters = parseFloat(enrichedItem.linear_meters || enrichedItem.fabric_metres || 0);
+        if (windowSummary?.summary) {
+          return buildClientBreakdown(windowSummary.summary);
+        }
         
-        // Fabric - Use EXACT fabric_cost from windows_summary
-        const fabricCost = parseFloat(enrichedItem.fabric_cost || 0);
-        if (fabricCost > 0 && linearMeters > 0) {
-          const fabricPricePerMeter = fabricCost / linearMeters;
-          components.push({
-            type: 'Fabric',
-            description: enrichedItem.fabric_name || enrichedItem.fabric_details?.name || 'Fabric',
-            quantity: linearMeters.toFixed(2),
-            unit: 'm',
-            rate: fabricPricePerMeter.toFixed(2),
-            total: fabricCost.toFixed(2)
-          });
-        }
-
-        // Manufacturing - Use EXACT manufacturing_cost from windows_summary
-        const manufacturingCost = parseFloat(enrichedItem.manufacturing_cost || 0);
-        if (manufacturingCost > 0) {
-          components.push({
-            type: 'Manufacturing price',
-            description: '-',
-            quantity: '1',
-            unit: '',
-            rate: manufacturingCost.toFixed(2),
-            total: manufacturingCost.toFixed(2)
-          });
-        }
-
-        // Lining - Use EXACT lining_cost from windows_summary
-        const liningCost = parseFloat(enrichedItem.lining_cost || 0);
-        if (liningCost > 0 && linearMeters > 0) {
-          const liningPricePerMetre = enrichedItem.lining_details?.price_per_metre || (liningCost / linearMeters);
-          components.push({
-            type: 'Lining',
-            description: enrichedItem.lining_name || enrichedItem.lining_details?.lining_name || enrichedItem.lining_details?.type || 'Standard',
-            quantity: linearMeters.toFixed(2),
-            unit: 'm',
-            rate: liningPricePerMetre.toFixed(2),
-            total: liningCost.toFixed(2)
-          });
-        }
-
-        // Heading - Use EXACT heading_cost from windows_summary
-        const headingCost = parseFloat(enrichedItem.heading_details?.cost || enrichedItem.heading_cost || 0);
-        if (headingCost > 0) {
-          const headingQuantity = Math.round((enrichedItem.measurements?.rail_width || 200));
-          components.push({
-            type: 'Heading',
-            description: enrichedItem.heading_details?.heading_name || enrichedItem.heading_details?.name || 'Regular Headrail',
-            quantity: headingQuantity,
-            unit: 'cm',
-            rate: headingCost.toFixed(2),
-            total: headingCost.toFixed(2)
-          });
-        }
-
-        return components;
+        return [];
       };
 
       // Group items by room if enabled
@@ -665,28 +586,36 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false,
             </h3>
             <div className="flex items-center gap-3">
               {!isPrintMode && hasRealData && (
-                <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={groupByRoom}
-                    onChange={(e) => setGroupByRoom(e.target.checked)}
-                    className="rounded border-gray-300 cursor-pointer"
-                  />
-                  <span>Group by room</span>
-                </label>
-              )}
-              {!isPrintMode && (
-                <button
-                  onClick={() => setShowDetailedProducts(!showDetailedProducts)}
-                  className="px-4 py-1.5 text-sm font-medium border rounded-md hover:bg-gray-50 active:bg-gray-100 transition-colors"
-                  title={showDetailedProducts ? "Switch to simple view" : "Switch to detailed view with itemized breakdown"}
-                >
-                  {showDetailedProducts ? '📋 Simple View' : '🔍 Detailed View'}
-                </button>
+                <>
+                  <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={groupByRoom}
+                      onChange={(e) => setGroupByRoom(e.target.checked)}
+                      className="rounded border-gray-300 cursor-pointer"
+                    />
+                    <span>Group by room</span>
+                  </label>
+                  <button
+                    onClick={() => setShowDetailedProducts(!showDetailedProducts)}
+                    className="px-4 py-1.5 text-sm font-medium border rounded-md hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                    title={showDetailedProducts ? "Switch to simple view" : "Switch to detailed view with itemized breakdown"}
+                  >
+                    {showDetailedProducts ? '📋 Simple View' : '🔍 Detailed View'}
+                  </button>
+                  <button
+                    onClick={() => setShowImages(!showImages)}
+                    className="px-4 py-1.5 text-sm font-medium border rounded-md hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                    title={showImages ? "Hide product images" : "Show product images"}
+                  >
+                    {showImages ? '🖼️ Hide Images' : '🖼️ Show Images'}
+                  </button>
+                </>
               )}
               {isPrintMode && (
                 <div className="px-3 py-1 text-xs bg-blue-50 border border-blue-200 rounded-md text-blue-700 font-medium">
                   {showDetailedProducts ? '🔍 Detailed Breakdown' : '📋 Simple View'}
+                  {showImages && ' • 🖼️ Images'}
                 </div>
               )}
             </div>
@@ -726,67 +655,70 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false,
                     )}
                     {(items as any[]).map((item: any, itemIndex: number) => {
                       const itemNumber = groupByRoom ? itemIndex + 1 : Object.values(groupedItems).flat().indexOf(item) + 1;
+                      const breakdown = getItemizedBreakdown(item);
                       
-                      if (showDetailedProducts && hasRealData) {
-                        // Detailed view with itemization
-                        const itemizedComponents = getItemizedBreakdown(item);
-                        return (
-                            <React.Fragment key={`item-${roomName}-${itemIndex}`}>
-                            {/* Main product row */}
-                            <tr className="border-t border-gray-300">
-                              <td className="px-2 py-2 text-sm font-semibold align-top" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{itemNumber}</td>
-                              <td className="px-2 py-2 text-sm font-semibold align-top" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
-                                {item.name || 'Window Treatment'}
-                              </td>
-                              <td className="px-2 py-2 text-sm align-top" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
-                                {item.description || item.treatment_type || ''}
-                              </td>
-                              <td className="px-2 py-2 text-center text-sm align-top" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{item.quantity || 1}</td>
-                              <td className="px-2 py-2 text-right text-sm align-top" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
-                                {renderTokenValue('currency_symbol')}{(item.unit_price || 0).toFixed(2)}
-                              </td>
-                              <td className="px-2 py-2 text-right font-semibold text-sm align-top" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>
-                                {renderTokenValue('currency_symbol')}{(item.total || 0).toFixed(2)}
-                              </td>
-                            </tr>
-                            {/* Itemized component rows with smaller font and indentation */}
-                            {itemizedComponents.map((component, compIndex) => (
-                              <tr key={`comp-${roomName}-${itemIndex}-${compIndex}`} className="border-t border-gray-100">
-                                <td className="px-2 py-1"></td>
-                                <td className="px-2 py-1 pl-6 text-sm text-gray-700" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{component.type}</td>
-                                <td className="px-2 py-1 text-sm text-gray-700" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{component.description}</td>
-                                <td className="px-2 py-1 text-center text-sm text-gray-700" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{component.quantity} {component.unit}</td>
-                                <td className="px-2 py-1 text-right text-sm text-gray-700" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{renderTokenValue('currency_symbol')}{component.rate}</td>
-                                <td className="px-2 py-1 text-right text-sm text-gray-700" style={{ wordWrap: 'break-word', overflow: 'hidden' }}>{renderTokenValue('currency_symbol')}{component.total}</td>
-                              </tr>
-                            ))}
-                          </React.Fragment>
-                        );
-                      } else {
-                        // Simple view - show compact summary with room location
-                        const locationInfo = item.room_name || item.location || '';
-                        return (
-                          <tr key={`simple-${roomName}-${itemIndex}`} className="border-t border-gray-300">
-                            <td className="px-2 py-2 text-sm align-top" style={{ wordWrap: 'break-word' }}>{itemNumber}</td>
-                            <td className="px-2 py-2 text-sm font-medium align-top" style={{ wordWrap: 'break-word' }}>
-                              {item.name || item.treatment_type || 'Window Treatment'}
-                              {!groupByRoom && locationInfo && (
-                                <div className="text-xs text-gray-500 font-normal mt-0.5">{locationInfo}</div>
-                              )}
+                      return (
+                        <React.Fragment key={`item-${roomName}-${itemIndex}`}>
+                          {/* Main product row */}
+                          <tr className="border-t border-gray-300 hover:bg-gray-50/50">
+                            <td className="px-2 py-2 text-sm font-semibold align-top">{itemNumber}</td>
+                            <td className="px-2 py-2 text-sm font-semibold align-top">
+                              <div className="flex items-start gap-2">
+                                {showImages && item.image_url && (
+                                  <QuoteItemImage src={item.image_url} alt={item.name} size={60} />
+                                )}
+                                <div className="flex-1">
+                                  {item.name || 'Window Treatment'}
+                                </div>
+                              </div>
                             </td>
-                            <td className="px-2 py-2 text-sm text-gray-700 align-top" style={{ wordWrap: 'break-word' }}>
+                            <td className="px-2 py-2 text-sm align-top">
                               {item.description || item.treatment_type || ''}
                             </td>
-                            <td className="px-2 py-2 text-center text-sm align-top" style={{ wordWrap: 'break-word' }}>{item.quantity || 1}</td>
-                            <td className="px-2 py-2 text-right text-sm align-top" style={{ wordWrap: 'break-word' }}>
+                            <td className="px-2 py-2 text-center text-sm align-top">{item.quantity || 1}</td>
+                            <td className="px-2 py-2 text-right text-sm align-top">
                               {renderTokenValue('currency_symbol')}{(item.unit_price || 0).toFixed(2)}
                             </td>
-                            <td className="px-2 py-2 text-right font-medium text-sm align-top" style={{ wordWrap: 'break-word' }}>
+                            <td className="px-2 py-2 text-right font-semibold text-sm align-top">
                               {renderTokenValue('currency_symbol')}{(item.total || 0).toFixed(2)}
                             </td>
                           </tr>
-                        );
-                      }
+                          
+                          {/* Detailed breakdown rows */}
+                          {showDetailedProducts && breakdown.length > 0 && (
+                            <tr>
+                              <td colSpan={6} className="px-2 py-2 bg-gray-50/30">
+                                <div className="ml-8 pl-4 border-l-2 border-gray-300 space-y-2">
+                                  {breakdown.map((breakdownItem: any, bidx: number) => (
+                                    <div key={bidx} className="flex items-start text-xs gap-2">
+                                      {showImages && breakdownItem.image_url && (
+                                        <QuoteItemImage src={breakdownItem.image_url} alt={breakdownItem.name} size={40} />
+                                      )}
+                                      <span className="text-gray-400 mt-0.5">•</span>
+                                      <div className="flex-1">
+                                        <div className="font-medium text-gray-700">{breakdownItem.name}</div>
+                                        {breakdownItem.description && (
+                                          <div className="text-gray-500 text-xs">{breakdownItem.description}</div>
+                                        )}
+                                        {breakdownItem.quantity && breakdownItem.unit && (
+                                          <div className="text-gray-400 text-xs">
+                                            {typeof breakdownItem.quantity === 'number' ? breakdownItem.quantity.toFixed(2) : breakdownItem.quantity} {breakdownItem.unit} × {renderTokenValue('currency_symbol')}{(breakdownItem.unit_price || 0).toFixed(2)} = {renderTokenValue('currency_symbol')}{(breakdownItem.total_cost || 0).toFixed(2)}
+                                          </div>
+                                        )}
+                                        {!breakdownItem.quantity && breakdownItem.total_cost > 0 && (
+                                          <div className="text-gray-400 text-xs">
+                                            {renderTokenValue('currency_symbol')}{(breakdownItem.total_cost || 0).toFixed(2)}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
                     })}
                   </React.Fragment>
                 ))}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Document, Page, Text, View, Image, StyleSheet, Font } from '@react-pdf/renderer';
+import { buildClientBreakdown } from '@/utils/quotes/buildClientBreakdown';
 
 // Register fonts (optional - using default Helvetica for now)
 const styles = StyleSheet.create({
@@ -165,9 +166,16 @@ const styles = StyleSheet.create({
 interface QuotePDFDocumentProps {
   blocks: any[];
   projectData: any;
+  showDetailedBreakdown?: boolean;
+  showImages?: boolean;
 }
 
-export const QuotePDFDocument: React.FC<QuotePDFDocumentProps> = ({ blocks, projectData }) => {
+export const QuotePDFDocument: React.FC<QuotePDFDocumentProps> = ({ 
+  blocks, 
+  projectData, 
+  showDetailedBreakdown = false,
+  showImages = false 
+}) => {
   const renderTokenValue = (token: string) => {
     const project = projectData?.project || {};
     const client = project.client || projectData?.client || {};
@@ -285,6 +293,8 @@ export const QuotePDFDocument: React.FC<QuotePDFDocumentProps> = ({ blocks, proj
 
       case 'products':
         const items = projectData?.items || [];
+        const windowSummaries = projectData?.windowSummaries?.windows || [];
+        
         return (
           <View style={styles.productsSection} key={block.id}>
             <Text style={styles.sectionTitle}>{content.title || 'Quote Items'}</Text>
@@ -298,52 +308,74 @@ export const QuotePDFDocument: React.FC<QuotePDFDocumentProps> = ({ blocks, proj
                 <Text style={[styles.tableCol5, { fontWeight: 'bold' }]}>Total</Text>
               </View>
 
-              {/* Table Rows with Breakdown */}
-              {items.map((item: any, index: number) => (
-                <View key={index} style={{ marginBottom: 12, borderBottom: '1px solid #e2e8f0', paddingBottom: 12 }}>
-                  {/* Main Item Row */}
-                  <View style={[styles.tableRow, { borderBottom: 'none', paddingBottom: 4 }]}>
-                    <Text style={styles.tableCol1}>{index + 1}</Text>
-                    <View style={styles.tableCol2}>
-                      <Text style={{ fontWeight: 'bold', fontSize: 11 }}>{item.name || item.description}</Text>
-                      <Text style={{ fontSize: 9, color: '#666', marginTop: 2 }}>{item.description}</Text>
-                    </View>
-                    <Text style={styles.tableCol3}>{item.quantity || 1}</Text>
-                    <Text style={[styles.tableCol5, { fontWeight: 'bold' }]}>
-                      {renderTokenValue('currency_symbol')}{(item.total || 0).toFixed(2)}
-                    </Text>
-                  </View>
-                  
-                  {/* Breakdown Details */}
-                  {item.breakdown && item.breakdown.length > 0 && (
-                    <View style={{ marginLeft: 30, marginTop: 8, paddingLeft: 12, borderLeft: '2px solid #e5e7eb' }}>
-                      {item.breakdown.map((breakdownItem: any, idx: number) => (
-                        <View key={idx} style={{ marginBottom: 6, flexDirection: 'row' }}>
-                          <Text style={{ fontSize: 10, marginRight: 6, color: '#6b7280' }}>•</Text>
-                          <View style={{ flex: 1 }}>
-                            <Text style={{ fontSize: 9, fontWeight: 'bold', marginBottom: 1 }}>
-                              {breakdownItem.name}
-                            </Text>
-                            <Text style={{ fontSize: 8, color: '#6b7280', marginBottom: 1 }}>
-                              {breakdownItem.description}
-                            </Text>
-                            {breakdownItem.quantity && breakdownItem.unit && (
-                              <Text style={{ fontSize: 8, color: '#9ca3af' }}>
-                                {breakdownItem.quantity} {breakdownItem.unit} × {renderTokenValue('currency_symbol')}{(breakdownItem.unit_price || 0).toFixed(2)} = {renderTokenValue('currency_symbol')}{(breakdownItem.total_cost || 0).toFixed(2)}
-                              </Text>
-                            )}
-                            {!breakdownItem.quantity && breakdownItem.total_cost > 0 && (
-                              <Text style={{ fontSize: 8, color: '#9ca3af' }}>
-                                {renderTokenValue('currency_symbol')}{(breakdownItem.total_cost || 0).toFixed(2)}
-                              </Text>
-                            )}
-                          </View>
+              {/* Table Rows */}
+              {items.map((item: any, index: number) => {
+                // Get breakdown using buildClientBreakdown
+                const windowSummary = windowSummaries.find((ws: any) => ws.window_id === item.id);
+                const breakdown = (showDetailedBreakdown && windowSummary?.summary) 
+                  ? buildClientBreakdown(windowSummary.summary) 
+                  : [];
+                
+                return (
+                  <View key={index} style={{ marginBottom: 12, borderBottom: '1px solid #e2e8f0', paddingBottom: 12 }}>
+                    {/* Main Item Row */}
+                    <View style={[styles.tableRow, { borderBottom: 'none', paddingBottom: 4, flexDirection: 'row', alignItems: 'flex-start' }]}>
+                      <Text style={styles.tableCol1}>{index + 1}</Text>
+                      <View style={[styles.tableCol2, { flexDirection: 'row', gap: 8 }]}>
+                        {showImages && item.image_url && (
+                          <Image 
+                            src={item.image_url} 
+                            style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: 4 }}
+                          />
+                        )}
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontWeight: 'bold', fontSize: 11 }}>{item.name || item.description}</Text>
+                          <Text style={{ fontSize: 9, color: '#666', marginTop: 2 }}>{item.description}</Text>
                         </View>
-                      ))}
+                      </View>
+                      <Text style={styles.tableCol3}>{item.quantity || 1}</Text>
+                      <Text style={[styles.tableCol5, { fontWeight: 'bold' }]}>
+                        {renderTokenValue('currency_symbol')}{(item.total || 0).toFixed(2)}
+                      </Text>
                     </View>
-                  )}
-                </View>
-              ))}
+                    
+                    {/* Breakdown Details */}
+                    {breakdown.length > 0 && (
+                      <View style={{ marginLeft: 30, marginTop: 8, paddingLeft: 12, borderLeft: '2px solid #e5e7eb' }}>
+                        {breakdown.map((breakdownItem: any, idx: number) => (
+                          <View key={idx} style={{ marginBottom: 6, flexDirection: 'row', alignItems: 'flex-start' }}>
+                            {showImages && breakdownItem.image_url && (
+                              <Image 
+                                src={breakdownItem.image_url} 
+                                style={{ width: 30, height: 30, objectFit: 'cover', borderRadius: 4, marginRight: 6 }}
+                              />
+                            )}
+                            <Text style={{ fontSize: 10, marginRight: 6, color: '#6b7280' }}>•</Text>
+                            <View style={{ flex: 1 }}>
+                              <Text style={{ fontSize: 9, fontWeight: 'bold', marginBottom: 1 }}>
+                                {breakdownItem.name}
+                              </Text>
+                              <Text style={{ fontSize: 8, color: '#6b7280', marginBottom: 1 }}>
+                                {breakdownItem.description}
+                              </Text>
+                              {breakdownItem.quantity && breakdownItem.unit && (
+                                <Text style={{ fontSize: 8, color: '#9ca3af' }}>
+                                  {typeof breakdownItem.quantity === 'number' ? breakdownItem.quantity.toFixed(2) : breakdownItem.quantity} {breakdownItem.unit} × {renderTokenValue('currency_symbol')}{(breakdownItem.unit_price || 0).toFixed(2)} = {renderTokenValue('currency_symbol')}{(breakdownItem.total_cost || 0).toFixed(2)}
+                                </Text>
+                              )}
+                              {!breakdownItem.quantity && breakdownItem.total_cost > 0 && (
+                                <Text style={{ fontSize: 8, color: '#9ca3af' }}>
+                                  {renderTokenValue('currency_symbol')}{(breakdownItem.total_cost || 0).toFixed(2)}
+                                </Text>
+                              )}
+                            </View>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
             </View>
           </View>
         );

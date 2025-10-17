@@ -8,6 +8,7 @@ export interface ClientBreakdownItem {
   unit?: string;
   unit_price?: number;
   total_cost?: number;
+  image_url?: string;
   details?: Record<string, any>;
 }
 
@@ -38,6 +39,7 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
       summary.price_per_meter ?? summary.fabric_details?.price_per_meter ?? summary.fabric_details?.unit_price
     ) || 0,
     total_cost: Number(summary.fabric_cost) || 0,
+    image_url: summary.fabric_details?.image_url,
     category: 'fabric',
     details: {
       widths_required: summary.widths_required,
@@ -56,6 +58,7 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
       unit: 'm',
       unit_price: Number(summary.lining_details?.price_per_metre ?? summary.lining_details?.price_per_meter) || undefined,
       total_cost: Number(summary.lining_cost) || 0,
+      image_url: summary.lining_details?.image_url,
       category: 'lining',
       details: summary.lining_details || undefined,
     });
@@ -82,6 +85,7 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
         name: option.name || 'Option',
         description: option.description,
         total_cost: Number(option.price) || 0,
+        image_url: option.image_url,
         category: 'option',
         details: option,
       });
