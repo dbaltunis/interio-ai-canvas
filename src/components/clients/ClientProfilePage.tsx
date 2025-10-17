@@ -16,11 +16,14 @@ import {
 } from "lucide-react";
 import { useClient, useUpdateClient } from "@/hooks/useClients";
 import { useClientJobs, useClientQuotes, calculateClientDealValue } from "@/hooks/useClientJobs";
+import { useConversionProbability } from "@/hooks/useConversionProbability";
 import { ClientEmailHistory } from "./ClientEmailHistory";
+import { EnhancedClientEmailHistory } from "./EnhancedClientEmailHistory";
 import { ClientProjectsList } from "./ClientProjectsList";
 import { MeasurementsList } from "../measurements/MeasurementsList";
 import { EmailComposer } from "../jobs/email/EmailComposer";
 import { TasksList } from "../tasks/TasksList";
+import { QuickAddTask } from "../tasks/QuickAddTask";
 import { ClientActivityLog } from "./ClientActivityLog";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
@@ -38,6 +41,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   const { data: quotes } = useClientQuotes(clientId);
   const updateClient = useUpdateClient();
   const { toast } = useToast();
+  const { probability: autoConversionProb, factors } = useConversionProbability(client);
   
   const [isEditing, setIsEditing] = useState(false);
   const [showEmailComposer, setShowEmailComposer] = useState(false);
@@ -150,13 +154,25 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         <div className="flex items-center gap-2">
           {!isEditing ? (
             <>
-              <Button variant="outline" size="sm" onClick={() => setShowEmailComposer(true)}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  // First scroll to email section
+                  const emailTab = document.querySelector('[value="emails"]') as HTMLElement;
+                  if (emailTab) {
+                    emailTab.click();
+                    setTimeout(() => {
+                      if ((window as any).scrollToEmailSection) {
+                        (window as any).scrollToEmailSection();
+                      }
+                    }, 150);
+                  }
+                }}
+              >
                 <Mail className="h-4 w-4 mr-2" />
                 Email
-              </Button>
-              <Button variant="outline" size="sm">
-                <Phone className="h-4 w-4 mr-2" />
-                Call
               </Button>
               <Button size="sm" onClick={handleEdit}>
                 <Edit className="h-4 w-4 mr-2" />
@@ -494,25 +510,85 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
           </CardContent>
         </Card>
 
-        {/* Side Panel */}
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Conversion Probability</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Probability</span>
-                  <span className="font-semibold">{currentClient.conversion_probability || 0}%</span>
-                </div>
-                <Progress value={currentClient.conversion_probability || 0} className="h-2" />
+        {/* Side Panel - Combined Tasks & Activity */}
+        <Card className="space-y-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-purple-600" />
+              Engagement Overview
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Automated Conversion Probability */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Conversion Probability</span>
+                <Badge 
+                  variant="outline" 
+                  className={`${
+                    autoConversionProb >= 70 
+                      ? 'bg-green-50 text-green-700 border-green-300' 
+                      : autoConversionProb >= 40 
+                      ? 'bg-yellow-50 text-yellow-700 border-yellow-300' 
+                      : 'bg-red-50 text-red-700 border-red-300'
+                  }`}
+                >
+                  {autoConversionProb}%
+                </Badge>
               </div>
-            </CardContent>
-          </Card>
-          
-          <TasksList clientId={clientId} />
-        </div>
+              <Progress 
+                value={autoConversionProb} 
+                className="h-2.5"
+              />
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">
+                  Auto-calculated based on:
+                </p>
+                <div className="grid grid-cols-2 gap-1 text-xs">
+                  <span className="text-muted-foreground">• Lead score: {factors.leadScore}</span>
+                  <span className="text-muted-foreground">• Stage: {factors.stage}</span>
+                  <span className="text-muted-foreground">• Emails: {factors.emailEngagement}</span>
+                  <span className="text-muted-foreground">• Activity: {factors.activityLevel}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="h-px bg-border" />
+            
+            {/* Compact Tasks & Activity Section */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-semibold flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4" />
+                  Tasks & Activity
+                </h4>
+                <QuickAddTask clientId={clientId} />
+              </div>
+              
+              <TasksList clientId={clientId} compact={true} />
+              
+              <div className="pt-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => {
+                    const activityTab = document.querySelector('[value="activity"]');
+                    if (activityTab) {
+                      (activityTab as HTMLElement).click();
+                      setTimeout(() => {
+                        activityTab.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                      }, 100);
+                    }
+                  }}
+                >
+                  <Clock className="h-4 w-4 mr-2" />
+                  View Full Timeline
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Tabs defaultValue="projects" className="w-full">
@@ -533,7 +609,11 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         </TabsContent>
 
         <TabsContent value="emails" className="mt-6">
-          <ClientEmailHistory clientId={clientId} />
+          <EnhancedClientEmailHistory 
+            clientId={clientId} 
+            clientEmail={client.email}
+            onComposeEmail={() => setShowEmailComposer(true)}
+          />
         </TabsContent>
 
         <TabsContent value="measurements" className="mt-6">

@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 
 interface TasksListProps {
   clientId?: string;
+  compact?: boolean;
 }
 
 const priorityConfig: Record<TaskPriority, { color: string; icon: string; label: string }> = {
@@ -38,7 +39,7 @@ const getDueDateColor = (dueDate: string) => {
   return "text-muted-foreground";
 };
 
-export const TasksList = ({ clientId }: TasksListProps) => {
+export const TasksList = ({ clientId, compact = false }: TasksListProps) => {
   const { data: tasks, isLoading } = useClientTasks(clientId);
   const completeTask = useCompleteTask();
   const deleteTask = useDeleteTask();
@@ -65,6 +66,50 @@ export const TasksList = ({ clientId }: TasksListProps) => {
 
   const pendingTasks = tasks?.filter(t => t.status === "pending" || t.status === "in_progress") || [];
   const hasTasks = pendingTasks.length > 0;
+  const displayTasks = compact ? pendingTasks.slice(0, 3) : pendingTasks;
+
+  if (compact) {
+    return (
+      <div className="space-y-2">
+        {!hasTasks ? (
+          <div className="text-center py-6">
+            <CheckCircle2 className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+            <p className="text-xs text-muted-foreground">No active tasks</p>
+          </div>
+        ) : (
+          <>
+            {displayTasks.map((task) => {
+              const priorityInfo = priorityConfig[task.priority];
+              
+              return (
+                <div
+                  key={task.id}
+                  className="flex items-center gap-2 p-2 rounded border bg-card text-xs"
+                >
+                  <Checkbox
+                    checked={false}
+                    onCheckedChange={() => handleComplete(task.id)}
+                    className="h-3 w-3"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{task.title}</p>
+                  </div>
+                  <Badge variant="outline" className={cn("text-[10px] px-1 py-0", priorityInfo.color)}>
+                    {priorityInfo.icon}
+                  </Badge>
+                </div>
+              );
+            })}
+            {pendingTasks.length > 3 && (
+              <p className="text-xs text-muted-foreground text-center pt-1">
+                +{pendingTasks.length - 3} more tasks
+              </p>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
 
   return (
     <Card>
