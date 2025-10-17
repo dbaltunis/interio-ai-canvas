@@ -46,6 +46,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   const [isEditing, setIsEditing] = useState(false);
   const [showEmailComposer, setShowEmailComposer] = useState(false);
   const [editedClient, setEditedClient] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState("projects");
   
   // Calculate total value from quotes
   const calculatedDealValue = calculateClientDealValue(quotes || []);
@@ -159,16 +160,13 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                 size="sm" 
                 onClick={(e) => {
                   e.preventDefault();
-                  // First scroll to email section
-                  const emailTab = document.querySelector('[value="emails"]') as HTMLElement;
-                  if (emailTab) {
-                    emailTab.click();
-                    setTimeout(() => {
-                      if ((window as any).scrollToEmailSection) {
-                        (window as any).scrollToEmailSection();
-                      }
-                    }, 150);
-                  }
+                  setActiveTab("emails");
+                  setTimeout(() => {
+                    const emailSection = document.getElementById('email-section');
+                    if (emailSection) {
+                      emailSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }, 100);
                 }}
               >
                 <Mail className="h-4 w-4 mr-2" />
@@ -438,11 +436,22 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   {currentClient.email && (
-                    <div className="flex items-center gap-3">
+                    <div 
+                      className="flex items-center gap-3 cursor-pointer hover:bg-accent/5 p-2 rounded-lg transition-colors"
+                      onClick={() => {
+                        setActiveTab("emails");
+                        setTimeout(() => {
+                          const emailSection = document.getElementById('email-section');
+                          if (emailSection) {
+                            emailSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }
+                        }, 100);
+                      }}
+                    >
                       <Mail className="h-5 w-5 text-muted-foreground" />
                       <div>
                         <p className="text-sm text-muted-foreground">Email</p>
-                        <p className="font-medium">{currentClient.email}</p>
+                        <p className="font-medium text-primary hover:underline">{currentClient.email}</p>
                       </div>
                     </div>
                   )}
@@ -573,13 +582,13 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                   size="sm" 
                   className="w-full"
                   onClick={() => {
-                    const activityTab = document.querySelector('[value="activity"]');
-                    if (activityTab) {
-                      (activityTab as HTMLElement).click();
-                      setTimeout(() => {
-                        activityTab.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                      }, 100);
-                    }
+                    setActiveTab("activity");
+                    setTimeout(() => {
+                      const activitySection = document.getElementById('activity-section');
+                      if (activitySection) {
+                        activitySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }, 100);
                   }}
                 >
                   <Clock className="h-4 w-4 mr-2" />
@@ -591,7 +600,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         </Card>
       </div>
 
-      <Tabs defaultValue="projects" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList>
           <TabsTrigger value="projects">Projects</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
@@ -605,7 +614,9 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         </TabsContent>
 
         <TabsContent value="activity" className="mt-6">
-          <ClientActivityLog clientId={clientId} />
+          <div id="activity-section">
+            <ClientActivityLog clientId={clientId} />
+          </div>
         </TabsContent>
 
         <TabsContent value="emails" className="mt-6">
