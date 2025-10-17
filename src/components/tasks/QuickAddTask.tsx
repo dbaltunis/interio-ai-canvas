@@ -97,7 +97,7 @@ export const QuickAddTask = ({ clientId, projectId, trigger }: QuickAddTaskProps
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Due date</Label>
-              <Popover>
+              <Popover modal={false}>
                 <PopoverTrigger asChild>
                   <Button
                     type="button"

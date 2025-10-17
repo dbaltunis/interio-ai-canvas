@@ -120,7 +120,7 @@ export const AddActivityDialog = ({ clientId, open, onOpenChange }: AddActivityD
 
           <div className="space-y-2">
             <Label>Follow-up Date (Optional)</Label>
-            <Popover>
+            <Popover modal={false}>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full justify-start text-left font-normal">
                   <CalendarIcon className="mr-2 h-4 w-4" />
