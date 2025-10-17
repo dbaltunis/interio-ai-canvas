@@ -2906,6 +2906,45 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_sources: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       making_cost_option_mappings: {
         Row: {
           created_at: string

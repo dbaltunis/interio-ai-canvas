@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useCreateClient, useUpdateClient } from "@/hooks/useClients";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
+import { LeadSourceSelect } from "@/components/crm/LeadSourceSelect";
 
 interface ClientFormWithLeadIntelligenceProps {
   onCancel: () => void;
@@ -244,22 +245,11 @@ export const ClientFormWithLeadIntelligence = ({ onCancel, onSuccess, editingCli
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormFieldGroup label="Lead Source" description="How did they find you?">
-              <Select value={leadSource} onValueChange={setLeadSource}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select lead source" />
-                </SelectTrigger>
-                <SelectContent className="z-[9999] bg-background border border-border shadow-lg" position="popper" sideOffset={4}>
-                  <SelectItem value="website">Website</SelectItem>
-                  <SelectItem value="google_ads">Google Ads</SelectItem>
-                  <SelectItem value="facebook_ads">Facebook Ads</SelectItem>
-                  <SelectItem value="referral">Referral</SelectItem>
-                  <SelectItem value="trade_show">Trade Show</SelectItem>
-                  <SelectItem value="cold_call">Cold Call</SelectItem>
-                  <SelectItem value="email_campaign">Email Campaign</SelectItem>
-                  <SelectItem value="social_media">Social Media</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+              <LeadSourceSelect 
+                value={leadSource} 
+                onValueChange={setLeadSource}
+                placeholder="Select lead source"
+              />
             </FormFieldGroup>
 
             <FormFieldGroup label="Priority Level">

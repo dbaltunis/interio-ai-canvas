@@ -19,6 +19,7 @@ import { useClientJobs, useClientQuotes, calculateClientDealValue } from "@/hook
 import { useConversionProbability } from "@/hooks/useConversionProbability";
 import { ClientEmailHistory } from "./ClientEmailHistory";
 import { EnhancedClientEmailHistory } from "./EnhancedClientEmailHistory";
+import { LeadSourceSelect } from "@/components/crm/LeadSourceSelect";
 import { ClientProjectsList } from "./ClientProjectsList";
 import { MeasurementsList } from "../measurements/MeasurementsList";
 import { EmailComposer } from "../jobs/email/EmailComposer";
@@ -341,22 +342,11 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                 
                 <div className="space-y-2">
                   <Label htmlFor="lead_source">Lead Source</Label>
-                  <Select
-                    value={editedClient.lead_source || 'other'}
+                  <LeadSourceSelect 
+                    value={editedClient.lead_source || ''} 
                     onValueChange={(value) => setEditedClient({ ...editedClient, lead_source: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="website">Website</SelectItem>
-                      <SelectItem value="referral">Referral</SelectItem>
-                      <SelectItem value="social_media">Social Media</SelectItem>
-                      <SelectItem value="advertisement">Advertisement</SelectItem>
-                      <SelectItem value="direct">Direct</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select lead source"
+                  />
                 </div>
                 
                 <div className="space-y-2">
