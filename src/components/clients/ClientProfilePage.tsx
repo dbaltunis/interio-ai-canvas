@@ -118,7 +118,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
     : currentClient.name;
 
   return (
-    <div className="min-h-screen bg-background p-6 space-y-6 animate-fade-in">
+    <div className="max-h-screen overflow-y-auto bg-background p-6 space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -515,7 +515,6 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         </div>
       </div>
 
-      {/* Tabs */}
       <Tabs defaultValue="projects" className="w-full">
         <TabsList>
           <TabsTrigger value="projects">Projects</TabsTrigger>
