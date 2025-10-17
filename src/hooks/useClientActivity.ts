@@ -33,13 +33,18 @@ export const useClientActivities = (clientId: string) => {
   return useQuery({
     queryKey: ["client-activities", clientId],
     queryFn: async () => {
+      console.log("Fetching activities for client:", clientId);
       const { data, error } = await supabase
         .from("client_activity_log")
         .select("*")
         .eq("client_id", clientId)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching activities:", error);
+        throw error;
+      }
+      console.log("Activities fetched:", data?.length, "records");
       return data as ClientActivity[];
     },
     enabled: !!clientId,
