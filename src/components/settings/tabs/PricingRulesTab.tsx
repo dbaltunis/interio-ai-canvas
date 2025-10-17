@@ -147,22 +147,36 @@ export const PricingRulesTab = () => {
             </div>
           </div>
           
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="space-y-0.5">
-              <Label htmlFor="taxInclusive" className="text-base font-medium">
-                Tax Inclusive Pricing
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                {taxInclusive 
-                  ? "Prices shown include tax (tax is part of the price)" 
-                  : "Prices shown exclude tax (tax is added to the price)"}
-              </p>
+          <div className="rounded-lg border-2 p-4 bg-muted/30" style={{ borderColor: taxInclusive ? 'hsl(var(--primary))' : 'hsl(var(--border))' }}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="space-y-1">
+                <Label htmlFor="taxInclusive" className="text-base font-semibold cursor-pointer">
+                  Tax Inclusive Pricing
+                </Label>
+                <p className="text-sm text-muted-foreground font-normal">
+                  {taxInclusive 
+                    ? "✓ Prices include tax - Tax is already included in displayed prices" 
+                    : "✗ Prices exclude tax - Tax will be added to displayed prices"}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-muted-foreground">
+                  {taxInclusive ? "ON" : "OFF"}
+                </span>
+                <Switch 
+                  id="taxInclusive"
+                  checked={taxInclusive}
+                  onCheckedChange={setTaxInclusive}
+                />
+              </div>
             </div>
-            <Switch 
-              id="taxInclusive"
-              checked={taxInclusive}
-              onCheckedChange={setTaxInclusive}
-            />
+            <div className="text-xs text-muted-foreground bg-background/50 rounded p-2">
+              <strong>Example:</strong> If you set a price of $100 and tax is 20%:
+              <ul className="mt-1 ml-4 list-disc">
+                <li><strong>Inclusive ON:</strong> Customer pays $100 total (includes $16.67 tax)</li>
+                <li><strong>Inclusive OFF:</strong> Customer pays $120 total ($100 + $20 tax)</li>
+              </ul>
+            </div>
           </div>
           
           <p className="text-sm text-muted-foreground">
