@@ -132,10 +132,31 @@ export const LeadSourceManager = () => {
           if (!open) resetForm();
         }}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
+            <button
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 16px',
+                backgroundColor: '#111827',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#1f2937';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#111827';
+              }}
+            >
+              <Plus className="w-4 h-4" />
               Add Source
-            </Button>
+            </button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px] z-50">
             <DialogHeader>
@@ -216,12 +237,51 @@ export const LeadSourceManager = () => {
                 </div>
 
                 <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  <button
+                    type="button"
+                    onClick={() => setIsDialogOpen(false)}
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: '#ffffff',
+                      color: '#111827',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#f3f4f6';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#ffffff';
+                    }}
+                  >
                     Cancel
-                  </Button>
-                  <Button type="submit">
+                  </button>
+                  <button
+                    type="submit"
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: '#111827',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#1f2937';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#111827';
+                    }}
+                  >
                     {editingSource ? "Update" : "Create"}
-                  </Button>
+                  </button>
                 </div>
               </form>
             </DialogContent>
@@ -265,20 +325,50 @@ export const LeadSourceManager = () => {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                    <button
                       onClick={() => handleEdit(source)}
+                      style={{
+                        padding: '6px',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#f3f4f6';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
                     >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                      <Edit className="h-4 w-4" style={{ color: '#6b7280' }} />
+                    </button>
+                    <button
                       onClick={() => handleDelete(source.id)}
+                      style={{
+                        padding: '6px',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#fee2e2';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      <Trash2 className="h-4 w-4" style={{ color: '#ef4444' }} />
+                    </button>
                   </div>
                 </TableCell>
               </TableRow>
