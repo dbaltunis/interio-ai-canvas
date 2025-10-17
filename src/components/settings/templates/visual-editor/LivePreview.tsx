@@ -560,12 +560,34 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false,
       const getItemizedBreakdown = (item: any) => {
         const windowSummary = windowSummaries.find((ws: any) => ws.window_id === item.id);
         
+        console.log('[DETAILED VIEW] Getting breakdown for item:', {
+          itemId: item.id,
+          itemName: item.name,
+          foundSummary: !!windowSummary,
+          hasSummary: !!windowSummary?.summary
+        });
+        
         if (windowSummary?.summary) {
-          return buildClientBreakdown(windowSummary.summary);
+          const breakdown = buildClientBreakdown(windowSummary.summary);
+          console.log('[DETAILED VIEW] Built breakdown:', {
+            itemName: item.name,
+            breakdownCount: breakdown.length,
+            breakdown
+          });
+          return breakdown;
         }
         
         return [];
       };
+      
+      console.log('[PRODUCTS BLOCK] Rendering products:', {
+        projectItemsCount: projectItems.length,
+        windowSummariesCount: windowSummaries.length,
+        rooms: rooms.map((r: any) => r.name),
+        groupByRoom,
+        showDetailedProducts,
+        showImages
+      });
 
       // Group items by room if enabled
       const groupedItems = groupByRoom && hasRealData ? 
@@ -647,9 +669,9 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false,
                 {Object.entries(groupedItems).map(([roomName, items]: [string, any]) => (
                   <React.Fragment key={roomName}>
                     {groupByRoom && hasRealData && (
-                      <tr className="border-t-2 border-gray-400">
-                        <td colSpan={6} className="px-3 py-3 font-semibold text-base text-gray-900 bg-gray-50" style={{ wordWrap: 'break-word' }}>
-                          {roomName}
+                      <tr className="bg-gray-100 border-t-2 border-gray-400">
+                        <td colSpan={6} className="px-4 py-2.5 font-semibold text-sm uppercase tracking-wide text-gray-700" style={{ wordWrap: 'break-word' }}>
+                          📍 {roomName}
                         </td>
                       </tr>
                     )}
@@ -730,23 +752,23 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false,
 
     case 'totals':
       return (
-        <div className="mb-8">
+        <div className="mb-6">
           <div className="flex justify-end">
             <div 
-              className="w-80 space-y-2 p-4 rounded-lg"
+              className="w-80 space-y-1 p-4 rounded-lg"
               style={{ 
                 backgroundColor: style.backgroundColor || '#f8fafc',
                 borderColor: style.borderColor || '#e2e8f0'
               }}
             >
               {content.showSubtotal !== false && (
-                <div className="flex justify-between py-2">
+                <div className="flex justify-between py-1.5">
                   <span className="text-gray-600">Subtotal:</span>
                   <span className="font-medium">{renderTokenValue('subtotal')}</span>
                 </div>
               )}
               {content.showTax && (
-                <div className="flex justify-between py-2">
+                <div className="flex justify-between py-1.5">
                   <span className="text-gray-600">
                     {userBusinessSettings?.tax_type && userBusinessSettings.tax_type !== 'none' 
                       ? userBusinessSettings.tax_type.toUpperCase() 
@@ -755,7 +777,7 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false,
                   <span className="font-medium">{renderTokenValue('tax_amount')}</span>
                 </div>
               )}
-              <div className="flex justify-between py-2 text-lg font-bold border-t border-gray-300 pt-3">
+              <div className="flex justify-between py-2 text-lg font-bold border-t border-gray-300 pt-2 mt-1">
                 <span>Total:</span>
                 <span className="text-brand-primary">{renderTokenValue('total')}</span>
               </div>
