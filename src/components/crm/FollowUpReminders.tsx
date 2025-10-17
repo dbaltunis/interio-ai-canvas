@@ -244,7 +244,7 @@ const ReminderCard = ({ reminder, markCompleted, snoozeReminder, deleteReminder,
 };
 
 const CompletedReminderCard = ({ reminder }: { reminder: any }) => {
-  const completedDate = new Date(reminder.completed_at);
+  const updatedDate = new Date(reminder.updated_at);
   const client = reminder.clients;
   const deal = reminder.deals;
 
@@ -278,7 +278,7 @@ const CompletedReminderCard = ({ reminder }: { reminder: any }) => {
         </Badge>
         <div className="flex items-center gap-1">
           <Calendar className="h-3 w-3" />
-          Completed {formatDistanceToNow(completedDate, { addSuffix: true })}
+          Completed {formatDistanceToNow(updatedDate, { addSuffix: true })}
         </div>
       </div>
     </div>

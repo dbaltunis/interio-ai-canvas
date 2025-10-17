@@ -21,8 +21,11 @@ export const useFollowUpReminders = () => {
   return useQuery({
     queryKey: ["follow-up-reminders"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
       const { data, error } = await supabase
-        .from("reminders" as any)
+        .from("follow_up_reminders")
         .select(`
           *,
           clients:client_id (
@@ -31,8 +34,13 @@ export const useFollowUpReminders = () => {
             company_name,
             client_type,
             email
+          ),
+          deals:deal_id (
+            id,
+            title
           )
         `)
+        .eq("user_id", user.id)
         .eq("status", "pending")
         .order("scheduled_for", { ascending: true });
 
@@ -210,8 +218,10 @@ export const useMarkReminderCompleted = () => {
   return useMutation({
     mutationFn: async (reminderId: string) => {
       const { data, error } = await supabase
-        .from("reminders" as any)
-        .update({ status: "completed" })
+        .from("follow_up_reminders")
+        .update({ 
+          status: "completed"
+        })
         .eq("id", reminderId)
         .select()
         .single();
@@ -223,8 +233,8 @@ export const useMarkReminderCompleted = () => {
       queryClient.invalidateQueries({ queryKey: ["follow-up-reminders"] });
       queryClient.invalidateQueries({ queryKey: ["completed-reminders"] });
       toast({
-        title: "Task completed",
-        description: "Follow-up reminder marked as done",
+        title: "✓ Task completed",
+        description: "View in the Completed tab",
       });
     },
     onError: (error: Error) => {
@@ -247,7 +257,7 @@ export const useSnoozeReminder = () => {
       newDate.setDate(newDate.getDate() + days);
 
       const { error } = await supabase
-        .from("reminders" as any)
+        .from("follow_up_reminders")
         .update({ scheduled_for: newDate.toISOString() })
         .eq("id", reminderId);
 
@@ -257,7 +267,7 @@ export const useSnoozeReminder = () => {
     onSuccess: (days) => {
       queryClient.invalidateQueries({ queryKey: ["follow-up-reminders"] });
       toast({
-        title: "Reminder snoozed",
+        title: "⏰ Reminder snoozed",
         description: `Rescheduled for ${days} day${days > 1 ? 's' : ''} from now`,
       });
     },
@@ -278,7 +288,7 @@ export const useDeleteReminder = () => {
   return useMutation({
     mutationFn: async (reminderId: string) => {
       const { error } = await supabase
-        .from("reminders" as any)
+        .from("follow_up_reminders")
         .delete()
         .eq("id", reminderId);
 
@@ -287,7 +297,7 @@ export const useDeleteReminder = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["follow-up-reminders"] });
       toast({
-        title: "Reminder deleted",
+        title: "🗑️ Reminder deleted",
         description: "Follow-up reminder has been removed",
       });
     },
@@ -309,7 +319,7 @@ export const useCompletedReminders = () => {
       if (!user) throw new Error('Not authenticated');
 
       const { data, error } = await supabase
-        .from('reminders' as any)
+        .from('follow_up_reminders')
         .select(`
           *,
           clients:client_id (
