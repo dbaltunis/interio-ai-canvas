@@ -120,14 +120,22 @@ export const AddActivityDialog = ({ clientId, open, onOpenChange }: AddActivityD
 
           <div className="space-y-2">
             <Label>Follow-up Date (Optional)</Label>
-            <div className="border rounded-md">
-              <Calendar
-                mode="single"
-                selected={followUpDate}
-                onSelect={setFollowUpDate}
-                className="pointer-events-auto"
-              />
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {followUpDate ? format(followUpDate, "PPP") : "Select date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 z-[10000]" align="start">
+                <Calendar
+                  mode="single"
+                  selected={followUpDate}
+                  onSelect={setFollowUpDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
