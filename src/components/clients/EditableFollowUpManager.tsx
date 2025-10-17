@@ -42,7 +42,7 @@ export const EditableFollowUpManager = ({ clientId }: EditableFollowUpManagerPro
       if (!user) throw new Error("Not authenticated");
 
       const { error } = await supabase
-        .from("reminders" as any)
+        .from("follow_up_reminders")
         .insert({
           client_id: clientId,
           user_id: user.id,
@@ -78,7 +78,7 @@ export const EditableFollowUpManager = ({ clientId }: EditableFollowUpManagerPro
   const handleUpdateReminder = async () => {
     try {
       const { error } = await supabase
-        .from("reminders" as any)
+        .from("follow_up_reminders")
         .update({
           message: editingReminder.message,
           reminder_type: editingReminder.reminder_type,
@@ -107,7 +107,7 @@ export const EditableFollowUpManager = ({ clientId }: EditableFollowUpManagerPro
   const handleDeleteReminder = async (reminderId: string) => {
     try {
       const { error } = await supabase
-        .from("reminders" as any)
+        .from("follow_up_reminders")
         .delete()
         .eq("id", reminderId);
 
