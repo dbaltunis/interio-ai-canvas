@@ -2713,6 +2713,53 @@ export type Database = {
           },
         ]
       }
+      inventory_transactions: {
+        Row: {
+          created_at: string | null
+          id: string
+          inventory_item_id: string
+          notes: string | null
+          quantity: number
+          reference_id: string | null
+          reference_type: string | null
+          transaction_type: string
+          unit_cost: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          inventory_item_id: string
+          notes?: string | null
+          quantity: number
+          reference_id?: string | null
+          reference_type?: string | null
+          transaction_type: string
+          unit_cost?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          inventory_item_id?: string
+          notes?: string | null
+          quantity?: number
+          reference_id?: string | null
+          reference_type?: string | null
+          transaction_type?: string
+          unit_cost?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_transactions_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_statuses: {
         Row: {
           action: string
@@ -4044,6 +4091,54 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      project_material_allocations: {
+        Row: {
+          allocated_quantity: number
+          created_at: string | null
+          id: string
+          inventory_item_id: string
+          project_id: string
+          status: string
+          updated_at: string | null
+          used_quantity: number | null
+        }
+        Insert: {
+          allocated_quantity: number
+          created_at?: string | null
+          id?: string
+          inventory_item_id: string
+          project_id: string
+          status?: string
+          updated_at?: string | null
+          used_quantity?: number | null
+        }
+        Update: {
+          allocated_quantity?: number
+          created_at?: string | null
+          id?: string
+          inventory_item_id?: string
+          project_id?: string
+          status?: string
+          updated_at?: string | null
+          used_quantity?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_material_allocations_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_material_allocations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       project_note_mentions: {
         Row: {
