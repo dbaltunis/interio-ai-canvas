@@ -119,11 +119,14 @@ export const LeadSourceManager = () => {
   }
 
   return (
-    <Card className="bg-card border-border">
+    <Card style={{
+      backgroundColor: 'hsl(var(--card))',
+      borderColor: 'hsl(var(--border))'
+    }}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-foreground">Lead Sources</CardTitle>
+            <CardTitle style={{ color: 'hsl(var(--foreground))' }}>Lead Sources</CardTitle>
             <CardDescription>
               Manage custom lead sources for tracking where your clients come from
             </CardDescription>
@@ -138,9 +141,13 @@ export const LeadSourceManager = () => {
                 Add Source
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px] bg-background border-border z-50">
+            <DialogContent className="sm:max-w-[500px] z-50" style={{
+              backgroundColor: 'hsl(var(--background))',
+              color: 'hsl(var(--foreground))',
+              borderColor: 'hsl(var(--border))'
+            }}>
               <DialogHeader>
-                <DialogTitle className="text-foreground">
+                <DialogTitle style={{ color: 'hsl(var(--foreground))' }}>
                   {editingSource ? "Edit Lead Source" : "Add Lead Source"}
                 </DialogTitle>
                 <DialogDescription>
@@ -232,21 +239,21 @@ export const LeadSourceManager = () => {
       <CardContent>
         <Table>
           <TableHeader>
-            <TableRow className="border-border">
+            <TableRow style={{ borderColor: 'hsl(var(--border))' }}>
               <TableHead className="w-12"></TableHead>
-              <TableHead className="text-foreground">Name</TableHead>
-              <TableHead className="text-foreground">Description</TableHead>
-              <TableHead className="text-foreground">Status</TableHead>
-              <TableHead className="text-right text-foreground">Actions</TableHead>
+              <TableHead style={{ color: 'hsl(var(--foreground))' }}>Name</TableHead>
+              <TableHead style={{ color: 'hsl(var(--foreground))' }}>Description</TableHead>
+              <TableHead style={{ color: 'hsl(var(--foreground))' }}>Status</TableHead>
+              <TableHead className="text-right" style={{ color: 'hsl(var(--foreground))' }}>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sources?.map((source) => (
-              <TableRow key={source.id} className="border-border">
+              <TableRow key={source.id} style={{ borderColor: 'hsl(var(--border))' }}>
                 <TableCell>
                   <GripVertical className="h-4 w-4 text-muted-foreground" />
                 </TableCell>
-                <TableCell className="text-foreground">
+                <TableCell style={{ color: 'hsl(var(--foreground))' }}>
                   <div className="flex items-center gap-2">
                     <div
                       className="w-2 h-2 rounded-full"
