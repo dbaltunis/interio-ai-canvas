@@ -12,6 +12,7 @@ import { useClients } from "@/hooks/useClients";
 import { ProjectDetailsTab } from "./tabs/ProjectDetailsTab";
 import { RoomsTab } from "./tabs/RoomsTab";
 import { QuotationTab } from "./tabs/QuotationTab";
+import { ProjectMaterialsTab } from "./ProjectMaterialsTab";
 import { WorkroomTab } from "./tabs/WorkroomTab";
 import { EmailsTab } from "./tabs/EmailsTab";
 import { CalendarTab } from "./tabs/CalendarTab";
@@ -71,6 +72,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
     { id: "details", label: "Client", icon: User },
     { id: "rooms", label: "Rooms & Treatments", icon: Package },
     { id: "quotation", label: "Quotation", icon: FileText },
+    { id: "materials", label: "Materials", icon: Package },
     { id: "workroom", label: "Workroom", icon: Wrench },
     { id: "emails", label: "Emails", icon: Mail },
     { id: "calendar", label: "Calendar", icon: Calendar },
@@ -191,6 +193,14 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                 <div className="modern-card">
                   <div className="p-6">
                     <QuotationTab projectId={jobId} />
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="materials" className="mt-0">
+                <div className="modern-card">
+                  <div className="p-6">
+                    <ProjectMaterialsTab projectId={jobId} />
                   </div>
                 </div>
               </TabsContent>
