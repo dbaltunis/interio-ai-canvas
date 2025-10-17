@@ -119,11 +119,11 @@ export const LeadSourceManager = () => {
   }
 
   return (
-    <Card>
+    <Card className="bg-card border-border">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Lead Sources</CardTitle>
+            <CardTitle className="text-foreground">Lead Sources</CardTitle>
             <CardDescription>
               Manage custom lead sources for tracking where your clients come from
             </CardDescription>
@@ -138,9 +138,9 @@ export const LeadSourceManager = () => {
                 Add Source
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px] bg-background z-50">
+            <DialogContent className="sm:max-w-[500px] bg-background border-border z-50">
               <DialogHeader>
-                <DialogTitle>
+                <DialogTitle className="text-foreground">
                   {editingSource ? "Edit Lead Source" : "Add Lead Source"}
                 </DialogTitle>
                 <DialogDescription>
@@ -232,21 +232,21 @@ export const LeadSourceManager = () => {
       <CardContent>
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="border-border">
               <TableHead className="w-12"></TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="text-foreground">Name</TableHead>
+              <TableHead className="text-foreground">Description</TableHead>
+              <TableHead className="text-foreground">Status</TableHead>
+              <TableHead className="text-right text-foreground">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sources?.map((source) => (
-              <TableRow key={source.id}>
+              <TableRow key={source.id} className="border-border">
                 <TableCell>
                   <GripVertical className="h-4 w-4 text-muted-foreground" />
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-foreground">
                   <div className="flex items-center gap-2">
                     <div
                       className="w-2 h-2 rounded-full"
