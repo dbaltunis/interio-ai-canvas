@@ -5,13 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCreateTask, TaskPriority } from "@/hooks/useTasks";
-import { CalendarIcon, Plus, Zap, Clock } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
-import { TimePicker } from "@/components/calendar/TimePicker";
+import { Plus, Zap } from "lucide-react";
 
 interface QuickAddTaskProps {
   clientId?: string;
@@ -23,8 +18,6 @@ export const QuickAddTask = ({ clientId, projectId, trigger }: QuickAddTaskProps
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [dueDate, setDueDate] = useState<Date | undefined>();
-  const [dueTime, setDueTime] = useState("09:00");
   const [priority, setPriority] = useState<TaskPriority>("medium");
   
   const createTask = useCreateTask();
@@ -32,24 +25,18 @@ export const QuickAddTask = ({ clientId, projectId, trigger }: QuickAddTaskProps
   const handleSubmit = async () => {
     if (!title.trim()) return;
 
-    const dueDateWithTime = dueDate 
-      ? new Date(`${format(dueDate, "yyyy-MM-dd")}T${dueTime}:00`)
-      : undefined;
-
     await createTask.mutateAsync({
       title: title.trim(),
       description: description.trim() || undefined,
       client_id: clientId,
       project_id: projectId,
-      due_date: dueDateWithTime ? format(dueDateWithTime, "yyyy-MM-dd'T'HH:mm:ssXXX") : undefined,
+      due_date: undefined,
       priority,
     });
 
     // Reset form
     setTitle("");
     setDescription("");
-    setDueDate(undefined);
-    setDueTime("09:00");
     setPriority("medium");
     setOpen(false);
   };
@@ -101,80 +88,39 @@ export const QuickAddTask = ({ clientId, projectId, trigger }: QuickAddTaskProps
             />
           </div>
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Due date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !dueDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dueDate ? format(dueDate, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={dueDate}
-                    onSelect={setDueDate}
-                    initialFocus
-                    className="pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Due time</Label>
-                <TimePicker
-                  label=""
-                  value={dueTime}
-                  onChange={setDueTime}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Priority</Label>
-                <Select value={priority} onValueChange={(value) => setPriority(value as TaskPriority)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">
-                      <span className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-blue-500"></span>
-                        Low
-                      </span>
-                    </SelectItem>
-                    <SelectItem value="medium">
-                      <span className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-yellow-500"></span>
-                        Medium
-                      </span>
-                    </SelectItem>
-                    <SelectItem value="high">
-                      <span className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-orange-500"></span>
-                        High
-                      </span>
-                    </SelectItem>
-                    <SelectItem value="urgent">
-                      <span className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-red-500"></span>
-                        Urgent
-                      </span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+          <div className="space-y-2">
+            <Label>Priority</Label>
+            <Select value={priority} onValueChange={(value) => setPriority(value as TaskPriority)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="low">
+                  <span className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-blue-500"></span>
+                    Low
+                  </span>
+                </SelectItem>
+                <SelectItem value="medium">
+                  <span className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-yellow-500"></span>
+                    Medium
+                  </span>
+                </SelectItem>
+                <SelectItem value="high">
+                  <span className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-orange-500"></span>
+                    High
+                  </span>
+                </SelectItem>
+                <SelectItem value="urgent">
+                  <span className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                    Urgent
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
