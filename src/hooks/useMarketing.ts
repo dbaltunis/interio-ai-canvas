@@ -213,6 +213,23 @@ export const useMarkReminderCompleted = () => {
 
   return useMutation({
     mutationFn: async (reminderId: string) => {
+      // Get reminder details first
+      const { data: reminder, error: fetchError } = await supabase
+        .from("follow_up_reminders")
+        .select(`
+          *,
+          clients:client_id (
+            id,
+            name,
+            user_id
+          )
+        `)
+        .eq("id", reminderId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Mark reminder as dismissed
       const { data, error } = await supabase
         .from("follow_up_reminders")
         .update({ 
@@ -223,6 +240,20 @@ export const useMarkReminderCompleted = () => {
         .single();
 
       if (error) throw error;
+
+      // Log activity in client_activity_log
+      if (reminder?.clients?.id) {
+        await supabase
+          .from("client_activity_log")
+          .insert({
+            client_id: reminder.clients.id,
+            user_id: reminder.clients.user_id,
+            activity_type: "follow_up_completed",
+            title: "Follow-up Completed",
+            description: reminder.message || "Follow-up reminder marked as completed"
+          });
+      }
+
       return data;
     },
     onSuccess: () => {
