@@ -40,6 +40,7 @@ export const useAllocateMaterial = () => {
 
   return useMutation({
     mutationFn: async (allocation: { project_id: string; inventory_item_id: string; allocated_quantity: number; status?: string }) => {
+      // Create material allocation
       const { data, error } = await supabase
         .from("project_material_allocations")
         .insert({
@@ -53,6 +54,29 @@ export const useAllocateMaterial = () => {
 
       if (error) throw error;
 
+      // Get current user for transaction
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Create inventory transaction to track the allocation
+      if (user?.id) {
+        const { error: transactionError } = await supabase
+          .from("inventory_transactions")
+          .insert({
+            user_id: user.id,
+            inventory_item_id: allocation.inventory_item_id,
+            transaction_type: 'allocation',
+            quantity: -allocation.allocated_quantity, // Negative because it's being allocated out
+            reference_type: 'project_allocation',
+            reference_id: data.id,
+            notes: `Allocated to project`,
+          });
+
+        if (transactionError) {
+          console.error('Failed to create transaction record:', transactionError);
+          // Don't fail the whole operation if transaction recording fails
+        }
+      }
+
       toast({
         title: "Material allocated",
         description: "Material has been allocated to the project",
@@ -63,6 +87,8 @@ export const useAllocateMaterial = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["project-material-allocations"] });
       queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["enhanced-inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-transactions"] });
     },
   });
 };

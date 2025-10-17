@@ -1,8 +1,7 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
-
-interface InventoryItem {
+export interface InventoryItem {
   id: string;
   user_id: string;
   name: string;
@@ -13,7 +12,7 @@ interface InventoryItem {
   unit?: string;
   cost_price?: number;
   selling_price?: number;
-  unit_price?: number; // Added this property
+  unit_price?: number;
   supplier?: string;
   location?: string;
   width?: number;
@@ -23,85 +22,90 @@ interface InventoryItem {
   updated_at: string;
 }
 
-// Mock data store
-let mockInventoryItems: InventoryItem[] = [
-  {
-    id: "inv-1",
-    user_id: "mock-user",
-    name: "Curtain Hooks",
-    description: "Standard curtain hooks",
-    sku: "CH-001",
-    category: "Hardware",
-    quantity: 15,
-    unit: "pieces",
-    cost_price: 2.50,
-    selling_price: 5.00,
-    unit_price: 5.00,
-    supplier: "Hardware Supplies",
-    location: "Storage Room",
-    reorder_point: 10,
-    active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }
-];
-
+// This hook is deprecated - use useEnhancedInventory instead
+// Kept for backwards compatibility
 export const useInventory = () => {
   return useQuery({
     queryKey: ["inventory"],
     queryFn: async () => {
-      // Mock implementation
-      return mockInventoryItems.filter(item => item.active);
-    },
-  });
-};
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) throw new Error("User not authenticated");
+      
+      const { data, error } = await supabase
+        .from("enhanced_inventory_items")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("active", true)
+        .order("created_at", { ascending: false });
 
-export const useCreateInventoryItem = () => {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
+      if (error) throw error;
 
-  return useMutation({
-    mutationFn: async (item: Omit<InventoryItem, "id" | "user_id" | "created_at" | "updated_at">) => {
-      // Mock implementation
-      const newItem: InventoryItem = {
-        ...item,
-        id: `inv-${Date.now()}`,
-        user_id: 'mock-user',
+      // Map to InventoryItem interface
+      return (data || []).map((item): InventoryItem => ({
+        id: item.id,
+        user_id: item.user_id,
+        name: item.name,
+        description: item.description || undefined,
+        sku: item.sku || undefined,
+        category: item.category,
+        quantity: item.quantity || 0,
+        unit: item.unit || undefined,
+        cost_price: item.cost_price || 0,
+        selling_price: item.selling_price || 0,
         unit_price: item.selling_price || item.cost_price || 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      mockInventoryItems.push(newItem);
-      return newItem;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["inventory"] });
-      toast({
-        title: "Success",
-        description: "Inventory item created successfully",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+        supplier: item.supplier || undefined,
+        location: item.location || undefined,
+        width: item.fabric_width || item.width || undefined,
+        reorder_point: item.reorder_point || undefined,
+        active: item.active ?? true,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+      }));
     },
   });
 };
 
+// This hook is deprecated - use useEnhancedInventory with filter instead
+// Kept for backwards compatibility  
 export const useLowStockItems = () => {
   return useQuery({
     queryKey: ["inventory", "low-stock"],
     queryFn: async () => {
-      // Mock implementation
-      return mockInventoryItems.filter(item => 
-        item.active && 
-        item.reorder_point && 
-        item.quantity <= item.reorder_point
-      );
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) throw new Error("User not authenticated");
+      
+      const { data, error } = await supabase
+        .from("enhanced_inventory_items")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("active", true)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      // Filter for low stock items
+      return (data || [])
+        .filter(item => item.reorder_point && (item.quantity || 0) <= item.reorder_point)
+        .map((item): InventoryItem => ({
+          id: item.id,
+          user_id: item.user_id,
+          name: item.name,
+          description: item.description || undefined,
+          sku: item.sku || undefined,
+          category: item.category,
+          quantity: item.quantity || 0,
+          unit: item.unit || undefined,
+          cost_price: item.cost_price || 0,
+          selling_price: item.selling_price || 0,
+          unit_price: item.selling_price || item.cost_price || 0,
+          supplier: item.supplier || undefined,
+          location: item.location || undefined,
+          width: item.fabric_width || item.width || undefined,
+          reorder_point: item.reorder_point || undefined,
+          active: item.active ?? true,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+        }));
     },
   });
 };

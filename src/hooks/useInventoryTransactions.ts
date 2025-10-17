@@ -49,6 +49,34 @@ export const useCreateInventoryTransaction = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user?.id) throw new Error("User not authenticated");
 
+      // Start a transaction to update inventory quantity and create transaction record
+      const { data: currentItem, error: fetchError } = await supabase
+        .from("enhanced_inventory_items")
+        .select("quantity")
+        .eq("id", transaction.inventory_item_id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Calculate new quantity based on transaction type
+      let quantityChange = transaction.quantity;
+      if (transaction.transaction_type === 'sale' || transaction.transaction_type === 'allocation') {
+        quantityChange = -Math.abs(transaction.quantity); // Deduct
+      } else if (transaction.transaction_type === 'purchase' || transaction.transaction_type === 'return') {
+        quantityChange = Math.abs(transaction.quantity); // Add
+      }
+
+      const newQuantity = (currentItem.quantity || 0) + quantityChange;
+
+      // Update inventory quantity
+      const { error: updateError } = await supabase
+        .from("enhanced_inventory_items")
+        .update({ quantity: newQuantity })
+        .eq("id", transaction.inventory_item_id);
+
+      if (updateError) throw updateError;
+
+      // Create transaction record
       const { data, error } = await supabase
         .from("inventory_transactions")
         .insert({
@@ -77,6 +105,7 @@ export const useCreateInventoryTransaction = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory-transactions"] });
       queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["enhanced-inventory"] });
     },
   });
 };

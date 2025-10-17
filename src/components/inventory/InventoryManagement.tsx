@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, AlertTriangle, TrendingUp, Package } from "lucide-react";
-import { useInventory, useLowStockItems } from "@/hooks/useInventory";
+import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { InventoryImportDialog } from "./InventoryImportDialog";
 
@@ -13,8 +13,13 @@ export const InventoryManagement = () => {
   const canViewInventory = useHasPermission('view_inventory');
   const canManageInventory = useHasPermission('manage_inventory');
 
-  const { data: inventory, isLoading } = useInventory();
-  const { data: lowStockItems } = useLowStockItems();
+  const { data: inventory, isLoading } = useEnhancedInventory();
+  
+  // Calculate low stock items from enhanced inventory
+  const lowStockItems = inventory?.filter(item => 
+    item.reorder_point && 
+    (item.quantity || 0) <= item.reorder_point
+  ) || [];
 
   // Handle permission loading with proper loading check
   if (canViewInventory === undefined) {
@@ -45,7 +50,8 @@ export const InventoryManagement = () => {
   }
 
   const totalValue = inventory?.reduce((sum, item) => {
-    return sum + ((item.unit_price || 0) * (item.quantity || 0));
+    const unitPrice = item.selling_price || item.price_per_unit || item.cost_price || 0;
+    return sum + (unitPrice * (item.quantity || 0));
   }, 0) || 0;
 
   const formatCurrency = (amount: number) => {
@@ -202,7 +208,9 @@ export const InventoryManagement = () => {
                         {item.quantity} units
                       </TableCell>
                       <TableCell>
-                        {item.unit_price ? formatCurrency(item.unit_price) : "N/A"}
+                        {(item.selling_price || item.price_per_unit || item.cost_price) 
+                          ? formatCurrency(item.selling_price || item.price_per_unit || item.cost_price || 0) 
+                          : "N/A"}
                       </TableCell>
                       <TableCell>{item.supplier || "N/A"}</TableCell>
                       <TableCell>
