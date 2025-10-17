@@ -116,6 +116,7 @@ export const QuickAddTask = ({ clientId, projectId, trigger }: QuickAddTaskProps
                     selected={dueDate}
                     onSelect={setDueDate}
                     initialFocus
+                    className="pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
