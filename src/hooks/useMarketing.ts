@@ -216,7 +216,7 @@ export const useMarkReminderCompleted = () => {
       const { data, error } = await supabase
         .from("follow_up_reminders")
         .update({ 
-          status: "completed"
+          status: "dismissed"
         })
         .eq("id", reminderId)
         .select()
@@ -327,7 +327,7 @@ export const useCompletedReminders = () => {
           )
         `)
         .eq('user_id', user.id)
-        .eq('status', 'completed')
+        .eq('status', 'dismissed')
         .order('updated_at', { ascending: false })
         .limit(20);
 
