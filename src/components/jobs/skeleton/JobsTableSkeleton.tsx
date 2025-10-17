@@ -19,7 +19,7 @@ export const JobsTableSkeleton = () => {
             <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Client</TableHead>
             <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Status</TableHead>
             <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Total</TableHead>
-            <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Owner</TableHead>
+            <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Team</TableHead>
             <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors">Created</TableHead>
             <TableHead className="w-[70px]">Actions</TableHead>
           </TableRow>

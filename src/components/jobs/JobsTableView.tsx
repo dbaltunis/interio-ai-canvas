@@ -384,7 +384,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
               <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Status</TableHead>
               <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Created</TableHead>
               <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Emails</TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Owner</TableHead>
+              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Team</TableHead>
               <TableHead className="w-[70px] font-normal">Actions</TableHead>
             </TableRow>
           </TableHeader>
