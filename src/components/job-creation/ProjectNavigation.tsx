@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Home, Box, FileText, Wrench, Mail, Calendar } from "lucide-react";
+import { User, Box, FileText, Wrench, Mail, Calendar } from "lucide-react";
 import { useEffect } from "react";
 
 interface ProjectNavigationProps {
@@ -19,7 +19,7 @@ export const ProjectNavigation = ({
   shouldRedirectToQuote = false 
 }: ProjectNavigationProps) => {
   const navItems = [
-    { id: "client", label: "Project Details", icon: Home },
+    { id: "client", label: "Client", icon: User },
     { id: "jobs", label: "Rooms & Treatments", icon: Box },
     { id: "quote", label: "Quotation", icon: FileText },
     { id: "workshop", label: "Workroom", icon: Wrench },

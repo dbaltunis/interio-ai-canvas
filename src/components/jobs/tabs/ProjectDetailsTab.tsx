@@ -310,363 +310,163 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   
   return (
     <div className="space-y-6">
-      {/* Project Details */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            Project Details
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Rooms */}
-            <div className="bg-primary/5 dark:bg-primary/10 p-4 rounded-lg border border-primary/20 dark:border-primary/30">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-2xl font-bold text-primary">{rooms.length}</span>
-                  <p className="text-sm text-primary/80">Rooms</p>
-                </div>
-                <Package className="h-8 w-8 text-primary/60" />
-              </div>
-            </div>
-            
-            {/* Products & Services */}
-            <div className="bg-accent/20 dark:bg-accent/10 p-4 rounded-lg border border-accent/30 dark:border-accent/20">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-2xl font-bold text-accent-foreground">{getTotalProductsCount()}</span>
-                  <p className="text-sm text-accent-foreground/80">Products & Services</p>
-                </div>
-                <FileText className="h-8 w-8 text-accent-foreground/60" />
-              </div>
-            </div>
-            
-            {/* Current Quote Value */}
-            <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {getCurrentQuoteDisplay()}
-                  </span>
-                  <p className="text-sm text-green-700 dark:text-green-300">Current Quote</p>
-                </div>
-                <DollarSign className="h-8 w-8 text-green-500" />
-              </div>
-            </div>
-          </div>
-          
-          {/* Room Breakdown with Products */}
-          {rooms.length > 0 && (
-            <div className="mt-4 space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">Room Breakdown</h4>
-              <div className="space-y-2">
-                {rooms.length > 0 ? (
-                  rooms.slice(0, 3).map((room) => {
-                    const roomProducts = getRoomProducts(room.id);
-                    const roomTotal = roomProducts.reduce((sum, p) => sum + p.price, 0);
-                    return (
-                      <div key={room.id} className="p-3 bg-muted/30 dark:bg-muted/20 rounded border border-muted/50">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">{room.name}</span>
-                          <span className="text-sm font-semibold text-green-600 dark:text-green-400">
-                            {roomTotal > 0 ? formatCurrency(roomTotal) : "No pricing"}
-                          </span>
-                        </div>
-                        {roomProducts.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {roomProducts.map((product, idx) => (
-                              <Badge key={idx} variant="secondary" className="text-xs">
-                                {product.name}
-                                {product.quantity > 1 && ` (${product.quantity})`}
-                              </Badge>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-xs text-muted-foreground">No products/services added</p>
-                        )}
-                      </div>
-                    );
-                  })
-                ) : (
-                  // Show quote items even if no rooms (fallback case)
-                  quoteItems.length > 0 && (
-                    <div className="p-3 bg-muted/30 dark:bg-muted/20 rounded border border-muted/50">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">Quote Items</span>
-                        <span className="text-sm font-semibold text-green-600 dark:text-green-400">
-                          {getCurrentQuoteDisplay()}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {quoteItems.slice(0, 5).map((item, idx) => (
-                          <Badge key={idx} variant="secondary" className="text-xs">
-                            {item.name}
-                            {item.quantity > 1 && ` (${item.quantity})`}
-                          </Badge>
-                        ))}
-                        {quoteItems.length > 5 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{quoteItems.length - 5} more
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  )
-                )}
-                {rooms.length > 3 && (
-                  <div className="text-xs text-muted-foreground text-center py-1">
-                    +{rooms.length - 3} more rooms
-                  </div>
-                )}
-                
-                {/* Show helpful message if quote total exists but no items */}
-                {getCurrentQuoteDisplay() !== "No quotes" && getTotalProductsCount() === 0 && (
-                  <div className="p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded border border-yellow-200 dark:border-yellow-800">
-                    <p className="text-xs text-yellow-800 dark:text-yellow-300">
-                      <strong>Note:</strong> Quote total exists ({getCurrentQuoteDisplay()}) but no individual line items are configured. 
-                      Consider adding specific products/services to provide detailed breakdowns for clients.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Page Title */}
+      <div className="mb-4">
+        <h2 className="text-2xl font-bold text-foreground">Client & Project Overview</h2>
+        <p className="text-sm text-muted-foreground">Manage client assignment and project essentials</p>
+      </div>
 
-      {/* Compact Project Timeline Card */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <CalendarDays className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Project Timeline</span>
+      {/* Compact Summary Bar */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+        {/* Client Status - Primary Focus */}
+        <div className="sm:col-span-2 bg-primary/5 p-4 rounded-lg border border-primary/20">
+          <div className="flex items-center justify-between">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground mb-1">Client</p>
+              {selectedClient ? (
+                <>
+                  <span className="text-lg font-semibold truncate block">{getClientDisplayName(selectedClient)}</span>
+                  {selectedClient.email && (
+                    <p className="text-xs text-muted-foreground truncate">{selectedClient.email}</p>
+                  )}
+                </>
+              ) : (
+                <span className="text-sm text-muted-foreground">No client assigned</span>
+              )}
             </div>
-            {!isEditing ? (
-              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Timeline
-              </Button>
-            ) : (
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={handleCancel}>
-                  <X className="h-4 w-4 mr-2" />
-                  Cancel
-                </Button>
-                <Button 
-                  size="sm" 
-                  onClick={handleSave}
-                  disabled={updateProject.isPending}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {updateProject.isPending ? "Saving..." : "Save"}
-                </Button>
-              </div>
-            )}
+            <User className="h-8 w-8 text-primary/60 shrink-0 ml-2" />
           </div>
-          
-          {/* Project Name and Description */}
+        </div>
+        
+        {/* Rooms Count */}
+        <div className="bg-accent/10 p-4 rounded-lg border border-accent/20">
+          <p className="text-xs text-muted-foreground mb-1">Rooms</p>
+          <span className="text-2xl font-bold">{rooms.length}</span>
+        </div>
+        
+        {/* Quote Value */}
+        <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+          <p className="text-xs text-muted-foreground mb-1">Quote</p>
+          <span className="text-lg font-semibold text-green-600 dark:text-green-400">{getCurrentQuoteDisplay()}</span>
+        </div>
+      </div>
+
+      {/* Timeline - Compact Single Row */}
+      <div className="p-3 bg-muted/30 rounded-lg border border-muted/50">
+        <div className="flex items-center justify-between text-sm flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">Timeline:</span>
+            <span className="font-medium">
+              {project.start_date ? new Date(project.start_date).toLocaleDateString() : 'Not set'}
+            </span>
+            <span className="text-muted-foreground">→</span>
+            <span className="font-medium">
+              {project.due_date ? new Date(project.due_date).toLocaleDateString() : 'Not set'}
+            </span>
+          </div>
           {isEditing && (
-            <div className="space-y-4 mt-3 pb-4 border-b border-border">
-              <div>
-                <Label htmlFor="project_name" className="text-xs text-muted-foreground">Project Name</Label>
-                <Input
-                  id="project_name"
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => updateFormData("name", e.target.value)}
-                  className="mt-1"
-                  placeholder="Enter project name..."
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="project_description" className="text-xs text-muted-foreground">Description</Label>
-                <Textarea
-                  id="project_description"
-                  value={formData.description}
-                  onChange={(e) => updateFormData("description", e.target.value)}
-                  className="mt-1 min-h-[80px]"
-                  placeholder="Enter project description..."
-                />
-              </div>
+            <div className="flex gap-2">
+              <Input
+                type="date"
+                value={formData.start_date}
+                onChange={(e) => updateFormData("start_date", e.target.value)}
+                className="h-8 text-xs w-auto"
+              />
+              <Input
+                type="date"
+                value={formData.due_date}
+                onChange={(e) => updateFormData("due_date", e.target.value)}
+                className="h-8 text-xs w-auto"
+              />
             </div>
           )}
-          
-          {/* Compact Dates Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
-            <div>
-              <Label htmlFor="start_date" className="text-xs text-muted-foreground">Start Date</Label>
-              {isEditing ? (
-                <Input
-                  id="start_date"
-                  type="date"
-                  value={formData.start_date}
-                  onChange={(e) => updateFormData("start_date", e.target.value)}
-                  className="mt-1 h-8"
-                />
-              ) : (
-                <div className="mt-1 text-sm font-medium">
-                  {formData.start_date ? new Date(formData.start_date).toLocaleDateString() : "Not set"}
-                </div>
-              )}
-            </div>
+        </div>
+      </div>
 
-            <div>
-              <Label htmlFor="due_date" className="text-xs text-muted-foreground">Due Date</Label>
-              {isEditing ? (
-                <Input
-                  id="due_date"
-                  type="date"
-                  value={formData.due_date}
-                  onChange={(e) => updateFormData("due_date", e.target.value)}
-                  className="mt-1 h-8"
-                />
-              ) : (
-                <div className="mt-1 text-sm font-medium">
-                  {formData.due_date ? new Date(formData.due_date).toLocaleDateString() : "Not set"}
-                </div>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Enhanced Client Information Card */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            <User className="h-4 w-4" />
-            Client Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          {selectedClient ? (
-            <div className="space-y-3">
-              {/* Main Client Info */}
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                <div className="flex items-start gap-3 flex-1 min-w-0">
-                  <div className="bg-primary/10 p-2 rounded-full shrink-0">
-                    <User className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0 space-y-2">
-                    <div>
-                      <h3 className="font-semibold text-base">
-                        {getClientDisplayName(selectedClient)}
-                      </h3>
-                      {selectedClient.client_type === 'B2B' && selectedClient.name && selectedClient.company_name && (
-                        <p className="text-sm text-muted-foreground">
-                          Contact: {selectedClient.name}
-                        </p>
-                      )}
-                    </div>
-                    
-                    {/* Contact Details - Compact Grid */}
-                    <div className="space-y-1">
-                      {selectedClient.email && (
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-sm">{selectedClient.email}</span>
-                        </div>
-                      )}
-                      {selectedClient.phone && (
-                        <div className="flex items-center gap-2">
-                          <svg className="h-3.5 w-3.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                          </svg>
-                          <span className="text-sm">{selectedClient.phone}</span>
-                        </div>
-                      )}
-                      {(selectedClient.address || selectedClient.city || selectedClient.state) && (
-                        <div className="flex items-start gap-2">
-                          <MapPin className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
-                          <div className="text-sm">
-                            {selectedClient.address && <div>{selectedClient.address}</div>}
-                            {(selectedClient.city || selectedClient.state) && (
-                              <div>{selectedClient.city}{selectedClient.city && selectedClient.state && ', '}{selectedClient.state}</div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Client Type Badge */}
-                    <Badge variant="outline" className="text-xs w-fit">
-                      {selectedClient.client_type || 'B2C'}
-                    </Badge>
-                  </div>
-                </div>
-                
-                {/* Action Buttons */}
-                <div className="flex flex-row sm:flex-col gap-2 shrink-0">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setShowClientSearch(true)}
-                    className="flex-1 sm:flex-none"
-                  >
-                    <Search className="h-4 w-4 mr-2" />
-                    Change
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => {
-                      updateFormData("client_id", null);
-                      updateProject.mutateAsync({
-                        id: project.id,
-                        client_id: null,
-                      }).then(() => {
-                        project.client_id = null;
-                        toast({
-                          title: "Success",
-                          description: "Client removed from project",
-                        });
-                      });
-                    }}
-                    className="flex-1 sm:flex-none"
-                  >
-                    Remove
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-6 border-2 border-dashed border-border rounded-lg">
-              <User className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground mb-4">No client assigned to this project</p>
-              <Button 
-                onClick={() => setShowClientSearch(true)}
-              >
-                <Search className="h-4 w-4 mr-2" />
-                Search or Create Client
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Enhanced Quotes Section with New Quote Button */}
+      {/* Client Assignment - Primary Section */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base font-medium flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Project Quotes
+              <User className="h-4 w-4" />
+              Client Assignment
             </CardTitle>
+            {selectedClient && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowClientSearch(true)}
+              >
+                <Search className="h-3 w-3 mr-1" />
+                Change Client
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {selectedClient ? (
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  {getClientDisplayName(selectedClient)}
+                </p>
+                {selectedClient.client_type === 'B2B' && selectedClient.name && (
+                  <p className="text-xs text-muted-foreground">Contact: {selectedClient.name}</p>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                {selectedClient.email && (
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <span className="text-xs truncate">{selectedClient.email}</span>
+                  </div>
+                )}
+                {selectedClient.phone && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs">📞</span>
+                    <span className="text-xs">{selectedClient.phone}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <User className="mx-auto h-12 w-12 text-muted-foreground/50 mb-3" />
+              <p className="text-sm text-muted-foreground mb-4">No client assigned to this project</p>
+              <Button onClick={() => setShowClientSearch(true)}>
+                <Search className="h-4 w-4 mr-2" />
+                Assign Client
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Simplified Quotes Section */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Project Quotation
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div>
+            <p className="text-sm text-muted-foreground">Current Quote Value</p>
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+              {getCurrentQuoteDisplay()}
+            </p>
+            {quotes.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {quotes.length} {quotes.length === 1 ? 'quote' : 'quotes'} created
+              </p>
+            )}
+          </div>
+          <div className="flex gap-2">
             <NewQuoteButton projectId={project.id} />
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Create and manage quotes for this project. Each quote can have different versions and pricing options for your client's consideration.
-          </p>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <CompactQuotesSection 
-            quotes={quotes}
-            onSelectQuote={setSelectedQuote}
-            onOpenNotes={(quote) => { setSelectedQuote(quote); setNotesOpen(true); }}
-          />
         </CardContent>
       </Card>
 

@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, FolderOpen, Home, Package, FileText, Wrench, Mail, Calendar, User, MapPin, DollarSign, Clock } from "lucide-react";
+import { ArrowLeft, FolderOpen, User, Package, FileText, Wrench, Mail, Calendar, MapPin, DollarSign, Clock } from "lucide-react";
 import { useProjects, useUpdateProject } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
 import { ProjectDetailsTab } from "./tabs/ProjectDetailsTab";
@@ -68,7 +68,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   };
 
   const tabs = [
-    { id: "details", label: "Project Details", icon: Home },
+    { id: "details", label: "Client", icon: User },
     { id: "rooms", label: "Rooms & Treatments", icon: Package },
     { id: "quotation", label: "Quotation", icon: FileText },
     { id: "workroom", label: "Workroom", icon: Wrench },
