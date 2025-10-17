@@ -2,11 +2,13 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, AlertCircle } from "lucide-react";
+import { Plus, Package, AlertCircle, ShoppingCart } from "lucide-react";
 import { useProjectMaterialAllocations } from "@/hooks/useProjectMaterialAllocations";
 import { AllocateMaterialDialog } from "./AllocateMaterialDialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useSuppliers } from "@/hooks/useSuppliers";
 
 interface ProjectMaterialsTabProps {
   projectId: string;
@@ -14,8 +16,11 @@ interface ProjectMaterialsTabProps {
 
 export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
   const [showAllocateDialog, setShowAllocateDialog] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [vendorFilter, setVendorFilter] = useState("all");
   const { data: allocations, isLoading } = useProjectMaterialAllocations(projectId);
   const { data: inventory } = useEnhancedInventory();
+  const { data: suppliers } = useSuppliers();
 
   const getInventoryItem = (itemId: string) => {
     return inventory?.find((item) => item.id === itemId);
@@ -41,8 +46,144 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
   const totalAllocated = allocations?.reduce((sum, a) => sum + a.allocated_quantity, 0) || 0;
   const totalUsed = allocations?.reduce((sum, a) => sum + a.used_quantity, 0) || 0;
 
+  // Calculate products that need to be ordered
+  const productsToOrder = allocations?.map((allocation) => {
+    const item = getInventoryItem(allocation.inventory_item_id);
+    if (!item) return null;
+
+    const needed = allocation.allocated_quantity;
+    const available = item.quantity;
+    const shortfall = Math.max(0, needed - available);
+
+    if (shortfall > 0) {
+      return {
+        allocation,
+        item,
+        needed,
+        available,
+        shortfall,
+        supplier: item.supplier,
+      };
+    }
+    return null;
+  }).filter(Boolean) || [];
+
+  // Get unique suppliers from products to order
+  const uniqueSuppliers = Array.from(new Set(productsToOrder.map(p => p?.supplier).filter(Boolean)));
+
+  // Filter products to order
+  const filteredProducts = productsToOrder.filter((product) => {
+    if (!product) return false;
+    
+    const matchesVendor = vendorFilter === "all" || product.supplier === vendorFilter;
+    const matchesStatus = statusFilter === "all" || statusFilter === "to_order";
+    
+    return matchesVendor && matchesStatus;
+  });
+
   return (
     <div className="space-y-6">
+      {/* Products to Order Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5" />
+              <CardTitle>Products to Order from Suppliers</CardTitle>
+            </div>
+            <Badge variant="secondary" className="ml-2">
+              {productsToOrder.length} items
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Filters */}
+          <div className="flex gap-3 mb-4">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[180px] bg-background">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border">
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="to_order">To Order</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={vendorFilter} onValueChange={setVendorFilter}>
+              <SelectTrigger className="w-[180px] bg-background">
+                <SelectValue placeholder="All Vendors" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border">
+                <SelectItem value="all">All Vendors</SelectItem>
+                {uniqueSuppliers.map((supplier) => (
+                  <SelectItem key={supplier} value={supplier || "unknown"}>
+                    {supplier || "Unknown Supplier"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-12">
+              <Package className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+              <h3 className="text-lg font-medium mb-2">No products need to be ordered</h3>
+              <p className="text-sm text-muted-foreground">
+                All allocated materials are available in stock
+              </p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Product</TableHead>
+                  <TableHead>Supplier</TableHead>
+                  <TableHead className="text-right">Needed</TableHead>
+                  <TableHead className="text-right">In Stock</TableHead>
+                  <TableHead className="text-right">To Order</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredProducts.map((product) => {
+                  if (!product) return null;
+                  
+                  return (
+                    <TableRow key={product.allocation.id}>
+                      <TableCell className="font-medium">
+                        <div>{product.item.name}</div>
+                        {product.item.sku && (
+                          <div className="text-xs text-muted-foreground">{product.item.sku}</div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {product.supplier || "Unknown"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {product.needed} {product.item.unit}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {product.available} {product.item.unit}
+                      </TableCell>
+                      <TableCell className="text-right font-medium text-orange-500">
+                        {product.shortfall} {product.item.unit}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="bg-orange-500/10 text-orange-500 border-orange-500/20">
+                          To Order
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
