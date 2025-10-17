@@ -40,6 +40,14 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false,
   const content = block.content || {};
   const style = content.style || {};
   
+  // State for products block - moved to component level to persist across renders
+  const [showDetailedProducts, setShowDetailedProducts] = React.useState(
+    content.showDetailed !== undefined ? content.showDetailed : false
+  );
+  const [groupByRoom, setGroupByRoom] = React.useState(
+    content.groupByRoom !== undefined ? content.groupByRoom : false
+  );
+  
   // Trim and normalize block type to prevent matching issues
   const blockType = (block.type || '').toString().trim().toLowerCase();
   console.log('LivePreviewBlock rendering:', { 
@@ -508,14 +516,6 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false,
       );
 
     case 'products':
-      // Use content settings for initial state, with proper defaults
-      const [showDetailedProducts, setShowDetailedProducts] = React.useState(
-        content.showDetailed !== undefined ? content.showDetailed : false
-      );
-      const [groupByRoom, setGroupByRoom] = React.useState(
-        content.groupByRoom !== undefined ? content.groupByRoom : false
-      );
-      
       // Get real workshop items data which has the detailed breakdown
       const workshopItems = projectData?.workshopItems || [];
       const surfaces = projectData?.surfaces || [];
@@ -709,7 +709,9 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false,
                   <th className="text-left px-2 py-2 text-sm font-semibold text-gray-700" style={{ width: '28%' }}>Description</th>
                   <th className="text-center px-2 py-2 text-sm font-semibold text-gray-700" style={{ width: '10%' }}>Quantity</th>
                   <th className="text-right px-2 py-2 text-sm font-semibold text-gray-700" style={{ width: '15%' }}>Price rate</th>
-                  <th className="text-right px-2 py-2 text-sm font-semibold text-gray-700" style={{ width: '17%' }}>Total without {renderTokenValue('tax_label')}</th>
+                  <th className="text-right px-2 py-2 text-sm font-semibold text-gray-700" style={{ width: '17%' }}>
+                    Total {(userBusinessSettings?.pricing_settings as any)?.tax_inclusive ? `(incl. ${renderTokenValue('tax_label')})` : `without ${renderTokenValue('tax_label')}`}
+                  </th>
                 </tr>
               </thead>
               <tbody>
