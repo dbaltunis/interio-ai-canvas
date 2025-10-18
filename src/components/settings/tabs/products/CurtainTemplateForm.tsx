@@ -1632,17 +1632,19 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
             className="flex-1"
             disabled={isSaving}
           >
-            {isSaving ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                {template ? "Update Template" : "Create Template"}
-              </>
-            )}
+            <div className="flex items-center gap-2">
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  <span>{template ? "Update Template" : "Create Template"}</span>
+                </>
+              )}
+            </div>
           </Button>
           <Button variant="outline" onClick={onClose}>
             <X className="h-4 w-4 mr-2" />
