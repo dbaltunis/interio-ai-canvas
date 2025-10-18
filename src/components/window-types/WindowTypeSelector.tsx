@@ -131,10 +131,13 @@ export const WindowTypeSelector = ({
     }
   };
   if (loading) {
-    return <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <span className="ml-2">Loading window types...</span>
-      </div>;
+    return (
+      <div className="grid grid-cols-2 gap-3">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="h-24 bg-muted/30 rounded-lg animate-pulse" />
+        ))}
+      </div>
+    );
   }
   // Filter window types based on search
   const filteredWindowTypes = windowTypes.filter(wt => 

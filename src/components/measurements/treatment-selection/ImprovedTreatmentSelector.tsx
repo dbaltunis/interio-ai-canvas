@@ -73,12 +73,17 @@ export const ImprovedTreatmentSelector = ({
       </div>}
 
       <ScrollArea className="h-[300px]">
-        {isLoading ? <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <span className="ml-2 text-sm">Loading treatments...</span>
-          </div> : <div className="pr-3">
+        {isLoading ? (
+          <div className="space-y-3 pr-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-20 bg-muted/30 rounded-lg animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className="pr-3">
             <TreatmentTypeGrid treatments={filteredTemplates} selectedId={selectedCoveringId} onSelect={handleTreatmentSelect} searchQuery={searchQuery} />
-          </div>}
+          </div>
+        )}
       </ScrollArea>
     </div>;
 };

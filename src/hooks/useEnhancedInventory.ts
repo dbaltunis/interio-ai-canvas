@@ -72,11 +72,12 @@ export interface EnhancedInventoryItem {
 export const useEnhancedInventory = () => {
   return useQuery({
     queryKey: ["enhanced-inventory"],
+    staleTime: 5 * 60 * 1000, // 5 minutes - prevent redundant fetches
+    gcTime: 10 * 60 * 1000, // 10 minutes cache
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // RLS policy handles filtering - shows user's items + defaults
       const { data, error } = await supabase
         .from("enhanced_inventory_items")
         .select("*")
@@ -92,11 +93,12 @@ export const useEnhancedInventory = () => {
 export const useEnhancedInventoryByCategory = (category: string) => {
   return useQuery({
     queryKey: ["enhanced-inventory", category],
+    staleTime: 5 * 60 * 1000, // 5 minutes - prevent redundant fetches
+    gcTime: 10 * 60 * 1000, // 10 minutes cache
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // RLS policy handles filtering - shows user's items + defaults
       const { data, error } = await supabase
         .from("enhanced_inventory_items")
         .select("*")
