@@ -88,6 +88,8 @@ export const useWorkshopData = (projectId?: string) => {
       const width = widthIn !== undefined ? Math.round(convertToUserUnit(widthIn, "inches") * 100) / 100 : undefined;
       const height = heightIn !== undefined ? Math.round(convertToUserUnit(heightIn, "inches") * 100) / 100 : undefined;
 
+      const summary = summaryMap.get(s.id);
+
       const item: WorkshopRoomItem = {
         id: s.id,
         name: s.name || "Window",
@@ -99,9 +101,9 @@ export const useWorkshopData = (projectId?: string) => {
           height,
           unit: (width || height) ? getLengthUnitLabel() : undefined,
         },
-        treatmentType: s.surface_type || s.type || undefined,
+        treatmentType: summary?.template_name || summary?.treatment_type || s.surface_type || s.type || undefined,
         notes: s.notes || undefined,
-        summary: summaryMap.get(s.id),
+        summary: summary,
         surface: s,
       };
 
