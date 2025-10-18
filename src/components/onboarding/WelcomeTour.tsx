@@ -75,6 +75,7 @@ interface WelcomeTourProps {
 export const WelcomeTour = ({ isOpen, onComplete, onSkip, onTabChange }: WelcomeTourProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [highlightedElement, setHighlightedElement] = useState<HTMLElement | null>(null);
+  const [currentTab, setCurrentTab] = useState<string | null>(null);
 
   // Map step IDs to tab names
   const stepToTab: Record<string, string> = {
@@ -86,20 +87,25 @@ export const WelcomeTour = ({ isOpen, onComplete, onSkip, onTabChange }: Welcome
   const step = tourSteps[currentStep];
   const isLastStep = currentStep === tourSteps.length - 1;
 
-  // Handle tab navigation and element highlighting
+  // Handle tab navigation when step changes
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const tabName = stepToTab[step.id];
+    if (tabName && tabName !== currentTab && onTabChange) {
+      setCurrentTab(tabName);
+      onTabChange(tabName);
+    }
+  }, [currentStep, isOpen, step.id]); // Don't include onTabChange in dependencies
+
+  // Handle element highlighting
   useEffect(() => {
     if (!isOpen) {
       setHighlightedElement(null);
       return;
     }
 
-    // Navigate to the correct tab if needed
-    const tabName = stepToTab[step.id];
-    if (tabName && onTabChange) {
-      onTabChange(tabName);
-    }
-
-    // Wait a bit for tab change and DOM update before highlighting
+    // Wait for tab change and DOM update before highlighting
     const timer = setTimeout(() => {
       if (!step.target) {
         setHighlightedElement(null);
@@ -111,10 +117,10 @@ export const WelcomeTour = ({ isOpen, onComplete, onSkip, onTabChange }: Welcome
         setHighlightedElement(element);
         element.scrollIntoView({ behavior: "smooth", block: "center" });
       }
-    }, tabName ? 300 : 0); // Delay if we changed tabs
+    }, currentTab !== stepToTab[step.id] ? 300 : 100); // Delay if we need tab change
 
     return () => clearTimeout(timer);
-  }, [currentStep, isOpen, step.target, step.id, onTabChange]);
+  }, [currentStep, isOpen, step.target, currentTab, step.id]);
 
   const handleNext = () => {
     if (isLastStep) {

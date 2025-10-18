@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { WelcomeTour } from "./WelcomeTour";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,9 +32,10 @@ export const OnboardingProvider = ({ children }: OnboardingProviderProps) => {
   const [showTour, setShowTour] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
-  const handleTabChange = (tab: string) => {
+  // Memoize the tab change handler to prevent re-renders
+  const handleTabChange = useCallback((tab: string) => {
     setSearchParams({ tab }, { replace: true });
-  };
+  }, [setSearchParams]);
 
   // Check if user has completed onboarding
   useEffect(() => {
