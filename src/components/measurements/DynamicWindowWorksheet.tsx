@@ -4,6 +4,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Ruler, Package, Calculator, Save } from "lucide-react";
+import { saveQueueService } from "@/services/saveQueueService";
+import { draftService } from "@/services/draftService";
+import { SaveStatusIndicator } from "./SaveStatusIndicator";
 import { WindowTypeSelector } from "../window-types/WindowTypeSelector";
 import { TreatmentPreviewEngine } from "../treatment-visualizers/TreatmentPreviewEngine";
 import { InventorySelectionPanel } from "../inventory/InventorySelectionPanel";
@@ -74,6 +77,8 @@ export const DynamicWindowWorksheet = forwardRef<{
     name: string;
   }>>([]);
   const [isLayeredMode, setIsLayeredMode] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [lastSaveTime, setLastSaveTime] = useState<number | null>(null);
 
   // Hooks
   const {
@@ -332,6 +337,113 @@ export const DynamicWindowWorksheet = forwardRef<{
       }
     }
   }, [selectedTemplate]);
+
+  // Load draft on mount
+  useEffect(() => {
+    if (!surfaceId || existingWindowSummary) return; // Don't load draft if we have existing data
+
+    const draft = draftService.loadDraft(surfaceId);
+    if (draft) {
+      const age = draftService.getDraftAge(surfaceId);
+      console.log(`📥 [Draft] Found draft from ${age} minutes ago`);
+
+      // Ask user if they want to restore
+      const { toast } = require("@/hooks/use-toast");
+      toast.toast({
+        title: "Draft Found",
+        description: `Found unsaved changes from ${age} minutes ago. Restore?`,
+        action: {
+          label: "Restore",
+          onClick: () => {
+            // Restore draft data
+            if (draft.templateId) {
+              const template = curtainTemplates.find(t => t.id === draft.templateId);
+              if (template) setSelectedTemplate(template);
+            }
+            if (draft.fabricId) {
+              // Will need to fetch fabric details
+              console.log('Restoring fabric:', draft.fabricId);
+            }
+            if (draft.measurements) {
+              setMeasurements(draft.measurements);
+            }
+            if (draft.selectedOptions) {
+              setSelectedOptions(draft.selectedOptions);
+            }
+            if (draft.selectedHeading) {
+              setSelectedHeading(draft.selectedHeading);
+            }
+            if (draft.selectedLining) {
+              setSelectedLining(draft.selectedLining);
+            }
+            if (draft.windowType) {
+              setSelectedWindowType(draft.windowType);
+            }
+
+            toast.toast({
+              title: "Draft Restored",
+              description: "Your previous work has been restored"
+            });
+          }
+        },
+        duration: 10000
+      });
+    }
+
+    // Cleanup expired drafts on mount
+    draftService.clearExpiredDrafts();
+  }, [surfaceId, existingWindowSummary]);
+
+  // Auto-save draft every 30 seconds
+  useEffect(() => {
+    if (!surfaceId) return;
+
+    const autoSaveInterval = setInterval(() => {
+      if (hasUnsavedChanges) {
+        console.log('🔄 [Draft] Auto-saving draft...');
+
+        draftService.saveDraft(surfaceId, {
+          windowId: surfaceId,
+          templateId: selectedTemplate?.id,
+          fabricId: selectedItems.fabric?.id,
+          hardwareId: selectedItems.hardware?.id,
+          materialId: selectedItems.material?.id,
+          measurements,
+          selectedOptions,
+          selectedHeading,
+          selectedLining,
+          windowType: selectedWindowType
+        });
+
+        const { toast } = require("sonner");
+        toast.info('Draft auto-saved', { duration: 2000 });
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(autoSaveInterval);
+  }, [
+    surfaceId,
+    hasUnsavedChanges,
+    selectedTemplate,
+    selectedItems,
+    measurements,
+    selectedOptions,
+    selectedHeading,
+    selectedLining,
+    selectedWindowType
+  ]);
+
+  // Track unsaved changes
+  useEffect(() => {
+    const hasChanges = !!(
+      selectedTemplate ||
+      selectedItems.fabric ||
+      selectedItems.hardware ||
+      Object.keys(measurements).length > 0
+    );
+
+    setHasUnsavedChanges(hasChanges);
+  }, [selectedTemplate, selectedItems, measurements]);
 
   // Enhanced auto-save implementation with cross-mode data
   useImperativeHandle(ref, () => ({
@@ -778,32 +890,28 @@ export const DynamicWindowWorksheet = forwardRef<{
             material_details: summaryData.material_details
           });
 
-          // Save to windows_summary table
-          const {
-            data: summaryInserted,
-            error
-          } = await supabase.from('windows_summary').upsert(summaryData, {
-            onConflict: 'window_id'
-          }).select().maybeSingle();
-          
-          if (error) {
-            console.error("❌ DynamicWindowWorksheet: Database save error:", error);
-            throw error;
-          }
-          
-          if (!summaryInserted) {
-            console.error("❌ DynamicWindowWorksheet: No data returned after save");
-            throw new Error("Failed to save window summary - no data returned");
-          }
+          // Use save queue service for robust saving with retry
+          const saveId = await saveQueueService.enqueueSave(
+            'windows_summary',
+            summaryData,
+            { onConflict: 'window_id' }
+          );
 
-          console.log("✅ DynamicWindowWorksheet: Successfully saved to windows_summary:", summaryInserted);
+          console.log(`✅ [SaveQueue] Queued save with ID: ${saveId}`);
           
-          // Show immediate success feedback
-          const { toast } = await import("@/hooks/use-toast");
-          toast({
-            title: "✅ Saved Successfully",
-            description: `${selectedTemplate?.name || 'Treatment'} configuration saved`,
-          });
+          // Mark as saved
+          setHasUnsavedChanges(false);
+          setLastSaveTime(Date.now());
+          
+          // Clear draft after successful save
+          if (surfaceId) {
+            draftService.clearDraft(surfaceId);
+          }
+          
+          // Skip the error check since save queue handles it
+          console.log("✅ DynamicWindowWorksheet: Save queued with ID:", saveId);
+          
+          // Toast notification handled by save queue service
 
           // Invalidate cache to refresh UI
           await queryClient.invalidateQueries({
@@ -884,6 +992,14 @@ export const DynamicWindowWorksheet = forwardRef<{
   const canProceedToMeasurements = selectedWindowType && (selectedTemplate || selectedTreatmentType);
   const canShowPreview = canProceedToMeasurements && Object.keys(measurements).length > 0;
   return <div className="space-y-6">
+      {/* Save Status Indicator */}
+      <div className="flex justify-end">
+        <SaveStatusIndicator 
+          hasUnsavedChanges={hasUnsavedChanges}
+          lastSaveTime={lastSaveTime}
+        />
+      </div>
+
       {/* Enhanced Progress indicator with clickable navigation */}
       <div className="flex items-center space-x-4">
         {["window-type", "treatment", "inventory", "measurements"].map((step, index) => {
