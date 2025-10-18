@@ -130,21 +130,82 @@ export const WindowManagementDialog = ({
     if (!selectedInventoryItem) return;
     setShowTreatmentForm(true);
   };
-  const handleTreatmentSave = (treatmentData: any) => {
-    const enrichedTreatmentData = {
-      ...treatmentData,
-      window_id: surface.id,
-      room_id: surface.room_id,
-      inventory_item: selectedInventoryItem,
-      surface_dimensions: {
-        width: surface.width,
-        height: surface.height
+  const handleTreatmentSave = async (treatmentData: any) => {
+    try {
+      // CRITICAL: Save cost_summary to windows_summary table
+      if (treatmentData.cost_summary && surface?.id) {
+        const summaryData = {
+          window_id: surface.id,
+          user_id: (await supabase.auth.getUser()).data.user?.id,
+          // Core costs from cost_summary
+          fabric_cost: treatmentData.cost_summary.fabric_cost || 0,
+          manufacturing_cost: treatmentData.cost_summary.labor_cost || 0,
+          total_cost: treatmentData.cost_summary.total_cost || 0,
+          linear_meters: treatmentData.measurements?.fabric_usage || 0,
+          widths_required: treatmentData.cost_summary.widths_required || 0,
+          // Fabric details
+          price_per_meter: treatmentData.fabric_details?.fabric_cost_per_yard || 0,
+          // Treatment info
+          treatment_type: selectedTreatmentType,
+          treatment_category: treatmentData.window_covering?.category || 'curtains',
+          // Template details
+          template_id: treatmentData.window_covering?.id,
+          template_name: treatmentData.window_covering?.name,
+          template_details: treatmentData.window_covering,
+          // Full cost breakdown
+          cost_summary: treatmentData.cost_summary,
+          // Measurements
+          measurements_details: {
+            ...treatmentData.measurements,
+            selected_options: treatmentData.selected_options
+          },
+          // Fabric details
+          fabric_details: treatmentData.fabric_details,
+          // Options
+          selected_options: treatmentData.selected_options,
+          // Metadata
+          pricing_type: 'per_metre',
+          currency: 'USD'
+        };
+
+        const { error: saveError } = await supabase
+          .from('windows_summary')
+          .upsert(summaryData, { onConflict: 'window_id' });
+
+        if (saveError) {
+          console.error("❌ Failed to save cost summary:", saveError);
+          throw saveError;
+        }
+
+        console.log("✅ Cost summary saved to windows_summary:", summaryData);
       }
-    };
-    onSaveTreatment(enrichedTreatmentData);
-    setShowTreatmentForm(false);
-    setSelectedInventoryItem(null);
-    onClose();
+
+      // Also call the parent callback if provided
+      if (onSaveTreatment) {
+        const enrichedTreatmentData = {
+          ...treatmentData,
+          window_id: surface.id,
+          room_id: surface.room_id,
+          inventory_item: selectedInventoryItem,
+          surface_dimensions: {
+            width: surface.width,
+            height: surface.height
+          }
+        };
+        onSaveTreatment(enrichedTreatmentData);
+      }
+
+      setShowTreatmentForm(false);
+      setSelectedInventoryItem(null);
+      onClose();
+    } catch (error) {
+      console.error("❌ Treatment save failed:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save treatment data",
+        variant: "destructive"
+      });
+    }
   };
 
   // Simple save function that just triggers the worksheet's save
