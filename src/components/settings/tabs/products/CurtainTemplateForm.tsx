@@ -1195,6 +1195,39 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                       />
                     </div>
                   </div>
+
+                  <Separator />
+
+                  {/* Waste Percentage - For all product types */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium">Waste Allowance</h4>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Extra percentage added to material calculations to account for cutting waste and errors</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <div>
+                      <Label htmlFor="waste_percent_blind">Waste Percentage (%)</Label>
+                      <Input
+                        id="waste_percent_blind"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        value={formData.waste_percent}
+                        onChange={(e) => handleInputChange("waste_percent", e.target.value)}
+                        placeholder="5"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Applied to final material calculations (default: 5%)
+                      </p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             )}
