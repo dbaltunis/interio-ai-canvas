@@ -60,8 +60,8 @@ export const useUserPermissions = () => {
       // Define role-based permissions matching the database function
       const rolePermissions = {
         Owner: [
-          'view_jobs', 'create_jobs', 'delete_jobs', 'view_all_jobs', 'view_all_projects',
-          'view_clients', 'create_clients', 'delete_clients', 'view_all_clients',
+          'view_jobs', 'create_jobs', 'edit_all_jobs', 'edit_own_jobs', 'delete_jobs', 'view_all_jobs', 'view_all_projects',
+          'view_clients', 'create_clients', 'edit_all_clients', 'edit_own_clients', 'delete_clients', 'view_all_clients',
           'view_calendar', 'create_appointments', 'delete_appointments',
           'view_inventory', 'manage_inventory',
           'view_window_treatments', 'manage_window_treatments',
@@ -69,8 +69,8 @@ export const useUserPermissions = () => {
           'view_profile'
         ],
         Admin: [
-          'view_jobs', 'create_jobs', 'delete_jobs', 'view_all_jobs', 'view_all_projects',
-          'view_clients', 'create_clients', 'delete_clients', 'view_all_clients',
+          'view_jobs', 'create_jobs', 'edit_all_jobs', 'edit_own_jobs', 'delete_jobs', 'view_all_jobs', 'view_all_projects',
+          'view_clients', 'create_clients', 'edit_all_clients', 'edit_own_clients', 'delete_clients', 'view_all_clients',
           'view_calendar', 'create_appointments', 'delete_appointments', 
           'view_inventory', 'manage_inventory',
           'view_window_treatments', 'manage_window_treatments',
@@ -78,8 +78,8 @@ export const useUserPermissions = () => {
           'view_profile'
         ],
         Manager: [
-          'view_jobs', 'create_jobs', 'view_all_jobs', 'view_all_projects',
-          'view_clients', 'create_clients', 'view_all_clients',
+          'view_jobs', 'create_jobs', 'edit_all_jobs', 'edit_own_jobs', 'view_all_jobs', 'view_all_projects',
+          'view_clients', 'create_clients', 'edit_all_clients', 'edit_own_clients', 'view_all_clients',
           'view_calendar', 'create_appointments',
           'view_inventory', 'manage_inventory',
           'view_window_treatments', 'manage_window_treatments',
@@ -87,8 +87,8 @@ export const useUserPermissions = () => {
           'view_profile'
         ],
         Staff: [
-          'view_jobs', 'create_jobs',
-          'view_clients', 'create_clients', 
+          'view_jobs', 'create_jobs', 'edit_own_jobs',
+          'view_clients', 'create_clients', 'edit_own_clients', 
           'view_calendar',
           'view_inventory',
           'view_profile'
