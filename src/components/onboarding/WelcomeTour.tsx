@@ -21,37 +21,40 @@ const tourSteps: TourStep[] = [
     description: "Let's take a quick tour to help you get started. This will only take 2 minutes.",
   },
   {
-    id: "navigation",
-    title: "Navigate Your Workspace",
-    description: "Use the top navigation to switch between Projects, Clients, Library, and Calendar. Everything you need is just one click away.",
-    target: "header nav",
+    id: "projects",
+    title: "Your Projects Dashboard",
+    description: "This is where you'll manage all your jobs. You can see project status, client info, and totals at a glance.",
+    target: "[data-tour='projects-tab']",
     placement: "bottom",
+    action: () => {}, // Will be set by component
   },
   {
     id: "create-job",
     title: "Create Your First Project",
-    description: "Click here to create a new job. You can add measurements, select products, and generate quotes all in one place.",
+    description: "Click this button to create a new job. You can add measurements, select products, and generate quotes all in one place.",
     target: "[data-tour='create-job']",
     placement: "left",
   },
   {
     id: "clients",
-    title: "Manage Your Clients",
-    description: "Track client information, communication history, and deals all in one centralized location.",
+    title: "Client Relationship Management",
+    description: "Switch to the CRM tab to track client information, communication history, and deals all in one centralized location.",
     target: "[data-tour='clients-tab']",
     placement: "bottom",
+    action: () => {}, // Will be set by component
   },
   {
     id: "library",
-    title: "Product Library",
-    description: "Set up your product templates, pricing grids, and component catalog here. This powers all your calculations.",
+    title: "Product & Component Library",
+    description: "The Library tab is where you set up your product templates, pricing grids, and component catalog. This powers all your calculations.",
     target: "[data-tour='library-tab']",
     placement: "bottom",
+    action: () => {}, // Will be set by component
   },
   {
     id: "settings",
     title: "Customize Your Settings",
-    description: "Configure your business details, pricing rules, document templates, and more in Settings.",
+    description: "Click your profile to access Settings where you can configure business details, pricing rules, document templates, and more.",
     target: "[data-tour='settings']",
     placement: "left",
   },
@@ -66,28 +69,52 @@ interface WelcomeTourProps {
   isOpen: boolean;
   onComplete: () => void;
   onSkip: () => void;
+  onTabChange?: (tab: string) => void;
 }
 
-export const WelcomeTour = ({ isOpen, onComplete, onSkip }: WelcomeTourProps) => {
+export const WelcomeTour = ({ isOpen, onComplete, onSkip, onTabChange }: WelcomeTourProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [highlightedElement, setHighlightedElement] = useState<HTMLElement | null>(null);
+
+  // Map step IDs to tab names
+  const stepToTab: Record<string, string> = {
+    projects: "projects",
+    clients: "clients",
+    library: "inventory",
+  };
 
   const step = tourSteps[currentStep];
   const isLastStep = currentStep === tourSteps.length - 1;
 
-  // Highlight target element
+  // Handle tab navigation and element highlighting
   useEffect(() => {
-    if (!isOpen || !step.target) {
+    if (!isOpen) {
       setHighlightedElement(null);
       return;
     }
 
-    const element = document.querySelector(step.target) as HTMLElement;
-    if (element) {
-      setHighlightedElement(element);
-      element.scrollIntoView({ behavior: "smooth", block: "center" });
+    // Navigate to the correct tab if needed
+    const tabName = stepToTab[step.id];
+    if (tabName && onTabChange) {
+      onTabChange(tabName);
     }
-  }, [currentStep, isOpen, step.target]);
+
+    // Wait a bit for tab change and DOM update before highlighting
+    const timer = setTimeout(() => {
+      if (!step.target) {
+        setHighlightedElement(null);
+        return;
+      }
+
+      const element = document.querySelector(step.target) as HTMLElement;
+      if (element) {
+        setHighlightedElement(element);
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, tabName ? 300 : 0); // Delay if we changed tabs
+
+    return () => clearTimeout(timer);
+  }, [currentStep, isOpen, step.target, step.id, onTabChange]);
 
   const handleNext = () => {
     if (isLastStep) {

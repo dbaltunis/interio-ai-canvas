@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 import { WelcomeTour } from "./WelcomeTour";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
+import { useSearchParams } from "react-router-dom";
 
 interface OnboardingContextType {
   showTour: boolean;
@@ -27,8 +28,13 @@ interface OnboardingProviderProps {
 
 export const OnboardingProvider = ({ children }: OnboardingProviderProps) => {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showTour, setShowTour] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+
+  const handleTabChange = (tab: string) => {
+    setSearchParams({ tab }, { replace: true });
+  };
 
   // Check if user has completed onboarding
   useEffect(() => {
@@ -98,7 +104,12 @@ export const OnboardingProvider = ({ children }: OnboardingProviderProps) => {
       }}
     >
       {children}
-      <WelcomeTour isOpen={showTour} onComplete={completeTour} onSkip={skipTour} />
+      <WelcomeTour 
+        isOpen={showTour} 
+        onComplete={completeTour} 
+        onSkip={skipTour} 
+        onTabChange={handleTabChange}
+      />
     </OnboardingContext.Provider>
   );
 };
