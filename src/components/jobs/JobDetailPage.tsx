@@ -79,7 +79,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   ];
 
   return (
-    <div className="min-h-screen bg-background w-full flex flex-col">
+    <div className="h-screen bg-background w-full flex flex-col overflow-hidden">
       {/* Enhanced Header Section - Scrolls away */}
       <div className="bg-gradient-to-r from-card/95 to-card border-b border-border/50 shadow-sm backdrop-blur-sm">
         <div className="px-3 sm:px-6 py-4">
@@ -142,8 +142,8 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
       </div>
 
       {/* Tabs and Content - Tabs stay sticky */}
-      <div className="flex-1 overflow-auto">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Standardized Tab Navigation - STICKY */}
           <div className="sticky top-0 z-20 bg-background border-b border-border/50 shadow-sm">
             <div className="px-2 sm:px-4">
@@ -173,7 +173,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
           </div>
 
           {/* Tab Content */}
-          <div className="bg-background flex-1">
+          <div className="bg-background">
             <div className="p-2 sm:p-4">
               <TabsContent value="details" className="mt-0">
                 <div className="modern-card p-3 sm:p-6">
