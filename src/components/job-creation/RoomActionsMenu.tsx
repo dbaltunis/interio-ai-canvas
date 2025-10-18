@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Edit, Copy, Trash2, Building, Home, Hotel } from "lucide-react";
+import { useHasPermission } from "@/hooks/usePermissions";
 
 interface RoomActionsMenuProps {
   room: any;
@@ -23,6 +24,9 @@ export const RoomActionsMenu = ({
   onDeleteRoom, 
   onChangeRoomType 
 }: RoomActionsMenuProps) => {
+  const canEditJobs = useHasPermission('edit_all_jobs') || useHasPermission('edit_own_jobs');
+  const canDeleteJobs = useHasPermission('delete_jobs');
+  
   const roomTypes = [
     { value: "living_room", label: "Living Room", icon: Home },
     { value: "bedroom", label: "Bedroom", icon: Building },
@@ -44,17 +48,26 @@ export const RoomActionsMenu = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48 bg-background border border-border shadow-lg z-50">
-        <DropdownMenuItem onClick={onCopyRoom}>
-          <Copy className="mr-2 h-4 w-4" />
-          Copy Room
-        </DropdownMenuItem>
-        <DropdownMenuItem 
-          onClick={onDeleteRoom}
-          className="text-red-600 hover:text-red-800"
-        >
-          <Trash2 className="mr-2 h-4 w-4" />
-          Delete Room
-        </DropdownMenuItem>
+        {canEditJobs && (
+          <DropdownMenuItem onClick={onCopyRoom}>
+            <Copy className="mr-2 h-4 w-4" />
+            Copy Room
+          </DropdownMenuItem>
+        )}
+        {canDeleteJobs && (
+          <DropdownMenuItem 
+            onClick={onDeleteRoom}
+            className="text-red-600 hover:text-red-800"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete Room
+          </DropdownMenuItem>
+        )}
+        {!canEditJobs && !canDeleteJobs && (
+          <DropdownMenuItem disabled>
+            Contact admin for access
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

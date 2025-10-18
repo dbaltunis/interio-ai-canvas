@@ -14,10 +14,12 @@ interface ProjectWorkshopTabProps {
 }
 
 export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
-  const { data: treatments = [] } = useTreatments(project?.id);
-  const { data: rooms = [] } = useRooms(project?.id);
-  const { data: surfaces = [] } = useSurfaces(project?.id);
-  const { data: projectSummaries } = useProjectWindowSummaries(project?.id);
+  const { data: treatments = [], isLoading: treatmentsLoading } = useTreatments(project?.id);
+  const { data: rooms = [], isLoading: roomsLoading } = useRooms(project?.id);
+  const { data: surfaces = [], isLoading: surfacesLoading } = useSurfaces(project?.id);
+  const { data: projectSummaries, isLoading: summariesLoading } = useProjectWindowSummaries(project?.id);
+  
+  const isLoading = treatmentsLoading || roomsLoading || surfacesLoading || summariesLoading;
   
   // Generate work orders from treatments or fallback to window summaries
   const hasTreatments = (treatments?.length || 0) > 0;
@@ -128,16 +130,23 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
         <div className="p-4 border-b">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">Work Orders</h3>
-            <Button size="sm">
+            <Button size="sm" disabled={isLoading || workOrders.length === 0}>
               <Wrench className="h-4 w-4 mr-2" />
               Generate Orders
             </Button>
           </div>
         </div>
         <div className="divide-y">
-          {workOrders.length === 0 ? (
+          {isLoading ? (
+            <div className="p-8 text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="mt-2 text-gray-500">Loading work orders...</p>
+            </div>
+          ) : workOrders.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
-              No treatments created yet. Add treatments in the Jobs tab to generate work orders.
+              <div className="mb-2">📋</div>
+              <p className="font-medium">No work orders available</p>
+              <p className="text-sm mt-1">Add treatments in the Jobs tab to generate work orders.</p>
             </div>
           ) : (
             workOrders.map((order) => (
@@ -164,22 +173,27 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
                 {/* Manufacturing Details */}
                 <div className="ml-8 pl-3 border-l-2 border-gray-100 space-y-2">
                   <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">Treatment:</span> {order.treatment_type || 'Not specified'}
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Fabric:</span> {order.fabric_type || 'Not specified'}
+                  </div>
+                  {order.color && (
                     <div>
-                      <span className="text-gray-600">Treatment:</span> {order.treatment_type}
+                      <span className="text-gray-600">Color:</span> {order.color}
                     </div>
+                  )}
+                  {order.pattern && (
                     <div>
-                      <span className="text-gray-600">Fabric:</span> {order.fabric_type || 'N/A'}
+                      <span className="text-gray-600">Pattern:</span> {order.pattern}
                     </div>
-                    {order.color && (
-                      <div>
-                        <span className="text-gray-600">Color:</span> {order.color}
-                      </div>
-                    )}
-                    {order.pattern && (
-                      <div>
-                        <span className="text-gray-600">Pattern:</span> {order.pattern}
-                      </div>
-                    )}
+                  )}
+                  {order.hardware && (
+                    <div>
+                      <span className="text-gray-600">Hardware:</span> {order.hardware}
+                    </div>
+                  )}
                   </div>
                   
                   {order.measurements && Object.keys(order.measurements).length > 0 && (

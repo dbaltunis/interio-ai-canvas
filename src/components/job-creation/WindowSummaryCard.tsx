@@ -11,6 +11,7 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { WindowRenameButton } from "./WindowRenameButton";
 import { TreatmentTypeIndicator } from "../measurements/TreatmentTypeIndicator";
 import { TreatmentPreviewEngine } from "@/components/treatment-visualizers/TreatmentPreviewEngine";
+import { useHasPermission } from "@/hooks/usePermissions";
 
 interface WindowSummaryCardProps {
   surface: any;
@@ -43,6 +44,9 @@ export function WindowSummaryCard({
   treatmentLabel,
   treatmentType: propTreatmentType
 }: WindowSummaryCardProps) {
+  const canEditJobs = useHasPermission('edit_all_jobs') || useHasPermission('edit_own_jobs');
+  const canDeleteJobs = useHasPermission('delete_jobs');
+  
   // Add defensive check for surface data
   if (!surface || !surface.id) {
     console.error('WindowSummaryCard: Invalid surface data', surface);
@@ -213,28 +217,35 @@ export function WindowSummaryCard({
             )}
           </div>
           <div className="flex gap-2 flex-shrink-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onViewDetails?.(surface);
-              }}
-              className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/30"
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDeleteSurface?.(surface.id);
-              }}
-              className="text-destructive hover:text-destructive hover:border-destructive/30"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {canEditJobs && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewDetails?.(surface);
+                }}
+                className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/30"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
+            {canDeleteJobs && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteSurface?.(surface.id);
+                }}
+                className="text-destructive hover:text-destructive hover:border-destructive/30"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+            {!canEditJobs && !canDeleteJobs && (
+              <p className="text-xs text-muted-foreground">Contact admin for edit access</p>
+            )}
           </div>
         </div>
       </CardHeader>
