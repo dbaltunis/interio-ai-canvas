@@ -9,6 +9,7 @@ import { useTreatmentOptionRules, useCreateOptionRule, useUpdateOptionRule, useD
 import { useTreatmentOptions } from '@/hooks/useTreatmentOptions';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface OptionRulesManagerProps {
   templateId: string;
@@ -40,6 +41,8 @@ export const OptionRulesManager = ({ templateId }: OptionRulesManagerProps) => {
   const createRule = useCreateOptionRule();
   const updateRule = useUpdateOptionRule();
   const deleteRule = useDeleteOptionRule();
+  
+  const { toast } = useToast();
   
   const [editingRule, setEditingRule] = useState<Partial<OptionRule> | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -75,26 +78,63 @@ export const OptionRulesManager = ({ templateId }: OptionRulesManagerProps) => {
   };
 
   const handleSaveRule = async () => {
-    if (!editingRule?.condition?.option_key || !editingRule?.effect?.target_option_key) {
+    // Validate required fields
+    if (!editingRule?.condition?.option_key) {
+      toast({
+        title: "Validation Error",
+        description: "Please select a condition option (When this option)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!editingRule?.condition?.value) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter or select a condition value",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!editingRule?.effect?.target_option_key) {
+      toast({
+        title: "Validation Error",
+        description: "Please select a target option",
+        variant: "destructive",
+      });
       return;
     }
 
     const description = `When "${editingRule.condition.option_key}" ${editingRule.condition.operator} "${editingRule.condition.value}", ${editingRule.effect.action.replace('_', ' ')} "${editingRule.effect.target_option_key}"`;
 
-    if (isCreating) {
-      await createRule.mutateAsync({
-        ...editingRule as Omit<OptionRule, 'id' | 'created_at' | 'updated_at'>,
-        description,
+    try {
+      if (isCreating) {
+        await createRule.mutateAsync({
+          ...editingRule as Omit<OptionRule, 'id' | 'created_at' | 'updated_at'>,
+          description,
+        });
+      } else if (editingRule.id) {
+        await updateRule.mutateAsync({
+          id: editingRule.id,
+          updates: { ...editingRule, description },
+        });
+      }
+
+      toast({
+        title: "Success",
+        description: "Rule saved successfully",
       });
-    } else if (editingRule.id) {
-      await updateRule.mutateAsync({
-        id: editingRule.id,
-        updates: { ...editingRule, description },
+
+      setEditingRule(null);
+      setIsCreating(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save rule. Please try again.",
+        variant: "destructive",
       });
     }
-
-    setEditingRule(null);
-    setIsCreating(false);
   };
 
   const handleDeleteRule = async (ruleId: string) => {
