@@ -349,6 +349,7 @@ export function WindowSummaryCard({
                           <div className="text-xs text-muted-foreground">Width</div>
                           <div className="font-semibold">
                             {fmtMeasurement(
+                              Number(summary.measurements_details?.rail_width) || 
                               Number(summary.measurements_details?.width) || 
                               Number(summary.measurements_details?.measurement_a) || 
                               Number(surface.measurement_a) || 
@@ -360,6 +361,7 @@ export function WindowSummaryCard({
                           <div className="text-xs text-muted-foreground">Height</div>
                           <div className="font-semibold">
                             {fmtMeasurement(
+                              Number(summary.measurements_details?.drop) || 
                               Number(summary.measurements_details?.height) || 
                               Number(summary.measurements_details?.measurement_b) || 
                               Number(surface.measurement_b) || 
