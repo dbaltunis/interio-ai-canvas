@@ -785,6 +785,13 @@ export const DynamicWindowWorksheet = forwardRef<{
           }
 
           console.log("✅ DynamicWindowWorksheet: Successfully saved to windows_summary:", summaryInserted);
+          
+          // Show immediate success feedback
+          const { toast } = await import("@/hooks/use-toast");
+          toast({
+            title: "✅ Saved Successfully",
+            description: `${selectedTemplate?.name || 'Treatment'} configuration saved`,
+          });
 
           // CRITICAL: Also create/update treatments table record for Materials tab extraction
           // Get the user ID for the treatment
