@@ -415,7 +415,7 @@ export const AuthPage = () => {
                       </div>
                       
                       {/* Password Strength Indicator */}
-                      {password && passwordStrength && (isSignUp && invitation) && (
+                      {password && passwordStrength && isSignUp && (
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-muted-foreground">Password strength:</span>
