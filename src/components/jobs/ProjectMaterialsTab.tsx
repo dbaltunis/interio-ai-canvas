@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, AlertCircle, ShoppingCart, Sparkles } from "lucide-react";
+import { Plus, Package, AlertCircle, ShoppingCart, Sparkles, FileDown } from "lucide-react";
 import { useProjectMaterialAllocations } from "@/hooks/useProjectMaterialAllocations";
 import { AllocateMaterialDialog } from "./AllocateMaterialDialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -10,6 +10,8 @@ import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSuppliers } from "@/hooks/useSuppliers";
 import { useTreatments } from "@/hooks/useTreatments";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
 
 interface ProjectMaterialsTabProps {
   projectId: string;
@@ -19,10 +21,11 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
   const [showAllocateDialog, setShowAllocateDialog] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
   const [vendorFilter, setVendorFilter] = useState("all");
+  const [selectedMaterials, setSelectedMaterials] = useState<Set<string>>(new Set());
   const { data: allocations, isLoading } = useProjectMaterialAllocations(projectId);
   const { data: inventory } = useEnhancedInventory();
   const { data: suppliers } = useSuppliers();
-  const { data: treatments } = useTreatments(projectId);
+  const { data: treatments, isLoading: treatmentsLoading } = useTreatments(projectId);
 
   // Extract materials from treatments
   const treatmentMaterials = useMemo(() => {
@@ -119,6 +122,61 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
     return materials;
   }, [treatments, inventory]);
 
+  // Toggle material selection
+  const toggleMaterialSelection = (materialId: string) => {
+    const newSelection = new Set(selectedMaterials);
+    if (newSelection.has(materialId)) {
+      newSelection.delete(materialId);
+    } else {
+      newSelection.add(materialId);
+    }
+    setSelectedMaterials(newSelection);
+  };
+
+  // Select all materials
+  const selectAllMaterials = () => {
+    setSelectedMaterials(new Set(treatmentMaterials.map(m => m.id)));
+  };
+
+  // Deselect all materials
+  const deselectAllMaterials = () => {
+    setSelectedMaterials(new Set());
+  };
+
+  // Export selected materials
+  const exportSelectedMaterials = () => {
+    const selected = treatmentMaterials.filter(m => selectedMaterials.has(m.id));
+    if (selected.length === 0) {
+      toast.error("No materials selected");
+      return;
+    }
+
+    // Group by supplier
+    const bySupplier = selected.reduce((acc, material) => {
+      const supplier = material.supplier || "Unknown Supplier";
+      if (!acc[supplier]) {
+        acc[supplier] = [];
+      }
+      acc[supplier].push(material);
+      return acc;
+    }, {} as Record<string, typeof selected>);
+
+    // Create order summary text
+    let orderText = "MATERIALS ORDER\n\n";
+    Object.entries(bySupplier).forEach(([supplier, materials]) => {
+      orderText += `\n${supplier}\n${"=".repeat(50)}\n`;
+      materials.forEach(mat => {
+        orderText += `${mat.name} - ${mat.quantity.toFixed(2)} ${mat.unit}\n`;
+        orderText += `  Category: ${mat.category}\n`;
+        orderText += `  Treatment: ${mat.treatment_name}\n\n`;
+      });
+    });
+
+    // Copy to clipboard
+    navigator.clipboard.writeText(orderText);
+    toast.success(`Order list for ${selected.length} items copied to clipboard!`);
+  };
+
   const getInventoryItem = (itemId: string) => {
     return inventory?.find((item) => item.id === itemId);
   };
@@ -136,7 +194,7 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || treatmentsLoading) {
     return <div className="p-4">Loading materials...</div>;
   }
 
@@ -181,67 +239,131 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
   return (
     <div className="space-y-6">
       {/* Auto-Extracted Materials from Treatments */}
-      {treatmentMaterials.length > 0 && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" />
-                <CardTitle>Materials from Treatments</CardTitle>
-              </div>
-              <Badge variant="secondary" className="ml-2">
-                {treatmentMaterials.length} items auto-detected
-              </Badge>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <CardTitle>Materials from Treatments</CardTitle>
             </div>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Material</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Treatment</TableHead>
-                  <TableHead className="text-right">Quantity</TableHead>
-                  <TableHead>Supplier</TableHead>
-                  <TableHead>Source</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {treatmentMaterials.map((material) => (
-                  <TableRow key={material.id}>
-                    <TableCell className="font-medium">{material.name}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs">
-                        {material.category}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {material.treatment_name}
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {material.quantity.toFixed(2)} {material.unit}
-                    </TableCell>
-                    <TableCell>
-                      {material.supplier ? (
-                        <Badge variant="outline" className="text-xs">
-                          {material.supplier}
-                        </Badge>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">No supplier</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="text-xs">
-                        {material.source}
-                      </Badge>
-                    </TableCell>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="ml-2">
+                {treatmentMaterials.length} items detected
+              </Badge>
+              {selectedMaterials.size > 0 && (
+                <Badge variant="default">
+                  {selectedMaterials.size} selected
+                </Badge>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {treatmentMaterials.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <h3 className="font-medium text-lg mb-1">No materials detected yet</h3>
+              <p className="text-sm">Add treatments with fabrics and products to see them here</p>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={selectAllMaterials}
+                  >
+                    Select All
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={deselectAllMaterials}
+                  >
+                    Deselect All
+                  </Button>
+                </div>
+                <Button
+                  onClick={exportSelectedMaterials}
+                  disabled={selectedMaterials.size === 0}
+                  size="sm"
+                >
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Export Order List ({selectedMaterials.size})
+                </Button>
+              </div>
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedMaterials.size === treatmentMaterials.length}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            selectAllMaterials();
+                          } else {
+                            deselectAllMaterials();
+                          }
+                        }}
+                      />
+                    </TableHead>
+                    <TableHead>Material</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Treatment</TableHead>
+                    <TableHead className="text-right">Quantity</TableHead>
+                    <TableHead>Supplier</TableHead>
+                    <TableHead>Source</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+                </TableHeader>
+                <TableBody>
+                  {treatmentMaterials.map((material) => (
+                    <TableRow 
+                      key={material.id} 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => toggleMaterialSelection(material.id)}
+                    >
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={selectedMaterials.has(material.id)}
+                          onCheckedChange={() => toggleMaterialSelection(material.id)}
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">{material.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {material.category}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {material.treatment_name}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {material.quantity > 0 ? `${material.quantity.toFixed(2)} ${material.unit}` : 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        {material.supplier ? (
+                          <Badge variant="outline" className="text-xs">
+                            {material.supplier}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">No supplier</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="text-xs">
+                          {material.source}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Products to Order Section */}
       <Card>
