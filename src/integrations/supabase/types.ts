@@ -615,6 +615,45 @@ export type Database = {
           },
         ]
       }
+      audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          new_data: Json | null
+          old_data: Json | null
+          record_id: string | null
+          table_name: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       automation_executions: {
         Row: {
           client_id: string | null
@@ -5995,6 +6034,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          ip_address: string | null
+          last_activity_at: string
+          session_token: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          ip_address?: string | null
+          last_activity_at?: string
+          session_token: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          ip_address?: string | null
+          last_activity_at?: string
+          session_token?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_subscriptions: {
         Row: {
           canceled_at: string | null
@@ -6519,6 +6591,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      cleanup_expired_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       create_comprehensive_blind_templates: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -6637,6 +6713,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_valid_email: {
+        Args: { email_address: string }
+        Returns: boolean
+      }
       link_user_to_account: {
         Args: { child_user_id: string; parent_user_id?: string }
         Returns: Json
@@ -6657,8 +6737,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      sanitize_phone_number: {
+        Args: { phone_number: string }
+        Returns: string
+      }
       sanitize_text_input: {
         Args: { input_text: string }
+        Returns: string
+      }
+      sanitize_user_input: {
+        Args: { input_text: string; max_length?: number }
         Returns: string
       }
       schedule_follow_up_reminder: {

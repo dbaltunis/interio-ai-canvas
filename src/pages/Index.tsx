@@ -6,6 +6,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { motion } from "framer-motion";
 import { AIBackground } from "@/components/common/AIBackground";
 import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 
 
 // Lazy load heavy components with proper error handling
@@ -53,6 +54,9 @@ const Index = () => {
     return tab;
   });
   const { signOut, user } = useAuth();
+  
+  // Enable session timeout tracking
+  useSessionTimeout();
 
   console.log('Index: Rendering with activeTab =', activeTab, 'user =', user?.email || 'no user');
   console.log('Index: Render time =', new Date().toISOString());
