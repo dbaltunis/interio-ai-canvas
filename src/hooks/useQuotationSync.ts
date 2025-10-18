@@ -239,6 +239,25 @@ export const useQuotationSync = ({
             });
           }
 
+          // DETAILED BREAKDOWN - Options (CRITICAL: Include options cost!)
+          if (summary.options_cost && summary.options_cost > 0) {
+            const selectedOptions = summary.selected_options || [];
+            const optionsDescription = Array.isArray(selectedOptions) && selectedOptions.length > 0
+              ? selectedOptions.map((opt: any) => opt.name || opt.label).filter(Boolean).join(', ')
+              : 'Selected options';
+            
+            parentItem.children.push({
+              id: `${window.window_id}-options`,
+              name: 'Options',
+              description: optionsDescription,
+              quantity: 1,
+              unit: '',
+              unit_price: summary.options_cost,
+              total: summary.options_cost,
+              isChild: true
+            });
+          }
+
           roomGroups[roomId].items.push(parentItem);
         }
       });
