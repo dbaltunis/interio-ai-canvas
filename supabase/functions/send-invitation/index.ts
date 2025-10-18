@@ -160,7 +160,16 @@ serve(async (req) => {
     }
 
     sgMail.setApiKey(sgApiKey);
-    const msg = { to: invitedEmail, from: fromAddress, subject: `Invitation to join ${inviterName}'s team`, html: emailContent };
+    const msg = { 
+      to: invitedEmail, 
+      from: fromAddress, 
+      subject: `Invitation to join ${inviterName}'s team`, 
+      html: emailContent,
+      tracking_settings: {
+        click_tracking: { enable: false },
+        open_tracking: { enable: false }
+      }
+    };
     const [sendResult] = await sgMail.send(msg);
     console.log('SendGrid send result:', sendResult?.statusCode, sendResult?.headers);
 
