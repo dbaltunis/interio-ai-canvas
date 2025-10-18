@@ -70,26 +70,30 @@ export const QuotesListView = ({ onNewQuote, onQuoteSelect, onQuoteEdit }: Quote
     }).format(amount);
   };
 
-  // Format dates using user preferences
+  // Format dates using user preferences - batched and debounced
   useEffect(() => {
     const formatDates = async () => {
-      if (!quotes) return;
+      if (!quotes || quotes.length === 0) return;
       
       const dateMap: Record<string, string> = {};
       
-      for (const quote of quotes) {
-        if (quote.created_at) {
-          dateMap[`created_${quote.id}`] = await formatUserDate(quote.created_at);
-        }
-        if (quote.valid_until) {
-          dateMap[`valid_${quote.id}`] = await formatUserDate(quote.valid_until);
-        }
-      }
+      // Batch format all dates at once
+      await Promise.all(
+        quotes.flatMap(quote => [
+          quote.created_at ? formatUserDate(quote.created_at).then(formatted => {
+            dateMap[`created_${quote.id}`] = formatted;
+          }) : Promise.resolve(),
+          quote.valid_until ? formatUserDate(quote.valid_until).then(formatted => {
+            dateMap[`valid_${quote.id}`] = formatted;
+          }) : Promise.resolve()
+        ])
+      );
       
       setFormattedDates(dateMap);
     };
     
-    formatDates();
+    const timeoutId = setTimeout(formatDates, 100);
+    return () => clearTimeout(timeoutId);
   }, [quotes]);
 
   if (quotesLoading) {

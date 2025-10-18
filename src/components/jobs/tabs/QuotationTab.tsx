@@ -33,6 +33,7 @@ import { EmailQuoteModal } from "@/components/jobs/quotation/EmailQuoteModal";
 import { useQuoteTemplates } from "@/hooks/useQuoteTemplates";
 import { useClients } from "@/hooks/useClients";
 import { generateQuotePDFBlob } from "@/utils/pdfGenerator.tsx";
+import { QuotationSkeleton } from "@/components/jobs/quotation/QuotationSkeleton";
 
 interface QuotationTabProps {
   projectId: string;
@@ -424,11 +425,7 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   }
 
   if (templatesLoading || quotesLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-muted-foreground">Loading templates and quotes...</div>
-      </div>
-    );
+    return <QuotationSkeleton />;
   }
 
   if (!activeTemplates || activeTemplates.length === 0) {

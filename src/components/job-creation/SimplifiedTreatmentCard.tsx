@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useSurfaces } from "@/hooks/useSurfaces";
+import { WindowManagementDialog } from "./WindowManagementDialog";
 
 interface SimplifiedTreatmentCardProps {
   treatment: any;
@@ -30,6 +31,7 @@ interface SimplifiedTreatmentCardProps {
 export const SimplifiedTreatmentCard = ({ treatment, projectId }: SimplifiedTreatmentCardProps) => {
   const [isEditingWindow, setIsEditingWindow] = useState(false);
   const [windowName, setWindowName] = useState("");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const { toast } = useToast();
   const { data: surfaces } = useSurfaces(projectId);
 
@@ -165,6 +167,7 @@ export const SimplifiedTreatmentCard = ({ treatment, projectId }: SimplifiedTrea
   };
 
   return (
+    <>
     <Card className="border-l-4 border-l-primary bg-card/50">
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
@@ -227,7 +230,7 @@ export const SimplifiedTreatmentCard = ({ treatment, projectId }: SimplifiedTrea
                 <Eye className="h-4 w-4 mr-2" />
                 View Details
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setEditDialogOpen(true)}>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Treatment
               </DropdownMenuItem>
@@ -248,5 +251,16 @@ export const SimplifiedTreatmentCard = ({ treatment, projectId }: SimplifiedTrea
         </div>
       </CardContent>
     </Card>
+
+    {/* Edit Dialog */}
+    <WindowManagementDialog
+      isOpen={editDialogOpen}
+      onClose={() => setEditDialogOpen(false)}
+      surface={surface}
+      projectId={projectId}
+      existingMeasurement={treatment.measurement_id}
+      existingTreatments={[treatment]}
+    />
+  </>
   );
 };

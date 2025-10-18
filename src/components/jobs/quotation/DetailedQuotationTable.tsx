@@ -6,6 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ChevronDown, ChevronRight, Eye, EyeOff } from "lucide-react";
 import { formatCurrency } from "@/utils/currency";
 import QuoteItemBreakdown from "@/components/quotes/QuoteItemBreakdown";
+import { QuoteItemImage } from "@/components/quotes/QuoteItemImage";
 
 interface DetailedQuotationTableProps {
   quotationData: any;
@@ -181,7 +182,14 @@ const QuotationItemRow: React.FC<{
       <div className="border rounded-lg overflow-hidden">
         {/* PARENT ROW */}
         <div className="flex items-center justify-between p-3 bg-card text-card-foreground">
-          <div className="flex items-center space-x-2 flex-1">
+          <div className="flex items-center space-x-3 flex-1">
+            {item.image_url && (
+              <QuoteItemImage 
+                src={item.image_url} 
+                alt={item.name} 
+                size={48}
+              />
+            )}
             <div className="flex-1">
               <div className="font-medium text-sm text-foreground">{item.name}</div>
               <div className="text-xs text-muted-foreground">{item.description}</div>
@@ -198,17 +206,26 @@ const QuotationItemRow: React.FC<{
             key={child.id || `child-${index}`} 
             className="flex items-center justify-between p-3 bg-muted/10 border-t text-sm pl-8"
           >
-            <div className="flex-1">
-              <div className="font-medium text-foreground">{child.name}</div>
-              {child.description && child.description !== '-' && (
-                <div className="text-xs text-muted-foreground">{child.description}</div>
+            <div className="flex items-center space-x-3 flex-1">
+              {child.image_url && (
+                <QuoteItemImage 
+                  src={child.image_url} 
+                  alt={child.name} 
+                  size={32}
+                />
               )}
-              {child.quantity && (
-                <div className="text-xs text-muted-foreground">
-                  {Number(child.quantity).toFixed(2)}{child.unit ? ` ${child.unit}` : ''} 
-                  {child.unit_price ? ` × ${formatCurrency(child.unit_price, currency)}` : ''}
-                </div>
-              )}
+              <div className="flex-1">
+                <div className="font-medium text-foreground">{child.name}</div>
+                {child.description && child.description !== '-' && (
+                  <div className="text-xs text-muted-foreground">{child.description}</div>
+                )}
+                {child.quantity && (
+                  <div className="text-xs text-muted-foreground">
+                    {Number(child.quantity).toFixed(2)}{child.unit ? ` ${child.unit}` : ''} 
+                    {child.unit_price ? ` × ${formatCurrency(child.unit_price, currency)}` : ''}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="text-right font-medium text-foreground">
               {formatCurrency(child.total || 0, currency)}
@@ -233,6 +250,13 @@ const QuotationItemRow: React.FC<{
             >
               {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
             </Button>
+          )}
+          {item.image_url && (
+            <QuoteItemImage 
+              src={item.image_url} 
+              alt={item.name} 
+              size={40}
+            />
           )}
           <div className="flex-1">
             <div className="font-medium text-sm text-foreground">{item.name}</div>

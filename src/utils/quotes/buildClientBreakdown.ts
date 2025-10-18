@@ -26,25 +26,28 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
 
   const items: ClientBreakdownItem[] = [];
 
-  // Fabric line
+  // Fabric line - handle both fabric and material (for blinds/shutters)
+  const isBlindsOrShutters = summary.treatment_category?.includes('blind') || summary.treatment_category?.includes('shutter');
+  const materialDetails = isBlindsOrShutters ? (summary.material_details || summary.fabric_details) : summary.fabric_details;
+  
   items.push({
     id: 'fabric',
-    name: summary.fabric_details?.name || 'Fabric',
-    description: summary.fabric_details?.name
-      ? `${summary.fabric_details.name} • ${summary.linear_meters ?? ''}m • ${summary.widths_required} width(s)`
+    name: materialDetails?.name || 'Fabric',
+    description: materialDetails?.name
+      ? `${materialDetails.name} • ${summary.linear_meters ?? ''}m • ${summary.widths_required} width(s)`
       : `${summary.linear_meters ?? ''}m • ${summary.widths_required} width(s)`,
     quantity: Number(summary.linear_meters) || 0,
     unit: 'm',
     unit_price: Number(
-      summary.price_per_meter ?? summary.fabric_details?.price_per_meter ?? summary.fabric_details?.unit_price
+      summary.price_per_meter ?? materialDetails?.price_per_meter ?? materialDetails?.unit_price
     ) || 0,
     total_cost: Number(summary.fabric_cost) || 0,
-    image_url: summary.fabric_details?.image_url,
+    image_url: materialDetails?.image_url || null,
     category: 'fabric',
     details: {
       widths_required: summary.widths_required,
       linear_meters: summary.linear_meters,
-      price_per_meter: summary.price_per_meter ?? summary.fabric_details?.price_per_meter ?? summary.fabric_details?.unit_price,
+      price_per_meter: summary.price_per_meter ?? materialDetails?.price_per_meter ?? materialDetails?.unit_price,
     },
   });
 
@@ -58,7 +61,7 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
       unit: 'm',
       unit_price: Number(summary.lining_details?.price_per_metre ?? summary.lining_details?.price_per_meter) || undefined,
       total_cost: Number(summary.lining_cost) || 0,
-      image_url: summary.lining_details?.image_url,
+      image_url: summary.lining_details?.image_url || null,
       category: 'lining',
       details: summary.lining_details || undefined,
     });

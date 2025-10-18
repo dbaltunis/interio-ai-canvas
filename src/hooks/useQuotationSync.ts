@@ -120,6 +120,9 @@ export const useQuotationSync = ({
           const headingDetails = summary.heading_details || {};
           const wallpaperDetails = summary.wallpaper_details || {};
           
+          // Extract image URLs from material/fabric details
+          const imageUrl = materialDetails.image_url || fabricDetails.image_url || null;
+          
           // Determine material type label
           const getMaterialLabel = () => {
             if (treatmentCategory === 'wallpaper' || fabricDetails.category === 'wallcovering' || fabricDetails.category === 'wallcover') return 'Wallpaper';
@@ -165,6 +168,7 @@ export const useQuotationSync = ({
             room_id: roomId,
             surface_name: window.surface_name,
             treatment_type: summary.template_name,
+            image_url: imageUrl,
             hasChildren: true,
             children: [] as any[]
           };
@@ -192,6 +196,7 @@ export const useQuotationSync = ({
               unit: 'm',
               unit_price: pricePerMetre,
               total: summary.fabric_cost,
+              image_url: imageUrl,
               isChild: true
             });
           }
@@ -226,6 +231,7 @@ export const useQuotationSync = ({
               unit: 'm',
               unit_price: liningPricePerMetre,
               total: summary.lining_cost,
+              image_url: liningDetails.image_url || null,
               isChild: true
             });
           }
