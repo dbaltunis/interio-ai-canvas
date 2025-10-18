@@ -18,6 +18,8 @@ export interface WindowCovering {
 export const useWindowCoverings = () => {
   return useQuery({
     queryKey: ["window-coverings"],
+    staleTime: 5 * 60 * 1000, // 5 minutes - prevent redundant fetches
+    gcTime: 10 * 60 * 1000, // 10 minutes cache
     queryFn: async () => {
       const { data, error } = await supabase
         .from("window_coverings")
@@ -28,7 +30,6 @@ export const useWindowCoverings = () => {
       if (error) throw error;
       return data || [];
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 };
 

@@ -34,9 +34,9 @@ let mockHeadingOptions: HeadingOption[] = [
 export const useHeadingOptions = () => {
   return useQuery({
     queryKey: ['heading-options'],
+    staleTime: 5 * 60 * 1000, // 5 minutes - prevent redundant fetches
+    gcTime: 10 * 60 * 1000, // 10 minutes cache
     queryFn: async () => {
-      console.log('Mock fetching heading options...');
-      
       // Mock implementation
       return mockHeadingOptions.filter(option => option.active);
     },

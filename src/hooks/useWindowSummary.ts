@@ -110,12 +110,21 @@ const pick = (...vals: any[]): number | undefined => {
 };
 
 const enrichSummaryForPersistence = (summary: Omit<WindowSummary, "updated_at">) => {
+  // CRITICAL FIX: If cost_summary exists from TreatmentPricingForm, preserve it completely
+  // This prevents data loss (£501.62 -> £145.20 issue)
+  if ((summary as any).cost_summary) {
+    return {
+      ...summary,
+      fabric_details: (summary as any).fabric_details || {},
+      measurements_details: (summary as any).measurements_details || {}
+    };
+  }
+
   const treatmentCategory = (summary as any).treatment_category;
   const treatmentType = (summary as any).treatment_type;
   
   // For blinds, shutters, and wallpaper: Skip curtain-specific enrichment
   // Their calculations are already complete from DynamicWindowWorksheet
-  // Check both treatment_category AND treatment_type to catch all blind types
   const isBlindType = treatmentCategory === 'blinds' || 
                       treatmentType?.includes('blind') || 
                       treatmentType?.includes('shade');
@@ -123,13 +132,8 @@ const enrichSummaryForPersistence = (summary: Omit<WindowSummary, "updated_at">)
   const isWallpaperType = treatmentCategory === 'wallpaper' || treatmentType === 'wallpaper';
   
   if (isBlindType || isShutterType || isWallpaperType) {
-    console.log('⚡ Skipping curtain enrichment for:', treatmentCategory, treatmentType, {
-      total_cost: (summary as any).total_cost,
-      fabric_cost: (summary as any).fabric_cost
-    });
     return {
       ...summary,
-      // Preserve fabric_details and measurements_details as-is
       fabric_details: (summary as any).fabric_details || {},
       measurements_details: (summary as any).measurements_details || {}
     };
@@ -250,24 +254,8 @@ export const useSaveWindowSummary = () => {
 
   return useMutation({
     mutationFn: async (summary: Omit<WindowSummary, "updated_at">) => {
-      // Debug: Log before enrichment
-      console.log('📥 Before enrichment:', {
-        treatment_category: summary.treatment_category,
-        total_cost: summary.total_cost,
-        fabric_cost: summary.fabric_cost,
-        manufacturing_cost: summary.manufacturing_cost
-      });
-      
       // Enrich with derived worksheet steps and ensure fabric width is present
       const enriched = enrichSummaryForPersistence(summary);
-      
-      // Debug: Log after enrichment
-      console.log('📤 After enrichment:', {
-        treatment_category: (enriched as any).treatment_category,
-        total_cost: (enriched as any).total_cost,
-        fabric_cost: (enriched as any).fabric_cost,
-        manufacturing_cost: (enriched as any).manufacturing_cost
-      });
 
       const { data, error } = await supabase
         .from("windows_summary")

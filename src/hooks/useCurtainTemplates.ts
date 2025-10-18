@@ -106,6 +106,8 @@ export interface CurtainTemplate {
 export const useCurtainTemplates = () => {
   return useQuery({
     queryKey: ["curtain-templates"],
+    staleTime: 5 * 60 * 1000, // 5 minutes - prevent redundant fetches
+    gcTime: 10 * 60 * 1000, // 10 minutes cache
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
