@@ -192,21 +192,57 @@ export const AuthPage = () => {
         }
       } else {
         // Handle regular login/signup
-        const { error } = isSignUp 
-          ? await signUp(email, password)
-          : await signIn(email, password);
-
-        if (error) {
-          toast({
-            title: "Error",
-            description: error.message,
-            variant: "destructive"
-          });
-        } else {
-          if (isSignUp) {
+        if (isSignUp) {
+          // Regular signup
+          if (password !== confirmPassword) {
             toast({
-              title: "Success",
-              description: "Check your email to confirm your account"
+              title: "Password mismatch",
+              description: "Please make sure your passwords match",
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
+
+          // Validate password strength
+          if (passwordStrength === 'weak') {
+            toast({
+              title: "Weak password",
+              description: "Please use a stronger password with at least 8 characters, including uppercase, lowercase, numbers, and special characters",
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
+
+          const { error } = await signUp(email, password);
+          
+          if (error) {
+            toast({
+              title: "Error",
+              description: error.message,
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Success!",
+              description: "Your account has been created. Redirecting...",
+            });
+            
+            // Auto-redirect after successful registration
+            setTimeout(() => {
+              navigate('/');
+            }, 1500);
+          }
+        } else {
+          // Regular login
+          const { error } = await signIn(email, password);
+          
+          if (error) {
+            toast({
+              title: "Error",
+              description: error.message,
+              variant: "destructive"
             });
           }
         }
@@ -414,8 +450,8 @@ export const AuthPage = () => {
                         )}
                       </div>
                       
-                      {/* Password Strength Indicator */}
-                      {password && passwordStrength && isSignUp && (
+                      {/* Password Strength Indicator - show for ALL signups */}
+                      {isSignUp && password && passwordStrength && (
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-muted-foreground">Password strength:</span>
@@ -452,7 +488,7 @@ export const AuthPage = () => {
                         </div>
                       )}
 
-                      {(isSignUp && invitation) && (
+                      {isSignUp && (
                         <>
                           <div className="relative">
                             <Input
