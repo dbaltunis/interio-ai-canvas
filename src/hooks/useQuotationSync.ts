@@ -54,13 +54,6 @@ export const useQuotationSync = ({
 
   // Build quotation items from current project data
   const buildQuotationItems = () => {
-    console.log('[QUOTE BUILD] Building quotation items...', {
-      projectSummariesExists: !!projectSummaries,
-      windowCount: projectSummaries?.windows?.length || 0,
-      summariesTotal: projectSummaries?.projectTotal,
-      treatmentCount: treatments.length
-    });
-    
     const items: any[] = [];
 
     // Get the most accurate cost data - prioritize window summaries over treatments
@@ -71,13 +64,6 @@ export const useQuotationSync = ({
 
     const hasTreatments = treatments.length > 0;
     const baseSubtotal = summariesTotal > 0 ? summariesTotal : treatmentTotal;
-    
-    console.log('[QUOTE BUILD] Cost calculation:', {
-      summariesTotal,
-      treatmentTotal,
-      baseSubtotal,
-      usingWindowSummaries: summariesTotal > 0
-    });
 
     // Group items by room for better organization
     const roomGroups = rooms.reduce((groups, room) => {
@@ -341,16 +327,7 @@ export const useQuotationSync = ({
 
   // Sync quotation data
   const syncQuotation = async () => {
-    console.log('[QUOTE SYNC] ===== SYNC TRIGGERED =====');
     const quotationData = buildQuotationItems();
-    console.log('[QUOTE SYNC] Built quotation data:', {
-      baseSubtotal: quotationData.baseSubtotal,
-      subtotal: quotationData.subtotal,
-      total: quotationData.total,
-      itemCount: quotationData.items.length,
-      summariesTotal: projectSummaries?.projectTotal,
-      treatmentCount: treatments.length
-    });
     
     // Build current window costs map for comparison
     const currentWindowCosts: Record<string, number> = {};
@@ -386,27 +363,9 @@ export const useQuotationSync = ({
       windowIdsChanged ||
       windowValuesChanged;
 
-    console.log('[QUOTE SYNC] Change detection:', {
-      hasChanges,
-      treatmentCountChanged: currentData.treatmentCount !== previousDataRef.current.treatmentCount,
-      roomCountChanged: currentData.roomCount !== previousDataRef.current.roomCount,
-      totalCostChanged: Math.abs(currentData.totalCost - previousDataRef.current.totalCost) > 0.01,
-      windowIdsChanged,
-      windowValuesChanged,
-      currentWindowCosts,
-      prevWindowCosts
-    });
-
     if (!hasChanges) {
-      console.log('[QUOTE SYNC] No changes detected, skipping sync');
       return; // No changes detected
     }
-
-    console.log('🔄 QuotationSync: Data changes detected, updating quotation...', {
-      previous: previousDataRef.current,
-      current: currentData,
-      items: quotationData.items.length
-    });
 
     // Find existing draft quote for this project
     const existingQuote = quotes.find(quote => 
@@ -415,14 +374,6 @@ export const useQuotationSync = ({
 
     if (existingQuote) {
       // Update existing quote
-      console.log('[QUOTE SYNC] Updating existing quote with new values:', {
-        quoteId: existingQuote.id,
-        oldSubtotal: existingQuote.subtotal,
-        newSubtotal: quotationData.subtotal,
-        oldTotal: existingQuote.total_amount,
-        newTotal: quotationData.total
-      });
-      
       await updateQuote.mutateAsync({
         id: existingQuote.id,
         subtotal: quotationData.subtotal,
@@ -431,8 +382,6 @@ export const useQuotationSync = ({
         notes: `Updated with ${quotationData.items.length} items - ${new Date().toISOString()}`,
         updated_at: new Date().toISOString()
       });
-      
-      console.log('✅ QuotationSync: Updated existing quote', existingQuote.id);
     } else if (autoCreateQuote && quotationData.baseSubtotal > 0) {
       // Create new quote
       const quoteNumber = `Q-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;

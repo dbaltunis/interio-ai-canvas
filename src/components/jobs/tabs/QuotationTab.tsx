@@ -87,7 +87,7 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
     enabled: !!projectId && !!projects,
   });
   
-  // Fetch workshop items for detailed breakdown
+  // Fetch workshop items - with caching and disabled by default
   const { data: workshopItems } = useQuery({
     queryKey: ["workshop-items", projectId],
     queryFn: async () => {
@@ -97,40 +97,27 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
         .select("*")
         .eq("project_id", projectId);
       
-      if (error) {
-        console.error('Error fetching workshop items:', error);
-        return [];
-      }
-      
+      if (error) return [];
       return data || [];
     },
     enabled: !!projectId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
-  // Fetch quote templates from database
+  // Fetch quote templates from database - with caching
   const { data: activeTemplates, isLoading: templatesLoading, refetch: refetchTemplates } = useQuery({
     queryKey: ["quote-templates"],
     queryFn: async () => {
-      console.log('Fetching quote templates...');
       const { data, error } = await supabase
         .from("quote_templates")
         .select("*")
         .eq("active", true)
         .order("updated_at", { ascending: false });
       
-      if (error) {
-        console.error('Error fetching templates:', error);
-        throw error;
-      }
-      
-      console.log('Fetched templates:', data);
-      console.log('Templates count:', data?.length || 0);
-      data?.forEach(template => {
-        console.log(`Template: ${template.name} (${template.template_style}) - Active: ${template.active}`);
-      });
+      if (error) throw error;
       return data || [];
     },
-    staleTime: 0, // Always fetch fresh data
-    refetchOnWindowFocus: true,
+    staleTime: 5 * 60 * 1000, // 5 minutes - reduce refetching
+    gcTime: 10 * 60 * 1000, // 10 minutes cache
   });
   const { data: quotes = [], isLoading: quotesLoading } = useQuotes(projectId);
   const createQuote = useCreateQuote();
