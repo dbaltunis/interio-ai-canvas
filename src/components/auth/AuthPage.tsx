@@ -190,7 +190,24 @@ export const AuthPage = () => {
         }
 
         console.log('[AuthPage] Attempting signup for new invitation user:', email);
-        const { data: signUpData, error: signUpError } = await signUp(email, password);
+        
+        // Get inviter's user_id from invitation to set parent_account_id
+        const { data: invitationDetails } = await supabase
+          .from('user_invitations')
+          .select('user_id')
+          .eq('invitation_token', invitationToken)
+          .single();
+        
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              invitation_user_id: invitationDetails?.user_id, // Pass inviter's ID for parent_account_id
+              display_name: invitation.invited_name || email
+            }
+          }
+        });
 
         if (signUpError) {
           console.error('[AuthPage] Signup error:', signUpError);
