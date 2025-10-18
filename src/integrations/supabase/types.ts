@@ -6491,10 +6491,7 @@ export type Database = {
     }
     Functions: {
       accept_user_invitation: {
-        Args: {
-          accepting_user_id_param: string
-          invitation_token_param: string
-        }
+        Args: { invitation_token_param: string; user_id_param: string }
         Returns: Json
       }
       calculate_lead_score: {

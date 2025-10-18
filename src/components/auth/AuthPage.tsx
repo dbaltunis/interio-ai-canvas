@@ -124,7 +124,50 @@ export const AuthPage = () => {
 
     try {
       if (isSignUp && invitation) {
-        // Handle invitation signup
+        console.log('[AuthPage] Processing invitation-based authentication');
+        
+        // CRITICAL FIX: Check if user already exists (they might be clicking the email link twice)
+        // First attempt to sign in to see if the account already exists
+        console.log('[AuthPage] Attempting sign in to check if user exists:', email);
+        const { error: signInError } = await signIn(email, password);
+        
+        if (!signInError) {
+          // User already exists and signed in successfully, get their ID and accept invitation
+          const { data: { user } } = await supabase.auth.getUser();
+          
+          if (user) {
+            console.log('[AuthPage] User already exists, accepting invitation for user:', user.id);
+            
+            const { data: acceptResult, error: acceptError } = await supabase.rpc('accept_user_invitation', {
+              invitation_token_param: invitationToken,
+              user_id_param: user.id,
+            });
+            
+            console.log('[AuthPage] Invitation acceptance result:', acceptResult, acceptError);
+            
+            if (acceptError) {
+              console.error('[AuthPage] Error accepting invitation:', acceptError);
+              toast({
+                title: "Error accepting invitation",
+                description: acceptError.message,
+                variant: "destructive",
+              });
+            } else {
+              toast({
+                title: "Welcome!",
+                description: "Successfully joined the team",
+              });
+              setTimeout(() => navigate('/'), 1500);
+            }
+            setLoading(false);
+            return;
+          }
+        }
+        
+        // Sign in failed, user needs to create account
+        console.log('[AuthPage] User does not exist, creating new account');
+        
+        // Validate passwords match
         if (password !== confirmPassword) {
           toast({
             title: "Password mismatch",
@@ -146,24 +189,24 @@ export const AuthPage = () => {
           return;
         }
 
-        console.log('[AuthPage] Attempting signup for invitation user:', email);
-        const { data: signUpData, error } = await signUp(email, password);
+        console.log('[AuthPage] Attempting signup for new invitation user:', email);
+        const { data: signUpData, error: signUpError } = await signUp(email, password);
 
-        if (error) {
-          console.error('[AuthPage] Signup error:', error);
+        if (signUpError) {
+          console.error('[AuthPage] Signup error:', signUpError);
           toast({
             title: "Error",
-            description: error.message,
+            description: signUpError.message,
             variant: "destructive"
           });
         } else if (signUpData?.user) {
           console.log('[AuthPage] Signup successful, user ID:', signUpData.user.id);
           
-          // Try to accept the invitation immediately after signup
+          // Accept the invitation immediately after signup
           try {
             const { data: acceptResult, error: acceptError } = await supabase.rpc('accept_user_invitation', {
               invitation_token_param: invitationToken,
-              accepting_user_id_param: signUpData.user.id,
+              user_id_param: signUpData.user.id,
             });
             
             console.log('[AuthPage] Invitation acceptance result:', acceptResult, acceptError);
@@ -181,10 +224,7 @@ export const AuthPage = () => {
                 description: "Your account has been created successfully. Redirecting...",
               });
               
-              // Auto-redirect after successful registration
-              setTimeout(() => {
-                navigate('/');
-              }, 1500);
+              setTimeout(() => navigate('/'), 1500);
             }
           } catch (error) {
             console.error('[AuthPage] Exception accepting invitation:', error);

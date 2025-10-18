@@ -73,7 +73,7 @@ const AcceptInvitation = () => {
         // User is already logged in - accept directly
         const { data: result, error } = await supabase.rpc('accept_user_invitation', {
           invitation_token_param: token,
-          accepting_user_id_param: user.id,
+          user_id_param: user.id,
         });
         
         if (error) {
