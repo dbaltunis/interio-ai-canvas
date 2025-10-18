@@ -135,7 +135,6 @@ export const DynamicWindowWorksheet = forwardRef<{
         console.error("Error loading window summary:", error);
         return null;
       }
-      console.log("✅ Loaded existing window summary:", data);
       return data;
     },
     enabled: !!surfaceId
@@ -143,15 +142,8 @@ export const DynamicWindowWorksheet = forwardRef<{
 
   // Load existing data and sync with Enhanced mode
   useEffect(() => {
-    console.log("🔄 Loading existing data:", {
-      existingMeasurement,
-      existingWindowSummary,
-      existingTreatments
-    });
-
     // Priority 1: Load from windows_summary table if available
     if (existingWindowSummary) {
-      console.log("📊 PRIORITY 1: Loading from windows_summary");
       const measurementsDetails = existingWindowSummary.measurements_details as any || {};
       const templateDetails = existingWindowSummary.template_details as any;
       const fabricDetails = existingWindowSummary.fabric_details as any;
@@ -165,13 +157,11 @@ export const DynamicWindowWorksheet = forwardRef<{
           visual_key: existingWindowSummary.window_type_key
         };
         setSelectedWindowType(windowTypeData);
-        console.log("📊 Restored window type:", windowTypeData);
       }
       
       // STEP 2: Restore Treatment/Template
       if (templateDetails) {
         setSelectedTemplate(templateDetails);
-        console.log("📊 Restored template:", templateDetails.name);
       }
       if (existingWindowSummary.treatment_type) {
         setSelectedTreatmentType(existingWindowSummary.treatment_type);
@@ -183,70 +173,56 @@ export const DynamicWindowWorksheet = forwardRef<{
       // STEP 3: Restore Inventory Selections
       const restoredItems: any = {};
       
-      // Restore fabric selection - set BOTH id AND fabric_id for consistency
+      // Restore fabric selection
       if (fabricDetails && (fabricDetails.fabric_id || fabricDetails.id)) {
         const fabricId = fabricDetails.fabric_id || fabricDetails.id;
         restoredItems.fabric = {
           ...fabricDetails,
           id: fabricId,
-          fabric_id: fabricId // Set BOTH for selection persistence
+          fabric_id: fabricId
         };
-        console.log("🎨 Restored fabric with dual IDs:", {
-          id: fabricId,
-          fabric_id: fabricId,
-          name: fabricDetails.name
-        });
       } else if (existingWindowSummary.selected_fabric_id && fabricDetails) {
-        // Fallback: try using selected_fabric_id
         restoredItems.fabric = {
           ...fabricDetails,
           id: existingWindowSummary.selected_fabric_id,
           fabric_id: existingWindowSummary.selected_fabric_id
         };
-        console.log("🎨 Restored fabric using selected_fabric_id:", existingWindowSummary.selected_fabric_id);
       }
       
-      // Restore hardware selection - ONLY if it was actually selected
+      // Restore hardware selection
       if (existingWindowSummary.selected_hardware_id && existingWindowSummary.hardware_details && typeof existingWindowSummary.hardware_details === 'object') {
         const hardwareDetails = existingWindowSummary.hardware_details as any;
         restoredItems.hardware = {
           id: existingWindowSummary.selected_hardware_id,
           ...hardwareDetails
         };
-        console.log("📊 Restored hardware:", restoredItems.hardware.id, restoredItems.hardware.name);
       }
       
-      // Restore material selection - ONLY if it was actually selected
+      // Restore material selection
       if (existingWindowSummary.selected_material_id && existingWindowSummary.material_details && typeof existingWindowSummary.material_details === 'object') {
         const materialDetails = existingWindowSummary.material_details as any;
         restoredItems.material = {
           id: existingWindowSummary.selected_material_id,
           ...materialDetails
         };
-        console.log("📊 Restored material:", restoredItems.material.id, restoredItems.material.name);
       }
       
       if (Object.keys(restoredItems).length > 0) {
-        console.log("📊 Setting restored items:", restoredItems);
         setSelectedItems(restoredItems);
       }
       
       // Restore heading and lining
       if (existingWindowSummary.selected_heading_id) {
         setSelectedHeading(existingWindowSummary.selected_heading_id);
-        console.log("📊 Restored heading:", existingWindowSummary.selected_heading_id);
       }
       if (existingWindowSummary.selected_lining_type) {
         setSelectedLining(existingWindowSummary.selected_lining_type);
-        console.log("📊 Restored lining:", existingWindowSummary.selected_lining_type);
       }
       
       // STEP 4: Restore Measurements
       if (measurementsDetails) {
         setMeasurements(measurementsDetails);
-        console.log("📊 Restored measurements:", measurementsDetails);
       }
-      
       
       // Set fabric calculation if available
       if (existingWindowSummary.linear_meters && existingWindowSummary.fabric_cost) {
@@ -256,18 +232,12 @@ export const DynamicWindowWorksheet = forwardRef<{
           pricePerMeter: existingWindowSummary.price_per_meter,
           widthsRequired: existingWindowSummary.widths_required
         });
-        console.log("📊 Loaded fabric calculation:", {
-          linearMeters: existingWindowSummary.linear_meters,
-          fabricCost: existingWindowSummary.fabric_cost,
-          totalCost: existingWindowSummary.total_cost
-        });
       }
-      return; // Exit early if we loaded from windows_summary
+      return;
     }
 
     // Priority 2: Load from existingMeasurement (legacy support)
     if (existingMeasurement) {
-      console.log("📊 PRIORITY 2: Loading from existingMeasurement");
       setMeasurements(existingMeasurement.measurements || {});
 
       // Load window type if saved
@@ -307,7 +277,6 @@ export const DynamicWindowWorksheet = forwardRef<{
 
     // Priority 3: Load from existing treatments for cross-mode compatibility
     if (existingTreatments && existingTreatments.length > 0) {
-      console.log("📊 PRIORITY 3: Loading from existingTreatments");
       const treatment = existingTreatments[0];
 
       // Parse treatment details
@@ -330,11 +299,9 @@ export const DynamicWindowWorksheet = forwardRef<{
       const detectedType = detectTreatmentType(selectedTemplate);
       const previousCategory = treatmentCategory;
       setTreatmentCategory(detectedType);
-      console.log('🎯 Treatment type detected:', detectedType, 'for template:', selectedTemplate.name);
       
-      // Clear selected items if treatment category changed (e.g., switching from roller blinds to curtains)
+      // Clear selected items if treatment category changed
       if (previousCategory !== detectedType) {
-        console.log('🔄 Treatment category changed from', previousCategory, 'to', detectedType, '- clearing selected items');
         setSelectedItems({});
       }
     }
@@ -418,44 +385,7 @@ export const DynamicWindowWorksheet = forwardRef<{
   useImperativeHandle(ref, () => ({
     autoSave: async () => {
       try {
-          console.log("🔄 DynamicWindowWorksheet: Starting auto-save for surface:", surfaceId);
-          
-          // Log fabric selection state for debugging
-          console.log("📦 Fabric selection state:", {
-            hasFabric: !!selectedItems.fabric,
-            fabricId: selectedItems.fabric?.id,
-            fabricName: selectedItems.fabric?.name,
-            fabricCategory: selectedItems.fabric?.category
-          });
-
-          // Only save if we have meaningful data
-          if (Object.keys(measurements).length > 0 || selectedWindowType || selectedTemplate) {
-          console.log("🔄 DynamicWindowWorksheet: Saving measurement data:", {
-            measurements,
-            selectedTemplate,
-            selectedItems,
-            fabricCalculation
-          });
-
-          // PRICE CONSISTENCY: Check if we can use existing saved prices instead of recalculating
-          let shouldRecalculate = true;
-          if (existingWindowSummary) {
-            const measurementsChanged = JSON.stringify(measurements) !== JSON.stringify(existingWindowSummary.measurements_details || {});
-            const fabricChanged = selectedItems.fabric?.id !== (existingWindowSummary as any).selected_fabric_id;
-            const templateChanged = selectedTemplate?.id !== existingWindowSummary.template_id;
-            
-            shouldRecalculate = measurementsChanged || fabricChanged || templateChanged;
-            
-            console.log("💰 Price calculation decision:", {
-              shouldRecalculate,
-              measurementsChanged,
-              fabricChanged,
-              templateChanged,
-              existingTotal: existingWindowSummary.total_cost
-            });
-          }
-
-          // Import supabase and save to windows_summary table (where UI expects it)
+          // Import supabase
           const {
             supabase
           } = await import('@/integrations/supabase/client');
@@ -882,12 +812,8 @@ export const DynamicWindowWorksheet = forwardRef<{
           await queryClient.invalidateQueries({
             queryKey: ["project-materials"]
           });
-        } else {
-          console.log("ℹ️ DynamicWindowWorksheet: No data to save yet");
-        }
-        console.log("✅ DynamicWindowWorksheet: Auto-save completed successfully");
       } catch (error) {
-        console.error("❌ DynamicWindowWorksheet: Auto-save failed:", error);
+        console.error("❌ Auto-save failed:", error);
         throw error;
       }
     }
@@ -908,11 +834,6 @@ export const DynamicWindowWorksheet = forwardRef<{
         id: fabricId,
         fabric_id: fabricId
       };
-      console.log('🎨 Fabric selected with dual IDs:', {
-        id: fabricId,
-        fabric_id: fabricId,
-        name: item.name
-      });
     }
     
     setSelectedItems(prev => ({
