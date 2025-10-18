@@ -145,7 +145,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
       <div className="w-full">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Standardized Tab Navigation */}
-          <div className="bg-background border-b border-border/50">
+          <div className="sticky top-0 z-20 bg-background border-b border-border/50 shadow-sm">
             <div className="px-2 sm:px-4">
               <div className="flex w-full justify-start gap-0 overflow-x-auto scrollbar-hide">
                 {tabs.map((tab) => {
