@@ -53,10 +53,11 @@ export const TreatmentPreviewEngine = ({
   showProductOnly = false
 }: TreatmentPreviewEngineProps) => {
   
-  // If showing product only, display images in priority order: template -> fabric/material -> treatment visual
+  // If showing product only, prioritize fabric image when fabric is selected, otherwise use template
   if (showProductOnly) {
-    const productImage = template?.image_url || selectedItems.fabric?.image_url || selectedItems.material?.image_url;
-    const productName = template?.name || selectedItems.fabric?.name || selectedItems.material?.name || 'Product';
+    // Priority: fabric (if selected from inventory) → material (for blinds/shutters) → template (default)
+    const productImage = selectedItems.fabric?.image_url || selectedItems.material?.image_url || template?.image_url;
+    const productName = selectedItems.fabric?.name || selectedItems.material?.name || template?.name || 'Product';
     
     console.log("🖼️ Product image data:", { 
       templateImage: template?.image_url?.substring(0, 50), 
