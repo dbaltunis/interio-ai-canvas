@@ -295,6 +295,13 @@ export const QuotePDFDocument: React.FC<QuotePDFDocumentProps> = ({
         const items = projectData?.items || [];
         const windowSummaries = projectData?.windowSummaries?.windows || [];
         
+        console.log('📄 PDF Products Block:', {
+          itemsCount: items.length,
+          firstItem: items[0],
+          showDetailedBreakdown,
+          showImages
+        });
+        
         return (
           <View style={styles.productsSection} key={block.id}>
             <Text style={styles.sectionTitle}>{content.title || 'Quote Items'}</Text>
