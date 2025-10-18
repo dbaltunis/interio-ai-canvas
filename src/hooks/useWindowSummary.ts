@@ -111,11 +111,19 @@ const pick = (...vals: any[]): number | undefined => {
 
 const enrichSummaryForPersistence = (summary: Omit<WindowSummary, "updated_at">) => {
   const treatmentCategory = (summary as any).treatment_category;
+  const treatmentType = (summary as any).treatment_type;
   
   // For blinds, shutters, and wallpaper: Skip curtain-specific enrichment
   // Their calculations are already complete from DynamicWindowWorksheet
-  if (treatmentCategory === 'blinds' || treatmentCategory === 'shutters' || treatmentCategory === 'wallpaper') {
-    console.log('⚡ Skipping curtain enrichment for:', treatmentCategory, {
+  // Check both treatment_category AND treatment_type to catch all blind types
+  const isBlindType = treatmentCategory === 'blinds' || 
+                      treatmentType?.includes('blind') || 
+                      treatmentType?.includes('shade');
+  const isShutterType = treatmentCategory === 'shutters' || treatmentType?.includes('shutter');
+  const isWallpaperType = treatmentCategory === 'wallpaper' || treatmentType === 'wallpaper';
+  
+  if (isBlindType || isShutterType || isWallpaperType) {
+    console.log('⚡ Skipping curtain enrichment for:', treatmentCategory, treatmentType, {
       total_cost: (summary as any).total_cost,
       fabric_cost: (summary as any).fabric_cost
     });
