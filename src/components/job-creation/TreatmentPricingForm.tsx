@@ -155,7 +155,22 @@ export const TreatmentPricingForm = ({
       notes: formData.notes,
       images: uploadedImages,
       status: "planned",
-      window_covering: windowCovering
+      window_covering: windowCovering,
+      // Save ALL cost summary data
+      cost_summary: {
+        fabric_cost: costs.fabricCost,
+        options_cost: costs.optionsCost,
+        labor_cost: costs.laborCost,
+        total_cost: costs.totalCost,
+        fabric_usage: costs.fabricUsage,
+        fabric_orientation: costs.fabricOrientation,
+        seams_required: costs.seamsRequired,
+        seam_labor_hours: costs.seamLaborHours,
+        widths_required: costs.widthsRequired,
+        option_details: costs.optionDetails,
+        warnings: costs.warnings,
+        cost_comparison: costs.costComparison
+      }
     };
 
     onSave(treatmentData);
