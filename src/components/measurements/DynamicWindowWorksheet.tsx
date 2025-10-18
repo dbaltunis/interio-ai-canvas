@@ -793,110 +793,6 @@ export const DynamicWindowWorksheet = forwardRef<{
             description: `${selectedTemplate?.name || 'Treatment'} configuration saved`,
           });
 
-          // CRITICAL: Also create/update treatments table record for Materials tab extraction
-          // Get the user ID for the treatment
-          const { data: { user: currentUser } } = await supabase.auth.getUser();
-          if (!currentUser) {
-            console.error("❌ No user found for treatment creation");
-            throw new Error("User not authenticated");
-          }
-
-          // Get project_id and room_id from the surface
-          const { data: surfaceInfo } = await supabase
-            .from('surfaces')
-            .select('project_id, room_id')
-            .eq('id', surfaceId)
-            .single();
-
-          if (!surfaceInfo?.project_id) {
-            console.error("❌ No project_id found for surface");
-            throw new Error("Surface must be associated with a project");
-          }
-
-          // Prepare treatment data - extract material identifiers for easy querying
-          const treatmentData = {
-            user_id: currentUser.id,
-            project_id: surfaceInfo.project_id,
-            room_id: surfaceInfo.room_id,
-            window_id: surfaceId,
-            treatment_type: specificTreatmentType,
-            product_name: selectedTemplate?.name || `${specificTreatmentType} Treatment`,
-            quantity: 1,
-            // Store ALL the details needed for material extraction
-            fabric_details: selectedItems.fabric ? {
-              fabricId: selectedItems.fabric.id,
-              fabric_id: selectedItems.fabric.id,
-              id: selectedItems.fabric.id,
-              name: selectedItems.fabric.name,
-              category: selectedItems.fabric.category,
-              width_cm: selectedItems.fabric.fabric_width || selectedItems.fabric.width || 140,
-              selling_price: selectedItems.fabric.selling_price || selectedItems.fabric.unit_price || 0,
-              cost_price: selectedItems.fabric.cost_price || 0,
-              image_url: selectedItems.fabric.image_url
-            } : null,
-            treatment_details: {
-              template_id: selectedTemplate?.id,
-              template_name: selectedTemplate?.name,
-              treatment_category: generalCategory,
-              manufacturing_type: selectedTemplate?.manufacturing_type || 'machine',
-              // Include hardware for extraction
-              hardware_id: selectedItems.hardware?.id,
-              hardwareId: selectedItems.hardware?.id,
-              hardware: selectedItems.hardware,
-              // Include material for blinds/shutters
-              material_id: selectedItems.material?.id || (summaryData.material_details?.id),
-              materialId: selectedItems.material?.id || (summaryData.material_details?.id),
-              material: selectedItems.material || summaryData.material_details,
-              // Include lining
-              lining_type: selectedLining,
-              lining_details: liningDetails,
-              heading_details: headingDetails
-            },
-            calculation_details: {
-              linear_meters: linearMeters,
-              widths_required: fabricCalculation?.widthsRequired || 0,
-              fabric_cost: fabricCost,
-              manufacturing_cost: manufacturingCost,
-              lining_cost: finalLiningCost,
-              heading_cost: headingCost,
-              total_cost: finalTotalCost,
-              measurements: measurements,
-              pricing_type: selectedTemplate?.pricing_type || 'per_metre'
-            },
-            measurements: measurements,
-            total_price: finalTotalCost,
-            material_cost: fabricCost,
-            labor_cost: manufacturingCost + finalLiningCost + headingCost,
-            fabric_usage: linearMeters || 0,
-            notes: `Auto-generated from worksheet for ${selectedWindowType?.name || 'window'}`
-          };
-
-          console.log("💾 Creating treatment record with data:", {
-            treatment_type: treatmentData.treatment_type,
-            project_id: treatmentData.project_id,
-            fabric_id: treatmentData.fabric_details?.fabricId,
-            material_id: treatmentData.treatment_details?.material_id,
-            hardware_id: treatmentData.treatment_details?.hardware_id,
-            total_price: treatmentData.total_price
-          });
-
-          // Insert/update treatment (no unique constraint, just insert)
-          // First delete existing treatment for this window to avoid duplicates
-          await supabase.from('treatments').delete().eq('window_id', surfaceId);
-          
-          const { data: treatmentInserted, error: treatmentError } = await supabase
-            .from('treatments')
-            .insert([treatmentData])
-            .select()
-            .maybeSingle();
-
-          if (treatmentError) {
-            console.error("❌ Error creating treatment record:", treatmentError);
-            // Don't throw - we want windows_summary to still work even if treatments fails
-          } else {
-            console.log("✅ Successfully created/updated treatment record:", treatmentInserted?.id);
-          }
-
           // Invalidate cache to refresh UI
           await queryClient.invalidateQueries({
             queryKey: ["window-summary", surfaceId]
@@ -905,10 +801,10 @@ export const DynamicWindowWorksheet = forwardRef<{
             queryKey: ["project-window-summaries"]
           });
           await queryClient.invalidateQueries({
-            queryKey: ["treatments", surfaceInfo.project_id]
+            queryKey: ["treatments"]
           });
           await queryClient.invalidateQueries({
-            queryKey: ["project-materials", surfaceInfo.project_id]
+            queryKey: ["project-materials"]
           });
         } else {
           console.log("ℹ️ DynamicWindowWorksheet: No data to save yet");
