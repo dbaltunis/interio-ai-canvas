@@ -27,12 +27,12 @@ interface ResponsiveHeaderProps {
 }
 
 const navItems = [
-  { id: "dashboard", label: "Home", icon: LayoutDashboard },
-  { id: "projects", label: "Jobs", icon: FolderOpen },
-  { id: "clients", label: "CRM", icon: Users },
-  { id: "quotes", label: "Emails", icon: FileText },
-  { id: "calendar", label: "Calendar", icon: Calendar },
-  { id: "inventory", label: "Library", icon: Package },
+  { id: "dashboard", label: "Home", icon: LayoutDashboard, tourId: "dashboard-tab" },
+  { id: "projects", label: "Jobs", icon: FolderOpen, tourId: "projects-tab" },
+  { id: "clients", label: "CRM", icon: Users, tourId: "clients-tab" },
+  { id: "quotes", label: "Emails", icon: FileText, tourId: "emails-tab" },
+  { id: "calendar", label: "Calendar", icon: Calendar, tourId: "calendar-tab" },
+  { id: "inventory", label: "Library", icon: Package, tourId: "library-tab" },
 ];
 
 export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderProps) => {
@@ -72,6 +72,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                     key={item.id}
                     variant="ghost"
                     onClick={() => onTabChange(item.id)}
+                    data-tour={item.tourId}
                     className={`flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 rounded-none ${
                       isActive
                         ? "border-primary text-foreground bg-primary/5 font-semibold"

@@ -44,7 +44,7 @@ export const UserProfile = ({ onOpenTeamHub, showCollaborationIndicator = false,
   }
 
   return (
-    <div className="relative flex items-center gap-2">
+    <div className="relative flex items-center gap-2" data-tour="settings">
       <button
         onClick={onOpenTeamHub}
         className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer relative group"

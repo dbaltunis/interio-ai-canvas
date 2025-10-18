@@ -5,6 +5,7 @@ import { ResponsiveHeader } from "@/components/layout/ResponsiveHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { motion } from "framer-motion";
 import { AIBackground } from "@/components/common/AIBackground";
+import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
 
 
 // Lazy load heavy components with proper error handling
@@ -147,22 +148,24 @@ const Index = () => {
   };
 
   return (
-    <AIBackground variant="subtle" className="min-h-screen w-full">
-      <div className="relative min-h-screen">
-        <ResponsiveHeader activeTab={activeTab} onTabChange={handleTabChange} />
+    <OnboardingProvider>
+      <AIBackground variant="subtle" className="min-h-screen w-full">
+        <div className="relative min-h-screen">
+          <ResponsiveHeader activeTab={activeTab} onTabChange={handleTabChange} />
 
-        <motion.main 
-          className="w-full"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          {renderActiveComponent()}
-        </motion.main>
-        
-        
-      </div>
-    </AIBackground>
+          <motion.main 
+            className="w-full"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {renderActiveComponent()}
+          </motion.main>
+          
+          
+        </div>
+      </AIBackground>
+    </OnboardingProvider>
   );
 };
 

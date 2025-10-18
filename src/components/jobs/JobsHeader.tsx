@@ -98,6 +98,7 @@ export const JobsHeader = ({
 
           <Button 
             onClick={onNewJob}
+            data-tour="create-job"
             className="bg-brand-primary hover:bg-brand-accent text-white"
           >
             <Plus className="h-4 w-4 mr-2" />
