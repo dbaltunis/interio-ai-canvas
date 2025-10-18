@@ -333,12 +333,22 @@ export const useMeasurementWizardStore = create<MeasurementState & MeasurementAc
         window_type_id: state.selectedWindowType?.id || state.selectedTemplate.id,
         state: {
           selectedTemplate: state.selectedTemplate,
+          selectedWindowType: state.selectedWindowType,
           selectedHardware: state.selectedHardware,
-          selectedFabric: state.selectedFabric,
+          panelSetup: state.panelSetup,
           measurements: state.measurements,
-          priceBreakdown: state.priceBreakdown,
-          bom: state.bom
-        }
+          selectedFabric: state.selectedFabric,
+          selectedLining: state.selectedLining,
+          selectedInterlining: state.selectedInterlining,
+          selectedHeading: state.selectedHeading,
+          selectedFinish: state.selectedFinish,
+          extras: state.extras,
+          notes: state.notes,
+          mode: state.mode
+        },
+        bom: state.bom,
+        price_breakdown: state.priceBreakdown,
+        price_total: state.priceTotal
       };
 
       const { data, error } = await supabase
