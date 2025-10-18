@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -24,6 +23,7 @@ export const AuthPage = () => {
   const [resetLoading, setResetLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong' | null>(null);
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
 
@@ -94,6 +94,30 @@ export const AuthPage = () => {
     }
   }, [invitationToken, navigate, toast]);
 
+  // Validate password strength
+  const validatePasswordStrength = (pwd: string): 'weak' | 'medium' | 'strong' => {
+    const hasMinLength = pwd.length >= 8;
+    const hasUpperCase = /[A-Z]/.test(pwd);
+    const hasLowerCase = /[a-z]/.test(pwd);
+    const hasNumber = /\d/.test(pwd);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(pwd);
+    
+    const criteriaCount = [hasMinLength, hasUpperCase, hasLowerCase, hasNumber, hasSpecial].filter(Boolean).length;
+    
+    if (criteriaCount <= 2) return 'weak';
+    if (criteriaCount <= 4) return 'medium';
+    return 'strong';
+  };
+
+  // Update password strength on password change
+  useEffect(() => {
+    if (password && isSignUp) {
+      setPasswordStrength(validatePasswordStrength(password));
+    } else {
+      setPasswordStrength(null);
+    }
+  }, [password, isSignUp]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -103,9 +127,20 @@ export const AuthPage = () => {
         // Handle invitation signup
         if (password !== confirmPassword) {
           toast({
-            title: "Error",
-            description: "Passwords do not match",
-            variant: "destructive"
+            title: "Password mismatch",
+            description: "Please make sure your passwords match",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+
+        // Validate password strength
+        if (passwordStrength === 'weak') {
+          toast({
+            title: "Weak password",
+            description: "Please use a stronger password with at least 8 characters, including uppercase, lowercase, numbers, and special characters",
+            variant: "destructive",
           });
           setLoading(false);
           return;
@@ -128,54 +163,54 @@ export const AuthPage = () => {
           try {
             const { data: acceptResult, error: acceptError } = await supabase.rpc('accept_user_invitation', {
               invitation_token_param: invitationToken,
-              user_id_param: signUpData.user.id,
+              accepting_user_id_param: signUpData.user.id,
             });
             
+            console.log('[AuthPage] Invitation acceptance result:', acceptResult, acceptError);
+            
             if (acceptError) {
-              console.error('[AuthPage] Immediate invitation acceptance failed:', acceptError);
+              console.error('[AuthPage] Error accepting invitation:', acceptError);
               toast({
-                title: "Almost there",
-                description: "Please check your email to confirm your account. After confirming, your invitation will be processed automatically.",
+                title: "Invitation Error",
+                description: "Could not accept invitation. Please contact support.",
+                variant: "destructive",
               });
             } else {
-              console.log('[AuthPage] Immediate invitation acceptance successful:', acceptResult);
               toast({
-                title: "Success!",
-                description: "Your account has been created and invitation accepted. Please check your email to confirm your account.",
+                title: "Welcome!",
+                description: "Your account has been created successfully. Redirecting...",
               });
+              
+              // Auto-redirect after successful registration
+              setTimeout(() => {
+                navigate('/');
+              }, 1500);
             }
-          } catch (acceptErr) {
-            console.error('[AuthPage] Error accepting invitation immediately:', acceptErr);
-            toast({
-              title: "Almost there",
-              description: "Please check your email to confirm your account. After confirming, your invitation will be processed automatically.",
-            });
+          } catch (error) {
+            console.error('[AuthPage] Exception accepting invitation:', error);
           }
         }
-        } else {
-          // Handle regular login/signup
-          const { error } = isSignUp 
-            ? await signUp(email, password)
-            : await signIn(email, password);
+      } else {
+        // Handle regular login/signup
+        const { error } = isSignUp 
+          ? await signUp(email, password)
+          : await signIn(email, password);
 
-          if (error) {
+        if (error) {
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive"
+          });
+        } else {
+          if (isSignUp) {
             toast({
-              title: "Error",
-              description: error.message,
-              variant: "destructive"
+              title: "Success",
+              description: "Check your email to confirm your account"
             });
-          } else {
-            if (isSignUp) {
-              toast({
-                title: "Success",
-                description: "Check your email to confirm your account"
-              });
-            } else {
-              // Let AuthProvider handle navigation to preserve current route
-              // Don't navigate here as it might interfere with route preservation
-            }
           }
         }
+      }
     } catch (err) {
       console.error('[AuthPage] unexpected error:', err);
       toast({
@@ -185,6 +220,41 @@ export const AuthPage = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Password reset handler
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetLoading(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset`,
+      });
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Check your email for a password reset link"
+        });
+        setShowResetForm(false);
+      }
+    } catch (err) {
+      console.error('Password reset error:', err);
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -201,125 +271,82 @@ export const AuthPage = () => {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-background via-primary/5 to-secondary/10">
-      {/* AI-themed animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-secondary/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-        
-        {/* Subtle grid pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(var(--primary-rgb,0,0,0),0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(var(--primary-rgb,0,0,0),0.03)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)]"></div>
-      </div>
-      
-      <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-screen relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 items-center w-full max-w-6xl">
-          {/* Left side - Branding and Info */}
-          <div className="space-y-8 text-center lg:text-left">
-            <div className="space-y-4">
-              <img 
-                src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
-                alt="InterioApp Logo" 
-                className="h-20 w-auto mx-auto lg:mx-0"
-              />
-              <div>
-                <h1 className="text-4xl lg:text-5xl font-bold text-foreground">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/30">
+      <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-screen">
+        <div className="w-full max-w-6xl">
+          <div className="grid lg:grid-cols-2 gap-8 items-center">
+            {/* Left Side - Branding */}
+            <div className="hidden lg:flex flex-col justify-center space-y-6 px-8">
+              <div className="space-y-4">
+                <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
                   InterioApp
                 </h1>
-                <p className="text-lg text-muted-foreground mt-2">
+                <p className="text-xl text-muted-foreground">
                   The future of window décor is online and bespoke
                 </p>
               </div>
-            </div>
-            
-            <div className="space-y-6">
-              <div className="text-left space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+              
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="mt-1 p-2 rounded-full bg-primary/10">
+                    <UserPlus className="h-5 w-5 text-primary" />
+                  </div>
                   <div>
-                    <h3 className="font-semibold text-foreground">Project Management</h3>
-                    <p className="text-muted-foreground text-sm">Organize your window treatment projects with ease</p>
+                    <h3 className="font-semibold mb-1">Team Collaboration</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Work seamlessly with your team on projects
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">Smart Calculations</h3>
-                    <p className="text-muted-foreground text-sm">Automated fabric calculations and pricing</p>
+                
+                <div className="flex items-start space-x-3">
+                  <div className="mt-1 p-2 rounded-full bg-secondary/10">
+                    <Mail className="h-5 w-5 text-secondary" />
                   </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
                   <div>
-                    <h3 className="font-semibold text-foreground">Client Portal</h3>
-                    <p className="text-muted-foreground text-sm">Professional quotes and appointment scheduling</p>
+                    <h3 className="font-semibold mb-1">Client Management</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Manage clients, projects, and quotations in one place
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Right side - Auth Form */}
-          <div className="w-full max-w-md mx-auto">
-            <Card className="shadow-2xl border border-primary/20 bg-card/80 backdrop-blur-md relative overflow-hidden">
-              {/* Subtle animated border glow */}
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 animate-pulse pointer-events-none"></div>
-              <div className="relative z-10">
-              <CardHeader className="text-center pb-4">
+            {/* Right Side - Auth Form */}
+            <Card className="w-full shadow-xl">
+              <div className="bg-gradient-to-r from-primary via-secondary to-accent p-0.5 rounded-t-xl">
+                <div className="bg-background rounded-t-xl">
+                  <CardHeader className="space-y-1 pb-4">
+                    <CardTitle className="text-2xl font-bold text-center">
+                      {invitation 
+                        ? 'Complete Your Registration'
+                        : (isSignUp ? 'Create Account' : 'Welcome Back')}
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground text-center">
+                      {invitation 
+                        ? 'Set up your password to access your account'
+                        : (isSignUp 
+                          ? 'Start managing your window treatment business' 
+                          : 'Sign in to your account')}
+                    </p>
+                  </CardHeader>
+                </div>
+              </div>
+              
+              <CardContent className="pt-6">
                 {invitation && (
-                  <div className="mb-4">
-                    <Alert className="text-left">
-                      <UserPlus className="h-4 w-4" />
-                      <AlertDescription>
-                        <strong>{invitation.invited_by_name}</strong> invited you to join as a <strong>{invitation.role}</strong>
-                      </AlertDescription>
-                    </Alert>
-                  </div>
+                  <Alert className="mb-4 border-accent/50 bg-accent/5">
+                    <UserPlus className="h-4 w-4" />
+                    <AlertDescription>
+                      You've been invited to join {invitation.invited_by_name}'s team as a{' '}
+                      <strong>{invitation.role}</strong>
+                    </AlertDescription>
+                  </Alert>
                 )}
-                
-                <CardTitle className="text-2xl font-semibold">
-                  {showResetForm
-                    ? 'Reset your password'
-                    : invitation
-                      ? 'Complete Your Registration'
-                      : (isSignUp ? 'Create Account' : 'Welcome Back')}
-                </CardTitle>
-                <p className="text-muted-foreground text-sm">
-                  {showResetForm
-                    ? 'Enter your email to receive a password reset link'
-                    : invitation 
-                      ? 'Set up your password to access your account'
-                      : (isSignUp 
-                        ? 'Start managing your window treatment business' 
-                        : 'Sign in to your InterioApp account'
-                      )}
-                </p>
-              </CardHeader>
-              <CardContent>
+
                 {showResetForm ? (
-                  <form
-                    onSubmit={async (e) => {
-                      e.preventDefault();
-                      setResetLoading(true);
-                      try {
-                        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                          redirectTo: `${window.location.origin}/reset-password`,
-                        });
-                        if (error) {
-                          toast({ title: 'Error', description: error.message, variant: 'destructive' });
-                        } else {
-                          toast({ title: 'Email sent', description: 'Check your inbox for the reset link.' });
-                          setShowResetForm(false);
-                        }
-                      } catch (err) {
-                        console.error('[AuthPage] resetPassword error:', err);
-                        toast({ title: 'Error', description: 'Could not send reset email.', variant: 'destructive' });
-                      } finally {
-                        setResetLoading(false);
-                      }
-                    }}
-                    className="space-y-4"
-                  >
+                  <form onSubmit={handlePasswordReset} className="space-y-4">
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -332,17 +359,16 @@ export const AuthPage = () => {
                       />
                     </div>
                     <Button type="submit" className="w-full" disabled={resetLoading}>
-                      {resetLoading ? 'Sending...' : 'Send reset link'}
+                      {resetLoading ? 'Sending...' : 'Send Reset Link'}
                     </Button>
-                    <div className="text-center">
-                      <button
-                        type="button"
-                        onClick={() => setShowResetForm(false)}
-                        className="text-primary hover:underline"
-                      >
-                        Back to sign in
-                      </button>
-                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="w-full"
+                      onClick={() => setShowResetForm(false)}
+                    >
+                      Back to Sign In
+                    </Button>
                   </form>
                 ) : (
                   <>
@@ -387,6 +413,45 @@ export const AuthPage = () => {
                           </button>
                         )}
                       </div>
+                      
+                      {/* Password Strength Indicator */}
+                      {password && passwordStrength && (isSignUp && invitation) && (
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">Password strength:</span>
+                            <span className={`font-medium ${
+                              passwordStrength === 'weak' ? 'text-destructive' :
+                              passwordStrength === 'medium' ? 'text-yellow-600' :
+                              'text-green-600'
+                            }`}>
+                              {passwordStrength === 'weak' ? '⚠️ Weak' :
+                               passwordStrength === 'medium' ? '✓ Medium' :
+                               '✓✓ Strong'}
+                            </span>
+                          </div>
+                          <div className="flex gap-1">
+                            <div className={`h-1.5 flex-1 rounded-full ${
+                              passwordStrength === 'weak' ? 'bg-destructive' :
+                              passwordStrength === 'medium' ? 'bg-yellow-600' :
+                              'bg-green-600'
+                            }`} />
+                            <div className={`h-1.5 flex-1 rounded-full ${
+                              passwordStrength === 'medium' ? 'bg-yellow-600' :
+                              passwordStrength === 'strong' ? 'bg-green-600' :
+                              'bg-muted'
+                            }`} />
+                            <div className={`h-1.5 flex-1 rounded-full ${
+                              passwordStrength === 'strong' ? 'bg-green-600' : 'bg-muted'
+                            }`} />
+                          </div>
+                          {passwordStrength === 'weak' && (
+                            <p className="text-xs text-destructive">
+                              Use 8+ characters with uppercase, lowercase, numbers & symbols
+                            </p>
+                          )}
+                        </div>
+                      )}
+
                       {(isSignUp && invitation) && (
                         <>
                           <div className="relative">
@@ -433,7 +498,6 @@ export const AuthPage = () => {
                   </>
                 )}
               </CardContent>
-              </div>
             </Card>
           </div>
         </div>

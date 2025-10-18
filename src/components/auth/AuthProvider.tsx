@@ -124,7 +124,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                         if (token) {
                           const { data: acceptResult, error: acceptError } = await supabase.rpc('accept_user_invitation', {
                             invitation_token_param: token,
-                            user_id_param: userId,
+                            accepting_user_id_param: userId,
                           });
                           if (acceptError) {
                             console.error('[AuthProvider] Auto-accept invitation failed:', acceptError);

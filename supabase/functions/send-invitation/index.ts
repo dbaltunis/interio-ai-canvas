@@ -97,13 +97,13 @@ serve(async (req) => {
                     <div style="text-align:center; margin:32px 0;">
                       <a href="${invitationLink}" class="button"
                          style="background:${accentColor}; color:#ffffff; padding:16px 32px; border-radius:12px; text-decoration:none; font-weight:600; font-size:16px; display:inline-block; box-shadow:0 4px 16px rgba(115,51,65,0.3); transition:all 0.3s ease;">
-                        Accept Invitation
+                        Join Team →
                       </a>
                     </div>
                     
                     <!-- Alternative Link -->
                     <div style="background:#f8f9fa; border-radius:8px; padding:16px; margin:24px 0;">
-                      <p style="margin:0 0 8px; font-size:13px; color:#6c757d; text-align:center;">Can't click the button? Copy this link:</p>
+                      <p style="margin:0 0 8px; font-size:13px; color:#6c757d; text-align:center;">Or copy and paste this link into your browser:</p>
                       <p style="margin:0; font-size:12px; color:#6c757d; word-break:break-all; text-align:center; font-family:monospace;">${invitationLink}</p>
                     </div>
                     
