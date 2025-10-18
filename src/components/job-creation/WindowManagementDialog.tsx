@@ -132,40 +132,57 @@ export const WindowManagementDialog = ({
   };
   const handleTreatmentSave = async (treatmentData: any) => {
     try {
-      // CRITICAL: Save cost_summary to windows_summary table
+      // CRITICAL: Save ALL cost data to windows_summary table
       if (treatmentData.cost_summary && surface?.id) {
+        const costSummary = treatmentData.cost_summary;
+        
         const summaryData = {
           window_id: surface.id,
           user_id: (await supabase.auth.getUser()).data.user?.id,
-          // Core costs from cost_summary
-          fabric_cost: treatmentData.cost_summary.fabric_cost || 0,
-          manufacturing_cost: treatmentData.cost_summary.labor_cost || 0,
-          total_cost: treatmentData.cost_summary.total_cost || 0,
-          linear_meters: treatmentData.measurements?.fabric_usage || 0,
-          widths_required: treatmentData.cost_summary.widths_required || 0,
-          // Fabric details
-          price_per_meter: treatmentData.fabric_details?.fabric_cost_per_yard || 0,
+          
+          // Core costs from cost_summary - PRESERVE ALL VALUES
+          fabric_cost: costSummary.fabric_cost || costSummary.material_cost || 0,
+          manufacturing_cost: costSummary.labor_cost || costSummary.manufacturing_cost || 0,
+          options_cost: costSummary.options_cost || 0, // CRITICAL: Save options cost
+          hardware_cost: costSummary.hardware_cost || 0,
+          lining_cost: costSummary.lining_cost || 0,
+          heading_cost: costSummary.heading_cost || 0,
+          total_cost: costSummary.total_cost || 0,
+          
+          // Measurements - PRESERVE dimensions
+          linear_meters: costSummary.linear_meters || treatmentData.measurements?.fabric_usage || 0,
+          widths_required: costSummary.widths_required || 0,
+          rail_width: treatmentData.measurements?.rail_width || treatmentData.measurements?.width || 0,
+          drop: treatmentData.measurements?.drop || treatmentData.measurements?.height || 0,
+          
+          // Fabric details - PRESERVE pricing
+          price_per_meter: costSummary.price_per_meter || treatmentData.fabric_details?.fabric_cost_per_yard || 0,
+          fabric_details: treatmentData.fabric_details || {},
+          
           // Treatment info
           treatment_type: selectedTreatmentType,
           treatment_category: treatmentData.window_covering?.category || 'curtains',
+          
           // Template details
           template_id: treatmentData.window_covering?.id,
           template_name: treatmentData.window_covering?.name,
-          template_details: treatmentData.window_covering,
-          // Full cost breakdown
-          cost_summary: treatmentData.cost_summary,
-          // Measurements
+          template_details: treatmentData.window_covering || {},
+          
+          // Full cost breakdown - PRESERVE EVERYTHING
+          cost_summary: costSummary,
+          
+          // Measurements with options
           measurements_details: {
             ...treatmentData.measurements,
             selected_options: treatmentData.selected_options
           },
-          // Fabric details
-          fabric_details: treatmentData.fabric_details,
-          // Options
-          selected_options: treatmentData.selected_options,
+          
+          // Options - PRESERVE selection
+          selected_options: treatmentData.selected_options || [],
+          
           // Metadata
-          pricing_type: 'per_metre',
-          currency: 'USD'
+          pricing_type: treatmentData.pricing_type || 'per_metre',
+          currency: treatmentData.currency || 'USD'
         };
 
         const { error: saveError } = await supabase

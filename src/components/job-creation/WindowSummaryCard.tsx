@@ -159,6 +159,23 @@ export function WindowSummaryCard({
       details: { type: summary.manufacturing_type },
     });
 
+    // Add options cost if available - CRITICAL for completeness
+    if (Number(summary.options_cost) > 0) {
+      const optionsDetails = summary.selected_options || [];
+      const optionsDescription = Array.isArray(optionsDetails) && optionsDetails.length > 0
+        ? optionsDetails.map((opt: any) => opt.name || opt.label).filter(Boolean).join(', ')
+        : 'Selected options';
+      
+      items.push({
+        id: 'options',
+        name: 'Options',
+        description: optionsDescription,
+        total_cost: Number(summary.options_cost) || 0,
+        category: 'options',
+        details: { selected_options: optionsDetails },
+      });
+    }
+
     return items;
   }, [summary]);
 

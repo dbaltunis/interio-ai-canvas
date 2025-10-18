@@ -33,6 +33,14 @@ export interface WindowSummary {
   // Treatment type fields
   treatment_type?: string;
   treatment_category?: string;
+  // Options and hardware costs - CRITICAL for accurate totals
+  options_cost?: number;
+  hardware_cost?: number;
+  heading_cost?: number;
+  selected_options?: any[];
+  // Dimensions - preserve from measurement dialog
+  rail_width?: number;
+  drop?: number;
 }
 
 export const useWindowSummary = (windowId: string | undefined) => {
