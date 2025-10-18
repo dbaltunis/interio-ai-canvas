@@ -89,6 +89,15 @@ export const useWorkshopData = (projectId?: string) => {
       const height = heightIn !== undefined ? Math.round(convertToUserUnit(heightIn, "inches") * 100) / 100 : undefined;
 
       const summary = summaryMap.get(s.id);
+      
+      console.log(`🔍 Workshop Item for ${s.name}:`, {
+        surfaceId: s.id,
+        hasSummary: !!summary,
+        summaryTreatmentType: summary?.treatment_type,
+        summaryTemplateName: summary?.template_name,
+        surfaceType: s.surface_type,
+        finalTreatmentType: summary?.template_name || summary?.treatment_type || s.surface_type || undefined
+      });
 
       const item: WorkshopRoomItem = {
         id: s.id,
@@ -101,7 +110,7 @@ export const useWorkshopData = (projectId?: string) => {
           height,
           unit: (width || height) ? getLengthUnitLabel() : undefined,
         },
-        treatmentType: summary?.template_name || summary?.treatment_type || s.surface_type || s.type || undefined,
+        treatmentType: summary?.template_name || summary?.treatment_type || s.surface_type || undefined,
         notes: s.notes || undefined,
         summary: summary,
         surface: s,
