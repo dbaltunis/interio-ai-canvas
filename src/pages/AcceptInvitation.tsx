@@ -19,13 +19,12 @@ const AcceptInvitation = () => {
   useEffect(() => {
     if (!token) {
       setStatus('error');
-      setMessage('Invalid invitation link - no token provided');
+      setMessage('This invitation link is invalid. Please check the URL or request a new invitation from your team administrator.');
       return;
     }
 
     const checkInvitation = async () => {
       try {
-        console.log('[AcceptInvitation] Verifying token via RPC:', token);
         const { data: invitationData, error } = await supabase
           .rpc('get_invitation_by_token', { invitation_token_param: token })
           .maybeSingle();
@@ -33,32 +32,30 @@ const AcceptInvitation = () => {
         if (error) {
           console.error('[AcceptInvitation] RPC error:', error);
           setStatus('error');
-          setMessage('Invitation not found or has already been used');
+          setMessage('Unable to verify invitation. This link may have already been used or is no longer valid. Please contact your team administrator for a new invitation.');
           return;
         }
 
         if (!invitationData) {
-          console.warn('[AcceptInvitation] No invitation returned (invalid/expired/used).');
           setStatus('error');
-          setMessage('Invitation not found or has already been used');
+          setMessage('This invitation could not be found. It may have been cancelled or already accepted. Please contact your team administrator if you need assistance.');
           return;
         }
 
-        // Extra safety: check expiration even though RPC filters it
         const expiresAt = new Date(invitationData.expires_at);
         if (expiresAt < new Date()) {
           setStatus('expired');
-          setMessage('This invitation has expired');
+          setMessage('This invitation link has expired. Please request a new invitation from your team administrator.');
           return;
         }
 
         setInvitation(invitationData);
         setStatus('success');
-        setMessage(`You've been invited to join as a ${invitationData.role}`);
+        setMessage(`You've been invited by ${invitationData.invited_by_name} to join as ${invitationData.role}`);
       } catch (error) {
         console.error('Error checking invitation:', error);
         setStatus('error');
-        setMessage('An error occurred while processing your invitation');
+        setMessage('We encountered an error while processing your invitation. Please try again or contact support if the problem persists.');
       }
     };
 
@@ -66,34 +63,36 @@ const AcceptInvitation = () => {
   }, [token]);
 
   const handleAcceptInvitation = async () => {
+    setStatus('loading');
+    setMessage('Processing your invitation...');
+    
     try {
-      console.log('[AcceptInvitation] Accepting invitation manually with token:', token);
-      // Try manual acceptance first for already authenticated users
       const { data: { user } } = await supabase.auth.getUser();
+      
       if (user) {
-        console.log('[AcceptInvitation] User already authenticated, accepting directly');
+        // User is already logged in - accept directly
         const { data: result, error } = await supabase.rpc('accept_user_invitation', {
           invitation_token_param: token,
           user_id_param: user.id,
         });
         
         if (error) {
-          console.error('[AcceptInvitation] Direct acceptance failed:', error);
-          navigate(`/auth?invitation=${token}`);
-        } else {
-          console.log('[AcceptInvitation] Direct acceptance successful:', result);
-          setStatus('success');
-          setMessage('Invitation accepted! Redirecting to dashboard...');
-          setTimeout(() => navigate('/'), 2000);
-          return;
+          throw new Error(error.message || 'Failed to accept invitation');
         }
+        
+        setStatus('success');
+        setMessage('✓ Invitation accepted successfully! Taking you to your dashboard...');
+        setTimeout(() => navigate('/'), 2000);
+        return;
       }
-    } catch (error) {
-      console.error('[AcceptInvitation] Error in direct acceptance:', error);
+    } catch (error: any) {
+      console.error('[AcceptInvitation] Error:', error);
+      setStatus('error');
+      setMessage(error.message || 'Failed to accept invitation. Please try again or contact support.');
+      return;
     }
     
-    // Fallback: redirect to signup/login with the invitation token
-    console.log('[AcceptInvitation] Redirecting to auth page with token:', token);
+    // User not logged in - redirect to auth with invitation
     navigate(`/auth?invitation=${token}`);
   };
 

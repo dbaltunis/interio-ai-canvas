@@ -43,14 +43,32 @@ export const useCreateInvitation = () => {
       permissions?: any;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      if (!user) {
+        throw new Error("You must be logged in to send invitations. Please log in and try again.");
+      }
 
       // Get user profile for inviter details
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("user_profiles")
-        .select("display_name")
+        .select("display_name, role")
         .eq("user_id", user.id)
         .single();
+
+      if (profileError) {
+        throw new Error("Unable to verify your account. Please ensure you have proper permissions.");
+      }
+
+      // Check if user already exists
+      const { data: existingInvite } = await supabase
+        .from("user_invitations")
+        .select("id, status")
+        .eq("invited_email", invitation.invited_email)
+        .eq("status", "pending")
+        .maybeSingle();
+
+      if (existingInvite) {
+        throw new Error(`An invitation has already been sent to ${invitation.invited_email}. Please cancel the existing invitation first.`);
+      }
 
       const invitationData = {
         user_id: user.id,
@@ -68,7 +86,12 @@ export const useCreateInvitation = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505') {
+          throw new Error("A pending invitation already exists for this email address.");
+        }
+        throw new Error(error.message || "Failed to create invitation. Please try again.");
+      }
 
       // Send invitation email
       const { error: emailError } = await supabase.functions.invoke("send-invitation", {
@@ -83,8 +106,8 @@ export const useCreateInvitation = () => {
       });
 
       if (emailError) {
-        console.error("Failed to send invitation email:", emailError);
-        // Still return success as the invitation was created
+        console.error("Email sending failed:", emailError);
+        throw new Error("Invitation created but email could not be sent. Please resend the invitation or contact the user directly.");
       }
 
       return data;
@@ -92,14 +115,14 @@ export const useCreateInvitation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user-invitations"] });
       toast({
-        title: "Invitation sent",
-        description: "The invitation has been sent successfully.",
+        title: "✓ Invitation sent successfully",
+        description: "The team member will receive an email with instructions to join.",
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to send invitation.",
+        title: "Failed to send invitation",
+        description: error.message || "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     },
