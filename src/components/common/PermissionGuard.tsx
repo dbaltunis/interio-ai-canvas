@@ -1,6 +1,8 @@
 import { useHasPermission, useHasAnyPermission, useHasAllPermissions } from "@/hooks/usePermissions";
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { RequestAccessDialog } from "@/components/settings/RequestAccessDialog";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface PermissionGuardProps {
   permission?: string;
@@ -18,6 +20,8 @@ export const PermissionGuard = ({
   requireAll = false 
 }: PermissionGuardProps) => {
   const { user, loading: authLoading } = useAuth();
+  const { data: roleData } = useUserRole();
+  const [showAccessDialog, setShowAccessDialog] = useState(false);
   
   // If authentication is still loading, don't render anything
   if (authLoading) {
@@ -47,6 +51,29 @@ export const PermissionGuard = ({
   }
 
   if (!hasPermission) {
+    // If user has a role but no permissions, show access request dialog
+    if (roleData?.role && roleData.role !== 'User') {
+      return (
+        <>
+          <RequestAccessDialog 
+            open={showAccessDialog}
+            onOpenChange={setShowAccessDialog}
+            userRole={roleData.role}
+          />
+          {fallback || (
+            <div className="text-center text-muted-foreground">
+              <button 
+                onClick={() => setShowAccessDialog(true)}
+                className="text-primary underline"
+              >
+                Request access
+              </button>
+            </div>
+          )}
+        </>
+      );
+    }
+    
     return (fallback || null) as JSX.Element;
   }
 
