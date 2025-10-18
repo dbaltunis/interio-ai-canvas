@@ -3749,6 +3749,39 @@ export type Database = {
         }
         Relationships: []
       }
+      permission_seed_log: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          permissions_added: string[] | null
+          role: string
+          success: boolean
+          triggered_by: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          permissions_added?: string[] | null
+          role: string
+          success?: boolean
+          triggered_by?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          permissions_added?: string[] | null
+          role?: string
+          success?: boolean
+          triggered_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       permissions: {
         Row: {
           category: string

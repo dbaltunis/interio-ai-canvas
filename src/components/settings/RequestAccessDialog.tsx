@@ -58,6 +58,9 @@ export const RequestAccessDialog = ({ open, onOpenChange, userRole }: RequestAcc
       } else {
         console.log('✅ Permissions restored:', data);
         
+        const permissionsAdded = typeof data === 'object' && data !== null && 'permissions_added' in data 
+          ? (data as any).permissions_added : 0;
+        
         // Refresh all permission-related queries
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ['user-permissions'] }),
@@ -67,7 +70,7 @@ export const RequestAccessDialog = ({ open, onOpenChange, userRole }: RequestAcc
 
         toast({
           title: "Success!",
-          description: `${data.permissions_added || 0} permissions restored. Refreshing...`
+          description: `${permissionsAdded} permissions restored. Refreshing...`
         });
 
         // Close dialog and reload page after short delay
