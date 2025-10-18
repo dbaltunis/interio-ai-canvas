@@ -199,21 +199,21 @@ export const DynamicWindowWorksheet = forwardRef<{
         console.log("🎨 Restored fabric using selected_fabric_id:", existingWindowSummary.selected_fabric_id);
       }
       
-      // Restore hardware selection
-      if (existingWindowSummary.hardware_details && typeof existingWindowSummary.hardware_details === 'object') {
+      // Restore hardware selection - ONLY if it was actually selected
+      if (existingWindowSummary.selected_hardware_id && existingWindowSummary.hardware_details && typeof existingWindowSummary.hardware_details === 'object') {
         const hardwareDetails = existingWindowSummary.hardware_details as any;
         restoredItems.hardware = {
-          id: existingWindowSummary.selected_hardware_id || hardwareDetails.id,
+          id: existingWindowSummary.selected_hardware_id,
           ...hardwareDetails
         };
         console.log("📊 Restored hardware:", restoredItems.hardware.id, restoredItems.hardware.name);
       }
       
-      // Restore material selection
-      if (existingWindowSummary.material_details && typeof existingWindowSummary.material_details === 'object') {
+      // Restore material selection - ONLY if it was actually selected
+      if (existingWindowSummary.selected_material_id && existingWindowSummary.material_details && typeof existingWindowSummary.material_details === 'object') {
         const materialDetails = existingWindowSummary.material_details as any;
         restoredItems.material = {
-          id: existingWindowSummary.selected_material_id || materialDetails.id,
+          id: existingWindowSummary.selected_material_id,
           ...materialDetails
         };
         console.log("📊 Restored material:", restoredItems.material.id, restoredItems.material.name);

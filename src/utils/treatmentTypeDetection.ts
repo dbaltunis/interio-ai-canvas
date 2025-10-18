@@ -112,7 +112,7 @@ export const getTreatmentConfig = (category: TreatmentCategory): TreatmentConfig
       requiresHeading: false,
       requiresLining: true,
       showPooling: false,
-      inventoryCategory: 'curtain_fabric',
+      inventoryCategory: 'roman_blind_fabric',
       specificFields: ['fold_style', 'fold_spacing', 'mounting_type'],
       visualComponent: 'RollerBlindVisualizer',
     },
