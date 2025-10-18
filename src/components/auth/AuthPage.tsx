@@ -191,12 +191,14 @@ export const AuthPage = () => {
 
         console.log('[AuthPage] Attempting signup for new invitation user:', email);
         
-        // Get inviter's user_id from invitation to set parent_account_id
+        // Get inviter's user_id AND role from invitation
         const { data: invitationDetails } = await supabase
           .from('user_invitations')
-          .select('user_id')
+          .select('user_id, role')
           .eq('invitation_token', invitationToken)
           .single();
+        
+        console.log('[AuthPage] Creating user with role from invitation:', invitationDetails?.role);
         
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
@@ -204,6 +206,7 @@ export const AuthPage = () => {
           options: {
             data: {
               invitation_user_id: invitationDetails?.user_id, // Pass inviter's ID for parent_account_id
+              invitation_role: invitationDetails?.role, // Pass role from invitation
               display_name: invitation.invited_name || email
             }
           }
