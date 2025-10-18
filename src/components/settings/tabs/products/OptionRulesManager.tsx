@@ -7,14 +7,36 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTreatmentOptionRules, useCreateOptionRule, useUpdateOptionRule, useDeleteOptionRule, OptionRule } from '@/hooks/useOptionRules';
 import { useTreatmentOptions } from '@/hooks/useTreatmentOptions';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface OptionRulesManagerProps {
   templateId: string;
 }
 
 export const OptionRulesManager = ({ templateId }: OptionRulesManagerProps) => {
+  // First, get the template to find its treatment_category
+  const { data: template } = useQuery({
+    queryKey: ['template-for-rules', templateId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('curtain_templates')
+        .select('treatment_category, curtain_type')
+        .eq('id', templateId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!templateId,
+  });
+
   const { data: rules = [] } = useTreatmentOptionRules(templateId);
-  const { data: options = [] } = useTreatmentOptions(templateId);
+  // Use treatment_category to query options instead of template_id
+  const { data: options = [] } = useTreatmentOptions(
+    template?.treatment_category || template?.curtain_type, 
+    'category'
+  );
   const createRule = useCreateOptionRule();
   const updateRule = useUpdateOptionRule();
   const deleteRule = useDeleteOptionRule();
@@ -93,6 +115,14 @@ export const OptionRulesManager = ({ templateId }: OptionRulesManagerProps) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {!template && (
+          <div className="text-sm text-muted-foreground">Loading template information...</div>
+        )}
+        {template && options.length === 0 && (
+          <div className="text-sm text-muted-foreground">
+            No options found for this treatment category. Add options in the Treatment Options tab first.
+          </div>
+        )}
         {rules.map(rule => (
           <Card key={rule.id} className="p-4">
             <div className="space-y-2">
