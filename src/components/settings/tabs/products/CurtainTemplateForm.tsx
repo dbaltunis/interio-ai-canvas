@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Save, X, Info, Plus, Trash2, Upload, Download } from "lucide-react";
+import { Save, X, Info, Plus, Trash2, Upload, Download, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -83,6 +83,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     { id: 3, name: "Black Matt 30mm", color: "Black", diameter: 30 },
     { id: 4, name: "Chrome 25mm", color: "Chrome", diameter: 25 }
   ]);
+
+  const [isSaving, setIsSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     // Basic Information
@@ -399,6 +401,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       return;
     }
 
+    setIsSaving(true);
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -490,6 +494,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         description: "Failed to save template. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -1588,9 +1594,22 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
 
         {/* Action Buttons */}
         <div className="flex gap-3 pt-4 border-t">
-          <Button onClick={handleSave} className="flex-1">
-            <Save className="h-4 w-4 mr-2" />
-            {template ? "Update Template" : "Create Template"}
+          <Button 
+            onClick={handleSave} 
+            className="flex-1"
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                {template ? "Update Template" : "Create Template"}
+              </>
+            )}
           </Button>
           <Button variant="outline" onClick={onClose}>
             <X className="h-4 w-4 mr-2" />
