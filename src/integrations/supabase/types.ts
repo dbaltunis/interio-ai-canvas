@@ -1341,22 +1341,7 @@ export type Database = {
           user_id?: string
           zip_code?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "clients_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "user_presence_view"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "clients_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["user_id"]
-          },
-        ]
+        Relationships: []
       }
       components_temp: {
         Row: {
@@ -6506,7 +6491,10 @@ export type Database = {
     }
     Functions: {
       accept_user_invitation: {
-        Args: { invitation_token_param: string; user_id_param: string }
+        Args: {
+          accepting_user_id_param: string
+          invitation_token_param: string
+        }
         Returns: Json
       }
       calculate_lead_score: {
