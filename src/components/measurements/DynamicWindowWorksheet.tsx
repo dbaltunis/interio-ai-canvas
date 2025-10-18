@@ -1107,61 +1107,6 @@ export const DynamicWindowWorksheet = forwardRef<{
                     fabricCalculation={fabricCalculation}
                     selectedOptions={selectedOptions}
                   />
-                  
-                  <Button onClick={async () => {
-                  setIsSaving(true);
-                  
-                  // Close dialog immediately for better UX
-                  onClose?.();
-                  
-                  try {
-                    console.log("DynamicWorksheet: Starting save from measurements tab...");
-                    const currentRef = ref as React.MutableRefObject<{
-                      autoSave: () => Promise<void>;
-                    }>;
-                    if (currentRef?.current) {
-                      await currentRef.current.autoSave();
-                    }
-                    const {
-                      toast
-                    } = await import("@/hooks/use-toast");
-                    toast({
-                      title: "✅ Configuration Saved",
-                      description: "Your window configuration has been saved successfully"
-                    });
-                  } catch (error) {
-                    console.error("Save failed:", error);
-                    const {
-                      toast
-                    } = await import("@/hooks/use-toast");
-                    toast({
-                      title: "❌ Save Failed",
-                      description: error instanceof Error ? error.message : "There was an error saving your configuration.",
-                      variant: "destructive"
-                    });
-                  } finally {
-                    setIsSaving(false);
-                  }
-                }} disabled={
-                  isSaving || (
-                    // For wallpaper, check wall_width and wall_height
-                    treatmentCategory === 'wallpaper' 
-                      ? (!measurements.wall_width || !measurements.wall_height)
-                      : (!measurements.rail_width || !measurements.drop)
-                  )
-                } className="w-full">
-                    {isSaving ? (
-                      <>
-                        <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-background border-t-foreground" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Save Configuration
-                      </>
-                    )}
-                  </Button>
                 </div>
               </div>
             </CardContent>
