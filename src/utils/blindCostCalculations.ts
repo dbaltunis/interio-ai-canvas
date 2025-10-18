@@ -3,6 +3,8 @@
  * Handles pricing for roller, venetian, roman, vertical blinds and shutters
  */
 
+import { getPriceFromGrid } from '@/hooks/usePricingGrids';
+
 export interface BlindCostResult {
   fabricCost: number;
   manufacturingCost: number;
@@ -40,20 +42,31 @@ export const calculateBlindCost = (
   const linearMeters = heightM; // For blinds, linear meters typically = height
   
   // PRICING GRID: If using pricing grid, the grid price IS the total cost (includes everything)
-  // Set fabric cost to 0 to avoid double-counting when fabric is already in the grid
   let fabricCost = 0;
   let manufacturingCost = 0;
   
   if (template?.pricing_type === 'pricing_grid') {
-    console.log('💡 Using PRICING GRID - grid price includes fabric + manufacturing');
+    console.log('💡 Using PRICING GRID - calculating from grid data');
     
-    // Grid price will be calculated as manufacturingCost (but it's actually total)
-    // Set fabricCost to 0 to avoid adding fabric cost separately
-    fabricCost = 0;
+    const gridData = template?.pricing_grid_data;
     
-    // Manufacturing cost will be set from grid price in the component
-    // This is just a placeholder - actual grid lookup happens in CostCalculationSummary
-    manufacturingCost = 0;
+    if (gridData) {
+      const gridPrice = getPriceFromGrid(gridData, width, height);
+      
+      console.log('💰 Grid price calculated:', gridPrice, 'for', width, 'x', height);
+      
+      // Grid price IS the total - it includes everything
+      // Put it in manufacturingCost to keep fabricCost at 0
+      fabricCost = 0;
+      manufacturingCost = gridPrice;
+    } else if (template?.unit_price) {
+      // Fallback to unit price if no grid data
+      console.log('⚠️ No grid data, using template unit_price as fallback');
+      manufacturingCost = squareMeters * template.unit_price;
+    } else {
+      console.warn('⚠️ Pricing grid selected but no grid data or unit_price available');
+      manufacturingCost = 0;
+    }
   } else {
     // Standard pricing: Calculate fabric and manufacturing separately
     console.log('💡 Using STANDARD pricing - calculating fabric + manufacturing separately');
