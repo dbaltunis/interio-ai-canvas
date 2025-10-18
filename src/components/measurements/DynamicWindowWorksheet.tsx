@@ -785,8 +785,7 @@ export const DynamicWindowWorksheet = forwardRef<{
             user_id: currentUser.id,
             project_id: surfaceInfo.project_id,
             room_id: surfaceInfo.room_id,
-            surface_id: surfaceId,
-            window_id: surfaceId, // Required field
+            window_id: surfaceId,
             treatment_type: specificTreatmentType,
             product_name: selectedTemplate?.name || `${specificTreatmentType} Treatment`,
             quantity: 1,
@@ -848,10 +847,13 @@ export const DynamicWindowWorksheet = forwardRef<{
             total_price: treatmentData.total_price
           });
 
-          // Insert/update treatment (using surface_id as unique key)
+          // Insert/update treatment (no unique constraint, just insert)
+          // First delete existing treatment for this window to avoid duplicates
+          await supabase.from('treatments').delete().eq('window_id', surfaceId);
+          
           const { data: treatmentInserted, error: treatmentError } = await supabase
             .from('treatments')
-            .upsert([treatmentData], { onConflict: 'surface_id' })
+            .insert([treatmentData])
             .select()
             .maybeSingle();
 
