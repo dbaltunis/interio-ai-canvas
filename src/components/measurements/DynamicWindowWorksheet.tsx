@@ -683,38 +683,50 @@ export const DynamicWindowWorksheet = forwardRef<{
             window_type_key: selectedWindowType?.key || 'standard',
             window_type_id: selectedWindowType?.id,
             
-            // STEP 2: Treatment/Template Selection
+            // STEP 2: Treatment/Template Selection - SIMPLIFIED
             template_name: selectedTemplate?.name,
-            template_details: selectedTemplate,
-            treatment_type: specificTreatmentType, // CRITICAL: Save specific type like 'venetian_blinds'
-            treatment_category: generalCategory, // Save general category like 'blinds'
+            template_details: {
+              id: selectedTemplate?.id,
+              name: selectedTemplate?.name,
+              pricing_type: selectedTemplate?.pricing_type,
+              unit_price: selectedTemplate?.unit_price,
+              machine_price_per_metre: selectedTemplate?.machine_price_per_metre,
+              waste_percent: selectedTemplate?.waste_percent,
+              manufacturing_type: selectedTemplate?.manufacturing_type
+            },
+            treatment_type: specificTreatmentType,
+            treatment_category: generalCategory,
             
-            // STEP 3: Inventory Selections (Fabric, Hardware, Materials)
+            // STEP 3: Inventory Selections - SIMPLIFIED (only IDs and essential fields)
             fabric_details: selectedItems.fabric ? {
-              ...selectedItems.fabric,
-              fabric_id: selectedItems.fabric.id,
-              width_cm: selectedItems.fabric.fabric_width || selectedItems.fabric.wallpaper_roll_width || 140,
-              width: selectedItems.fabric.fabric_width || selectedItems.fabric.wallpaper_roll_width || 140,
-              category: selectedItems.fabric.category, // Include fabric category for detection
-              image_url: selectedItems.fabric.image_url // Include image for display
+              id: selectedItems.fabric.id,
+              name: selectedItems.fabric.name,
+              fabric_width: selectedItems.fabric.fabric_width || selectedItems.fabric.wallpaper_roll_width || 140,
+              selling_price: selectedItems.fabric.selling_price || selectedItems.fabric.unit_price,
+              category: selectedItems.fabric.category,
+              image_url: selectedItems.fabric.image_url
             } : null,
             selected_fabric_id: selectedItems.fabric?.id || null,
             selected_hardware_id: selectedItems.hardware?.id || null,
             selected_material_id: selectedItems.material?.id || null,
-            hardware_details: selectedItems.hardware || null,
-            // For blinds/shutters: Use template data as material if no material selected
-            material_details: selectedItems.material || (
+            hardware_details: selectedItems.hardware ? {
+              id: selectedItems.hardware.id,
+              name: selectedItems.hardware.name,
+              selling_price: selectedItems.hardware.selling_price || selectedItems.hardware.unit_price
+            } : null,
+            material_details: selectedItems.material ? {
+              id: selectedItems.material.id,
+              name: selectedItems.material.name,
+              selling_price: selectedItems.material.selling_price || selectedItems.material.unit_price,
+              image_url: selectedItems.material.image_url
+            } : (
               (generalCategory === 'blinds' || generalCategory === 'shutters') && selectedTemplate
                 ? {
                     id: selectedTemplate.id,
                     name: selectedTemplate.name,
-                    description: selectedTemplate.description,
                     image_url: selectedTemplate.image_url,
-                    category: treatmentCategory,
-                    treatment_type: specificTreatmentType,
-                    template_based: true, // Flag to indicate this is from template
-                    pricing_type: selectedTemplate.pricing_type,
-                    unit_price: selectedTemplate.unit_price || 0
+                    unit_price: selectedTemplate.unit_price || 0,
+                    template_based: true
                   }
                 : null
             ),
