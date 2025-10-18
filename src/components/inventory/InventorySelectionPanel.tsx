@@ -287,13 +287,15 @@ export const InventorySelectionPanel = ({
         {availableTabs.map(({
         key,
         label
-      }) => <TabsContent key={key} value={key} className="mt-3">
+      }) => {
+          const categoryItems = getInventoryByCategory(key);
+          return <TabsContent key={key} value={key} className="mt-3">
             <ScrollArea className="h-[300px]">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 pr-3">
-                {getInventoryByCategory(key).map(item => renderInventoryItem(item, key))}
+                {categoryItems.map(item => renderInventoryItem(item, key))}
               </div>
 
-              {getInventoryByCategory(key).length === 0 && <div className="text-center py-12 text-muted-foreground">
+              {categoryItems.length === 0 && <div className="text-center py-12 text-muted-foreground">
                   <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
                   <p className="text-sm">
                     {treatmentCategory === 'wallpaper' && key === 'fabric' 
@@ -307,7 +309,8 @@ export const InventorySelectionPanel = ({
                   {searchTerm && <p className="text-xs mt-1">Try different search terms</p>}
                 </div>}
             </ScrollArea>
-          </TabsContent>)}
+          </TabsContent>;
+        })}
       </Tabs>
     </div>;
 };
