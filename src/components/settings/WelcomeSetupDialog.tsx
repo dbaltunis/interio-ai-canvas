@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Sparkles, CheckCircle2 } from "lucide-react";
 import { useSampleData } from "@/hooks/useSampleData";
-import { useOnboarding } from "@/components/onboarding/OnboardingProvider";
 import { motion } from "framer-motion";
 
 interface WelcomeSetupDialogProps {
@@ -13,32 +12,16 @@ interface WelcomeSetupDialogProps {
 }
 
 export const WelcomeSetupDialog = ({ isOpen, onComplete }: WelcomeSetupDialogProps) => {
-  const [selectedOptions, setSelectedOptions] = useState({
-    sampleData: true,
-    tour: true,
-  });
+  const [wantsSampleData, setWantsSampleData] = useState(true);
   const { seedSampleData, isSeedingData } = useSampleData();
-  const { startTour } = useOnboarding();
 
   if (!isOpen) return null;
 
   const handleSetup = async () => {
-    if (selectedOptions.sampleData) {
+    if (wantsSampleData) {
       await seedSampleData();
     }
-
-    if (selectedOptions.tour) {
-      startTour();
-    }
-
     onComplete();
-  };
-
-  const toggleOption = (option: keyof typeof selectedOptions) => {
-    setSelectedOptions((prev) => ({
-      ...prev,
-      [option]: !prev[option],
-    }));
   };
 
   return (
@@ -62,40 +45,36 @@ export const WelcomeSetupDialog = ({ isOpen, onComplete }: WelcomeSetupDialogPro
           </CardHeader>
 
           <CardContent className="space-y-6">
-            {/* Options */}
+            {/* Info */}
             <div className="space-y-4">
-              <div
-                className="flex items-start space-x-3 p-4 border rounded-lg hover:border-primary/50 cursor-pointer transition-colors"
-                onClick={() => toggleOption("sampleData")}
-              >
-                <Checkbox
-                  checked={selectedOptions.sampleData}
-                  onCheckedChange={() => toggleOption("sampleData")}
-                />
-                <div className="flex-1">
-                  <h4 className="font-medium">Add Sample Data</h4>
-                  <p className="text-sm text-muted-foreground">
-                    We'll create example clients and projects to help you explore features
-                  </p>
-                </div>
-                <CheckCircle2 className={`h-5 w-5 ${selectedOptions.sampleData ? "text-primary" : "text-muted-foreground/30"}`} />
+              <div className="text-center space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  We can help you get started faster by adding some example data to your account.
+                </p>
               </div>
 
               <div
                 className="flex items-start space-x-3 p-4 border rounded-lg hover:border-primary/50 cursor-pointer transition-colors"
-                onClick={() => toggleOption("tour")}
+                onClick={() => setWantsSampleData(!wantsSampleData)}
               >
                 <Checkbox
-                  checked={selectedOptions.tour}
-                  onCheckedChange={() => toggleOption("tour")}
+                  checked={wantsSampleData}
+                  onCheckedChange={() => setWantsSampleData(!wantsSampleData)}
                 />
                 <div className="flex-1">
-                  <h4 className="font-medium">Take a Quick Tour</h4>
+                  <h4 className="font-medium">Add Sample Data</h4>
                   <p className="text-sm text-muted-foreground">
-                    2-minute guided tour of the key features (highly recommended)
+                    Example clients and projects to help you explore features
                   </p>
                 </div>
-                <CheckCircle2 className={`h-5 w-5 ${selectedOptions.tour ? "text-primary" : "text-muted-foreground/30"}`} />
+                <CheckCircle2 className={`h-5 w-5 ${wantsSampleData ? "text-primary" : "text-muted-foreground/30"}`} />
+              </div>
+
+              <div className="bg-muted/50 border rounded-lg p-4">
+                <h4 className="font-medium text-sm mb-2">📋 What's Next?</h4>
+                <p className="text-xs text-muted-foreground">
+                  After setup, you'll see a helpful checklist to guide you through the key features at your own pace.
+                </p>
               </div>
             </div>
 

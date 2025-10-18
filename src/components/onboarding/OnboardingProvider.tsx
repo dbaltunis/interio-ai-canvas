@@ -1,14 +1,13 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
-import { WelcomeTour } from "./WelcomeTour";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { OnboardingChecklist } from "./OnboardingChecklist";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 interface OnboardingContextType {
-  showTour: boolean;
-  startTour: () => void;
-  skipTour: () => void;
-  completeTour: () => void;
+  showChecklist: boolean;
+  dismissChecklist: () => void;
+  completeItem: (itemId: string) => void;
   hasCompletedOnboarding: boolean;
 }
 
@@ -28,14 +27,10 @@ interface OnboardingProviderProps {
 
 export const OnboardingProvider = ({ children }: OnboardingProviderProps) => {
   const { user } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [showTour, setShowTour] = useState(false);
+  const navigate = useNavigate();
+  const [showChecklist, setShowChecklist] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
-
-  // Memoize the tab change handler to prevent re-renders
-  const handleTabChange = useCallback((tab: string) => {
-    setSearchParams({ tab }, { replace: true });
-  }, [setSearchParams]);
+  const [completedItems, setCompletedItems] = useState<string[]>([]);
 
   // Check if user has completed onboarding
   useEffect(() => {
@@ -50,8 +45,8 @@ export const OnboardingProvider = ({ children }: OnboardingProviderProps) => {
         .single();
 
       if (error || !data) {
-        // User hasn't completed onboarding, show tour after a delay
-        setTimeout(() => setShowTour(true), 2000);
+        // User hasn't completed onboarding, show checklist after a delay
+        setTimeout(() => setShowChecklist(true), 3000);
       } else {
         setHasCompletedOnboarding(data.enabled);
       }
@@ -60,56 +55,85 @@ export const OnboardingProvider = ({ children }: OnboardingProviderProps) => {
     checkOnboardingStatus();
   }, [user]);
 
-  const startTour = () => {
-    setShowTour(true);
-  };
-
-  const skipTour = async () => {
-    setShowTour(false);
+  const dismissChecklist = async () => {
+    setShowChecklist(false);
     if (user) {
-      await markOnboardingComplete();
-    }
-  };
-
-  const completeTour = async () => {
-    setShowTour(false);
-    if (user) {
-      await markOnboardingComplete();
-    }
-  };
-
-  const markOnboardingComplete = async () => {
-    if (!user) return;
-
-    const { error } = await supabase
-      .from("app_user_flags")
-      .upsert({
+      await supabase.from("app_user_flags").upsert({
         user_id: user.id,
         flag: "onboarding_completed",
         enabled: true,
       });
-
-    if (!error) {
       setHasCompletedOnboarding(true);
     }
   };
 
+  const completeItem = (itemId: string) => {
+    setCompletedItems(prev => [...prev, itemId]);
+  };
+
+  // Define checklist items
+  const checklistItems = [
+    {
+      id: "view-projects",
+      title: "Explore the Projects Dashboard",
+      description: "See where you'll manage all your jobs",
+      completed: completedItems.includes("view-projects"),
+      action: () => {
+        navigate("/?tab=projects");
+        completeItem("view-projects");
+      },
+      actionLabel: "View Projects",
+    },
+    {
+      id: "add-client",
+      title: "Add Your First Client",
+      description: "Build your client database",
+      completed: completedItems.includes("add-client"),
+      action: () => {
+        navigate("/?tab=clients");
+        completeItem("add-client");
+      },
+      actionLabel: "Go to CRM",
+    },
+    {
+      id: "setup-library",
+      title: "Set Up Product Library",
+      description: "Configure templates and pricing",
+      completed: completedItems.includes("setup-library"),
+      action: () => {
+        navigate("/?tab=inventory");
+        completeItem("setup-library");
+      },
+      actionLabel: "Open Library",
+    },
+    {
+      id: "configure-settings",
+      title: "Configure Business Settings",
+      description: "Customize pricing and templates",
+      completed: completedItems.includes("configure-settings"),
+      action: () => {
+        navigate("/settings");
+        completeItem("configure-settings");
+      },
+      actionLabel: "Open Settings",
+    },
+  ];
+
   return (
     <OnboardingContext.Provider
       value={{
-        showTour,
-        startTour,
-        skipTour,
-        completeTour,
+        showChecklist,
+        dismissChecklist,
+        completeItem,
         hasCompletedOnboarding,
       }}
     >
       {children}
-      <WelcomeTour 
-        isOpen={showTour} 
-        onComplete={completeTour} 
-        onSkip={skipTour} 
-        onTabChange={handleTabChange}
+      <OnboardingChecklist
+        isOpen={showChecklist}
+        onDismiss={dismissChecklist}
+        items={checklistItems}
+        onItemComplete={completeItem}
       />
     </OnboardingContext.Provider>
   );
