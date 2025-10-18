@@ -63,6 +63,7 @@ export const DynamicWindowWorksheet = forwardRef<{
   const [selectedHeading, setSelectedHeading] = useState("standard");
   const [selectedLining, setSelectedLining] = useState("none");
   const [selectedOptions, setSelectedOptions] = useState<Array<{ name: string; price: number }>>([]);
+  const [isSaving, setIsSaving] = useState(false);
   const [layeredTreatments, setLayeredTreatments] = useState<Array<{
     id: string;
     type: string;
@@ -1108,6 +1109,11 @@ export const DynamicWindowWorksheet = forwardRef<{
                   />
                   
                   <Button onClick={async () => {
+                  setIsSaving(true);
+                  
+                  // Close dialog immediately for better UX
+                  onClose?.();
+                  
                   try {
                     console.log("DynamicWorksheet: Starting save from measurements tab...");
                     const currentRef = ref as React.MutableRefObject<{
@@ -1123,12 +1129,6 @@ export const DynamicWindowWorksheet = forwardRef<{
                       title: "✅ Configuration Saved",
                       description: "Your window configuration has been saved successfully"
                     });
-                    
-                    // Wait a bit longer before closing to ensure state updates complete
-                    await new Promise(resolve => setTimeout(resolve, 800));
-                    
-                    // Close dialog
-                    onClose?.();
                   } catch (error) {
                     console.error("Save failed:", error);
                     const {
@@ -1139,15 +1139,28 @@ export const DynamicWindowWorksheet = forwardRef<{
                       description: error instanceof Error ? error.message : "There was an error saving your configuration.",
                       variant: "destructive"
                     });
+                  } finally {
+                    setIsSaving(false);
                   }
                 }} disabled={
-                  // For wallpaper, check wall_width and wall_height
-                  treatmentCategory === 'wallpaper' 
-                    ? (!measurements.wall_width || !measurements.wall_height)
-                    : (!measurements.rail_width || !measurements.drop)
+                  isSaving || (
+                    // For wallpaper, check wall_width and wall_height
+                    treatmentCategory === 'wallpaper' 
+                      ? (!measurements.wall_width || !measurements.wall_height)
+                      : (!measurements.rail_width || !measurements.drop)
+                  )
                 } className="w-full">
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Configuration
+                    {isSaving ? (
+                      <>
+                        <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-background border-t-foreground" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Save Configuration
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
