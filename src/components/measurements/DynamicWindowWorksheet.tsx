@@ -176,20 +176,27 @@ export const DynamicWindowWorksheet = forwardRef<{
       // STEP 3: Restore Inventory Selections
       const restoredItems: any = {};
       
-      // Restore fabric selection - set both full object AND id
+      // Restore fabric selection - set BOTH id AND fabric_id for consistency
       if (fabricDetails && (fabricDetails.fabric_id || fabricDetails.id)) {
+        const fabricId = fabricDetails.fabric_id || fabricDetails.id;
         restoredItems.fabric = {
-          id: fabricDetails.fabric_id || fabricDetails.id,
-          ...fabricDetails
+          ...fabricDetails,
+          id: fabricId,
+          fabric_id: fabricId // Set BOTH for selection persistence
         };
-        console.log("📊 Restored fabric with ID:", fabricDetails.fabric_id || fabricDetails.id, fabricDetails.name);
+        console.log("🎨 Restored fabric with dual IDs:", {
+          id: fabricId,
+          fabric_id: fabricId,
+          name: fabricDetails.name
+        });
       } else if (existingWindowSummary.selected_fabric_id && fabricDetails) {
         // Fallback: try using selected_fabric_id
         restoredItems.fabric = {
+          ...fabricDetails,
           id: existingWindowSummary.selected_fabric_id,
-          ...fabricDetails
+          fabric_id: existingWindowSummary.selected_fabric_id
         };
-        console.log("📊 Restored fabric using selected_fabric_id:", existingWindowSummary.selected_fabric_id);
+        console.log("🎨 Restored fabric using selected_fabric_id:", existingWindowSummary.selected_fabric_id);
       }
       
       // Restore hardware selection
@@ -348,6 +355,24 @@ export const DynamicWindowWorksheet = forwardRef<{
             selectedItems,
             fabricCalculation
           });
+
+          // PRICE CONSISTENCY: Check if we can use existing saved prices instead of recalculating
+          let shouldRecalculate = true;
+          if (existingWindowSummary) {
+            const measurementsChanged = JSON.stringify(measurements) !== JSON.stringify(existingWindowSummary.measurements_details || {});
+            const fabricChanged = selectedItems.fabric?.id !== (existingWindowSummary as any).selected_fabric_id;
+            const templateChanged = selectedTemplate?.id !== existingWindowSummary.template_id;
+            
+            shouldRecalculate = measurementsChanged || fabricChanged || templateChanged;
+            
+            console.log("💰 Price calculation decision:", {
+              shouldRecalculate,
+              measurementsChanged,
+              fabricChanged,
+              templateChanged,
+              existingTotal: existingWindowSummary.total_cost
+            });
+          }
 
           // Import supabase and save to windows_summary table (where UI expects it)
           const {
@@ -895,9 +920,25 @@ export const DynamicWindowWorksheet = forwardRef<{
     }));
   };
   const handleItemSelect = (category: string, item: any) => {
+    // For fabric, ensure BOTH id and fabric_id are set for persistence
+    let processedItem = item;
+    if (category === 'fabric') {
+      const fabricId = item.id || item.fabric_id;
+      processedItem = {
+        ...item,
+        id: fabricId,
+        fabric_id: fabricId
+      };
+      console.log('🎨 Fabric selected with dual IDs:', {
+        id: fabricId,
+        fabric_id: fabricId,
+        name: item.name
+      });
+    }
+    
     setSelectedItems(prev => ({
       ...prev,
-      [category]: item
+      [category]: processedItem
     }));
     
     // Auto-detect treatment type from fabric category

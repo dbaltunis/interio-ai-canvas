@@ -103,7 +103,15 @@ export const InventorySelectionPanel = ({
   };
   const renderInventoryItem = (item: any, category: string) => {
     const estimatedCost = calculateEstimatedCost(item, category);
-    const isSelected = selectedItems[category as keyof typeof selectedItems]?.id === item.id;
+    
+    // Check selection using multiple ID field options for fabric persistence
+    const selectedItem = selectedItems[category as keyof typeof selectedItems];
+    const isSelected = 
+      selectedItem?.id === item.id || 
+      selectedItem?.id === item.fabric_id ||
+      selectedItem?.fabric_id === item.id ||
+      selectedItem?.fabric_id === item.fabric_id;
+    
     const price = item.selling_price || item.unit_price || item.price_per_meter || 0;
 
     // Get the image URL - try multiple storage buckets

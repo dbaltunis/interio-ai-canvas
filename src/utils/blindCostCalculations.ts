@@ -88,7 +88,18 @@ export const calculateBlindCost = (
     }
     
     // Calculate manufacturing cost from template
-    if (template?.manufacturing_type === 'hand') {
+    // CRITICAL: Check pricing_type FIRST to determine calculation method
+    if (template?.pricing_type === 'per_sqm') {
+      // For per_sqm pricing, use the stored price × square meters
+      const pricePerSqm = template.machine_price_per_metre || template.unit_price || 0;
+      manufacturingCost = pricePerSqm * squareMeters;
+      console.log('💰 Per SQM pricing:', {
+        pricePerSqm,
+        squareMeters,
+        manufacturingCost,
+        template: template.name
+      });
+    } else if (template?.manufacturing_type === 'hand') {
       manufacturingCost = template.hand_price_per_panel || template.hand_price_per_metre * linearMeters || 0;
     } else {
       manufacturingCost = template.machine_price_per_panel || template.machine_price_per_metre * linearMeters || 0;
