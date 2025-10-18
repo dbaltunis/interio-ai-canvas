@@ -58,8 +58,12 @@ export const RequestAccessDialog = ({ open, onOpenChange, userRole }: RequestAcc
       } else {
         console.log('✅ Permissions restored:', data);
         
-        const permissionsAdded = typeof data === 'object' && data !== null && 'permissions_added' in data 
-          ? (data as any).permissions_added : 0;
+        // Safely extract permissions_added from JSONB response
+        let permissionsAdded = 0;
+        if (data && typeof data === 'object' && !Array.isArray(data)) {
+          const response = data as Record<string, any>;
+          permissionsAdded = Number(response.permissions_added) || 0;
+        }
         
         // Refresh all permission-related queries
         await Promise.all([
