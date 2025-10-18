@@ -104,11 +104,11 @@ const styles = StyleSheet.create({
     padding: 10,
     borderBottom: '1px solid #e2e8f0',
   },
-  tableCol1: { width: '10%' },
-  tableCol2: { width: '35%' },
-  tableCol3: { width: '15%' },
-  tableCol4: { width: '20%' },
-  tableCol5: { width: '20%', textAlign: 'right' },
+  tableCol1: { width: '8%' },
+  tableCol2: { width: '50%' },
+  tableCol3: { width: '12%' },
+  tableCol4: { width: '15%' },
+  tableCol5: { width: '15%', textAlign: 'right' },
   // Totals
   totalsSection: {
     marginTop: 20,
@@ -310,11 +310,14 @@ export const QuotePDFDocument: React.FC<QuotePDFDocumentProps> = ({
 
               {/* Table Rows */}
               {items.map((item: any, index: number) => {
-                // Get breakdown using buildClientBreakdown
+                // Use breakdown from item if available, or build from windowSummary
                 const windowSummary = windowSummaries.find((ws: any) => ws.window_id === item.id);
-                const breakdown = (showDetailedBreakdown && windowSummary?.summary) 
+                const breakdown = item.breakdown || (showDetailedBreakdown && windowSummary?.summary 
                   ? buildClientBreakdown(windowSummary.summary) 
-                  : [];
+                  : []);
+                
+                // Get actual price - handle both total and total_price fields
+                const itemTotal = item.total || item.total_price || item.unit_price || 0;
                 
                 return (
                   <View key={index} style={{ marginBottom: 12, borderBottom: '1px solid #e2e8f0', paddingBottom: 12 }}>
@@ -329,18 +332,23 @@ export const QuotePDFDocument: React.FC<QuotePDFDocumentProps> = ({
                           />
                         )}
                         <View style={{ flex: 1 }}>
-                          <Text style={{ fontWeight: 'bold', fontSize: 11 }}>{item.name || item.description}</Text>
-                          <Text style={{ fontSize: 9, color: '#666', marginTop: 2 }}>{item.description}</Text>
+                          <Text style={{ fontWeight: 'bold', fontSize: 11 }}>{item.name || item.product_name || item.description || 'Window Treatment'}</Text>
+                          {item.description && item.description !== item.name && (
+                            <Text style={{ fontSize: 9, color: '#666', marginTop: 2 }}>{item.description}</Text>
+                          )}
+                          {item.surface_name && (
+                            <Text style={{ fontSize: 8, color: '#999', marginTop: 1 }}>Room: {item.room_name || 'Unassigned'} • {item.surface_name}</Text>
+                          )}
                         </View>
                       </View>
                       <Text style={styles.tableCol3}>{item.quantity || 1}</Text>
                       <Text style={[styles.tableCol5, { fontWeight: 'bold' }]}>
-                        {renderTokenValue('currency_symbol')}{(item.total || 0).toFixed(2)}
+                        {renderTokenValue('currency_symbol')}{Number(itemTotal).toFixed(2)}
                       </Text>
                     </View>
                     
                     {/* Breakdown Details */}
-                    {breakdown.length > 0 && (
+                    {breakdown && breakdown.length > 0 && (
                       <View style={{ marginLeft: 30, marginTop: 8, paddingLeft: 12, borderLeft: '2px solid #e5e7eb' }}>
                         {breakdown.map((breakdownItem: any, idx: number) => (
                           <View key={idx} style={{ marginBottom: 6, flexDirection: 'row', alignItems: 'flex-start' }}>
@@ -355,9 +363,11 @@ export const QuotePDFDocument: React.FC<QuotePDFDocumentProps> = ({
                               <Text style={{ fontSize: 9, fontWeight: 'bold', marginBottom: 1 }}>
                                 {breakdownItem.name}
                               </Text>
-                              <Text style={{ fontSize: 8, color: '#6b7280', marginBottom: 1 }}>
-                                {breakdownItem.description}
-                              </Text>
+                              {breakdownItem.description && (
+                                <Text style={{ fontSize: 8, color: '#6b7280', marginBottom: 1 }}>
+                                  {breakdownItem.description}
+                                </Text>
+                              )}
                               {breakdownItem.quantity && breakdownItem.unit && (
                                 <Text style={{ fontSize: 8, color: '#9ca3af' }}>
                                   {typeof breakdownItem.quantity === 'number' ? breakdownItem.quantity.toFixed(2) : breakdownItem.quantity} {breakdownItem.unit} × {renderTokenValue('currency_symbol')}{(breakdownItem.unit_price || 0).toFixed(2)} = {renderTokenValue('currency_symbol')}{(breakdownItem.total_cost || 0).toFixed(2)}
