@@ -3461,7 +3461,7 @@ export type Database = {
           description: string | null
           effect: Json
           id: string
-          treatment_id: string
+          template_id: string
           updated_at: string | null
         }
         Insert: {
@@ -3471,7 +3471,7 @@ export type Database = {
           description?: string | null
           effect: Json
           id?: string
-          treatment_id: string
+          template_id: string
           updated_at?: string | null
         }
         Update: {
@@ -3481,15 +3481,15 @@ export type Database = {
           description?: string | null
           effect?: Json
           id?: string
-          treatment_id?: string
+          template_id?: string
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "option_rules_treatment_id_fkey"
-            columns: ["treatment_id"]
+            foreignKeyName: "option_rules_template_id_fkey"
+            columns: ["template_id"]
             isOneToOne: false
-            referencedRelation: "treatments"
+            referencedRelation: "curtain_templates"
             referencedColumns: ["id"]
           },
         ]
