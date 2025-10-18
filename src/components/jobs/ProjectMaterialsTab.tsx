@@ -29,7 +29,13 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
 
   // Extract materials from treatments
   const treatmentMaterials = useMemo(() => {
-    if (!treatments || !inventory) return [];
+    if (!treatments || !inventory) {
+      console.log('[MATERIALS] No treatments or inventory:', { treatments: !!treatments, inventory: !!inventory });
+      return [];
+    }
+
+    console.log('[MATERIALS] Processing treatments:', treatments.length, 'treatments');
+    console.log('[MATERIALS] Sample treatment:', treatments[0]);
 
     const materials: Array<{
       id: string;
@@ -43,7 +49,15 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
       fabric_id?: string;
     }> = [];
 
-    treatments.forEach((treatment) => {
+    treatments.forEach((treatment, idx) => {
+      console.log(`[MATERIALS] Processing treatment ${idx}:`, {
+        id: treatment.id,
+        type: treatment.treatment_type,
+        fabric_details: treatment.fabric_details,
+        calculation_details: treatment.calculation_details,
+        treatment_details: treatment.treatment_details
+      });
+
       // Extract fabric materials
       const fabricDetails = typeof treatment.fabric_details === 'object' && treatment.fabric_details 
         ? treatment.fabric_details as Record<string, any> 
@@ -52,6 +66,8 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
       const calculationDetails = typeof treatment.calculation_details === 'object' && treatment.calculation_details
         ? treatment.calculation_details as Record<string, any>
         : {};
+
+      console.log(`[MATERIALS] Treatment ${idx} details:`, { fabricDetails, calculationDetails });
         
       if (fabricDetails.fabricId) {
         const fabricItem = inventory.find(item => item.id === fabricDetails.fabricId);
