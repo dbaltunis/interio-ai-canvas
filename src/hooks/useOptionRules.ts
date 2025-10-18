@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 
 export interface OptionRule {
   id: string;
-  treatment_id: string;
+  template_id: string;
   condition: {
     option_key: string;
     operator: 'equals' | 'not_equals' | 'contains' | 'in_list';
@@ -20,22 +20,22 @@ export interface OptionRule {
   updated_at?: string;
 }
 
-export const useTreatmentOptionRules = (treatmentId?: string) => {
+export const useTreatmentOptionRules = (templateId?: string) => {
   return useQuery({
-    queryKey: ['treatment-option-rules', treatmentId],
+    queryKey: ['treatment-option-rules', templateId],
     queryFn: async () => {
-      if (!treatmentId) return [];
+      if (!templateId) return [];
       
       const { data, error } = await supabase
         .from('option_rules')
         .select('*')
-        .eq('treatment_id', treatmentId)
+        .eq('template_id', templateId)
         .order('created_at', { ascending: true });
       
       if (error) throw error;
       return (data || []) as unknown as OptionRule[];
     },
-    enabled: !!treatmentId,
+    enabled: !!templateId,
   });
 };
 
@@ -54,7 +54,7 @@ export const useCreateOptionRule = () => {
       return data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['treatment-option-rules', variables.treatment_id] });
+      queryClient.invalidateQueries({ queryKey: ['treatment-option-rules', variables.template_id] });
       toast.success('Option rule created');
     },
     onError: (error) => {
@@ -79,7 +79,7 @@ export const useUpdateOptionRule = () => {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['treatment-option-rules', data.treatment_id] });
+      queryClient.invalidateQueries({ queryKey: ['treatment-option-rules', data.template_id] });
       toast.success('Option rule updated');
     },
     onError: (error) => {
@@ -92,17 +92,17 @@ export const useDeleteOptionRule = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, treatmentId }: { id: string; treatmentId: string }) => {
+    mutationFn: async ({ id, templateId }: { id: string; templateId: string }) => {
       const { error } = await supabase
         .from('option_rules')
         .delete()
         .eq('id', id);
       
       if (error) throw error;
-      return { treatmentId };
+      return { templateId };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['treatment-option-rules', data.treatmentId] });
+      queryClient.invalidateQueries({ queryKey: ['treatment-option-rules', data.templateId] });
       toast.success('Option rule deleted');
     },
     onError: (error) => {

@@ -64,7 +64,7 @@ export const OptionRulesManager = ({ templateId }: OptionRulesManagerProps) => {
   const handleCreateRule = () => {
     setIsCreating(true);
     setEditingRule({
-      treatment_id: templateId,
+      template_id: templateId,
       condition: {
         option_key: '',
         operator: 'equals',
@@ -138,7 +138,7 @@ export const OptionRulesManager = ({ templateId }: OptionRulesManagerProps) => {
   };
 
   const handleDeleteRule = async (ruleId: string) => {
-    await deleteRule.mutateAsync({ id: ruleId, treatmentId: templateId });
+    await deleteRule.mutateAsync({ id: ruleId, templateId: templateId });
   };
 
   const getOptionValues = (optionKey: string) => {
