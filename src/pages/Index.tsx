@@ -11,16 +11,16 @@ import { AIBackground } from "@/components/common/AIBackground";
 const Dashboard = lazy(() => 
   import("@/components/dashboard/Dashboard").catch(() => ({ default: () => <div>Error loading Dashboard</div> }))
 );
-const EnhancedDashboard = lazy(() => 
-  import("@/components/dashboard/EnhancedDashboard").then(module => ({
-    default: module.EnhancedDashboard
-  })).catch(() => ({ default: () => <div>Error loading CRM Dashboard</div> }))
-);
 const JobsPage = lazy(() => 
   import("@/components/jobs/JobsPage").catch(() => ({ default: () => <div>Error loading Jobs</div> }))
 );
 const LibraryPage = lazy(() => 
   import("@/components/library/LibraryPage").catch(() => ({ default: () => <div>Error loading Library</div> }))
+);
+const ClientManagement = lazy(() => 
+  import("@/components/jobs/ClientManagement").then(module => ({
+    default: (props: any) => <module.default {...props} />
+  })).catch(() => ({ default: () => <div>Error loading Clients</div> }))
 );
 const EmailManagement = lazy(() => 
   import("@/components/jobs/EmailManagement").catch(() => ({ default: () => <div>Error loading Emails</div> }))
@@ -97,9 +97,9 @@ const Index = () => {
         );
       case "clients":
         return (
-          <Suspense fallback={<DashboardSkeleton />}>
+          <Suspense fallback={<ClientManagementSkeleton />}>
             <ComponentWrapper>
-              <EnhancedDashboard />
+              <ClientManagement onTabChange={handleTabChange} />
             </ComponentWrapper>
           </Suspense>
         );
