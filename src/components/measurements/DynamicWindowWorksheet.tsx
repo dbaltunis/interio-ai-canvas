@@ -1004,11 +1004,22 @@ export const DynamicWindowWorksheet = forwardRef<{
                   </div>
                 </div>}
                 
-                {!Object.values(selectedItems).some(item => item) && <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <p className="text-xs text-blue-700 dark:text-blue-300">
-                    No inventory selection required for this treatment. Click continue to proceed to measurements.
-                  </p>
-                </div>}
+                {!Object.values(selectedItems).some(item => item) && (
+                  // Only show "no selection required" for treatments that truly don't need fabric
+                  (treatmentCategory === 'wallpaper' || treatmentCategory.includes('blind') || treatmentCategory.includes('shutter')) ? (
+                    <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        {treatmentCategory === 'wallpaper' ? 'Select wallpaper to continue' : 'No additional inventory selection required. Click continue to proceed to measurements.'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
+                      <p className="text-xs text-amber-700 dark:text-amber-300">
+                        Please select fabric to continue
+                      </p>
+                    </div>
+                  )
+                )}
                 
                 <Button 
                   onClick={() => {
