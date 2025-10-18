@@ -104,13 +104,14 @@ export const InventorySelectionPanel = ({
   const renderInventoryItem = (item: any, category: string) => {
     const estimatedCost = calculateEstimatedCost(item, category);
     
-    // Check selection using multiple ID field options for fabric persistence
+    // Check selection - ONLY if both IDs exist and match
     const selectedItem = selectedItems[category as keyof typeof selectedItems];
-    const isSelected = 
-      selectedItem?.id === item.id || 
-      selectedItem?.id === item.fabric_id ||
-      selectedItem?.fabric_id === item.id ||
-      selectedItem?.fabric_id === item.fabric_id;
+    const isSelected = Boolean(
+      selectedItem && item.id && (
+        selectedItem.id === item.id || 
+        (selectedItem.fabric_id && item.fabric_id && selectedItem.fabric_id === item.fabric_id)
+      )
+    );
     
     const price = item.selling_price || item.unit_price || item.price_per_meter || 0;
 
