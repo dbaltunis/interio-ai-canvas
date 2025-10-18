@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, AlertCircle, ShoppingCart } from "lucide-react";
+import { Plus, Package, AlertCircle, ShoppingCart, Sparkles } from "lucide-react";
 import { useProjectMaterialAllocations } from "@/hooks/useProjectMaterialAllocations";
 import { AllocateMaterialDialog } from "./AllocateMaterialDialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSuppliers } from "@/hooks/useSuppliers";
+import { useTreatments } from "@/hooks/useTreatments";
 
 interface ProjectMaterialsTabProps {
   projectId: string;
@@ -21,6 +22,102 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
   const { data: allocations, isLoading } = useProjectMaterialAllocations(projectId);
   const { data: inventory } = useEnhancedInventory();
   const { data: suppliers } = useSuppliers();
+  const { data: treatments } = useTreatments(projectId);
+
+  // Extract materials from treatments
+  const treatmentMaterials = useMemo(() => {
+    if (!treatments || !inventory) return [];
+
+    const materials: Array<{
+      id: string;
+      name: string;
+      category: string;
+      quantity: number;
+      unit: string;
+      supplier?: string;
+      source: string;
+      treatment_name: string;
+      fabric_id?: string;
+    }> = [];
+
+    treatments.forEach((treatment) => {
+      // Extract fabric materials
+      const fabricDetails = typeof treatment.fabric_details === 'object' && treatment.fabric_details 
+        ? treatment.fabric_details as Record<string, any> 
+        : {};
+      
+      const calculationDetails = typeof treatment.calculation_details === 'object' && treatment.calculation_details
+        ? treatment.calculation_details as Record<string, any>
+        : {};
+        
+      if (fabricDetails.fabricId) {
+        const fabricItem = inventory.find(item => item.id === fabricDetails.fabricId);
+        if (fabricItem) {
+          // Calculate fabric usage from treatment
+          const fabricUsage = calculationDetails.fabricUsage || 
+                            fabricDetails.fabricUsage || 
+                            0;
+
+          materials.push({
+            id: `${treatment.id}-fabric`,
+            name: fabricItem.name,
+            category: fabricItem.category || 'fabric',
+            quantity: parseFloat(String(fabricUsage)) || 0,
+            unit: fabricItem.unit || 'meter',
+            supplier: fabricItem.supplier,
+            source: 'Treatment Fabric',
+            treatment_name: treatment.treatment_type || 'Treatment',
+            fabric_id: fabricItem.id,
+          });
+        }
+      }
+
+      // Extract lining materials
+      if (fabricDetails.liningFabricId) {
+        const liningItem = inventory.find(item => item.id === fabricDetails.liningFabricId);
+        if (liningItem) {
+          const liningUsage = calculationDetails.liningUsage || 
+                            fabricDetails.liningUsage || 
+                            0;
+
+          materials.push({
+            id: `${treatment.id}-lining`,
+            name: liningItem.name,
+            category: liningItem.category || 'lining',
+            quantity: parseFloat(String(liningUsage)) || 0,
+            unit: liningItem.unit || 'meter',
+            supplier: liningItem.supplier,
+            source: 'Treatment Lining',
+            treatment_name: treatment.treatment_type || 'Treatment',
+            fabric_id: liningItem.id,
+          });
+        }
+      }
+
+      // Extract hardware/components
+      const treatmentDetails = typeof treatment.treatment_details === 'object' && treatment.treatment_details
+        ? treatment.treatment_details as Record<string, any>
+        : {};
+        
+      if (treatmentDetails.hardwareId) {
+        const hardwareItem = inventory.find(item => item.id === treatmentDetails.hardwareId);
+        if (hardwareItem) {
+          materials.push({
+            id: `${treatment.id}-hardware`,
+            name: hardwareItem.name,
+            category: hardwareItem.category || 'hardware',
+            quantity: treatment.quantity || 1,
+            unit: hardwareItem.unit || 'unit',
+            supplier: hardwareItem.supplier,
+            source: 'Treatment Hardware',
+            treatment_name: treatment.treatment_type || 'Treatment',
+          });
+        }
+      }
+    });
+
+    return materials;
+  }, [treatments, inventory]);
 
   const getInventoryItem = (itemId: string) => {
     return inventory?.find((item) => item.id === itemId);
@@ -83,6 +180,69 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* Auto-Extracted Materials from Treatments */}
+      {treatmentMaterials.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                <CardTitle>Materials from Treatments</CardTitle>
+              </div>
+              <Badge variant="secondary" className="ml-2">
+                {treatmentMaterials.length} items auto-detected
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Material</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Treatment</TableHead>
+                  <TableHead className="text-right">Quantity</TableHead>
+                  <TableHead>Supplier</TableHead>
+                  <TableHead>Source</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {treatmentMaterials.map((material) => (
+                  <TableRow key={material.id}>
+                    <TableCell className="font-medium">{material.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs">
+                        {material.category}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {material.treatment_name}
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      {material.quantity.toFixed(2)} {material.unit}
+                    </TableCell>
+                    <TableCell>
+                      {material.supplier ? (
+                        <Badge variant="outline" className="text-xs">
+                          {material.supplier}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">No supplier</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className="text-xs">
+                        {material.source}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Products to Order Section */}
       <Card>
         <CardHeader>
