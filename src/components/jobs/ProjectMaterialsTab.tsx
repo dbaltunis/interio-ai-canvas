@@ -50,14 +50,9 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
     }> = [];
 
     treatments.forEach((treatment, idx) => {
-      console.log(`[MATERIALS] Processing treatment ${idx}:`, {
-        id: treatment.id,
-        type: treatment.treatment_type,
-        fabric_details: treatment.fabric_details,
-        calculation_details: treatment.calculation_details,
-        treatment_details: treatment.treatment_details
-      });
-
+      console.log(`[MATERIALS] ========== Treatment ${idx + 1}/${treatments.length} ==========`);
+      console.log('[MATERIALS] Full treatment object:', treatment);
+      
       // Extract fabric materials
       const fabricDetails = typeof treatment.fabric_details === 'object' && treatment.fabric_details 
         ? treatment.fabric_details as Record<string, any> 
@@ -66,16 +61,29 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
       const calculationDetails = typeof treatment.calculation_details === 'object' && treatment.calculation_details
         ? treatment.calculation_details as Record<string, any>
         : {};
-
-      console.log(`[MATERIALS] Treatment ${idx} details:`, { fabricDetails, calculationDetails });
+      
+      console.log('[MATERIALS] fabricDetails:', fabricDetails);
+      console.log('[MATERIALS] calculationDetails:', calculationDetails);
+      
+      // Try multiple field name variations for fabric ID (camelCase and snake_case)
+      const fabricId = fabricDetails.fabricId || fabricDetails.fabric_id || fabricDetails.selectedFabric || fabricDetails.selected_fabric;
+      console.log('[MATERIALS] Fabric ID found:', fabricId);
         
-      if (fabricDetails.fabricId) {
-        const fabricItem = inventory.find(item => item.id === fabricDetails.fabricId);
+      if (fabricId) {
+        const fabricItem = inventory.find(item => item.id === fabricId);
+        console.log('[MATERIALS] Fabric item from inventory:', fabricItem);
+        
         if (fabricItem) {
-          // Calculate fabric usage from treatment
+          // Calculate fabric usage from treatment - try multiple field names
           const fabricUsage = calculationDetails.fabricUsage || 
+                            calculationDetails.fabric_usage ||
                             fabricDetails.fabricUsage || 
+                            fabricDetails.fabric_usage ||
+                            calculationDetails.linear_meters ||
+                            calculationDetails.linearMeters ||
                             0;
+
+          console.log('[MATERIALS] Fabric usage calculated:', fabricUsage);
 
           materials.push({
             id: `${treatment.id}-fabric`,
@@ -88,16 +96,31 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
             treatment_name: treatment.treatment_type || 'Treatment',
             fabric_id: fabricItem.id,
           });
+          
+          console.log('[MATERIALS] ✅ Added fabric material:', materials[materials.length - 1]);
+        } else {
+          console.warn('[MATERIALS] ⚠️ Fabric item not found in inventory for ID:', fabricId);
         }
+      } else {
+        console.log('[MATERIALS] ⚠️ No fabric ID found in treatment');
       }
 
-      // Extract lining materials
-      if (fabricDetails.liningFabricId) {
-        const liningItem = inventory.find(item => item.id === fabricDetails.liningFabricId);
+      // Extract lining materials - try multiple field names
+      const liningId = fabricDetails.liningFabricId || fabricDetails.lining_fabric_id || fabricDetails.selectedLining || fabricDetails.selected_lining;
+      console.log('[MATERIALS] Lining ID found:', liningId);
+      
+      if (liningId) {
+        const liningItem = inventory.find(item => item.id === liningId);
+        console.log('[MATERIALS] Lining item from inventory:', liningItem);
+        
         if (liningItem) {
           const liningUsage = calculationDetails.liningUsage || 
+                            calculationDetails.lining_usage ||
                             fabricDetails.liningUsage || 
+                            fabricDetails.lining_usage ||
                             0;
+          
+          console.log('[MATERIALS] Lining usage calculated:', liningUsage);
 
           materials.push({
             id: `${treatment.id}-lining`,
@@ -110,16 +133,25 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
             treatment_name: treatment.treatment_type || 'Treatment',
             fabric_id: liningItem.id,
           });
+          
+          console.log('[MATERIALS] ✅ Added lining material:', materials[materials.length - 1]);
+        } else {
+          console.warn('[MATERIALS] ⚠️ Lining item not found in inventory for ID:', liningId);
         }
       }
 
-      // Extract hardware/components
+      // Extract hardware/components - try multiple field names
       const treatmentDetails = typeof treatment.treatment_details === 'object' && treatment.treatment_details
         ? treatment.treatment_details as Record<string, any>
         : {};
+      
+      const hardwareId = treatmentDetails.hardwareId || treatmentDetails.hardware_id || treatmentDetails.selectedHardware || treatmentDetails.selected_hardware;
+      console.log('[MATERIALS] Hardware ID found:', hardwareId);
         
-      if (treatmentDetails.hardwareId) {
-        const hardwareItem = inventory.find(item => item.id === treatmentDetails.hardwareId);
+      if (hardwareId) {
+        const hardwareItem = inventory.find(item => item.id === hardwareId);
+        console.log('[MATERIALS] Hardware item from inventory:', hardwareItem);
+        
         if (hardwareItem) {
           materials.push({
             id: `${treatment.id}-hardware`,
@@ -131,9 +163,19 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
             source: 'Treatment Hardware',
             treatment_name: treatment.treatment_type || 'Treatment',
           });
+          
+          console.log('[MATERIALS] ✅ Added hardware material:', materials[materials.length - 1]);
+        } else {
+          console.warn('[MATERIALS] ⚠️ Hardware item not found in inventory for ID:', hardwareId);
         }
       }
+      
+      console.log(`[MATERIALS] Treatment ${idx + 1} complete. Total materials so far: ${materials.length}`);
     });
+
+    console.log('[MATERIALS] ========== EXTRACTION COMPLETE ==========');
+    console.log('[MATERIALS] Total materials extracted:', materials.length);
+    console.log('[MATERIALS] All materials:', materials);
 
     return materials;
   }, [treatments, inventory]);
