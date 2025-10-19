@@ -252,7 +252,7 @@ export const AdaptiveFabricPricingDisplay = ({
             </div>
             <div className="flex justify-between">
               <span>Fullness Ratio:</span>
-              <span className="font-medium text-foreground">{fabricCalculation.fullnessRatio || 0}x</span>
+              <span className="font-medium text-foreground">{treatmentCategory === 'roman_blinds' ? '1' : (fabricCalculation.fullnessRatio || 0)}x</span>
             </div>
             <div className="flex justify-between">
               <span>Required Width:</span>
