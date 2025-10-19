@@ -398,7 +398,43 @@ export const CostCalculationSummary = ({
     const curtainCount = panelConfig === 'pair' ? 2 : 1;
     const fabricUsage = calculateFabricUsage();
 
-    // Cost per metre of fabric used
+    // Check if this is a blind and we're using per_sqm pricing
+    const isBlindTreatment = template.treatment_category && 
+      (template.treatment_category.includes('blind') || template.treatment_category === 'shutters');
+    
+    const pricingType = selectedMethod?.pricing_type || template.pricing_type;
+    
+    // PER SQUARE METRE PRICING (for blinds/shutters)
+    if (pricingType === 'per_sqm' && isBlindTreatment && fabricUsage.squareMeters) {
+      const pricePerSqm = isHandFinished 
+        ? (selectedMethod?.hand_price_per_metre || template.hand_price_per_metre || template.machine_price_per_metre || 0)
+        : (selectedMethod?.machine_price_per_metre || template.machine_price_per_metre || 0);
+      
+      if (pricePerSqm) {
+        cost = pricePerSqm * fabricUsage.squareMeters;
+        console.log(`💰 ${manufacturingType} cost/sqm: ${pricePerSqm} × ${fabricUsage.squareMeters}sqm = ${cost}`);
+      }
+      
+      console.log(`🏭 Total ${manufacturingType} finished makeup cost (per sqm):`, cost);
+      return cost;
+    }
+    
+    // PER UNIT PRICING (for blinds/shutters with fixed pricing)
+    if (pricingType === 'per_unit' && isBlindTreatment) {
+      const pricePerUnit = isHandFinished
+        ? (selectedMethod?.hand_price_per_drop || template.hand_price_per_drop || 0)
+        : (selectedMethod?.machine_price_per_drop || template.machine_price_per_drop || 0);
+      
+      if (pricePerUnit) {
+        cost = pricePerUnit;
+        console.log(`💰 ${manufacturingType} cost/unit: ${pricePerUnit}`);
+      }
+      
+      console.log(`🏭 Total ${manufacturingType} finished makeup cost (per unit):`, cost);
+      return cost;
+    }
+
+    // Cost per metre of fabric used (for curtains)
     if (pricePerMetre) {
       cost += pricePerMetre * fabricUsage.linearMeters;
       console.log(`💰 ${manufacturingType} cost/metre: ${pricePerMetre} × ${fabricUsage.linearMeters}m = ${cost}`);
