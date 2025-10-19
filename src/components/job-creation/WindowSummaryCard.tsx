@@ -97,10 +97,22 @@ export function WindowSummaryCard({
   const enrichedBreakdown = useMemo(() => {
     if (!summary) return [] as any[];
 
+    console.log('🔍 Building enrichedBreakdown from summary:', {
+      fabric_cost: summary.fabric_cost,
+      manufacturing_cost: summary.manufacturing_cost,
+      options_cost: summary.options_cost,
+      total_cost: summary.total_cost,
+      cost_breakdown: summary.cost_breakdown
+    });
+
     const raw = Array.isArray(summary.cost_breakdown) ? summary.cost_breakdown : [];
     const hasStructured = raw.some((it: any) => it && 'category' in it && 'total_cost' in it);
-    if (hasStructured) return raw as any[];
+    if (hasStructured) {
+      console.log('✅ Using structured cost_breakdown:', raw);
+      return raw as any[];
+    }
 
+    console.log('🔨 Building breakdown from individual fields');
     const items: any[] = [];
 
     // FABRIC: Always include fabric details with proper name display
