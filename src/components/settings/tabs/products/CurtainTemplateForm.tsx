@@ -489,6 +489,14 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         blind_bottom_hem_cm: formData.blind_bottom_hem_cm ? parseFloat(formData.blind_bottom_hem_cm.toString()) : undefined,
         blind_side_hem_cm: formData.blind_side_hem_cm ? parseFloat(formData.blind_side_hem_cm.toString()) : undefined,
         
+        // Blind/Shutter-specific: Manufacturing settings
+        bracket_deduction: formData.bracket_deduction ? parseFloat(formData.bracket_deduction.toString()) : undefined,
+        minimum_width: formData.minimum_width ? parseFloat(formData.minimum_width.toString()) : undefined,
+        maximum_width: formData.maximum_width ? parseFloat(formData.maximum_width.toString()) : undefined,
+        minimum_height: formData.minimum_height ? parseFloat(formData.minimum_height.toString()) : undefined,
+        maximum_height: formData.maximum_height ? parseFloat(formData.maximum_height.toString()) : undefined,
+        stack_allowance: formData.stack_allowance ? parseFloat(formData.stack_allowance.toString()) : undefined,
+        
         active: true
       };
 
