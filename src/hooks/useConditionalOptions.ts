@@ -77,52 +77,76 @@ export const useConditionalOptions = (templateId?: string, selectedOptions: Sele
       console.log(`🔒 Default HIDING option controlled by show rule: ${optionKey}`);
     });
 
-    // Second pass: Evaluate rules and apply effects
-    rules.forEach(rule => {
-      const conditionMet = evaluateCondition(rule);
-      
-      console.log(`📋 Rule "${rule.description || rule.id}":`, {
-        conditionMet,
-        action: rule.effect.action,
-        target: rule.effect.target_option_key
-      });
-      
-      if (conditionMet) {
-        const { action, target_option_key, target_value } = rule.effect;
+    // Cascading evaluation: Keep evaluating until no changes occur
+    // This handles nested conditions (e.g., headrail -> lift_system -> chain_side)
+    let hasChanges = true;
+    let iterations = 0;
+    const maxIterations = 10; // Prevent infinite loops
 
-        switch (action) {
-          case 'show_option':
-            console.log(`✅ SHOWING option: ${target_option_key}`);
-            shownOptions.add(target_option_key);
-            hiddenOptions.delete(target_option_key);
-            break;
-          
-          case 'hide_option':
-            if (!shownOptions.has(target_option_key)) {
-              console.log(`❌ HIDING option: ${target_option_key}`);
-              hiddenOptions.add(target_option_key);
-            }
-            break;
-          
-          case 'require_option':
-            console.log(`⚠️ REQUIRING option: ${target_option_key}`);
-            requiredOptions.add(target_option_key);
-            // Also show required options
-            shownOptions.add(target_option_key);
-            hiddenOptions.delete(target_option_key);
-            break;
-          
-          case 'set_default':
-            if (target_value) {
-              console.log(`🎯 SETTING DEFAULT for ${target_option_key}: ${target_value}`);
-              defaultValues[target_option_key] = target_value;
-            }
-            break;
+    while (hasChanges && iterations < maxIterations) {
+      hasChanges = false;
+      iterations++;
+      
+      console.log(`🔄 Cascade iteration ${iterations}`);
+
+      rules.forEach(rule => {
+        const conditionMet = evaluateCondition(rule);
+        
+        console.log(`📋 Rule "${rule.description || rule.id}":`, {
+          conditionMet,
+          action: rule.effect.action,
+          target: rule.effect.target_option_key,
+          iteration: iterations
+        });
+        
+        if (conditionMet) {
+          const { action, target_option_key, target_value } = rule.effect;
+
+          switch (action) {
+            case 'show_option':
+              if (hiddenOptions.has(target_option_key)) {
+                console.log(`✅ SHOWING option: ${target_option_key} (iteration ${iterations})`);
+                shownOptions.add(target_option_key);
+                hiddenOptions.delete(target_option_key);
+                hasChanges = true; // Trigger another iteration
+              }
+              break;
+            
+            case 'hide_option':
+              if (!shownOptions.has(target_option_key) && !hiddenOptions.has(target_option_key)) {
+                console.log(`❌ HIDING option: ${target_option_key}`);
+                hiddenOptions.add(target_option_key);
+                hasChanges = true;
+              }
+              break;
+            
+            case 'require_option':
+              if (!requiredOptions.has(target_option_key)) {
+                console.log(`⚠️ REQUIRING option: ${target_option_key}`);
+                requiredOptions.add(target_option_key);
+                hasChanges = true;
+              }
+              // Also show required options
+              if (hiddenOptions.has(target_option_key)) {
+                shownOptions.add(target_option_key);
+                hiddenOptions.delete(target_option_key);
+                hasChanges = true;
+              }
+              break;
+            
+            case 'set_default':
+              if (target_value && !defaultValues[target_option_key]) {
+                console.log(`🎯 SETTING DEFAULT for ${target_option_key}: ${target_value}`);
+                defaultValues[target_option_key] = target_value;
+                hasChanges = true;
+              }
+              break;
+          }
         }
-      }
-    });
+      });
+    }
 
-    console.log('📦 Final conditional state:', {
+    console.log('📦 Final conditional state after', iterations, 'iterations:', {
       hidden: Array.from(hiddenOptions),
       shown: Array.from(shownOptions),
       required: Array.from(requiredOptions),
