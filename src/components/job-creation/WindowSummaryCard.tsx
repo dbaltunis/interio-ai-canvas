@@ -469,107 +469,38 @@ export function WindowSummaryCard({
               </div>
 
 
-              {/* Expandable Cost Breakdown */}
+              {/* Expandable Cost Breakdown - Use enrichedBreakdown for accurate costs */}
               {showBreakdown && (
                 <div className="border-t p-3 bg-muted/20">
                   <div className="space-y-2">
-                    {/* Fabric/Material/Wallpaper */}
-                    <div className="border rounded-lg p-3">
-                  <SummaryItem
-                    title={
-                      treatmentType === 'wallpaper' 
-                        ? 'Wallpaper' 
-                        : treatmentType?.includes('blind') 
-                          ? 'Material' 
-                          : 'Fabric'
-                    }
-                    main={formatCurrency(summary.fabric_cost, userCurrency)}
-                    sub={
-                      treatmentType === 'wallpaper'
-                        ? `${summary.widths_required || 1} roll(s)`
-                        : `${summary.linear_meters?.toFixed(1) || '0'} m • ${summary.widths_required || 1} width(s)`
-                    }
-                  />
-                </div>
+                    {/* Render all breakdown items from enrichedBreakdown for accuracy */}
+                    {enrichedBreakdown.map((item) => {
+                      // Skip options here - they're rendered separately below
+                      if (item.category === 'option' || item.category === 'options') return null;
+                      
+                      return (
+                        <div key={item.id} className="border rounded-lg p-3">
+                          <SummaryItem
+                            title={item.name}
+                            main={formatCurrency(item.total_cost, userCurrency)}
+                            sub={item.description || ''}
+                          />
+                        </div>
+                      );
+                    })}
 
-                {/* Curtains-specific items */}
-                {(treatmentType === 'curtains' || !treatmentType) && (
-                  <>
-                    {Number(summary.lining_cost) > 0 && (
-                      <div className="border rounded-lg p-3">
-                        <SummaryItem
-                          title="Lining"
-                          main={formatCurrency(summary.lining_cost, userCurrency)}
-                          sub={summary.lining_details?.type || 'Interlining'}
-                        />
-                      </div>
-                    )}
-                    
-                    {Number(summary.heading_details?.cost || 0) > 0 && (
-                      <div className="border rounded-lg p-3">
-                        <SummaryItem
-                          title="Heading"
-                          main={formatCurrency(summary.heading_details?.cost || 0, userCurrency)}
-                          sub={summary.heading_details?.heading_name || 'Standard'}
-                        />
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {/* Blinds-specific items */}
-                {(treatmentType?.includes('blind') || treatmentType?.includes('shutter')) && (
-                  <>
-                    {summary.hardware_details && (
-                      <div className="border rounded-lg p-3">
-                        <SummaryItem
-                          title="Hardware/Mechanism"
-                          main={formatCurrency(summary.hardware_details?.price || 0, userCurrency)}
-                          sub={summary.hardware_details?.name || 'Control mechanism'}
-                        />
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {/* Wallpaper-specific items */}
-                {treatmentType === 'wallpaper' && (
-                  <>
-                    {summary.wallpaper_details?.adhesive_cost && (
-                      <div className="border rounded-lg p-3">
-                        <SummaryItem
-                          title="Adhesive"
-                          main={formatCurrency(summary.wallpaper_details.adhesive_cost, userCurrency)}
-                          sub="Installation adhesive"
-                        />
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {/* Selected Options - show ALL options (even zero-price) */}
-                {enrichedBreakdown
-                  .filter(item => item.category === 'option')
-                  .map((item) => (
-                    <div key={item.id} className="border rounded-lg p-3">
-                      <SummaryItem
-                        title={item.name}
-                        main={formatCurrency(item.total_cost, userCurrency)}
-                        sub={item.description}
-                      />
-                    </div>
-                  ))}
-
-                    {/* Manufacturing (show for curtains and blinds, not wallpaper) */}
-                    {treatmentType !== 'wallpaper' && (
-                      <div className="border rounded-lg p-3">
-                        <SummaryItem
-                          title="Manufacturing"
-                          main={formatCurrency(summary.manufacturing_cost, userCurrency)}
-                          sub={summary.manufacturing_type || 'machine'}
-                        />
-                      </div>
-                    )}
+                    {/* Selected Options - show ALL options from enrichedBreakdown */}
+                    {enrichedBreakdown
+                      .filter(item => item.category === 'option' || item.category === 'options')
+                      .map((item) => (
+                        <div key={item.id} className="border rounded-lg p-3">
+                          <SummaryItem
+                            title={item.name}
+                            main={formatCurrency(item.total_cost, userCurrency)}
+                            sub={item.description}
+                          />
+                        </div>
+                      ))}
                   </div>
                 </div>
               )}
