@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useTreatmentOptions } from "@/hooks/useTreatmentOptions";
+import { useConditionalOptions } from "@/hooks/useConditionalOptions";
 import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
 
@@ -31,6 +32,13 @@ export const DynamicRollerBlindFields = ({
     treatmentCategory || templateId, 
     treatmentCategory ? 'category' : 'template'
   );
+
+  // Use rules engine to determine visibility, required status, and defaults
+  const {
+    isOptionVisible,
+    isOptionRequired,
+    getDefaultValue,
+  } = useConditionalOptions(templateId, measurements);
 
   // Check if conditional visibility condition is met
   const isConditionMet = (showIf: any) => {
@@ -129,10 +137,10 @@ export const DynamicRollerBlindFields = ({
     );
   }
 
-  // Filter and sort visible options
-  // Filter, sort, and deduplicate options (safety net in case of data issues)
+  // Filter and sort visible options - apply BOTH static visibility AND rule-based visibility
   const visibleOptions = treatmentOptions
-    .filter(opt => opt.visible)
+    .filter(opt => opt.visible) // Static visibility from database
+    .filter(opt => isOptionVisible(opt.key)) // Rule-based visibility
     .sort((a, b) => a.order_index - b.order_index)
     .filter((opt, index, self) => 
       index === self.findIndex(o => o.key === opt.key)
@@ -148,7 +156,9 @@ export const DynamicRollerBlindFields = ({
 
         const optionValues = getOptionValues(option);
         const currentValue = measurements[option.key];
-        const defaultValue = optionValues[0]?.value;
+        const ruleDefaultValue = getDefaultValue(option.key);
+        const defaultValue = ruleDefaultValue || optionValues[0]?.value;
+        const isRequired = option.required || isOptionRequired(option.key);
 
         // Render based on input_type
         switch (option.input_type) {
@@ -157,7 +167,7 @@ export const DynamicRollerBlindFields = ({
               <div key={option.id} className="space-y-2">
                 <Label htmlFor={option.key}>
                   {option.label}
-                  {option.required && <span className="text-destructive ml-1">*</span>}
+                  {isRequired && <span className="text-destructive ml-1">*</span>}
                 </Label>
                 <Select
                   value={currentValue || defaultValue}
@@ -190,7 +200,7 @@ export const DynamicRollerBlindFields = ({
               <div key={option.id} className="space-y-2">
                 <Label>
                   {option.label}
-                  {option.required && <span className="text-destructive ml-1">*</span>}
+                  {isRequired && <span className="text-destructive ml-1">*</span>}
                 </Label>
                 <RadioGroup
                   value={currentValue || defaultValue}
@@ -219,7 +229,7 @@ export const DynamicRollerBlindFields = ({
               <div key={option.id} className="space-y-2">
                 <Label htmlFor={option.key}>
                   {option.label}
-                  {option.required && <span className="text-destructive ml-1">*</span>}
+                  {isRequired && <span className="text-destructive ml-1">*</span>}
                 </Label>
                 <Input
                   id={option.key}
@@ -237,7 +247,7 @@ export const DynamicRollerBlindFields = ({
               <div key={option.id} className="space-y-2">
                 <Label htmlFor={option.key}>
                   {option.label}
-                  {option.required && <span className="text-destructive ml-1">*</span>}
+                  {isRequired && <span className="text-destructive ml-1">*</span>}
                 </Label>
                 <Input
                   id={option.key}
@@ -255,7 +265,7 @@ export const DynamicRollerBlindFields = ({
               <div key={option.id} className="flex items-center justify-between space-x-2">
                 <Label htmlFor={option.key}>
                   {option.label}
-                  {option.required && <span className="text-destructive ml-1">*</span>}
+                  {isRequired && <span className="text-destructive ml-1">*</span>}
                 </Label>
                 <Switch
                   id={option.key}
