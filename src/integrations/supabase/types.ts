@@ -6324,10 +6324,13 @@ export type Database = {
         Row: {
           cost_breakdown: Json | null
           currency: string
+          drop: number | null
           extras_details: Json | null
           fabric_cost: number | null
           fabric_details: Json | null
+          hardware_cost: number | null
           hardware_details: Json | null
+          heading_cost: number | null
           heading_details: Json | null
           linear_meters: number | null
           lining_cost: number | null
@@ -6337,13 +6340,16 @@ export type Database = {
           manufacturing_type: string | null
           material_details: Json | null
           measurements_details: Json | null
+          options_cost: number | null
           price_per_meter: number | null
           pricing_type: string | null
+          rail_width: number | null
           selected_fabric_id: string | null
           selected_hardware_id: string | null
           selected_heading_id: string | null
           selected_lining_type: string | null
           selected_material_id: string | null
+          selected_options: Json | null
           template_details: Json | null
           template_id: string | null
           template_name: string | null
@@ -6362,10 +6368,13 @@ export type Database = {
         Insert: {
           cost_breakdown?: Json | null
           currency?: string
+          drop?: number | null
           extras_details?: Json | null
           fabric_cost?: number | null
           fabric_details?: Json | null
+          hardware_cost?: number | null
           hardware_details?: Json | null
+          heading_cost?: number | null
           heading_details?: Json | null
           linear_meters?: number | null
           lining_cost?: number | null
@@ -6375,13 +6384,16 @@ export type Database = {
           manufacturing_type?: string | null
           material_details?: Json | null
           measurements_details?: Json | null
+          options_cost?: number | null
           price_per_meter?: number | null
           pricing_type?: string | null
+          rail_width?: number | null
           selected_fabric_id?: string | null
           selected_hardware_id?: string | null
           selected_heading_id?: string | null
           selected_lining_type?: string | null
           selected_material_id?: string | null
+          selected_options?: Json | null
           template_details?: Json | null
           template_id?: string | null
           template_name?: string | null
@@ -6400,10 +6412,13 @@ export type Database = {
         Update: {
           cost_breakdown?: Json | null
           currency?: string
+          drop?: number | null
           extras_details?: Json | null
           fabric_cost?: number | null
           fabric_details?: Json | null
+          hardware_cost?: number | null
           hardware_details?: Json | null
+          heading_cost?: number | null
           heading_details?: Json | null
           linear_meters?: number | null
           lining_cost?: number | null
@@ -6413,13 +6428,16 @@ export type Database = {
           manufacturing_type?: string | null
           material_details?: Json | null
           measurements_details?: Json | null
+          options_cost?: number | null
           price_per_meter?: number | null
           pricing_type?: string | null
+          rail_width?: number | null
           selected_fabric_id?: string | null
           selected_hardware_id?: string | null
           selected_heading_id?: string | null
           selected_lining_type?: string | null
           selected_material_id?: string | null
+          selected_options?: Json | null
           template_details?: Json | null
           template_id?: string | null
           template_name?: string | null

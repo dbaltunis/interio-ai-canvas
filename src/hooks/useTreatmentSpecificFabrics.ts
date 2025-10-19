@@ -17,13 +17,15 @@ export const useTreatmentSpecificFabrics = (treatmentCategory: TreatmentCategory
         return [];
       }
 
-      // Each treatment type should only see its specific fabric category
-      const categories = treatmentCategory === 'roller_blinds'
+      // Handle both specific and generic treatment categories
+      const categories = treatmentCategory === 'roller_blinds' || (treatmentCategory === 'blinds' && config.inventoryCategory === 'roller_blind_fabric')
         ? ['roller_fabric', 'roller_blind_fabric'] // Support both naming conventions
-        : treatmentCategory === 'roman_blinds'
+        : treatmentCategory === 'roman_blinds' || (treatmentCategory === 'blinds' && config.inventoryCategory === 'curtain_fabric')
         ? ['curtain_fabric'] // Roman blinds use curtain fabrics
         : treatmentCategory === 'panel_glide'
         ? ['panel_glide_fabric', 'curtain_fabric']
+        : treatmentCategory === 'curtains'
+        ? ['curtain_fabric']
         : [config.inventoryCategory];
       
       console.log('🔍 Fetching fabrics for treatment:', treatmentCategory, 'with categories:', categories);

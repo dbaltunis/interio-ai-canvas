@@ -400,9 +400,11 @@ export const DynamicWindowWorksheet = forwardRef<{
             throw new Error("User not authenticated");
           }
 
-          // Detect the specific treatment type early for calculations
+          // Detect the specific treatment type early for calculations - KEEP SPECIFIC TYPE
           const specificTreatmentType = detectTreatmentType(selectedTemplate);
-          const generalCategory = specificTreatmentType.includes('blind') 
+          
+          // Display category for UI grouping only - DO NOT use for database storage
+          const displayCategory = specificTreatmentType.includes('blind') 
             ? 'blinds' 
             : specificTreatmentType.includes('shutter') 
             ? 'shutters' 
@@ -488,7 +490,7 @@ export const DynamicWindowWorksheet = forwardRef<{
               
               console.log("💰 Wallpaper autoSave calculation:", wallpaperDetails);
             }
-          } else if (generalCategory === 'blinds' || generalCategory === 'shutters') {
+          } else if (displayCategory === 'blinds' || displayCategory === 'shutters') {
             // BLIND/SHUTTER CALCULATIONS
             const width = parseFloat(measurements.rail_width) || 0;
             const height = parseFloat(measurements.drop) || 0;
@@ -509,11 +511,11 @@ export const DynamicWindowWorksheet = forwardRef<{
               templateMachinePrice: selectedTemplate?.machine_price_per_metre,
               templateUnitPrice: selectedTemplate?.unit_price,
               material: materialForCalc,
-              category: generalCategory,
+              category: displayCategory,
               selectedOptions
             });
             
-            const blindCalc = generalCategory === 'shutters' 
+            const blindCalc = displayCategory === 'shutters' 
               ? calculateShutterCost(width, height, selectedTemplate, materialForCalc, selectedOptions || [])
               : calculateBlindCost(width, height, selectedTemplate, materialForCalc, selectedOptions || []);
             
@@ -600,7 +602,7 @@ export const DynamicWindowWorksheet = forwardRef<{
           }
 
           // Calculate manufacturing cost (for curtains only - blinds already calculated)
-          if (generalCategory === 'curtains' && selectedTemplate && fabricCalculation) {
+          if (displayCategory === 'curtains' && selectedTemplate && fabricCalculation) {
             const manufacturingType = selectedTemplate.manufacturing_type || 'machine';
             const linearMetersForManufacturing = fabricCalculation.linearMeters || 0;
             if (manufacturingType === 'machine') {
@@ -613,7 +615,7 @@ export const DynamicWindowWorksheet = forwardRef<{
           // Calculate total cost 
           if (treatmentCategory === 'wallpaper') {
             totalCost = fabricCost; // Already calculated above for wallpaper
-          } else if (generalCategory === 'blinds' || generalCategory === 'shutters') {
+          } else if (displayCategory === 'blinds' || displayCategory === 'shutters') {
             // Blinds/shutters totalCost already calculated and includes options
             // DO NOT RECALCULATE - use blindCalc.totalCost which includes all components
           } else {
@@ -667,19 +669,21 @@ export const DynamicWindowWorksheet = forwardRef<{
 
           // Recalculate total cost with proper lining and heading costs
           // CRITICAL: For blinds/shutters, use the already-calculated totalCost (includes options)
-          const finalTotalCost = (generalCategory === 'blinds' || generalCategory === 'shutters') 
+          const finalTotalCost = (displayCategory === 'blinds' || displayCategory === 'shutters') 
             ? totalCost // Already includes all components including options
             : fabricCost + finalLiningCost + finalHeadingCost + manufacturingCost;
 
           // Create summary data for windows_summary table - Save ALL 4 steps
-          // Note: specificTreatmentType and generalCategory already declared earlier
-          
-          console.log('🎯 DynamicWorksheet treatment type detection for save:', {
+          console.log('💾 DynamicWorksheet treatment data for save:', {
             specificTreatmentType,
-            generalCategory,
+            displayCategory,
             templateName: selectedTemplate?.name,
             curtainType: selectedTemplate?.curtain_type,
-            treatmentCategory
+            treatmentCategory,
+            options_count: selectedOptions?.length,
+            options_cost: blindOptionsCost,
+            hardware_cost: hardwareCost,
+            heading_cost: finalHeadingCost
           });
           
           const summaryData = {
@@ -694,7 +698,14 @@ export const DynamicWindowWorksheet = forwardRef<{
             manufacturing_type: selectedTemplate?.manufacturing_type || 'machine',
             manufacturing_cost: manufacturingCost,
             hardware_cost: hardwareCost || 0,
-            options_cost: (generalCategory === 'blinds' || generalCategory === 'shutters') ? (blindOptionsCost || 0) : 0,
+            options_cost: blindOptionsCost || 0,
+            heading_cost: finalHeadingCost || 0,
+            selected_options: selectedOptions || [],
+            
+            // Add dimensions for easy querying
+            rail_width: measurements.rail_width ? parseFloat(measurements.rail_width) : null,
+            drop: measurements.drop ? parseFloat(measurements.drop) : null,
+            
             total_cost: finalTotalCost,
             template_id: selectedTemplate?.id,
             pricing_type: selectedTemplate?.pricing_type || 'per_metre',
@@ -718,7 +729,7 @@ export const DynamicWindowWorksheet = forwardRef<{
               manufacturing_type: selectedTemplate?.manufacturing_type
             },
             treatment_type: specificTreatmentType,
-            treatment_category: generalCategory,
+            treatment_category: specificTreatmentType, // CRITICAL: Use specific type, not generic
             
             // STEP 3: Inventory Selections - SIMPLIFIED (only IDs and essential fields)
             fabric_details: selectedItems.fabric ? {
@@ -743,7 +754,7 @@ export const DynamicWindowWorksheet = forwardRef<{
               selling_price: selectedItems.material.selling_price || selectedItems.material.unit_price,
               image_url: selectedItems.material.image_url
             } : (
-              (generalCategory === 'blinds' || generalCategory === 'shutters') && selectedTemplate
+              (displayCategory === 'blinds' || displayCategory === 'shutters') && selectedTemplate
                 ? {
                     id: selectedTemplate.id,
                     name: selectedTemplate.name,
@@ -789,6 +800,17 @@ export const DynamicWindowWorksheet = forwardRef<{
           };
 
           // PERFORMANCE FIX: Direct save instead of SaveQueue (30s -> 1s)
+          console.log('💾 Saving summary data:', {
+            window_id: summaryData.window_id,
+            treatment_category: summaryData.treatment_category,
+            treatment_type: summaryData.treatment_type,
+            fabric_name: summaryData.fabric_details?.name,
+            options_cost: summaryData.options_cost,
+            hardware_cost: summaryData.hardware_cost,
+            selected_options_count: summaryData.selected_options?.length,
+            total_cost: summaryData.total_cost
+          });
+
           const { error: saveError } = await supabase
             .from('windows_summary')
             .upsert(summaryData, { onConflict: 'window_id' });
@@ -798,6 +820,8 @@ export const DynamicWindowWorksheet = forwardRef<{
             toast.error("Failed to save window summary");
             throw saveError;
           }
+          
+          console.log('✅ Summary data saved successfully');
 
           // Mark as saved
           setHasUnsavedChanges(false);

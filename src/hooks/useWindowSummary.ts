@@ -58,10 +58,29 @@ export const useWindowSummary = (windowId: string | undefined) => {
       if (error) throw error;
       if (!data) return null as WindowSummary | null;
 
-      // Extract selected_options from measurements_details and expose at top level
-      if (data.measurements_details && (data.measurements_details as any).selected_options) {
+      // Extract selected_options from top-level OR measurements_details
+      if (!data.selected_options && data.measurements_details && (data.measurements_details as any).selected_options) {
         (data as any).selected_options = (data.measurements_details as any).selected_options;
+      } else if (!data.selected_options) {
+        // Fallback to empty array if not found anywhere
+        (data as any).selected_options = [];
       }
+
+      // Extract dimensions if missing at top level
+      if (!data.rail_width && data.measurements_details) {
+        const md = data.measurements_details as any;
+        (data as any).rail_width = md.rail_width_cm || md.rail_width;
+        (data as any).drop = md.drop_cm || md.drop;
+      }
+
+      console.log('📖 Loaded summary data:', {
+        window_id: data.window_id,
+        treatment_category: data.treatment_category,
+        fabric_name: (data.fabric_details as any)?.name,
+        options_cost: data.options_cost,
+        selected_options_count: (data.selected_options as any)?.length,
+        total_cost: data.total_cost
+      });
 
       return data as WindowSummary | null;
     },
