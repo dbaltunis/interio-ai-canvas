@@ -165,7 +165,11 @@ export const DynamicRollerBlindFields = ({
       
       const targetOption = treatmentOptions.find(opt => opt.key === targetKey);
       if (targetOption && isOptionVisible(targetKey)) {
-        conditionalMap.get(triggerKey)!.push(targetOption);
+        // Check if this option is already in the list (deduplicate)
+        const existingOptions = conditionalMap.get(triggerKey)!;
+        if (!existingOptions.some(opt => opt.key === targetKey)) {
+          existingOptions.push(targetOption);
+        }
       }
     }
   });
