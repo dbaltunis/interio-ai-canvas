@@ -86,6 +86,77 @@ export const CostCalculationSummary = ({
     );
   }
 
+  // CRITICAL: Detect blinds/shutters and use specialized calculation
+  const treatmentCategory = template.treatment_category?.toLowerCase() || '';
+  const isBlindsOrShutters = treatmentCategory.includes('blind') || treatmentCategory.includes('shutter');
+
+  if (isBlindsOrShutters) {
+    // Import blind calculation utilities
+    const { calculateBlindCost, calculateShutterCost } = require('@/utils/blindCostCalculations');
+    
+    const width = parseFloat(measurements.rail_width) || 0;
+    const height = parseFloat(measurements.drop) || 0;
+    
+    // Format selected options
+    const blindOptions = selectedOptions.map(opt => ({
+      name: opt.name,
+      price: opt.price || 0
+    }));
+    
+    const blindResult = treatmentCategory.includes('shutter')
+      ? calculateShutterCost(width, height, template, selectedFabric, blindOptions)
+      : calculateBlindCost(width, height, template, selectedFabric, blindOptions);
+    
+    const formatCurrency = (value: number) => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(value);
+    
+    return (
+      <Card className="bg-card/50 border-primary/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2">
+            <Calculator className="h-5 w-5 text-primary" />
+            Cost Summary
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-muted-foreground">Material</span>
+              <span className="font-semibold">{formatCurrency(blindResult.fabricCost)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-muted-foreground">Assembly</span>
+              <span className="font-semibold">{formatCurrency(blindResult.manufacturingCost)}</span>
+            </div>
+            {blindResult.optionsCost > 0 && (
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-muted-foreground">Options</span>
+                <span className="font-semibold">{formatCurrency(blindResult.optionsCost)}</span>
+              </div>
+            )}
+            <div className="border-t pt-2 mt-2">
+              <div className="flex justify-between items-center">
+                <span className="font-bold">Total</span>
+                <span className="font-bold text-lg text-primary">{formatCurrency(blindResult.totalCost)}</span>
+              </div>
+            </div>
+          </div>
+          <div className="text-xs text-muted-foreground mt-2">
+            <div>Template: {template.name}</div>
+            <div>Method: {template.pricing_type || 'per_sqm'}</div>
+            {selectedOptions.length > 0 && (
+              <div className="mt-1">
+                <div className="font-medium">Selected Options:</div>
+                {selectedOptions.map((opt, idx) => (
+                  <div key={idx}>• {opt.name}{opt.price > 0 ? ` £${opt.price.toFixed(2)}` : ' Included'}</div>
+                ))}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Hooks MUST be called after early returns are handled
   const { units } = useMeasurementUnits();
   const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
