@@ -1435,6 +1435,7 @@ export type Database = {
           blind_header_hem_cm: number | null
           blind_side_hem_cm: number | null
           bottom_hem: number
+          bracket_deduction: number | null
           compatible_hardware: string[] | null
           complexity_pricing_tiers: Json | null
           created_at: string
@@ -1472,6 +1473,10 @@ export type Database = {
           machine_price_per_panel: number | null
           machine_price_per_sqm: number | null
           manufacturing_type: string
+          maximum_height: number | null
+          maximum_width: number | null
+          minimum_height: number | null
+          minimum_width: number | null
           name: string
           offers_hand_finished: boolean | null
           overlap: number | null
@@ -1486,6 +1491,7 @@ export type Database = {
           seam_hems: number
           selected_heading_ids: string[] | null
           side_hems: number
+          stack_allowance: number | null
           treatment_category: string | null
           unit_price: number | null
           updated_at: string
@@ -1501,6 +1507,7 @@ export type Database = {
           blind_header_hem_cm?: number | null
           blind_side_hem_cm?: number | null
           bottom_hem?: number
+          bracket_deduction?: number | null
           compatible_hardware?: string[] | null
           complexity_pricing_tiers?: Json | null
           created_at?: string
@@ -1538,6 +1545,10 @@ export type Database = {
           machine_price_per_panel?: number | null
           machine_price_per_sqm?: number | null
           manufacturing_type?: string
+          maximum_height?: number | null
+          maximum_width?: number | null
+          minimum_height?: number | null
+          minimum_width?: number | null
           name: string
           offers_hand_finished?: boolean | null
           overlap?: number | null
@@ -1552,6 +1563,7 @@ export type Database = {
           seam_hems?: number
           selected_heading_ids?: string[] | null
           side_hems?: number
+          stack_allowance?: number | null
           treatment_category?: string | null
           unit_price?: number | null
           updated_at?: string
@@ -1567,6 +1579,7 @@ export type Database = {
           blind_header_hem_cm?: number | null
           blind_side_hem_cm?: number | null
           bottom_hem?: number
+          bracket_deduction?: number | null
           compatible_hardware?: string[] | null
           complexity_pricing_tiers?: Json | null
           created_at?: string
@@ -1604,6 +1617,10 @@ export type Database = {
           machine_price_per_panel?: number | null
           machine_price_per_sqm?: number | null
           manufacturing_type?: string
+          maximum_height?: number | null
+          maximum_width?: number | null
+          minimum_height?: number | null
+          minimum_width?: number | null
           name?: string
           offers_hand_finished?: boolean | null
           overlap?: number | null
@@ -1618,6 +1635,7 @@ export type Database = {
           seam_hems?: number
           selected_heading_ids?: string[] | null
           side_hems?: number
+          stack_allowance?: number | null
           treatment_category?: string | null
           unit_price?: number | null
           updated_at?: string
