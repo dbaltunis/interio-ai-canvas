@@ -152,10 +152,19 @@ export const DynamicRollerBlindFields = ({
     );
   }
 
-  // Filter and sort visible options - apply BOTH static visibility AND rule-based visibility
+  // Filter and sort visible options
+  // For options controlled by rules: Check rule-based visibility FIRST
+  // For regular options: Check static visibility from database
   const visibleOptions = treatmentOptions
-    .filter(opt => opt.visible) // Static visibility from database
-    .filter(opt => isOptionVisible(opt.key)) // Rule-based visibility
+    .filter(opt => {
+      // If this option is controlled by ANY rule, use rule-based visibility only
+      const hasRule = rules.some(r => r.effect.target_option_key === opt.key);
+      if (hasRule) {
+        return isOptionVisible(opt.key); // Rule determines visibility
+      }
+      // Otherwise use static database visibility
+      return opt.visible;
+    })
     .sort((a, b) => a.order_index - b.order_index)
     .filter((opt, index, self) => 
       index === self.findIndex(o => o.key === opt.key)
