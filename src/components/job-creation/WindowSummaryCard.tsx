@@ -103,12 +103,16 @@ export function WindowSummaryCard({
 
     const items: any[] = [];
 
+    // FABRIC: Always include fabric details with proper name display
+    const fabricName = summary.fabric_details?.name || 
+                       summary.fabric_details?.fabric_name || 
+                       summary.material_details?.name ||
+                       'Fabric';
+    
     items.push({
       id: 'fabric',
-      name: summary.fabric_details?.name || 'Fabric',
-      description: summary.fabric_details?.name
-        ? `${summary.fabric_details.name} • ${fmtMeasurement(Number(summary.linear_meters)) || '0.00cm'} • ${summary.widths_required || 0} width(s)`
-        : `${fmtMeasurement(Number(summary.linear_meters)) || '0.00cm'} • ${summary.widths_required || 0} width(s)`,
+      name: fabricName,
+      description: `${fabricName} • ${fmtMeasurement(Number(summary.linear_meters)) || '0.00cm'} • ${summary.widths_required || 0} width(s)`,
       quantity: Number(summary.linear_meters) || 0,
       unit: 'm',
       unit_price: Number(summary.price_per_meter) || 0,
@@ -118,6 +122,7 @@ export function WindowSummaryCard({
         widths_required: summary.widths_required,
         linear_meters: summary.linear_meters,
         price_per_meter: summary.price_per_meter,
+        fabric_name: fabricName,
       },
     });
 
@@ -159,8 +164,23 @@ export function WindowSummaryCard({
       details: { type: summary.manufacturing_type },
     });
 
+    // Add hardware cost if available
+    if (Number(summary.hardware_cost) > 0 || summary.hardware_details) {
+      const hardwareName = summary.hardware_details?.name || 
+                          summary.hardware_details?.hardware_name || 
+                          'Hardware';
+      items.push({
+        id: 'hardware',
+        name: hardwareName,
+        description: hardwareName,
+        total_cost: Number(summary.hardware_cost) || 0,
+        category: 'hardware',
+        details: summary.hardware_details,
+      });
+    }
+
     // Add options cost if available - CRITICAL for completeness
-    if (Number(summary.options_cost) > 0) {
+    if (Number(summary.options_cost) > 0 || (summary.selected_options && (summary.selected_options as any[]).length > 0)) {
       const optionsDetails = summary.selected_options || [];
       const optionsDescription = Array.isArray(optionsDetails) && optionsDetails.length > 0
         ? optionsDetails.map((opt: any) => opt.name || opt.label).filter(Boolean).join(', ')

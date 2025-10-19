@@ -99,11 +99,17 @@ const enrichSummaryForPersistence = (summary: Omit<WindowSummary, "updated_at">)
   const treatmentCategory = (summary as any).treatment_category;
   const treatmentType = (summary as any).treatment_type;
   
-  // For blinds, shutters, and wallpaper: Skip curtain-specific enrichment
-  // Their calculations are already complete from DynamicWindowWorksheet
-  const isBlindType = treatmentCategory === 'blinds' || 
-                      treatmentType?.includes('blind') || 
-                      treatmentType?.includes('shade');
+  // CRITICAL: Roman blinds use same fabrics/linings as curtains, so DON'T skip enrichment
+  // Only skip for roller, venetian, vertical, cellular blinds, shutters, and wallpaper
+  const isBlindType = (treatmentCategory === 'roller_blinds' || 
+                       treatmentCategory === 'venetian_blinds' ||
+                       treatmentCategory === 'vertical_blinds' ||
+                       treatmentCategory === 'cellular_blinds' ||
+                       treatmentCategory === 'cellular_shades') ||
+                      (treatmentType?.includes('roller') || 
+                       treatmentType?.includes('venetian') ||
+                       treatmentType?.includes('vertical') ||
+                       treatmentType?.includes('cellular'));
   const isShutterType = treatmentCategory === 'shutters' || treatmentType?.includes('shutter');
   const isWallpaperType = treatmentCategory === 'wallpaper' || treatmentType === 'wallpaper';
   
