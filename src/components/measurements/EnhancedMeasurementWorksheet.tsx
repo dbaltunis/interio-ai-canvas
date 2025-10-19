@@ -878,6 +878,9 @@ export const EnhancedMeasurementWorksheet = forwardRef<
           template_details: selectedCovering as any,
           treatment_type: specificTreatmentType, // CRITICAL: Save specific type like 'venetian_blinds'
           treatment_category: generalCategory, // Save general category like 'blinds'
+          // CRITICAL: Calculate options cost from selectedOptions
+          options_cost: selectedOptions.reduce((sum, opt) => sum + (opt.price || 0), 0),
+          selected_options: selectedOptions,
           fabric_details: { 
             id: fabricItem.id, 
             name: fabricItem.name, 
@@ -899,6 +902,12 @@ export const EnhancedMeasurementWorksheet = forwardRef<
             selected_options: selectedOptions  // Use the tracked state with actual prices from database
           }
         } as any);
+        
+        console.log('💾 Saved window summary with options cost:', {
+          options_cost: selectedOptions.reduce((sum, opt) => sum + (opt.price || 0), 0),
+          selected_options_count: selectedOptions.length,
+          selectedOptions
+        });
       }
     } catch (e) {
       console.error('Failed to save window summary:', e);
