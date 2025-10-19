@@ -1210,6 +1210,42 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                   <CardDescription>Size constraints and deductions for {formData.curtain_type.replace('_', ' ')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  {/* Visual Explanation Card */}
+                  <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start gap-3">
+                        <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+                        <div className="flex-1">
+                          <CardTitle className="text-sm text-blue-900">How These Settings Work</CardTitle>
+                          <CardDescription className="text-xs text-blue-700 mt-1">
+                            These manufacturing specifications control production calculations
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3 text-xs">
+                      <div className="flex items-start gap-2">
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300 shrink-0">Bracket Deduction</Badge>
+                        <span className="text-blue-800">Reduces the final width to account for mounting brackets on each side</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300 shrink-0">Size Constraints</Badge>
+                        <span className="text-blue-800">Validates minimum/maximum dimensions and shows warnings during quoting</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300 shrink-0">Stack Allowance</Badge>
+                        <span className="text-blue-800">Adds extra height for fabric stacking when blind is fully raised (Roman blinds)</span>
+                      </div>
+                      <Separator className="my-2" />
+                      <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-200 rounded">
+                        <Info className="h-4 w-4 text-amber-600 shrink-0" />
+                        <p className="text-amber-800 font-medium">
+                          Note: These values are saved to the template but may not be fully integrated in quoting/workshop calculations yet
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
                   {/* Bracket Deduction */}
                   <div className="space-y-4">
                     <div className="flex items-center gap-2">
@@ -1220,6 +1256,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Amount to deduct from width for bracket space (per side)</p>
+                          <p className="text-xs mt-1 opacity-80">Example: If bracket deduction = 2cm, final width = measured width - 4cm</p>
                         </TooltipContent>
                       </Tooltip>
                     </div>
@@ -1233,6 +1270,11 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                         onChange={(e) => handleInputChange("bracket_deduction", e.target.value)}
                         placeholder="0"
                       />
+                      {formData.bracket_deduction && parseFloat(formData.bracket_deduction) > 0 && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Total width deduction: {(parseFloat(formData.bracket_deduction) * 2).toFixed(1)}cm
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -1248,6 +1290,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Minimum and maximum dimensions for this product</p>
+                          <p className="text-xs mt-1 opacity-80">Shows validation warnings in quoting if dimensions are out of range</p>
                         </TooltipContent>
                       </Tooltip>
                     </div>
@@ -1297,6 +1340,17 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                         />
                       </div>
                     </div>
+                    {(formData.minimum_width || formData.maximum_width || formData.minimum_height || formData.maximum_height) && (
+                      <div className="p-3 bg-muted rounded-lg text-xs space-y-1">
+                        <p className="font-medium">Size Range Summary:</p>
+                        {formData.minimum_width && formData.maximum_width && (
+                          <p>Width: {formData.minimum_width}cm - {formData.maximum_width}cm</p>
+                        )}
+                        {formData.minimum_height && formData.maximum_height && (
+                          <p>Height: {formData.minimum_height}cm - {formData.maximum_height}cm</p>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <Separator />
@@ -1311,6 +1365,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Height to add for stacking when raised (Roman blinds, etc.)</p>
+                          <p className="text-xs mt-1 opacity-80">Typical: 15-25cm for standard Roman blinds</p>
                         </TooltipContent>
                       </Tooltip>
                     </div>
@@ -1324,6 +1379,11 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                         onChange={(e) => handleInputChange("stack_allowance", e.target.value)}
                         placeholder="0"
                       />
+                      {formData.stack_allowance && parseFloat(formData.stack_allowance) > 0 && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          When fully raised, the blind will stack approximately {formData.stack_allowance}cm from the top
+                        </p>
+                      )}
                     </div>
                   </div>
 
