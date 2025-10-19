@@ -74,7 +74,7 @@ export const TreatmentPreviewEngine = ({
           <img 
             src={productImage} 
             alt={productName} 
-            className="w-full h-full object-cover rounded-md"
+            className="w-full h-full object-cover"
             onError={(e) => {
               console.error("❌ Failed to load image:", productImage?.substring(0, 100));
             }}
