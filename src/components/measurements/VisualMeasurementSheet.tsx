@@ -185,143 +185,46 @@ export const VisualMeasurementSheet = ({
       return null;
     }
     try {
-      // Use the same calculation method as CostCalculationSummary for consistency
+      // Use the unified calculateFabricUsage function that handles both curtains AND blinds
+      const result = calculateFabricUsage(
+        measurements,
+        [selectedTemplate],
+        selectedFabricItem
+      );
+
+      // Transform the result to match the expected format for display
       const width = parseFloat(measurements.rail_width);
       const height = parseFloat(measurements.drop);
       const pooling = parseFloat(measurements.pooling_amount || "0");
-      const returns = parseFloat(measurements.returns || "0");
-      const fabricWidthCm = selectedFabricItem.fabric_width || 137; // Default fabric width
-
-      // Include all manufacturing allowances from template settings
+      const fabricWidthCm = selectedFabricItem.fabric_width || 137;
+      
       const headerHem = selectedTemplate.header_allowance || 8;
       const bottomHem = selectedTemplate.bottom_hem || 8;
-      const sideHems = selectedTemplate.side_hems || 0; // Manufacturing side hems (both sides)
-      const seamHems = selectedTemplate.seam_hems || 0; // Manufacturing seam allowances
-      const returnLeft = selectedTemplate.return_left || 0; // Manufacturing return left
-      const returnRight = selectedTemplate.return_right || 0; // Manufacturing return right
-
-      // Calculate required width with fullness multiplier
-      const requiredWidth = width * selectedTemplate.fullness_ratio;
-
-      // Add side hems to width calculation (for curtain pairs, each curtain needs side hems)
-      // Use measurements.curtain_type as the source of truth, fallback to template
+      const sideHems = selectedTemplate.side_hems || 0;
+      const seamHems = selectedTemplate.seam_hems || 0;
+      const returnLeft = selectedTemplate.return_left || 0;
+      const returnRight = selectedTemplate.return_right || 0;
+      
       const panelConfig = measurements.curtain_type || (selectedTemplate as any).panel_configuration || selectedTemplate.curtain_type;
       const curtainCount = panelConfig === 'pair' ? 2 : 1;
-      const totalSideHems = sideHems * 2 * curtainCount; // Both sides of each curtain
-
-      // Check if fabric is rotated (user preference)
-      const fabricRotated = measurements.fabric_rotated === true || measurements.fabric_rotated === 'true';
-
-      // Use consistent thresholds: narrow fabrics < 250cm, wide fabrics >= 250cm
-      const isNarrowFabric = fabricWidthCm < 250;
-      const isWideFabric = fabricWidthCm >= 250;
-
-      // Calculate total drop to check if railroading is possible
+      const totalSideHems = sideHems * 2 * curtainCount;
       const totalDrop = height + headerHem + bottomHem + pooling;
-      const wasteMultiplier = 1 + (selectedTemplate.waste_percent || 0) / 100;
-
-      // Determine if we can use horizontal/railroaded orientation:
-      // - Drop must fit within fabric width
-      // - User must want it (fabricRotated = true for narrow, or it's a wide fabric and not explicitly rotated off)
-      const canRailroad = totalDrop <= fabricWidthCm;
-
-      // Orientation logic:
-      // - Wide fabrics: railroaded by default UNLESS user turns rotation OFF
-      // - Narrow fabrics: vertical by default UNLESS user turns rotation ON (and it's possible)
-      let useHorizontalOrientation;
-      if (isWideFabric) {
-        // Wide fabrics: rotation toggle OFF means switch to vertical
-        useHorizontalOrientation = fabricRotated !== false && canRailroad;
-      } else {
-        // Narrow fabrics: rotation toggle ON means switch to railroaded (if possible)
-        useHorizontalOrientation = fabricRotated && canRailroad;
-      }
-      console.log("🔄 Fabric Calculation:", {
-        fabricRotated,
-        isNarrowFabric,
-        isWideFabric,
-        canRailroad,
-        useHorizontalOrientation,
-        fabricWidthCm,
-        totalDrop
-      });
-      let widthsRequired, totalSeamAllowance, linearMeters;
-      if (useHorizontalOrientation) {
-        // RAILROADED/HORIZONTAL (wide fabrics by default OR rotated narrow fabrics if drop fits):
-        // - Fabric WIDTH is used for the curtain DROP
-        // - Fabric LENGTH (from roll) is used for the curtain WIDTH
-        // - We buy LENGTH equal to curtain width needed
-        const totalWidthNeeded = requiredWidth + returnLeft + returnRight + totalSideHems;
-        widthsRequired = 1; // Only 1 "width" needed because fabric is railroaded
-        totalSeamAllowance = 0; // No seams in railroaded orientation
-
-        // Linear meters = the total curtain width we need
-        linearMeters = totalWidthNeeded / 100 * wasteMultiplier;
-        console.log("✅ HORIZONTAL/RAILROADED calculation:", {
-          totalWidthNeeded,
-          widthsRequired,
-          linearMeters,
-          totalSeamAllowance
-        });
-      } else {
-        // STANDARD/VERTICAL (narrow fabrics by default OR wide fabrics rotated to vertical):
-        // - Fabric WIDTH determines how many panels (drops) fit across
-        // - Fabric HEIGHT (length from roll) is used for curtain DROP
-        // - We buy DROPS (heights) and seam them together for curtain width
-        const totalWidthWithAllowances = requiredWidth + returnLeft + returnRight + totalSideHems;
-
-        // How many fabric widths (drops) do we need to cover the curtain width?
-        widthsRequired = Math.ceil(totalWidthWithAllowances / fabricWidthCm);
-
-        // Seams between widths
-        totalSeamAllowance = widthsRequired > 1 ? (widthsRequired - 1) * seamHems * 2 : 0;
-
-        // Linear meters = drop length × number of widths (drops)
-        linearMeters = (totalDrop + totalSeamAllowance) / 100 * widthsRequired * wasteMultiplier;
-        console.log("✅ VERTICAL/STANDARD calculation:", {
-          totalWidthWithAllowances,
-          widthsRequired,
-          linearMeters,
-          totalDrop,
-          totalSeamAllowance
-        });
-      }
-
-      // Get price per meter from various possible fields
+      
       const pricePerMeter = selectedFabricItem.price_per_meter || selectedFabricItem.selling_price || 0;
-      console.log('VisualMeasurementSheet fabric calculation with proper hems:', {
-        width,
-        height,
-        pooling,
-        requiredWidth,
-        totalDrop,
-        widthsRequired,
-        linearMeters,
-        pricePerMeter,
-        fabricWidthCm,
-        curtainCount,
-        fabricRotated,
-        useHorizontalOrientation: useHorizontalOrientation && height < fabricWidthCm,
-        isNarrowFabric,
-        isWideFabric,
-        fullnessRatio: selectedTemplate.fullness_ratio,
-        wastePercent: selectedTemplate.waste_percent,
-        manufacturingAllowances: {
-          headerHem,
-          bottomHem,
-          sideHems,
-          seamHems,
-          returnLeft,
-          returnRight,
-          totalSideHems,
-          totalSeamAllowance
-        }
+      const fabricRotated = measurements.fabric_rotated === true || measurements.fabric_rotated === 'true';
+      
+      console.log('VisualMeasurementSheet using unified fabric calculator:', {
+        treatmentCategory: selectedTemplate.treatment_category,
+        isBlind: /blind/i.test(selectedTemplate.treatment_category || ''),
+        result,
+        measurements: { width, height, pooling }
       });
+
       return {
-        linearMeters: linearMeters,
-        totalCost: linearMeters * pricePerMeter,
+        linearMeters: result.meters,
+        totalCost: result.meters * pricePerMeter,
         pricePerMeter: pricePerMeter,
-        widthsRequired: widthsRequired,
+        widthsRequired: result.widthsRequired || 1,
         railWidth: width,
         fullnessRatio: selectedTemplate.fullness_ratio,
         drop: height,
@@ -333,14 +236,18 @@ export const VisualMeasurementSheet = ({
         wastePercent: selectedTemplate.waste_percent || 0,
         sideHems: sideHems,
         seamHems: seamHems,
-        totalSeamAllowance: totalSeamAllowance,
+        totalSeamAllowance: result.seamLaborHours || 0,
         totalSideHems: totalSideHems,
         returnLeft: returnLeft,
         returnRight: returnRight,
         curtainCount: curtainCount,
         curtainType: panelConfig,
         fabricRotated: fabricRotated,
-        fabricOrientation: useHorizontalOrientation && height < fabricWidthCm ? 'horizontal' : 'vertical'
+        fabricOrientation: result.fabricOrientation || 'vertical',
+        // Add blind-specific data if available
+        sqm: result.details?.sqm,
+        widthCalcNote: result.details?.widthCalcNote,
+        heightCalcNote: result.details?.heightCalcNote
       };
     } catch (error) {
       console.error('Error calculating fabric usage:', error);
