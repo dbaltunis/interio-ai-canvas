@@ -42,6 +42,11 @@ export const TreatmentPricingForm = ({
   const uploadFile = useUploadFile();
   const { calculateFabricUsage, calculateCosts } = useFabricCalculation(formData, options, treatmentTypesData, treatmentType, hierarchicalOptions);
 
+  // CRITICAL: Use blind calculation for blinds/shutters, curtain calculation for curtains
+  const isBlindsOrShutters = windowCovering?.category === 'blinds' || windowCovering?.category === 'shutters' || 
+                             windowCovering?.treatment_category === 'blinds' || windowCovering?.treatment_category === 'shutters' ||
+                             treatmentType.toLowerCase().includes('blind') || treatmentType.toLowerCase().includes('shutter');
+  
   const costs = calculateCosts();
 
   // Enhanced debugging for options loading
