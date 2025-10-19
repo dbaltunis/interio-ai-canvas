@@ -62,6 +62,22 @@ export const useConditionalOptions = (templateId?: string, selectedOptions: Sele
 
     console.log('🎯 Processing rules with selections:', selectedOptions);
 
+    // First pass: Find all options controlled by "show_option" rules
+    // These should be HIDDEN by default unless their condition is met
+    const optionsControlledByShowRules = new Set<string>();
+    rules.forEach(rule => {
+      if (rule.effect.action === 'show_option') {
+        optionsControlledByShowRules.add(rule.effect.target_option_key);
+      }
+    });
+
+    // Hide all options controlled by show_option rules by default
+    optionsControlledByShowRules.forEach(optionKey => {
+      hiddenOptions.add(optionKey);
+      console.log(`🔒 Default HIDING option controlled by show rule: ${optionKey}`);
+    });
+
+    // Second pass: Evaluate rules and apply effects
     rules.forEach(rule => {
       const conditionMet = evaluateCondition(rule);
       
