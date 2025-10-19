@@ -47,7 +47,7 @@ export const TraditionalOptions = ({
     <>
       {Object.entries(groupedOptions).map(([optionType, typeOptions]) => {
         const filteredOptions = (typeOptions as any[]).filter((opt: any) => 
-          isOptionVisible(opt.option_type || opt.name || opt.id)
+          isOptionVisible(opt.key || opt.option_type || opt.name || opt.id)
         );
         
         if (filteredOptions.length === 0) {
