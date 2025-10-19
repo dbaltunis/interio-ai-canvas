@@ -292,7 +292,7 @@ export function WindowSummaryCard({
                   }}
                   showProductOnly={true}
                   hideDetails={true}
-                  className="w-24 h-24 flex-shrink-0 bg-gradient-to-br from-muted/30 to-muted/10 rounded-lg border"
+                  className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden"
                 />
 
                 {/* RIGHT: Compact Details */}
