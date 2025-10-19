@@ -7,6 +7,7 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import { getPriceFromGrid } from "@/hooks/usePricingGrids";
 import { calculateBlindCost, calculateShutterCost } from "@/utils/blindCostCalculations";
+import { isBlind, calculateFabricUsage } from "@/components/job-creation/treatment-pricing/fabric-calculation/fabricUsageCalculator";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 
 // Simple black outline SVG icons

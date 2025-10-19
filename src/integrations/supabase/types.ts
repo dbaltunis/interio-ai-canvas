@@ -1431,6 +1431,9 @@ export type Database = {
         Row: {
           active: boolean
           average_drop_width: number | null
+          blind_bottom_hem_cm: number | null
+          blind_header_hem_cm: number | null
+          blind_side_hem_cm: number | null
           bottom_hem: number
           compatible_hardware: string[] | null
           complexity_pricing_tiers: Json | null
@@ -1467,6 +1470,7 @@ export type Database = {
           machine_price_per_drop: number | null
           machine_price_per_metre: number | null
           machine_price_per_panel: number | null
+          machine_price_per_sqm: number | null
           manufacturing_type: string
           name: string
           offers_hand_finished: boolean | null
@@ -1493,6 +1497,9 @@ export type Database = {
         Insert: {
           active?: boolean
           average_drop_width?: number | null
+          blind_bottom_hem_cm?: number | null
+          blind_header_hem_cm?: number | null
+          blind_side_hem_cm?: number | null
           bottom_hem?: number
           compatible_hardware?: string[] | null
           complexity_pricing_tiers?: Json | null
@@ -1529,6 +1536,7 @@ export type Database = {
           machine_price_per_drop?: number | null
           machine_price_per_metre?: number | null
           machine_price_per_panel?: number | null
+          machine_price_per_sqm?: number | null
           manufacturing_type?: string
           name: string
           offers_hand_finished?: boolean | null
@@ -1555,6 +1563,9 @@ export type Database = {
         Update: {
           active?: boolean
           average_drop_width?: number | null
+          blind_bottom_hem_cm?: number | null
+          blind_header_hem_cm?: number | null
+          blind_side_hem_cm?: number | null
           bottom_hem?: number
           compatible_hardware?: string[] | null
           complexity_pricing_tiers?: Json | null
@@ -1591,6 +1602,7 @@ export type Database = {
           machine_price_per_drop?: number | null
           machine_price_per_metre?: number | null
           machine_price_per_panel?: number | null
+          machine_price_per_sqm?: number | null
           manufacturing_type?: string
           name?: string
           offers_hand_finished?: boolean | null

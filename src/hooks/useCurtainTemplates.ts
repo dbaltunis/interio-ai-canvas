@@ -98,6 +98,12 @@ export interface CurtainTemplate {
   hand_finished_upcharge_fixed?: number;
   hand_finished_upcharge_percentage?: number;
   
+  // Blind-specific hem allowances
+  blind_header_hem_cm?: number;
+  blind_bottom_hem_cm?: number;
+  blind_side_hem_cm?: number;
+  machine_price_per_sqm?: number;
+  
   active: boolean;
   created_at: string;
   updated_at: string;

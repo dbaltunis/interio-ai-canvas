@@ -168,6 +168,12 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     // Multiple pricing methods
     pricing_methods: (template as any)?.pricing_methods || [],
     
+    // Blind-specific hem allowances
+    blind_header_hem_cm: (template as any)?.blind_header_hem_cm?.toString() || "8",
+    blind_bottom_hem_cm: (template as any)?.blind_bottom_hem_cm?.toString() || "8",
+    blind_side_hem_cm: (template as any)?.blind_side_hem_cm?.toString() || "0",
+    machine_price_per_sqm: (template as any)?.machine_price_per_sqm?.toString() || "",
+    
     // Option Categories Integration
     selected_option_categories: template?.compatible_hardware || []  // Temporarily use this field
   });
@@ -1227,6 +1233,64 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                         Applied to final material calculations (default: 5%)
                       </p>
                     </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Hem Allowances for Blinds */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium">Hem Allowances</h4>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Fabric allowances for hems in centimeters</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <Label htmlFor="blind_header_hem_cm">Header Hem (cm)</Label>
+                        <Input
+                          id="blind_header_hem_cm"
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          value={formData.blind_header_hem_cm || 8}
+                          onChange={(e) => handleInputChange("blind_header_hem_cm", e.target.value)}
+                          placeholder="8"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="blind_bottom_hem_cm">Bottom Hem (cm)</Label>
+                        <Input
+                          id="blind_bottom_hem_cm"
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          value={formData.blind_bottom_hem_cm || 8}
+                          onChange={(e) => handleInputChange("blind_bottom_hem_cm", e.target.value)}
+                          placeholder="8"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="blind_side_hem_cm">Side Hem per Side (cm)</Label>
+                        <Input
+                          id="blind_side_hem_cm"
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          value={formData.blind_side_hem_cm || 0}
+                          onChange={(e) => handleInputChange("blind_side_hem_cm", e.target.value)}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      These values are added to the blind dimensions for fabric calculation
+                    </p>
                   </div>
                 </CardContent>
               </Card>
