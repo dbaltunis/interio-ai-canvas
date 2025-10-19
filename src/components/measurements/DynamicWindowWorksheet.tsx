@@ -689,8 +689,12 @@ export const DynamicWindowWorksheet = forwardRef<{
           const summaryData = {
             window_id: surfaceId,
             linear_meters: linearMeters,
-            widths_required: fabricCalculation?.widthsRequired || 0,
-            price_per_meter: fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || selectedItems.fabric?.unit_price || 0,
+            // For blinds/shutters, widths_required doesn't apply - use 1
+            widths_required: (displayCategory === 'blinds' || displayCategory === 'shutters') ? 1 : (fabricCalculation?.widthsRequired || 0),
+            // For blinds/shutters, use material price; for curtains use fabric calculation
+            price_per_meter: (displayCategory === 'blinds' || displayCategory === 'shutters') 
+              ? (selectedItems.material?.selling_price || selectedItems.material?.unit_price || selectedItems.fabric?.selling_price || selectedItems.fabric?.unit_price || 0)
+              : (fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || selectedItems.fabric?.unit_price || 0),
             fabric_cost: fabricCost,
             lining_type: selectedLining || 'none',
             lining_cost: finalLiningCost,
