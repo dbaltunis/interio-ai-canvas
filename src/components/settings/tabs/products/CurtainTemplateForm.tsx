@@ -500,6 +500,13 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         active: true
       };
 
+      console.log('🔍 SAVING TEMPLATE DATA:', {
+        waste_percent_raw: formData.waste_percent,
+        waste_percent_parsed: parseFloat(formData.waste_percent.toString()),
+        waste_percent_in_data: templateData.waste_percent,
+        full_template_data: templateData
+      });
+
       if (template) {
         await updateTemplate.mutateAsync({ id: template.id, ...templateData });
       } else {
