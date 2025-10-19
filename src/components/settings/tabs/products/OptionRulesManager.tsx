@@ -16,28 +16,50 @@ interface OptionRulesManagerProps {
 }
 
 export const OptionRulesManager = ({ templateId }: OptionRulesManagerProps) => {
+  console.log('🔧 OptionRulesManager - templateId:', templateId);
+  
   // First, get the template to find its treatment_category
-  const { data: template } = useQuery({
+  const { data: template, isLoading: templateLoading, error: templateError } = useQuery({
     queryKey: ['template-for-rules', templateId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('curtain_templates')
-        .select('treatment_category, curtain_type')
+        .select('treatment_category, curtain_type, user_id, name')
         .eq('id', templateId)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error loading template:', error);
+        throw error;
+      }
+      console.log('✅ Template loaded for rules:', data);
       return data;
     },
     enabled: !!templateId,
   });
 
-  const { data: rules = [] } = useTreatmentOptionRules(templateId);
+  const { data: rules = [], isLoading: rulesLoading, error: rulesError } = useTreatmentOptionRules(templateId);
+  
+  console.log('📋 Rules state:', { 
+    rulesCount: rules.length, 
+    rules, 
+    rulesLoading, 
+    rulesError,
+    templateLoading,
+    templateError 
+  });
+  
   // Use treatment_category to query options instead of template_id
-  const { data: options = [] } = useTreatmentOptions(
+  const { data: options = [], isLoading: optionsLoading } = useTreatmentOptions(
     template?.treatment_category || template?.curtain_type, 
     'category'
   );
+  
+  console.log('🎯 Options for rules:', { 
+    optionsCount: options.length, 
+    category: template?.treatment_category || template?.curtain_type,
+    optionsLoading 
+  });
   const createRule = useCreateOptionRule();
   const updateRule = useUpdateOptionRule();
   const deleteRule = useDeleteOptionRule();
@@ -109,12 +131,17 @@ export const OptionRulesManager = ({ templateId }: OptionRulesManagerProps) => {
     const description = `When "${editingRule.condition.option_key}" ${editingRule.condition.operator} "${editingRule.condition.value}", ${editingRule.effect.action.replace('_', ' ')} "${editingRule.effect.target_option_key}"`;
 
     try {
+      console.log('💾 Saving rule:', { isCreating, editingRule });
+      
       if (isCreating) {
-        await createRule.mutateAsync({
+        const ruleData = {
           ...editingRule as Omit<OptionRule, 'id' | 'created_at' | 'updated_at'>,
           description,
-        });
+        };
+        console.log('Creating new rule:', ruleData);
+        await createRule.mutateAsync(ruleData);
       } else if (editingRule.id) {
+        console.log('Updating existing rule:', editingRule.id);
         await updateRule.mutateAsync({
           id: editingRule.id,
           updates: { ...editingRule, description },
@@ -129,9 +156,10 @@ export const OptionRulesManager = ({ templateId }: OptionRulesManagerProps) => {
       setEditingRule(null);
       setIsCreating(false);
     } catch (error) {
+      console.error('❌ Error saving rule:', error);
       toast({
         title: "Error",
-        description: "Failed to save rule. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to save rule. Please try again.",
         variant: "destructive",
       });
     }
@@ -155,13 +183,19 @@ export const OptionRulesManager = ({ templateId }: OptionRulesManagerProps) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!template && (
+        {!template && templateLoading && (
           <div className="text-sm text-muted-foreground">Loading template information...</div>
         )}
-        {template && options.length === 0 && (
+        {templateError && (
+          <div className="text-sm text-destructive">Error loading template: {templateError.message}</div>
+        )}
+        {template && options.length === 0 && !optionsLoading && (
           <div className="text-sm text-muted-foreground">
-            No options found for this treatment category. Add options in the Treatment Options tab first.
+            No options found for treatment category "{template.treatment_category}". Add options in the Treatment Settings tab first.
           </div>
+        )}
+        {rulesError && (
+          <div className="text-sm text-destructive">Error loading rules: {rulesError.message}</div>
         )}
         {rules.map(rule => (
           <Card key={rule.id} className="p-4">
