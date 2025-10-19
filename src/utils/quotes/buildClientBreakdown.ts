@@ -30,26 +30,36 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
   const isBlindsOrShutters = summary.treatment_category?.includes('blind') || summary.treatment_category?.includes('shutter');
   const materialDetails = isBlindsOrShutters ? (summary.material_details || summary.fabric_details) : summary.fabric_details;
   
-  items.push({
-    id: 'fabric',
-    name: materialDetails?.name || 'Fabric',
-    description: materialDetails?.name
-      ? `${materialDetails.name} • ${summary.linear_meters ?? ''}m • ${summary.widths_required} width(s)`
-      : `${summary.linear_meters ?? ''}m • ${summary.widths_required} width(s)`,
-    quantity: Number(summary.linear_meters) || 0,
-    unit: 'm',
-    unit_price: Number(
-      summary.price_per_meter ?? materialDetails?.price_per_meter ?? materialDetails?.unit_price
-    ) || 0,
-    total_cost: Number(summary.fabric_cost) || 0,
-    image_url: materialDetails?.image_url || null,
-    category: 'fabric',
-    details: {
-      widths_required: summary.widths_required,
-      linear_meters: summary.linear_meters,
-      price_per_meter: summary.price_per_meter ?? materialDetails?.price_per_meter ?? materialDetails?.unit_price,
-    },
-  });
+  // Use fabric_cost from cost_summary if available, otherwise use top-level fabric_cost
+  const fabricCost = Number(summary.cost_summary?.fabric_cost ?? summary.fabric_cost) || 0;
+  const linearMeters = Number(summary.linear_meters ?? summary.cost_summary?.linear_meters) || 0;
+  const pricePerMeter = Number(
+    summary.price_per_meter ?? 
+    summary.cost_summary?.price_per_meter ?? 
+    materialDetails?.price_per_meter ?? 
+    materialDetails?.unit_price
+  ) || 0;
+  
+  if (fabricCost > 0 || linearMeters > 0) {
+    items.push({
+      id: 'fabric',
+      name: materialDetails?.name || summary.fabric_details?.name || 'Fabric Material',
+      description: materialDetails?.name
+        ? `${materialDetails.name} • ${linearMeters.toFixed(2)}m • ${summary.widths_required || 1} width(s)`
+        : `${linearMeters.toFixed(2)}m • ${summary.widths_required || 1} width(s)`,
+      quantity: linearMeters,
+      unit: 'm',
+      unit_price: pricePerMeter,
+      total_cost: fabricCost,
+      image_url: materialDetails?.image_url || summary.fabric_details?.image_url || null,
+      category: 'fabric',
+      details: {
+        widths_required: summary.widths_required,
+        linear_meters: linearMeters,
+        price_per_meter: pricePerMeter,
+      },
+    });
+  }
 
   // Lining line (optional)
   if (Number(summary.lining_cost) > 0) {
@@ -95,15 +105,24 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
     });
   }
 
-  // Manufacturing
-  items.push({
-    id: 'manufacturing',
-    name: 'Manufacturing',
-    description: summary.manufacturing_type,
-    total_cost: Number(summary.manufacturing_cost) || 0,
-    category: 'manufacturing',
-    details: { type: summary.manufacturing_type },
-  });
+  // Manufacturing/Assembly
+  const manufacturingCost = Number(summary.cost_summary?.manufacturing_cost ?? summary.manufacturing_cost) || 0;
+  const manufacturingType = summary.manufacturing_type || summary.cost_summary?.manufacturing_type || 'machine';
+  
+  if (manufacturingCost > 0) {
+    items.push({
+      id: 'manufacturing',
+      name: 'Assembly',
+      description: `${linearMeters.toFixed(2)}m × ${summary.cost_summary?.price_per_metre || 0}/m ${manufacturingType}`,
+      total_cost: manufacturingCost,
+      category: 'manufacturing',
+      details: { 
+        type: manufacturingType,
+        linear_meters: linearMeters,
+        price_per_metre: summary.cost_summary?.price_per_metre
+      },
+    });
+  }
 
   return items;
 };
