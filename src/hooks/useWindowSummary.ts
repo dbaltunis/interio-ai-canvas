@@ -58,39 +58,6 @@ export const useWindowSummary = (windowId: string | undefined) => {
       if (error) throw error;
       if (!data) return null as WindowSummary | null;
 
-      // Attempt gentle backfill if essential worksheet details are missing
-      try {
-        const mdRaw = (data as any).measurements_details;
-        const md = typeof mdRaw === "string" ? JSON.parse(mdRaw) : (mdRaw || {});
-        const fabricDetails = (data as any).fabric_details || {};
-
-        const needsWorksheetEnrichment = (
-          md?.total_width_with_allowances_cm === undefined ||
-          md?.required_width_cm === undefined ||
-          md?.seams_required === undefined ||
-          md?.total_drop_per_width_cm === undefined
-        );
-        const needsFabricWidth = (fabricDetails?.width_cm === undefined);
-
-        if (needsWorksheetEnrichment || needsFabricWidth) {
-          const enriched = enrichSummaryForPersistence(data as any);
-          const { data: saved, error: saveErr } = await supabase
-            .from("windows_summary")
-            .upsert(enriched)
-            .select()
-            .maybeSingle();
-          if (!saveErr && saved) {
-            // Extract selected_options from measurements_details and expose at top level
-            if (saved.measurements_details && (saved.measurements_details as any).selected_options) {
-              (saved as any).selected_options = (saved.measurements_details as any).selected_options;
-            }
-            return saved as WindowSummary;
-          }
-        }
-      } catch (e) {
-        console.warn("WindowSummary backfill skipped:", e);
-      }
-
       // Extract selected_options from measurements_details and expose at top level
       if (data.measurements_details && (data.measurements_details as any).selected_options) {
         (data as any).selected_options = (data.measurements_details as any).selected_options;
@@ -99,6 +66,7 @@ export const useWindowSummary = (windowId: string | undefined) => {
       return data as WindowSummary | null;
     },
     enabled: !!windowId,
+    staleTime: 30000, // Cache for 30 seconds to reduce refetches
   });
 };
 

@@ -415,6 +415,8 @@ export const DynamicWindowWorksheet = forwardRef<{
           let totalCost = 0;
           let linearMeters = 0;
           let manufacturingCost = 0;
+          let hardwareCost = 0;
+          let blindOptionsCost = 0;
           let wallpaperDetails = null;
           
           // Handle wallpaper calculations
@@ -518,12 +520,17 @@ export const DynamicWindowWorksheet = forwardRef<{
             fabricCost = blindCalc.fabricCost;
             manufacturingCost = blindCalc.manufacturingCost;
             linearMeters = blindCalc.linearMeters;
-            totalCost = blindCalc.totalCost;
+            hardwareCost = blindCalc.hardwareCost || 0;
+            
+            // CRITICAL: Preserve options cost from blind calculation
+            blindOptionsCost = blindCalc.optionsCost || 0;
+            totalCost = blindCalc.totalCost; // Already includes options
             
             console.log('💰 Blind calculation result:', {
               fabricCost: blindCalc.fabricCost,
               manufacturingCost: blindCalc.manufacturingCost,
-              optionsCost: blindCalc.optionsCost,
+              hardwareCost: blindCalc.hardwareCost,
+              optionsCost: blindOptionsCost,
               linearMeters: blindCalc.linearMeters,
               totalCost: blindCalc.totalCost
             });
@@ -603,14 +610,14 @@ export const DynamicWindowWorksheet = forwardRef<{
             }
           }
 
-          // Calculate total cost (blinds already have totalCost calculated)
+          // Calculate total cost 
           if (treatmentCategory === 'wallpaper') {
             totalCost = fabricCost; // Already calculated above for wallpaper
           } else if (generalCategory === 'blinds' || generalCategory === 'shutters') {
-            // Don't recalculate - blind totalCost already includes everything
-            // totalCost already set from blindCalc.totalCost above
+            // Blinds/shutters totalCost already calculated and includes options
+            // DO NOT RECALCULATE - use blindCalc.totalCost which includes all components
           } else {
-            // Curtains
+            // Curtains - recalculate with all components
             totalCost = fabricCost + liningCost + headingCost + manufacturingCost;
           }
 
@@ -659,7 +666,10 @@ export const DynamicWindowWorksheet = forwardRef<{
           console.log("🎯 Final heading details for save:", headingDetails);
 
           // Recalculate total cost with proper lining and heading costs
-          const finalTotalCost = fabricCost + finalLiningCost + finalHeadingCost + manufacturingCost;
+          // CRITICAL: For blinds/shutters, use the already-calculated totalCost (includes options)
+          const finalTotalCost = (generalCategory === 'blinds' || generalCategory === 'shutters') 
+            ? totalCost // Already includes all components including options
+            : fabricCost + finalLiningCost + finalHeadingCost + manufacturingCost;
 
           // Create summary data for windows_summary table - Save ALL 4 steps
           // Note: specificTreatmentType and generalCategory already declared earlier
@@ -683,6 +693,8 @@ export const DynamicWindowWorksheet = forwardRef<{
             lining_details: liningDetails,
             manufacturing_type: selectedTemplate?.manufacturing_type || 'machine',
             manufacturing_cost: manufacturingCost,
+            hardware_cost: hardwareCost || 0,
+            options_cost: (generalCategory === 'blinds' || generalCategory === 'shutters') ? (blindOptionsCost || 0) : 0,
             total_cost: finalTotalCost,
             template_id: selectedTemplate?.id,
             pricing_type: selectedTemplate?.pricing_type || 'per_metre',
