@@ -481,7 +481,9 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         return_right: parseFloat(formData.return_right.toString()) || 7.5,
         overlap: parseFloat(formData.overlap.toString()) || 10,
         header_allowance: parseFloat(formData.header_allowance.toString()) || 8,
-        waste_percent: parseFloat(formData.waste_percent.toString()) || 5,
+        waste_percent: formData.waste_percent !== '' && formData.waste_percent !== null && formData.waste_percent !== undefined 
+          ? parseFloat(formData.waste_percent.toString()) 
+          : 5,
         is_railroadable: formData.is_railroadable,
         
         // Blind-specific hem allowances
