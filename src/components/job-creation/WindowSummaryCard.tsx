@@ -115,20 +115,46 @@ export function WindowSummaryCard({
     console.log('🔨 Building breakdown from individual fields');
     const items: any[] = [];
 
-    // FABRIC: Always include fabric details with proper name display
-    const fabricName = summary.fabric_details?.name || 
-                       summary.fabric_details?.fabric_name || 
-                       summary.material_details?.name ||
-                       'Fabric';
+    // CRITICAL: For blinds/shutters, if fabric_cost is 0 but total_cost exists, derive it
+    const isBlindsOrShutters = summary.treatment_category === 'blinds' || 
+                                summary.treatment_category === 'shutters' ||
+                                summary.treatment_type?.includes('blind') ||
+                                summary.treatment_type?.includes('shutter');
+    
+    let actualFabricCost = Number(summary.fabric_cost) || 0;
+    
+    // If fabric_cost is 0 for blinds/shutters, derive it from total minus other costs
+    if (actualFabricCost === 0 && isBlindsOrShutters && Number(summary.total_cost) > 0) {
+      const manufacturingCost = Number(summary.manufacturing_cost) || 0;
+      const optionsCost = Number(summary.options_cost) || 0;
+      const hardwareCost = Number(summary.hardware_cost) || 0;
+      const liningCost = Number(summary.lining_cost) || 0;
+      const headingCost = Number(summary.heading_cost) || 0;
+      
+      actualFabricCost = Number(summary.total_cost) - manufacturingCost - optionsCost - hardwareCost - liningCost - headingCost;
+      console.log('🔧 Derived fabric cost for blinds:', {
+        total: summary.total_cost,
+        manufacturing: manufacturingCost,
+        options: optionsCost,
+        hardware: hardwareCost,
+        derived: actualFabricCost
+      });
+    }
+
+    // FABRIC/MATERIAL: Always include with proper name display
+    const fabricName = summary.material_details?.name ||
+                       summary.fabric_details?.name || 
+                       summary.fabric_details?.fabric_name ||  
+                       (isBlindsOrShutters ? 'Material' : 'Fabric');
     
     items.push({
       id: 'fabric',
       name: fabricName,
-      description: `${fabricName} • ${fmtMeasurement(Number(summary.linear_meters)) || '0.00cm'} • ${summary.widths_required || 0} width(s)`,
+      description: `${fabricName} • ${fmtMeasurement(Number(summary.linear_meters)) || '0.00cm'} • ${summary.widths_required || 1} width(s)`,
       quantity: Number(summary.linear_meters) || 0,
       unit: 'm',
       unit_price: Number(summary.price_per_meter) || 0,
-      total_cost: Number(summary.fabric_cost) || 0,
+      total_cost: actualFabricCost,
       category: 'fabric',
       details: {
         widths_required: summary.widths_required,
