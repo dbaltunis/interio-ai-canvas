@@ -30,12 +30,10 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
   const isBlindsOrShutters = summary.treatment_category?.includes('blind') || summary.treatment_category?.includes('shutter');
   const materialDetails = isBlindsOrShutters ? (summary.material_details || summary.fabric_details) : summary.fabric_details;
   
-  // Use fabric_cost from cost_summary if available, otherwise use top-level fabric_cost
-  const fabricCost = Number(summary.cost_summary?.fabric_cost ?? summary.fabric_cost) || 0;
-  const linearMeters = Number(summary.linear_meters ?? summary.cost_summary?.linear_meters) || 0;
+  const fabricCost = Number(summary.fabric_cost) || 0;
+  const linearMeters = Number(summary.linear_meters) || 0;
   const pricePerMeter = Number(
     summary.price_per_meter ?? 
-    summary.cost_summary?.price_per_meter ?? 
     materialDetails?.price_per_meter ?? 
     materialDetails?.unit_price
   ) || 0;
@@ -106,21 +104,17 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
   }
 
   // Manufacturing/Assembly
-  const manufacturingCost = Number(summary.cost_summary?.manufacturing_cost ?? summary.manufacturing_cost) || 0;
-  const manufacturingType = summary.manufacturing_type || summary.cost_summary?.manufacturing_type || 'machine';
+  const manufacturingCost = Number(summary.manufacturing_cost) || 0;
+  const manufacturingType = summary.manufacturing_type || 'machine';
   
   if (manufacturingCost > 0) {
     items.push({
       id: 'manufacturing',
-      name: 'Assembly',
-      description: `${linearMeters.toFixed(2)}m × ${summary.cost_summary?.price_per_metre || 0}/m ${manufacturingType}`,
+      name: 'Manufacturing',
+      description: manufacturingType,
       total_cost: manufacturingCost,
       category: 'manufacturing',
-      details: { 
-        type: manufacturingType,
-        linear_meters: linearMeters,
-        price_per_metre: summary.cost_summary?.price_per_metre
-      },
+      details: { type: manufacturingType },
     });
   }
 
