@@ -76,6 +76,12 @@ export const calculateBlindCost = (
       const pricePerUnit = fabricItem.selling_price || fabricItem.unit_price || fabricItem.cost_price || 0;
       const soldBy = fabricItem.sold_by_unit || 'per_meter';
       
+      console.log('💰 Fabric item pricing:', {
+        pricePerUnit,
+        soldBy,
+        fabricItem: fabricItem.name
+      });
+      
       if (soldBy === 'per_sqm' || soldBy === 'per_square_meter') {
         fabricCost = squareMeters * pricePerUnit;
       } else {
@@ -85,6 +91,9 @@ export const calculateBlindCost = (
     } else if (template?.unit_price) {
       // Use template unit price as fallback
       fabricCost = squareMeters * template.unit_price;
+      console.log('⚠️ No fabric item - using template unit_price:', template.unit_price);
+    } else {
+      console.warn('⚠️ No fabric item AND no template unit_price - fabric cost will be 0');
     }
     
     // Calculate manufacturing cost from template
@@ -108,6 +117,19 @@ export const calculateBlindCost = (
     // If no panel/metre pricing, use unit_price * area as manufacturing cost
     if (manufacturingCost === 0 && template?.unit_price) {
       manufacturingCost = template.unit_price * squareMeters * 0.5; // 50% of material for labor
+      console.log('💡 Using fallback manufacturing cost from unit_price:', manufacturingCost);
+    }
+    
+    // CRITICAL: If BOTH fabric and manufacturing are 0, we have a problem
+    if (fabricCost === 0 && manufacturingCost === 0) {
+      console.error('❌ CRITICAL: Both fabric and manufacturing costs are 0!', {
+        hasFabricItem: !!fabricItem,
+        fabricPrice: fabricItem?.selling_price,
+        templateName: template?.name,
+        templateUnitPrice: template?.unit_price,
+        templateMachinePrice: template?.machine_price_per_metre,
+        templatePricingType: template?.pricing_type
+      });
     }
   }
   
