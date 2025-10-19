@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Save, X, Info, Plus, Trash2, Upload, Download, Loader2 } from "lucide-react";
+import { Save, X, Info, Plus, Trash2, Upload, Download, Loader2, Link2, GitBranch, Workflow } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -26,6 +26,7 @@ import { useTreatmentOptions, useUpdateTreatmentOption } from "@/hooks/useTreatm
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCreateTreatmentOption, useCreateOptionValue, useDeleteOptionValue } from "@/hooks/useTreatmentOptionsManagement";
 import { OptionRulesManager } from "./OptionRulesManager";
+import { useTreatmentOptionRules } from "@/hooks/useOptionRules";
 import { useOptionTypeCategories } from "@/hooks/useOptionTypeCategories";
 import { TREATMENT_CATEGORIES } from "@/types/treatmentCategories";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
@@ -62,6 +63,9 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   const createTreatmentOption = useCreateTreatmentOption();
   const createOptionValue = useCreateOptionValue();
   const deleteOptionValue = useDeleteOptionValue();
+  
+  // Fetch rules for this template to show rule indicators
+  const { data: templateRules = [] } = useTreatmentOptionRules(template?.id);
 
   // Helper function to format price consistently
   const formatOptionPrice = (price: number | undefined): string => {
@@ -74,6 +78,24 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                           units.currency;
     
     return `+${currencySymbol}${price.toFixed(2)}`;
+  };
+  
+  // Helper function to check if an option is used in rule conditions
+  const isUsedInRuleCondition = (optionKey: string): boolean => {
+    return templateRules.some(rule => rule.condition.option_key === optionKey);
+  };
+  
+  // Helper function to check if an option is controlled by rules
+  const isControlledByRule = (optionKey: string): boolean => {
+    return templateRules.some(rule => rule.effect.target_option_key === optionKey);
+  };
+  
+  // Helper function to get rules affecting an option
+  const getRulesForOption = (optionKey: string) => {
+    return templateRules.filter(rule => 
+      rule.condition.option_key === optionKey || 
+      rule.effect.target_option_key === optionKey
+    );
   };
 
   // State for eyelet ring library
@@ -794,6 +816,33 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
 
           {/* Treatment Settings Tab - Only for Non-Curtain Window Coverings */}
           <TabsContent value="treatment_settings" className="space-y-6">
+            {templateRules.length > 0 && (
+              <Card className="bg-blue-50 border-blue-200">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <Info className="h-4 w-4 text-blue-600" />
+                    <CardTitle className="text-sm text-blue-900">Rule Indicators Guide</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="default" className="text-xs gap-1 bg-blue-500">
+                      <Workflow className="h-3 w-3" />
+                      Condition
+                    </Badge>
+                    <span className="text-blue-800">This option triggers rules when a specific value is selected</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs gap-1 bg-purple-100 text-purple-800">
+                      <GitBranch className="h-3 w-3" />
+                      Controlled
+                    </Badge>
+                    <span className="text-blue-800">This option's visibility is controlled by rules (cannot manually toggle)</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
             {(() => {
               // Use dynamic option type categories from database instead of hardcoded
               const currentGroups = optionTypeCategories.map(cat => ({
@@ -838,23 +887,91 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                   const hasOptionsAvailable = allAvailableValues.length > 0;
                   
                   return (
-                    <Card key={group.type}>
+                     <Card key={group.type}>
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
-                            <CardTitle className="text-base">{group.label}</CardTitle>
+                            <div className="flex items-center gap-2">
+                              <CardTitle className="text-base">{group.label}</CardTitle>
+                              {isUsedInRuleCondition(group.type) && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge variant="default" className="text-xs gap-1 bg-blue-500 hover:bg-blue-600">
+                                        <Workflow className="h-3 w-3" />
+                                        Condition
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-xs">
+                                      <p className="font-semibold mb-1">Used in Rule Condition</p>
+                                      <p className="text-xs">This option triggers rules when selected</p>
+                                      {getRulesForOption(group.type).filter(r => r.condition.option_key === group.type).map(rule => (
+                                        <p key={rule.id} className="text-xs mt-1 opacity-90">
+                                          • {rule.description || `When "${rule.condition.value}" is selected`}
+                                        </p>
+                                      ))}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                              {isControlledByRule(group.type) && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge variant="secondary" className="text-xs gap-1 bg-purple-100 hover:bg-purple-200 text-purple-800">
+                                        <GitBranch className="h-3 w-3" />
+                                        Controlled
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-xs">
+                                      <p className="font-semibold mb-1">Controlled by Rules</p>
+                                      <p className="text-xs">This option's visibility is controlled by rules</p>
+                                      {getRulesForOption(group.type).filter(r => r.effect.target_option_key === group.type).map(rule => (
+                                        <p key={rule.id} className="text-xs mt-1 opacity-90">
+                                          • {rule.description || `Shown when condition is met`}
+                                        </p>
+                                      ))}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </div>
                             <CardDescription>
                               Select which {group.label.toLowerCase()} to enable for this template
                             </CardDescription>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <Switch
-                              checked={isEnabled}
-                              onCheckedChange={(checked) => handleToggleOption(group.type, group.label, checked)}
-                            />
-                            <Label className="text-sm font-medium">
-                              {isEnabled ? 'Enabled' : 'Disabled'}
-                            </Label>
+                            {isControlledByRule(group.type) ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="flex items-center space-x-2 opacity-60 cursor-not-allowed">
+                                      <Switch
+                                        checked={isEnabled}
+                                        disabled={true}
+                                      />
+                                      <Label className="text-sm font-medium">
+                                        {isEnabled ? 'Enabled' : 'Disabled'}
+                                      </Label>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="left" className="max-w-xs">
+                                    <p className="font-semibold mb-1">Cannot Toggle Manually</p>
+                                    <p className="text-xs">This option is controlled by rules. Edit the rules in the "Rules" tab to change its behavior.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : (
+                              <>
+                                <Switch
+                                  checked={isEnabled}
+                                  onCheckedChange={(checked) => handleToggleOption(group.type, group.label, checked)}
+                                />
+                                <Label className="text-sm font-medium">
+                                  {isEnabled ? 'Enabled' : 'Disabled'}
+                                </Label>
+                              </>
+                            )}
                           </div>
                         </div>
                       </CardHeader>
