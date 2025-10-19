@@ -361,23 +361,28 @@ export const DynamicRollerBlindFields = ({
     );
   };
 
+  // Recursive function to render option and its conditional children
+  const renderOptionWithChildren = (option: any, isConditional: boolean = false): React.ReactNode => {
+    return (
+      <div key={option.id}>
+        {/* Render the option itself */}
+        {renderOption(option, isConditional)}
+        
+        {/* Render any conditional options that appear below this one (recursively) */}
+        {conditionalMap.has(option.key) && conditionalMap.get(option.key)!.length > 0 && (
+          <div className="mt-2 space-y-2">
+            {conditionalMap.get(option.key)!.map(condOption => (
+              renderOptionWithChildren(condOption, true)
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4">
-      {visibleOptions.map(option => (
-        <div key={option.id}>
-          {/* Render the base option */}
-          {renderOption(option, false)}
-          
-          {/* Render any conditional options that appear below this one */}
-          {conditionalMap.has(option.key) && conditionalMap.get(option.key)!.length > 0 && (
-            <div className="mt-2 space-y-2">
-              {conditionalMap.get(option.key)!.map(condOption => (
-                renderOption(condOption, true)
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
+      {visibleOptions.map(option => renderOptionWithChildren(option, false))}
     </div>
   );
 };
