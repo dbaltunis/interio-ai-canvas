@@ -218,6 +218,73 @@ export const AdaptiveFabricPricingDisplay = ({
       );
     }
 
+    // Check if this is a blind - show square meter calculation
+    const isBlindTreatment = treatmentCategory === 'roman_blinds' || treatmentCategory === 'roller_blinds' || 
+                             treatmentCategory === 'venetian_blinds' || treatmentCategory === 'vertical_blinds';
+
+    if (isBlindTreatment && fabricCalculation.sqm) {
+      return (
+        <div className="space-y-4">
+          {/* Fabric Information */}
+          <div className="container-level-3 rounded-md p-3 space-y-2">
+            <h4 className="font-semibold text-sm flex items-center gap-2">
+              <Calculator className="w-3.5 h-3.5" />
+              Selected Fabric
+            </h4>
+            <div className="text-xs space-y-1 text-muted-foreground">
+              <div className="flex justify-between">
+                <span>Fabric:</span>
+                <span className="font-medium text-foreground">{selectedFabricItem?.name || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Width:</span>
+                <span className="font-medium text-foreground">{selectedFabricItem?.fabric_width || 137}cm</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Price/sqm:</span>
+                <span className="font-medium text-foreground">{formatPrice(fabricCalculation.pricePerMeter || 0)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Blind Dimensions with Hems */}
+          <div className="container-level-3 rounded-md p-3 space-y-2">
+            <h4 className="font-semibold text-sm">Blind Dimensions</h4>
+            <div className="text-xs space-y-1 text-muted-foreground">
+              {fabricCalculation.widthCalcNote && (
+                <div className="text-xs text-muted-foreground">
+                  {fabricCalculation.widthCalcNote}
+                </div>
+              )}
+              {fabricCalculation.heightCalcNote && (
+                <div className="text-xs text-muted-foreground">
+                  {fabricCalculation.heightCalcNote}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Square Meter Calculation */}
+          <div className="container-level-3 rounded-md p-3 bg-primary/5">
+            <div className="text-xs space-y-2">
+              <div className="flex justify-between font-medium">
+                <span>Area Required:</span>
+                <span className="text-foreground">{fabricCalculation.sqm.toFixed(2)} sqm</span>
+              </div>
+              <div className="flex justify-between font-medium text-base">
+                <span>Fabric Cost:</span>
+                <span className="text-foreground">{formatPrice(fabricCalculation.totalCost || 0)}</span>
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Calculation: {fabricCalculation.sqm.toFixed(2)} sqm × {formatPrice(fabricCalculation.pricePerMeter || 0)}/sqm
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Regular curtain display
     return (
       <div className="space-y-4">
         {/* Fabric Information */}
