@@ -192,8 +192,12 @@ export const useUpdateCurtainTemplate = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
+      // Invalidate both the list and the individual template query
       queryClient.invalidateQueries({ queryKey: ["curtain-templates"] });
+      if (data?.id) {
+        queryClient.invalidateQueries({ queryKey: ["curtain-template", data.id] });
+      }
       toast.success("Curtain template updated successfully");
     },
     onError: (error) => {
