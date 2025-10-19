@@ -3,9 +3,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTreatmentOptions } from "@/hooks/useTreatmentOptions";
 import { useConditionalOptions } from "@/hooks/useConditionalOptions";
-import { Loader2 } from "lucide-react";
+import { Loader2, Info } from "lucide-react";
 import { useEffect } from "react";
 
 interface DynamicRollerBlindFieldsProps {
@@ -38,7 +40,20 @@ export const DynamicRollerBlindFields = ({
     isOptionVisible,
     isOptionRequired,
     getDefaultValue,
+    shownOptions,
+    rules,
   } = useConditionalOptions(templateId, measurements);
+
+  // Helper to check if an option is shown by a rule (not just visible by default)
+  const isShownByRule = (optionKey: string) => {
+    return shownOptions.includes(optionKey);
+  };
+
+  // Helper to get the rule description for an option
+  const getRuleDescription = (optionKey: string) => {
+    const rule = rules.find(r => r.effect.target_option_key === optionKey);
+    return rule?.description || '';
+  };
 
   // Check if conditional visibility condition is met
   const isConditionMet = (showIf: any) => {
@@ -165,10 +180,27 @@ export const DynamicRollerBlindFields = ({
           case 'select':
             return (
               <div key={option.id} className="space-y-2">
-                <Label htmlFor={option.key}>
-                  {option.label}
-                  {isRequired && <span className="text-destructive ml-1">*</span>}
-                </Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor={option.key}>
+                    {option.label}
+                    {isRequired && <span className="text-destructive ml-1">*</span>}
+                  </Label>
+                  {isShownByRule(option.key) && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant="outline" className="text-xs gap-1">
+                            <Info className="h-3 w-3" />
+                            Conditional
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs max-w-xs">{getRuleDescription(option.key)}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
                 <Select
                   value={currentValue || defaultValue}
                   onValueChange={(value) => handleOptionChange(option.key, value, optionValues)}
@@ -198,10 +230,27 @@ export const DynamicRollerBlindFields = ({
           case 'radio':
             return (
               <div key={option.id} className="space-y-2">
-                <Label>
-                  {option.label}
-                  {isRequired && <span className="text-destructive ml-1">*</span>}
-                </Label>
+                <div className="flex items-center gap-2">
+                  <Label>
+                    {option.label}
+                    {isRequired && <span className="text-destructive ml-1">*</span>}
+                  </Label>
+                  {isShownByRule(option.key) && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant="outline" className="text-xs gap-1">
+                            <Info className="h-3 w-3" />
+                            Conditional
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs max-w-xs">{getRuleDescription(option.key)}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
                 <RadioGroup
                   value={currentValue || defaultValue}
                   onValueChange={(value) => handleOptionChange(option.key, value, optionValues)}
@@ -227,10 +276,27 @@ export const DynamicRollerBlindFields = ({
           case 'text':
             return (
               <div key={option.id} className="space-y-2">
-                <Label htmlFor={option.key}>
-                  {option.label}
-                  {isRequired && <span className="text-destructive ml-1">*</span>}
-                </Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor={option.key}>
+                    {option.label}
+                    {isRequired && <span className="text-destructive ml-1">*</span>}
+                  </Label>
+                  {isShownByRule(option.key) && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant="outline" className="text-xs gap-1">
+                            <Info className="h-3 w-3" />
+                            Conditional
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs max-w-xs">{getRuleDescription(option.key)}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
                 <Input
                   id={option.key}
                   type="text"
@@ -245,10 +311,27 @@ export const DynamicRollerBlindFields = ({
           case 'number':
             return (
               <div key={option.id} className="space-y-2">
-                <Label htmlFor={option.key}>
-                  {option.label}
-                  {isRequired && <span className="text-destructive ml-1">*</span>}
-                </Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor={option.key}>
+                    {option.label}
+                    {isRequired && <span className="text-destructive ml-1">*</span>}
+                  </Label>
+                  {isShownByRule(option.key) && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant="outline" className="text-xs gap-1">
+                            <Info className="h-3 w-3" />
+                            Conditional
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs max-w-xs">{getRuleDescription(option.key)}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
                 <Input
                   id={option.key}
                   type="number"
@@ -263,10 +346,27 @@ export const DynamicRollerBlindFields = ({
           case 'boolean':
             return (
               <div key={option.id} className="flex items-center justify-between space-x-2">
-                <Label htmlFor={option.key}>
-                  {option.label}
-                  {isRequired && <span className="text-destructive ml-1">*</span>}
-                </Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor={option.key}>
+                    {option.label}
+                    {isRequired && <span className="text-destructive ml-1">*</span>}
+                  </Label>
+                  {isShownByRule(option.key) && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant="outline" className="text-xs gap-1">
+                            <Info className="h-3 w-3" />
+                            Conditional
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs max-w-xs">{getRuleDescription(option.key)}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
                 <Switch
                   id={option.key}
                   checked={currentValue === 'true' || currentValue === true}
