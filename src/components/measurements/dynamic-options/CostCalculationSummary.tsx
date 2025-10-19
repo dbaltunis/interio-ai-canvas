@@ -75,7 +75,11 @@ export const CostCalculationSummary = ({
   fabricCalculation,
   selectedOptions = []
 }: CostCalculationSummaryProps) => {
-  // Early return BEFORE hooks if template is null - this prevents hooks violation
+  // Hooks MUST be called before any conditional returns to avoid hook violations
+  const { units } = useMeasurementUnits();
+  const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
+
+  // Early return AFTER hooks if template is null
   if (!template) {
     return (
       <div className="p-4 border rounded-lg bg-muted/50">
@@ -85,6 +89,20 @@ export const CostCalculationSummary = ({
       </div>
     );
   }
+
+  // Format price helper using user's currency
+  const formatPrice = (price: number) => {
+    const currencySymbols: Record<string, string> = {
+      'NZD': 'NZ$',
+      'AUD': 'A$',
+      'USD': '$',
+      'GBP': '£',
+      'EUR': '€',
+      'ZAR': 'R'
+    };
+    const symbol = currencySymbols[units.currency] || units.currency;
+    return `${symbol}${price.toFixed(2)}`;
+  };
 
   // CRITICAL: Detect blinds/shutters and use specialized calculation
   const treatmentCategory = template.treatment_category?.toLowerCase() || '';
@@ -107,8 +125,6 @@ export const CostCalculationSummary = ({
       ? calculateShutterCost(width, height, template, selectedFabric, blindOptions)
       : calculateBlindCost(width, height, template, selectedFabric, blindOptions);
     
-    const formatCurrency = (value: number) => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(value);
-    
     return (
       <Card className="bg-card/50 border-primary/20">
         <CardHeader className="pb-3">
@@ -121,22 +137,22 @@ export const CostCalculationSummary = ({
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-muted-foreground">Material</span>
-              <span className="font-semibold">{formatCurrency(blindResult.fabricCost)}</span>
+              <span className="font-semibold">{formatPrice(blindResult.fabricCost)}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-muted-foreground">Assembly</span>
-              <span className="font-semibold">{formatCurrency(blindResult.manufacturingCost)}</span>
+              <span className="font-semibold">{formatPrice(blindResult.manufacturingCost)}</span>
             </div>
             {blindResult.optionsCost > 0 && (
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-muted-foreground">Options</span>
-                <span className="font-semibold">{formatCurrency(blindResult.optionsCost)}</span>
+                <span className="font-semibold">{formatPrice(blindResult.optionsCost)}</span>
               </div>
             )}
             <div className="border-t pt-2 mt-2">
               <div className="flex justify-between items-center">
                 <span className="font-bold">Total</span>
-                <span className="font-bold text-lg text-primary">{formatCurrency(blindResult.totalCost)}</span>
+                <span className="font-bold text-lg text-primary">{formatPrice(blindResult.totalCost)}</span>
               </div>
             </div>
           </div>
@@ -147,7 +163,7 @@ export const CostCalculationSummary = ({
               <div className="mt-1">
                 <div className="font-medium">Selected Options:</div>
                 {selectedOptions.map((opt, idx) => (
-                  <div key={idx}>• {opt.name}{opt.price > 0 ? ` £${opt.price.toFixed(2)}` : ' Included'}</div>
+                  <div key={idx}>• {opt.name}{opt.price > 0 ? ` ${formatPrice(opt.price)}` : ' Included'}</div>
                 ))}
               </div>
             )}
@@ -157,9 +173,7 @@ export const CostCalculationSummary = ({
     );
   }
 
-  // Hooks MUST be called after early returns are handled
-  const { units } = useMeasurementUnits();
-  const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
+  // Hooks are now called at the top of the component before any conditional logic
 
   const width = parseFloat(measurements.rail_width || measurements.measurement_a || '0');
   const height = parseFloat(measurements.drop || measurements.measurement_b || '0');
@@ -179,18 +193,7 @@ export const CostCalculationSummary = ({
   const widthsRequired = Math.ceil(totalWidthWithAllowances / fabricWidthCm);
   const totalSeamAllowance = widthsRequired > 1 ? (widthsRequired - 1) * seamHems * 2 : 0;
 
-  const formatPrice = (price: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    const symbol = currencySymbols[units.currency] || units.currency;
-    return `${symbol}${price.toFixed(2)}`;
-  };
+  // formatPrice is now defined at the top of the component
 
   // Calculate fabric usage per running linear metre
   const calculateFabricUsage = () => {
