@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MeasurementBridge } from "../measurements/MeasurementBridge";
 import { convertLegacyToDynamic, validateMeasurement } from "../measurements/utils/measurementMigration";
 import { TreatmentPricingForm } from "./TreatmentPricingForm";
+import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
 import { useInventory } from "@/hooks/useInventory";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { WindowRenameButton } from "./WindowRenameButton";
@@ -184,10 +185,17 @@ export const WindowManagementDialog = ({
           pricing_type: treatmentData.pricing_type || 'per_metre',
           currency: treatmentData.currency || 'USD'
         };
+        
+        // CRITICAL: Build structured cost_breakdown for display
+        const costBreakdown = buildClientBreakdown(summaryData);
+        const finalSummaryData = {
+          ...summaryData,
+          cost_breakdown: costBreakdown as any
+        };
 
         const { error: saveError } = await supabase
           .from('windows_summary')
-          .upsert(summaryData, { onConflict: 'window_id' });
+          .upsert(finalSummaryData, { onConflict: 'window_id' });
 
         if (saveError) {
           console.error("❌ Failed to save cost summary:", saveError);
