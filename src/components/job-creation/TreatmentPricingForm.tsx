@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useWindowCoveringOptions } from "@/hooks/useWindowCoveringOptions";
 import { useUploadFile } from "@/hooks/useFileStorage";
@@ -40,14 +40,82 @@ export const TreatmentPricingForm = ({
   const { options, hierarchicalOptions, isLoading: optionsLoading } = useWindowCoveringOptions(windowCovering?.id);
   const { data: treatmentTypesData, isLoading: treatmentTypesLoading } = useTreatmentTypes();
   const uploadFile = useUploadFile();
-  const { calculateFabricUsage, calculateCosts } = useFabricCalculation(formData, options, treatmentTypesData, treatmentType, hierarchicalOptions);
+  const { calculateFabricUsage, calculateCosts: calculateCurtainCosts } = useFabricCalculation(formData, options, treatmentTypesData, treatmentType, hierarchicalOptions);
 
-  // CRITICAL: Use blind calculation for blinds/shutters, curtain calculation for curtains
+  // CRITICAL: Detect treatment category to use correct calculation
   const isBlindsOrShutters = windowCovering?.category === 'blinds' || windowCovering?.category === 'shutters' || 
                              windowCovering?.treatment_category === 'blinds' || windowCovering?.treatment_category === 'shutters' ||
                              treatmentType.toLowerCase().includes('blind') || treatmentType.toLowerCase().includes('shutter');
   
-  const costs = calculateCosts();
+  // Calculate costs using the correct method based on treatment type
+  const costs = React.useMemo(() => {
+    if (isBlindsOrShutters) {
+      // Use blind calculation logic
+      const { calculateBlindCost, calculateShutterCost } = require('@/utils/blindCostCalculations');
+      
+      const width = parseFloat(formData.rail_width) || 0;
+      const height = parseFloat(formData.drop) || 0;
+      
+      // Get selected options with prices from hierarchical options
+      const selectedOpts = hierarchicalOptions
+        .flatMap(category => category.subcategories || [])
+        .flatMap(sub => sub.sub_subcategories || [])
+        .filter(opt => formData.selected_options.includes(opt.id))
+        .map(opt => ({
+          name: opt.name,
+          price: opt.base_price || 0
+        }));
+      
+      // Also include traditional options
+      const traditionalOpts = options
+        .filter(opt => formData.selected_options.includes(opt.id))
+        .map(opt => ({
+          name: opt.name,
+          price: opt.base_price || 0
+        }));
+      
+      const allOptions = [...selectedOpts, ...traditionalOpts];
+      
+      // Create a fabric item from formData
+      const fabricItem = {
+        name: formData.fabric_type || 'Material',
+        unit_price: parseFloat(formData.fabric_cost_per_yard) || 0,
+        selling_price: parseFloat(formData.fabric_cost_per_yard) || 0,
+        fabric_width_cm: parseFloat(formData.fabric_width) || 0
+      };
+      
+      // Calculate based on blind/shutter type
+      let result;
+      if (treatmentType.toLowerCase().includes('shutter')) {
+        result = calculateShutterCost(width, height, windowCovering, fabricItem, allOptions);
+      } else {
+        result = calculateBlindCost(width, height, windowCovering, fabricItem, allOptions);
+      }
+      
+      return {
+        fabricCost: result.fabricCost.toFixed(2),
+        laborCost: result.manufacturingCost.toFixed(2),
+        optionsCost: result.optionsCost.toFixed(2),
+        totalCost: result.totalCost.toFixed(2),
+        fabricUsage: `${width}cm × ${height}cm`,
+        fabricOrientation: 'standard',
+        seamsRequired: 0,
+        seamLaborHours: 0,
+        widthsRequired: 1,
+        optionDetails: allOptions.map(opt => ({
+          name: opt.name,
+          cost: opt.price,
+          method: 'fixed',
+          calculation: `Fixed price: £${opt.price}`
+        })),
+        warnings: result.warnings || [],
+        costComparison: null
+      };
+    } else {
+      // Use curtain calculation
+      return calculateCurtainCosts();
+    }
+  }, [isBlindsOrShutters, formData, options, hierarchicalOptions, windowCovering, treatmentType, calculateCurtainCosts]);
 
   // Enhanced debugging for options loading
   console.log('=== TreatmentPricingForm Debug ===');
