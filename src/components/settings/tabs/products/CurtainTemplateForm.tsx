@@ -483,6 +483,12 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         header_allowance: parseFloat(formData.header_allowance.toString()) || 8,
         waste_percent: parseFloat(formData.waste_percent.toString()) || 5,
         is_railroadable: formData.is_railroadable,
+        
+        // Blind-specific hem allowances
+        blind_header_hem_cm: formData.blind_header_hem_cm ? parseFloat(formData.blind_header_hem_cm.toString()) : undefined,
+        blind_bottom_hem_cm: formData.blind_bottom_hem_cm ? parseFloat(formData.blind_bottom_hem_cm.toString()) : undefined,
+        blind_side_hem_cm: formData.blind_side_hem_cm ? parseFloat(formData.blind_side_hem_cm.toString()) : undefined,
+        
         active: true
       };
 
