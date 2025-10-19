@@ -10,6 +10,7 @@ import { useTreatmentOptions } from '@/hooks/useTreatmentOptions';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { OptionRulesGuide } from './OptionRulesGuide';
 
 interface OptionRulesManagerProps {
   templateId: string;
@@ -175,14 +176,17 @@ export const OptionRulesManager = ({ templateId }: OptionRulesManagerProps) => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Option Rules</CardTitle>
-        <CardDescription>
-          Configure conditional visibility and behavior for options based on other selections
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="space-y-6">
+      <OptionRulesGuide />
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Option Rules ({rules.length})</CardTitle>
+          <CardDescription>
+            Configure conditional visibility and behavior for options based on other selections
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
         {!template && templateLoading && (
           <div className="text-sm text-muted-foreground">Loading template information...</div>
         )}
@@ -387,5 +391,6 @@ export const OptionRulesManager = ({ templateId }: OptionRulesManagerProps) => {
         )}
       </CardContent>
     </Card>
+    </div>
   );
 };
