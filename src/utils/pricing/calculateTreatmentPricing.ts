@@ -6,6 +6,7 @@ export interface TreatmentPricingInput {
   selectedHeading?: string;
   selectedLining?: string;
   unitsCurrency?: string; // e.g., 'GBP'
+  selectedOptions?: Array<{ name: string; price: number }>; // CRITICAL: Add selected options
 }
 
 export interface TreatmentPricingResult {
@@ -15,6 +16,7 @@ export interface TreatmentPricingResult {
   fabricCost: number;
   liningCost: number;
   manufacturingCost: number;
+  optionsCost: number; // CRITICAL: Add options cost to result
   totalCost: number;
   currency: string;
   liningDetails: any | null;
@@ -28,7 +30,7 @@ export interface TreatmentPricingResult {
 }
 
 export const calculateTreatmentPricing = (input: TreatmentPricingInput): TreatmentPricingResult => {
-  const { template, measurements, fabricItem, selectedHeading, selectedLining, unitsCurrency } = input;
+  const { template, measurements, fabricItem, selectedHeading, selectedLining, unitsCurrency, selectedOptions = [] } = input;
 
   // Measurements (cm)
   const widthCm = parseFloat(measurements?.rail_width || measurements?.measurement_a || '0');
@@ -100,7 +102,10 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   if (template?.machine_price_per_drop) manufacturingCost += template.machine_price_per_drop * curtainCount;
   if (template?.machine_price_per_panel) manufacturingCost += template.machine_price_per_panel * curtainCount;
 
-  const totalCost = fabricCost + liningCost + manufacturingCost;
+  // Options cost - sum all selected option prices
+  const optionsCost = selectedOptions.reduce((sum, opt) => sum + (opt.price || 0), 0);
+
+  const totalCost = fabricCost + liningCost + manufacturingCost + optionsCost;
 
   // Leftovers with repeat-aware width usage
   const returnsTotal = returnLeft + returnRight;
@@ -135,6 +140,7 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
       { label: 'Fabric', amount: fabricCost },
       { label: 'Lining', amount: liningCost },
       { label: 'Manufacturing', amount: manufacturingCost },
+      { label: 'Options', amount: optionsCost },
     ],
   };
 
@@ -145,6 +151,7 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
     fabricCost,
     liningCost,
     manufacturingCost,
+    optionsCost,
     totalCost,
     currency: unitsCurrency || 'GBP',
     liningDetails,

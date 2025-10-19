@@ -685,6 +685,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       fabricCost,
       liningCost,
       manufacturingCost,
+      optionsCost,
       totalCost,
       liningDetails,
       calculation_details,
@@ -695,6 +696,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       selectedHeading,
       selectedLining,
       unitsCurrency: units.currency,
+      selectedOptions, // CRITICAL: Pass selectedOptions to calculate options cost
     });
 
     const treatmentConfigData = {
