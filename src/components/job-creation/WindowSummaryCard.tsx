@@ -273,29 +273,27 @@ export function WindowSummaryCard({
             <div className="rounded-lg border bg-card overflow-hidden">
               <div className="flex gap-3 p-3">
                 {/* LEFT: Compact Treatment Preview */}
-                <div className="w-24 h-24 flex-shrink-0 bg-gradient-to-br from-muted/30 to-muted/10 rounded-lg border flex items-center justify-center p-2">
-                  <TreatmentPreviewEngine
-                    windowType={surface.window_type || 'standard'}
-                    treatmentType={treatmentType}
-                    measurements={{
-                      measurement_a: surface.measurement_a || surface.width || 200,
-                      measurement_b: surface.measurement_b || surface.height || 250,
-                      rail_width: surface.rail_width || surface.width || 200,
-                      drop: surface.drop || surface.height || 250,
-                      ...surface
-                    }}
-                    selectedItems={{
-                      fabric: treatmentType === 'curtains' ? summary.fabric_details : null,
-                      hardware: summary.hardware_details,
-                      material: treatmentType?.includes('blind') || treatmentType === 'shutters' 
-                        ? summary.material_details 
-                        : summary.fabric_details
-                    }}
-                    showProductOnly={true}
-                    hideDetails={true}
-                    className="w-full h-full"
-                  />
-                </div>
+                <TreatmentPreviewEngine
+                  windowType={surface.window_type || 'standard'}
+                  treatmentType={treatmentType}
+                  measurements={{
+                    measurement_a: surface.measurement_a || surface.width || 200,
+                    measurement_b: surface.measurement_b || surface.height || 250,
+                    rail_width: surface.rail_width || surface.width || 200,
+                    drop: surface.drop || surface.height || 250,
+                    ...surface
+                  }}
+                  selectedItems={{
+                    fabric: treatmentType === 'curtains' ? summary.fabric_details : null,
+                    hardware: summary.hardware_details,
+                    material: treatmentType?.includes('blind') || treatmentType === 'shutters' 
+                      ? summary.material_details 
+                      : summary.fabric_details
+                  }}
+                  showProductOnly={true}
+                  hideDetails={true}
+                  className="w-24 h-24 flex-shrink-0"
+                />
 
                 {/* RIGHT: Compact Details */}
                 <div className="flex-1 min-w-0">
