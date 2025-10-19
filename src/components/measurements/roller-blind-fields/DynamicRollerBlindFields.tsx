@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTreatmentOptions } from "@/hooks/useTreatmentOptions";
 import { useConditionalOptions } from "@/hooks/useConditionalOptions";
-import { Loader2, Info } from "lucide-react";
+import { Loader2, Info, Sparkles, ChevronDown } from "lucide-react";
 import { useEffect } from "react";
 
 interface DynamicRollerBlindFieldsProps {
@@ -152,17 +152,42 @@ export const DynamicRollerBlindFields = ({
     );
   }
 
-  // Filter and sort visible options
-  // For options controlled by rules: Check rule-based visibility FIRST
-  // For regular options: Check static visibility from database
+  // Create a map of which options trigger which conditional options
+  const conditionalMap = new Map<string, any[]>();
+  rules.forEach(rule => {
+    if (rule.effect.action === 'show_option') {
+      const triggerKey = rule.condition.option_key;
+      const targetKey = rule.effect.target_option_key;
+      
+      if (!conditionalMap.has(triggerKey)) {
+        conditionalMap.set(triggerKey, []);
+      }
+      
+      const targetOption = treatmentOptions.find(opt => opt.key === targetKey);
+      if (targetOption && isOptionVisible(targetKey)) {
+        conditionalMap.get(triggerKey)!.push(targetOption);
+      }
+    }
+  });
+
+  // Separate base options from conditional ones
+  const isConditionalOption = (optionKey: string) => {
+    return rules.some(r => r.effect.target_option_key === optionKey && r.effect.action === 'show_option');
+  };
+
+  // Filter visible options - exclude conditional options from main list
   const visibleOptions = treatmentOptions
     .filter(opt => {
-      // If this option is controlled by ANY rule, use rule-based visibility only
+      // Skip conditional options - they'll be rendered with their triggers
+      if (isConditionalOption(opt.key)) {
+        return false;
+      }
+      
+      // For base options, check visibility
       const hasRule = rules.some(r => r.effect.target_option_key === opt.key);
       if (hasRule) {
-        return isOptionVisible(opt.key); // Rule determines visibility
+        return isOptionVisible(opt.key);
       }
-      // Otherwise use static database visibility
       return opt.visible;
     })
     .sort((a, b) => a.order_index - b.order_index)
@@ -170,225 +195,189 @@ export const DynamicRollerBlindFields = ({
       index === self.findIndex(o => o.key === opt.key)
     );
 
-  return (
-    <div className="space-y-4">
-      {visibleOptions.map(option => {
-        // Check conditional visibility
-        if (option.validation?.show_if && !isConditionMet(option.validation.show_if)) {
-          return null;
-        }
+  // Helper to render a single option field
+  const renderOption = (option: any, isConditional: boolean = false) => {
+    // Check conditional visibility
+    if (option.validation?.show_if && !isConditionMet(option.validation.show_if)) {
+      return null;
+    }
 
-        const optionValues = getOptionValues(option);
-        const currentValue = measurements[option.key];
-        const ruleDefaultValue = getDefaultValue(option.key);
-        const defaultValue = ruleDefaultValue || optionValues[0]?.value;
-        const isRequired = option.required || isOptionRequired(option.key);
+    const optionValues = getOptionValues(option);
+    const currentValue = measurements[option.key];
+    const ruleDefaultValue = getDefaultValue(option.key);
+    const defaultValue = ruleDefaultValue || optionValues[0]?.value;
+    const isRequired = option.required || isOptionRequired(option.key);
 
-        // Render based on input_type
-        switch (option.input_type) {
-          case 'select':
-            return (
-              <div key={option.id} className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor={option.key}>
-                    {option.label}
-                    {isRequired && <span className="text-destructive ml-1">*</span>}
-                  </Label>
-                  {isShownByRule(option.key) && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge variant="outline" className="text-xs gap-1">
-                            <Info className="h-3 w-3" />
-                            Conditional
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs max-w-xs">{getRuleDescription(option.key)}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
-                <Select
-                  value={currentValue || defaultValue}
-                  onValueChange={(value) => handleOptionChange(option.key, value, optionValues)}
-                  disabled={readOnly}
-                >
-                  <SelectTrigger id={option.key}>
-                    <SelectValue placeholder={`Select ${option.label.toLowerCase()}`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {optionValues.map(opt => (
-                      <SelectItem key={opt.id} value={opt.value}>
-                        <div className="flex items-center justify-between w-full">
-                          <span>{opt.label}</span>
-                          {opt.price > 0 && (
-                            <span className="text-xs text-muted-foreground ml-2">
-                              +${opt.price.toFixed(2)}
-                            </span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+    const wrapperClass = isConditional 
+      ? "ml-4 pl-4 border-l-2 border-purple-300 bg-gradient-to-r from-purple-50 to-transparent p-3 rounded-r-lg animate-in slide-in-from-left duration-300" 
+      : "";
+
+    // Render based on input_type
+    const renderField = () => {
+      switch (option.input_type) {
+        case 'select':
+          return (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Label htmlFor={option.key}>
+                  {isConditional && <Sparkles className="h-3 w-3 text-purple-500 inline mr-1" />}
+                  {option.label}
+                  {isRequired && <span className="text-destructive ml-1">*</span>}
+                </Label>
+                {isConditional && (
+                  <Badge variant="secondary" className="text-xs gap-1 bg-purple-100 text-purple-800">
+                    <ChevronDown className="h-3 w-3" />
+                    Appears conditionally
+                  </Badge>
+                )}
               </div>
-            );
-
-          case 'radio':
-            return (
-              <div key={option.id} className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label>
-                    {option.label}
-                    {isRequired && <span className="text-destructive ml-1">*</span>}
-                  </Label>
-                  {isShownByRule(option.key) && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge variant="outline" className="text-xs gap-1">
-                            <Info className="h-3 w-3" />
-                            Conditional
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs max-w-xs">{getRuleDescription(option.key)}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
-                <RadioGroup
-                  value={currentValue || defaultValue}
-                  onValueChange={(value) => handleOptionChange(option.key, value, optionValues)}
-                  disabled={readOnly}
-                >
+              <Select
+                value={currentValue || defaultValue}
+                onValueChange={(value) => handleOptionChange(option.key, value, optionValues)}
+                disabled={readOnly}
+              >
+                <SelectTrigger id={option.key} className={isConditional ? "border-purple-200 focus:ring-purple-500" : ""}>
+                  <SelectValue placeholder={`Select ${option.label.toLowerCase()}`} />
+                </SelectTrigger>
+                <SelectContent>
                   {optionValues.map(opt => (
-                    <div key={opt.id} className="flex items-center space-x-2">
-                      <RadioGroupItem value={opt.value} id={`${option.key}-${opt.value}`} />
-                      <Label htmlFor={`${option.key}-${opt.value}`} className="font-normal cursor-pointer flex items-center">
-                        {opt.label}
+                    <SelectItem key={opt.id} value={opt.value}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>{opt.label}</span>
                         {opt.price > 0 && (
                           <span className="text-xs text-muted-foreground ml-2">
                             +${opt.price.toFixed(2)}
                           </span>
                         )}
-                      </Label>
-                    </div>
+                      </div>
+                    </SelectItem>
                   ))}
-                </RadioGroup>
-              </div>
-            );
+                </SelectContent>
+              </Select>
+            </div>
+          );
 
-          case 'text':
-            return (
-              <div key={option.id} className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor={option.key}>
-                    {option.label}
-                    {isRequired && <span className="text-destructive ml-1">*</span>}
-                  </Label>
-                  {isShownByRule(option.key) && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge variant="outline" className="text-xs gap-1">
-                            <Info className="h-3 w-3" />
-                            Conditional
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs max-w-xs">{getRuleDescription(option.key)}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
-                <Input
-                  id={option.key}
-                  type="text"
-                  value={currentValue || ''}
-                  onChange={(e) => handleOptionChange(option.key, e.target.value, [])}
-                  disabled={readOnly}
-                  placeholder={`Enter ${option.label.toLowerCase()}`}
-                />
+        case 'radio':
+          return (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Label>
+                  {isConditional && <Sparkles className="h-3 w-3 text-purple-500 inline mr-1" />}
+                  {option.label}
+                  {isRequired && <span className="text-destructive ml-1">*</span>}
+                </Label>
+                {isConditional && (
+                  <Badge variant="secondary" className="text-xs gap-1 bg-purple-100 text-purple-800">
+                    <ChevronDown className="h-3 w-3" />
+                    Appears conditionally
+                  </Badge>
+                )}
               </div>
-            );
+              <RadioGroup
+                value={currentValue || defaultValue}
+                onValueChange={(value) => handleOptionChange(option.key, value, optionValues)}
+                disabled={readOnly}
+              >
+                {optionValues.map(opt => (
+                  <div key={opt.id} className="flex items-center space-x-2">
+                    <RadioGroupItem value={opt.value} id={`${option.key}-${opt.value}`} />
+                    <Label htmlFor={`${option.key}-${opt.value}`} className="font-normal cursor-pointer flex items-center">
+                      {opt.label}
+                      {opt.price > 0 && (
+                        <span className="text-xs text-muted-foreground ml-2">
+                          +${opt.price.toFixed(2)}
+                        </span>
+                      )}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+          );
 
-          case 'number':
-            return (
-              <div key={option.id} className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor={option.key}>
-                    {option.label}
-                    {isRequired && <span className="text-destructive ml-1">*</span>}
-                  </Label>
-                  {isShownByRule(option.key) && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge variant="outline" className="text-xs gap-1">
-                            <Info className="h-3 w-3" />
-                            Conditional
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs max-w-xs">{getRuleDescription(option.key)}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
-                <Input
-                  id={option.key}
-                  type="number"
-                  value={currentValue || ''}
-                  onChange={(e) => handleOptionChange(option.key, e.target.value, [])}
-                  disabled={readOnly}
-                  placeholder={`Enter ${option.label.toLowerCase()}`}
-                />
+        case 'text':
+        case 'number':
+          return (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Label htmlFor={option.key}>
+                  {isConditional && <Sparkles className="h-3 w-3 text-purple-500 inline mr-1" />}
+                  {option.label}
+                  {isRequired && <span className="text-destructive ml-1">*</span>}
+                </Label>
+                {isConditional && (
+                  <Badge variant="secondary" className="text-xs gap-1 bg-purple-100 text-purple-800">
+                    <ChevronDown className="h-3 w-3" />
+                    Appears conditionally
+                  </Badge>
+                )}
               </div>
-            );
+              <Input
+                id={option.key}
+                type={option.input_type}
+                value={currentValue || ''}
+                onChange={(e) => handleOptionChange(option.key, e.target.value, [])}
+                disabled={readOnly}
+                placeholder={`Enter ${option.label.toLowerCase()}`}
+                className={isConditional ? "border-purple-200 focus:ring-purple-500" : ""}
+              />
+            </div>
+          );
 
-          case 'boolean':
-            return (
-              <div key={option.id} className="flex items-center justify-between space-x-2">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor={option.key}>
-                    {option.label}
-                    {isRequired && <span className="text-destructive ml-1">*</span>}
-                  </Label>
-                  {isShownByRule(option.key) && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge variant="outline" className="text-xs gap-1">
-                            <Info className="h-3 w-3" />
-                            Conditional
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs max-w-xs">{getRuleDescription(option.key)}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
-                <Switch
-                  id={option.key}
-                  checked={currentValue === 'true' || currentValue === true}
-                  onCheckedChange={(checked) => handleOptionChange(option.key, checked, [])}
-                  disabled={readOnly}
-                />
+        case 'boolean':
+          return (
+            <div className="flex items-center justify-between space-x-2">
+              <div className="flex items-center gap-2">
+                <Label htmlFor={option.key}>
+                  {isConditional && <Sparkles className="h-3 w-3 text-purple-500 inline mr-1" />}
+                  {option.label}
+                  {isRequired && <span className="text-destructive ml-1">*</span>}
+                </Label>
+                {isConditional && (
+                  <Badge variant="secondary" className="text-xs gap-1 bg-purple-100 text-purple-800">
+                    <ChevronDown className="h-3 w-3" />
+                    Appears conditionally
+                  </Badge>
+                )}
               </div>
-            );
+              <Switch
+                id={option.key}
+                checked={currentValue === 'true' || currentValue === true}
+                onCheckedChange={(checked) => handleOptionChange(option.key, checked, [])}
+                disabled={readOnly}
+              />
+            </div>
+          );
 
-          default:
-            return null;
-        }
-      })}
+        default:
+          return null;
+      }
+    };
+
+    return (
+      <div key={option.id} className={wrapperClass}>
+        {renderField()}
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-4">
+      {visibleOptions.map(option => (
+        <div key={option.id}>
+          {/* Render the base option */}
+          {renderOption(option, false)}
+          
+          {/* Render any conditional options that appear below this one */}
+          {conditionalMap.has(option.key) && conditionalMap.get(option.key)!.length > 0 && (
+            <div className="mt-2 space-y-2">
+              {conditionalMap.get(option.key)!.map(condOption => (
+                renderOption(condOption, true)
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 };
