@@ -6,6 +6,7 @@ import { Calculator, DollarSign, Info, Settings } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import { getPriceFromGrid } from "@/hooks/usePricingGrids";
+import { calculateBlindCost, calculateShutterCost } from "@/utils/blindCostCalculations";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 
 // Simple black outline SVG icons
@@ -109,9 +110,6 @@ export const CostCalculationSummary = ({
   const isBlindsOrShutters = treatmentCategory.includes('blind') || treatmentCategory.includes('shutter');
 
   if (isBlindsOrShutters) {
-    // Import blind calculation utilities
-    const { calculateBlindCost, calculateShutterCost } = require('@/utils/blindCostCalculations');
-    
     const width = parseFloat(measurements.rail_width) || 0;
     const height = parseFloat(measurements.drop) || 0;
     
