@@ -383,20 +383,61 @@ export const AdaptiveFabricPricingDisplay = ({
           </div>
         </div>
 
-        {/* Total Calculation */}
+        {/* Total Calculation - Dynamic based on pricing method */}
         <div className="container-level-3 rounded-md p-3 bg-primary/5">
           <div className="text-xs space-y-2">
-            <div className="flex justify-between font-medium">
-              <span>Linear Meters Required:</span>
-              <span className="text-foreground">{(fabricCalculation.linearMeters || 0).toFixed(2)}m</span>
-            </div>
-            <div className="flex justify-between font-medium text-base">
-              <span>Fabric Cost:</span>
-              <span className="text-foreground">{formatPrice(fabricCalculation.totalCost || 0)}</span>
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">
-              Calculation: {(fabricCalculation.linearMeters || 0).toFixed(2)}m × {formatPrice(fabricCalculation.pricePerMeter || 0)}/m
-            </div>
+            {(() => {
+              // Determine pricing unit dynamically from template
+              const pricingMethod = template?.makeup_pricing_method || template?.pricing_method || 'per_metre';
+              const isByDrop = pricingMethod === 'per_drop';
+              const isByPanel = pricingMethod === 'per_panel';
+              const isByMetre = pricingMethod === 'per_metre' || !pricingMethod;
+              
+              const quantity = isByDrop 
+                ? (fabricCalculation.widthsRequired || 1)
+                : isByPanel
+                ? (measurements.curtain_type === 'pair' ? 2 : 1)
+                : (fabricCalculation.linearMeters || 0);
+              
+              const unitLabel = isByDrop 
+                ? 'Drops Required'
+                : isByPanel
+                ? 'Panels Required'
+                : 'Linear Meters Required';
+              
+              const unitSuffix = isByDrop 
+                ? ' drop(s)'
+                : isByPanel
+                ? ' panel(s)'
+                : 'm';
+              
+              const calculationText = isByDrop
+                ? `${quantity.toFixed(0)} drops × ${formatPrice(fabricCalculation.pricePerMeter || 0)}/drop`
+                : isByPanel
+                ? `${quantity.toFixed(0)} panels × ${formatPrice(fabricCalculation.pricePerMeter || 0)}/panel`
+                : `${quantity.toFixed(2)}m × ${formatPrice(fabricCalculation.pricePerMeter || 0)}/m`;
+              
+              return (
+                <>
+                  <div className="flex justify-between font-medium">
+                    <span>{unitLabel}:</span>
+                    <span className="text-foreground">{isByDrop || isByPanel ? quantity.toFixed(0) : quantity.toFixed(2)}{unitSuffix}</span>
+                  </div>
+                  <div className="flex justify-between font-medium text-base">
+                    <span>Fabric Cost:</span>
+                    <span className="text-foreground">{formatPrice(fabricCalculation.totalCost || 0)}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Calculation: {calculationText}
+                  </div>
+                  {pricingMethod && pricingMethod !== 'per_metre' && (
+                    <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                      Pricing Method: {pricingMethod.replace(/_/g, ' ')}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
       </div>
