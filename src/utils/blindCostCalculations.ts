@@ -32,13 +32,27 @@ export const calculateBlindCost = (
     template: template?.name,
     pricing_type: template?.pricing_type,
     fabricPrice: fabricItem?.selling_price,
+    blindHeaderHem: template?.blind_header_hem_cm || template?.header_allowance || 8,
+    blindBottomHem: template?.blind_bottom_hem_cm || template?.bottom_hem || 8,
+    blindSideHem: template?.blind_side_hem_cm || 0,
+    wastePercent: template?.waste_percent || 0,
     options: selectedOptions
   });
   
   // Convert to meters for area calculation
-  const widthM = width / 100;
-  const heightM = height / 100;
-  const squareMeters = widthM * heightM;
+  // For blinds, include hems in the calculation (matching fabricUsageCalculator)
+  const blindHeaderHem = template?.blind_header_hem_cm || template?.header_allowance || 8;
+  const blindBottomHem = template?.blind_bottom_hem_cm || template?.bottom_hem || 8;
+  const blindSideHem = template?.blind_side_hem_cm || 0;
+  const wastePercent = template?.waste_percent || 0;
+  const wasteMultiplier = 1 + (wastePercent / 100);
+  
+  const effectiveWidthCm = width + (blindSideHem * 2);
+  const effectiveHeightCm = height + blindHeaderHem + blindBottomHem;
+  const widthM = effectiveWidthCm / 100;
+  const heightM = effectiveHeightCm / 100;
+  const squareMetersRaw = widthM * heightM;
+  const squareMeters = squareMetersRaw * wasteMultiplier; // Apply waste
   const linearMeters = heightM; // For blinds, linear meters typically = height
   
   // PRICING GRID: If using pricing grid, the grid price IS the total cost (includes everything)
