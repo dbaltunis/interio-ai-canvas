@@ -261,16 +261,50 @@ export const CostCalculationSummary = ({
   
   // CRITICAL: Use ONLY pre-calculated costs from calculateTreatmentPricing (single source of truth)
   // This component is DISPLAY ONLY - all calculations happen in calculateTreatmentPricing
-  const finalFabricCostToDisplay = calculatedFabricCost || 0;
+  let finalFabricCostToDisplay = calculatedFabricCost || 0;
   const finalLiningCostToDisplay = calculatedLiningCost || 0;
   const finalManufacturingCostToDisplay = calculatedManufacturingCost || 0;
   const finalHeadingCostToDisplay = calculatedHeadingCost || 0;
   const finalOptionsCostToDisplay = calculatedOptionsCost || 0;
-  const totalCost = calculatedTotalCost || 0;
+  let totalCost = calculatedTotalCost || 0;
   
   // Get linear meters from fabricCalculation if available, otherwise from our metrics
   const finalLinearMeters = fabricCalculation?.linearMeters || fabricUsage.linearMeters;
-  const finalSquareMeters = fabricCalculation?.sqm || fabricCalculation?.squareMeters || fabricUsage.squareMeters;
+  let finalSquareMeters = fabricCalculation?.sqm || fabricCalculation?.squareMeters || fabricUsage.squareMeters;
+  
+  // FALLBACK: Calculate sqm with hems if it's 0 or missing for blinds
+  if ((finalSquareMeters === 0 || !finalSquareMeters) && treatmentCategory.includes('blind')) {
+    const widthCm = parseFloat(measurements.rail_width || '0');
+    const heightCm = parseFloat(measurements.drop || '0');
+    const headerHem = template?.blind_header_hem_cm || template?.header_allowance || 8;
+    const bottomHem = template?.blind_bottom_hem_cm || template?.bottom_hem || 8;
+    const sideHem = template?.blind_side_hem_cm || 0;
+    const wastePercent = template?.waste_percent || 0;
+    
+    const effectiveWidth = widthCm + (sideHem * 2);
+    const effectiveHeight = heightCm + headerHem + bottomHem;
+    const sqmRaw = (effectiveWidth * effectiveHeight) / 10000;
+    finalSquareMeters = sqmRaw * (1 + wastePercent / 100);
+    
+    console.log('🔧 CostSummary FALLBACK sqm calculation:', {
+      widthCm, heightCm, headerHem, bottomHem, sideHem, wastePercent,
+      effectiveWidth, effectiveHeight, sqmRaw, finalSquareMeters
+    });
+  }
+  
+  // FALLBACK: Calculate fabric cost if it's 0 or missing for blinds with sqm pricing
+  if ((finalFabricCostToDisplay === 0 || !finalFabricCostToDisplay) && treatmentCategory.includes('blind') && finalSquareMeters > 0) {
+    const pricePerSqm = selectedFabric?.selling_price || selectedFabric?.price_per_meter || selectedFabric?.unit_price || 0;
+    finalFabricCostToDisplay = finalSquareMeters * pricePerSqm;
+    totalCost = finalFabricCostToDisplay + finalLiningCostToDisplay + finalManufacturingCostToDisplay + finalHeadingCostToDisplay + finalOptionsCostToDisplay;
+    
+    console.log('🔧 CostSummary FALLBACK fabric cost calculation:', {
+      finalSquareMeters,
+      pricePerSqm,
+      finalFabricCostToDisplay,
+      totalCost
+    });
+  }
 
   console.log('🎨 CostCalculationSummary DISPLAYING (from calculateTreatmentPricing):', {
     fabricCost: finalFabricCostToDisplay,
