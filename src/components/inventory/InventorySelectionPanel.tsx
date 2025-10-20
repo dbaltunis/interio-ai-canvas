@@ -7,6 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Package, Palette, Wrench, Check, X, Plus, Edit3 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -50,7 +57,11 @@ export const InventorySelectionPanel = ({
   const [manualEntry, setManualEntry] = useState({
     name: "",
     price: "",
-    unit: "m"
+    unit: "m",
+    fabric_width: "",
+    fabric_rotation: "vertical",
+    pattern_repeat_horizontal: "",
+    pattern_repeat_vertical: ""
   });
   const selectedCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const {
@@ -95,11 +106,25 @@ export const InventorySelectionPanel = ({
       unit: manualEntry.unit,
       quantity: 0,
       category: activeCategory,
-      isManualEntry: true
+      isManualEntry: true,
+      ...(activeCategory === "fabric" && {
+        fabric_width: parseFloat(manualEntry.fabric_width) || 0,
+        fabric_rotation: manualEntry.fabric_rotation,
+        pattern_repeat_horizontal: parseFloat(manualEntry.pattern_repeat_horizontal) || 0,
+        pattern_repeat_vertical: parseFloat(manualEntry.pattern_repeat_vertical) || 0
+      })
     };
 
     onItemSelect(activeCategory, manualItem);
-    setManualEntry({ name: "", price: "", unit: "m" });
+    setManualEntry({ 
+      name: "", 
+      price: "", 
+      unit: "m",
+      fabric_width: "",
+      fabric_rotation: "vertical",
+      pattern_repeat_horizontal: "",
+      pattern_repeat_vertical: ""
+    });
     setShowManualEntry(false);
   };
 
@@ -329,7 +354,7 @@ export const InventorySelectionPanel = ({
                   Enter custom {activeCategory} details not in your inventory.
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
+              <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
                 <div className="grid gap-2">
                   <Label htmlFor="name">Name</Label>
                   <Input
@@ -339,8 +364,66 @@ export const InventorySelectionPanel = ({
                     placeholder={`Enter ${activeCategory} name`}
                   />
                 </div>
+
+                {activeCategory === "fabric" && (
+                  <>
+                    <div className="grid gap-2">
+                      <Label htmlFor="fabric_width">Fabric Width (cm)</Label>
+                      <Input
+                        id="fabric_width"
+                        type="number"
+                        step="1"
+                        value={manualEntry.fabric_width}
+                        onChange={(e) => setManualEntry({ ...manualEntry, fabric_width: e.target.value })}
+                        placeholder="e.g., 137, 300"
+                      />
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="fabric_rotation">Fabric Rotation</Label>
+                      <Select
+                        value={manualEntry.fabric_rotation}
+                        onValueChange={(value) => setManualEntry({ ...manualEntry, fabric_rotation: value })}
+                      >
+                        <SelectTrigger id="fabric_rotation">
+                          <SelectValue placeholder="Select rotation type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="vertical">Vertical (Narrow Fabric)</SelectItem>
+                          <SelectItem value="horizontal">Horizontal (Railroaded)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="grid gap-2">
+                        <Label htmlFor="pattern_repeat_vertical">Vertical Repeat (cm)</Label>
+                        <Input
+                          id="pattern_repeat_vertical"
+                          type="number"
+                          step="0.1"
+                          value={manualEntry.pattern_repeat_vertical}
+                          onChange={(e) => setManualEntry({ ...manualEntry, pattern_repeat_vertical: e.target.value })}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="pattern_repeat_horizontal">Horizontal Repeat (cm)</Label>
+                        <Input
+                          id="pattern_repeat_horizontal"
+                          type="number"
+                          step="0.1"
+                          value={manualEntry.pattern_repeat_horizontal}
+                          onChange={(e) => setManualEntry({ ...manualEntry, pattern_repeat_horizontal: e.target.value })}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
                 <div className="grid gap-2">
-                  <Label htmlFor="price">Price</Label>
+                  <Label htmlFor="price">Price per Unit</Label>
                   <div className="flex gap-2">
                     <Input
                       id="price"
@@ -351,12 +434,21 @@ export const InventorySelectionPanel = ({
                       placeholder="0.00"
                       className="flex-1"
                     />
-                    <Input
+                    <Select
                       value={manualEntry.unit}
-                      onChange={(e) => setManualEntry({ ...manualEntry, unit: e.target.value })}
-                      placeholder="unit"
-                      className="w-20"
-                    />
+                      onValueChange={(value) => setManualEntry({ ...manualEntry, unit: value })}
+                    >
+                      <SelectTrigger className="w-24">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="m">per m</SelectItem>
+                        <SelectItem value="yd">per yd</SelectItem>
+                        <SelectItem value="ft">per ft</SelectItem>
+                        <SelectItem value="m²">per m²</SelectItem>
+                        <SelectItem value="each">each</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>
