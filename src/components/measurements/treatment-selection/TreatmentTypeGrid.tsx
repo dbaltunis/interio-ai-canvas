@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
@@ -25,12 +26,25 @@ export const TreatmentTypeGrid = ({
   onSelect,
   searchQuery = ""
 }: TreatmentTypeGridProps) => {
+  const selectedCardRef = useRef<HTMLDivElement>(null);
+
   // Filter treatments based on search query
   const filteredTreatments = treatments.filter(treatment =>
     treatment.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     treatment.curtain_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (treatment.heading_name || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Auto-scroll to selected treatment when component mounts or selection changes
+  useEffect(() => {
+    if (selectedCardRef.current && selectedId) {
+      selectedCardRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest'
+      });
+    }
+  }, [selectedId]);
 
   // Group treatments by curtain type for better organization
   const groupedTreatments = filteredTreatments.reduce((acc, treatment) => {
@@ -64,6 +78,7 @@ export const TreatmentTypeGrid = ({
               return (
                 <Card
                   key={treatment.id}
+                  ref={isSelected ? selectedCardRef : null}
                   className={`cursor-pointer transition-all duration-200 hover:shadow-sm ${
                     isSelected 
                       ? 'border-primary bg-primary/5 shadow-sm' 

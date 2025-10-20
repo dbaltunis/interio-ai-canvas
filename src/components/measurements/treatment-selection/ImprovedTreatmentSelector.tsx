@@ -72,12 +72,13 @@ export const ImprovedTreatmentSelector = ({
         />
       </div>}
 
-      <ScrollArea className="h-[300px]">
+      <ScrollArea className="h-[400px]">
         {isLoading ? (
-          <div className="space-y-3 pr-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-20 bg-muted/30 rounded-lg animate-pulse" />
-            ))}
+          <div className="flex items-center justify-center h-full">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Loading treatments...</p>
+            </div>
           </div>
         ) : (
           <div className="pr-3">
