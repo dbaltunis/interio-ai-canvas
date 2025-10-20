@@ -263,7 +263,7 @@ export const CostCalculationSummary = ({
   // This component is DISPLAY ONLY - all calculations happen in calculateTreatmentPricing
   let finalFabricCostToDisplay = calculatedFabricCost || 0;
   const finalLiningCostToDisplay = calculatedLiningCost || 0;
-  const finalManufacturingCostToDisplay = calculatedManufacturingCost || 0;
+  let finalManufacturingCostToDisplay = calculatedManufacturingCost || 0;
   const finalHeadingCostToDisplay = calculatedHeadingCost || 0;
   const finalOptionsCostToDisplay = calculatedOptionsCost || 0;
   let totalCost = calculatedTotalCost || 0;
@@ -293,18 +293,30 @@ export const CostCalculationSummary = ({
   }
   
   // FALLBACK: Calculate fabric cost if it's 0 or missing for blinds with sqm pricing
-  if ((finalFabricCostToDisplay === 0 || !finalFabricCostToDisplay) && treatmentCategory.includes('blind') && finalSquareMeters > 0) {
+  if ((finalFabricCostToDisplay === 0 || !finalFabricCostToDisplay) && finalSquareMeters > 0) {
     const pricePerSqm = selectedFabric?.selling_price || selectedFabric?.price_per_meter || selectedFabric?.unit_price || 0;
-    finalFabricCostToDisplay = finalSquareMeters * pricePerSqm;
-    totalCost = finalFabricCostToDisplay + finalLiningCostToDisplay + finalManufacturingCostToDisplay + finalHeadingCostToDisplay + finalOptionsCostToDisplay;
-    
-    console.log('🔧 CostSummary FALLBACK fabric cost calculation:', {
-      finalSquareMeters,
-      pricePerSqm,
-      finalFabricCostToDisplay,
-      totalCost
-    });
+    if (pricePerSqm > 0) {
+      finalFabricCostToDisplay = finalSquareMeters * pricePerSqm;
+      console.log('🔧 CostSummary FALLBACK fabric cost calculation:', {
+        finalSquareMeters,
+        pricePerSqm,
+        finalFabricCostToDisplay
+      });
+    }
   }
+  
+  // FALLBACK: Calculate manufacturing cost if it's 0 or missing
+  if ((finalManufacturingCostToDisplay === 0 || !finalManufacturingCostToDisplay) && treatmentCategory.includes('blind')) {
+    // For blinds, manufacturing might be included in grid price or calculated separately
+    if (template?.pricing_type === 'pricing_grid' && template?.pricing_grid_data) {
+      const gridPrice = getPriceFromGrid(template.pricing_grid_data, parseFloat(measurements.rail_width || '0'), parseFloat(measurements.drop || '0'));
+      finalManufacturingCostToDisplay = gridPrice;
+      console.log('🔧 CostSummary FALLBACK manufacturing from grid:', finalManufacturingCostToDisplay);
+    }
+  }
+  
+  // Recalculate total with all costs
+  totalCost = finalFabricCostToDisplay + finalLiningCostToDisplay + finalManufacturingCostToDisplay + finalHeadingCostToDisplay + finalOptionsCostToDisplay;
 
   console.log('🎨 CostCalculationSummary DISPLAYING (from calculateTreatmentPricing):', {
     fabricCost: finalFabricCostToDisplay,
