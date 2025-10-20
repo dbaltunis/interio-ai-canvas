@@ -490,8 +490,8 @@ export const CostCalculationSummary = ({
 
       {/* Cost Breakdown - Simple View */}
       <div className="grid gap-2 text-sm">
-        {/* Fabric Material */}
-        {finalFabricCostToDisplay > 0 && (
+        {/* Fabric Material - Always show if we have fabric selected */}
+        {(finalFabricCostToDisplay > 0 || selectedFabric) && (
           <div className="flex items-center justify-between py-1.5 border-b border-border/50">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
@@ -500,7 +500,9 @@ export const CostCalculationSummary = ({
                 <span className="text-xs text-muted-foreground truncate">
                   {treatmentCategory.includes('blind') && finalSquareMeters > 0 
                     ? `${finalSquareMeters.toFixed(2)} sqm × ${formatPrice(fabricPriceDisplay)}/sqm`
-                    : `${finalLinearMeters.toFixed(2)}${units.fabric === 'yards' ? 'yd' : 'm'} × ${formatPrice(fabricPriceDisplay)}/${units.fabric === 'yards' ? 'yd' : 'm'}`
+                    : finalLinearMeters > 0
+                    ? `${finalLinearMeters.toFixed(2)}${units.fabric === 'yards' ? 'yd' : 'm'} × ${formatPrice(fabricPriceDisplay)}/${units.fabric === 'yards' ? 'yd' : 'm'}`
+                    : selectedFabric?.name || 'Calculating...'
                   }
                 </span>
               </div>
@@ -509,15 +511,17 @@ export const CostCalculationSummary = ({
           </div>
         )}
 
-        {/* Manufacturing/Assembly */}
-        {finalManufacturingCostToDisplay > 0 && (
+        {/* Manufacturing/Assembly - Show for blinds or if cost > 0 */}
+        {(finalManufacturingCostToDisplay > 0 || treatmentCategory.includes('blind')) && (
           <div className="flex items-center justify-between py-1.5 border-b border-border/50">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <ManufacturingIcon className="h-3.5 w-3.5 text-primary shrink-0" />
               <div className="flex flex-col min-w-0">
                 <span className="text-card-foreground font-medium">{getManufacturingLabel()}</span>
                 <span className="text-xs text-muted-foreground truncate">
-                  {template?.pricing_type === 'pricing_grid' ? 'Grid pricing' : 'Labor & assembly'}
+                  {template?.pricing_type === 'pricing_grid' 
+                    ? `Grid: ${parseFloat(measurements.rail_width || '0')}cm × ${parseFloat(measurements.drop || '0')}cm`
+                    : 'Labor & assembly'}
                 </span>
               </div>
             </div>
