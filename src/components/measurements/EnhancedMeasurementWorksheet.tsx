@@ -862,6 +862,19 @@ export const EnhancedMeasurementWorksheet = forwardRef<
           curtainType: selectedCovering.curtain_type
         });
         
+        // CRITICAL: Recalculate total to ensure options_cost is included
+        const finalTotalCost = fabricCost + liningCost + manufacturingCost + selectedOptions.reduce((sum, opt) => sum + (opt.price || 0), 0);
+        
+        console.log('💰 Final cost calculation before save:', {
+          fabricCost,
+          liningCost,
+          manufacturingCost,
+          optionsCost: selectedOptions.reduce((sum, opt) => sum + (opt.price || 0), 0),
+          totalFromCalculation: totalCost,
+          finalTotalCost,
+          selectedOptionsCount: selectedOptions.length
+        });
+        
         await saveWindowSummary.mutateAsync({
           window_id: surfaceId,
           linear_meters: linearMeters,
@@ -870,7 +883,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
           fabric_cost: fabricCost,
           lining_cost: liningCost,
           manufacturing_cost: manufacturingCost,
-          total_cost: totalCost,
+          total_cost: finalTotalCost, // Use recalculated total that includes all costs
           template_id: selectedCovering.id,
           pricing_type: selectedCovering.pricing_type,
           waste_percent: selectedCovering.waste_percent || 0,
