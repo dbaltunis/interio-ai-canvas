@@ -222,7 +222,7 @@ export const VisualMeasurementSheet = ({
 
       return {
         linearMeters: result.meters,
-        totalCost: result.meters * pricePerMeter,
+        totalCost: result.details?.sqm ? (result.details.sqm * pricePerMeter) : (result.meters * pricePerMeter),
         pricePerMeter: pricePerMeter,
         widthsRequired: result.widthsRequired || 1,
         railWidth: width,
