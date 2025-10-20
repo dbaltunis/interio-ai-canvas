@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
 
 interface TreatmentType {
@@ -94,15 +93,12 @@ export const TreatmentTypeGrid = ({
                       </div>
                       
                       <div className="text-center w-full">
-                        <div className="flex items-center justify-center gap-2 mb-2">
+                        <div className="flex items-center justify-center gap-2">
                           <h4 className="text-sm font-semibold truncate">{treatment.name}</h4>
                           {isSelected && (
                             <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
                           )}
                         </div>
-                        <Badge variant="outline" className="text-xs h-5 px-2">
-                          {treatment.fullness_ratio}x
-                        </Badge>
                       </div>
                     </div>
                   </CardContent>
