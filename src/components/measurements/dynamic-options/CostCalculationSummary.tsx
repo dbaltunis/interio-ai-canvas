@@ -207,443 +207,81 @@ export const CostCalculationSummary = ({
 
   // formatPrice is now defined at the top of the component
 
-  // Calculate fabric usage per running linear metre
+  // Calculate fabric usage METRICS ONLY (no cost calculation)
   const calculateFabricUsage = () => {
     if (!width || !height) return { 
       linearMeters: 0, 
       squareMeters: 0, 
-      cost: 0, 
       fabricWidth: 0,
       totalDrop: 0,
       widthsRequired: 0
     };
 
-    const fabricWidthCm = selectedFabric?.fabric_width_cm || selectedFabric?.fabric_width || 137; // Default fabric width
-    
-    // Include all manufacturing allowances from template settings
+    const fabricWidthCm = selectedFabric?.fabric_width_cm || selectedFabric?.fabric_width || 137;
     const headerHem = template.header_allowance || 8;
     const bottomHem = template.bottom_hem || 8;
-    
-    // Include pooling and vertical allowances in the total drop calculation  
     const totalDrop = height + headerHem + bottomHem + pooling;
     const wasteMultiplier = 1 + ((template.waste_percent || 0) / 100);
-    
-    // Calculate linear metres needed (drop + seam allowances) × number of widths
-    const linearMeters = ((totalDrop + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier; // Convert cm to m
-    
-    // Calculate square metres for reference
-    const squareMeters = linearMeters * (fabricWidthCm / 100); // Convert cm to m
-    
-    // Calculate cost using price per metre - check multiple price fields
-    const pricePerMeter = selectedFabric?.price_per_meter || 
-                         selectedFabric?.unit_price || 
-                         selectedFabric?.selling_price ||
-                         selectedFabric?.price || 
-                         selectedFabric?.cost_per_meter || 
-                         0;
-    
-    // Debug logging with proper manufacturing allowances
-    console.log('Fabric calculation debug with proper hems and seams:', {
-      selectedFabric: selectedFabric ? {
-        id: selectedFabric.id,
-        name: selectedFabric.name,
-        selling_price: selectedFabric.selling_price,
-        unit_price: selectedFabric.unit_price,
-        price_per_meter: selectedFabric.price_per_meter
-      } : null,
-      pricePerMeter,
-      linearMeters,
-      fabricWidthCm,
-      requiredWidth,
-      totalWidthWithAllowances,
-      totalDrop,
-      widthsRequired,
-      curtainCount,
-      manufacturingAllowances: {
-        headerHem,
-        bottomHem,
-        sideHems,
-        seamHems,
-        returnLeft,
-        returnRight,
-        totalSideHems,
-        totalSeamAllowance
-      }
-    });
-    
-    const fabricCost = linearMeters * pricePerMeter;
+    const linearMeters = ((totalDrop + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier;
+    const squareMeters = linearMeters * (fabricWidthCm / 100);
 
     return { 
       linearMeters, 
       squareMeters, 
-      cost: fabricCost,
       fabricWidth: fabricWidthCm,
       totalDrop,
       widthsRequired
     };
   };
 
-  // Calculate lining cost
-  const calculateLiningCost = () => {
-    if (!selectedLining || selectedLining === 'none') return 0;
-
-    const liningType = template.lining_types.find(l => l.type === selectedLining);
-    if (!liningType) return 0;
-
-    const fabricUsage = calculateFabricUsage();
-    const liningCost = fabricUsage.linearMeters * liningType.price_per_metre;
-    const panelConfig = (template as any).panel_configuration || template.curtain_type;
-    const laborCost = liningType.labour_per_curtain * (panelConfig === 'pair' ? 2 : 1);
-
-    return liningCost + laborCost;
+  // Get lining display name only - cost calculation handled elsewhere
+  const getLiningName = () => {
+    if (!selectedLining || selectedLining === 'none') return '';
+    const liningType = template.lining_types?.find(l => l.type === selectedLining);
+    return liningType?.type || selectedLining;
   };
 
-  // Calculate heading upcharge
-  const calculateHeadingCost = () => {
-    let cost = 0;
-    
-    // Template base heading upcharges
-    if (template.heading_upcharge_per_metre) {
-      cost += template.heading_upcharge_per_metre * width / 100; // Convert cm to m
-    }
-    if (template.heading_upcharge_per_curtain) {
-      const panelConfig = (template as any).panel_configuration || template.curtain_type;
-      cost += template.heading_upcharge_per_curtain * (panelConfig === 'pair' ? 2 : 1);
-    }
-
-    // Selected heading from settings
-    if (selectedHeading && selectedHeading !== 'standard') {
-      // First check heading options from settings
-      const headingOptionFromSettings = headingOptionsFromSettings.find(h => h.id === selectedHeading);
-      if (headingOptionFromSettings) {
-        cost += headingOptionFromSettings.price * width / 100; // Convert cm to m
-        console.log('Adding heading cost from settings:', {
-          headingName: headingOptionFromSettings.name,
-          price: headingOptionFromSettings.price,
-          width: width,
-          widthInMeters: width / 100,
-          headingCost: headingOptionFromSettings.price * width / 100
-        });
-      } else {
-        // Fall back to inventory items
-        const headingItem = inventory.find(item => item.id === selectedHeading);
-        if (headingItem) {
-          cost += (headingItem.price_per_meter || headingItem.unit_price || 0) * width / 100;
-          console.log('Adding heading cost from inventory:', {
-            headingName: headingItem.name,
-            pricePerMeter: headingItem.price_per_meter || headingItem.unit_price || 0,
-            width: width,
-            widthInMeters: width / 100,
-            headingCost: (headingItem.price_per_meter || headingItem.unit_price || 0) * width / 100
-          });
-        }
-      }
-    }
-
-    console.log('Total heading cost calculated:', cost);
-    return cost;
+  // Get heading display name only - cost calculation handled elsewhere
+  const getHeadingName = () => {
+    if (!selectedHeading || selectedHeading === 'standard') return template.heading_name || 'Standard';
+    const headingOption = headingOptionsFromSettings.find(h => h.id === selectedHeading);
+    if (headingOption) return headingOption.name;
+    const headingItem = inventory.find(item => item.id === selectedHeading);
+    return headingItem?.name || selectedHeading;
   };
 
-  // Calculate manufacturing cost
-  const calculateManufacturingCost = () => {
-    // PRICING GRID: If template uses pricing_grid, get price from grid
-    if (template.pricing_type === 'pricing_grid' && template.pricing_grid_data) {
-      console.log("🎯 Using PRICING GRID for manufacturing cost");
-      console.log("Grid data:", template.pricing_grid_data);
-      console.log("Looking up: width =", width, "cm, drop =", height, "cm");
-      
-      const gridPrice = getPriceFromGrid(template.pricing_grid_data, width, height);
-      
-      console.log("💰 Pricing Grid Result:", gridPrice);
-      return gridPrice;
-    }
-    
-    // Get the selected pricing method from measurements or use first method as default
-    const pricingMethods = (template as any).pricing_methods || [];
-    const selectedMethodId = measurements.selected_pricing_method;
-    const selectedMethod = pricingMethods.find((m: any) => m.id === selectedMethodId) || pricingMethods[0];
-    
-    // Determine manufacturing type from measurements or template
-    const manufacturingType = measurements.manufacturing_type || template.manufacturing_type || 'machine';
-    const isHandFinished = manufacturingType === 'hand';
-    
-    console.log('🏭 Manufacturing cost calculation:', {
-      selectedMethodId,
-      selectedMethod: selectedMethod ? {
-        id: selectedMethod.id,
-        name: selectedMethod.name,
-        pricing_type: selectedMethod.pricing_type
-      } : null,
-      manufacturingType,
-      isHandFinished
-    });
-    
-    // Get prices from the selected pricing method, fallback to template level
-    const pricePerMetre = isHandFinished 
-      ? (selectedMethod?.hand_price_per_metre || template.hand_price_per_metre || 0)
-      : (selectedMethod?.machine_price_per_metre || template.machine_price_per_metre || 0);
-    
-    const pricePerDrop = isHandFinished
-      ? (selectedMethod?.hand_price_per_drop || template.hand_price_per_drop || 0)
-      : (selectedMethod?.machine_price_per_drop || template.machine_price_per_drop || 0);
-    
-    const pricePerPanel = isHandFinished
-      ? (selectedMethod?.hand_price_per_panel || template.hand_price_per_panel || 0)
-      : (selectedMethod?.machine_price_per_panel || template.machine_price_per_panel || 0);
-    
-    console.log('💰 Makeup prices from method:', {
-      methodId: selectedMethod?.id,
-      methodName: selectedMethod?.name,
-      pricePerMetre,
-      pricePerDrop,
-      pricePerPanel,
-      source: selectedMethod ? 'pricing_method' : 'template_fallback'
-    });
-    
-    // FALLBACK: Check if any pricing is available
-    if (!pricePerMetre && !pricePerDrop && !pricePerPanel) {
-      console.warn('⚠️ No makeup pricing found for', manufacturingType, 'finishing in method or template');
-      return 0;
-    }
+  // All cost calculations are handled by calculateTreatmentPricing - this component is DISPLAY ONLY
 
-    let cost = 0;
-    const panelConfig = (template as any).panel_configuration || template.curtain_type;
-    const curtainCount = panelConfig === 'pair' ? 2 : 1;
-    const fabricUsage = calculateFabricUsage();
-
-    // Check if this is a blind and we're using per_sqm pricing
-    const isBlindTreatment = template.treatment_category && 
-      (template.treatment_category.includes('blind') || template.treatment_category === 'shutters');
-    
-    const pricingType = selectedMethod?.pricing_type || template.pricing_type;
-    
-    // PER SQUARE METRE PRICING (for blinds/shutters)
-    if (pricingType === 'per_sqm' && isBlindTreatment && fabricUsage.squareMeters) {
-      const pricePerSqm = isHandFinished 
-        ? (selectedMethod?.hand_price_per_metre || template.hand_price_per_metre || template.machine_price_per_metre || 0)
-        : (selectedMethod?.machine_price_per_metre || template.machine_price_per_metre || 0);
-      
-      if (pricePerSqm) {
-        cost = pricePerSqm * fabricUsage.squareMeters;
-        console.log(`💰 ${manufacturingType} cost/sqm: ${pricePerSqm} × ${fabricUsage.squareMeters}sqm = ${cost}`);
-      }
-      
-      console.log(`🏭 Total ${manufacturingType} finished makeup cost (per sqm):`, cost);
-      return cost;
-    }
-    
-    // PER UNIT PRICING (for blinds/shutters with fixed pricing)
-    if (pricingType === 'per_unit' && isBlindTreatment) {
-      const pricePerUnit = isHandFinished
-        ? (selectedMethod?.hand_price_per_drop || template.hand_price_per_drop || 0)
-        : (selectedMethod?.machine_price_per_drop || template.machine_price_per_drop || 0);
-      
-      if (pricePerUnit) {
-        cost = pricePerUnit;
-        console.log(`💰 ${manufacturingType} cost/unit: ${pricePerUnit}`);
-      }
-      
-      console.log(`🏭 Total ${manufacturingType} finished makeup cost (per unit):`, cost);
-      return cost;
-    }
-
-    // Cost per metre of fabric used (for curtains)
-    if (pricePerMetre) {
-      cost += pricePerMetre * fabricUsage.linearMeters;
-      console.log(`💰 ${manufacturingType} cost/metre: ${pricePerMetre} × ${fabricUsage.linearMeters}m = ${cost}`);
-    }
-    
-    // Cost per curtain drop (per panel)
-    if (pricePerDrop) {
-      const dropCost = pricePerDrop * curtainCount;
-      cost += dropCost;
-      console.log(`💰 ${manufacturingType} cost/drop: ${pricePerDrop} × ${curtainCount} = ${dropCost}`);
-    }
-    
-    // Cost per curtain panel
-    if (pricePerPanel) {
-      const panelCost = pricePerPanel * curtainCount;
-      cost += panelCost;
-      console.log(`💰 ${manufacturingType} cost/panel: ${pricePerPanel} × ${curtainCount} = ${panelCost}`);
-    }
-
-    console.log(`🏭 Total ${manufacturingType} finished makeup cost:`, cost);
-    return cost;
-  };
-
+  // Get fabric usage metrics only
   const fabricUsage = calculateFabricUsage();
-  const liningCost = calculateLiningCost();
-  const headingCost = calculateHeadingCost();
-  const manufacturingCost = calculateManufacturingCost();
   
-  // Calculate options cost
-  const optionsCost = selectedOptions?.reduce((total, option) => total + (option.price || 0), 0) || 0;
-  console.log('🎯 Options cost calculated:', optionsCost, 'from options:', selectedOptions);
+  // Get fabric display info
+  const fabricName = selectedFabric?.name || "No fabric selected";
+  const fabricPriceDisplay = selectedFabric?.selling_price || selectedFabric?.unit_price || selectedFabric?.price_per_meter || 0;
   
-  // If selectedFabric is missing but there's a fabric selection, try to find it in inventory
-  let effectiveFabricCost = fabricUsage.cost;
-  let fabricName = selectedFabric?.name || "No fabric selected";
-  let fabricPriceDisplay = 0;
+  // CRITICAL: Use ONLY pre-calculated costs from calculateTreatmentPricing (single source of truth)
+  // This component is DISPLAY ONLY - all calculations happen in calculateTreatmentPricing
+  const finalFabricCostToDisplay = calculatedFabricCost || 0;
+  const finalLiningCostToDisplay = calculatedLiningCost || 0;
+  const finalManufacturingCostToDisplay = calculatedManufacturingCost || 0;
+  const finalHeadingCostToDisplay = calculatedHeadingCost || 0;
+  const finalOptionsCostToDisplay = calculatedOptionsCost || 0;
+  const totalCost = calculatedTotalCost || 0;
   
-  // Try multiple sources for fabric selection
-  if (effectiveFabricCost === 0 && inventory.length > 0) {
-    let fabricItem = null;
-    
-    // Check various sources for fabric selection
-    const fabricSources = [
-      selectedFabric?.id,
-      measurements.selected_fabric,
-      measurements.fabric_id,
-      measurements.fabric_type
-    ];
-    
-    console.log('Fabric cost debugging:', {
-      selectedFabric: selectedFabric ? {
-        id: selectedFabric.id,
-        name: selectedFabric.name,
-        selling_price: selectedFabric.selling_price,
-        unit_price: selectedFabric.unit_price
-      } : null,
-      fabricSources,
-      measurements: {
-        selected_fabric: measurements.selected_fabric,
-        fabric_id: measurements.fabric_id,
-        fabric_type: measurements.fabric_type
-      },
-      inventoryCount: inventory.length
-    });
-    
-    for (const fabricId of fabricSources) {
-      if (fabricId && typeof fabricId === 'string' && fabricId !== 'undefined') {
-        fabricItem = inventory.find(item => 
-          item.id === fabricId || 
-          item.name === fabricId ||
-          item.sku === fabricId
-        );
-        if (fabricItem) {
-          console.log('Found fabric item:', {
-            searchId: fabricId,
-            foundItem: {
-              id: fabricItem.id,
-              name: fabricItem.name,
-              selling_price: fabricItem.selling_price
-            }
-          });
-          break;
-        } else {
-          console.log('Fabric not found for ID:', fabricId, 'in inventory:', inventory.map(i => ({id: i.id, name: i.name})));
-        }
-      } else if (typeof fabricId === 'number') {
-        // Handle numeric index case - convert to fabric from inventory
-        const numericIndex = Number(fabricId);
-        if (numericIndex >= 0 && numericIndex < inventory.length) {
-          fabricItem = inventory[numericIndex];
-          console.log('Found fabric by index:', {
-            index: numericIndex,
-            foundItem: {
-              id: fabricItem.id,
-              name: fabricItem.name,
-              selling_price: fabricItem.selling_price
-            }
-          });
-          break;
-        }
-      }
-    }
-    
-    if (fabricItem) {
-      const pricePerMeter = fabricItem.selling_price || fabricItem.unit_price || fabricItem.price_per_meter || 0;
-      effectiveFabricCost = fabricUsage.linearMeters * pricePerMeter;
-      fabricName = fabricItem.name;
-      fabricPriceDisplay = pricePerMeter;
-      
-      console.log('Found fabric from measurements:', {
-        fabricItem: {
-          id: fabricItem.id,
-          name: fabricItem.name,
-          selling_price: fabricItem.selling_price,
-          unit_price: fabricItem.unit_price
-        },
-        pricePerMeter,
-        linearMeters: fabricUsage.linearMeters,
-        effectiveFabricCost
-      });
-    } else {
-      console.log('No fabric item found from any source, trying fallback...');
-      
-      // FALLBACK: If we can't find the fabric in inventory but have a fabric ID, 
-      // use a default price from the fabric selection data
-      const fabricId = measurements.selected_fabric || measurements.fabric_id;
-      if (fabricId && fabricUsage.linearMeters > 0) {
-        // Use £45/m as shown in VisualMeasurementSheet logs
-        const fallbackPrice = 45; // This matches the VisualMeasurementSheet calculation
-        effectiveFabricCost = fabricUsage.linearMeters * fallbackPrice;
-        fabricName = "Selected Fabric";
-        fabricPriceDisplay = fallbackPrice;
-        
-        console.log('Using fallback fabric pricing:', {
-          fabricId,
-          fallbackPrice,
-          linearMeters: fabricUsage.linearMeters,
-          effectiveFabricCost
-        });
-      }
-    }
-  } else if (selectedFabric) {
-    fabricPriceDisplay = selectedFabric.selling_price || selectedFabric.unit_price || selectedFabric.price_per_meter || 0;
-    console.log('Using selectedFabric prop:', {
-      name: selectedFabric.name,
-      pricePerMeter: fabricPriceDisplay,
-      cost: fabricUsage.cost
-    });
-  }
-  
-  // Use fabric calculation if available for more accurate costs
-  let finalFabricCost = effectiveFabricCost;
-  let finalLinearMeters = fabricUsage.linearMeters;
-  
-  if (fabricCalculation) {
-    console.log('🎯 FABRIC COST DEBUG - CostCalculationSummary:', {
-      fabricCalculationTotalCost: fabricCalculation.totalCost,
-      fabricCalculationLinearMeters: fabricCalculation.linearMeters,
-      effectiveFabricCost,
-      fabricUsageLinearMeters: fabricUsage.linearMeters,
-      fabricPriceDisplay,
-      calculatedCost: fabricUsage.linearMeters * fabricPriceDisplay
-    });
-    
-    // IMPORTANT: Only use fabricCalculation.totalCost if it seems reasonable
-    // If fabricCalculation.totalCost seems too high, recalculate it
-    const expectedCost = fabricUsage.linearMeters * fabricPriceDisplay;
-    const costRatio = fabricCalculation.totalCost / expectedCost;
-    
-    if (costRatio > 2) {
-      console.log('🚨 FABRIC COST WARNING: fabricCalculation.totalCost seems too high, using recalculated cost');
-      finalFabricCost = expectedCost;
-    } else {
-      finalFabricCost = fabricCalculation.totalCost || effectiveFabricCost;
-    }
-    
-    finalLinearMeters = fabricCalculation.linearMeters || fabricUsage.linearMeters;
-  }
+  // Get linear meters from fabricCalculation if available, otherwise from our metrics
+  const finalLinearMeters = fabricCalculation?.linearMeters || fabricUsage.linearMeters;
+  const finalSquareMeters = fabricCalculation?.squareMeters || fabricUsage.squareMeters;
 
-  // CRITICAL: Use pre-calculated costs if provided (single source of truth)
-  const finalFabricCostToDisplay = calculatedFabricCost !== undefined ? calculatedFabricCost : finalFabricCost;
-  const finalLiningCostToDisplay = calculatedLiningCost !== undefined ? calculatedLiningCost : liningCost;
-  const finalManufacturingCostToDisplay = calculatedManufacturingCost !== undefined ? calculatedManufacturingCost : manufacturingCost;
-  const finalHeadingCostToDisplay = calculatedHeadingCost !== undefined ? calculatedHeadingCost : headingCost;
-  const finalOptionsCostToDisplay = calculatedOptionsCost !== undefined ? calculatedOptionsCost : optionsCost;
-  const totalCost = calculatedTotalCost !== undefined ? calculatedTotalCost : (finalFabricCost + liningCost + headingCost + manufacturingCost + optionsCost);
-
-  console.log('🎨 CostCalculationSummary DISPLAYING to user:', {
-    usingPreCalculated: calculatedTotalCost !== undefined,
-    finalFabricCost: finalFabricCostToDisplay,
+  console.log('🎨 CostCalculationSummary DISPLAYING (from calculateTreatmentPricing):', {
+    fabricCost: finalFabricCostToDisplay,
     liningCost: finalLiningCostToDisplay,
     headingCost: finalHeadingCostToDisplay,
     manufacturingCost: finalManufacturingCostToDisplay,
     optionsCost: finalOptionsCostToDisplay,
     totalCost,
-    finalLinearMeters
+    linearMeters: finalLinearMeters,
+    squareMeters: finalSquareMeters,
+    pricingType: template.pricing_type
   });
 
   // Detect product type for dynamic labels
@@ -671,6 +309,8 @@ export const CostCalculationSummary = ({
 
   // Wallpaper simplified view
   if (isWallpaper) {
+    const wallpaperOptionsCost = finalOptionsCostToDisplay;
+    
     // Calculate wallpaper requirements from measurements
     const wallWidth = parseFloat(measurements.wall_width || '0');
     const wallHeight = parseFloat(measurements.wall_height || '0');
@@ -715,7 +355,7 @@ export const CostCalculationSummary = ({
     }
     
     const wallpaperCost = quantity * pricePerUnit;
-    const finalTotal = wallpaperCost + optionsCost;
+    const finalTotal = wallpaperCost + wallpaperOptionsCost;
     
     console.log('💰 Wallpaper cost calculation:', {
       wallWidth,
@@ -731,7 +371,7 @@ export const CostCalculationSummary = ({
       quantity,
       pricePerUnit,
       wallpaperCost,
-      optionsCost,
+      optionsCost: wallpaperOptionsCost,
       finalTotal
     });
     
@@ -759,14 +399,14 @@ export const CostCalculationSummary = ({
           </div>
 
           {/* Options if any */}
-          {optionsCost > 0 && (
+          {wallpaperOptionsCost > 0 && (
             <>
               <div className="flex items-center justify-between p-2 bg-muted/30 rounded">
                 <div className="flex items-center gap-2">
                   <Settings className="h-4 w-4 text-primary" />
                   <span className="font-medium">Options</span>
                 </div>
-                <span className="font-semibold">{formatPrice(optionsCost)}</span>
+                <span className="font-semibold">{formatPrice(wallpaperOptionsCost)}</span>
               </div>
               {selectedOptions.length > 0 && (
                 <div className="text-xs text-muted-foreground pl-8 pb-2 space-y-0.5">
@@ -817,13 +457,13 @@ export const CostCalculationSummary = ({
         </div>
 
         {/* Lining */}
-        {selectedLining && selectedLining !== 'none' && (
+        {selectedLining && selectedLining !== 'none' && finalLiningCostToDisplay > 0 && (
           <div className="flex items-center justify-between py-1.5">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
               <div className="flex flex-col min-w-0">
                 <span className="text-card-foreground font-medium">Lining</span>
-                <span className="text-xs text-muted-foreground truncate">{selectedLining}</span>
+                <span className="text-xs text-muted-foreground truncate">{getLiningName()}</span>
               </div>
             </div>
             <span className="font-medium text-card-foreground ml-2">{formatPrice(finalLiningCostToDisplay)}</span>
@@ -837,7 +477,7 @@ export const CostCalculationSummary = ({
               <span className="w-3.5 h-3.5 border-b-2 border-primary shrink-0" />
               <div className="flex flex-col min-w-0">
                 <span className="text-card-foreground font-medium">Heading</span>
-                <span className="text-xs text-muted-foreground truncate">{template.heading_name}</span>
+                <span className="text-xs text-muted-foreground truncate">{getHeadingName()}</span>
               </div>
             </div>
             <span className="font-medium text-card-foreground ml-2">{formatPrice(finalHeadingCostToDisplay)}</span>
