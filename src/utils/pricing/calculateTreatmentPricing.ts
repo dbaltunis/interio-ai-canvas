@@ -115,10 +115,18 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   console.log(`🔍 Fabric cost calculation - pricing type: ${pricingType}, isBlind: ${isBlindTreatment}, template: ${template?.name}`);
   
   if (pricingType === 'per_sqm' && isBlindTreatment) {
-    // Calculate square meters: (width × height) / 10000 (cm² to m²)
-    const squareMeters = (widthCm * heightCm) / 10000;
+    // Calculate square meters: For blinds, include hems in calculation
+    const blindHeaderHem = template?.blind_header_hem_cm || headerHem || 8;
+    const blindBottomHem = template?.blind_bottom_hem_cm || bottomHem || 8;
+    const blindSideHem = template?.blind_side_hem_cm || 0;
+    
+    const effectiveWidth = widthCm + (blindSideHem * 2);
+    const effectiveHeight = heightCm + blindHeaderHem + blindBottomHem;
+    const squareMetersRaw = (effectiveWidth * effectiveHeight) / 10000;
+    const squareMeters = squareMetersRaw * wasteMultiplier;
+    
     fabricCost = squareMeters * pricePerMeter;
-    console.log(`💰 Fabric cost (per_sqm): ${pricePerMeter}/sqm × ${squareMeters.toFixed(2)}sqm = ${fabricCost.toFixed(2)}`);
+    console.log(`💰 Fabric cost (per_sqm): ${pricePerMeter}/sqm × ${squareMeters.toFixed(2)}sqm = ${fabricCost.toFixed(2)} [${effectiveWidth}cm × ${effectiveHeight}cm with waste ${template?.waste_percent || 0}%]`);
   } else {
     // Default: linear meter pricing
     fabricCost = linearMeters * pricePerMeter;
@@ -141,8 +149,16 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   console.log(`🏭 Manufacturing lookup: machine_price_per_metre=${template?.machine_price_per_metre}, machine_price_per_drop=${template?.machine_price_per_drop}, machine_price_per_panel=${template?.machine_price_per_panel}`);
   
   if (pricingType === 'per_sqm' && isBlindTreatment) {
-    // Manufacturing priced per square meter
-    const squareMeters = (widthCm * heightCm) / 10000;
+    // Manufacturing priced per square meter - use same calculation as fabric
+    const blindHeaderHem = template?.blind_header_hem_cm || headerHem || 8;
+    const blindBottomHem = template?.blind_bottom_hem_cm || bottomHem || 8;
+    const blindSideHem = template?.blind_side_hem_cm || 0;
+    
+    const effectiveWidth = widthCm + (blindSideHem * 2);
+    const effectiveHeight = heightCm + blindHeaderHem + blindBottomHem;
+    const squareMetersRaw = (effectiveWidth * effectiveHeight) / 10000;
+    const squareMeters = squareMetersRaw * wasteMultiplier;
+    
     const machinePricePerSqm = template.machine_price_per_metre || 0;
     manufacturingCost = machinePricePerSqm * squareMeters;
     console.log(`💰 Manufacturing cost (per_sqm): ${machinePricePerSqm}/sqm × ${squareMeters.toFixed(2)}sqm = ${manufacturingCost.toFixed(2)}`);
