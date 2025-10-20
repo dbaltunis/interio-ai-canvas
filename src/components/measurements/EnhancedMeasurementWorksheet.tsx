@@ -698,6 +698,17 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       unitsCurrency: units.currency,
       selectedOptions, // CRITICAL: Pass selectedOptions to calculate options cost
     });
+    
+    console.log('🔍 calculateTreatmentPricing returned (WHAT GETS SAVED):', {
+      fabricCost,
+      liningCost,
+      manufacturingCost,
+      optionsCost,
+      totalCost,
+      linearMeters,
+      widthsRequired,
+      pricePerMeter
+    });
 
     const treatmentConfigData = {
       treatment_type: selectedCovering.name.toLowerCase(),

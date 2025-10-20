@@ -616,6 +616,16 @@ export const CostCalculationSummary = ({
 
   const totalCost = finalFabricCost + liningCost + headingCost + manufacturingCost + optionsCost;
 
+  console.log('🎨 CostCalculationSummary DISPLAYING to user:', {
+    finalFabricCost,
+    liningCost,
+    headingCost,
+    manufacturingCost,
+    optionsCost,
+    totalCost,
+    finalLinearMeters
+  });
+
   // Detect product type for dynamic labels
   const productCategory = (template as any).category?.toLowerCase() || template.name?.toLowerCase() || '';
   const templateType = (template as any).template_type?.toLowerCase() || '';
