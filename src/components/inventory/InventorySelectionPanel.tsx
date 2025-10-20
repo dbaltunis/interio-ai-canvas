@@ -23,11 +23,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
+import { useEnhancedInventory, useCreateEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { supabase } from "@/integrations/supabase/client";
 import { TreatmentCategory, getTreatmentConfig } from "@/utils/treatmentTypeDetection";
 import { useTreatmentSpecificFabrics } from "@/hooks/useTreatmentSpecificFabrics";
+import { toast } from "sonner";
 interface InventorySelectionPanelProps {
   treatmentType: string;
   selectedItems: {
@@ -73,6 +74,8 @@ export const InventorySelectionPanel = ({
   } = useMeasurementUnits();
   const treatmentConfig = getTreatmentConfig(treatmentCategory);
 
+  const createInventoryItem = useCreateEnhancedInventoryItem();
+
   // Use treatment-specific fabrics
   const {
     data: treatmentFabrics = []
@@ -94,38 +97,53 @@ export const InventorySelectionPanel = ({
   }, [activeCategory, selectedItems]);
 
   // Handle manual entry submission
-  const handleManualEntrySubmit = () => {
+  const handleManualEntrySubmit = async () => {
     if (!manualEntry.name || !manualEntry.price) {
+      toast.error("Please fill in all required fields");
       return;
     }
 
-    const manualItem = {
-      id: `manual-${Date.now()}`,
-      name: manualEntry.name,
-      selling_price: parseFloat(manualEntry.price),
-      unit: manualEntry.unit,
-      quantity: 0,
-      category: activeCategory,
-      isManualEntry: true,
-      ...(activeCategory === "fabric" && {
-        fabric_width: parseFloat(manualEntry.fabric_width) || 0,
-        fabric_rotation: manualEntry.fabric_rotation,
-        pattern_repeat_horizontal: parseFloat(manualEntry.pattern_repeat_horizontal) || 0,
-        pattern_repeat_vertical: parseFloat(manualEntry.pattern_repeat_vertical) || 0
-      })
-    };
+    try {
+      // Prepare the item data for database insertion
+      const itemData: any = {
+        name: manualEntry.name,
+        selling_price: parseFloat(manualEntry.price),
+        unit: manualEntry.unit,
+        quantity: 0,
+        category: activeCategory,
+      };
 
-    onItemSelect(activeCategory, manualItem);
-    setManualEntry({ 
-      name: "", 
-      price: "", 
-      unit: "m",
-      fabric_width: "",
-      fabric_rotation: "vertical",
-      pattern_repeat_horizontal: "",
-      pattern_repeat_vertical: ""
-    });
-    setShowManualEntry(false);
+      // Add fabric-specific fields if category is fabric
+      if (activeCategory === "fabric") {
+        itemData.fabric_width = parseFloat(manualEntry.fabric_width) || 0;
+        itemData.fabric_rotation = manualEntry.fabric_rotation;
+        itemData.pattern_repeat_horizontal = parseFloat(manualEntry.pattern_repeat_horizontal) || 0;
+        itemData.pattern_repeat_vertical = parseFloat(manualEntry.pattern_repeat_vertical) || 0;
+      }
+
+      // Save to database
+      const newItem = await createInventoryItem.mutateAsync(itemData);
+      
+      // Select the newly created item
+      if (newItem) {
+        onItemSelect(activeCategory, newItem);
+      }
+
+      // Reset form and close dialog
+      setManualEntry({ 
+        name: "", 
+        price: "", 
+        unit: "m",
+        fabric_width: "",
+        fabric_rotation: "vertical",
+        pattern_repeat_horizontal: "",
+        pattern_repeat_vertical: ""
+      });
+      setShowManualEntry(false);
+    } catch (error) {
+      console.error("Error creating inventory item:", error);
+      // Error toast is already handled by the mutation
+    }
   };
 
   // Filter inventory by treatment type and category
@@ -456,8 +474,8 @@ export const InventorySelectionPanel = ({
                 <Button variant="outline" onClick={() => setShowManualEntry(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleManualEntrySubmit}>
-                  Add Item
+                <Button onClick={handleManualEntrySubmit} disabled={createInventoryItem.isPending}>
+                  {createInventoryItem.isPending ? "Adding..." : "Add Item"}
                 </Button>
               </DialogFooter>
             </DialogContent>
