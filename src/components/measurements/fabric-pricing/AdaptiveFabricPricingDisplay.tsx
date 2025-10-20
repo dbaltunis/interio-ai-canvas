@@ -391,50 +391,81 @@ export const AdaptiveFabricPricingDisplay = ({
               const pricingMethod = template?.makeup_pricing_method || template?.pricing_method || 'per_metre';
               const isByDrop = pricingMethod === 'per_drop';
               const isByPanel = pricingMethod === 'per_panel';
+              const isBySqm = pricingMethod === 'per_sqm' || template?.pricing_type === 'per_sqm';
               const isByMetre = pricingMethod === 'per_metre' || !pricingMethod;
               
-              const quantity = isByDrop 
-                ? (fabricCalculation.widthsRequired || 1)
-                : isByPanel
-                ? (measurements.curtain_type === 'pair' ? 2 : 1)
-                : (fabricCalculation.linearMeters || 0);
+              // Calculate appropriate quantity based on method
+              let quantity = 0;
+              let unitLabel = '';
+              let unitSuffix = '';
+              let calculationText = '';
+              let calculationBreakdown = '';
               
-              const unitLabel = isByDrop 
-                ? 'Drops Required'
-                : isByPanel
-                ? 'Panels Required'
-                : 'Linear Meters Required';
-              
-              const unitSuffix = isByDrop 
-                ? ' drop(s)'
-                : isByPanel
-                ? ' panel(s)'
-                : 'm';
-              
-              const calculationText = isByDrop
-                ? `${quantity.toFixed(0)} drops × ${formatPrice(fabricCalculation.pricePerMeter || 0)}/drop`
-                : isByPanel
-                ? `${quantity.toFixed(0)} panels × ${formatPrice(fabricCalculation.pricePerMeter || 0)}/panel`
-                : `${quantity.toFixed(2)}m × ${formatPrice(fabricCalculation.pricePerMeter || 0)}/m`;
+              if (isBySqm) {
+                // Square meter calculation
+                const sqm = fabricCalculation.sqm || ((fabricCalculation.railWidth || 0) * (fabricCalculation.totalDrop || 0) / 10000);
+                quantity = sqm;
+                unitLabel = 'Area Required';
+                unitSuffix = ' sqm';
+                calculationText = `${quantity.toFixed(2)} sqm × ${formatPrice(fabricCalculation.pricePerMeter || 0)}/sqm`;
+                calculationBreakdown = `Width: ${(fabricCalculation.railWidth || 0).toFixed(0)}cm × Height: ${(fabricCalculation.totalDrop || 0).toFixed(0)}cm = ${quantity.toFixed(2)} sqm`;
+              } else if (isByDrop) {
+                // Per drop calculation
+                quantity = fabricCalculation.widthsRequired || 1;
+                unitLabel = 'Drops Required';
+                unitSuffix = ' drop(s)';
+                calculationText = `${quantity.toFixed(0)} drops × ${formatPrice(fabricCalculation.pricePerMeter || 0)}/drop`;
+                calculationBreakdown = `Each drop: ${(fabricCalculation.totalDrop || 0).toFixed(0)}cm × ${quantity} width(s)`;
+              } else if (isByPanel) {
+                // Per panel calculation
+                quantity = measurements.curtain_type === 'pair' ? 2 : 1;
+                unitLabel = 'Panels Required';
+                unitSuffix = ' panel(s)';
+                calculationText = `${quantity.toFixed(0)} panels × ${formatPrice(fabricCalculation.pricePerMeter || 0)}/panel`;
+                calculationBreakdown = `Panel type: ${measurements.curtain_type || 'single'}`;
+              } else {
+                // Linear meter calculation (default)
+                quantity = fabricCalculation.linearMeters || 0;
+                unitLabel = 'Linear Meters Required';
+                unitSuffix = 'm';
+                calculationText = `${quantity.toFixed(2)}m × ${formatPrice(fabricCalculation.pricePerMeter || 0)}/m`;
+                calculationBreakdown = `${fabricCalculation.widthsRequired || 0} width(s) × ${(fabricCalculation.totalDrop || 0).toFixed(0)}cm = ${quantity.toFixed(2)}m`;
+              }
               
               return (
                 <>
-                  <div className="flex justify-between font-medium">
-                    <span>{unitLabel}:</span>
-                    <span className="text-foreground">{isByDrop || isByPanel ? quantity.toFixed(0) : quantity.toFixed(2)}{unitSuffix}</span>
+                  <div className="flex justify-between items-start">
+                    <span className="font-medium">Pricing Method:</span>
+                    <span className="text-foreground text-right font-semibold">
+                      {isBySqm ? 'Per Square Meter' : 
+                       isByDrop ? 'Per Drop' : 
+                       isByPanel ? 'Per Panel' : 
+                       'Per Linear Meter'}
+                    </span>
                   </div>
-                  <div className="flex justify-between font-medium text-base">
+                  
+                  {calculationBreakdown && (
+                    <div className="text-xs text-muted-foreground bg-background/50 p-2 rounded">
+                      {calculationBreakdown}
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-between font-medium pt-1 border-t border-border/50">
+                    <span>{unitLabel}:</span>
+                    <span className="text-foreground">
+                      {(isByDrop || isByPanel) ? quantity.toFixed(0) : quantity.toFixed(2)}{unitSuffix}
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between font-semibold text-base pt-1">
                     <span>Fabric Cost:</span>
                     <span className="text-foreground">{formatPrice(fabricCalculation.totalCost || 0)}</span>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Calculation: {calculationText}
+                  
+                  <div className="text-xs text-muted-foreground mt-1 bg-background/30 p-2 rounded">
+                    <div className="font-medium mb-0.5">Calculation:</div>
+                    {calculationText}
                   </div>
-                  {pricingMethod && pricingMethod !== 'per_metre' && (
-                    <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                      Pricing Method: {pricingMethod.replace(/_/g, ' ')}
-                    </div>
-                  )}
                 </>
               );
             })()}
