@@ -1,11 +1,21 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Package, Palette, Wrench, Check, X } from "lucide-react";
+import { Search, Package, Palette, Wrench, Check, X, Plus, Edit3 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +46,13 @@ export const InventorySelectionPanel = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [activeCategory, setActiveCategory] = useState("fabric");
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [manualEntry, setManualEntry] = useState({
+    name: "",
+    price: "",
+    unit: "m"
+  });
+  const selectedCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const {
     data: inventory = []
   } = useEnhancedInventory();
@@ -49,6 +66,42 @@ export const InventorySelectionPanel = ({
   const {
     data: treatmentFabrics = []
   } = useTreatmentSpecificFabrics(treatmentCategory);
+
+  // Auto-scroll to selected item when category changes or selection changes
+  useEffect(() => {
+    const selectedId = selectedItems[activeCategory as keyof typeof selectedItems]?.id;
+    if (selectedId) {
+      const selectedCard = selectedCardRefs.current.get(selectedId);
+      if (selectedCard) {
+        selectedCard.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'nearest'
+        });
+      }
+    }
+  }, [activeCategory, selectedItems]);
+
+  // Handle manual entry submission
+  const handleManualEntrySubmit = () => {
+    if (!manualEntry.name || !manualEntry.price) {
+      return;
+    }
+
+    const manualItem = {
+      id: `manual-${Date.now()}`,
+      name: manualEntry.name,
+      selling_price: parseFloat(manualEntry.price),
+      unit: manualEntry.unit,
+      quantity: 0,
+      category: activeCategory,
+      isManualEntry: true
+    };
+
+    onItemSelect(activeCategory, manualItem);
+    setManualEntry({ name: "", price: "", unit: "m" });
+    setShowManualEntry(false);
+  };
 
   // Filter inventory by treatment type and category
   const getInventoryByCategory = (category: string) => {
@@ -140,7 +193,16 @@ export const InventorySelectionPanel = ({
       return null;
     };
     const imageUrl = getImageUrl();
-    return <Card key={item.id} className={`cursor-pointer transition-all duration-200 hover:shadow-sm ${isSelected ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/30'}`} onClick={() => isSelected ? onItemDeselect(category) : onItemSelect(category, item)}>
+    return <Card 
+      key={item.id} 
+      ref={(el) => {
+        if (el && isSelected) {
+          selectedCardRefs.current.set(item.id, el);
+        }
+      }}
+      className={`cursor-pointer transition-all duration-200 hover:shadow-sm ${isSelected ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/30'}`} 
+      onClick={() => isSelected ? onItemDeselect(category) : onItemSelect(category, item)}
+    >
         <CardContent className="p-2">
           <div className="flex flex-col space-y-2">
             {/* Image */}
@@ -248,14 +310,76 @@ export const InventorySelectionPanel = ({
   return <div className={`space-y-3 ${className}`}>
       <div className="flex items-center justify-between">
         <h3 className="text-base font-medium">Select Materials & Hardware</h3>
-        <Button 
-          variant="ghost" 
-          size="sm"
-          onClick={() => setShowSearch(!showSearch)}
-          className="h-8 px-2"
-        >
-          <Search className="h-4 w-4" />
-        </Button>
+        <div className="flex gap-2">
+          <Dialog open={showManualEntry} onOpenChange={setShowManualEntry}>
+            <DialogTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="h-8 px-2"
+              >
+                <Edit3 className="h-4 w-4 mr-1" />
+                Manual Entry
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add Manual Entry</DialogTitle>
+                <DialogDescription>
+                  Enter custom {activeCategory} details not in your inventory.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    value={manualEntry.name}
+                    onChange={(e) => setManualEntry({ ...manualEntry, name: e.target.value })}
+                    placeholder={`Enter ${activeCategory} name`}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="price">Price</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="price"
+                      type="number"
+                      step="0.01"
+                      value={manualEntry.price}
+                      onChange={(e) => setManualEntry({ ...manualEntry, price: e.target.value })}
+                      placeholder="0.00"
+                      className="flex-1"
+                    />
+                    <Input
+                      value={manualEntry.unit}
+                      onChange={(e) => setManualEntry({ ...manualEntry, unit: e.target.value })}
+                      placeholder="unit"
+                      className="w-20"
+                    />
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowManualEntry(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleManualEntrySubmit}>
+                  Add Item
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => setShowSearch(!showSearch)}
+            className="h-8 px-2"
+          >
+            <Search className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
