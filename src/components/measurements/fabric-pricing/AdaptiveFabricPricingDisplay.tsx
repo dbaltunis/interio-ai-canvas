@@ -408,10 +408,23 @@ export const AdaptiveFabricPricingDisplay = ({
               let unitSuffix = '';
               let calculationText = '';
               let calculationBreakdown = '';
-              const pricePerUnit = fabricCalculation.pricePerMeter || 0;
-              const totalCost = fabricCalculation.totalCost || 0;
+              
+              // CRITICAL: Get the correct price based on how fabric is sold
+              let pricePerUnit = 0;
+              let totalCost = 0;
               
               if (isBySqm) {
+                // For blinds with per_sqm pricing, get the sqm price from fabric
+                pricePerUnit = selectedFabricItem?.selling_price || selectedFabricItem?.price_per_meter || selectedFabricItem?.unit_price || 0;
+                
+                console.log('💰 Getting fabric price for sqm blind:', {
+                  selectedFabricItem: selectedFabricItem?.name,
+                  selling_price: selectedFabricItem?.selling_price,
+                  price_per_meter: selectedFabricItem?.price_per_meter,
+                  unit_price: selectedFabricItem?.unit_price,
+                  pricePerUnit
+                });
+                
                 // Square meter calculation - use sqm directly from fabricCalculation (includes hems and waste for blinds)
                 let sqm = fabricCalculation.sqm || 0;
                 
@@ -435,6 +448,9 @@ export const AdaptiveFabricPricingDisplay = ({
                   });
                 }
                 
+                // Calculate total cost
+                totalCost = sqm * pricePerUnit;
+                
                 quantity = sqm;
                 unitLabel = 'Area Required';
                 unitSuffix = ' sqm';
@@ -446,21 +462,27 @@ export const AdaptiveFabricPricingDisplay = ({
                 calculationBreakdown = `Width: ${widthForCalc.toFixed(0)}cm × Height: ${heightForCalc.toFixed(0)}cm = ${quantity.toFixed(2)} sqm × ${formatPrice(pricePerUnit)}/sqm = ${formatPrice(totalCost)}`;
               } else if (isByDrop) {
                 // Per drop calculation
+                pricePerUnit = fabricCalculation.pricePerMeter || selectedFabricItem?.selling_price || 0;
                 quantity = fabricCalculation.widthsRequired || 1;
+                totalCost = quantity * pricePerUnit;
                 unitLabel = 'Drops Required';
                 unitSuffix = ' drop(s)';
                 calculationText = `${quantity.toFixed(0)} drops × ${formatPrice(pricePerUnit)}/drop`;
                 calculationBreakdown = `${quantity} width(s) × ${(fabricCalculation.totalDrop || 0).toFixed(0)}cm drop × ${formatPrice(pricePerUnit)}/drop = ${formatPrice(totalCost)}`;
               } else if (isByPanel) {
                 // Per panel calculation
+                pricePerUnit = fabricCalculation.pricePerMeter || selectedFabricItem?.selling_price || 0;
                 quantity = measurements.curtain_type === 'pair' ? 2 : 1;
+                totalCost = quantity * pricePerUnit;
                 unitLabel = 'Panels Required';
                 unitSuffix = ' panel(s)';
                 calculationText = `${quantity.toFixed(0)} panels × ${formatPrice(pricePerUnit)}/panel`;
                 calculationBreakdown = `${quantity} panel(s) [${measurements.curtain_type || 'single'}] × ${formatPrice(pricePerUnit)}/panel = ${formatPrice(totalCost)}`;
               } else {
                 // Linear meter calculation (default)
+                pricePerUnit = fabricCalculation.pricePerMeter || selectedFabricItem?.selling_price || 0;
                 quantity = fabricCalculation.linearMeters || 0;
+                totalCost = quantity * pricePerUnit;
                 unitLabel = 'Linear Meters Required';
                 unitSuffix = 'm';
                 calculationText = `${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
