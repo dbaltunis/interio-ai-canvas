@@ -98,9 +98,11 @@ export const calculateBlindCost = (
       
       if (soldBy === 'per_sqm' || soldBy === 'per_square_meter') {
         fabricCost = squareMeters * pricePerUnit;
+        console.log(`💰 FABRIC COST CALCULATION: ${squareMeters.toFixed(2)} sqm × £${pricePerUnit.toFixed(2)}/sqm = £${fabricCost.toFixed(2)}`);
       } else {
         // Default to per linear meter (height)
         fabricCost = linearMeters * pricePerUnit;
+        console.log(`💰 FABRIC COST CALCULATION: ${linearMeters.toFixed(2)} m × £${pricePerUnit.toFixed(2)}/m = £${fabricCost.toFixed(2)}`);
       }
     } else if (template?.unit_price) {
       // Use template unit price as fallback
@@ -164,7 +166,9 @@ export const calculateBlindCost = (
     optionsCost,
     totalCost,
     squareMeters,
-    linearMeters
+    linearMeters,
+    effectiveWidthCm,
+    effectiveHeightCm
   });
   
   return {

@@ -220,9 +220,22 @@ export const VisualMeasurementSheet = ({
         measurements: { width, height, pooling }
       });
 
+      const calculatedTotalCost = result.details?.sqm ? (result.details.sqm * pricePerMeter) : (result.meters * pricePerMeter);
+      
+      console.log('📊 VisualMeasurementSheet fabricCalculation:', {
+        hasBlindData: !!result.details?.sqm,
+        sqm: result.details?.sqm,
+        linearMeters: result.meters,
+        pricePerMeter,
+        calculatedTotalCost,
+        formula: result.details?.sqm 
+          ? `${result.details.sqm.toFixed(2)} sqm × £${pricePerMeter.toFixed(2)} = £${calculatedTotalCost.toFixed(2)}`
+          : `${result.meters.toFixed(2)} m × £${pricePerMeter.toFixed(2)} = £${calculatedTotalCost.toFixed(2)}`
+      });
+      
       return {
         linearMeters: result.meters,
-        totalCost: result.details?.sqm ? (result.details.sqm * pricePerMeter) : (result.meters * pricePerMeter),
+        totalCost: calculatedTotalCost,
         pricePerMeter: pricePerMeter,
         widthsRequired: result.widthsRequired || 1,
         railWidth: width,
