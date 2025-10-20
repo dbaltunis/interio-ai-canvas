@@ -84,7 +84,25 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
 
   const linearMeters = ((totalDropPerWidth + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier; // cm->m
   const pricePerMeter = fabricItem?.price_per_meter || fabricItem?.unit_price || fabricItem?.selling_price || 0;
-  const fabricCost = linearMeters * pricePerMeter;
+  
+  // Calculate fabric cost based on pricing method
+  let fabricCost = 0;
+  const pricingType = template?.pricing_type;
+  
+  // Check if this is a blind/shutter treatment
+  const treatmentCategory = template?.treatment_category || template?.category || '';
+  const isBlindTreatment = treatmentCategory.includes('blind') || treatmentCategory === 'shutters';
+  
+  if (pricingType === 'per_sqm' && isBlindTreatment) {
+    // Calculate square meters: (width × height) / 10000 (cm² to m²)
+    const squareMeters = (widthCm * heightCm) / 10000;
+    fabricCost = squareMeters * pricePerMeter;
+    console.log(`💰 Fabric cost (per_sqm): ${pricePerMeter}/sqm × ${squareMeters.toFixed(2)}sqm = ${fabricCost.toFixed(2)}`);
+  } else {
+    // Default: linear meter pricing
+    fabricCost = linearMeters * pricePerMeter;
+    console.log(`💰 Fabric cost (per_metre): ${pricePerMeter}/m × ${linearMeters.toFixed(2)}m = ${fabricCost.toFixed(2)}`);
+  }
 
   // Lining
   let liningCost = 0;
@@ -96,11 +114,28 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
     }
   }
 
-  // Manufacturing
+  // Manufacturing - CRITICAL: Respect pricing method
   let manufacturingCost = 0;
-  if (template?.machine_price_per_metre) manufacturingCost += template.machine_price_per_metre * linearMeters;
-  if (template?.machine_price_per_drop) manufacturingCost += template.machine_price_per_drop * curtainCount;
-  if (template?.machine_price_per_panel) manufacturingCost += template.machine_price_per_panel * curtainCount;
+  
+  if (pricingType === 'per_sqm' && isBlindTreatment) {
+    // Manufacturing priced per square meter
+    const squareMeters = (widthCm * heightCm) / 10000;
+    const machinePricePerSqm = template.machine_price_per_metre || 0;
+    manufacturingCost = machinePricePerSqm * squareMeters;
+    console.log(`💰 Manufacturing cost (per_sqm): ${machinePricePerSqm}/sqm × ${squareMeters.toFixed(2)}sqm = ${manufacturingCost.toFixed(2)}`);
+  } else {
+    // Standard pricing - per meter, per drop, or per panel
+    if (template?.machine_price_per_metre) {
+      manufacturingCost += template.machine_price_per_metre * linearMeters;
+    }
+    if (template?.machine_price_per_drop) {
+      manufacturingCost += template.machine_price_per_drop * curtainCount;
+    }
+    if (template?.machine_price_per_panel) {
+      manufacturingCost += template.machine_price_per_panel * curtainCount;
+    }
+    console.log(`💰 Manufacturing cost (standard): ${manufacturingCost.toFixed(2)}`);
+  }
 
   // Options cost - sum all selected option prices
   const optionsCost = selectedOptions.reduce((sum, opt) => sum + (opt.price || 0), 0);
