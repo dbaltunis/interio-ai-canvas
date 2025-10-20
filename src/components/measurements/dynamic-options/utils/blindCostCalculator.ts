@@ -85,6 +85,11 @@ export const calculateBlindCosts = (
   };
 };
 
-export const isBlindCategory = (category: string): boolean => {
-  return category.toLowerCase().includes('blind');
+export const isBlindCategory = (category: string, templateName?: string): boolean => {
+  const categoryLower = category.toLowerCase();
+  const nameLower = (templateName || '').toLowerCase();
+  return categoryLower.includes('blind') || 
+         categoryLower.includes('shade') ||
+         nameLower.includes('blind') ||
+         nameLower.includes('shade');
 };

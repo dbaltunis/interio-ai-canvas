@@ -95,15 +95,16 @@ export const CostCalculationSummary = ({
 
   console.log('🔍 CostCalculationSummary Debug:', {
     treatmentCategory,
+    templateName: template.name,
     width,
     height,
-    isBlind: isBlindCategory(treatmentCategory),
+    isBlind: isBlindCategory(treatmentCategory, template.name),
     measurements,
-    template: template.name
+    selectedFabric: selectedFabric?.name
   });
 
-  // BLINDS: Use clean calculator
-  if (isBlindCategory(treatmentCategory) && width > 0 && height > 0) {
+  // BLINDS: Use clean calculator (check both category and template name)
+  if (isBlindCategory(treatmentCategory, template.name) && width > 0 && height > 0) {
     const blindCosts = calculateBlindCosts(width, height, template, selectedFabric, selectedOptions);
     
     console.log('✅ Using blind calculator, costs:', blindCosts);
