@@ -400,6 +400,8 @@ export const AdaptiveFabricPricingDisplay = ({
               let unitSuffix = '';
               let calculationText = '';
               let calculationBreakdown = '';
+              const pricePerUnit = fabricCalculation.pricePerMeter || 0;
+              const totalCost = fabricCalculation.totalCost || 0;
               
               if (isBySqm) {
                 // Square meter calculation
@@ -407,29 +409,29 @@ export const AdaptiveFabricPricingDisplay = ({
                 quantity = sqm;
                 unitLabel = 'Area Required';
                 unitSuffix = ' sqm';
-                calculationText = `${quantity.toFixed(2)} sqm × ${formatPrice(fabricCalculation.pricePerMeter || 0)}/sqm`;
-                calculationBreakdown = `Width: ${(fabricCalculation.railWidth || 0).toFixed(0)}cm × Height: ${(fabricCalculation.totalDrop || 0).toFixed(0)}cm = ${quantity.toFixed(2)} sqm`;
+                calculationText = `${quantity.toFixed(2)} sqm × ${formatPrice(pricePerUnit)}/sqm`;
+                calculationBreakdown = `Width: ${(fabricCalculation.railWidth || 0).toFixed(0)}cm × Height: ${(fabricCalculation.totalDrop || 0).toFixed(0)}cm = ${quantity.toFixed(2)} sqm × ${formatPrice(pricePerUnit)}/sqm = ${formatPrice(totalCost)}`;
               } else if (isByDrop) {
                 // Per drop calculation
                 quantity = fabricCalculation.widthsRequired || 1;
                 unitLabel = 'Drops Required';
                 unitSuffix = ' drop(s)';
-                calculationText = `${quantity.toFixed(0)} drops × ${formatPrice(fabricCalculation.pricePerMeter || 0)}/drop`;
-                calculationBreakdown = `Each drop: ${(fabricCalculation.totalDrop || 0).toFixed(0)}cm × ${quantity} width(s)`;
+                calculationText = `${quantity.toFixed(0)} drops × ${formatPrice(pricePerUnit)}/drop`;
+                calculationBreakdown = `${quantity} width(s) × ${(fabricCalculation.totalDrop || 0).toFixed(0)}cm drop × ${formatPrice(pricePerUnit)}/drop = ${formatPrice(totalCost)}`;
               } else if (isByPanel) {
                 // Per panel calculation
                 quantity = measurements.curtain_type === 'pair' ? 2 : 1;
                 unitLabel = 'Panels Required';
                 unitSuffix = ' panel(s)';
-                calculationText = `${quantity.toFixed(0)} panels × ${formatPrice(fabricCalculation.pricePerMeter || 0)}/panel`;
-                calculationBreakdown = `Panel type: ${measurements.curtain_type || 'single'}`;
+                calculationText = `${quantity.toFixed(0)} panels × ${formatPrice(pricePerUnit)}/panel`;
+                calculationBreakdown = `${quantity} panel(s) [${measurements.curtain_type || 'single'}] × ${formatPrice(pricePerUnit)}/panel = ${formatPrice(totalCost)}`;
               } else {
                 // Linear meter calculation (default)
                 quantity = fabricCalculation.linearMeters || 0;
                 unitLabel = 'Linear Meters Required';
                 unitSuffix = 'm';
-                calculationText = `${quantity.toFixed(2)}m × ${formatPrice(fabricCalculation.pricePerMeter || 0)}/m`;
-                calculationBreakdown = `${fabricCalculation.widthsRequired || 0} width(s) × ${(fabricCalculation.totalDrop || 0).toFixed(0)}cm = ${quantity.toFixed(2)}m`;
+                calculationText = `${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
+                calculationBreakdown = `${fabricCalculation.widthsRequired || 0} width(s) × ${(fabricCalculation.totalDrop || 0).toFixed(0)}cm = ${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m = ${formatPrice(totalCost)}`;
               }
               
               return (
@@ -445,7 +447,7 @@ export const AdaptiveFabricPricingDisplay = ({
                   </div>
                   
                   {calculationBreakdown && (
-                    <div className="text-xs text-muted-foreground bg-background/50 p-2 rounded">
+                    <div className="text-xs text-muted-foreground bg-background/50 p-2 rounded font-medium">
                       {calculationBreakdown}
                     </div>
                   )}
@@ -459,11 +461,11 @@ export const AdaptiveFabricPricingDisplay = ({
                   
                   <div className="flex justify-between font-semibold text-base pt-1">
                     <span>Fabric Cost:</span>
-                    <span className="text-foreground">{formatPrice(fabricCalculation.totalCost || 0)}</span>
+                    <span className="text-foreground">{formatPrice(totalCost)}</span>
                   </div>
                   
                   <div className="text-xs text-muted-foreground mt-1 bg-background/30 p-2 rounded">
-                    <div className="font-medium mb-0.5">Calculation:</div>
+                    <div className="font-medium mb-0.5">Formula:</div>
                     {calculationText}
                   </div>
                 </>
