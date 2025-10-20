@@ -60,7 +60,6 @@ export const InventorySelectionPanel = ({
     price: "",
     unit: "m",
     fabric_width: "",
-    fabric_rotation: "vertical",
     pattern_repeat_horizontal: "",
     pattern_repeat_vertical: ""
   });
@@ -132,15 +131,16 @@ export const InventorySelectionPanel = ({
       // Add fabric-specific fields if category is fabric
       if (activeCategory === "fabric") {
         itemData.fabric_width = parseFloat(manualEntry.fabric_width) || 0;
-        itemData.fabric_rotation = manualEntry.fabric_rotation;
         itemData.pattern_repeat_horizontal = parseFloat(manualEntry.pattern_repeat_horizontal) || 0;
         itemData.pattern_repeat_vertical = parseFloat(manualEntry.pattern_repeat_vertical) || 0;
       }
 
-      console.log('💾 Saving inventory item with category:', dbCategory, 'for treatment:', treatmentCategory);
+      console.log('💾 Saving inventory item:', itemData);
 
       // Save to database
       const newItem = await createInventoryItem.mutateAsync(itemData);
+      
+      console.log('✅ Item created:', newItem);
       
       // Select the newly created item
       if (newItem) {
@@ -153,13 +153,12 @@ export const InventorySelectionPanel = ({
         price: "", 
         unit: "m",
         fabric_width: "",
-        fabric_rotation: "vertical",
         pattern_repeat_horizontal: "",
         pattern_repeat_vertical: ""
       });
       setShowManualEntry(false);
     } catch (error) {
-      console.error("Error creating inventory item:", error);
+      console.error("❌ Error creating inventory item:", error);
       // Error toast is already handled by the mutation
     }
   };
@@ -413,22 +412,9 @@ export const InventorySelectionPanel = ({
                         onChange={(e) => setManualEntry({ ...manualEntry, fabric_width: e.target.value })}
                         placeholder="e.g., 137, 300"
                       />
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Label htmlFor="fabric_rotation">Fabric Rotation</Label>
-                      <Select
-                        value={manualEntry.fabric_rotation}
-                        onValueChange={(value) => setManualEntry({ ...manualEntry, fabric_rotation: value })}
-                      >
-                        <SelectTrigger id="fabric_rotation">
-                          <SelectValue placeholder="Select rotation type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="vertical">Vertical (Narrow Fabric)</SelectItem>
-                          <SelectItem value="horizontal">Horizontal (Railroaded)</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Fabrics ≥250cm are wide (can be railroaded), &lt;250cm are narrow
+                      </p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
