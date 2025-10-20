@@ -133,10 +133,13 @@ const enrichSummaryForPersistence = (summary: Omit<WindowSummary, "updated_at">)
   const isWallpaperType = treatmentCategory === 'wallpaper' || treatmentType === 'wallpaper';
   
   if (isBlindType || isShutterType || isWallpaperType) {
+    // CRITICAL: Preserve options_cost and selected_options for all treatment types
     return {
       ...summary,
       fabric_details: (summary as any).fabric_details || {},
-      measurements_details: (summary as any).measurements_details || {}
+      measurements_details: (summary as any).measurements_details || {},
+      options_cost: (summary as any).options_cost,
+      selected_options: (summary as any).selected_options
     };
   }
   
