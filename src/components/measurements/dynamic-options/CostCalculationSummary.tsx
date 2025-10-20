@@ -93,9 +93,20 @@ export const CostCalculationSummary = ({
   const width = parseFloat(measurements.rail_width) || 0;
   const height = parseFloat(measurements.drop) || 0;
 
+  console.log('🔍 CostCalculationSummary Debug:', {
+    treatmentCategory,
+    width,
+    height,
+    isBlind: isBlindCategory(treatmentCategory),
+    measurements,
+    template: template.name
+  });
+
   // BLINDS: Use clean calculator
   if (isBlindCategory(treatmentCategory) && width > 0 && height > 0) {
     const blindCosts = calculateBlindCosts(width, height, template, selectedFabric, selectedOptions);
+    
+    console.log('✅ Using blind calculator, costs:', blindCosts);
 
     return (
       <div className="bg-card border border-border rounded-lg p-3 space-y-3">
@@ -206,6 +217,15 @@ export const CostCalculationSummary = ({
   const headingCost = calculatedHeadingCost || 0;
   const optionsCost = calculatedOptionsCost || 0;
   const totalCost = calculatedTotalCost || (fabricCost + liningCost + manufacturingCost + headingCost + optionsCost);
+
+  console.log('📊 Curtain costs:', {
+    fabricCost,
+    liningCost,
+    manufacturingCost,
+    headingCost,
+    optionsCost,
+    totalCost
+  });
 
   return (
     <div className="bg-card border border-border rounded-lg p-3 space-y-3">
