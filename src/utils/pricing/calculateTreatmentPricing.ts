@@ -90,9 +90,20 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   let fabricCost = 0;
   const pricingType = template?.pricing_type;
   
-  // Check if this is a blind/shutter treatment
+  // CRITICAL: Detect blinds from template name OR category - templates might not have treatment_category
   const treatmentCategory = template?.treatment_category || template?.category || '';
-  const isBlindTreatment = treatmentCategory.includes('blind') || treatmentCategory === 'shutters';
+  const templateName = (template?.name || '').toLowerCase();
+  const isBlindTreatment = treatmentCategory.includes('blind') || 
+                           treatmentCategory === 'shutters' ||
+                           templateName.includes('blind') ||
+                           templateName.includes('roman') ||
+                           templateName.includes('roller') ||
+                           templateName.includes('venetian') ||
+                           templateName.includes('vertical') ||
+                           templateName.includes('cellular') ||
+                           templateName.includes('shutter');
+  
+  console.log(`🔍 Fabric cost calculation - pricing type: ${pricingType}, isBlind: ${isBlindTreatment}, template: ${template?.name}`);
   
   if (pricingType === 'per_sqm' && isBlindTreatment) {
     // Calculate square meters: (width × height) / 10000 (cm² to m²)
@@ -115,7 +126,7 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
     }
   }
 
-  // Manufacturing - CRITICAL: Respect pricing method
+  // Manufacturing - CRITICAL: Respect pricing method (use same isBlindTreatment detection)
   let manufacturingCost = 0;
   
   if (pricingType === 'per_sqm' && isBlindTreatment) {
