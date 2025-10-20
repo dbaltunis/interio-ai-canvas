@@ -1161,12 +1161,44 @@ export const EnhancedMeasurementWorksheet = forwardRef<
 
               {/* Cost Calculation Summary - CRITICAL: Pass pre-calculated costs for single source of truth */}
               {(() => {
-                // Calculate pricing using the centralized function
-                const fabricItem = selectedFabric 
-                  ? inventoryItems.find(item => item.id === selectedFabric) 
-                  : inventoryItems.find(item => item.id === (measurements as any)?.selected_fabric);
+                // CRITICAL: Find fabric from multiple sources to ensure we have the data
+                let fabricItem = null;
                 
+                // Priority 1: selectedFabric state
+                if (selectedFabric) {
+                  fabricItem = inventoryItems.find(item => item.id === selectedFabric);
+                }
+                
+                // Priority 2: measurements.selected_fabric
+                if (!fabricItem && (measurements as any)?.selected_fabric) {
+                  fabricItem = inventoryItems.find(item => item.id === (measurements as any).selected_fabric);
+                }
+                
+                // Priority 3: treatmentData.fabric_details.fabric_id
+                if (!fabricItem && treatmentData?.fabric_details?.fabric_id) {
+                  fabricItem = inventoryItems.find(item => item.id === treatmentData.fabric_details.fabric_id);
+                }
+                
+                // Priority 4: savedSummary.fabric_details.fabric_id
+                if (!fabricItem && savedSummary?.fabric_details?.fabric_id) {
+                  fabricItem = inventoryItems.find(item => item.id === savedSummary.fabric_details.fabric_id);
+                }
+                
+                console.log('🔍 CRITICAL DEBUG - Before calculateTreatmentPricing:', {
+                  selectedCovering: selectedCovering?.name,
+                  selectedFabric,
+                  fabricItem: fabricItem ? { id: fabricItem.id, name: fabricItem.name, selling_price: fabricItem.selling_price } : null,
+                  measurements_selected_fabric: (measurements as any)?.selected_fabric,
+                  treatmentData_fabric_id: treatmentData?.fabric_details?.fabric_id,
+                  savedSummary_fabric_id: savedSummary?.fabric_details?.fabric_id,
+                  inventoryCount: inventoryItems.length
+                });
+
                 if (!selectedCovering || !fabricItem) {
+                  console.log('⚠️ MISSING DATA - Rendering CostSummary without calculations:', {
+                    hasCovering: !!selectedCovering,
+                    hasFabricItem: !!fabricItem
+                  });
                   return (
                     <CostCalculationSummary
                       template={selectedCovering}
