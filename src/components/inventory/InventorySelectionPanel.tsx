@@ -104,13 +104,29 @@ export const InventorySelectionPanel = ({
     }
 
     try {
+      // Determine the correct category to save to database
+      let dbCategory = activeCategory;
+      
+      // Map fabric category to treatment-specific category
+      if (activeCategory === "fabric") {
+        if (treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds') {
+          dbCategory = 'curtain_fabric';
+        } else if (treatmentCategory === 'roller_blinds') {
+          dbCategory = 'roller_fabric';
+        } else if (treatmentCategory === 'panel_glide') {
+          dbCategory = 'panel_glide_fabric';
+        } else if (treatmentCategory === 'wallpaper') {
+          dbCategory = 'wallcovering';
+        }
+      }
+
       // Prepare the item data for database insertion
       const itemData: any = {
         name: manualEntry.name,
         selling_price: parseFloat(manualEntry.price),
         unit: manualEntry.unit,
         quantity: 0,
-        category: activeCategory,
+        category: dbCategory,
       };
 
       // Add fabric-specific fields if category is fabric
@@ -120,6 +136,8 @@ export const InventorySelectionPanel = ({
         itemData.pattern_repeat_horizontal = parseFloat(manualEntry.pattern_repeat_horizontal) || 0;
         itemData.pattern_repeat_vertical = parseFloat(manualEntry.pattern_repeat_vertical) || 0;
       }
+
+      console.log('💾 Saving inventory item with category:', dbCategory, 'for treatment:', treatmentCategory);
 
       // Save to database
       const newItem = await createInventoryItem.mutateAsync(itemData);
