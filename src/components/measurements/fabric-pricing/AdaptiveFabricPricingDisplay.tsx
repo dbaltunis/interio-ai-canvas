@@ -404,13 +404,17 @@ export const AdaptiveFabricPricingDisplay = ({
               const totalCost = fabricCalculation.totalCost || 0;
               
               if (isBySqm) {
-                // Square meter calculation
-                const sqm = fabricCalculation.sqm || ((fabricCalculation.railWidth || 0) * (fabricCalculation.totalDrop || 0) / 10000);
+                // Square meter calculation - use sqm directly from fabricCalculation (includes hems and waste for blinds)
+                const sqm = fabricCalculation.sqm || 0;
                 quantity = sqm;
                 unitLabel = 'Area Required';
                 unitSuffix = ' sqm';
                 calculationText = `${quantity.toFixed(2)} sqm × ${formatPrice(pricePerUnit)}/sqm`;
-                calculationBreakdown = `Width: ${(fabricCalculation.railWidth || 0).toFixed(0)}cm × Height: ${(fabricCalculation.totalDrop || 0).toFixed(0)}cm = ${quantity.toFixed(2)} sqm × ${formatPrice(pricePerUnit)}/sqm = ${formatPrice(totalCost)}`;
+                
+                // For blinds, sqm already includes hems/waste, so just show the calculation
+                const rawWidthM = (fabricCalculation.railWidth || 0) / 100;
+                const rawHeightM = (fabricCalculation.totalDrop || fabricCalculation.drop || 0) / 100;
+                calculationBreakdown = `Width: ${(fabricCalculation.railWidth || 0).toFixed(0)}cm × Height: ${(fabricCalculation.totalDrop || fabricCalculation.drop || 0).toFixed(0)}cm = ${quantity.toFixed(2)} sqm × ${formatPrice(pricePerUnit)}/sqm = ${formatPrice(totalCost)}`;
               } else if (isByDrop) {
                 // Per drop calculation
                 quantity = fabricCalculation.widthsRequired || 1;

@@ -270,7 +270,7 @@ export const CostCalculationSummary = ({
   
   // Get linear meters from fabricCalculation if available, otherwise from our metrics
   const finalLinearMeters = fabricCalculation?.linearMeters || fabricUsage.linearMeters;
-  const finalSquareMeters = fabricCalculation?.squareMeters || fabricUsage.squareMeters;
+  const finalSquareMeters = fabricCalculation?.sqm || fabricCalculation?.squareMeters || fabricUsage.squareMeters;
 
   console.log('🎨 CostCalculationSummary DISPLAYING (from calculateTreatmentPricing):', {
     fabricCost: finalFabricCostToDisplay,
@@ -449,7 +449,11 @@ export const CostCalculationSummary = ({
             <div className="flex flex-col min-w-0">
               <span className="text-card-foreground font-medium">Fabric Material</span>
               <span className="text-xs text-muted-foreground truncate">
-                {finalLinearMeters.toFixed(2)}{units.fabric === 'yards' ? 'yd' : 'm'} × {formatPrice(fabricPriceDisplay)}/{units.fabric === 'yards' ? 'yd' : 'm'}
+                {/* Show sqm for blinds, linear meters for curtains */}
+                {treatmentCategory.includes('blind') && finalSquareMeters > 0 
+                  ? `${finalSquareMeters.toFixed(2)} sqm × ${formatPrice(fabricPriceDisplay)}/sqm`
+                  : `${finalLinearMeters.toFixed(2)}${units.fabric === 'yards' ? 'yd' : 'm'} × ${formatPrice(fabricPriceDisplay)}/${units.fabric === 'yards' ? 'yd' : 'm'}`
+                }
               </span>
             </div>
           </div>
