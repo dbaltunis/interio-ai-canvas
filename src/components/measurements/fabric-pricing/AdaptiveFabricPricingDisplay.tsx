@@ -223,6 +223,14 @@ export const AdaptiveFabricPricingDisplay = ({
                              treatmentCategory === 'venetian_blinds' || treatmentCategory === 'vertical_blinds';
 
     if (isBlindTreatment && fabricCalculation.sqm) {
+      console.log('🔍 AdaptiveFabricPricingDisplay BLIND rendering:', {
+        isBlindTreatment,
+        fabricCalculationSqm: fabricCalculation.sqm,
+        totalCost: fabricCalculation.totalCost,
+        pricePerMeter: fabricCalculation.pricePerMeter,
+        fullFabricCalculation: fabricCalculation
+      });
+      
       return (
         <div className="space-y-4">
           {/* Fabric Information */}

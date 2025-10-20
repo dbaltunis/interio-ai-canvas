@@ -281,7 +281,9 @@ export const CostCalculationSummary = ({
     totalCost,
     linearMeters: finalLinearMeters,
     squareMeters: finalSquareMeters,
-    pricingType: template.pricing_type
+    pricingType: template.pricing_type,
+    fabricCalculation: fabricCalculation,
+    treatmentCategory
   });
 
   // Detect product type for dynamic labels

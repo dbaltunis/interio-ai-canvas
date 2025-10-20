@@ -233,7 +233,7 @@ export const VisualMeasurementSheet = ({
           : `${result.meters.toFixed(2)} m × £${pricePerMeter.toFixed(2)} = £${calculatedTotalCost.toFixed(2)}`
       });
       
-      return {
+      const fabricCalcResult = {
         linearMeters: result.meters,
         totalCost: calculatedTotalCost,
         pricePerMeter: pricePerMeter,
@@ -262,6 +262,10 @@ export const VisualMeasurementSheet = ({
         widthCalcNote: result.details?.widthCalcNote,
         heightCalcNote: result.details?.heightCalcNote
       };
+      
+      console.log('🎯 VisualMeasurementSheet FINAL fabricCalculation:', fabricCalcResult);
+      
+      return fabricCalcResult;
     } catch (error) {
       console.error('Error calculating fabric usage:', error);
     }
