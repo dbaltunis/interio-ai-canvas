@@ -476,29 +476,46 @@ export const CostCalculationSummary = ({
         <h3 className="text-base font-semibold text-card-foreground">Cost Summary</h3>
       </div>
 
-      {/* Cost Breakdown - Compact Grid Layout */}
-      <div className="grid gap-1.5 text-sm">
-        {/* Fabric */}
-        <div className="flex items-center justify-between py-1.5">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
-            <div className="flex flex-col min-w-0">
-              <span className="text-card-foreground font-medium">Fabric Material</span>
-              <span className="text-xs text-muted-foreground truncate">
-                {/* Show sqm for blinds, linear meters for curtains */}
-                {treatmentCategory.includes('blind') && finalSquareMeters > 0 
-                  ? `${finalSquareMeters.toFixed(2)} sqm × ${formatPrice(fabricPriceDisplay)}/sqm`
-                  : `${finalLinearMeters.toFixed(2)}${units.fabric === 'yards' ? 'yd' : 'm'} × ${formatPrice(fabricPriceDisplay)}/${units.fabric === 'yards' ? 'yd' : 'm'}`
-                }
-              </span>
+      {/* Cost Breakdown - Simple View */}
+      <div className="grid gap-2 text-sm">
+        {/* Fabric Material */}
+        {finalFabricCostToDisplay > 0 && (
+          <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+              <div className="flex flex-col min-w-0">
+                <span className="text-card-foreground font-medium">Fabric Material</span>
+                <span className="text-xs text-muted-foreground truncate">
+                  {treatmentCategory.includes('blind') && finalSquareMeters > 0 
+                    ? `${finalSquareMeters.toFixed(2)} sqm × ${formatPrice(fabricPriceDisplay)}/sqm`
+                    : `${finalLinearMeters.toFixed(2)}${units.fabric === 'yards' ? 'yd' : 'm'} × ${formatPrice(fabricPriceDisplay)}/${units.fabric === 'yards' ? 'yd' : 'm'}`
+                  }
+                </span>
+              </div>
             </div>
+            <span className="font-semibold text-card-foreground ml-2">{formatPrice(finalFabricCostToDisplay)}</span>
           </div>
-          <span className="font-medium text-card-foreground ml-2">{formatPrice(finalFabricCostToDisplay)}</span>
-        </div>
+        )}
+
+        {/* Manufacturing/Assembly */}
+        {finalManufacturingCostToDisplay > 0 && (
+          <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <ManufacturingIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+              <div className="flex flex-col min-w-0">
+                <span className="text-card-foreground font-medium">{getManufacturingLabel()}</span>
+                <span className="text-xs text-muted-foreground truncate">
+                  {template?.pricing_type === 'pricing_grid' ? 'Grid pricing' : 'Labor & assembly'}
+                </span>
+              </div>
+            </div>
+            <span className="font-semibold text-card-foreground ml-2">{formatPrice(finalManufacturingCostToDisplay)}</span>
+          </div>
+        )}
 
         {/* Lining */}
         {selectedLining && selectedLining !== 'none' && finalLiningCostToDisplay > 0 && (
-          <div className="flex items-center justify-between py-1.5">
+          <div className="flex items-center justify-between py-1.5 border-b border-border/50">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
               <div className="flex flex-col min-w-0">
@@ -506,13 +523,13 @@ export const CostCalculationSummary = ({
                 <span className="text-xs text-muted-foreground truncate">{getLiningName()}</span>
               </div>
             </div>
-            <span className="font-medium text-card-foreground ml-2">{formatPrice(finalLiningCostToDisplay)}</span>
+            <span className="font-semibold text-card-foreground ml-2">{formatPrice(finalLiningCostToDisplay)}</span>
           </div>
         )}
 
         {/* Heading */}
         {finalHeadingCostToDisplay > 0 && (
-          <div className="flex items-center justify-between py-1.5">
+          <div className="flex items-center justify-between py-1.5 border-b border-border/50">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <span className="w-3.5 h-3.5 border-b-2 border-primary shrink-0" />
               <div className="flex flex-col min-w-0">
@@ -520,111 +537,106 @@ export const CostCalculationSummary = ({
                 <span className="text-xs text-muted-foreground truncate">{getHeadingName()}</span>
               </div>
             </div>
-            <span className="font-medium text-card-foreground ml-2">{formatPrice(finalHeadingCostToDisplay)}</span>
+            <span className="font-semibold text-card-foreground ml-2">{formatPrice(finalHeadingCostToDisplay)}</span>
           </div>
         )}
 
-        {/* Manufacturing/Assembly with detailed breakdown */}
-        {finalManufacturingCostToDisplay > 0 && (
-          <div className="flex items-center justify-between py-1.5">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <SewingMachineIcon className="h-3.5 w-3.5 text-primary shrink-0" />
-              <div className="flex flex-col min-w-0">
-                <span className="text-card-foreground font-medium">{getManufacturingLabel()}</span>
-                <span className="text-xs text-muted-foreground truncate">
-                  {(() => {
-                    const manufacturingType = measurements.manufacturing_type || template.manufacturing_type || 'machine';
-                    const isHandFinished = manufacturingType === 'hand';
-                    const pricingMethods = (template as any).pricing_methods || [];
-                    const selectedMethodId = measurements.selected_pricing_method;
-                    const selectedMethod = pricingMethods.find((m: any) => m.id === selectedMethodId) || pricingMethods[0];
-                    
-                    const pricePerMetre = isHandFinished 
-                      ? (selectedMethod?.hand_price_per_metre || template.hand_price_per_metre || 0)
-                      : (selectedMethod?.machine_price_per_metre || template.machine_price_per_metre || 0);
-                    
-                    if (pricePerMetre > 0) {
-                      return `${finalLinearMeters.toFixed(2)}${units.fabric === 'yards' ? 'yd' : 'm'} × ${formatPrice(pricePerMetre)}/${units.fabric === 'yards' ? 'yd' : 'm'} sewing`;
-                    }
-                    return 'Makeup service';
-                  })()}
-                </span>
+        {/* Options with Prices */}
+        {selectedOptions && selectedOptions.filter(opt => opt.price && opt.price > 0).length > 0 && (
+          <div className="py-1.5 border-b border-border/50">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="text-card-foreground font-medium">Additional Options</span>
               </div>
+              <span className="font-semibold text-card-foreground">
+                {formatPrice(selectedOptions.filter(opt => opt.price && opt.price > 0).reduce((sum, opt) => sum + (opt.price || 0), 0))}
+              </span>
             </div>
-            <span className="font-medium text-card-foreground ml-2">{formatPrice(finalManufacturingCostToDisplay)}</span>
-          </div>
-        )}
-
-        {/* Options */}
-        {finalOptionsCostToDisplay > 0 && (
-          <div className="flex items-center justify-between py-1.5">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
-              <span className="text-card-foreground font-medium">Options</span>
-            </div>
-            <span className="font-medium text-card-foreground ml-2">{formatPrice(finalOptionsCostToDisplay)}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Total - More Compact */}
-      <div className="border-t border-border pt-2.5 space-y-0.5">
-        <div className="flex items-center justify-between">
-          <span className="text-base font-semibold text-card-foreground">Total</span>
-          <span className="text-lg font-bold text-primary">{formatPrice(totalCost)}</span>
-        </div>
-        {isCurtain && panelCount > 1 && (
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{getPerUnitLabel()}</span>
-            <span>{formatPrice(totalCost / panelCount)}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Collapsible Details */}
-      <details className="text-xs text-muted-foreground group">
-        <summary className="cursor-pointer font-medium text-card-foreground flex items-center gap-1.5 py-1 hover:text-primary transition-colors">
-          <Info className="h-3 w-3" />
-          <span>Pricing Details</span>
-          <span className="ml-auto text-xs group-open:rotate-180 transition-transform">▼</span>
-        </summary>
-        <div className="space-y-1 mt-2 pl-4 border-l-2 border-border">
-          <div>Template: {template.name}</div>
-          <div>Method: {template.pricing_type}</div>
-          
-          {/* Selected Options */}
-          {selectedOptions && selectedOptions.length > 0 && (
-            <div className="mt-2">
-              <div className="font-medium text-card-foreground mb-1">Selected Options:</div>
-              {selectedOptions.map((option, index) => (
-                <div key={index} className="flex items-center justify-between text-xs">
+            <div className="pl-6 space-y-1">
+              {selectedOptions.filter(opt => opt.price && opt.price > 0).map((option, index) => (
+                <div key={index} className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>• {option.name}</span>
-                  <span className="text-card-foreground font-medium">
-                    {option.price > 0 ? formatPrice(option.price) : 'Included'}
-                  </span>
+                  <span className="font-medium">{formatPrice(option.price || 0)}</span>
                 </div>
               ))}
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* Total */}
+      <div className="border-t-2 border-primary/20 pt-2.5">
+        <div className="flex items-center justify-between">
+          <span className="text-lg font-bold text-card-foreground">Total</span>
+          <span className="text-xl font-bold text-primary">{formatPrice(totalCost)}</span>
+        </div>
+        {isCurtain && panelCount > 1 && (
+          <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+            <span>{getPerUnitLabel()}</span>
+            <span className="font-medium">{formatPrice(totalCost / panelCount)}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Collapsible Detailed Pricing */}
+      <details className="text-xs text-muted-foreground group">
+        <summary className="cursor-pointer font-medium text-card-foreground flex items-center gap-1.5 py-1.5 hover:text-primary transition-colors border-t border-border/50 pt-2">
+          <Info className="h-3.5 w-3.5" />
+          <span>Pricing Details</span>
+          <span className="ml-auto text-xs group-open:rotate-180 transition-transform">▼</span>
+        </summary>
+        <div className="space-y-2 mt-3 pl-4 border-l-2 border-primary/20">
+          {/* Template Info */}
+          <div className="space-y-0.5">
+            <div className="text-card-foreground font-medium">Template: {template.name}</div>
+            <div>Method: {template.pricing_type}</div>
+            {template.waste_percent > 0 && <div>Waste: {template.waste_percent}%</div>}
+          </div>
+          
+          {/* All Selected Options (including free/included ones) */}
+          {selectedOptions && selectedOptions.length > 0 && (
+            <div className="mt-3 pt-2 border-t border-border/30">
+              <div className="font-medium text-card-foreground mb-1.5">Selected Options:</div>
+              <div className="space-y-1">
+                {selectedOptions.map((option, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <span>• {option.name}</span>
+                    <span className="font-medium text-card-foreground">
+                      {option.price && option.price > 0 ? formatPrice(option.price) : 'Included'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
           
+          {/* Calculation Details based on pricing type */}
           {template.pricing_type === 'pricing_grid' && (
-            <div className="mt-1.5 p-1.5 bg-primary/5 rounded text-xs">
-              <div className="font-medium text-primary">Grid:</div>
-              <div>W: {width}cm × H: {height}cm</div>
-              <div>Price: {formatPrice(finalManufacturingCostToDisplay)}</div>
+            <div className="mt-2 p-2 bg-primary/5 rounded">
+              <div className="font-medium text-primary mb-1">Grid Pricing:</div>
+              <div>Dimensions: {width}cm × {height}cm</div>
+              <div>Grid Price: {formatPrice(finalManufacturingCostToDisplay)}</div>
             </div>
           )}
-          {template.pricing_type === 'per_metre' && (
-            <div className="mt-1.5 p-1.5 bg-primary/5 rounded text-xs">
-              <div>{formatPrice(template.machine_price_per_metre || 0)}/m × {finalLinearMeters.toFixed(2)}m</div>
+          
+          {treatmentCategory.includes('blind') && finalSquareMeters > 0 && (
+            <div className="mt-2 p-2 bg-primary/5 rounded">
+              <div className="font-medium text-primary mb-1">Square Meter Calculation:</div>
+              <div>Area: {finalSquareMeters.toFixed(2)} sqm</div>
+              <div>Fabric Price: {formatPrice(fabricPriceDisplay)}/sqm</div>
             </div>
           )}
-          {(template.pricing_type === 'per_panel' || template.pricing_type === 'per_drop') && (
-            <div className="mt-1.5 p-1.5 bg-primary/5 rounded text-xs">
-              <div>{(width/100).toFixed(2)}m × {(height/100).toFixed(2)}m = {(width/100 * height/100).toFixed(2)}m²</div>
+          
+          {template.pricing_type === 'per_metre' && finalLinearMeters > 0 && (
+            <div className="mt-2 p-2 bg-primary/5 rounded">
+              <div className="font-medium text-primary mb-1">Per Linear Meter:</div>
+              <div>Length: {finalLinearMeters.toFixed(2)}m</div>
+              {template.machine_price_per_metre > 0 && (
+                <div>Rate: {formatPrice(template.machine_price_per_metre)}/m</div>
+              )}
             </div>
           )}
-          <div className="mt-1">Waste: {template.waste_percent || 5}%</div>
         </div>
       </details>
     </div>
