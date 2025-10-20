@@ -133,13 +133,29 @@ const enrichSummaryForPersistence = (summary: Omit<WindowSummary, "updated_at">)
   const isWallpaperType = treatmentCategory === 'wallpaper' || treatmentType === 'wallpaper';
   
   if (isBlindType || isShutterType || isWallpaperType) {
-    // CRITICAL: Preserve options_cost and selected_options for all treatment types
+    // CRITICAL: For blinds/shutters/wallpaper, preserve ALL cost fields exactly as provided
+    // Do NOT recalculate - the total_cost already includes options_cost from calculateTreatmentPricing
+    console.log('📦 Preserving exact costs for blinds/shutters/wallpaper:', {
+      treatment_category: treatmentCategory,
+      treatment_type: treatmentType,
+      total_cost: (summary as any).total_cost,
+      options_cost: (summary as any).options_cost,
+      fabric_cost: (summary as any).fabric_cost,
+      manufacturing_cost: (summary as any).manufacturing_cost
+    });
+    
     return {
       ...summary,
       fabric_details: (summary as any).fabric_details || {},
       measurements_details: (summary as any).measurements_details || {},
+      // Explicitly preserve all cost fields to prevent recalculation
+      total_cost: (summary as any).total_cost,
       options_cost: (summary as any).options_cost,
-      selected_options: (summary as any).selected_options
+      selected_options: (summary as any).selected_options,
+      fabric_cost: (summary as any).fabric_cost,
+      lining_cost: (summary as any).lining_cost,
+      manufacturing_cost: (summary as any).manufacturing_cost,
+      hardware_cost: (summary as any).hardware_cost
     };
   }
   
