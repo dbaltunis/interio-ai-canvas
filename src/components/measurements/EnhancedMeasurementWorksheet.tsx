@@ -686,6 +686,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       liningCost,
       manufacturingCost,
       optionsCost,
+      headingCost,
       totalCost,
       liningDetails,
       calculation_details,
@@ -703,6 +704,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       fabricCost,
       liningCost,
       manufacturingCost,
+      headingCost,
       optionsCost,
       totalCost,
       linearMeters,
@@ -873,16 +875,14 @@ export const EnhancedMeasurementWorksheet = forwardRef<
           curtainType: selectedCovering.curtain_type
         });
         
-        // CRITICAL: Recalculate total to ensure options_cost is included
-        const finalTotalCost = fabricCost + liningCost + manufacturingCost + selectedOptions.reduce((sum, opt) => sum + (opt.price || 0), 0);
-        
+        // CRITICAL: Use totalCost from calculateTreatmentPricing (already includes heading + options)
         console.log('💰 Final cost calculation before save:', {
           fabricCost,
           liningCost,
           manufacturingCost,
-          optionsCost: selectedOptions.reduce((sum, opt) => sum + (opt.price || 0), 0),
-          totalFromCalculation: totalCost,
-          finalTotalCost,
+          headingCost,
+          optionsCost,
+          totalCost,
           selectedOptionsCount: selectedOptions.length
         });
         
@@ -894,7 +894,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
           fabric_cost: fabricCost,
           lining_cost: liningCost,
           manufacturing_cost: manufacturingCost,
-          total_cost: finalTotalCost, // Use recalculated total that includes all costs
+          heading_cost: headingCost, // CRITICAL: Save heading cost
+          total_cost: totalCost, // CRITICAL: Use totalCost from calculateTreatmentPricing
           template_id: selectedCovering.id,
           pricing_type: selectedCovering.pricing_type,
           waste_percent: selectedCovering.waste_percent || 0,
@@ -904,8 +905,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
           template_details: selectedCovering as any,
           treatment_type: specificTreatmentType, // CRITICAL: Save specific type like 'venetian_blinds'
           treatment_category: generalCategory, // Save general category like 'blinds'
-          // CRITICAL: Calculate options cost from selectedOptions
-          options_cost: selectedOptions.reduce((sum, opt) => sum + (opt.price || 0), 0),
+          // CRITICAL: Save options cost from calculateTreatmentPricing
+          options_cost: optionsCost,
           selected_options: selectedOptions,
           fabric_details: { 
             id: fabricItem.id, 
@@ -1158,18 +1159,67 @@ export const EnhancedMeasurementWorksheet = forwardRef<
             <div className="space-y-6">
 
 
-              {/* Cost Calculation Summary */}
-              <CostCalculationSummary
-                template={selectedCovering}
-                measurements={measurements}
-                selectedFabric={selectedFabric ? inventoryItems.find(item => item.id === selectedFabric) : 
-                              inventoryItems.find(item => item.id === (measurements as any)?.selected_fabric)}
-                selectedHeading={selectedHeading}
-                selectedLining={selectedLining}
-                inventory={inventoryItems}
-                fabricCalculation={fabricCalculation}
-                selectedOptions={selectedOptions}
-              />
+              {/* Cost Calculation Summary - CRITICAL: Pass pre-calculated costs for single source of truth */}
+              {(() => {
+                // Calculate pricing using the centralized function
+                const fabricItem = selectedFabric 
+                  ? inventoryItems.find(item => item.id === selectedFabric) 
+                  : inventoryItems.find(item => item.id === (measurements as any)?.selected_fabric);
+                
+                if (!selectedCovering || !fabricItem) {
+                  return (
+                    <CostCalculationSummary
+                      template={selectedCovering}
+                      measurements={measurements}
+                      selectedFabric={fabricItem}
+                      selectedHeading={selectedHeading}
+                      selectedLining={selectedLining}
+                      inventory={inventoryItems}
+                      fabricCalculation={fabricCalculation}
+                      selectedOptions={selectedOptions}
+                    />
+                  );
+                }
+
+                // Get pre-calculated costs from the centralized function
+                const pricingResult = calculateTreatmentPricing({
+                  template: selectedCovering,
+                  measurements,
+                  fabricItem,
+                  selectedHeading,
+                  selectedLining,
+                  unitsCurrency: units.currency,
+                  selectedOptions,
+                });
+
+                console.log('💰 Passing calculated costs to display:', {
+                  fabricCost: pricingResult.fabricCost,
+                  liningCost: pricingResult.liningCost,
+                  manufacturingCost: pricingResult.manufacturingCost,
+                  headingCost: pricingResult.headingCost,
+                  optionsCost: pricingResult.optionsCost,
+                  totalCost: pricingResult.totalCost
+                });
+
+                return (
+                  <CostCalculationSummary
+                    template={selectedCovering}
+                    measurements={measurements}
+                    selectedFabric={fabricItem}
+                    selectedHeading={selectedHeading}
+                    selectedLining={selectedLining}
+                    inventory={inventoryItems}
+                    fabricCalculation={fabricCalculation}
+                    selectedOptions={selectedOptions}
+                    calculatedFabricCost={pricingResult.fabricCost}
+                    calculatedLiningCost={pricingResult.liningCost}
+                    calculatedManufacturingCost={pricingResult.manufacturingCost}
+                    calculatedHeadingCost={pricingResult.headingCost}
+                    calculatedOptionsCost={pricingResult.optionsCost}
+                    calculatedTotalCost={pricingResult.totalCost}
+                  />
+                );
+              })()}
             </div>
           )}
 

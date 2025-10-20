@@ -36,7 +36,7 @@ export interface WindowSummary {
   // Options and hardware costs - CRITICAL for accurate totals
   options_cost?: number;
   hardware_cost?: number;
-  heading_cost?: number;
+  heading_cost?: number; // CRITICAL: Heading cost now included
   selected_options?: any[];
   // Dimensions - preserve from measurement dialog
   rail_width?: number;

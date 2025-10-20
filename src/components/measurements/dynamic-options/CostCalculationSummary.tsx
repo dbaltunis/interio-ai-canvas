@@ -65,6 +65,13 @@ interface CostCalculationSummaryProps {
   inventory: any[];
   fabricCalculation?: any;
   selectedOptions?: Array<{ name: string; price?: number }>;
+  // CRITICAL: Pre-calculated costs from calculateTreatmentPricing
+  calculatedFabricCost?: number;
+  calculatedLiningCost?: number;
+  calculatedManufacturingCost?: number;
+  calculatedHeadingCost?: number;
+  calculatedOptionsCost?: number;
+  calculatedTotalCost?: number;
 }
 
 export const CostCalculationSummary = ({
@@ -75,7 +82,13 @@ export const CostCalculationSummary = ({
   selectedHeading,
   inventory,
   fabricCalculation,
-  selectedOptions = []
+  selectedOptions = [],
+  calculatedFabricCost,
+  calculatedLiningCost,
+  calculatedManufacturingCost,
+  calculatedHeadingCost,
+  calculatedOptionsCost,
+  calculatedTotalCost
 }: CostCalculationSummaryProps) => {
   // Hooks MUST be called before any conditional returns to avoid hook violations
   const { units } = useMeasurementUnits();
@@ -614,14 +627,21 @@ export const CostCalculationSummary = ({
     finalLinearMeters = fabricCalculation.linearMeters || fabricUsage.linearMeters;
   }
 
-  const totalCost = finalFabricCost + liningCost + headingCost + manufacturingCost + optionsCost;
+  // CRITICAL: Use pre-calculated costs if provided (single source of truth)
+  const finalFabricCostToDisplay = calculatedFabricCost !== undefined ? calculatedFabricCost : finalFabricCost;
+  const finalLiningCostToDisplay = calculatedLiningCost !== undefined ? calculatedLiningCost : liningCost;
+  const finalManufacturingCostToDisplay = calculatedManufacturingCost !== undefined ? calculatedManufacturingCost : manufacturingCost;
+  const finalHeadingCostToDisplay = calculatedHeadingCost !== undefined ? calculatedHeadingCost : headingCost;
+  const finalOptionsCostToDisplay = calculatedOptionsCost !== undefined ? calculatedOptionsCost : optionsCost;
+  const totalCost = calculatedTotalCost !== undefined ? calculatedTotalCost : (finalFabricCost + liningCost + headingCost + manufacturingCost + optionsCost);
 
   console.log('🎨 CostCalculationSummary DISPLAYING to user:', {
-    finalFabricCost,
-    liningCost,
-    headingCost,
-    manufacturingCost,
-    optionsCost,
+    usingPreCalculated: calculatedTotalCost !== undefined,
+    finalFabricCost: finalFabricCostToDisplay,
+    liningCost: finalLiningCostToDisplay,
+    headingCost: finalHeadingCostToDisplay,
+    manufacturingCost: finalManufacturingCostToDisplay,
+    optionsCost: finalOptionsCostToDisplay,
     totalCost,
     finalLinearMeters
   });
@@ -793,7 +813,7 @@ export const CostCalculationSummary = ({
               </span>
             </div>
           </div>
-          <span className="font-medium text-card-foreground ml-2">{formatPrice(finalFabricCost)}</span>
+          <span className="font-medium text-card-foreground ml-2">{formatPrice(finalFabricCostToDisplay)}</span>
         </div>
 
         {/* Lining */}
@@ -806,12 +826,12 @@ export const CostCalculationSummary = ({
                 <span className="text-xs text-muted-foreground truncate">{selectedLining}</span>
               </div>
             </div>
-            <span className="font-medium text-card-foreground ml-2">{formatPrice(liningCost)}</span>
+            <span className="font-medium text-card-foreground ml-2">{formatPrice(finalLiningCostToDisplay)}</span>
           </div>
         )}
 
         {/* Heading */}
-        {headingCost > 0 && (
+        {finalHeadingCostToDisplay > 0 && (
           <div className="flex items-center justify-between py-1.5">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <span className="w-3.5 h-3.5 border-b-2 border-primary shrink-0" />
@@ -820,12 +840,12 @@ export const CostCalculationSummary = ({
                 <span className="text-xs text-muted-foreground truncate">{template.heading_name}</span>
               </div>
             </div>
-            <span className="font-medium text-card-foreground ml-2">{formatPrice(headingCost)}</span>
+            <span className="font-medium text-card-foreground ml-2">{formatPrice(finalHeadingCostToDisplay)}</span>
           </div>
         )}
 
         {/* Manufacturing/Assembly with detailed breakdown */}
-        {manufacturingCost > 0 && (
+        {finalManufacturingCostToDisplay > 0 && (
           <div className="flex items-center justify-between py-1.5">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <SewingMachineIcon className="h-3.5 w-3.5 text-primary shrink-0" />
@@ -851,18 +871,18 @@ export const CostCalculationSummary = ({
                 </span>
               </div>
             </div>
-            <span className="font-medium text-card-foreground ml-2">{formatPrice(manufacturingCost)}</span>
+            <span className="font-medium text-card-foreground ml-2">{formatPrice(finalManufacturingCostToDisplay)}</span>
           </div>
         )}
 
         {/* Options */}
-        {optionsCost > 0 && (
+        {finalOptionsCostToDisplay > 0 && (
           <div className="flex items-center justify-between py-1.5">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
               <span className="text-card-foreground font-medium">Options</span>
             </div>
-            <span className="font-medium text-card-foreground ml-2">{formatPrice(optionsCost)}</span>
+            <span className="font-medium text-card-foreground ml-2">{formatPrice(finalOptionsCostToDisplay)}</span>
           </div>
         )}
       </div>
@@ -911,7 +931,7 @@ export const CostCalculationSummary = ({
             <div className="mt-1.5 p-1.5 bg-primary/5 rounded text-xs">
               <div className="font-medium text-primary">Grid:</div>
               <div>W: {width}cm × H: {height}cm</div>
-              <div>Price: {formatPrice(manufacturingCost)}</div>
+              <div>Price: {formatPrice(finalManufacturingCostToDisplay)}</div>
             </div>
           )}
           {template.pricing_type === 'per_metre' && (

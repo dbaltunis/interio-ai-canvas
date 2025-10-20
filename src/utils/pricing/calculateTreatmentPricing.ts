@@ -17,6 +17,7 @@ export interface TreatmentPricingResult {
   liningCost: number;
   manufacturingCost: number;
   optionsCost: number; // CRITICAL: Add options cost to result
+  headingCost: number; // CRITICAL: Add heading cost to result
   totalCost: number;
   currency: string;
   liningDetails: any | null;
@@ -140,7 +141,20 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   // Options cost - sum all selected option prices
   const optionsCost = selectedOptions.reduce((sum, opt) => sum + (opt.price || 0), 0);
 
-  const totalCost = fabricCost + liningCost + manufacturingCost + optionsCost;
+  // Heading cost - calculate upcharge for heading
+  let headingCost = 0;
+  if (selectedHeading && selectedHeading !== 'none' && selectedHeading !== 'standard') {
+    // Template base heading upcharges
+    if (template?.heading_upcharge_per_metre) {
+      headingCost += template.heading_upcharge_per_metre * (widthCm / 100); // Convert cm to m
+    }
+    if (template?.heading_upcharge_per_curtain) {
+      headingCost += template.heading_upcharge_per_curtain * curtainCount;
+    }
+    console.log(`💰 Heading cost: ${headingCost.toFixed(2)}`);
+  }
+
+  const totalCost = fabricCost + liningCost + manufacturingCost + optionsCost + headingCost;
 
   // Leftovers with repeat-aware width usage
   const returnsTotal = returnLeft + returnRight;
@@ -176,6 +190,7 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
       { label: 'Lining', amount: liningCost },
       { label: 'Manufacturing', amount: manufacturingCost },
       { label: 'Options', amount: optionsCost },
+      { label: 'Heading', amount: headingCost },
     ],
   };
 
@@ -187,6 +202,7 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
     liningCost,
     manufacturingCost,
     optionsCost,
+    headingCost,
     totalCost,
     currency: unitsCurrency || 'GBP',
     liningDetails,
