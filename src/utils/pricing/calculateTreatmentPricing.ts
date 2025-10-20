@@ -93,6 +93,8 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   const linearMeters = ((totalDropPerWidth + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier; // cm->m
   const pricePerMeter = fabricItem?.price_per_meter || fabricItem?.unit_price || fabricItem?.selling_price || 0;
   
+  console.log(`💵 Price lookup: price_per_meter=${fabricItem?.price_per_meter}, unit_price=${fabricItem?.unit_price}, selling_price=${fabricItem?.selling_price} → final: ${pricePerMeter}`);
+  
   // Calculate fabric cost based on pricing method
   let fabricCost = 0;
   const pricingType = template?.pricing_type;
@@ -136,6 +138,8 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   // Manufacturing - CRITICAL: Respect pricing method (use same isBlindTreatment detection)
   let manufacturingCost = 0;
   
+  console.log(`🏭 Manufacturing lookup: machine_price_per_metre=${template?.machine_price_per_metre}, machine_price_per_drop=${template?.machine_price_per_drop}, machine_price_per_panel=${template?.machine_price_per_panel}`);
+  
   if (pricingType === 'per_sqm' && isBlindTreatment) {
     // Manufacturing priced per square meter
     const squareMeters = (widthCm * heightCm) / 10000;
@@ -158,6 +162,7 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
 
   // Options cost - sum all selected option prices
   const optionsCost = selectedOptions.reduce((sum, opt) => sum + (opt.price || 0), 0);
+  console.log(`🎛️ Options cost: ${selectedOptions.length} options = £${optionsCost}`, selectedOptions);
 
   // Heading cost - calculate upcharge for heading
   let headingCost = 0;
