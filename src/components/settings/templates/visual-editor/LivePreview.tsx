@@ -23,8 +23,10 @@ import {
   Image as ImageIcon,
   Minus,
   Plus,
-  Space
+  Space,
+  Info
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SignatureCanvas } from './SignatureCanvas';
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { QuoteItemImage } from "@/components/quotes/QuoteItemImage";
@@ -250,13 +252,33 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false,
                       <span className="text-muted-foreground">{content.quoteNumberLabel || "Order number:"} </span>
                       <span className="font-semibold">{renderTokenValue('job_number')}</span>
                     </div>
-                    <div>
+                    <div className="flex items-center justify-end gap-1">
                       <span className="text-muted-foreground">Start Date: </span>
                       <span>{renderTokenValue('start_date') || (content.customDate ? format(new Date(content.customDate), 'M/d/yyyy') : renderTokenValue('date'))}</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3 w-3 text-muted-foreground cursor-help ml-1" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">Set timeline dates in Client & Project Overview tab</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
-                    <div>
+                    <div className="flex items-center justify-end gap-1">
                       <span className="text-muted-foreground">Due Date: </span>
                       <span>{renderTokenValue('due_date') || (content.customValidUntil ? format(new Date(content.customValidUntil), 'M/d/yyyy') : renderTokenValue('valid_until'))}</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3 w-3 text-muted-foreground cursor-help ml-1" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">Set timeline dates in Client & Project Overview tab</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </div>
                 </div>
@@ -315,11 +337,31 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false,
                   </div>
                   <div className="flex items-center gap-2 justify-end">
                     <Calendar className="h-3 w-3" />
-                    <span>{content.dateLabel || "Date"}: {renderTokenValue('date')}</span>
+                    <span>{content.dateLabel || "Start Date"}: {renderTokenValue('start_date') || renderTokenValue('date')}</span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">Set timeline in Client & Project Overview</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                   <div className="flex items-center gap-2 justify-end">
                     <Calendar className="h-3 w-3" />
-                    <span>Valid Until: {renderTokenValue('valid_until')}</span>
+                    <span>Due Date: {renderTokenValue('due_date') || renderTokenValue('valid_until')}</span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">Set timeline in Client & Project Overview</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 </div>
               </div>
@@ -381,9 +423,33 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false,
                     )}
                   </div>
                   <div className="mt-3 pt-3 border-t text-sm">
-                    <div><strong>Quote #:</strong> {renderTokenValue('quote_number')}</div>
-                    <div><strong>Date:</strong> {renderTokenValue('date')}</div>
-                    <div><strong>Valid Until:</strong> {renderTokenValue('valid_until')}</div>
+                    <div><strong>Quote #:</strong> {renderTokenValue('job_number')}</div>
+                    <div className="flex items-center gap-1">
+                      <strong>Start Date:</strong> {renderTokenValue('start_date') || renderTokenValue('date')}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">Set timeline in Client & Project Overview</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <strong>Due Date:</strong> {renderTokenValue('due_date') || renderTokenValue('valid_until')}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">Set timeline in Client & Project Overview</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                   </div>
                 </div>
               </div>
