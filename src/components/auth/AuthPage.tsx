@@ -368,96 +368,116 @@ export const AuthPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - AI Background & Branding (Desktop Only) */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        <AIBackground variant="strong" className="absolute inset-0">
-          <div className="relative h-full flex flex-col justify-center px-12 xl:px-16">
-            {/* Logo */}
-            <div className="mb-8">
-              <img 
-                src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
-                alt="InterioApp Logo" 
-                className="h-12 w-auto object-contain brightness-110 drop-shadow-lg"
-              />
-            </div>
-
-            {/* Main Heading with Gradient Effect */}
-            <div className="space-y-4 mb-12">
-              <h1 className="text-5xl xl:text-6xl font-bold">
-                <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
-                  InterioApp
-                </span>
-              </h1>
-              <p className="text-xl xl:text-2xl text-foreground/80 font-light">
-                The future of window décor is online and bespoke
-              </p>
-            </div>
-
-            {/* Features */}
-            <div className="space-y-6 mb-12">
-              <div className="flex items-start space-x-4">
-                <div className="mt-1 p-2.5 rounded-lg bg-primary/20 backdrop-blur-sm">
-                  <UserPlus className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg mb-1">Team Collaboration</h3>
-                  <p className="text-sm text-foreground/70">
-                    Work seamlessly with your team on projects
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-start space-x-4">
-                <div className="mt-1 p-2.5 rounded-lg bg-secondary/20 backdrop-blur-sm">
-                  <Mail className="h-5 w-5 text-secondary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg mb-1">Client Management</h3>
-                  <p className="text-sm text-foreground/70">
-                    Manage clients, projects, and quotations in one place
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Global Presence */}
-            <div className="pt-8 border-t border-foreground/10">
-              <p className="text-sm text-foreground/60 mb-3">
-                Trusted by professionals worldwide
-              </p>
-              <div className="flex flex-wrap gap-2 text-xs text-foreground/50">
-                <span className="px-3 py-1 rounded-full bg-background/10 backdrop-blur-sm">🇳🇿 NZ</span>
-                <span className="px-3 py-1 rounded-full bg-background/10 backdrop-blur-sm">🇦🇺 AU</span>
-                <span className="px-3 py-1 rounded-full bg-background/10 backdrop-blur-sm">🇫🇷 FR</span>
-                <span className="px-3 py-1 rounded-full bg-background/10 backdrop-blur-sm">🇧🇪 BE</span>
-                <span className="px-3 py-1 rounded-full bg-background/10 backdrop-blur-sm">🇬🇧 UK</span>
-                <span className="px-3 py-1 rounded-full bg-background/10 backdrop-blur-sm">🇿🇦 SA</span>
-                <span className="px-3 py-1 rounded-full bg-background/10 backdrop-blur-sm">🇪🇺 EU</span>
-              </div>
-              <p className="text-xs text-foreground/40 mt-3">
-                Offices in New Zealand, United Kingdom, France & South Africa
-              </p>
-            </div>
-          </div>
-        </AIBackground>
+    <div className="min-h-screen flex relative overflow-hidden">
+      {/* Animated gradient mesh background for mobile/tablet */}
+      <div className="lg:hidden absolute inset-0 bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(var(--primary-rgb),0.1),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(var(--secondary-rgb),0.1),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_80%,rgba(var(--accent-rgb),0.08),transparent_50%)]" />
       </div>
 
-      {/* Right Side - Auth Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-background">
-        <div className="w-full max-w-md">
-          {/* Mobile Logo */}
-          <div className="lg:hidden mb-8 text-center">
+      {/* Left Side - AI Background & Branding (Desktop Only) */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-primary/10 via-secondary/5 to-accent/10">
+        {/* Animated mesh gradient background */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(var(--primary-rgb),0.15),transparent_50%)] animate-pulse" style={{ animationDuration: '8s' }} />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(var(--secondary-rgb),0.15),transparent_50%)] animate-pulse" style={{ animationDuration: '12s', animationDelay: '2s' }} />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--accent-rgb),0.1),transparent_70%)] animate-pulse" style={{ animationDuration: '10s', animationDelay: '4s' }} />
+        </div>
+        
+        {/* Floating orbs */}
+        <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-primary/20 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-1/3 right-1/4 w-40 h-40 bg-secondary/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '3s', animationDuration: '8s' }} />
+        <div className="absolute top-1/2 right-1/3 w-24 h-24 bg-accent/20 rounded-full blur-2xl animate-float" style={{ animationDelay: '1.5s', animationDuration: '6s' }} />
+        
+        <div className="relative h-full flex flex-col justify-center px-12 xl:px-16 z-10">
+          {/* Logo - Much Larger */}
+          <div className="mb-10">
             <img 
               src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
               alt="InterioApp Logo" 
-              className="h-10 w-auto object-contain mx-auto mb-4"
+              className="h-20 w-auto object-contain brightness-110 drop-shadow-2xl transition-transform duration-500 hover:scale-105"
             />
-            <h1 className="text-3xl font-bold">
-              <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+          </div>
+
+          {/* Main Heading with Enhanced Gradient Effect */}
+          <div className="space-y-4 mb-12">
+            <h1 className="text-6xl xl:text-7xl font-bold leading-tight">
+              <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent drop-shadow-[0_4px_12px_rgba(0,0,0,0.2)]">
                 InterioApp
               </span>
             </h1>
+            <p className="text-xl xl:text-2xl text-foreground/80 font-light leading-relaxed">
+              The future of window décor is online and bespoke
+            </p>
+          </div>
+
+          {/* Features with glassmorphism */}
+          <div className="space-y-6 mb-12">
+            <div className="flex items-start space-x-4 group">
+              <div className="mt-1 p-3 rounded-xl bg-primary/10 backdrop-blur-md border border-primary/20 shadow-lg group-hover:bg-primary/20 transition-all duration-300">
+                <UserPlus className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg mb-1">Team Collaboration</h3>
+                <p className="text-sm text-foreground/70">
+                  Work seamlessly with your team on projects
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-4 group">
+              <div className="mt-1 p-3 rounded-xl bg-secondary/10 backdrop-blur-md border border-secondary/20 shadow-lg group-hover:bg-secondary/20 transition-all duration-300">
+                <Mail className="h-6 w-6 text-secondary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg mb-1">Client Management</h3>
+                <p className="text-sm text-foreground/70">
+                  Manage clients, projects, and quotations in one place
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Global Presence with better styling */}
+          <div className="pt-8 border-t border-foreground/10">
+            <p className="text-sm text-foreground/60 mb-4 font-medium">
+              Trusted by professionals worldwide
+            </p>
+            <div className="flex flex-wrap gap-2 mb-4">
+              <span className="px-3 py-1.5 rounded-full bg-background/20 backdrop-blur-md border border-foreground/10 text-xs font-medium hover:bg-background/30 transition-colors">🇳🇿 NZ</span>
+              <span className="px-3 py-1.5 rounded-full bg-background/20 backdrop-blur-md border border-foreground/10 text-xs font-medium hover:bg-background/30 transition-colors">🇦🇺 AU</span>
+              <span className="px-3 py-1.5 rounded-full bg-background/20 backdrop-blur-md border border-foreground/10 text-xs font-medium hover:bg-background/30 transition-colors">🇫🇷 FR</span>
+              <span className="px-3 py-1.5 rounded-full bg-background/20 backdrop-blur-md border border-foreground/10 text-xs font-medium hover:bg-background/30 transition-colors">🇧🇪 BE</span>
+              <span className="px-3 py-1.5 rounded-full bg-background/20 backdrop-blur-md border border-foreground/10 text-xs font-medium hover:bg-background/30 transition-colors">🇬🇧 UK</span>
+              <span className="px-3 py-1.5 rounded-full bg-background/20 backdrop-blur-md border border-foreground/10 text-xs font-medium hover:bg-background/30 transition-colors">🇿🇦 SA</span>
+              <span className="px-3 py-1.5 rounded-full bg-background/20 backdrop-blur-md border border-foreground/10 text-xs font-medium hover:bg-background/30 transition-colors">🇪🇺 EU</span>
+            </div>
+            <p className="text-xs text-foreground/40">
+              Offices in New Zealand, United Kingdom, France & South Africa
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side - Auth Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative z-10">
+        <div className="w-full max-w-md">
+          {/* Mobile/Tablet Logo - Larger */}
+          <div className="lg:hidden mb-10 text-center">
+            <img 
+              src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
+              alt="InterioApp Logo" 
+              className="h-16 w-auto object-contain mx-auto mb-6 drop-shadow-xl transition-transform duration-500 hover:scale-105"
+            />
+            <h1 className="text-4xl font-bold mb-2">
+              <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent drop-shadow-lg">
+                InterioApp
+              </span>
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              The future of window décor is online and bespoke
+            </p>
           </div>
 
           <div className="mb-8">

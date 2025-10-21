@@ -25,10 +25,13 @@
     /* AI Design System */
     --primary: var(--company-primary);
     --primary-foreground: 0 0% 100%;
+    --primary-rgb: 55, 68, 92; /* RGB values for primary (218 25% 15%) */
     --secondary: var(--company-secondary);
     --secondary-foreground: 0 0% 100%;
+    --secondary-rgb: 102, 178, 201; /* RGB values for secondary (189 40% 65%) */
     --accent: var(--company-secondary);
     --accent-foreground: var(--company-primary);
+    --accent-rgb: 102, 178, 201; /* RGB values for accent */
     
     --background: 216 20% 97%; /* Light gray background for contrast */
     --foreground: 220 15% 15%; /* Dark text for clarity */
