@@ -1,14 +1,23 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Users, FolderOpen, Calendar, Plus } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Users, FolderOpen, Calendar, Plus, Settings, MessageCircle } from "lucide-react";
 
 interface CreateActionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onTabChange: (tab: string) => void;
+  onOpenSettings?: () => void;
+  onOpenTeamHub?: () => void;
 }
 
-export const CreateActionDialog = ({ open, onOpenChange, onTabChange }: CreateActionDialogProps) => {
+export const CreateActionDialog = ({ 
+  open, 
+  onOpenChange, 
+  onTabChange,
+  onOpenSettings,
+  onOpenTeamHub 
+}: CreateActionDialogProps) => {
   const handleAction = (action: string) => {
     onOpenChange(false);
     // Navigate to the appropriate tab and trigger creation
@@ -31,6 +40,10 @@ export const CreateActionDialog = ({ open, onOpenChange, onTabChange }: CreateAc
         const createButton = document.querySelector('[data-create-event]') as HTMLElement;
         createButton?.click();
       }, 150);
+    } else if (action === "settings") {
+      onOpenSettings?.();
+    } else if (action === "team") {
+      onOpenTeamHub?.();
     }
   };
 
@@ -84,6 +97,36 @@ export const CreateActionDialog = ({ open, onOpenChange, onTabChange }: CreateAc
             <div>
               <div className="font-semibold">New Event</div>
               <div className="text-sm text-muted-foreground">Schedule a calendar event</div>
+            </div>
+          </Button>
+          
+          <Separator className="my-2" />
+          
+          <Button
+            onClick={() => handleAction("team")}
+            variant="outline"
+            className="h-14 justify-start gap-4 text-left"
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10">
+              <MessageCircle className="h-4 w-4 text-blue-600" />
+            </div>
+            <div>
+              <div className="font-medium">Team & Messages</div>
+              <div className="text-xs text-muted-foreground">Collaborate with your team</div>
+            </div>
+          </Button>
+          
+          <Button
+            onClick={() => handleAction("settings")}
+            variant="outline"
+            className="h-14 justify-start gap-4 text-left"
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-500/10">
+              <Settings className="h-4 w-4 text-gray-600" />
+            </div>
+            <div>
+              <div className="font-medium">Settings</div>
+              <div className="text-xs text-muted-foreground">Account & preferences</div>
             </div>
           </Button>
         </div>

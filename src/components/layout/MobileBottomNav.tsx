@@ -25,7 +25,7 @@ const navItems = [
   { id: "projects", label: "Jobs", icon: FolderOpen },
   { id: "clients", label: "Clients", icon: Users },
   { id: "calendar", label: "Calendar", icon: Calendar },
-  { id: "profile", label: "Profile", icon: UserCircle },
+  { id: "inventory", label: "Library", icon: Package },
 ];
 
 export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps) => {
@@ -91,33 +91,6 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             
-            // Special handling for profile button
-            if (item.id === 'profile') {
-              return (
-                <div key={item.id} className="relative">
-                  <Button
-                    variant="ghost"
-                    className="h-full w-full rounded-none flex flex-col items-center justify-center gap-1"
-                    onClick={() => setPresencePanelOpen(!presencePanelOpen)}
-                  >
-                    <div className="relative">
-                      <Icon className="h-4 w-4 text-muted-foreground" />
-                      {(hasActivity || unreadCount > 0) && (
-                        <Badge 
-                          className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[8px] bg-destructive text-destructive-foreground"
-                        >
-                          {unreadCount > 0 ? unreadCount : ''}
-                        </Badge>
-                      )}
-                    </div>
-                    <span className="text-[10px] font-medium opacity-70">
-                      {item.label}
-                    </span>
-                  </Button>
-                </div>
-              );
-            }
-            
             return (
               <Button
                 key={item.id}
@@ -153,6 +126,11 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
         open={showCreateDialog} 
         onOpenChange={setShowCreateDialog}
         onTabChange={onTabChange}
+        onOpenSettings={() => {
+          // Navigate to settings - could open a settings route
+          window.location.href = '/settings';
+        }}
+        onOpenTeamHub={() => setPresencePanelOpen(true)}
       />
       
       <TeamCollaborationCenter 

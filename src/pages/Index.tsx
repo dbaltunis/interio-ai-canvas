@@ -213,7 +213,7 @@ const Index = () => {
   return (
     <OnboardingProvider>
       <AIBackground variant="subtle" className="min-h-screen w-full">
-        <div className="relative min-h-screen pb-20 lg:pb-0">
+        <div className="relative min-h-screen pb-20 lg:pb-0 pt-safe lg:pt-0">
           <ResponsiveHeader activeTab={activeTab} onTabChange={handleTabChange} />
 
           <AnimatePresence initial={false} custom={direction} mode="wait">
