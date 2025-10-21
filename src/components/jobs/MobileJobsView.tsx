@@ -28,7 +28,12 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
 
   const filteredQuotes = quotes.filter((quote) => {
     const project = projects.find((p) => p.id === quote.project_id);
-    const client = clients.find((c) => c.id === quote.client_id);
+    
+    // Get client from multiple possible locations
+    let client = clients.find((c) => c.id === quote.client_id);
+    if (!client && project?.client_id) {
+      client = clients.find((c) => c.id === project.client_id);
+    }
     
     const matchesSearch = 
       quote.quote_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -54,13 +59,37 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
     );
   }
 
+  const getClientName = (quote: any, project: any) => {
+    // Check if quote has clients relation
+    if (quote.clients?.name) {
+      return quote.clients.name;
+    }
+    
+    // Check quote's direct client_id
+    if (quote.client_id && clients.length > 0) {
+      const client = clients.find(c => c.id === quote.client_id);
+      if (client?.name) {
+        return client.name;
+      }
+    }
+    
+    // Check project's client_id
+    if (project?.client_id && clients.length > 0) {
+      const client = clients.find(c => c.id === project.client_id);
+      if (client?.name) {
+        return client.name;
+      }
+    }
+    
+    return 'No Client';
+  };
+
   return (
     <div className="space-y-2 p-3 pb-20 animate-fade-in" data-create-project>
       {filteredQuotes.map((quote) => {
         const project = projects.find((p) => p.id === quote.project_id);
-        const client = clients.find((c) => c.id === quote.client_id);
-        const clientName = client?.name || 'Unknown';
-        const initials = clientName.substring(0, 2).toUpperCase();
+        const clientName = getClientName(quote, project);
+        const initials = clientName === 'No Client' ? 'NC' : clientName.substring(0, 2).toUpperCase();
         
         return (
           <Card 
