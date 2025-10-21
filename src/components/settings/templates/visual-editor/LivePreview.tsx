@@ -694,40 +694,41 @@ const LivePreviewBlock = ({
               <ShoppingCart className="h-5 w-5" />
               {content.title || 'Quote Items'}
             </h3>
-            <div className="flex items-center gap-3">
-              {!isPrintMode && hasRealData && (
-                <>
-                  <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={groupByRoom}
-                      onChange={(e) => {
-                        const newValue = e.target.checked;
+            {!isPrintMode && (
+              <div className="flex items-center gap-3">
+                {hasRealData && (
+                  <>
+                    <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={groupByRoom}
+                        onChange={(e) => {
+                          const newValue = e.target.checked;
+                          if (onSettingsChange) {
+                            onSettingsChange({ groupByRoom: newValue });
+                          } else {
+                            setInternalGroupByRoom(newValue);
+                          }
+                        }}
+                        className="rounded border-gray-300 cursor-pointer"
+                      />
+                      <span>Group by room</span>
+                    </label>
+                    <button
+                      onClick={() => {
+                        const newValue = !showDetailedProducts;
                         if (onSettingsChange) {
-                          onSettingsChange({ groupByRoom: newValue });
+                          onSettingsChange({ showDetailedBreakdown: newValue });
                         } else {
-                          setInternalGroupByRoom(newValue);
+                          setInternalShowDetailed(newValue);
                         }
                       }}
-                      className="rounded border-gray-300 cursor-pointer"
-                    />
-                    <span>Group by room</span>
-                  </label>
-                  <button
-                    onClick={() => {
-                      const newValue = !showDetailedProducts;
-                      if (onSettingsChange) {
-                        onSettingsChange({ showDetailedBreakdown: newValue });
-                      } else {
-                        setInternalShowDetailed(newValue);
-                      }
-                    }}
-                    className="px-4 py-1.5 text-sm font-medium border rounded-md hover:bg-gray-50 active:bg-gray-100 transition-colors"
-                    title={showDetailedProducts ? "Switch to simple view" : "Switch to detailed view with itemized breakdown"}
-                  >
-                    {showDetailedProducts ? '📋 Simple View' : '🔍 Detailed View'}
-                  </button>
-                  <button
+                      className="px-4 py-1.5 text-sm font-medium border rounded-md hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                      title={showDetailedProducts ? "Switch to simple view" : "Switch to detailed view with itemized breakdown"}
+                    >
+                      {showDetailedProducts ? '📋 Simple View' : '🔍 Detailed View'}
+                    </button>
+                    <button
                     onClick={() => {
                       const newValue = !showImages;
                       if (onSettingsChange) {
@@ -743,13 +744,8 @@ const LivePreviewBlock = ({
                   </button>
                 </>
               )}
-              {isPrintMode && (
-                <div className="px-3 py-1 text-xs bg-blue-50 border border-blue-200 rounded-md text-blue-700 font-medium">
-                  {showDetailedProducts ? '🔍 Detailed Breakdown' : '📋 Simple View'}
-                  {showImages && ' • 🖼️ Images'}
-                </div>
-              )}
             </div>
+            )}
           </div>
 
           {!hasRealData && (

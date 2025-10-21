@@ -67,7 +67,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
   };
 
   const handleDownloadPDF = async () => {
-    if (!previewRef.current) {
+    if (!printRef.current) {
       toast({
         title: "Error",
         description: "Preview not ready for PDF generation",
@@ -81,9 +81,9 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
       // Import the new PDF generator
       const { generateQuotePDFFromElement } = await import('@/utils/pdfGenerator');
       
-      // Generate PDF from the actual preview element
+      // Generate PDF from the print version (without controls)
       const blob = await generateQuotePDFFromElement(
-        previewRef.current,
+        printRef.current,
         `quote-${projectData.project.quote_number || 'document'}.pdf`
       );
       
@@ -197,6 +197,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
               blocks={templateBlocks} 
               projectData={projectData}
               isEditable={false}
+              isPrintMode={false}
               showDetailedBreakdown={showDetailedBreakdown}
               showImages={showImages}
               onSettingsChange={(settings) => {
@@ -206,17 +207,21 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
             />
           </div>
         </div>
-
-        {/* Hidden printable component */}
+        
+        {/* Hidden PDF version without controls */}
         <div className="hidden">
-          {templateBlocks && templateBlocks.length > 0 && (
-            <PrintableQuote 
-              ref={printRef}
-              blocks={templateBlocks}
+          <div ref={printRef} style={{ background: 'white', padding: '2rem', width: '210mm' }}>
+            <LivePreview 
+              blocks={templateBlocks} 
               projectData={projectData}
+              isEditable={false}
+              isPrintMode={true}
+              showDetailedBreakdown={showDetailedBreakdown}
+              showImages={showImages}
             />
-          )}
+          </div>
         </div>
+
       </DialogContent>
 
       <EmailQuoteModal
@@ -227,16 +232,16 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
         onSend={async (emailData) => {
           setIsSendingEmail(true);
           try {
-            if (!previewRef.current) {
+            if (!printRef.current) {
               throw new Error("Preview not ready");
             }
 
             // Import the new PDF generator
             const { generateQuotePDFFromElement } = await import('@/utils/pdfGenerator');
             
-            // Generate PDF from the actual preview element
+            // Generate PDF from the print version (without controls)
             const pdfBlob = await generateQuotePDFFromElement(
-              previewRef.current,
+              printRef.current,
               `quote-${projectData.project.quote_number || 'document'}.pdf`
             );
             
