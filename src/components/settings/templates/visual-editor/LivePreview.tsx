@@ -39,22 +39,41 @@ interface LivePreviewBlockProps {
   isEditable?: boolean;
   isPrintMode?: boolean;
   userBusinessSettings?: any;
+  showDetailedBreakdown?: boolean;
+  showImages?: boolean;
+  groupByRoom?: boolean;
+  onSettingsChange?: (settings: { showDetailedBreakdown?: boolean; showImages?: boolean; groupByRoom?: boolean }) => void;
 }
 
-const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false, userBusinessSettings }: LivePreviewBlockProps) => {
+const LivePreviewBlock = ({ 
+  block, 
+  projectData, 
+  isEditable, 
+  isPrintMode = false, 
+  userBusinessSettings,
+  showDetailedBreakdown: propsShowDetailed,
+  showImages: propsShowImages,
+  groupByRoom: propsGroupByRoom,
+  onSettingsChange
+}: LivePreviewBlockProps) => {
   const content = block.content || {};
   const style = content.style || {};
   
-  // State for products block - moved to component level to persist across renders
-  const [showDetailedProducts, setShowDetailedProducts] = React.useState(
+  // State for products block - use props if provided, otherwise use internal state
+  const [internalShowDetailed, setInternalShowDetailed] = React.useState(
     content.showDetailed !== undefined ? content.showDetailed : false
   );
-  const [groupByRoom, setGroupByRoom] = React.useState(
+  const [internalGroupByRoom, setInternalGroupByRoom] = React.useState(
     content.groupByRoom !== undefined ? content.groupByRoom : false
   );
-  const [showImages, setShowImages] = React.useState(
+  const [internalShowImages, setInternalShowImages] = React.useState(
     content.showImages !== undefined ? content.showImages : false
   );
+  
+  // Use props if provided, otherwise use internal state
+  const showDetailedProducts = propsShowDetailed !== undefined ? propsShowDetailed : internalShowDetailed;
+  const groupByRoom = propsGroupByRoom !== undefined ? propsGroupByRoom : internalGroupByRoom;
+  const showImages = propsShowImages !== undefined ? propsShowImages : internalShowImages;
   
   // Trim and normalize block type to prevent matching issues
   const blockType = (block.type || '').toString().trim().toLowerCase();
@@ -682,20 +701,41 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false,
                     <input
                       type="checkbox"
                       checked={groupByRoom}
-                      onChange={(e) => setGroupByRoom(e.target.checked)}
+                      onChange={(e) => {
+                        const newValue = e.target.checked;
+                        if (onSettingsChange) {
+                          onSettingsChange({ groupByRoom: newValue });
+                        } else {
+                          setInternalGroupByRoom(newValue);
+                        }
+                      }}
                       className="rounded border-gray-300 cursor-pointer"
                     />
                     <span>Group by room</span>
                   </label>
                   <button
-                    onClick={() => setShowDetailedProducts(!showDetailedProducts)}
+                    onClick={() => {
+                      const newValue = !showDetailedProducts;
+                      if (onSettingsChange) {
+                        onSettingsChange({ showDetailedBreakdown: newValue });
+                      } else {
+                        setInternalShowDetailed(newValue);
+                      }
+                    }}
                     className="px-4 py-1.5 text-sm font-medium border rounded-md hover:bg-gray-50 active:bg-gray-100 transition-colors"
                     title={showDetailedProducts ? "Switch to simple view" : "Switch to detailed view with itemized breakdown"}
                   >
                     {showDetailedProducts ? '📋 Simple View' : '🔍 Detailed View'}
                   </button>
                   <button
-                    onClick={() => setShowImages(!showImages)}
+                    onClick={() => {
+                      const newValue = !showImages;
+                      if (onSettingsChange) {
+                        onSettingsChange({ showImages: newValue });
+                      } else {
+                        setInternalShowImages(newValue);
+                      }
+                    }}
                     className="px-4 py-1.5 text-sm font-medium border rounded-md hover:bg-gray-50 active:bg-gray-100 transition-colors"
                     title={showImages ? "Hide product images" : "Show product images"}
                   >
@@ -1233,6 +1273,10 @@ interface LivePreviewProps {
   onBlocksChange?: (blocks: any[]) => void;
   containerStyles?: any;
   onContainerStylesChange?: (styles: any) => void;
+  showDetailedBreakdown?: boolean;
+  showImages?: boolean;
+  groupByRoom?: boolean;
+  onSettingsChange?: (settings: { showDetailedBreakdown?: boolean; showImages?: boolean; groupByRoom?: boolean }) => void;
 }
 
 export const LivePreview = ({ 
@@ -1242,7 +1286,11 @@ export const LivePreview = ({
   isPrintMode = false,
   onBlocksChange,
   containerStyles,
-  onContainerStylesChange 
+  onContainerStylesChange,
+  showDetailedBreakdown,
+  showImages,
+  groupByRoom,
+  onSettingsChange
 }: LivePreviewProps) => {
   const { data: businessSettings } = useBusinessSettings();
   console.log('LivePreview rendering with blocks:', blocks?.length || 0);
@@ -1332,6 +1380,10 @@ export const LivePreview = ({
                 isEditable={isEditable}
                 isPrintMode={isPrintMode}
                 userBusinessSettings={businessSettings}
+                showDetailedBreakdown={showDetailedBreakdown}
+                showImages={showImages}
+                groupByRoom={groupByRoom}
+                onSettingsChange={onSettingsChange}
               />
             ))}
           </div>

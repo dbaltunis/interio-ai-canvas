@@ -192,6 +192,12 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
             blocks={templateBlocks} 
             projectData={projectData}
             isEditable={false}
+            showDetailedBreakdown={showDetailedBreakdown}
+            showImages={showImages}
+            onSettingsChange={(settings) => {
+              if (settings.showDetailedBreakdown !== undefined) setShowDetailedBreakdown(settings.showDetailedBreakdown);
+              if (settings.showImages !== undefined) setShowImages(settings.showImages);
+            }}
           />
         </div>
 
