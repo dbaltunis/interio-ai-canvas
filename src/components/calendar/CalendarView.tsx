@@ -92,14 +92,22 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const { getColorForSource, getVisibilityForSource, addCalendarSource } = useCalendarColors();
   const twoWaySync = useTwoWaySync();
   const createAppointment = useCreateAppointment();
+  const { toast } = useToast();
+  const { userTimezone, isTimezoneDifferent } = useTimezone();
+
+  // Show loading during initial hydration
+  if (isMobile === undefined) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
   
   // Return mobile view for mobile devices (AFTER all hooks are called)
   if (isMobile) {
     return <MobileCalendarView />;
   }
-  const { toast } = useToast();
-  const { userTimezone, isTimezoneDifferent } = useTimezone();
-
   // New appointment form state
   const [newEvent, setNewEvent] = useState({
     title: '',

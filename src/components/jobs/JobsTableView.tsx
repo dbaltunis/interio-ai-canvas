@@ -78,6 +78,11 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
   const [projectNotes, setProjectNotes] = useState<Record<string, number>>({});
   const [projectAppointments, setProjectAppointments] = useState<Record<string, any[]>>({});
 
+  // Show loading during initial hydration
+  if (isMobile === undefined) {
+    return <JobsTableSkeleton />;
+  }
+
   // Return mobile view for mobile devices (AFTER all hooks are called)
   if (isMobile) {
     return <MobileJobsView onJobSelect={onJobSelect} searchTerm={searchTerm} statusFilter={statusFilter} />;

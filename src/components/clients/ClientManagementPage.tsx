@@ -202,6 +202,11 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
     return <LoadingFallback title="Loading clients..." />;
   }
 
+  // Show loading during initial hydration
+  if (isMobile === undefined) {
+    return <LoadingFallback title="Loading..." />;
+  }
+
   // Return mobile view for mobile devices  
   if (isMobile && !showClientProfile) {
     return <MobileClientView />;
