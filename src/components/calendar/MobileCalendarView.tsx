@@ -16,6 +16,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 export const MobileCalendarView = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const { data: appointments = [] } = useAppointments();
   const isMobile = useIsMobile();
 
@@ -33,6 +34,14 @@ export const MobileCalendarView = () => {
 
   return (
     <div className={cn("space-y-4 animate-fade-in", isMobile ? "p-4 pb-20" : "p-6")}>
+      {/* Hidden button for programmatic trigger from CreateActionDialog */}
+      <button 
+        data-create-event
+        className="hidden"
+        onClick={() => setShowCreateDialog(true)}
+        aria-hidden="true"
+      />
+      
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -204,6 +213,21 @@ export const MobileCalendarView = () => {
           </div>
         )}
       </div>
+      
+      {/* Simple Create Event Dialog placeholder */}
+      {showCreateDialog && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-card rounded-lg p-6 max-w-md w-full shadow-lg">
+            <h3 className="text-lg font-semibold mb-4">Create Event</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Event creation from mobile is coming soon! For now, please use the desktop view or click on a date in the calendar.
+            </p>
+            <Button onClick={() => setShowCreateDialog(false)} className="w-full">
+              Close
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

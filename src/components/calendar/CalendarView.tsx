@@ -52,12 +52,6 @@ interface CalendarViewProps {
 
 const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const isMobile = useIsMobile();
-  
-  // Return mobile view for mobile devices
-  if (isMobile) {
-    return <MobileCalendarView />;
-  }
-  
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date()); // Pre-select today
   const [view, setView] = useState<CalendarView>('week'); // Default to week view
@@ -98,6 +92,11 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const { getColorForSource, getVisibilityForSource, addCalendarSource } = useCalendarColors();
   const twoWaySync = useTwoWaySync();
   const createAppointment = useCreateAppointment();
+  
+  // Return mobile view for mobile devices (AFTER all hooks are called)
+  if (isMobile) {
+    return <MobileCalendarView />;
+  }
   const { toast } = useToast();
   const { userTimezone, isTimezoneDifferent } = useTimezone();
 

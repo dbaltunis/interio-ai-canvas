@@ -60,11 +60,6 @@ const ITEMS_PER_PAGE = 20;
 
 export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTableViewProps) => {
   const isMobile = useIsMobile();
-  
-  // Return mobile view for mobile devices
-  if (isMobile) {
-    return <MobileJobsView onJobSelect={onJobSelect} searchTerm={searchTerm} statusFilter={statusFilter} />;
-  }
   const { data: quotes = [], isLoading, refetch } = useQuotes();
   const { data: projects = [] } = useProjects();
   const { data: clients = [] } = useClients();
@@ -82,6 +77,11 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
   const [projectNotes, setProjectNotes] = useState<Record<string, number>>({});
   const [projectAppointments, setProjectAppointments] = useState<Record<string, any[]>>({});
+
+  // Return mobile view for mobile devices (AFTER all hooks are called)
+  if (isMobile) {
+    return <MobileJobsView onJobSelect={onJobSelect} searchTerm={searchTerm} statusFilter={statusFilter} />;
+  }
 
   const toggleJobExpansion = (jobId: string) => {
     const newExpanded = new Set(expandedJobs);
