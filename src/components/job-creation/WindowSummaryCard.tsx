@@ -329,9 +329,9 @@ export function WindowSummaryCard({
           <div className="space-y-4">
             {/* Treatment Card with Visual & Details */}
             <div className="rounded-lg border bg-card overflow-hidden">
-              <div className="flex gap-3 p-3">
-                {/* LEFT: Compact Treatment Preview */}
-                <div className="w-32 h-32 flex-shrink-0">
+              <div className="flex flex-col md:flex-row gap-3 p-3">
+                {/* LEFT: Compact Treatment Preview - Hidden on mobile due to rendering issues */}
+                <div className="hidden md:block w-32 h-32 flex-shrink-0">
                   <TreatmentPreviewEngine
                     windowType={surface.window_type || 'standard'}
                     treatmentType={treatmentType}
@@ -356,7 +356,7 @@ export function WindowSummaryCard({
                 </div>
 
                 {/* RIGHT: Compact Details */}
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 w-full">
                   {/* Compact Header */}
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div className="flex-1 min-w-0">
@@ -383,13 +383,13 @@ export function WindowSummaryCard({
                     </Button>
                   </div>
 
-                  {/* Compact Info Grid */}
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 text-sm">
+                  {/* Compact Info Grid - Better mobile layout */}
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                     {/* Curtains Measurements */}
                     {(treatmentType === 'curtains' || !treatmentType) && (
                       <>
-                        <div>
-                          <div className="text-xs text-muted-foreground truncate">Rail width</div>
+                        <div className="space-y-0.5">
+                          <div className="text-xs text-muted-foreground">Width</div>
                           <div className="font-semibold text-sm">
                             {fmtMeasurement(
                               Number(summary.measurements_details?.rail_width) || 
@@ -399,8 +399,8 @@ export function WindowSummaryCard({
                             ) || '—'}
                           </div>
                         </div>
-                        <div>
-                          <div className="text-xs text-muted-foreground truncate">Drop</div>
+                        <div className="space-y-0.5">
+                          <div className="text-xs text-muted-foreground">Height</div>
                           <div className="font-semibold text-sm">
                             {fmtMeasurement(
                               Number(summary.measurements_details?.drop) || 
@@ -416,8 +416,8 @@ export function WindowSummaryCard({
                     {/* Blinds Measurements */}
                     {treatmentType?.includes('blind') && (
                       <>
-                        <div>
-                          <div className="text-xs text-muted-foreground truncate">Width</div>
+                        <div className="space-y-0.5">
+                          <div className="text-xs text-muted-foreground">Width</div>
                           <div className="font-semibold text-sm">
                             {fmtMeasurement(
                               Number(summary.measurements_details?.rail_width) || 
@@ -428,8 +428,8 @@ export function WindowSummaryCard({
                             ) || '—'}
                           </div>
                         </div>
-                        <div>
-                          <div className="text-xs text-muted-foreground truncate">Height</div>
+                        <div className="space-y-0.5">
+                          <div className="text-xs text-muted-foreground">Height</div>
                           <div className="font-semibold text-sm">
                             {fmtMeasurement(
                               Number(summary.measurements_details?.drop) || 
@@ -446,8 +446,8 @@ export function WindowSummaryCard({
                     {/* Wallpaper Measurements */}
                     {treatmentType === 'wallpaper' && (
                       <>
-                        <div>
-                          <div className="text-xs text-muted-foreground truncate">Width</div>
+                        <div className="space-y-0.5">
+                          <div className="text-xs text-muted-foreground">Width</div>
                           <div className="font-semibold text-sm">
                             {fmtMeasurement(
                               Number(summary.measurements_details?.width) || 
@@ -456,8 +456,8 @@ export function WindowSummaryCard({
                             ) || '—'}
                           </div>
                         </div>
-                        <div>
-                          <div className="text-xs text-muted-foreground truncate">Height</div>
+                        <div className="space-y-0.5">
+                          <div className="text-xs text-muted-foreground">Height</div>
                           <div className="font-semibold text-sm">
                             {fmtMeasurement(
                               Number(summary.measurements_details?.height) || 
@@ -472,8 +472,8 @@ export function WindowSummaryCard({
                     {/* Shutters Measurements */}
                     {treatmentType === 'shutters' && (
                       <>
-                        <div>
-                          <div className="text-xs text-muted-foreground truncate">Width</div>
+                        <div className="space-y-0.5">
+                          <div className="text-xs text-muted-foreground">Width</div>
                           <div className="font-semibold text-sm">
                             {fmtMeasurement(
                               Number(summary.measurements_details?.width) || 
@@ -482,8 +482,8 @@ export function WindowSummaryCard({
                             ) || '—'}
                           </div>
                         </div>
-                        <div>
-                          <div className="text-xs text-muted-foreground truncate">Height</div>
+                        <div className="space-y-0.5">
+                          <div className="text-xs text-muted-foreground">Height</div>
                           <div className="font-semibold text-sm">
                             {fmtMeasurement(
                               Number(summary.measurements_details?.height) || 
@@ -495,10 +495,10 @@ export function WindowSummaryCard({
                       </>
                     )}
                     
-                    {/* Total Price - Always Visible */}
-                    <div className="flex flex-col md:items-end">
-                      <div className="text-xs text-muted-foreground truncate">Total</div>
-                      <div className="font-bold text-base md:text-lg text-primary">
+                    {/* Total Price - Full width on mobile, right aligned on desktop */}
+                    <div className="col-span-2 space-y-0.5 pt-2 border-t border-border">
+                      <div className="text-xs text-muted-foreground">Total</div>
+                      <div className="font-bold text-lg text-primary">
                         {formatCurrency(summary.total_cost || 0, userCurrency)}
                       </div>
                     </div>
