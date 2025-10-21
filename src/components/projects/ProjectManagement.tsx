@@ -10,6 +10,7 @@ import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { PermissionGuard } from "@/components/common/PermissionGuard";
 import { formatJobNumber } from "@/lib/format-job-number";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ProjectManagementProps {
   onViewProject?: (project: any) => void;
@@ -23,6 +24,7 @@ export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocume
   const canViewProjects = useHasPermission('view_projects');
   const canCreateProjects = useHasPermission('create_projects');
   const canEditProjects = useHasPermission('edit_projects');
+  const isMobile = useIsMobile();
 
   if (!canViewProjects) {
     return (
@@ -91,12 +93,14 @@ export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocume
               Documents
             </Button>
           </PermissionGuard>
-          <PermissionGuard permission="create_projects">
-            <Button onClick={onCreateProject}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Project
-            </Button>
-          </PermissionGuard>
+          {!isMobile && (
+            <PermissionGuard permission="create_projects">
+              <Button onClick={onCreateProject}>
+                <Plus className="mr-2 h-4 w-4" />
+                New Project
+              </Button>
+            </PermissionGuard>
+          )}
         </div>
       </div>
 

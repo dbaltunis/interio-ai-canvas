@@ -15,6 +15,7 @@ import { JobsFilter } from "./JobsFilter";
 import { HelpDrawer } from "@/components/ui/help-drawer";
 import { HelpIcon } from "@/components/ui/help-icon";
 import { JobsFocusHandler } from "./JobsFocusHandler";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const JobsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -26,6 +27,7 @@ const JobsPage = () => {
   // Permission checks
   const canViewJobs = useHasPermission('view_jobs');
   const canCreateJobs = useHasPermission('create_jobs');
+  const isMobile = useIsMobile();
   
   const { data: quotes = [], refetch: refetchQuotes } = useQuotes();
   const createProject = useCreateProject();
@@ -216,7 +218,7 @@ const JobsPage = () => {
     <>
       <JobsFocusHandler />
       <div className="bg-background min-h-screen animate-fade-in">
-      <div className="space-y-6 p-6">
+      <div className="space-y-4 p-4 lg:p-6">
         {/* Enhanced Header with Design System */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -240,7 +242,7 @@ const JobsPage = () => {
               onStatusChange={setStatusFilter}
               onClearFilters={handleClearFilters}
             />
-            {canCreateJobs && (
+            {canCreateJobs && !isMobile && (
               <Button 
                 onClick={handleNewJob}
                 disabled={createProject.isPending || createQuote.isPending}
