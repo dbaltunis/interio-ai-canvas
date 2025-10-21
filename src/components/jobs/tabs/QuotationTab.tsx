@@ -16,14 +16,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useQuotes, useCreateQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
 import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
-import { Percent, FileText, Mail, Eye, EyeOff, Settings, Plus, StickyNote, List, Download, MoreVertical, DollarSign } from "lucide-react";
+import { Percent, FileText, Mail, Settings, Plus, StickyNote, List, Download, MoreVertical, DollarSign } from "lucide-react";
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
 import { QuoteViewer } from "../QuoteViewer";
 import { TreatmentLineItems } from "@/components/jobs/quotation/TreatmentLineItems";
 import { formatCurrency } from "@/utils/currency";
 import { ProjectNotesCard } from "../ProjectNotesCard";
 import { JobNotesDialog } from "../JobNotesDialog";
-import { QuoteFullScreenView } from "@/components/jobs/quotation/QuoteFullScreenView";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
 import { QuotationItemsModal } from "../quotation/QuotationItemsModal";
 import { DetailedQuotationTable } from "../quotation/DetailedQuotationTable";
@@ -128,7 +127,6 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   const project = projects?.find(p => p.id === projectId);
   const [notesOpen, setNotesOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<any | null>(null);
-  const [showFullQuoteView, setShowFullQuoteView] = useState(false);
   const [showQuotationItems, setShowQuotationItems] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
@@ -455,17 +453,6 @@ const projectData = {
         
         {/* Compact Action Bar - Icon only on mobile */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          {/* View Quote Button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowFullQuoteView(true)}
-            className="h-8 px-2 sm:px-3 relative z-10 pointer-events-auto"
-          >
-            <Eye className="h-4 w-4" />
-            <span className="hidden sm:inline sm:ml-2">View</span>
-          </Button>
-
           {/* Save PDF Button */}
           <Button
             variant="default"
@@ -603,23 +590,6 @@ const projectData = {
         onOpenChange={(open) => { setNotesOpen(open); if (!open) setSelectedQuote(null); }}
         quote={selectedQuote}
         project={project}
-      />
-      
-      <QuoteFullScreenView
-        isOpen={showFullQuoteView}
-        onClose={() => setShowFullQuoteView(false)}
-        project={project}
-        client={clientData}
-        businessSettings={businessSettings}
-        quotationItems={quotationData.items || []}
-        subtotal={subtotal}
-        taxRate={taxRate}
-        taxAmount={taxAmount}
-        total={total}
-        markupPercentage={markupPercentage}
-        templateBlocks={templateBlocks}
-        selectedTemplate={selectedTemplate}
-        projectSummaries={projectSummaries}
       />
 
       {/* Email Modal */}
