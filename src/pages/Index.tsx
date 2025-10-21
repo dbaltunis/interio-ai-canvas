@@ -177,22 +177,6 @@ const Index = () => {
         );
       case 'measurement':
         return (
-          <Suspense fallback={<CalendarSkeleton />}>
-            <ComponentWrapper>
-              <CalendarView />
-            </ComponentWrapper>
-          </Suspense>
-        );
-      case 'settings':
-        return (
-          <Suspense fallback={<div>Loading...</div>}>
-            <ComponentWrapper>
-              <MobileSettings />
-            </ComponentWrapper>
-          </Suspense>
-        );
-      case 'measurement':
-        return (
           <Suspense fallback={<div>Loading...</div>}>
             <ComponentWrapper>
               <MeasurementWizardDemo />
