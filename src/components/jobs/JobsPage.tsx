@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Shield, FolderOpen } from "lucide-react";
+import { Plus, Shield, FolderOpen, Columns3 } from "lucide-react";
 import { useQuotes, useCreateQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useCreateProject } from "@/hooks/useProjects";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +16,8 @@ import { HelpDrawer } from "@/components/ui/help-drawer";
 import { HelpIcon } from "@/components/ui/help-icon";
 import { JobsFocusHandler } from "./JobsFocusHandler";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ColumnCustomizationModal } from "./ColumnCustomizationModal";
+import { useColumnPreferences } from "@/hooks/useColumnPreferences";
 
 const JobsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -23,6 +25,15 @@ const JobsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showHelp, setShowHelp] = useState(false);
+  const [showColumnCustomization, setShowColumnCustomization] = useState(false);
+  
+  const { 
+    columns, 
+    visibleColumns, 
+    toggleColumn, 
+    reorderColumns, 
+    resetToDefaults 
+  } = useColumnPreferences();
   
   // Permission checks
   const canViewJobs = useHasPermission('view_jobs');
@@ -235,6 +246,15 @@ const JobsPage = () => {
         </div>
           
           <div className="flex items-center gap-3">
+            <Button 
+              onClick={() => setShowColumnCustomization(true)}
+              variant="outline"
+              size="sm"
+              className="h-9"
+            >
+              <Columns3 className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Edit Columns</span>
+            </Button>
             <JobsFilter
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
@@ -265,6 +285,15 @@ const JobsPage = () => {
           />
         </Card>
       </div>
+      
+      <ColumnCustomizationModal
+        isOpen={showColumnCustomization}
+        onClose={() => setShowColumnCustomization(false)}
+        columns={columns}
+        onToggleColumn={toggleColumn}
+        onReorderColumns={reorderColumns}
+        onResetToDefaults={resetToDefaults}
+      />
       
       <HelpDrawer
         isOpen={showHelp}
