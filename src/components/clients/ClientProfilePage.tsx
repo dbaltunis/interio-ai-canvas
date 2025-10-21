@@ -124,36 +124,36 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
     : currentClient.name;
 
   return (
-    <div className="max-h-screen overflow-y-auto bg-background p-6 space-y-6 animate-fade-in">
+    <div className="max-h-screen overflow-y-auto bg-background p-3 sm:p-6 space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={onBack}>
-            <ArrowLeft className="h-5 w-5" />
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+          <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0">
+            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
-          <Avatar className="h-16 w-16">
-            <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl">
+          <Avatar className="h-12 w-12 sm:h-16 sm:w-16 shrink-0">
+            <AvatarFallback className="bg-primary/10 text-primary font-bold text-base sm:text-xl">
               {(clientDisplayName || 'U').substring(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <div>
-            <h1 className="text-2xl font-bold">{clientDisplayName}</h1>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant="secondary" className="flex items-center gap-1">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-lg sm:text-2xl font-bold truncate">{clientDisplayName}</h1>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <Badge variant="secondary" className="flex items-center gap-1 text-xs">
                 {currentClient.client_type === 'B2B' ? <Building2 className="h-3 w-3" /> : <User className="h-3 w-3" />}
                 {currentClient.client_type || 'B2C'}
               </Badge>
               {currentClient.lead_score && currentClient.lead_score >= 70 && (
-                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">
+                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300 text-xs">
                   <Star className="h-3 w-3 mr-1 fill-yellow-500" />
-                  Hot Lead
+                  <span className="hidden sm:inline">Hot Lead</span>
                 </Badge>
               )}
             </div>
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           {!isEditing ? (
             <>
               <Button 
@@ -169,24 +169,25 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                     }
                   }, 100);
                 }}
+                className="h-8 px-2 sm:px-3"
               >
-                <Mail className="h-4 w-4 mr-2" />
-                Email
+                <Mail className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Email</span>
               </Button>
-              <Button size="sm" onClick={handleEdit}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
+              <Button size="sm" onClick={handleEdit} className="h-8 px-2 sm:px-3">
+                <Edit className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Edit</span>
               </Button>
             </>
           ) : (
             <>
-              <Button variant="outline" size="sm" onClick={handleCancel}>
-                <X className="h-4 w-4 mr-2" />
-                Cancel
+              <Button variant="outline" size="sm" onClick={handleCancel} className="h-8 px-2 sm:px-3">
+                <X className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Cancel</span>
               </Button>
-              <Button size="sm" onClick={handleSave}>
-                <Save className="h-4 w-4 mr-2" />
-                Save Changes
+              <Button size="sm" onClick={handleSave} className="h-8 px-2 sm:px-3">
+                <Save className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Save</span>
               </Button>
             </>
           )}
