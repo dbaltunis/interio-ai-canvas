@@ -246,15 +246,17 @@ const JobsPage = () => {
         </div>
           
           <div className="flex items-center gap-3">
-            <Button 
-              onClick={() => setShowColumnCustomization(true)}
-              variant="outline"
-              size="sm"
-              className="h-9"
-            >
-              <Columns3 className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Edit Columns</span>
-            </Button>
+            {!isMobile && (
+              <Button 
+                onClick={() => setShowColumnCustomization(true)}
+                variant="outline"
+                size="sm"
+                className="h-9"
+              >
+                <Columns3 className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Edit Columns</span>
+              </Button>
+            )}
             <JobsFilter
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
