@@ -104,15 +104,17 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false,
       client_business_phone: client.business_phone || '',
       
       // Project information
-      quote_number: project.quote_number || project.job_number || 'QT-2024-001',
+      quote_number: project.job_number || project.quote_number || 'QT-2024-001',
       job_number: project.job_number || project.quote_number || 'JOB-2024-001',
       project_name: project.name || 'Window Treatment Project',
       project_id: project.id || '',
       
       // Dates
-      date: project.created_at ? new Date(project.created_at).toLocaleDateString() : new Date().toLocaleDateString(),
+      date: project.start_date ? new Date(project.start_date).toLocaleDateString() : (project.created_at ? new Date(project.created_at).toLocaleDateString() : new Date().toLocaleDateString()),
       quote_date: project.created_at ? new Date(project.created_at).toLocaleDateString() : new Date().toLocaleDateString(),
-      valid_until: projectData?.validUntil ? new Date(projectData.validUntil).toLocaleDateString() : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+      start_date: project.start_date ? new Date(project.start_date).toLocaleDateString() : '',
+      due_date: project.due_date ? new Date(project.due_date).toLocaleDateString() : '',
+      valid_until: project.due_date ? new Date(project.due_date).toLocaleDateString() : (projectData?.validUntil ? new Date(projectData.validUntil).toLocaleDateString() : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()),
       
       // Financial information with currency support
       currency: projectData?.currency || 'GBP',
@@ -246,15 +248,15 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false,
                   <div className="text-sm space-y-1">
                     <div>
                       <span className="text-muted-foreground">{content.quoteNumberLabel || "Order number:"} </span>
-                      <span className="font-semibold">{renderTokenValue('quote_number')}</span>
+                      <span className="font-semibold">{renderTokenValue('job_number')}</span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Date: </span>
-                      <span>{content.customDate ? format(new Date(content.customDate), 'M/d/yyyy') : renderTokenValue('date')}</span>
+                      <span className="text-muted-foreground">Start Date: </span>
+                      <span>{renderTokenValue('start_date') || (content.customDate ? format(new Date(content.customDate), 'M/d/yyyy') : renderTokenValue('date'))}</span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Valid Until: </span>
-                      <span>{content.customValidUntil ? format(new Date(content.customValidUntil), 'M/d/yyyy') : renderTokenValue('valid_until')}</span>
+                      <span className="text-muted-foreground">Due Date: </span>
+                      <span>{renderTokenValue('due_date') || (content.customValidUntil ? format(new Date(content.customValidUntil), 'M/d/yyyy') : renderTokenValue('valid_until'))}</span>
                     </div>
                   </div>
                 </div>
