@@ -585,17 +585,21 @@ export const UnifiedAppointmentDialog = ({
                 <Users className="w-3 h-3" />
                 Team Members
               </Label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {teamMembers.map((member) => (
-                  <div key={member.id} className="flex items-center space-x-2">
+                  <div key={member.id} className="flex items-start space-x-2">
                     <Checkbox
                       id={`member-${member.id}`}
                       checked={event.selectedTeamMembers.includes(member.id)}
                       onCheckedChange={(checked) => 
                         handleTeamMemberToggle(member.id, checked as boolean)
                       }
+                      className="mt-1"
                     />
-                    <Label htmlFor={`member-${member.id}`} className="text-sm">
+                    <Label 
+                      htmlFor={`member-${member.id}`} 
+                      className="text-sm break-words flex-1 leading-tight cursor-pointer"
+                    >
                       {member.name}
                     </Label>
                   </div>
@@ -683,25 +687,31 @@ export const UnifiedAppointmentDialog = ({
                 </div>
                 
                 {syncToCalendars && (
-                  <div className="space-y-2 ml-6">
+                  <div className="space-y-3 ml-2 pl-4 border-l-2 border-muted">
                     {syncableCalendars.map((calendar) => (
-                      <div key={calendar.id} className="flex items-center space-x-2">
+                      <div key={calendar.id} className="flex items-start space-x-2">
                         <Checkbox
                           id={`calendar-${calendar.id}`}
                           checked={selectedCalendars.includes(calendar.id)}
                           onCheckedChange={(checked) => 
                             handleCalendarToggle(calendar.id, checked as boolean)
                           }
+                          className="mt-1"
                         />
-                        <Label htmlFor={`calendar-${calendar.id}`} className="text-xs flex items-center gap-2">
-                          {calendar.color && (
-                            <div
-                              className="w-3 h-3 rounded-full border"
-                              style={{ backgroundColor: calendar.color }}
-                            />
-                          )}
-                          {calendar.display_name}
-                          <Badge variant="outline" className="text-xs">
+                        <Label 
+                          htmlFor={`calendar-${calendar.id}`} 
+                          className="text-xs flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 flex-1 cursor-pointer leading-tight"
+                        >
+                          <span className="flex items-center gap-2">
+                            {calendar.color && (
+                              <div
+                                className="w-3 h-3 rounded-full border shrink-0"
+                                style={{ backgroundColor: calendar.color }}
+                              />
+                            )}
+                            <span className="break-words">{calendar.display_name}</span>
+                          </span>
+                          <Badge variant="outline" className="text-xs w-fit">
                             {calendar.account_name}
                           </Badge>
                         </Label>
@@ -714,11 +724,11 @@ export const UnifiedAppointmentDialog = ({
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-2 pt-4">
+          <div className="flex flex-col sm:flex-row gap-2 pt-4">
             <Button
               onClick={handleSubmit}
               disabled={!event.title || !event.date || !event.startTime || !event.endTime || isLoading}
-              className="flex-1"
+              className="flex-1 order-1 sm:order-1"
             >
               {isLoading ? (
                 <>
@@ -730,20 +740,29 @@ export const UnifiedAppointmentDialog = ({
               )}
             </Button>
 
+            <Button 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              className="order-3 sm:order-3"
+            >
+              Cancel
+            </Button>
+
             {isEditing && (
-              <>
+              <div className="flex gap-2 order-2 sm:order-2">
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() => setShowSharingDialog(true)}
                   disabled={isLoading}
+                  className="flex-1 sm:flex-none"
                 >
                   <Share className="w-4 h-4" />
                 </Button>
                 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="icon" disabled={isLoading}>
+                    <Button variant="outline" size="icon" disabled={isLoading} className="flex-1 sm:flex-none">
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </AlertDialogTrigger>
@@ -765,12 +784,8 @@ export const UnifiedAppointmentDialog = ({
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-              </>
+              </div>
             )}
-            
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
           </div>
         </div>
 
