@@ -34,7 +34,7 @@ export const ModernInventoryDashboard = () => {
   const isMobile = useIsMobile();
 
   return (
-    <div className={cn("flex-1 space-y-4", isMobile ? "p-4" : "p-6")}>
+    <div className={cn("flex-1 space-y-4", isMobile ? "p-3 pb-20" : "p-6")}>
       {/* Header with Design System */}
       <div className={cn(
         "flex items-center",
@@ -44,7 +44,7 @@ export const ModernInventoryDashboard = () => {
           "flex items-center gap-3",
           isMobile && "w-full"
         )}>
-          <div className={cn("p-2 bg-primary-light rounded-lg", isMobile && "p-1.5")}>
+          <div className={cn("p-2 bg-primary/10 rounded-lg", isMobile && "p-1.5")}>
             <Package className={cn(isMobile ? "h-5 w-5" : "h-6 w-6", "text-primary")} />
           </div>
           <div className="flex items-center gap-2 flex-1">
@@ -57,7 +57,7 @@ export const ModernInventoryDashboard = () => {
             {!isMobile && <HelpIcon onClick={() => setShowHelp(true)} />}
           </div>
           <Badge className={cn(
-            "bg-accent-light text-accent border-accent",
+            "bg-accent/10 text-accent border-accent/20",
             isMobile && "text-xs"
           )}>
             {inventory?.length || 0}
@@ -133,35 +133,57 @@ export const ModernInventoryDashboard = () => {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-background border-b border-border/50 rounded-none p-0 h-auto flex w-full justify-start gap-0">
-          <TabsTrigger value="overview" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">
-            <Package className="h-4 w-4" />
+        <TabsList className={cn(
+          "bg-background border-b border-border/50 rounded-none p-0 h-auto flex w-full gap-0",
+          isMobile ? "overflow-x-auto justify-start" : "justify-start"
+        )}>
+          <TabsTrigger value="overview" className={cn(
+            "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
+            isMobile ? "px-3 py-2 text-xs" : "px-4 py-3 text-sm"
+          )}>
+            <Package className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
             <span>Overview</span>
           </TabsTrigger>
-          <TabsTrigger value="fabrics" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">
-            <Home className="h-4 w-4" />
+          <TabsTrigger value="fabrics" className={cn(
+            "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
+            isMobile ? "px-3 py-2 text-xs" : "px-4 py-3 text-sm"
+          )}>
+            <Home className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
             <span>Fabrics</span>
           </TabsTrigger>
-          <TabsTrigger value="hardware" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">
-            <Minus className="h-4 w-4" />
+          <TabsTrigger value="hardware" className={cn(
+            "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
+            isMobile ? "px-3 py-2 text-xs" : "px-4 py-3 text-sm"
+          )}>
+            <Minus className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
             <span>Hardware</span>
           </TabsTrigger>
-          <TabsTrigger value="wallcoverings" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">
-            <Wallpaper className="h-4 w-4" />
-            <span>Wallcoverings</span>
+          <TabsTrigger value="wallcoverings" className={cn(
+            "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
+            isMobile ? "px-3 py-2 text-xs whitespace-nowrap" : "px-4 py-3 text-sm"
+          )}>
+            <Wallpaper className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
+            <span>{isMobile ? "Walls" : "Wallcoverings"}</span>
           </TabsTrigger>
-          <TabsTrigger value="vendors" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">
-            <Package className="h-4 w-4" />
+          <TabsTrigger value="vendors" className={cn(
+            "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
+            isMobile ? "px-3 py-2 text-xs" : "px-4 py-3 text-sm"
+          )}>
+            <Package className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
             <span>Vendors</span>
           </TabsTrigger>
-          <TabsTrigger value="assemblies" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">
-            <Package className="h-4 w-4" />
-            <span>Assemblies</span>
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">
-            <Palette className="h-4 w-4" />
-            <span>Analytics</span>
-          </TabsTrigger>
+          {!isMobile && (
+            <>
+              <TabsTrigger value="assemblies" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">
+                <Package className="h-4 w-4" />
+                <span>Assemblies</span>
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">
+                <Palette className="h-4 w-4" />
+                <span>Analytics</span>
+              </TabsTrigger>
+            </>
+          )}
         </TabsList>
 
         <TabsContent value="overview" className="space-y-8">
