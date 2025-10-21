@@ -446,11 +446,11 @@ const projectData = {
 };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-2 sm:space-y-4 pb-4">
       {/* Modern Compact Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3">
         <div>
-          <h2 className="text-lg sm:text-xl font-semibold">Quotation</h2>
+          <h2 className="text-base sm:text-lg font-semibold">Quotation</h2>
         </div>
         
         {/* Compact Action Bar */}
@@ -561,37 +561,41 @@ const projectData = {
 
       {/* Quote Document Preview - Force refresh with key */}
       {selectedTemplate && (
-        <section className="mt-6" key={`preview-${projectSummaries?.projectTotal}-${quotationData.total}-${selectedTemplateId}`}>
-          <LivePreview
-            blocks={templateBlocks}
-            projectData={{
-              project: {
-                ...project,
-                client: client
-              },
-              client: client,
-              businessSettings: businessSettings || {},
-              treatments: sourceTreatments,
-              rooms: rooms || [],
-              surfaces: surfaces || [],
-              subtotal: quotationData.subtotal || 0,
-              taxRate: businessSettings?.tax_rate ? businessSettings.tax_rate / 100 : 0.08,
-              taxAmount: quotationData.taxAmount || 0,
-              total: quotationData.total || 0,
-              markupPercentage: markupPercentage,
-              currency: (businessSettings?.measurement_units ? 
-                (typeof businessSettings.measurement_units === 'string' ? JSON.parse(businessSettings.measurement_units) : businessSettings.measurement_units).currency 
-                : null) || 'GBP',
-              windowSummaries: projectSummaries?.windows || [],
-              workshopItems: workshopItems || [],
-              items: quotationData.items || [] // Pass the actual quote items
-            }}
-            isEditable={false}
-            onBlocksChange={(updatedBlocks) => {
-              // Update edited template blocks when user makes changes (like date selection)
-              setEditedTemplateBlocks(updatedBlocks);
-            }}
-          />
+        <section className="mt-2 sm:mt-4 overflow-x-hidden" key={`preview-${projectSummaries?.projectTotal}-${quotationData.total}-${selectedTemplateId}`}>
+          <div className="w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+            <div className="inline-block scale-[0.42] sm:scale-[0.65] md:scale-75 lg:scale-90 xl:scale-100 origin-top-left min-w-[794px]">
+              <LivePreview
+                blocks={templateBlocks}
+                projectData={{
+                  project: {
+                    ...project,
+                    client: client
+                  },
+                  client: client,
+                  businessSettings: businessSettings || {},
+                  treatments: sourceTreatments,
+                  rooms: rooms || [],
+                  surfaces: surfaces || [],
+                  subtotal: quotationData.subtotal || 0,
+                  taxRate: businessSettings?.tax_rate ? businessSettings.tax_rate / 100 : 0.08,
+                  taxAmount: quotationData.taxAmount || 0,
+                  total: quotationData.total || 0,
+                  markupPercentage: markupPercentage,
+                  currency: (businessSettings?.measurement_units ? 
+                    (typeof businessSettings.measurement_units === 'string' ? JSON.parse(businessSettings.measurement_units) : businessSettings.measurement_units).currency 
+                    : null) || 'GBP',
+                  windowSummaries: projectSummaries?.windows || [],
+                  workshopItems: workshopItems || [],
+                  items: quotationData.items || [] // Pass the actual quote items
+                }}
+                isEditable={false}
+                onBlocksChange={(updatedBlocks) => {
+                  // Update edited template blocks when user makes changes (like date selection)
+                  setEditedTemplateBlocks(updatedBlocks);
+                }}
+              />
+            </div>
+          </div>
         </section>
       )}
       <JobNotesDialog
