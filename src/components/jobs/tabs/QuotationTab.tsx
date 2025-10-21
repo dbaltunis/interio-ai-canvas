@@ -446,24 +446,24 @@ const projectData = {
 };
 
   return (
-    <div className="space-y-2 sm:space-y-4 pb-4">
+    <div className="space-y-2 sm:space-y-3 pb-4 overflow-x-hidden">
       {/* Modern Compact Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3">
         <div>
           <h2 className="text-base sm:text-lg font-semibold">Quotation</h2>
         </div>
         
-        {/* Compact Action Bar */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        {/* Compact Action Bar - Icon only on mobile */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           {/* View Quote Button */}
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowFullQuoteView(true)}
-            className="flex-1 sm:flex-none relative z-10 pointer-events-auto"
+            className="h-8 px-2 sm:px-3 relative z-10 pointer-events-auto"
           >
-            <Eye className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">View Quote</span>
+            <Eye className="h-4 w-4" />
+            <span className="hidden sm:inline sm:ml-2">View</span>
           </Button>
 
           {/* Save PDF Button */}
@@ -471,10 +471,10 @@ const projectData = {
             variant="default"
             size="sm"
             onClick={handlePrint}
-            className="flex-1 sm:flex-none relative z-10 pointer-events-auto"
+            className="h-8 px-2 sm:px-3 relative z-10 pointer-events-auto"
           >
-            <Download className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Save PDF</span>
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline sm:ml-2">PDF</span>
           </Button>
 
           {/* Email Button - Hidden on mobile, shown in dropdown */}
@@ -482,7 +482,7 @@ const projectData = {
             variant="outline"
             size="sm"
             onClick={() => setIsEmailModalOpen(true)}
-            className="hidden sm:flex relative z-10 pointer-events-auto"
+            className="hidden sm:flex h-8 relative z-10 pointer-events-auto"
           >
             <Mail className="h-4 w-4 mr-2" />
             Email
@@ -491,7 +491,7 @@ const projectData = {
           {/* More Dropdown Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="relative z-10 pointer-events-auto">
+              <Button variant="outline" size="sm" className="h-8 px-2 relative z-10 pointer-events-auto">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -520,16 +520,16 @@ const projectData = {
         </div>
 
       {/* Detailed Options Section */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+      <div className="flex items-center justify-between overflow-x-auto pb-2">
+        <div className="flex items-center space-x-2 sm:space-x-4 min-w-max">
           {/* Template Selector */}
           <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-muted-foreground">Template:</span>
+            <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Template:</span>
             <Select
               value={selectedTemplateId}
               onValueChange={setSelectedTemplateId}
             >
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-36 sm:w-48 h-8 text-sm">
                 <SelectValue placeholder="Select template" />
               </SelectTrigger>
               <SelectContent className="z-50 bg-background">
@@ -559,11 +559,11 @@ const projectData = {
         markupPercentage={markupPercentage}
       />
 
-      {/* Quote Document Preview - Force refresh with key */}
+      {/* Quote Document Preview - Centered and properly scaled */}
       {selectedTemplate && (
-        <section className="mt-2 sm:mt-4 overflow-x-hidden" key={`preview-${projectSummaries?.projectTotal}-${quotationData.total}-${selectedTemplateId}`}>
-          <div className="w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-            <div className="inline-block scale-[0.42] sm:scale-[0.65] md:scale-75 lg:scale-90 xl:scale-100 origin-top-left min-w-[794px]">
+        <section className="mt-2 sm:mt-4" key={`preview-${projectSummaries?.projectTotal}-${quotationData.total}-${selectedTemplateId}`}>
+          <div className="w-full flex justify-center">
+            <div className="transform scale-[0.38] sm:scale-[0.55] md:scale-[0.65] lg:scale-75 xl:scale-90 origin-top">
               <LivePreview
                 blocks={templateBlocks}
                 projectData={{

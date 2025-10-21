@@ -190,8 +190,8 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               </TabsContent>
 
               <TabsContent value="quotation" className="mt-0">
-                <div className="modern-card">
-                  <div className="p-3 sm:p-6">
+                <div className="modern-card overflow-hidden">
+                  <div className="p-2 sm:p-4 lg:p-6">
                     <QuotationTab projectId={jobId} />
                   </div>
                 </div>
