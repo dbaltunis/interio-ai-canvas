@@ -7,17 +7,41 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Clock,
-  MapPin
+  MapPin,
+  Plus,
+  Filter,
+  Settings,
+  Link2,
+  Bell
 } from "lucide-react";
 import { format, addDays, startOfWeek, isSameDay, isToday, addWeeks, subWeeks } from "date-fns";
 import { useAppointments } from "@/hooks/useAppointments";
+import { useCreateAppointment } from "@/hooks/useAppointments";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useToast } from "@/hooks/use-toast";
+import { UnifiedAppointmentDialog } from "./UnifiedAppointmentDialog";
+import { AppointmentSchedulerSlider } from "./AppointmentSchedulerSlider";
+import { CalendarFilters } from "./filters/CalendarFilters";
+import { CalendarFilterState } from "./CalendarFilters";
 
 export const MobileCalendarView = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showSchedulerSlider, setShowSchedulerSlider] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  const [filters, setFilters] = useState<CalendarFilterState>({
+    searchTerm: "",
+    userIds: [],
+    eventTypes: [],
+    statuses: []
+  });
+  
   const { data: appointments = [] } = useAppointments();
+  const createAppointment = useCreateAppointment();
+  const { toast } = useToast();
   const isMobile = useIsMobile();
 
   // Get current week for mobile view
@@ -31,6 +55,19 @@ export const MobileCalendarView = () => {
 
   const handlePrevWeek = () => setSelectedDate(subWeeks(selectedDate, 1));
   const handleNextWeek = () => setSelectedDate(addWeeks(selectedDate, 1));
+  
+  const handleEventClick = (appointment: any) => {
+    setSelectedAppointment(appointment);
+    setShowEditDialog(true);
+  };
+  
+  const handleCreateEvent = () => {
+    setShowCreateDialog(true);
+  };
+  
+  const handleFiltersChange = (visibleSources: string[]) => {
+    // Handle filter changes
+  };
 
   return (
     <div className={cn("space-y-4 animate-fade-in", isMobile ? "p-4 pb-20" : "p-6")}>
@@ -42,25 +79,56 @@ export const MobileCalendarView = () => {
         aria-hidden="true"
       />
       
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className={cn("font-bold", isMobile ? "text-lg" : "text-xl")}>
+      {/* Header with Actions */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <h2 className={cn("font-bold truncate", isMobile ? "text-lg" : "text-xl")}>
             {format(selectedDate, 'MMMM yyyy')}
           </h2>
           <p className="text-sm text-muted-foreground">
             {dayAppointments.length} {dayAppointments.length === 1 ? 'event' : 'events'}
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setSelectedDate(new Date())}
-          className={cn(isMobile && "text-xs px-2")}
-        >
-          Today
-        </Button>
+        <div className="flex items-center gap-1 shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+            className={cn(isMobile && "h-8 w-8 p-0")}
+          >
+            <Filter className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowSchedulerSlider(true)}
+            className={cn(isMobile && "h-8 w-8 p-0")}
+          >
+            <Link2 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSelectedDate(new Date())}
+            className={cn(isMobile && "text-xs px-2 h-8")}
+          >
+            Today
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleCreateEvent}
+            className={cn("shrink-0", isMobile && "h-8 w-8 p-0 sm:w-auto sm:px-3")}
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline ml-2">New</span>
+          </Button>
+        </div>
       </div>
+      
+      {/* Filters */}
+      {showFilters && (
+        <CalendarFilters onFiltersChange={handleFiltersChange} />
+      )}
 
       {/* Week Navigation */}
       <Card className="overflow-hidden">
@@ -160,7 +228,11 @@ export const MobileCalendarView = () => {
         ) : (
           <div className="space-y-2">
             {dayAppointments.map((apt) => (
-              <Card key={apt.id} className="overflow-hidden hover:shadow-md transition-shadow">
+              <Card 
+                key={apt.id} 
+                className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer active:scale-[0.98]"
+                onClick={() => handleEventClick(apt)}
+              >
                 <CardContent className={cn(isMobile ? "p-3" : "p-4")}>
                   <div className="space-y-2">
                     <div className="flex items-start justify-between gap-2">
@@ -180,12 +252,17 @@ export const MobileCalendarView = () => {
                           </p>
                         )}
                       </div>
-                      <Badge 
-                        variant="outline" 
-                        className={cn("shrink-0", isMobile && "text-xs px-1.5")}
-                      >
-                        {apt.status || 'scheduled'}
-                      </Badge>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {apt.notification_enabled && (
+                          <Bell className="h-3 w-3 text-primary" />
+                        )}
+                        <Badge 
+                          variant="outline" 
+                          className={cn("", isMobile && "text-xs px-1.5")}
+                        >
+                          {apt.status || 'scheduled'}
+                        </Badge>
+                      </div>
                     </div>
                     
                     <div className={cn(
@@ -196,6 +273,9 @@ export const MobileCalendarView = () => {
                         <div className="flex items-center gap-1">
                           <Clock className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
                           <span>{format(new Date(apt.start_time), 'h:mm a')}</span>
+                          {apt.end_time && (
+                            <span>- {format(new Date(apt.end_time), 'h:mm a')}</span>
+                          )}
                         </div>
                       )}
                       {apt.location && (
@@ -207,27 +287,40 @@ export const MobileCalendarView = () => {
                     </div>
                   </div>
                 </CardContent>
-                <div className="h-1 bg-gradient-to-r from-primary/50 to-primary" />
+                <div 
+                  className="h-1 bg-gradient-to-r from-primary/50 to-primary"
+                  style={{
+                    background: apt.color 
+                      ? `linear-gradient(to right, ${apt.color}80, ${apt.color})` 
+                      : undefined
+                  }}
+                />
               </Card>
             ))}
           </div>
         )}
       </div>
       
-      {/* Simple Create Event Dialog placeholder */}
-      {showCreateDialog && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-card rounded-lg p-6 max-w-md w-full shadow-lg">
-            <h3 className="text-lg font-semibold mb-4">Create Event</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Event creation from mobile is coming soon! For now, please use the desktop view or click on a date in the calendar.
-            </p>
-            <Button onClick={() => setShowCreateDialog(false)} className="w-full">
-              Close
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Create/Edit Event Dialog */}
+      <UnifiedAppointmentDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        appointment={null}
+        selectedDate={selectedDate}
+      />
+      
+      <UnifiedAppointmentDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        appointment={selectedAppointment}
+        selectedDate={selectedDate}
+      />
+      
+      {/* Scheduler/Booking Links */}
+      <AppointmentSchedulerSlider
+        isOpen={showSchedulerSlider}
+        onClose={() => setShowSchedulerSlider(false)}
+      />
     </div>
   );
 };
