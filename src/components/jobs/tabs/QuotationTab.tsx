@@ -457,10 +457,7 @@ const projectData = {
       {/* Modern Compact Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
-          <h2 className="text-lg sm:text-xl font-semibold">Project Quotation</h2>
-          <p className="text-muted-foreground text-xs sm:text-sm">
-            Manage quotes and generate professional documents
-          </p>
+          <h2 className="text-lg sm:text-xl font-semibold">Quotation</h2>
         </div>
         
         {/* Compact Action Bar */}
@@ -470,8 +467,7 @@ const projectData = {
             variant="outline"
             size="sm"
             onClick={() => setShowFullQuoteView(true)}
-            disabled={!clientData}
-            className="flex-1 sm:flex-none"
+            className="flex-1 sm:flex-none relative z-10 pointer-events-auto"
           >
             <Eye className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">View Quote</span>
@@ -482,8 +478,7 @@ const projectData = {
             variant="default"
             size="sm"
             onClick={handlePrint}
-            disabled={!clientData}
-            className="flex-1 sm:flex-none"
+            className="flex-1 sm:flex-none relative z-10 pointer-events-auto"
           >
             <Download className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">Save PDF</span>
@@ -494,8 +489,7 @@ const projectData = {
             variant="outline"
             size="sm"
             onClick={() => setIsEmailModalOpen(true)}
-            disabled={!clientData}
-            className="hidden sm:flex"
+            className="hidden sm:flex relative z-10 pointer-events-auto"
           >
             <Mail className="h-4 w-4 mr-2" />
             Email
@@ -504,14 +498,13 @@ const projectData = {
           {/* More Dropdown Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="relative z-10 pointer-events-auto">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="z-50 bg-background border shadow-md">
               <DropdownMenuItem 
                 onClick={() => setIsEmailModalOpen(true)}
-                disabled={!clientData}
                 className="sm:hidden"
               >
                 <Mail className="mr-2 h-4 w-4" />
@@ -619,16 +612,16 @@ const projectData = {
         isOpen={showFullQuoteView}
         onClose={() => setShowFullQuoteView(false)}
         project={project}
-        treatments={sourceTreatments}
-        rooms={rooms || []}
-        surfaces={surfaces || []}
+        client={clientData}
+        businessSettings={businessSettings}
+        quotationItems={quotationData.items || []}
         subtotal={subtotal}
         taxRate={taxRate}
         taxAmount={taxAmount}
         total={total}
         markupPercentage={markupPercentage}
-        templateId={selectedTemplateId || 'standard'}
-        workshopItems={workshopItems || []}
+        templateBlocks={templateBlocks}
+        selectedTemplate={selectedTemplate}
       />
 
       {/* Email Modal */}

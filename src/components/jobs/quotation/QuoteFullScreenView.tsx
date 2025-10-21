@@ -3,83 +3,67 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Download, Mail, MoreVertical } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { TemplateQuotePreview } from "./TemplateQuotePreview";
+import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
 import { PrintableQuote } from "./PrintableQuote";
 import { EmailQuoteModal } from "./EmailQuoteModal";
 import { generateQuotePDFBlob } from "@/utils/pdfGenerator";
-import { useQuoteTemplates } from "@/hooks/useQuoteTemplates";
-import { useClients } from "@/hooks/useClients";
-import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useToast } from "@/hooks/use-toast";
 
 interface QuoteFullScreenViewProps {
   isOpen: boolean;
   onClose: () => void;
   project: any;
-  treatments: any[];
-  rooms: any[];
-  surfaces: any[];
+  client: any;
+  businessSettings: any;
+  quotationItems: any[];
   subtotal: number;
   taxRate: number;
   taxAmount: number;
   total: number;
   markupPercentage: number;
-  templateId: string;
-  workshopItems?: any[];
+  templateBlocks: any[];
+  selectedTemplate: any;
 }
 
 export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
   isOpen,
   onClose,
   project,
-  treatments,
-  rooms,
-  surfaces,
+  client,
+  businessSettings,
+  quotationItems,
   subtotal,
   taxRate,
   taxAmount,
   total,
   markupPercentage,
-  templateId,
-  workshopItems = []
+  templateBlocks,
+  selectedTemplate
 }) => {
   const printRef = useRef<HTMLDivElement>(null);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const { toast } = useToast();
-  const { data: clients } = useClients();
-  const { data: businessSettings } = useBusinessSettings();
-  const { data: templates } = useQuoteTemplates();
-  
-  const selectedTemplate = templates?.find(t => t.id === templateId);
-  const client = clients?.find(c => c.id === project?.client_id);
 
   const projectData = {
-    project,
+    project: {
+      ...project,
+      client: client
+    },
     client,
     businessSettings,
-    treatments,
-    workshopItems,
-    rooms,
-    surfaces,
     subtotal,
     taxRate,
     taxAmount,
     total,
     markupPercentage,
     validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    items: treatments.map((treatment: any, index: number) => ({
-      name: treatment.fabric_details?.name || treatment.treatment_name || 'Window Treatment',
-      description: `${treatment.room_name || ''} - ${treatment.window_number || ''}`.trim(),
-      quantity: treatment.quantity || 1,
-      total: treatment.total_cost || treatment.total_price || 0,
-      breakdown: treatment.itemized_breakdown || []
-    }))
+    items: quotationItems
   };
 
   const handleDownloadPDF = async () => {
-    if (!selectedTemplate?.blocks) {
+    if (!templateBlocks || templateBlocks.length === 0) {
       toast({
         title: "Error",
         description: "No template blocks found for PDF generation",
@@ -90,7 +74,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
 
     setIsDownloading(true);
     try {
-      const blob = await generateQuotePDFBlob(selectedTemplate.blocks, projectData);
+      const blob = await generateQuotePDFBlob(templateBlocks, projectData);
       
       // Create download link
       const url = URL.createObjectURL(blob);
@@ -171,29 +155,20 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
         </DialogHeader>
         
         {/* Scrollable content area */}
-        <div className="flex-1 overflow-y-auto bg-white">
-          <TemplateQuotePreview
-            project={project}
-            treatments={treatments}
-            workshopItems={workshopItems}
-            surfaces={surfaces}
-            rooms={rooms}
-            subtotal={subtotal}
-            taxRate={taxRate}
-            taxAmount={taxAmount}
-            total={total}
-            markupPercentage={markupPercentage}
-            templateId={templateId}
-            isFullScreen={true}
+        <div className="flex-1 overflow-y-auto bg-white p-8">
+          <LivePreview 
+            blocks={templateBlocks} 
+            projectData={projectData}
+            isEditable={false}
           />
         </div>
 
         {/* Hidden printable component */}
         <div className="hidden">
-          {selectedTemplate?.blocks && (
+          {templateBlocks && templateBlocks.length > 0 && (
             <PrintableQuote 
               ref={printRef}
-              blocks={selectedTemplate.blocks}
+              blocks={templateBlocks}
               projectData={projectData}
             />
           )}
@@ -209,7 +184,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
           setIsSendingEmail(true);
           try {
             // Generate PDF
-            const pdfBlob = await generateQuotePDFBlob(selectedTemplate?.blocks || [], projectData);
+            const pdfBlob = await generateQuotePDFBlob(templateBlocks, projectData);
             
             // Here you would send the email with the PDF attachment
             // This requires a backend edge function
@@ -235,9 +210,9 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
         }}
         isSending={isSendingEmail}
         quotePreview={
-          selectedTemplate?.blocks && (
+          templateBlocks && templateBlocks.length > 0 && (
             <PrintableQuote 
-              blocks={selectedTemplate.blocks}
+              blocks={templateBlocks}
               projectData={projectData}
               isPrintMode={false}
             />
