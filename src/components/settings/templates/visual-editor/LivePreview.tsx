@@ -31,6 +31,7 @@ import { SignatureCanvas } from './SignatureCanvas';
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { QuoteItemImage } from "@/components/quotes/QuoteItemImage";
 import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
+import { formatJobNumber } from "@/lib/format-job-number";
 
 interface LivePreviewBlockProps {
   block: any;
@@ -106,8 +107,8 @@ const LivePreviewBlock = ({ block, projectData, isEditable, isPrintMode = false,
       client_business_phone: client.business_phone || '',
       
       // Project information
-      quote_number: project.job_number || project.quote_number || 'QT-2024-001',
-      job_number: project.job_number || project.quote_number || 'JOB-2024-001',
+      quote_number: formatJobNumber(project.job_number || project.quote_number) || 'QT-2024-001',
+      job_number: formatJobNumber(project.job_number || project.quote_number) || 'JOB-2024-001',
       project_name: project.name || 'Window Treatment Project',
       project_id: project.id || '',
       
