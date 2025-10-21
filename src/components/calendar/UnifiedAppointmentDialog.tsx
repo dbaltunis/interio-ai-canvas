@@ -307,14 +307,16 @@ export const UnifiedAppointmentDialog = ({
               />
             </div>
 
-            <div className="grid grid-cols-4 gap-4">
-              <div>
+            {/* Date and Time Section */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-1">
                 <Label htmlFor="date">Date *</Label>
                 <Input
                   id="date"
                   type="date"
                   value={event.date}
                   onChange={(e) => setEvent({ ...event, date: e.target.value })}
+                  className="w-full"
                 />
               </div>
               <div>
@@ -327,7 +329,7 @@ export const UnifiedAppointmentDialog = ({
                     type="button"
                     variant="outline"
                     size="icon"
-                    className="h-9 w-9"
+                    className="h-9 w-9 shrink-0"
                     onClick={() => adjustTime('startTime', -15)}
                   >
                     <Minus className="w-3 h-3" />
@@ -343,7 +345,7 @@ export const UnifiedAppointmentDialog = ({
                     type="button"
                     variant="outline"
                     size="icon"
-                    className="h-9 w-9"
+                    className="h-9 w-9 shrink-0"
                     onClick={() => adjustTime('startTime', 15)}
                   >
                     <Plus className="w-3 h-3" />
@@ -357,7 +359,7 @@ export const UnifiedAppointmentDialog = ({
                     type="button"
                     variant="outline"
                     size="icon"
-                    className="h-9 w-9"
+                    className="h-9 w-9 shrink-0"
                     onClick={() => adjustTime('endTime', -15)}
                   >
                     <Minus className="w-3 h-3" />
@@ -373,123 +375,121 @@ export const UnifiedAppointmentDialog = ({
                     type="button"
                     variant="outline"
                     size="icon"
-                    className="h-9 w-9"
+                    className="h-9 w-9 shrink-0"
                     onClick={() => adjustTime('endTime', 15)}
                   >
                     <Plus className="w-3 h-3" />
                   </Button>
                 </div>
               </div>
-              <div>
-                <Label className="flex items-center gap-2">
-                  <Bell className="w-4 w-4" />
-                  Notifications
+            </div>
+
+            {/* Notifications Section */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="enableNotifications" className="flex items-center gap-2">
+                  <Bell className="w-4 h-4" />
+                  Enable notifications for this event
                 </Label>
-                
-                <div className="space-y-3 mt-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="enableNotifications" className="text-sm">Enable notifications for this event</Label>
-                    <Switch
-                      id="enableNotifications"
-                      checked={event.notification_enabled || false}
-                      onCheckedChange={(checked) => setEvent({ ...event, notification_enabled: checked })}
-                    />
-                  </div>
+                <Switch
+                  id="enableNotifications"
+                  checked={event.notification_enabled || false}
+                  onCheckedChange={(checked) => setEvent({ ...event, notification_enabled: checked })}
+                />
+              </div>
 
-                  {event.notification_enabled && (
-                    <div className="space-y-3 ml-4 pl-4 border-l-2 border-muted">
-                      <div>
-                        <Label className="text-sm font-medium mb-2 block">Notification methods</Label>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              id="emailNotification"
-                              checked={event.notificationMethods?.includes('email') || false}
-                              onCheckedChange={(checked) => {
-                                const methods = event.notificationMethods || [];
-                                setEvent({
-                                  ...event,
-                                  notificationMethods: checked
-                                    ? [...methods.filter(m => m !== 'email'), 'email']
-                                    : methods.filter(m => m !== 'email')
-                                });
-                              }}
-                            />
-                            <Label htmlFor="emailNotification" className="text-sm">Email</Label>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              id="smsNotification"
-                              checked={event.notificationMethods?.includes('sms') || false}
-                              onCheckedChange={(checked) => {
-                                const methods = event.notificationMethods || [];
-                                setEvent({
-                                  ...event,
-                                  notificationMethods: checked
-                                    ? [...methods.filter(m => m !== 'sms'), 'sms']
-                                    : methods.filter(m => m !== 'sms')
-                                });
-                              }}
-                            />
-                            <Label htmlFor="smsNotification" className="text-sm">SMS</Label>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              id="inAppNotification"
-                              checked={event.notificationMethods?.includes('in_app') || false}
-                              onCheckedChange={(checked) => {
-                                const methods = event.notificationMethods || [];
-                                setEvent({
-                                  ...event,
-                                  notificationMethods: checked
-                                    ? [...methods.filter(m => m !== 'in_app'), 'in_app']
-                                    : methods.filter(m => m !== 'in_app')
-                                });
-                              }}
-                            />
-                            <Label htmlFor="inAppNotification" className="text-sm">In-app notification</Label>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="notificationTiming" className="text-sm font-medium">Notify before event</Label>
-                        <Select 
-                          value={event.notification_minutes?.toString() || '15'}
-                          onValueChange={(value) => setEvent({ ...event, notification_minutes: parseInt(value) })}
-                        >
-                          <SelectTrigger className="mt-1">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="0">At event time</SelectItem>
-                            <SelectItem value="5">5 minutes before</SelectItem>
-                            <SelectItem value="15">15 minutes before</SelectItem>
-                            <SelectItem value="30">30 minutes before</SelectItem>
-                            <SelectItem value="60">1 hour before</SelectItem>
-                            <SelectItem value="120">2 hours before</SelectItem>
-                            <SelectItem value="1440">1 day before</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="customMessage" className="text-sm font-medium">Custom message (optional)</Label>
-                        <Textarea
-                          id="customMessage"
-                          value={event.customNotificationMessage || ''}
-                          onChange={(e) => setEvent({ ...event, customNotificationMessage: e.target.value })}
-                          placeholder="Add a custom message to the notification..."
-                          rows={2}
-                          className="mt-1"
+              {event.notification_enabled && (
+                <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Notification methods</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="emailNotification"
+                          checked={event.notificationMethods?.includes('email') || false}
+                          onCheckedChange={(checked) => {
+                            const methods = event.notificationMethods || [];
+                            setEvent({
+                              ...event,
+                              notificationMethods: checked
+                                ? [...methods.filter(m => m !== 'email'), 'email']
+                                : methods.filter(m => m !== 'email')
+                            });
+                          }}
                         />
+                        <Label htmlFor="emailNotification" className="text-sm">Email</Label>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="smsNotification"
+                          checked={event.notificationMethods?.includes('sms') || false}
+                          onCheckedChange={(checked) => {
+                            const methods = event.notificationMethods || [];
+                            setEvent({
+                              ...event,
+                              notificationMethods: checked
+                                ? [...methods.filter(m => m !== 'sms'), 'sms']
+                                : methods.filter(m => m !== 'sms')
+                            });
+                          }}
+                        />
+                        <Label htmlFor="smsNotification" className="text-sm">SMS</Label>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="inAppNotification"
+                          checked={event.notificationMethods?.includes('in_app') || false}
+                          onCheckedChange={(checked) => {
+                            const methods = event.notificationMethods || [];
+                            setEvent({
+                              ...event,
+                              notificationMethods: checked
+                                ? [...methods.filter(m => m !== 'in_app'), 'in_app']
+                                : methods.filter(m => m !== 'in_app')
+                            });
+                          }}
+                        />
+                        <Label htmlFor="inAppNotification" className="text-sm">In-app</Label>
                       </div>
                     </div>
-                  )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="notificationTiming" className="text-sm font-medium">Notify before event</Label>
+                    <Select 
+                      value={event.notification_minutes?.toString() || '15'}
+                      onValueChange={(value) => setEvent({ ...event, notification_minutes: parseInt(value) })}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">At event time</SelectItem>
+                        <SelectItem value="5">5 minutes before</SelectItem>
+                        <SelectItem value="15">15 minutes before</SelectItem>
+                        <SelectItem value="30">30 minutes before</SelectItem>
+                        <SelectItem value="60">1 hour before</SelectItem>
+                        <SelectItem value="120">2 hours before</SelectItem>
+                        <SelectItem value="1440">1 day before</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="customMessage" className="text-sm font-medium">Custom message (optional)</Label>
+                    <Textarea
+                      id="customMessage"
+                      value={event.customNotificationMessage || ''}
+                      onChange={(e) => setEvent({ ...event, customNotificationMessage: e.target.value })}
+                      placeholder="Add a custom message to the notification..."
+                      rows={2}
+                      className="mt-1"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Quick Duration Buttons */}
