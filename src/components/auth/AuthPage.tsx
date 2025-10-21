@@ -8,6 +8,7 @@ import { useAuth } from './AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { UserPlus, Mail, Eye, EyeOff } from 'lucide-react';
+import { AIBackground } from '@/components/common/AIBackground';
 
 export const AuthPage = () => {
   const [searchParams] = useSearchParams();
@@ -367,79 +368,123 @@ export const AuthPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/30">
-      <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-screen">
-        <div className="w-full max-w-6xl">
-          <div className="grid lg:grid-cols-2 gap-8 items-center">
-            {/* Left Side - Branding */}
-            <div className="hidden lg:flex flex-col justify-center space-y-6 px-8">
-              <div className="space-y-4">
-                <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+    <div className="min-h-screen flex">
+      {/* Left Side - AI Background & Branding (Desktop Only) */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+        <AIBackground variant="strong" className="absolute inset-0">
+          <div className="relative h-full flex flex-col justify-center px-12 xl:px-16">
+            {/* Logo */}
+            <div className="mb-8">
+              <img 
+                src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
+                alt="InterioApp Logo" 
+                className="h-12 w-auto object-contain brightness-110 drop-shadow-lg"
+              />
+            </div>
+
+            {/* Main Heading with Gradient Effect */}
+            <div className="space-y-4 mb-12">
+              <h1 className="text-5xl xl:text-6xl font-bold">
+                <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
                   InterioApp
-                </h1>
-                <p className="text-xl text-muted-foreground">
-                  The future of window décor is online and bespoke
-                </p>
+                </span>
+              </h1>
+              <p className="text-xl xl:text-2xl text-foreground/80 font-light">
+                The future of window décor is online and bespoke
+              </p>
+            </div>
+
+            {/* Features */}
+            <div className="space-y-6 mb-12">
+              <div className="flex items-start space-x-4">
+                <div className="mt-1 p-2.5 rounded-lg bg-primary/20 backdrop-blur-sm">
+                  <UserPlus className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg mb-1">Team Collaboration</h3>
+                  <p className="text-sm text-foreground/70">
+                    Work seamlessly with your team on projects
+                  </p>
+                </div>
               </div>
               
-              <div className="space-y-4">
-                <div className="flex items-start space-x-3">
-                  <div className="mt-1 p-2 rounded-full bg-primary/10">
-                    <UserPlus className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1">Team Collaboration</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Work seamlessly with your team on projects
-                    </p>
-                  </div>
+              <div className="flex items-start space-x-4">
+                <div className="mt-1 p-2.5 rounded-lg bg-secondary/20 backdrop-blur-sm">
+                  <Mail className="h-5 w-5 text-secondary" />
                 </div>
-                
-                <div className="flex items-start space-x-3">
-                  <div className="mt-1 p-2 rounded-full bg-secondary/10">
-                    <Mail className="h-5 w-5 text-secondary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1">Client Management</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Manage clients, projects, and quotations in one place
-                    </p>
-                  </div>
+                <div>
+                  <h3 className="font-semibold text-lg mb-1">Client Management</h3>
+                  <p className="text-sm text-foreground/70">
+                    Manage clients, projects, and quotations in one place
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* Right Side - Auth Form */}
-            <Card className="w-full shadow-xl">
-              <div className="bg-gradient-to-r from-primary via-secondary to-accent p-0.5 rounded-t-xl">
-                <div className="bg-background rounded-t-xl">
-                  <CardHeader className="space-y-1 pb-4">
-                    <CardTitle className="text-2xl font-bold text-center">
-                      {invitation 
-                        ? 'Complete Your Registration'
-                        : (isSignUp ? 'Create Account' : 'Welcome Back')}
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground text-center">
-                      {invitation 
-                        ? 'Set up your password to access your account'
-                        : (isSignUp 
-                          ? 'Start managing your window treatment business' 
-                          : 'Sign in to your account')}
-                    </p>
-                  </CardHeader>
-                </div>
+            {/* Global Presence */}
+            <div className="pt-8 border-t border-foreground/10">
+              <p className="text-sm text-foreground/60 mb-3">
+                Trusted by professionals worldwide
+              </p>
+              <div className="flex flex-wrap gap-2 text-xs text-foreground/50">
+                <span className="px-3 py-1 rounded-full bg-background/10 backdrop-blur-sm">🇳🇿 NZ</span>
+                <span className="px-3 py-1 rounded-full bg-background/10 backdrop-blur-sm">🇦🇺 AU</span>
+                <span className="px-3 py-1 rounded-full bg-background/10 backdrop-blur-sm">🇫🇷 FR</span>
+                <span className="px-3 py-1 rounded-full bg-background/10 backdrop-blur-sm">🇧🇪 BE</span>
+                <span className="px-3 py-1 rounded-full bg-background/10 backdrop-blur-sm">🇬🇧 UK</span>
+                <span className="px-3 py-1 rounded-full bg-background/10 backdrop-blur-sm">🇿🇦 SA</span>
+                <span className="px-3 py-1 rounded-full bg-background/10 backdrop-blur-sm">🇪🇺 EU</span>
               </div>
-              
-              <CardContent className="pt-6">
-                {invitation && (
-                  <Alert className="mb-4 border-accent/50 bg-accent/5">
-                    <UserPlus className="h-4 w-4" />
-                    <AlertDescription>
-                      You've been invited to join {invitation.invited_by_name}'s team as a{' '}
-                      <strong>{invitation.role}</strong>
-                    </AlertDescription>
-                  </Alert>
-                )}
+              <p className="text-xs text-foreground/40 mt-3">
+                Offices in New Zealand, United Kingdom, France & South Africa
+              </p>
+            </div>
+          </div>
+        </AIBackground>
+      </div>
+
+      {/* Right Side - Auth Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-background">
+        <div className="w-full max-w-md">
+          {/* Mobile Logo */}
+          <div className="lg:hidden mb-8 text-center">
+            <img 
+              src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
+              alt="InterioApp Logo" 
+              className="h-10 w-auto object-contain mx-auto mb-4"
+            />
+            <h1 className="text-3xl font-bold">
+              <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+                InterioApp
+              </span>
+            </h1>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold mb-2">
+              {invitation 
+                ? 'Complete Your Registration'
+                : (isSignUp ? 'Create Account' : 'Welcome Back')}
+            </h2>
+            <p className="text-muted-foreground">
+              {invitation 
+                ? 'Set up your password to access your account'
+                : (isSignUp 
+                  ? 'Start managing your window treatment business' 
+                  : 'Sign in to continue to InterioApp')}
+            </p>
+          </div>
+          
+          <div>
+            {invitation && (
+              <Alert className="mb-6 border-accent/50 bg-accent/5">
+                <UserPlus className="h-4 w-4" />
+                <AlertDescription>
+                  You've been invited to join {invitation.invited_by_name}'s team as a{' '}
+                  <strong>{invitation.role}</strong>
+                </AlertDescription>
+              </Alert>
+            )}
 
                 {showResetForm ? (
                   <form onSubmit={handlePasswordReset} className="space-y-4">
@@ -590,14 +635,14 @@ export const AuthPage = () => {
                           {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
                         </button>
                       </div>
+                        )}
+                      </>
                     )}
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        export default AuthPage;
