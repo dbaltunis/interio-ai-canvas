@@ -601,9 +601,9 @@ const projectData = {
         onSend={handleSendEmail}
         isSending={isSendingEmail}
         quotePreview={
-          selectedQuoteTemplate?.blocks ? (
+          templateBlocks && templateBlocks.length > 0 ? (
             <PrintableQuote 
-              blocks={selectedQuoteTemplate.blocks}
+              blocks={templateBlocks}
               projectData={projectData}
               isPrintMode={false}
             />
@@ -613,10 +613,10 @@ const projectData = {
 
       {/* Hidden printable component for PDF generation */}
       <div className="hidden">
-        {selectedQuoteTemplate?.blocks && (
+        {templateBlocks && templateBlocks.length > 0 && (
           <PrintableQuote 
             ref={printRef}
-            blocks={selectedQuoteTemplate.blocks}
+            blocks={templateBlocks}
             projectData={projectData}
             isPrintMode={true}
           />

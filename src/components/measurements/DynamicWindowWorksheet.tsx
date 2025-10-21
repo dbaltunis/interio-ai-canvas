@@ -908,7 +908,7 @@ export const DynamicWindowWorksheet = forwardRef<{
   };
   const canProceedToMeasurements = selectedWindowType && (selectedTemplate || selectedTreatmentType);
   const canShowPreview = canProceedToMeasurements && Object.keys(measurements).length > 0;
-  return <div className="space-y-6">
+  return <div className="space-y-3 sm:space-y-6">
       {/* Save Status Indicator */}
       <div className="flex justify-end">
         <SaveStatusIndicator 
@@ -917,8 +917,8 @@ export const DynamicWindowWorksheet = forwardRef<{
         />
       </div>
 
-      {/* Enhanced Progress indicator with clickable navigation */}
-      <div className="flex items-center space-x-4">
+      {/* Enhanced Progress indicator with clickable navigation - Hide on mobile */}
+      <div className="hidden sm:flex items-center space-x-4">
         {["window-type", "treatment", "inventory", "measurements"].map((step, index) => {
         const stepNames = ["Window Type", "Treatment", "Inventory", "Measurements"];
         const isCompleted = (() => {
@@ -945,33 +945,37 @@ export const DynamicWindowWorksheet = forwardRef<{
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="window-type">
-            <Ruler className="h-4 w-4 md:mr-2" />
-            <span className="hidden md:inline">Select Type</span>
+        <TabsList className="grid w-full grid-cols-4 h-auto sm:h-10">
+          <TabsTrigger value="window-type" className="text-xs sm:text-sm px-1 sm:px-3">
+            <Ruler className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Select Type</span>
+            <span className="inline sm:hidden">Type</span>
             {selectedWindowType && <span className="ml-1 text-xs">✓</span>}
           </TabsTrigger>
-          <TabsTrigger value="treatment">
-            <Package className="h-4 w-4 md:mr-2" />
+          <TabsTrigger value="treatment" className="text-xs sm:text-sm px-1 sm:px-3">
+            <Package className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
             <span className="hidden md:inline">Treatment</span>
+            <span className="inline md:hidden">Style</span>
             {(selectedTemplate || isLayeredMode && layeredTreatments.length > 0) && <span className="ml-1 text-xs">✓</span>}
           </TabsTrigger>
-          <TabsTrigger value="inventory">
-            <Package className="h-4 w-4 md:mr-2" />
+          <TabsTrigger value="inventory" className="text-xs sm:text-sm px-1 sm:px-3">
+            <Package className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
             <span className="hidden md:inline">Inventory</span>
+            <span className="inline md:hidden">Items</span>
             {Object.values(selectedItems).some(item => item) && <span className="ml-1 text-xs">✓</span>}
           </TabsTrigger>
-          <TabsTrigger value="measurements">
-            <Ruler className="h-4 w-4 md:mr-2" />
+          <TabsTrigger value="measurements" className="text-xs sm:text-sm px-1 sm:px-3">
+            <Ruler className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
             <span className="hidden md:inline">Measurements</span>
+            <span className="inline md:hidden">Size</span>
             {measurements.rail_width && measurements.drop && <span className="ml-1 text-xs">✓</span>}
           </TabsTrigger>
         </TabsList>
 
         {/* Window Type Selection */}
-        <TabsContent value="window-type" className="space-y-4">
+        <TabsContent value="window-type" className="space-y-3 sm:space-y-4">
           <Card>
-            <CardContent className="pt-6 min-h-[500px] flex flex-col">
+            <CardContent className="pt-4 sm:pt-6 min-h-[350px] sm:min-h-[500px] flex flex-col">
               <WindowTypeSelector selectedWindowType={selectedWindowType} onWindowTypeChange={setSelectedWindowType} readOnly={readOnly} />
               
               <div className="mt-auto space-y-3">
@@ -991,9 +995,9 @@ export const DynamicWindowWorksheet = forwardRef<{
         </TabsContent>
 
         {/* Treatment Selection */}
-        <TabsContent value="treatment" className="space-y-4">
+        <TabsContent value="treatment" className="space-y-3 sm:space-y-4">
           <Card>
-            <CardContent className="pt-6 min-h-[500px] flex flex-col">
+            <CardContent className="pt-4 sm:pt-6 min-h-[350px] sm:min-h-[500px] flex flex-col">
               <ImprovedTreatmentSelector 
                 selectedCoveringId={selectedTemplate?.id || ""} 
                 onCoveringSelect={template => {
@@ -1020,9 +1024,9 @@ export const DynamicWindowWorksheet = forwardRef<{
         </TabsContent>
 
         {/* Inventory Selection */}
-        <TabsContent value="inventory" className="space-y-4">
+        <TabsContent value="inventory" className="space-y-3 sm:space-y-4">
           <Card>
-            <CardContent className="pt-6 min-h-[500px] flex flex-col">
+            <CardContent className="pt-4 sm:pt-6 min-h-[350px] sm:min-h-[500px] flex flex-col">
               <InventorySelectionPanel treatmentType={selectedTreatmentType} selectedItems={selectedItems} onItemSelect={handleItemSelect} onItemDeselect={handleItemDeselect} measurements={measurements} treatmentCategory={treatmentCategory} />
               
               <div className="mt-auto space-y-3">
@@ -1069,10 +1073,10 @@ export const DynamicWindowWorksheet = forwardRef<{
         </TabsContent>
 
         {/* Measurements - Full Interactive Visual Experience */}
-        <TabsContent value="measurements" className="space-y-4">
+        <TabsContent value="measurements" className="space-y-3 sm:space-y-4">
           <Card>
             <CardContent className="p-0">
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* Full Width Visual Worksheet */}
                 <div className="w-full">
                   <VisualMeasurementSheet 

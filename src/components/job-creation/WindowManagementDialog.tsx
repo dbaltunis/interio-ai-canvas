@@ -315,19 +315,20 @@ export const WindowManagementDialog = ({
   const hasMeasurements = existingMeasurement && Object.keys(existingMeasurement.measurements || {}).length > 0;
   return <>
       <Dialog open={isOpen} onOpenChange={handleDialogClose}>
-        <DialogContent className="max-w-7xl max-h-[95vh] flex flex-col bg-background border-2">
-          <DialogHeader className="flex-shrink-0 pb-4 border-b border-border">
+        <DialogContent className="max-w-[95vw] sm:max-w-7xl max-h-[95vh] flex flex-col bg-background border-2 p-3 sm:p-6">
+          <DialogHeader className="flex-shrink-0 pb-2 sm:pb-4 border-b border-border">
             <div className="flex items-center justify-between">
-              <DialogTitle className="flex items-center gap-2 text-xl font-bold text-foreground">
-                <Ruler className="h-6 w-6 text-primary" />
-                Design area: 
+              <DialogTitle className="flex items-center gap-1.5 sm:gap-2 text-base sm:text-xl font-bold text-foreground">
+                <Ruler className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                <span className="hidden sm:inline">Design area:</span>
+                <span className="sm:hidden">Area:</span>
                 <WindowRenameButton windowName={surface?.name || 'Untitled'} onRename={handleRename} />
               </DialogTitle>
               
             </div>
           </DialogHeader>
 
-          <div className="flex-1 min-h-0 overflow-y-auto bg-background/50 rounded-md p-4">
+          <div className="flex-1 min-h-0 overflow-y-auto bg-background/50 rounded-md p-2 sm:p-4">
             <MeasurementBridge key={surface?.id} // Stable key for consistent state
           ref={worksheetRef} mode="dynamic" // Always use dynamic mode
           clientId={clientId || ""} projectId={projectId} surfaceId={surface?.id} surfaceData={surface} currentRoomId={surface?.room_id} visualKey={windowTypeData?.visual_key} existingMeasurement={existingMeasurement} existingTreatments={existingTreatments} onSave={handleSaveData} onSaveTreatment={handleTreatmentSave} onClose={() => handleDialogClose(false)} // Ensure dialog closes after save
