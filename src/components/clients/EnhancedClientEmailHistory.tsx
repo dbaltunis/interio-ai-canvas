@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Mail, Send, Eye, MousePointer, AlertCircle, CheckCircle, 
-  Clock, TrendingUp, Calendar, MessageSquare, RefreshCw
+  Clock, TrendingUp, Calendar, MessageSquare, RefreshCw, ArrowLeft
 } from "lucide-react";
 import { useClientEmails } from "@/hooks/useClientEmails";
 import { formatDistanceToNow } from "date-fns";
 import { useState, useRef, useEffect } from "react";
+import { EmailComposer } from "../jobs/email/EmailComposer";
 
 interface EnhancedClientEmailHistoryProps {
   clientId: string;
@@ -22,6 +23,7 @@ export const EnhancedClientEmailHistory = ({
 }: EnhancedClientEmailHistoryProps) => {
   const { data: emails, isLoading } = useClientEmails(clientId);
   const [selectedEmail, setSelectedEmail] = useState<any>(null);
+  const [showComposer, setShowComposer] = useState(false);
   const emailSectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -89,6 +91,38 @@ export const EnhancedClientEmailHistory = ({
         return Mail;
     }
   };
+
+  const handleComposeClick = () => {
+    setShowComposer(true);
+    if (onComposeEmail) {
+      onComposeEmail();
+    }
+  };
+
+  const handleCloseComposer = () => {
+    setShowComposer(false);
+  };
+
+  // If showing composer, render only that
+  if (showComposer) {
+    return (
+      <div className="space-y-4">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={handleCloseComposer}
+          className="mb-2"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Email History
+        </Button>
+        <EmailComposer
+          clientId={clientId}
+          onClose={handleCloseComposer}
+        />
+      </div>
+    );
+  }
 
   return (
     <div ref={emailSectionRef} className="space-y-6" id="email-section">
@@ -163,7 +197,7 @@ export const EnhancedClientEmailHistory = ({
                     size="sm" 
                     variant="outline" 
                     className="mt-2 border-orange-300 hover:bg-orange-100"
-                    onClick={onComposeEmail}
+                    onClick={handleComposeClick}
                   >
                     <Mail className="h-4 w-4 mr-2" />
                     Send Follow-up
@@ -180,7 +214,7 @@ export const EnhancedClientEmailHistory = ({
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Email History</CardTitle>
           {clientEmail && onComposeEmail && (
-            <Button onClick={onComposeEmail} size="sm">
+            <Button onClick={handleComposeClick} size="sm">
               <Mail className="h-4 w-4 mr-2" />
               Compose Email
             </Button>
@@ -192,7 +226,7 @@ export const EnhancedClientEmailHistory = ({
               <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground mb-4">No emails sent yet</p>
               {clientEmail && onComposeEmail && (
-                <Button onClick={onComposeEmail} variant="outline">
+                <Button onClick={handleComposeClick} variant="outline">
                   <Mail className="h-4 w-4 mr-2" />
                   Send First Email
                 </Button>

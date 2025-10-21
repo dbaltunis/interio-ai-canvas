@@ -22,7 +22,6 @@ import { EnhancedClientEmailHistory } from "./EnhancedClientEmailHistory";
 import { LeadSourceSelect } from "@/components/crm/LeadSourceSelect";
 import { ClientProjectsList } from "./ClientProjectsList";
 import { MeasurementsList } from "../measurements/MeasurementsList";
-import { EmailComposer } from "../jobs/email/EmailComposer";
 import { TasksList } from "../tasks/TasksList";
 import { QuickAddTask } from "../tasks/QuickAddTask";
 import { ClientActivityLog } from "./ClientActivityLog";
@@ -45,7 +44,6 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   const { probability: autoConversionProb, factors } = useConversionProbability(client);
   
   const [isEditing, setIsEditing] = useState(false);
-  const [showEmailComposer, setShowEmailComposer] = useState(false);
   const [editedClient, setEditedClient] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("projects");
   
@@ -614,7 +612,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
           <EnhancedClientEmailHistory 
             clientId={clientId} 
             clientEmail={client.email}
-            onComposeEmail={() => setShowEmailComposer(true)}
+            onComposeEmail={() => {}}
           />
         </TabsContent>
 
@@ -635,14 +633,6 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
           </Card>
         </TabsContent>
       </Tabs>
-
-      {/* Email Composer Dialog */}
-      {showEmailComposer && (
-        <EmailComposer
-          clientId={clientId}
-          onClose={() => setShowEmailComposer(false)}
-        />
-      )}
     </div>
   );
 };
