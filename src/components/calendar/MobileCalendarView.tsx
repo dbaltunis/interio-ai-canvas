@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -7,32 +7,38 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Clock,
-  MapPin,
-  Users 
+  MapPin
 } from "lucide-react";
-import { format, addDays, startOfWeek, isSameDay, isToday } from "date-fns";
+import { format, addDays, startOfWeek, isSameDay, isToday, addWeeks, subWeeks } from "date-fns";
 import { useAppointments } from "@/hooks/useAppointments";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const MobileCalendarView = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [showMonthView, setShowMonthView] = useState(false);
   const { data: appointments = [] } = useAppointments();
+  const isMobile = useIsMobile();
 
-  // Get next 7 days for week view
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(selectedDate), i));
+  // Get current week for mobile view
+  const startDate = startOfWeek(selectedDate);
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(startDate, i));
   
   // Filter appointments for selected date
   const dayAppointments = appointments.filter(apt => 
     apt.start_time && isSameDay(new Date(apt.start_time), selectedDate)
   );
 
+  const handlePrevWeek = () => setSelectedDate(subWeeks(selectedDate, 1));
+  const handleNextWeek = () => setSelectedDate(addWeeks(selectedDate, 1));
+
   return (
-    <div className="p-4 space-y-4">
-      {/* Simplified Header */}
+    <div className={cn("space-y-4 animate-fade-in", isMobile ? "p-4 pb-20" : "p-6")}>
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold">{format(selectedDate, 'MMMM yyyy')}</h2>
+          <h2 className={cn("font-bold", isMobile ? "text-lg" : "text-xl")}>
+            {format(selectedDate, 'MMMM yyyy')}
+          </h2>
           <p className="text-sm text-muted-foreground">
             {dayAppointments.length} {dayAppointments.length === 1 ? 'event' : 'events'}
           </p>
@@ -40,28 +46,30 @@ export const MobileCalendarView = () => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setShowMonthView(!showMonthView)}
+          onClick={() => setSelectedDate(new Date())}
+          className={cn(isMobile && "text-xs px-2")}
         >
-          <CalendarIcon className="h-4 w-4" />
+          Today
         </Button>
       </div>
 
-      {/* Week View Slider */}
-      <Card>
-        <CardContent className="p-3">
-          <div className="flex items-center gap-2">
+      {/* Week Navigation */}
+      <Card className="overflow-hidden">
+        <CardContent className={cn(isMobile ? "p-2" : "p-3")}>
+          <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setSelectedDate(addDays(selectedDate, -7))}
-              className="h-8 w-8 p-0"
+              onClick={handlePrevWeek}
+              className={cn("shrink-0", isMobile ? "h-8 w-8 p-0" : "h-10 w-10")}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             
-            <div className="flex-1 grid grid-cols-7 gap-1">
+            <div className="flex-1 grid grid-cols-7 gap-0.5">
               {weekDays.map((day, i) => {
                 const isSelected = isSameDay(day, selectedDate);
+                const today = isToday(day);
                 const hasEvents = appointments.some(apt => 
                   apt.start_time && isSameDay(new Date(apt.start_time), day)
                 );
@@ -71,23 +79,30 @@ export const MobileCalendarView = () => {
                     key={i}
                     onClick={() => setSelectedDate(day)}
                     className={cn(
-                      "flex flex-col items-center gap-1 p-2 rounded-lg transition-colors relative",
-                      isSelected && "bg-primary text-primary-foreground",
-                      !isSelected && isToday(day) && "bg-accent",
-                      !isSelected && !isToday(day) && "hover:bg-muted"
+                      "flex flex-col items-center justify-center rounded-lg transition-all relative",
+                      isMobile ? "p-1.5 gap-0.5" : "p-2 gap-1",
+                      isSelected && "bg-primary text-primary-foreground shadow-md scale-105",
+                      !isSelected && today && "bg-accent",
+                      !isSelected && !today && "hover:bg-muted"
                     )}
                   >
-                    <span className="text-xs font-medium">
+                    <span className={cn(
+                      "font-medium",
+                      isMobile ? "text-[10px]" : "text-xs"
+                    )}>
                       {format(day, 'EEE')}
                     </span>
                     <span className={cn(
-                      "text-lg font-bold",
-                      isSelected && "text-primary-foreground"
+                      "font-bold",
+                      isMobile ? "text-base" : "text-lg"
                     )}>
                       {format(day, 'd')}
                     </span>
                     {hasEvents && !isSelected && (
-                      <div className="absolute bottom-1 h-1 w-1 rounded-full bg-primary" />
+                      <div className={cn(
+                        "absolute rounded-full bg-primary",
+                        isMobile ? "bottom-0.5 h-1 w-1" : "bottom-1 h-1.5 w-1.5"
+                      )} />
                     )}
                   </button>
                 );
@@ -97,8 +112,8 @@ export const MobileCalendarView = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setSelectedDate(addDays(selectedDate, 7))}
-              className="h-8 w-8 p-0"
+              onClick={handleNextWeek}
+              className={cn("shrink-0", isMobile ? "h-8 w-8 p-0" : "h-10 w-10")}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -106,56 +121,87 @@ export const MobileCalendarView = () => {
         </CardContent>
       </Card>
 
-      {/* Daily Events */}
+      {/* Daily Events List */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-muted-foreground">
+        <h3 className={cn(
+          "font-semibold text-muted-foreground",
+          isMobile ? "text-xs" : "text-sm"
+        )}>
           {format(selectedDate, 'EEEE, MMMM d')}
         </h3>
         
         {dayAppointments.length === 0 ? (
           <Card>
-            <CardContent className="p-6 text-center">
-              <p className="text-muted-foreground">No events scheduled</p>
+            <CardContent className={cn(
+              "text-center",
+              isMobile ? "p-8" : "p-12"
+            )}>
+              <CalendarIcon className={cn(
+                "mx-auto mb-3 text-muted-foreground",
+                isMobile ? "h-12 w-12" : "h-16 w-16"
+              )} />
+              <p className={cn(
+                "text-muted-foreground",
+                isMobile ? "text-sm" : "text-base"
+              )}>
+                No events scheduled
+              </p>
             </CardContent>
           </Card>
         ) : (
-          dayAppointments.map((apt) => (
-            <Card key={apt.id} className="overflow-hidden">
-              <CardContent className="p-4">
-                <div className="space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold truncate">{apt.title}</h4>
-                      {apt.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-1">
-                          {apt.description}
-                        </p>
+          <div className="space-y-2">
+            {dayAppointments.map((apt) => (
+              <Card key={apt.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                <CardContent className={cn(isMobile ? "p-3" : "p-4")}>
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h4 className={cn(
+                          "font-semibold line-clamp-1",
+                          isMobile ? "text-sm" : "text-base"
+                        )}>
+                          {apt.title}
+                        </h4>
+                        {apt.description && (
+                          <p className={cn(
+                            "text-muted-foreground line-clamp-2",
+                            isMobile ? "text-xs mt-0.5" : "text-sm mt-1"
+                          )}>
+                            {apt.description}
+                          </p>
+                        )}
+                      </div>
+                      <Badge 
+                        variant="outline" 
+                        className={cn("shrink-0", isMobile && "text-xs px-1.5")}
+                      >
+                        {apt.status || 'scheduled'}
+                      </Badge>
+                    </div>
+                    
+                    <div className={cn(
+                      "flex flex-wrap gap-3 text-muted-foreground",
+                      isMobile ? "text-xs" : "text-sm"
+                    )}>
+                      {apt.start_time && (
+                        <div className="flex items-center gap-1">
+                          <Clock className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                          <span>{format(new Date(apt.start_time), 'h:mm a')}</span>
+                        </div>
+                      )}
+                      {apt.location && (
+                        <div className="flex items-center gap-1 flex-1 min-w-0">
+                          <MapPin className={cn(isMobile ? "h-3 w-3" : "h-4 w-4", "shrink-0")} />
+                          <span className="truncate">{apt.location}</span>
+                        </div>
                       )}
                     </div>
-                    <Badge variant="outline" className="shrink-0">
-                      {apt.status || 'scheduled'}
-                    </Badge>
                   </div>
-                  
-                  <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                    {apt.start_time && (
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        <span>{format(new Date(apt.start_time), 'h:mm a')}</span>
-                      </div>
-                    )}
-                    {apt.location && (
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        <span className="truncate">{apt.location}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-              <div className="h-1 bg-primary" />
-            </Card>
-          ))
+                </CardContent>
+                <div className="h-1 bg-gradient-to-r from-primary/50 to-primary" />
+              </Card>
+            ))}
+          </div>
         )}
       </div>
     </div>

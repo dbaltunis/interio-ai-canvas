@@ -6,18 +6,9 @@ import {
   Package, 
   Calendar,
   Plus,
-  Menu,
-  Settings,
-  LayoutDashboard
 } from "lucide-react";
 import { useState } from "react";
 import { CreateActionDialog } from "./CreateActionDialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 interface MobileBottomNavProps {
   activeTab: string;
@@ -29,11 +20,6 @@ const navItems = [
   { id: "clients", label: "Clients", icon: Users },
   { id: "calendar", label: "Calendar", icon: Calendar },
   { id: "inventory", label: "Library", icon: Package },
-];
-
-const menuItems = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "settings", label: "Settings", icon: Settings },
 ];
 
 export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps) => {
@@ -76,16 +62,13 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
             );
           })}
           
-          {/* Center Create Button with AI Gradient */}
+          {/* Center Create Button with InterioApp Brand Gradient */}
           <div className="relative flex items-center justify-center">
             <Button
               onClick={() => setShowCreateDialog(true)}
-              className="absolute -top-6 h-14 w-14 rounded-full shadow-2xl bg-gradient-to-br from-[#9b87f5] via-[#7E69AB] to-[#6E59A5] hover:shadow-[0_0_30px_rgba(155,135,245,0.5)] transition-all duration-300 hover:scale-110 border border-white/20"
-              style={{
-                background: 'linear-gradient(135deg, rgba(155,135,245,1) 0%, rgba(126,105,171,1) 50%, rgba(110,89,165,1) 100%)',
-              }}
+              className="absolute -top-6 h-14 w-14 rounded-full shadow-2xl hover:shadow-[0_0_40px_hsl(var(--primary)/0.6)] transition-all duration-300 hover:scale-110 border-2 border-white/30 bg-gradient-to-r from-primary via-secondary to-accent"
             >
-              <Plus className="h-6 w-6 text-white drop-shadow-lg" />
+              <Plus className="h-7 w-7 text-white drop-shadow-lg" />
             </Button>
           </div>
           
@@ -121,38 +104,6 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
               </Button>
             );
           })}
-          
-          {/* Menu Button (Last position) */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="h-full rounded-none flex flex-col items-center justify-center gap-1 transition-all duration-200 text-muted-foreground hover:text-foreground"
-              >
-                <Menu className="h-4 w-4 transition-all duration-200" />
-                <span className="text-[10px] font-medium opacity-70">More</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent 
-              align="end" 
-              side="top"
-              className="mb-2 bg-background/95 backdrop-blur-lg border-border z-[60]"
-            >
-              {menuItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <DropdownMenuItem
-                    key={item.id}
-                    onClick={() => onTabChange(item.id)}
-                    className="cursor-pointer"
-                  >
-                    <Icon className="h-4 w-4 mr-2" />
-                    {item.label}
-                  </DropdownMenuItem>
-                );
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </nav>
       
