@@ -10,7 +10,11 @@ import { useClients } from "@/hooks/useClients";
 import { useUpdateProject } from "@/hooks/useProjects";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarDays, User, Edit, Save, X, Search, Mail, MapPin, Package, FileText, DollarSign } from "lucide-react";
+import { CalendarDays, User, Edit, Save, X, Search, Mail, MapPin, Package, FileText, DollarSign, Calendar as CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { ClientSearchStep } from "@/components/job-creation/steps/ClientSearchStep";
 import { ProductsToOrderSection } from "@/components/jobs/ProductsToOrderSection";
 import { ProjectNotesCard } from "../ProjectNotesCard";
@@ -351,36 +355,113 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
         </div>
       </div>
 
-      {/* Timeline - Compact Single Row */}
+      {/* Timeline - Compact Single Row with Date Pickers */}
       <div className="p-3 bg-muted/30 rounded-lg border border-muted/50">
         <div className="flex items-center justify-between text-sm flex-wrap gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
             <span className="text-muted-foreground">Timeline:</span>
-            <span className="font-medium">
-              {project.start_date ? new Date(project.start_date).toLocaleDateString() : 'Not set'}
-            </span>
+            
+            {/* Start Date Picker */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "h-7 px-2 font-medium hover:bg-accent",
+                    !project.start_date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="h-3 w-3 mr-1" />
+                  {project.start_date ? format(new Date(project.start_date), "PPP") : 'Set start date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={project.start_date ? new Date(project.start_date) : undefined}
+                  onSelect={async (date) => {
+                    if (date) {
+                      const dateStr = format(date, "yyyy-MM-dd");
+                      try {
+                        await updateProject.mutateAsync({
+                          id: project.id,
+                          start_date: dateStr,
+                        });
+                        project.start_date = dateStr;
+                        setFormData(prev => ({ ...prev, start_date: dateStr }));
+                        toast({
+                          title: "Success",
+                          description: "Start date updated",
+                        });
+                      } catch (error) {
+                        console.error("Failed to update start date:", error);
+                        toast({
+                          title: "Error",
+                          description: "Failed to update start date",
+                          variant: "destructive",
+                        });
+                      }
+                    }
+                  }}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+            
             <span className="text-muted-foreground">→</span>
-            <span className="font-medium">
-              {project.due_date ? new Date(project.due_date).toLocaleDateString() : 'Not set'}
-            </span>
+            
+            {/* Due Date Picker */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "h-7 px-2 font-medium hover:bg-accent",
+                    !project.due_date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="h-3 w-3 mr-1" />
+                  {project.due_date ? format(new Date(project.due_date), "PPP") : 'Set due date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={project.due_date ? new Date(project.due_date) : undefined}
+                  onSelect={async (date) => {
+                    if (date) {
+                      const dateStr = format(date, "yyyy-MM-dd");
+                      try {
+                        await updateProject.mutateAsync({
+                          id: project.id,
+                          due_date: dateStr,
+                        });
+                        project.due_date = dateStr;
+                        setFormData(prev => ({ ...prev, due_date: dateStr }));
+                        toast({
+                          title: "Success",
+                          description: "Due date updated",
+                        });
+                      } catch (error) {
+                        console.error("Failed to update due date:", error);
+                        toast({
+                          title: "Error",
+                          description: "Failed to update due date",
+                          variant: "destructive",
+                        });
+                      }
+                    }
+                  }}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
-          {isEditing && (
-            <div className="flex gap-2">
-              <Input
-                type="date"
-                value={formData.start_date}
-                onChange={(e) => updateFormData("start_date", e.target.value)}
-                className="h-8 text-xs w-auto"
-              />
-              <Input
-                type="date"
-                value={formData.due_date}
-                onChange={(e) => updateFormData("due_date", e.target.value)}
-                className="h-8 text-xs w-auto"
-              />
-            </div>
-          )}
         </div>
       </div>
 
