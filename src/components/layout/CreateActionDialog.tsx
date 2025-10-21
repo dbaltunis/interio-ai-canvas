@@ -18,19 +18,19 @@ export const CreateActionDialog = ({ open, onOpenChange, onTabChange }: CreateAc
       setTimeout(() => {
         const createButton = document.querySelector('[data-create-client]') as HTMLElement;
         createButton?.click();
-      }, 300);
+      }, 150);
     } else if (action === "project") {
       onTabChange("projects");
       setTimeout(() => {
         const createButton = document.querySelector('[data-create-project]') as HTMLElement;
         createButton?.click();
-      }, 300);
+      }, 150);
     } else if (action === "event") {
       onTabChange("calendar");
       setTimeout(() => {
         const createButton = document.querySelector('[data-create-event]') as HTMLElement;
         createButton?.click();
-      }, 300);
+      }, 150);
     }
   };
 

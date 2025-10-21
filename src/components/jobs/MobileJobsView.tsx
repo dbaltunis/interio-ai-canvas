@@ -42,10 +42,10 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
 
   if (isLoading) {
     return (
-      <div className="space-y-3 p-4">
+      <div className="space-y-2 p-3 pb-20 animate-fade-in">
         {[...Array(5)].map((_, i) => (
           <Card key={i} className="animate-pulse">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="h-20 bg-muted rounded" />
             </CardContent>
           </Card>
@@ -55,7 +55,7 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
   }
 
   return (
-    <div className="space-y-3 p-4" data-create-project>
+    <div className="space-y-2 p-3 pb-20 animate-fade-in" data-create-project>
       {filteredQuotes.map((quote) => {
         const project = projects.find((p) => p.id === quote.project_id);
         const client = clients.find((c) => c.id === quote.client_id);
@@ -68,7 +68,7 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
             className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
             onClick={() => onJobSelect(quote)}
           >
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-start gap-3">
                 {/* Avatar */}
                 <Avatar className="h-10 w-10 shrink-0">

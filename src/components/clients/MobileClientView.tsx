@@ -16,10 +16,10 @@ export const MobileClientView = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-3 p-4" data-create-client>
+      <div className="space-y-2 p-3 pb-20 animate-fade-in" data-create-client>
         {[...Array(5)].map((_, i) => (
           <Card key={i} className="animate-pulse">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="h-16 bg-muted rounded" />
             </CardContent>
           </Card>
@@ -29,14 +29,14 @@ export const MobileClientView = () => {
   }
 
   return (
-    <div className="space-y-3 p-4" data-create-client>
+    <div className="space-y-2 p-3 pb-20 animate-fade-in" data-create-client>
       {clients.map((client) => {
         const displayName = client.client_type === 'B2B' ? client.company_name : client.name;
         const initials = (displayName || 'U').substring(0, 2).toUpperCase();
         
         return (
-          <Card key={client.id} className="overflow-hidden">
-            <CardContent className="p-4">
+          <Card key={client.id} className="overflow-hidden hover:shadow-md transition-shadow">
+            <CardContent className="p-3">
               <div className="flex items-start gap-3">
                 <Avatar className="h-10 w-10 shrink-0">
                   <AvatarFallback className="text-xs font-semibold">
