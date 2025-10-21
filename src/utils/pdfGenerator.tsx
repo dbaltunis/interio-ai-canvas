@@ -2,7 +2,14 @@ import { pdf } from '@react-pdf/renderer';
 import React from 'react';
 import { QuotePDFDocument } from '@/components/jobs/quotation/pdf/QuotePDFDocument';
 
-export async function generateQuotePDFBlob(blocks: any[], projectData: any): Promise<Blob> {
+export async function generateQuotePDFBlob(
+  blocks: any[], 
+  projectData: any,
+  options?: {
+    showDetailedBreakdown?: boolean;
+    showImages?: boolean;
+  }
+): Promise<Blob> {
   console.log('🎯 PDF Generation - Full Data:', {
     blocks: blocks.length,
     items: projectData.items?.length || 0,
@@ -14,7 +21,14 @@ export async function generateQuotePDFBlob(blocks: any[], projectData: any): Pro
   
   try {
     // Create PDF document component
-    const MyDoc = () => <QuotePDFDocument blocks={blocks} projectData={projectData} />;
+    const MyDoc = () => (
+      <QuotePDFDocument 
+        blocks={blocks} 
+        projectData={projectData}
+        showDetailedBreakdown={options?.showDetailedBreakdown ?? true}
+        showImages={options?.showImages ?? false}
+      />
+    );
     
     // Generate PDF blob
     const blob = await pdf(<MyDoc />).toBlob();

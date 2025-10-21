@@ -1,8 +1,10 @@
 import React, { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, Mail, MoreVertical } from "lucide-react";
+import { Download, Mail, MoreVertical, Eye, Image as ImageIcon } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
 import { PrintableQuote } from "./PrintableQuote";
 import { EmailQuoteModal } from "./EmailQuoteModal";
@@ -44,6 +46,8 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [showDetailedBreakdown, setShowDetailedBreakdown] = useState(true);
+  const [showImages, setShowImages] = useState(false);
   const { toast } = useToast();
 
   const projectData = {
@@ -74,7 +78,10 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
 
     setIsDownloading(true);
     try {
-      const blob = await generateQuotePDFBlob(templateBlocks, projectData);
+      const blob = await generateQuotePDFBlob(templateBlocks, projectData, {
+        showDetailedBreakdown,
+        showImages
+      });
       
       // Create download link
       const url = URL.createObjectURL(blob);
@@ -108,7 +115,32 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
         <DialogHeader className="px-6 py-4 border-b bg-background flex-shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle>Quote Full View</DialogTitle>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
+              {/* Display Options */}
+              <div className="flex items-center gap-3 mr-2 border-r pr-4">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="detailed-breakdown"
+                    checked={showDetailedBreakdown}
+                    onCheckedChange={setShowDetailedBreakdown}
+                  />
+                  <Label htmlFor="detailed-breakdown" className="text-sm cursor-pointer">
+                    <Eye className="h-4 w-4 inline mr-1" />
+                    Detailed View
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="show-images"
+                    checked={showImages}
+                    onCheckedChange={setShowImages}
+                  />
+                  <Label htmlFor="show-images" className="text-sm cursor-pointer">
+                    <ImageIcon className="h-4 w-4 inline mr-1" />
+                    Show Images
+                  </Label>
+                </div>
+              </div>
               <Button
                 variant="outline"
                 size="sm"
@@ -183,8 +215,11 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
         onSend={async (emailData) => {
           setIsSendingEmail(true);
           try {
-            // Generate PDF
-            const pdfBlob = await generateQuotePDFBlob(templateBlocks, projectData);
+            // Generate PDF with current settings
+            const pdfBlob = await generateQuotePDFBlob(templateBlocks, projectData, {
+              showDetailedBreakdown,
+              showImages
+            });
             
             // Here you would send the email with the PDF attachment
             // This requires a backend edge function

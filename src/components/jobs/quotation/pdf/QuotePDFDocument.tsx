@@ -1,6 +1,7 @@
 import React from 'react';
 import { Document, Page, Text, View, Image, StyleSheet, Font } from '@react-pdf/renderer';
 import { buildClientBreakdown } from '@/utils/quotes/buildClientBreakdown';
+import { formatJobNumber } from '@/lib/format-job-number';
 
 // Register fonts (optional - using default Helvetica for now)
 const styles = StyleSheet.create({
@@ -198,9 +199,11 @@ export const QuotePDFDocument: React.FC<QuotePDFDocumentProps> = ({
         : '',
       client_company: client.company_name || '',
       
-      quote_number: project.quote_number || project.job_number || 'QT-2024-001',
+      quote_number: formatJobNumber(project.quote_number || project.job_number) || 'QT-2024-001',
       date: project.created_at ? new Date(project.created_at).toLocaleDateString() : new Date().toLocaleDateString(),
-      valid_until: projectData?.validUntil ? new Date(projectData.validUntil).toLocaleDateString() : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+      start_date: project.start_date ? new Date(project.start_date).toLocaleDateString() : '',
+      due_date: project.due_date ? new Date(project.due_date).toLocaleDateString() : '',
+      valid_until: project.due_date ? new Date(project.due_date).toLocaleDateString() : (projectData?.validUntil ? new Date(projectData.validUntil).toLocaleDateString() : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()),
       
       currency_symbol: projectData?.currency === 'AUD' ? 'A$' : projectData?.currency === 'NZD' ? 'NZ$' : '$',
       subtotal: projectData?.subtotal ? `${projectData.currency === 'AUD' ? 'A$' : '$'}${projectData.subtotal.toFixed(2)}` : '$0.00',
@@ -277,10 +280,10 @@ export const QuotePDFDocument: React.FC<QuotePDFDocumentProps> = ({
                     {content.quoteNumberLabel || "Order number"}: <Text style={{ fontWeight: 'bold' }}>{renderTokenValue('quote_number')}</Text>
                   </Text>
                   <Text style={styles.text}>
-                    Date: {renderTokenValue('date')}
+                    Start Date: {renderTokenValue('start_date') || renderTokenValue('date')}
                   </Text>
                   <Text style={styles.text}>
-                    Valid Until: {renderTokenValue('valid_until')}
+                    Due Date: {renderTokenValue('due_date') || renderTokenValue('valid_until')}
                   </Text>
                 </View>
               </View>
