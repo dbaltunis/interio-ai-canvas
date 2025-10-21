@@ -57,6 +57,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
     },
     client,
     businessSettings,
+    windowSummaries: project?.window_summaries || project?.windowSummaries,
     subtotal,
     taxRate,
     taxAmount,
@@ -208,9 +209,19 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
           </div>
         </div>
         
-        {/* Hidden PDF version without controls */}
-        <div className="hidden">
-          <div ref={printRef} style={{ background: 'white', padding: '2rem', width: '210mm' }}>
+        {/* Hidden PDF version without controls - positioned off-screen instead of display:none */}
+        <div style={{ position: 'absolute', left: '-9999px', top: '0' }}>
+          <div 
+            ref={printRef} 
+            style={{ 
+              background: 'white', 
+              padding: '32px',
+              width: '794px',
+              minWidth: '794px',
+              maxWidth: '794px',
+              boxSizing: 'border-box'
+            }}
+          >
             <LivePreview 
               blocks={templateBlocks} 
               projectData={projectData}
