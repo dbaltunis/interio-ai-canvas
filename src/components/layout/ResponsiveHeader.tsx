@@ -62,7 +62,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
           </div>
 
           {/* Center: Navigation items */}
-          <nav className="flex items-center space-x-6 lg:space-x-8">
+          <nav className="flex items-center space-x-2 lg:space-x-3">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -70,13 +70,18 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                   key={item.id}
                   onClick={() => onTabChange(item.id)}
                   className={cn(
-                    "flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary",
-                    activeTab === item.id ? "text-primary" : "text-muted-foreground"
+                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                    activeTab === item.id 
+                      ? "bg-primary text-primary-foreground shadow-sm border border-primary/20" 
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                   )}
                   data-tour-id={item.tourId}
                 >
-                  <Icon className="h-4 w-4" />
-                  <span>{item.label}</span>
+                  <Icon className={cn(
+                    "h-4 w-4 transition-transform",
+                    activeTab === item.id && "scale-110"
+                  )} />
+                  <span className={cn(activeTab === item.id && "font-semibold")}>{item.label}</span>
                 </button>
               );
             })}
