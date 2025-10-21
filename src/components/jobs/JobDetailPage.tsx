@@ -173,7 +173,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
           </div>
 
           {/* Tab Content */}
-          <div className="bg-background">
+          <div className="bg-background pb-24">
             <div className="p-2 sm:p-4">
               <TabsContent value="details" className="mt-0">
                 <div className="modern-card p-3 sm:p-6">
