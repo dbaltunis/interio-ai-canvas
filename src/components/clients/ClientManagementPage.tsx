@@ -204,7 +204,7 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
 
   // Return mobile view for mobile devices  
   if (isMobile && !showClientProfile) {
-    return <MobileClientView />;
+    return <MobileClientView onClientClick={handleClientClick} />;
   }
 
   return (

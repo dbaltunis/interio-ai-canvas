@@ -11,7 +11,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export const MobileClientView = () => {
+interface MobileClientViewProps {
+  onClientClick: (client: any) => void;
+}
+
+export const MobileClientView = ({ onClientClick }: MobileClientViewProps) => {
   const { data: clients = [], isLoading } = useClients();
 
   if (isLoading) {
@@ -35,7 +39,11 @@ export const MobileClientView = () => {
         const initials = (displayName || 'U').substring(0, 2).toUpperCase();
         
         return (
-          <Card key={client.id} className="overflow-hidden hover:shadow-md transition-shadow">
+          <Card 
+            key={client.id} 
+            className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer active:scale-[0.98]"
+            onClick={() => onClientClick(client)}
+          >
             <CardContent className="p-3">
               <div className="flex items-start gap-3">
                 <Avatar className="h-10 w-10 shrink-0">
@@ -55,16 +63,21 @@ export const MobileClientView = () => {
                     
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0 shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
                           <Mail className="h-4 w-4 mr-2" />
                           Email
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
                           <Phone className="h-4 w-4 mr-2" />
                           Call
                         </DropdownMenuItem>
