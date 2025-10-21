@@ -384,13 +384,13 @@ export function WindowSummaryCard({
                   </div>
 
                   {/* Compact Info Grid */}
-                  <div className="grid grid-cols-3 gap-3 text-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 text-sm">
                     {/* Curtains Measurements */}
                     {(treatmentType === 'curtains' || !treatmentType) && (
                       <>
                         <div>
-                          <div className="text-xs text-muted-foreground">Rail width</div>
-                          <div className="font-semibold">
+                          <div className="text-xs text-muted-foreground truncate">Rail width</div>
+                          <div className="font-semibold text-sm">
                             {fmtMeasurement(
                               Number(summary.measurements_details?.rail_width) || 
                               Number(surface.rail_width) || 
@@ -400,8 +400,8 @@ export function WindowSummaryCard({
                           </div>
                         </div>
                         <div>
-                          <div className="text-xs text-muted-foreground">Drop</div>
-                          <div className="font-semibold">
+                          <div className="text-xs text-muted-foreground truncate">Drop</div>
+                          <div className="font-semibold text-sm">
                             {fmtMeasurement(
                               Number(summary.measurements_details?.drop) || 
                               Number(surface.drop) || 
@@ -417,8 +417,8 @@ export function WindowSummaryCard({
                     {treatmentType?.includes('blind') && (
                       <>
                         <div>
-                          <div className="text-xs text-muted-foreground">Width</div>
-                          <div className="font-semibold">
+                          <div className="text-xs text-muted-foreground truncate">Width</div>
+                          <div className="font-semibold text-sm">
                             {fmtMeasurement(
                               Number(summary.measurements_details?.rail_width) || 
                               Number(summary.measurements_details?.width) || 
@@ -429,8 +429,8 @@ export function WindowSummaryCard({
                           </div>
                         </div>
                         <div>
-                          <div className="text-xs text-muted-foreground">Height</div>
-                          <div className="font-semibold">
+                          <div className="text-xs text-muted-foreground truncate">Height</div>
+                          <div className="font-semibold text-sm">
                             {fmtMeasurement(
                               Number(summary.measurements_details?.drop) || 
                               Number(summary.measurements_details?.height) || 
@@ -447,8 +447,8 @@ export function WindowSummaryCard({
                     {treatmentType === 'wallpaper' && (
                       <>
                         <div>
-                          <div className="text-xs text-muted-foreground">Width</div>
-                          <div className="font-semibold">
+                          <div className="text-xs text-muted-foreground truncate">Width</div>
+                          <div className="font-semibold text-sm">
                             {fmtMeasurement(
                               Number(summary.measurements_details?.width) || 
                               Number(surface.measurement_a) || 
@@ -457,8 +457,8 @@ export function WindowSummaryCard({
                           </div>
                         </div>
                         <div>
-                          <div className="text-xs text-muted-foreground">Height</div>
-                          <div className="font-semibold">
+                          <div className="text-xs text-muted-foreground truncate">Height</div>
+                          <div className="font-semibold text-sm">
                             {fmtMeasurement(
                               Number(summary.measurements_details?.height) || 
                               Number(surface.measurement_b) || 
@@ -473,8 +473,8 @@ export function WindowSummaryCard({
                     {treatmentType === 'shutters' && (
                       <>
                         <div>
-                          <div className="text-xs text-muted-foreground">Width</div>
-                          <div className="font-semibold">
+                          <div className="text-xs text-muted-foreground truncate">Width</div>
+                          <div className="font-semibold text-sm">
                             {fmtMeasurement(
                               Number(summary.measurements_details?.width) || 
                               Number(surface.measurement_a) || 
@@ -483,8 +483,8 @@ export function WindowSummaryCard({
                           </div>
                         </div>
                         <div>
-                          <div className="text-xs text-muted-foreground">Height</div>
-                          <div className="font-semibold">
+                          <div className="text-xs text-muted-foreground truncate">Height</div>
+                          <div className="font-semibold text-sm">
                             {fmtMeasurement(
                               Number(summary.measurements_details?.height) || 
                               Number(surface.measurement_b) || 
@@ -496,9 +496,9 @@ export function WindowSummaryCard({
                     )}
                     
                     {/* Total Price - Always Visible */}
-                    <div className="flex flex-col items-end">
-                      <div className="text-xs text-muted-foreground">Total</div>
-                      <div className="font-bold text-lg text-primary">
+                    <div className="flex flex-col md:items-end">
+                      <div className="text-xs text-muted-foreground truncate">Total</div>
+                      <div className="font-bold text-base md:text-lg text-primary">
                         {formatCurrency(summary.total_cost || 0, userCurrency)}
                       </div>
                     </div>
