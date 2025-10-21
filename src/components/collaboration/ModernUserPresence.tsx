@@ -61,9 +61,6 @@ export const ModernUserPresence = ({ isOpen, onToggle }: ModernUserPresenceProps
               </motion.div>
             )}
           </div>
-          
-          {/* Improved gradient background with better contrast */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/90 to-secondary/90 group-hover:from-primary group-hover:to-secondary transition-all duration-300" />
         </Button>
       </motion.div>
 
