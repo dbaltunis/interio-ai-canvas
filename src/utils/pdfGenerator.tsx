@@ -1,38 +1,57 @@
-import { pdf } from '@react-pdf/renderer';
-import React from 'react';
-import { QuotePDFDocument } from '@/components/jobs/quotation/pdf/QuotePDFDocument';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
-export async function generateQuotePDFBlob(
-  blocks: any[], 
-  projectData: any,
-  options?: {
-    showDetailedBreakdown?: boolean;
-    showImages?: boolean;
-  }
+/**
+ * Generate PDF from HTML element - "What You See Is What You Get"
+ * This converts the actual screen view to PDF, ensuring consistency
+ */
+export async function generateQuotePDFFromElement(
+  element: HTMLElement,
+  filename: string = 'quote.pdf'
 ): Promise<Blob> {
-  console.log('🎯 PDF Generation - Full Data:', {
-    blocks: blocks.length,
-    items: projectData.items?.length || 0,
-    itemSample: projectData.items?.[0],
-    subtotal: projectData.subtotal,
-    total: projectData.total,
-    currency: projectData.currency
-  });
+  console.log('🎯 PDF Generation - Converting screen view to PDF');
   
   try {
-    // Create PDF document component
-    const MyDoc = () => (
-      <QuotePDFDocument 
-        blocks={blocks} 
-        projectData={projectData}
-        showDetailedBreakdown={options?.showDetailedBreakdown ?? true}
-        showImages={options?.showImages ?? false}
-      />
-    );
+    // Capture the element as canvas with high quality
+    const canvas = await html2canvas(element, {
+      scale: 2, // Higher quality
+      useCORS: true, // Allow cross-origin images
+      logging: false,
+      backgroundColor: '#ffffff',
+      windowWidth: element.scrollWidth,
+      windowHeight: element.scrollHeight
+    });
     
-    // Generate PDF blob
-    const blob = await pdf(<MyDoc />).toBlob();
+    // Calculate PDF dimensions (A4 size)
+    const imgWidth = 210; // A4 width in mm
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
     
+    // Create PDF
+    const pdf = new jsPDF({
+      orientation: imgHeight > 297 ? 'portrait' : 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+    
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    
+    // Add image to PDF
+    let heightLeft = imgHeight;
+    let position = 0;
+    
+    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+    heightLeft -= 297;
+    
+    // Add new pages if content is longer than one page
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+      heightLeft -= 297;
+    }
+    
+    // Convert to blob
+    const blob = pdf.output('blob');
     console.log('✅ PDF Blob generated:', blob.size, 'bytes');
     return blob;
   } catch (error) {

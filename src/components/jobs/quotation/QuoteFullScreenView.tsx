@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
 import { PrintableQuote } from "./PrintableQuote";
 import { EmailQuoteModal } from "./EmailQuoteModal";
-import { generateQuotePDFBlob } from "@/utils/pdfGenerator";
 import { useToast } from "@/hooks/use-toast";
 
 interface QuoteFullScreenViewProps {
@@ -43,6 +42,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
   selectedTemplate
 }) => {
   const printRef = useRef<HTMLDivElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
@@ -67,10 +67,10 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
   };
 
   const handleDownloadPDF = async () => {
-    if (!templateBlocks || templateBlocks.length === 0) {
+    if (!previewRef.current) {
       toast({
         title: "Error",
-        description: "No template blocks found for PDF generation",
+        description: "Preview not ready for PDF generation",
         variant: "destructive"
       });
       return;
@@ -78,10 +78,14 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
 
     setIsDownloading(true);
     try {
-      const blob = await generateQuotePDFBlob(templateBlocks, projectData, {
-        showDetailedBreakdown,
-        showImages
-      });
+      // Import the new PDF generator
+      const { generateQuotePDFFromElement } = await import('@/utils/pdfGenerator');
+      
+      // Generate PDF from the actual preview element
+      const blob = await generateQuotePDFFromElement(
+        previewRef.current,
+        `quote-${projectData.project.quote_number || 'document'}.pdf`
+      );
       
       // Create download link
       const url = URL.createObjectURL(blob);
@@ -188,17 +192,19 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
         
         {/* Scrollable content area */}
         <div className="flex-1 overflow-y-auto bg-white p-8">
-          <LivePreview 
-            blocks={templateBlocks} 
-            projectData={projectData}
-            isEditable={false}
-            showDetailedBreakdown={showDetailedBreakdown}
-            showImages={showImages}
-            onSettingsChange={(settings) => {
-              if (settings.showDetailedBreakdown !== undefined) setShowDetailedBreakdown(settings.showDetailedBreakdown);
-              if (settings.showImages !== undefined) setShowImages(settings.showImages);
-            }}
-          />
+          <div ref={previewRef}>
+            <LivePreview 
+              blocks={templateBlocks} 
+              projectData={projectData}
+              isEditable={false}
+              showDetailedBreakdown={showDetailedBreakdown}
+              showImages={showImages}
+              onSettingsChange={(settings) => {
+                if (settings.showDetailedBreakdown !== undefined) setShowDetailedBreakdown(settings.showDetailedBreakdown);
+                if (settings.showImages !== undefined) setShowImages(settings.showImages);
+              }}
+            />
+          </div>
         </div>
 
         {/* Hidden printable component */}
@@ -221,14 +227,20 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
         onSend={async (emailData) => {
           setIsSendingEmail(true);
           try {
-            // Generate PDF with current settings
-            const pdfBlob = await generateQuotePDFBlob(templateBlocks, projectData, {
-              showDetailedBreakdown,
-              showImages
-            });
+            if (!previewRef.current) {
+              throw new Error("Preview not ready");
+            }
+
+            // Import the new PDF generator
+            const { generateQuotePDFFromElement } = await import('@/utils/pdfGenerator');
+            
+            // Generate PDF from the actual preview element
+            const pdfBlob = await generateQuotePDFFromElement(
+              previewRef.current,
+              `quote-${projectData.project.quote_number || 'document'}.pdf`
+            );
             
             // Here you would send the email with the PDF attachment
-            // This requires a backend edge function
             console.log("Email data:", emailData);
             console.log("PDF blob size:", pdfBlob.size);
             

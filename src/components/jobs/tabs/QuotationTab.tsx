@@ -32,7 +32,6 @@ import { PrintableQuote } from "@/components/jobs/quotation/PrintableQuote";
 import { EmailQuoteModal } from "@/components/jobs/quotation/EmailQuoteModal";
 import { useQuoteTemplates } from "@/hooks/useQuoteTemplates";
 import { useClients } from "@/hooks/useClients";
-import { generateQuotePDFBlob } from "@/utils/pdfGenerator.tsx";
 import { QuotationSkeleton } from "@/components/jobs/quotation/QuotationSkeleton";
 
 interface QuotationTabProps {
@@ -259,21 +258,15 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
         description: "Please wait while we prepare your quote",
       });
 
-      // Get template blocks
-      const templateBlocksForPDF = editedTemplateBlocks || (Array.isArray(selectedTemplate?.blocks) ? selectedTemplate.blocks : []);
+      // Import the new PDF generator
+      const { generateQuotePDFFromElement } = await import('@/utils/pdfGenerator');
       
-      const pdfBlob = await generateQuotePDFBlob(templateBlocksForPDF, {
-        project,
-        client,
-        businessSettings,
-        items: quotationData.items || [],
-        subtotal,
-        taxAmount,
-        taxRate,
-        total,
-        validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        currency: 'USD'
-      });
+      // Generate PDF from the actual preview element
+      const pdfBlob = await generateQuotePDFFromElement(
+        printRef.current,
+        `quote-${project?.job_number || 'QT'}.pdf`
+      );
+      
       console.log('PDF Blob generated:', pdfBlob.size, 'bytes');
 
       // Generate unique filename with timestamp to avoid conflicts
