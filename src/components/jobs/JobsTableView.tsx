@@ -47,6 +47,8 @@ import { JobsPagination } from "./JobsPagination";
 import { JobsTableSkeleton } from "./skeleton/JobsTableSkeleton";
 import { useUserCurrency, formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
 import { JobStatusBadge } from "./JobStatusBadge";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileJobsView } from "./MobileJobsView";
 
 interface JobsTableViewProps {
   onJobSelect: (quote: any) => void;
@@ -57,6 +59,12 @@ interface JobsTableViewProps {
 const ITEMS_PER_PAGE = 20;
 
 export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTableViewProps) => {
+  const isMobile = useIsMobile();
+  
+  // Return mobile view for mobile devices
+  if (isMobile) {
+    return <MobileJobsView onJobSelect={onJobSelect} searchTerm={searchTerm} statusFilter={statusFilter} />;
+  }
   const { data: quotes = [], isLoading, refetch } = useQuotes();
   const { data: projects = [] } = useProjects();
   const { data: clients = [] } = useClients();

@@ -18,12 +18,15 @@ import { LoadingFallback } from "@/components/ui/loading-fallback";
 import { HelpDrawer } from "@/components/ui/help-drawer";
 import { HelpIcon } from "@/components/ui/help-icon";
 import { Badge } from "@/components/ui/badge";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileClientView } from "./MobileClientView";
 
 interface ClientManagementPageProps {
   onTabChange?: (tab: string) => void;
 }
 
 export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps = {}) => {
+  const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showClientProfile, setShowClientProfile] = useState(false);
@@ -197,6 +200,11 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
 
   if (isLoading || isLoadingStats) {
     return <LoadingFallback title="Loading clients..." />;
+  }
+
+  // Return mobile view for mobile devices  
+  if (isMobile && !showClientProfile) {
+    return <MobileClientView />;
   }
 
   return (

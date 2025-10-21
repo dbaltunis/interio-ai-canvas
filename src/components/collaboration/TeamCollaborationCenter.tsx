@@ -25,6 +25,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { formatDisplayName, formatLastSeen, getInitials } from '@/utils/userDisplay';
 import { Clock, Coffee, Briefcase } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TeamCollaborationCenterProps {
   isOpen: boolean;
@@ -32,6 +33,7 @@ interface TeamCollaborationCenterProps {
 }
 
 export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationCenterProps) => {
+  const isMobile = useIsMobile();
   const { user } = useAuth();
   const { activeUsers = [] } = useUserPresence();
   const { openConversation, totalUnreadCount = 0, conversations = [] } = useDirectMessages();
@@ -178,16 +180,23 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className={cn("!fixed inset-y-0 right-0 w-full sm:w-96 z-[101] liquid-glass shadow-2xl overflow-hidden border-l border-border", messageDialogOpen ? "pointer-events-none" : "pointer-events-auto")}
+              className={cn(
+                "!fixed inset-y-0 right-0 z-[101] liquid-glass shadow-2xl overflow-hidden border-l border-border", 
+                isMobile ? "w-full" : "w-96",
+                messageDialogOpen ? "pointer-events-none" : "pointer-events-auto"
+              )}
             >
               {/* Content */}
               <div className="relative z-10 h-full flex flex-col">
                 {/* Header */}
-                <div className="p-6 glass-morphism border-b">
+                <div className={cn("glass-morphism border-b", isMobile ? "p-4" : "p-6")}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-2xl font-bold text-foreground mb-1 flex items-center gap-2">
-                        <Zap className="h-6 w-6 text-yellow-400" />
+                      <h2 className={cn(
+                        "font-bold text-foreground mb-1 flex items-center gap-2",
+                        isMobile ? "text-lg" : "text-2xl"
+                      )}>
+                        <Zap className={cn(isMobile ? "h-5 w-5" : "h-6 w-6", "text-yellow-400")} />
                         Team Hub
                       </h2>
                       <p className="text-muted-foreground text-sm">

@@ -7,9 +7,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Settings as SettingsIcon } from "lucide-react";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useNavigate } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 const Settings = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const hasViewSettings = useHasPermission('view_settings');
   const hasViewProfile = useHasPermission('view_profile');
   const canAccessSettings = hasViewSettings || hasViewProfile;
@@ -57,37 +60,45 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Enhanced Settings Header */}
-      <header className="modern-card-elevated sticky top-0 z-40 backdrop-blur-lg bg-background/95 border-b border-border/50">
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                onClick={handleBackToApp}
-                className="flex items-center space-x-2 hover-lift interactive-bounce text-muted-foreground hover:text-foreground"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span>Back to App</span>
-              </Button>
-              <div className="h-6 w-px bg-border" />
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <SettingsIcon className="h-5 w-5 text-primary" />
+      {/* Enhanced Settings Header - Hidden on mobile (using bottom nav) */}
+      {!isMobile && (
+        <header className="modern-card-elevated sticky top-0 z-40 backdrop-blur-lg bg-background/95 border-b border-border/50">
+          <div className="px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-20">
+              <div className="flex items-center space-x-4">
+                <Button
+                  variant="ghost"
+                  onClick={handleBackToApp}
+                  className="flex items-center space-x-2 hover-lift interactive-bounce text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Back to App</span>
+                </Button>
+                <div className="h-6 w-px bg-border" />
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <SettingsIcon className="h-5 w-5 text-primary" />
+                  </div>
+                  <BrandHeader size="sm" />
                 </div>
-                <BrandHeader size="sm" />
               </div>
+              
+              <UserProfile />
             </div>
-            
-            <UserProfile />
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       {/* Enhanced Settings Content */}
-      <main className="px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
-        <Card className="min-h-[calc(100vh-10rem)] hover:shadow-md transition-all duration-300">
-          <CardContent className="p-8">
+      <main className={cn(
+        "animate-fade-in",
+        isMobile ? "p-4 pb-20" : "px-4 sm:px-6 lg:px-8 py-8"
+      )}>
+        <Card className={cn(
+          "hover:shadow-md transition-all duration-300",
+          isMobile ? "min-h-[calc(100vh-8rem)]" : "min-h-[calc(100vh-10rem)]"
+        )}>
+          <CardContent className={cn(isMobile ? "p-4" : "p-8")}>
             <SettingsView />
           </CardContent>
         </Card>

@@ -33,6 +33,9 @@ const EmailManagement = lazy(() =>
 const CalendarView = lazy(() => 
   import("@/components/calendar/CalendarView").catch(() => ({ default: () => <div>Error loading Calendar</div> }))
 );
+const MobileSettings = lazy(() => 
+  import("@/pages/MobileSettings").catch(() => ({ default: () => <div>Error loading Settings</div> }))
+);
 const MeasurementWizardDemo = lazy(() => 
   import("@/components/measurement-wizard/MeasurementWizardDemo").catch(() => ({ default: () => <div>Error loading Measurement Wizard</div> }))
 );
@@ -63,8 +66,8 @@ const Index = () => {
   // Enable session timeout tracking
   useSessionTimeout();
 
-  // Tab navigation order for swipe
-  const tabOrder = ["dashboard", "projects", "clients", "inventory", "calendar", "settings"];
+  // Tab navigation order for swipe (exclude settings from swipe nav)
+  const tabOrder = ["dashboard", "projects", "clients", "inventory", "calendar"];
 
   // Swipe navigation for mobile
   useSwipeNavigation({
@@ -161,6 +164,30 @@ const Index = () => {
           <Suspense fallback={<CalendarSkeleton />}>
             <ComponentWrapper>
               <CalendarView />
+            </ComponentWrapper>
+          </Suspense>
+        );
+      case 'settings':
+        return (
+          <Suspense fallback={<div>Loading...</div>}>
+            <ComponentWrapper>
+              <MobileSettings />
+            </ComponentWrapper>
+          </Suspense>
+        );
+      case 'measurement':
+        return (
+          <Suspense fallback={<CalendarSkeleton />}>
+            <ComponentWrapper>
+              <CalendarView />
+            </ComponentWrapper>
+          </Suspense>
+        );
+      case 'settings':
+        return (
+          <Suspense fallback={<div>Loading...</div>}>
+            <ComponentWrapper>
+              <MobileSettings />
             </ComponentWrapper>
           </Suspense>
         );

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { InteractiveCRMTable } from "../crm/InteractiveCRMTable";
+import { MobileCRMView } from "../crm/MobileCRMView";
 import { useClients } from "@/hooks/useClients";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -147,8 +148,10 @@ export const EnhancedDashboard = () => {
       </div>
 
       {/* Main Content - Interactive Table */}
-      <Card>
-        {!isMobile && (
+      {isMobile ? (
+        <MobileCRMView />
+      ) : (
+        <Card>
           <CardHeader className="border-b bg-muted/30">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-semibold">Client Pipeline</CardTitle>
@@ -160,19 +163,17 @@ export const EnhancedDashboard = () => {
               </Tabs>
             </div>
           </CardHeader>
-        )}
-        <CardContent className="p-0">
-          {activeView === 'table' ? (
-            <div className={cn(isMobile && "overflow-x-auto")}>
+          <CardContent className="p-0">
+            {activeView === 'table' ? (
               <InteractiveCRMTable />
-            </div>
-          ) : (
-            <div className="p-12 text-center text-muted-foreground">
-              Kanban view coming soon...
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            ) : (
+              <div className="p-12 text-center text-muted-foreground">
+                Kanban view coming soon...
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

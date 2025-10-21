@@ -1,0 +1,95 @@
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Mail, Phone, MoreVertical } from "lucide-react";
+import { useClients } from "@/hooks/useClients";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+export const MobileClientView = () => {
+  const { data: clients = [], isLoading } = useClients();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3 p-4" data-create-client>
+        {[...Array(5)].map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <CardContent className="p-4">
+              <div className="h-16 bg-muted rounded" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3 p-4" data-create-client>
+      {clients.map((client) => {
+        const displayName = client.client_type === 'B2B' ? client.company_name : client.name;
+        const initials = (displayName || 'U').substring(0, 2).toUpperCase();
+        
+        return (
+          <Card key={client.id} className="overflow-hidden">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <Avatar className="h-10 w-10 shrink-0">
+                  <AvatarFallback className="text-xs font-semibold">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-sm truncate">{displayName}</h4>
+                      {client.email && (
+                        <p className="text-xs text-muted-foreground truncate">{client.email}</p>
+                      )}
+                    </div>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>
+                          <Mail className="h-4 w-4 mr-2" />
+                          Email
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Phone className="h-4 w-4 mr-2" />
+                          Call
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {client.funnel_stage && (
+                      <Badge variant="outline" className="text-xs">
+                        {client.funnel_stage.replace('_', ' ')}
+                      </Badge>
+                    )}
+                    {client.phone && (
+                      <span className="text-xs text-muted-foreground truncate">
+                        {client.phone}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
+};
