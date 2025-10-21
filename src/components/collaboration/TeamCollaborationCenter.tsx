@@ -157,39 +157,6 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
 
   return createPortal(
     <>
-      {/* Floating Action Button */}
-      <motion.div
-        className="fixed bottom-6 right-6 z-50"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <Button
-          onClick={onToggle}
-          className="relative h-16 w-16 rounded-full bg-gradient-to-br from-primary to-secondary shadow-2xl overflow-hidden group border-2 border-white/20"
-          variant="ghost"
-        >
-          {/* Icon with proper contrast */}
-          <div className="relative z-10 flex items-center justify-center">
-            <Users className="h-7 w-7 text-white drop-shadow-lg" />
-            {(onlineUsers.length > 0 || totalUnreadCount > 0) && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="absolute -top-1 -right-1 h-5 w-5 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg"
-                style={{
-                  animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-                }}
-              >
-                {totalUnreadCount > 0 ? totalUnreadCount : onlineUsers.length}
-              </motion.div>
-            )}
-          </div>
-          
-          {/* Improved gradient background with better contrast */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/90 to-secondary/90 group-hover:from-primary group-hover:to-secondary transition-all duration-300" />
-        </Button>
-      </motion.div>
-
       {/* Sliding Panel */}
       <AnimatePresence>
         {isOpen && (
