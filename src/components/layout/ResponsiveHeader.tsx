@@ -97,8 +97,8 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
         </div>
       </header>
 
-      {/* Mobile/Tablet Header - simplified, only logo and user */}
-      <header className="sticky top-0 z-40 w-full border-b glass-morphism-strong lg:hidden">
+      {/* Mobile/Tablet Header - HIDDEN, using bottom nav instead */}
+      {/* <header className="sticky top-0 z-40 w-full border-b glass-morphism-strong lg:hidden">
         <div className="flex h-14 items-center justify-between px-4">
           <BrandHeader size="md" showTagline={false} />
           <UserProfile 
@@ -107,7 +107,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
             unreadCount={unreadCount}
           />
         </div>
-      </header>
+      </header> */}
 
       {/* Modern AI-style Team Collaboration */}
       <TeamCollaborationCenter 

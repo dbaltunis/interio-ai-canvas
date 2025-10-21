@@ -1,14 +1,20 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { 
   FolderOpen, 
   Users, 
   Package, 
   Calendar,
   Plus,
+  UserCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { CreateActionDialog } from "./CreateActionDialog";
+import { UserProfile } from "./UserProfile";
+import { useUserPresence } from "@/hooks/useUserPresence";
+import { useDirectMessages } from "@/hooks/useDirectMessages";
+import { TeamCollaborationCenter } from "../collaboration/TeamCollaborationCenter";
 
 interface MobileBottomNavProps {
   activeTab: string;
@@ -19,11 +25,19 @@ const navItems = [
   { id: "projects", label: "Jobs", icon: FolderOpen },
   { id: "clients", label: "Clients", icon: Users },
   { id: "calendar", label: "Calendar", icon: Calendar },
-  { id: "inventory", label: "Library", icon: Package },
+  { id: "profile", label: "Profile", icon: UserCircle },
 ];
 
 export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps) => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [presencePanelOpen, setPresencePanelOpen] = useState(false);
+  
+  const { activeUsers, currentUser } = useUserPresence();
+  const { conversations } = useDirectMessages();
+  
+  const otherActiveUsers = activeUsers.filter(user => user.user_id !== currentUser?.user_id && user.status === 'online');
+  const unreadCount = conversations.reduce((total, conv) => total + conv.unread_count, 0);
+  const hasActivity = otherActiveUsers.length > 0 || unreadCount > 0;
 
   return (
     <>
@@ -76,6 +90,34 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
           {navItems.slice(2).map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
+            
+            // Special handling for profile button
+            if (item.id === 'profile') {
+              return (
+                <div key={item.id} className="relative">
+                  <Button
+                    variant="ghost"
+                    className="h-full w-full rounded-none flex flex-col items-center justify-center gap-1"
+                    onClick={() => setPresencePanelOpen(!presencePanelOpen)}
+                  >
+                    <div className="relative">
+                      <Icon className="h-4 w-4 text-muted-foreground" />
+                      {(hasActivity || unreadCount > 0) && (
+                        <Badge 
+                          className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[8px] bg-destructive text-destructive-foreground"
+                        >
+                          {unreadCount > 0 ? unreadCount : ''}
+                        </Badge>
+                      )}
+                    </div>
+                    <span className="text-[10px] font-medium opacity-70">
+                      {item.label}
+                    </span>
+                  </Button>
+                </div>
+              );
+            }
+            
             return (
               <Button
                 key={item.id}
@@ -111,6 +153,11 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
         open={showCreateDialog} 
         onOpenChange={setShowCreateDialog}
         onTabChange={onTabChange}
+      />
+      
+      <TeamCollaborationCenter 
+        isOpen={presencePanelOpen}
+        onToggle={() => setPresencePanelOpen(!presencePanelOpen)}
       />
     </>
   );
