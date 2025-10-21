@@ -615,6 +615,7 @@ const projectData = {
         markupPercentage={markupPercentage}
         templateBlocks={templateBlocks}
         selectedTemplate={selectedTemplate}
+        projectSummaries={projectSummaries}
       />
 
       {/* Email Modal */}

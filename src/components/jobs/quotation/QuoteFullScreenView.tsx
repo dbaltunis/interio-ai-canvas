@@ -25,6 +25,7 @@ interface QuoteFullScreenViewProps {
   markupPercentage: number;
   templateBlocks: any[];
   selectedTemplate: any;
+  projectSummaries?: any;
 }
 
 export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
@@ -40,7 +41,8 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
   total,
   markupPercentage,
   templateBlocks,
-  selectedTemplate
+  selectedTemplate,
+  projectSummaries
 }) => {
   const previewRef = useRef<HTMLDivElement>(null);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
@@ -57,14 +59,14 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
     },
     client,
     businessSettings,
-    windowSummaries: project?.window_summaries || project?.windowSummaries,
+    windowSummaries: projectSummaries || project?.window_summaries || project?.windowSummaries,
     subtotal,
     taxRate,
     taxAmount,
     total,
     markupPercentage,
     validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-  }), [project, client, businessSettings, subtotal, taxRate, taxAmount, total, markupPercentage]);
+  }), [project, client, businessSettings, projectSummaries, subtotal, taxRate, taxAmount, total, markupPercentage]);
 
   // Use prepareQuoteData to properly format items for LivePreview
   const preparedData = useMemo(() => {
