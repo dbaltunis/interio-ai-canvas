@@ -1,190 +1,55 @@
-/* Hide elements marked as no-print in print output */
+/* Print styles for Quote PDF generation */
 @media print {
-  .no-print,
-  .no-print *,
-  .no-print span,
-  .no-print label,
-  .no-print button,
-  .no-print input { 
-    display: none !important; 
-    visibility: hidden !important;
-    opacity: 0 !important;
+  /* Hide everything except the quote content */
+  body * {
+    visibility: hidden;
   }
   
-  /* Allow natural page breaks */
-  * {
-    break-inside: auto;
+  /* Show only the printable quote area */
+  #printable-quote-area,
+  #printable-quote-area * {
+    visibility: visible;
+  }
+  
+  #printable-quote-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
   }
 
-  /* Prevent breaks inside important sections */
-  .print-avoid-break,
-  table thead,
-  table tr,
-  h1, h2, h3, h4, h5, h6 {
-    break-inside: avoid;
+  /* Remove all page margins and padding */
+  @page {
+    margin: 15mm;
+    size: A4;
+  }
+
+  /* Hide UI controls */
+  button,
+  input[type="checkbox"],
+  .no-print {
+    display: none !important;
+  }
+
+  /* Ensure clean backgrounds */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Prevent page breaks inside tables */
+  table {
     page-break-inside: avoid;
   }
-  
-  /* Improve print readability */
-  body { 
-    background: white !important; 
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-  
-  main { 
-    padding: 0 !important; 
-    margin: 0 !important;
-  }
-  
-  /* Document surface clean print styling - NO BORDERS */
-  .document-surface,
-  .pdf-document-content {
-    background: white !important;
-    box-shadow: none !important;
-    border: none !important;
-    border-radius: 0 !important;
-    margin: 0 !important;
-    padding: 1rem !important;
-    max-width: none !important;
-    width: 100% !important;
-  }
-  
-  /* Remove any wrapper borders and rounded corners */
-  .document-surface *,
-  .pdf-document-content * {
-    border-radius: 0 !important;
-  }
-  
-  /* Remove card wrappers and containers */
-  .document-surface .border,
-  .pdf-document-content .border,
-  .document-surface .shadow-sm,
-  .pdf-document-content .shadow-sm,
-  .document-surface .rounded-lg,
-  .pdf-document-content .rounded-lg {
-    border: none !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-  }
-  
-  /* Clean table styling for print */
-  .document-surface table {
-    border-collapse: collapse;
-    width: 100%;
-    border: none !important;
-  }
-  
-  .document-surface th,
-  .document-surface td {
-    border: 1px solid #ddd !important;
-    padding: 8px !important;
-  }
-  
-  /* Ensure text is black for print */
-  .document-surface * {
-    color: black !important;
-  }
-  
-  /* Remove any bottom borders or lines from sections */
-  .document-surface .border-b,
-  .document-surface .border-b-2,
-  .document-surface [class*="border-b"] {
-    border-bottom: none !important;
-  }
-  
-  /* A4 Container Print Styling */
-  .bg-muted\/20 {
-    background: white !important;
-    padding: 0 !important;
-  }
-  
-  /* Remove A4 container visual styling in print */
-  .shadow-lg {
-    box-shadow: none !important;
-    border: none !important;
-  }
-  
-  /* Ensure A4 page takes full width in print and removes all container styling */
-  [style*="210mm"] {
-    width: 100% !important;
-    max-width: 100% !important;
-    box-shadow: none !important;
-    border: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: visible !important;
-  }
-  
-  /* Remove ALL padding and margins from content wrappers - @page margins control ALL spacing */
-  [style*="210mm"] > div,
-  [style*="210mm"] > div > div {
-    padding: 0 !important;
-    margin: 0 !important;
-    max-width: 100% !important;
-    width: 100% !important;
-  }
-  
-  /* Ensure content area uses full width minus page margins only */
-  .mx-auto {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-  
-  /* Remove max-width constraints in print */
-  .max-w-4xl,
-  .max-w-3xl,
-  .max-w-2xl,
-  .max-w-xl,
-  .max-w-lg,
-  .max-w-md,
-  .max-w-sm {
-    max-width: 100% !important;
-    width: 100% !important;
-  }
-  
-  /* Better page breaks for summary sections */
-  .space-y-2,
-  .flex.justify-between,
-  [class*="total"],
-  [class*="subtotal"],
-  [class*="tax"] {
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-  }
-  
-  /* Avoid orphaned labels */
-  h1, h2, h3, h4, h5, h6,
-  .font-semibold,
-  .font-bold {
-    break-after: avoid !important;
-    page-break-after: avoid !important;
-  }
-  
-  /* Set @page margins - this is the ONLY margin/padding that should exist in print */
-  @page {
-    size: A4 portrait;
-    margin: 0;
+
+  tr {
+    page-break-inside: avoid;
   }
 
-  /* Ensure content fits within page width */
-  html, body {
-    width: 210mm;
-    height: 297mm;
-  }
-  
-  /* Ensure tables don't overflow */
-  table {
-    width: 100% !important;
-    table-layout: auto !important;
-  }
-  
-  /* Prevent text overflow */
-  * {
-    word-wrap: break-word !important;
-    overflow-wrap: break-word !important;
-    box-sizing: border-box !important;
+  /* Ensure images are visible */
+  img {
+    max-width: 100%;
+    page-break-inside: avoid;
   }
 }
