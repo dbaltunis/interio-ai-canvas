@@ -54,11 +54,12 @@ interface JobsTableViewProps {
   onJobSelect: (quote: any) => void;
   searchTerm: string;
   statusFilter: string;
+  visibleColumns: Array<{ id: string; label: string; visible: boolean; order: number }>;
 }
 
 const ITEMS_PER_PAGE = 20;
 
-export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTableViewProps) => {
+export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleColumns }: JobsTableViewProps) => {
   const isMobile = useIsMobile();
   const { data: quotes = [], isLoading, refetch } = useQuotes();
   const { data: projects = [] } = useProjects();
@@ -380,20 +381,216 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
     );
   }
 
+  // Helper function to render cell content
+  const renderCellContent = (columnId: string, project: any, quotes: any[], clientName: string, client: any) => {
+    switch (columnId) {
+      case 'job_no':
+        return (
+          <span 
+            title={project.job_number}
+            className="font-mono text-xs text-muted-foreground whitespace-nowrap"
+          >
+            {formatJobNumber(project.job_number || `JOB-${project.id}`)}
+          </span>
+        );
+      
+      case 'client':
+        return (
+          <div className="flex items-center space-x-2">
+            <Avatar className="h-8 w-8 flex-shrink-0">
+              <AvatarFallback className={`${getClientAvatarColor(clientName)} text-primary-foreground text-xs font-medium`}>
+                {clientName === 'No Client' ? '—' : getClientInitials(clientName)}
+              </AvatarFallback>
+            </Avatar>
+            {clientName === 'No Client' ? (
+              <span className="text-sm font-medium">—</span>
+            ) : (
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-medium truncate max-w-[120px]" title={clientName}>
+                  {clientName.split(' ')[0]}
+                </span>
+                {clientName.split(' ').length > 1 && (
+                  <span className="text-xs text-muted-foreground truncate max-w-[120px]" title={clientName}>
+                    {clientName.split(' ').slice(1).join(' ')}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      
+      case 'total':
+        return (
+          <div className="flex items-center space-x-2">
+            <span className="font-medium">
+              {quotes.length > 0 ? formatCurrency(quotes[0].total_amount || 0, userCurrency) : formatCurrency(0, userCurrency)}
+            </span>
+            {quotes.length > 1 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-6 text-xs px-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleJobExpansion(project.id);
+                }}
+              >
+                {expandedJobs.has(project.id) ? '−' : '+'} {quotes.length} quotes
+              </Button>
+            )}
+          </div>
+        );
+      
+      case 'status':
+        return <JobStatusBadge status={project.status || 'draft'} />;
+      
+      case 'created':
+        return (
+          <div className="flex items-center space-x-2">
+            <span>{new Date(project.created_at).toLocaleDateString()}</span>
+            {projectAppointments[project.id] && projectAppointments[project.id].length > 0 && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button 
+                    className="relative hover:scale-110 transition-transform cursor-pointer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Calendar className="h-3.5 w-3.5 text-green-600" />
+                    <div className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-green-500 rounded-full border border-white" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0 pointer-events-auto z-[200]" align="start">
+                  <div className="p-4">
+                    <h4 className="font-semibold mb-3">Scheduled Appointments</h4>
+                    <div className="space-y-2">
+                      {projectAppointments[project.id].map((appointment: any) => (
+                        <div key={appointment.id} className="p-3 bg-muted rounded-md">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <p className="font-medium text-sm">{appointment.title}</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {new Date(appointment.start_time).toLocaleString()}
+                              </p>
+                              {appointment.description && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {appointment.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
+        );
+      
+      case 'emails':
+        return (
+          <div onClick={(e) => e.stopPropagation()}>
+            <EmailStatusDisplay 
+              jobId={project.id}
+              clientEmail={client?.email}
+            />
+          </div>
+        );
+      
+      case 'team':
+        return (
+          <div className="flex items-center space-x-2">
+            <Avatar className="h-6 w-6">
+              {(() => {
+                const owner = users.find(user => user.id === project.user_id);
+                const ownerInfo = getOwnerInfo({ user_id: project.user_id });
+                const avatarUrl = owner?.avatar_url;
+                return avatarUrl ? (
+                  <img 
+                    src={avatarUrl} 
+                    alt={ownerInfo.firstName}
+                    className="h-6 w-6 rounded-full object-cover"
+                  />
+                ) : (
+                  <AvatarFallback className={`${ownerInfo.color} text-primary-foreground text-xs font-medium`}>
+                    {ownerInfo.initials}
+                  </AvatarFallback>
+                );
+              })()}
+            </Avatar>
+            <span className="text-sm text-muted-foreground truncate max-w-[100px]" title={getOwnerInfo({ user_id: project.user_id }).firstName}>
+              {getOwnerInfo({ user_id: project.user_id }).firstName}
+            </span>
+          </div>
+        );
+      
+      case 'actions':
+        return (
+          <div onClick={(e) => e.stopPropagation()} className="relative">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 relative">
+                  <MoreHorizontal className="h-4 w-4" />
+                  {projectNotes[project.id] > 0 && (
+                    <div className="absolute -top-1 -right-1 h-3 w-3 bg-blue-500 rounded-full border border-white flex items-center justify-center">
+                      <StickyNote className="h-2 w-2 text-white" />
+                    </div>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 bg-popover text-popover-foreground border shadow-lg z-50">
+                <DropdownMenuItem onClick={() => onJobSelect({ id: project.id, projects: project })}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  View Job
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleNotesClick({ id: project.id, project: project })} className="relative">
+                  <StickyNote className="mr-2 h-4 w-4" />
+                  Write Note
+                  {projectNotes[project.id] > 0 && (
+                    <div className="ml-auto flex items-center">
+                      <div className="h-5 w-5 bg-blue-500 rounded-full flex items-center justify-center">
+                        <span className="text-[10px] font-semibold text-white">{projectNotes[project.id]}</span>
+                      </div>
+                    </div>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onJobSelect({ id: project.id, projects: project })}>
+                  <Copy className="mr-2 h-4 w-4" />
+                  New Quote
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => {
+                  setQuoteToDelete({ id: project.id, projects: project });
+                  setDeleteDialogOpen(true);
+                }}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Job
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        );
+      
+      default:
+        return null;
+    }
+  };
+
   return (
     <>
       <div className="rounded-lg border border-border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/30 hover:bg-muted/30">
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Job No</TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Client</TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Total</TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Status</TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Created</TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Emails</TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors font-normal">Team</TableHead>
-              <TableHead className="w-[70px] font-normal">Actions</TableHead>
+              {visibleColumns.map((column) => (
+                <TableHead 
+                  key={column.id}
+                  className={`cursor-pointer hover:bg-muted/50 transition-colors font-normal ${column.id === 'actions' ? 'w-[70px]' : ''}`}
+                >
+                  {column.label}
+                </TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -410,178 +607,11 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => onJobSelect({ id: project.id, projects: project })}
                     >
-                    <TableCell>
-                      <span 
-                        title={project.job_number}
-                        className="font-mono text-xs text-muted-foreground whitespace-nowrap"
-                      >
-                        {formatJobNumber(project.job_number || `JOB-${project.id}`)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Avatar className="h-8 w-8 flex-shrink-0">
-                          <AvatarFallback className={`${getClientAvatarColor(clientName)} text-primary-foreground text-xs font-medium`}>
-                            {clientName === 'No Client' ? '—' : getClientInitials(clientName)}
-                          </AvatarFallback>
-                        </Avatar>
-                        {clientName === 'No Client' ? (
-                          <span className="text-sm font-medium">—</span>
-                        ) : (
-                          <div className="flex flex-col min-w-0">
-                            <span className="text-sm font-medium truncate max-w-[120px]" title={clientName}>
-                              {clientName.split(' ')[0]}
-                            </span>
-                            {clientName.split(' ').length > 1 && (
-                              <span className="text-xs text-muted-foreground truncate max-w-[120px]" title={clientName}>
-                                {clientName.split(' ').slice(1).join(' ')}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-medium">
-                          {quotes.length > 0 ? formatCurrency(quotes[0].total_amount || 0, userCurrency) : formatCurrency(0, userCurrency)}
-                        </span>
-                        {quotes.length > 1 && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-6 text-xs px-2"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleJobExpansion(project.id);
-                            }}
-                          >
-                            {expandedJobs.has(project.id) ? '−' : '+'} {quotes.length} quotes
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <JobStatusBadge status={project.status || 'draft'} />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <span>{new Date(project.created_at).toLocaleDateString()}</span>
-                        {projectAppointments[project.id] && projectAppointments[project.id].length > 0 && (
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <button 
-                                className="relative hover:scale-110 transition-transform cursor-pointer"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Calendar className="h-3.5 w-3.5 text-green-600" />
-                                <div className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-green-500 rounded-full border border-white" />
-                              </button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-80 p-0 pointer-events-auto z-[200]" align="start">
-                              <div className="p-4">
-                                <h4 className="font-semibold mb-3">Scheduled Appointments</h4>
-                                <div className="space-y-2">
-                                  {projectAppointments[project.id].map((appointment: any) => (
-                                    <div key={appointment.id} className="p-3 bg-muted rounded-md">
-                                      <div className="flex items-start justify-between">
-                                        <div className="flex-1">
-                                          <p className="font-medium text-sm">{appointment.title}</p>
-                                          <p className="text-xs text-muted-foreground mt-1">
-                                            {new Date(appointment.start_time).toLocaleString()}
-                                          </p>
-                                          {appointment.description && (
-                                            <p className="text-xs text-muted-foreground mt-1">
-                                              {appointment.description}
-                                            </p>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <EmailStatusDisplay 
-                        jobId={project.id}
-                        clientEmail={client?.email}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Avatar className="h-6 w-6">
-                          {(() => {
-                            const owner = users.find(user => user.id === project.user_id);
-                            const ownerInfo = getOwnerInfo({ user_id: project.user_id });
-                            const avatarUrl = owner?.avatar_url;
-                            return avatarUrl ? (
-                              <img 
-                                src={avatarUrl} 
-                                alt={ownerInfo.firstName}
-                                className="h-6 w-6 rounded-full object-cover"
-                              />
-                            ) : (
-                              <AvatarFallback className={`${ownerInfo.color} text-primary-foreground text-xs font-medium`}>
-                                {ownerInfo.initials}
-                              </AvatarFallback>
-                            );
-                          })()}
-                        </Avatar>
-                        <span className="text-sm text-muted-foreground truncate max-w-[100px]" title={getOwnerInfo({ user_id: project.user_id }).firstName}>
-                          {getOwnerInfo({ user_id: project.user_id }).firstName}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div onClick={(e) => e.stopPropagation()} className="relative">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 relative">
-                              <MoreHorizontal className="h-4 w-4" />
-                              {projectNotes[project.id] > 0 && (
-                                <div className="absolute -top-1 -right-1 h-3 w-3 bg-blue-500 rounded-full border border-white flex items-center justify-center">
-                                  <StickyNote className="h-2 w-2 text-white" />
-                                </div>
-                              )}
-                            </Button>
-                          </DropdownMenuTrigger>
-                           <DropdownMenuContent align="end" className="w-48 bg-popover text-popover-foreground border shadow-lg z-50">
-                             <DropdownMenuItem onClick={() => onJobSelect({ id: project.id, projects: project })}>
-                               <Eye className="mr-2 h-4 w-4" />
-                               View Job
-                             </DropdownMenuItem>
-                               <DropdownMenuItem onClick={() => handleNotesClick({ id: project.id, project: project })} className="relative">
-                                 <StickyNote className="mr-2 h-4 w-4" />
-                                 Write Note
-                                 {projectNotes[project.id] > 0 && (
-                                   <div className="ml-auto flex items-center">
-                                     <div className="h-5 w-5 bg-blue-500 rounded-full flex items-center justify-center">
-                                       <span className="text-[10px] font-semibold text-white">{projectNotes[project.id]}</span>
-                                     </div>
-                                   </div>
-                                 )}
-                               </DropdownMenuItem>
-                             <DropdownMenuItem onClick={() => onJobSelect({ id: project.id, projects: project })}>
-                               <Copy className="mr-2 h-4 w-4" />
-                               New Quote
-                             </DropdownMenuItem>
-                             <DropdownMenuSeparator />
-                             <DropdownMenuItem onClick={() => {
-                               setQuoteToDelete({ id: project.id, projects: project });
-                               setDeleteDialogOpen(true);
-                             }}>
-                               <Trash2 className="mr-2 h-4 w-4" />
-                               Delete Job
-                             </DropdownMenuItem>
-                           </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </TableCell>
+                      {visibleColumns.map((column) => (
+                        <TableCell key={column.id}>
+                          {renderCellContent(column.id, project, quotes, clientName, client)}
+                        </TableCell>
+                      ))}
                   </TableRow>
                   
                   {/* Quote Rows - only show if expanded */}

@@ -282,6 +282,7 @@ const JobsPage = () => {
             onJobSelect={handleJobSelect} 
             searchTerm={searchTerm}
             statusFilter={statusFilter}
+            visibleColumns={visibleColumns}
           />
         </Card>
       </div>
