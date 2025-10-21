@@ -4,6 +4,7 @@ import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users, ChevronL
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, isToday, addWeeks, subWeeks } from "date-fns";
+import { MobileCalendarView } from "./MobileCalendarView";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useAppointments, Appointment } from "@/hooks/useAppointments";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
@@ -51,6 +52,12 @@ interface CalendarViewProps {
 
 const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const isMobile = useIsMobile();
+  
+  // Return mobile view for mobile devices
+  if (isMobile) {
+    return <MobileCalendarView />;
+  }
+  
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date()); // Pre-select today
   const [view, setView] = useState<CalendarView>('week'); // Default to week view

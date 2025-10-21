@@ -15,11 +15,13 @@ import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { InteractiveCRMTable } from "../crm/InteractiveCRMTable";
 import { useClients } from "@/hooks/useClients";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const EnhancedDashboard = () => {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: clients = [] } = useClients();
   const [activeView, setActiveView] = useState<'table' | 'kanban'>('table');
+  const isMobile = useIsMobile();
 
   // Calculate activity stats
   const totalActivities = clients.reduce((sum, client) => {
@@ -60,46 +62,64 @@ export const EnhancedDashboard = () => {
   ];
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in">
+    <div className={cn("space-y-6 animate-fade-in", isMobile ? "p-4" : "p-6")}>
       {/* Enhanced Header with Actions */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">CRM Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your clients, deals, and activities in one place
-          </p>
+          <h1 className={cn("font-bold text-foreground", isMobile ? "text-xl" : "text-3xl")}>
+            {isMobile ? "Dashboard" : "CRM Dashboard"}
+          </h1>
+          {!isMobile && (
+            <p className="text-muted-foreground mt-1">
+              Manage your clients, deals, and activities in one place
+            </p>
+          )}
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <Filter className="h-4 w-4 mr-2" />
-            Filter
-          </Button>
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Button size="sm" className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Client
-          </Button>
-        </div>
+        {!isMobile && (
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm">
+              <Filter className="h-4 w-4 mr-2" />
+              Filter
+            </Button>
+            <Button variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            <Button size="sm" className="gap-2">
+              <Plus className="h-4 w-4" />
+              Add Client
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Quick Stats - Compact Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className={cn(
+        "grid gap-3",
+        isMobile ? "grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
+      )}>
         {quickStats.map((stat, i) => (
           <Card key={i} className="group hover:shadow-md transition-all duration-300 overflow-hidden relative">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+            <CardContent className={cn("p-4", isMobile && "p-3")}>
+              <div className={cn(
+                "flex items-center",
+                isMobile ? "flex-col gap-2 text-center" : "justify-between"
+              )}>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
-                    {stat.title}
+                  <p className={cn(
+                    "font-medium text-muted-foreground mb-1",
+                    isMobile ? "text-xs" : "text-sm"
+                  )}>
+                    {isMobile ? stat.title.split(' ')[0] : stat.title}
                   </p>
-                  <div className="flex items-baseline gap-2">
-                    <h3 className="text-3xl font-bold text-foreground">
+                  <div className="flex items-baseline gap-1 justify-center">
+                    <h3 className={cn(
+                      "font-bold text-foreground",
+                      isMobile ? "text-2xl" : "text-3xl"
+                    )}>
                       {stat.value}
                     </h3>
-                    {stat.change && (
+                    {!isMobile && stat.change && (
                       <span className={cn(
                         "text-xs font-medium px-2 py-1 rounded-full",
                         stat.changeType === "positive" && "bg-green-100 text-green-700",
@@ -110,36 +130,42 @@ export const EnhancedDashboard = () => {
                       </span>
                     )}
                   </div>
-                  {stat.subtitle && (
-                    <p className="text-xs text-muted-foreground mt-1">{stat.subtitle}</p>
-                  )}
                 </div>
-                <div className="p-3 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
-                  <stat.icon className="h-6 w-6 text-primary" />
+                <div className={cn(
+                  "p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors",
+                  isMobile && "p-1.5"
+                )}>
+                  <stat.icon className={cn(isMobile ? "h-4 w-4" : "h-6 w-6", "text-primary")} />
                 </div>
               </div>
             </CardContent>
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/50 to-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+            {!isMobile && (
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/50 to-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+            )}
           </Card>
         ))}
       </div>
 
       {/* Main Content - Interactive Table */}
       <Card>
-        <CardHeader className="border-b bg-muted/30">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold">Client Pipeline</CardTitle>
-            <Tabs value={activeView} onValueChange={(v) => setActiveView(v as any)} className="w-auto">
-              <TabsList className="grid w-[200px] grid-cols-2">
-                <TabsTrigger value="table" className="text-xs">Table View</TabsTrigger>
-                <TabsTrigger value="kanban" className="text-xs">Kanban</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-        </CardHeader>
+        {!isMobile && (
+          <CardHeader className="border-b bg-muted/30">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-semibold">Client Pipeline</CardTitle>
+              <Tabs value={activeView} onValueChange={(v) => setActiveView(v as any)} className="w-auto">
+                <TabsList className="grid w-[200px] grid-cols-2">
+                  <TabsTrigger value="table" className="text-xs">Table View</TabsTrigger>
+                  <TabsTrigger value="kanban" className="text-xs">Kanban</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          </CardHeader>
+        )}
         <CardContent className="p-0">
           {activeView === 'table' ? (
-            <InteractiveCRMTable />
+            <div className={cn(isMobile && "overflow-x-auto")}>
+              <InteractiveCRMTable />
+            </div>
           ) : (
             <div className="p-12 text-center text-muted-foreground">
               Kanban view coming soon...

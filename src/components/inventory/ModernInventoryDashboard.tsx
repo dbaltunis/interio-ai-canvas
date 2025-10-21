@@ -20,6 +20,8 @@ import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useVendors } from "@/hooks/useVendors";
 import { HelpDrawer } from "@/components/ui/help-drawer";
 import { HelpIcon } from "@/components/ui/help-icon";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 export const ModernInventoryDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -29,81 +31,103 @@ export const ModernInventoryDashboard = () => {
   const [showHelp, setShowHelp] = useState(false);
   const { data: inventory, refetch } = useEnhancedInventory();
   const { data: vendors } = useVendors();
+  const isMobile = useIsMobile();
 
   return (
-    <div className="flex-1 space-y-6 p-6">
+    <div className={cn("flex-1 space-y-4", isMobile ? "p-4" : "p-6")}>
       {/* Header with Design System */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-primary-light rounded-lg">
-            <Package className="h-6 w-6 text-primary" />
+      <div className={cn(
+        "flex items-center",
+        isMobile ? "flex-col gap-3" : "justify-between"
+      )}>
+        <div className={cn(
+          "flex items-center gap-3",
+          isMobile && "w-full"
+        )}>
+          <div className={cn("p-2 bg-primary-light rounded-lg", isMobile && "p-1.5")}>
+            <Package className={cn(isMobile ? "h-5 w-5" : "h-6 w-6", "text-primary")} />
           </div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-foreground">Inventory Management</h1>
-            <HelpIcon onClick={() => setShowHelp(true)} />
+          <div className="flex items-center gap-2 flex-1">
+            <h1 className={cn(
+              "font-bold text-foreground",
+              isMobile ? "text-lg" : "text-2xl"
+            )}>
+              {isMobile ? "Library" : "Inventory Management"}
+            </h1>
+            {!isMobile && <HelpIcon onClick={() => setShowHelp(true)} />}
           </div>
-          <Badge className="bg-accent-light text-accent border-accent">
-            {inventory?.length || 0} items
+          <Badge className={cn(
+            "bg-accent-light text-accent border-accent",
+            isMobile && "text-xs"
+          )}>
+            {inventory?.length || 0}
           </Badge>
         </div>
-        <div className="flex items-center gap-2">
+        <div className={cn(
+          "flex items-center gap-2",
+          isMobile && "w-full"
+        )}>
           {/* Compact Search */}
-          <div className="relative w-64">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search inventory..."
+              placeholder={isMobile ? "Search..." : "Search inventory..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-9"
+              className={cn("pl-9", isMobile ? "h-9 text-sm" : "h-9")}
             />
           </div>
           
-          {/* View Toggle */}
-          <div className="flex items-center gap-1 border rounded-md p-1">
-            <Button
-              variant={viewMode === "grid" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("grid")}
-              className="h-7 w-7 p-0"
-            >
-              <Grid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("list")}
-              className="h-7 w-7 p-0"
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
+          {!isMobile && (
+            <>
+              {/* View Toggle */}
+              <div className="flex items-center gap-1 border rounded-md p-1">
+                <Button
+                  variant={viewMode === "grid" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("grid")}
+                  className="h-7 w-7 p-0"
+                >
+                  <Grid className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "list" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("list")}
+                  className="h-7 w-7 p-0"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
 
-          {/* Add Item Button */}
-          <AddInventoryDialog
-            trigger={
-              <Button variant="outline">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Item
+              {/* Add Item Button */}
+              <AddInventoryDialog
+                trigger={
+                  <Button variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Item
+                  </Button>
+                }
+                onSuccess={refetch}
+              />
+
+              {/* Import/Export - Primary Action */}
+              <Button 
+                variant="default"
+                className="bg-primary text-white hover:bg-primary-600 rounded-md"
+                onClick={() => {
+                  setActiveTab("analytics");
+                  setTimeout(() => {
+                    const importExportElement = document.querySelector('[data-import-export]');
+                    importExportElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 100);
+                }}
+              >
+                <ArrowRightLeft className="h-4 w-4 mr-2" />
+                Import/Export
               </Button>
-            }
-            onSuccess={refetch}
-          />
-
-          {/* Import/Export - Primary Action */}
-          <Button 
-            variant="default"
-            className="bg-primary text-white hover:bg-primary-600 rounded-md"
-            onClick={() => {
-              setActiveTab("analytics");
-              setTimeout(() => {
-                const importExportElement = document.querySelector('[data-import-export]');
-                importExportElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }, 100);
-            }}
-          >
-            <ArrowRightLeft className="h-4 w-4 mr-2" />
-            Import/Export
-          </Button>
+            </>
+          )}
         </div>
       </div>
 
