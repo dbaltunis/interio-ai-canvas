@@ -200,7 +200,7 @@ export const JobsListWithQuotes = ({
                         <div>
                           <CardTitle className="text-lg flex items-center space-x-2">
                             <span className="font-mono">
-                              {formatJobNumber(project.job_number || `JOB-${project.id.slice(-4)}`)}
+                              {formatJobNumber(project.job_number || `JOB-${project.id}`)}
                             </span>
                             <span className="text-base font-normal">
                               {project.name}

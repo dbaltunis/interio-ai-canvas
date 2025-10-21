@@ -217,7 +217,7 @@ export const JobsDashboard = () => {
                       <div>
                         <h4 className="font-medium">{project.name}</h4>
                         <p className="text-sm text-gray-500">
-                          Job #{project.job_number?.slice(-4) || 'N/A'} • Created {new Date(project.created_at).toLocaleDateString()}
+                          Job #{project.job_number || 'N/A'} • Created {new Date(project.created_at).toLocaleDateString()}
                         </p>
                       </div>
                     </div>

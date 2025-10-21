@@ -126,7 +126,7 @@ export const SimplifiedJobsDashboard = () => {
                     <div>
                       <h4 className="font-medium">{project.name}</h4>
                       <p className="text-sm text-muted-foreground">
-                        Job #{formatJobNumber(project.job_number || `JOB-${project.id.slice(-4)}`)} • {clientName}
+                        Job #{formatJobNumber(project.job_number || `JOB-${project.id}`)} • {clientName}
                       </p>
                     </div>
                   </div>

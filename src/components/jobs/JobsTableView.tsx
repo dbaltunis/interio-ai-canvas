@@ -407,7 +407,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter }: JobsTab
                         title={project.job_number}
                         className="font-mono text-xs text-muted-foreground whitespace-nowrap"
                       >
-                        {formatJobNumber(project.job_number || `JOB-${project.id.slice(-4)}`)}
+                        {formatJobNumber(project.job_number || `JOB-${project.id}`)}
                       </span>
                     </TableCell>
                     <TableCell>
