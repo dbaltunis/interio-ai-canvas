@@ -35,13 +35,13 @@ export const EmailIntegrationBanners = ({
       );
     } else {
       return (
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className="border-amber-200 bg-amber-50">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <Mail className="h-5 w-5 text-blue-600" />
+              <AlertCircle className="h-5 w-5 text-amber-600" />
               <div>
-                <p className="font-medium text-blue-800">Email Setup in Progress</p>
-                <p className="text-sm text-blue-700">Your account owner is setting up company email. You'll be able to send emails once it's ready.</p>
+                <p className="font-medium text-amber-800">Email Not Available Yet</p>
+                <p className="text-sm text-amber-700">Your account owner needs to complete the email setup (SendGrid integration + sender email configuration). The compose button will be enabled once ready.</p>
               </div>
             </div>
           </CardContent>

@@ -73,14 +73,28 @@ export const EmailManagement = () => {
             </Button>
           )}
           
-          <Button 
-            onClick={() => setActiveTab("composer")}
-            className="bg-primary text-white hover:bg-primary-600 rounded-md"
-            disabled={!hasSendGridIntegration || !emailSettings}
-          >
-            <Send className="h-4 w-4 mr-2" />
-            Compose Email
-          </Button>
+          <div className="relative group">
+            <Button 
+              onClick={() => setActiveTab("composer")}
+              className="bg-primary text-white hover:bg-primary-600 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!hasSendGridIntegration || !emailSettings}
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Compose Email
+            </Button>
+            {(!hasSendGridIntegration || !emailSettings) && (
+              <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block z-50">
+                <div className="bg-popover text-popover-foreground text-xs rounded-md p-2 shadow-lg border whitespace-nowrap">
+                  {!hasSendGridIntegration && !emailSettings 
+                    ? "Setup required: SendGrid integration + email settings"
+                    : !hasSendGridIntegration 
+                    ? "SendGrid integration required"
+                    : "Email settings configuration required"}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-popover" />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       
