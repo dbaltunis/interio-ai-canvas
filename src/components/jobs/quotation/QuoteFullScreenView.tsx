@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download, Mail, MoreVertical, Eye, Image as ImageIcon } from "lucide-react";
@@ -9,6 +9,7 @@ import { LivePreview } from "@/components/settings/templates/visual-editor/LiveP
 import { PrintableQuote } from "./PrintableQuote";
 import { EmailQuoteModal } from "./EmailQuoteModal";
 import { useToast } from "@/hooks/use-toast";
+import { prepareQuoteData } from "@/utils/quotes/prepareQuoteData";
 
 interface QuoteFullScreenViewProps {
   isOpen: boolean;
@@ -50,7 +51,8 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
   const [showImages, setShowImages] = useState(false);
   const { toast } = useToast();
 
-  const projectData = {
+  // Prepare the project data structure for LivePreview
+  const rawProjectData = useMemo(() => ({
     project: {
       ...project,
       client: client
@@ -63,9 +65,19 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
     taxAmount,
     total,
     markupPercentage,
-    validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    items: quotationItems
-  };
+    validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+  }), [project, client, businessSettings, subtotal, taxRate, taxAmount, total, markupPercentage]);
+
+  // Use prepareQuoteData to properly format items for LivePreview
+  const preparedData = useMemo(() => {
+    return prepareQuoteData(rawProjectData, showDetailedBreakdown);
+  }, [rawProjectData, showDetailedBreakdown]);
+
+  // Combine raw project data with prepared items
+  const projectData = useMemo(() => ({
+    ...rawProjectData,
+    items: preparedData.items
+  }), [rawProjectData, preparedData]);
 
   const handleDownloadPDF = async () => {
     if (!printRef.current) {
@@ -215,10 +227,10 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
             ref={printRef} 
             style={{ 
               background: 'white', 
-              padding: '32px',
-              width: '794px',
-              minWidth: '794px',
-              maxWidth: '794px',
+              padding: '40px',
+              width: '210mm',
+              minWidth: '210mm',
+              maxWidth: '210mm',
               boxSizing: 'border-box'
             }}
           >
