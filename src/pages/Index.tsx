@@ -2,11 +2,14 @@
 import { useState, useEffect, Suspense, lazy } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ResponsiveHeader } from "@/components/layout/ResponsiveHeader";
+import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { AIBackground } from "@/components/common/AIBackground";
 import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
+import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 
 // Lazy load heavy components with proper error handling
@@ -53,10 +56,36 @@ const Index = () => {
     console.log('Index: Initial tab =', tab, 'savedTab =', savedTab, 'urlTab =', urlTab);
     return tab;
   });
+  const [direction, setDirection] = useState(0);
   const { signOut, user } = useAuth();
+  const isMobile = useIsMobile();
   
   // Enable session timeout tracking
   useSessionTimeout();
+
+  // Tab navigation order for swipe
+  const tabOrder = ["dashboard", "projects", "clients", "inventory", "calendar", "settings"];
+
+  // Swipe navigation for mobile
+  useSwipeNavigation({
+    onSwipeLeft: () => {
+      if (!isMobile) return;
+      const currentIndex = tabOrder.indexOf(activeTab);
+      if (currentIndex < tabOrder.length - 1) {
+        setDirection(1);
+        setActiveTab(tabOrder[currentIndex + 1]);
+      }
+    },
+    onSwipeRight: () => {
+      if (!isMobile) return;
+      const currentIndex = tabOrder.indexOf(activeTab);
+      if (currentIndex > 0) {
+        setDirection(-1);
+        setActiveTab(tabOrder[currentIndex - 1]);
+      }
+    },
+    threshold: 75
+  });
 
   console.log('Index: Rendering with activeTab =', activeTab, 'user =', user?.email || 'no user');
   console.log('Index: Render time =', new Date().toISOString());
@@ -73,6 +102,9 @@ const Index = () => {
   }, [activeTab]); // Removed searchParams and setSearchParams from deps to prevent resets
 
   const handleTabChange = (tabId: string) => {
+    const currentIndex = tabOrder.indexOf(activeTab);
+    const newIndex = tabOrder.indexOf(tabId);
+    setDirection(newIndex > currentIndex ? 1 : -1);
     setActiveTab(tabId);
   };
 
@@ -151,22 +183,47 @@ const Index = () => {
     }
   };
 
+  // Slide animation variants
+  const slideVariants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 1000 : -1000,
+      opacity: 0
+    }),
+    center: {
+      x: 0,
+      opacity: 1
+    },
+    exit: (direction: number) => ({
+      x: direction < 0 ? 1000 : -1000,
+      opacity: 0
+    })
+  };
+
   return (
     <OnboardingProvider>
       <AIBackground variant="subtle" className="min-h-screen w-full">
-        <div className="relative min-h-screen">
+        <div className="relative min-h-screen pb-20 lg:pb-0">
           <ResponsiveHeader activeTab={activeTab} onTabChange={handleTabChange} />
 
-          <motion.main 
-            className="w-full"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            {renderActiveComponent()}
-          </motion.main>
+          <AnimatePresence initial={false} custom={direction} mode="wait">
+            <motion.main 
+              key={activeTab}
+              custom={direction}
+              variants={isMobile ? slideVariants : undefined}
+              initial={isMobile ? "enter" : { opacity: 0 }}
+              animate={isMobile ? "center" : { opacity: 1 }}
+              exit={isMobile ? "exit" : { opacity: 0 }}
+              transition={{
+                x: { type: "spring", stiffness: 300, damping: 30 },
+                opacity: { duration: 0.2 }
+              }}
+              className="w-full"
+            >
+              {renderActiveComponent()}
+            </motion.main>
+          </AnimatePresence>
           
-          
+          <MobileBottomNav activeTab={activeTab} onTabChange={handleTabChange} />
         </div>
       </AIBackground>
     </OnboardingProvider>

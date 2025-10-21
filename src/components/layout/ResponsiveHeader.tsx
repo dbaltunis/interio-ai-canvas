@@ -51,98 +51,57 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
 
   return (
     <>
-      {/* Desktop Header */}
-      <header className="sticky top-0 z-40 relative overflow-hidden backdrop-blur-lg bg-background/95 border-b border-border/50 rounded-none shadow-none">
-        <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 md:h-20">
-            {/* Left side - Logo */}
-            <div className="flex items-center">
-              <BrandHeader size="xl" showTagline={true} />
-            </div>
-            
-            {/* Right side - Navigation, User Profile, and Mobile Menu */}
-            <div className="flex items-center space-x-4">
-              {/* Navigation */}
-              <nav className="hidden md:flex items-center border-b border-border/50 rounded-none">
-                {navItems.map((item, idx) => {
-                  const Icon = item.icon;
-                  const isActive = activeTab === item.id;
-                  return (
-                  <Button
-                    key={item.id}
-                    variant="ghost"
-                    onClick={() => onTabChange(item.id)}
-                    data-tour={item.tourId}
-                    className={`flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 rounded-none ${
-                      isActive
-                        ? "border-primary text-foreground bg-primary/5 font-semibold"
-                        : "border-transparent text-muted-foreground hover:text-foreground hover:border-border/50"
-                    }`}
-                  >
-                      <Icon className="h-4 w-4" />
-                      <span>{item.label}</span>
-                    </Button>
-                  );
-                })}
-              </nav>
-              
-              {/* User Profile with integrated collaboration access */}
-              <UserProfile 
-                onOpenTeamHub={() => setPresencePanelOpen(!presencePanelOpen)}
-                showCollaborationIndicator={hasActivity}
-                unreadCount={unreadCount}
-              />
-              
-              {/* Mobile menu button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="md:hidden"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                {mobileMenuOpen ? (
-                  <X className="h-5.5 w-5.5" />
-                ) : (
-                  <Menu className="h-5.5 w-5.5" />
-                )}
-              </Button>
-            </div>
+      {/* Desktop Header - hidden on mobile/tablet, they use bottom nav */}
+      <header className="sticky top-0 z-40 w-full border-b glass-morphism-strong hidden lg:block"
+        data-tour-id="header-profile"
+      >
+        <div className="container mx-auto flex h-16 items-center justify-between px-4">
+          {/* Left: Logo */}
+          <div className="flex items-center">
+            <BrandHeader size="xl" showTagline={true} />
+          </div>
+
+          {/* Center: Navigation items */}
+          <nav className="flex items-center space-x-6 lg:space-x-8">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onTabChange(item.id)}
+                  className={cn(
+                    "flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary",
+                    activeTab === item.id ? "text-primary" : "text-muted-foreground"
+                  )}
+                  data-tour-id={item.tourId}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+          {/* Right: User Profile */}
+          <div className="flex items-center space-x-4">
+            <UserProfile 
+              onOpenTeamHub={() => setPresencePanelOpen(!presencePanelOpen)}
+              showCollaborationIndicator={hasActivity}
+              unreadCount={unreadCount}
+            />
           </div>
         </div>
+      </header>
 
-
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-background/95 backdrop-blur-lg border-t border-border/50 animate-scale-in">
-            <div className="px-4 py-4 space-y-2">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.id;
-                return (
-                  <Button
-                    key={item.id}
-                    variant={isActive ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => {
-                      onTabChange(item.id);
-                      setMobileMenuOpen(false);
-                    }}
-                    className={cn(
-                      "w-full justify-start px-4 py-3 text-sm font-medium transition-all duration-200",
-                      isActive && "shadow-sm"
-                    )}
-                  >
-                    <Icon className="h-5 w-5 mr-3" />
-                    {item.label}
-                    {isActive && (
-                      <div className="ml-auto h-2 w-2 rounded-full bg-primary-foreground" />
-                    )}
-                  </Button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+      {/* Mobile/Tablet Header - simplified, only logo and user */}
+      <header className="sticky top-0 z-40 w-full border-b glass-morphism-strong lg:hidden">
+        <div className="flex h-14 items-center justify-between px-4">
+          <BrandHeader size="md" showTagline={false} />
+          <UserProfile 
+            onOpenTeamHub={() => setPresencePanelOpen(!presencePanelOpen)}
+            showCollaborationIndicator={hasActivity}
+            unreadCount={unreadCount}
+          />
+        </div>
       </header>
 
       {/* Modern AI-style Team Collaboration */}

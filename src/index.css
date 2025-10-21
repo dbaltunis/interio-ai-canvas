@@ -355,26 +355,125 @@
 /* Glassmorphism Effects - AI Clean Style */
 .glass-morphism {
   background: hsl(var(--card) / 0.95);
-  border: 1px solid hsl(var(--border));
+  border: 1px solid hsl(var(--border) / 0.5);
   backdrop-filter: blur(16px) saturate(1.1);
   -webkit-backdrop-filter: blur(16px) saturate(1.1);
 }
 
 .dark .glass-morphism {
   background: hsl(var(--card) / 0.90);
-  border-color: hsl(var(--border));
+  border-color: hsl(var(--border) / 0.5);
 }
 
 .glass-morphism-strong {
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-  backdrop-filter: blur(20px) saturate(1.2);
-  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  background: hsl(var(--card) / 0.98);
+  border: 1px solid hsl(var(--border) / 0.6);
+  backdrop-filter: blur(24px) saturate(1.3);
+  -webkit-backdrop-filter: blur(24px) saturate(1.3);
+  box-shadow: 0 4px 24px -4px hsl(var(--primary) / 0.08);
 }
 
 .dark .glass-morphism-strong {
   background: hsl(var(--card) / 0.95);
-  border-color: hsl(var(--border));
+  border-color: hsl(var(--border) / 0.6);
+  box-shadow: 0 4px 24px -4px hsl(var(--primary) / 0.15);
+}
+
+/* Safe area padding for mobile */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* AI-inspired floating mesh backgrounds */
+.mesh-background {
+  position: relative;
+  overflow: hidden;
+}
+
+.mesh-background::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: 
+    radial-gradient(circle at 20% 30%, hsl(var(--primary-rgb) / 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, hsl(var(--secondary-rgb) / 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 40% 80%, hsl(var(--accent-rgb) / 0.03) 0%, transparent 50%);
+  animation: float 20s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.dark .mesh-background::before {
+  background: 
+    radial-gradient(circle at 20% 30%, hsl(var(--primary-rgb) / 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, hsl(var(--secondary-rgb) / 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 40% 80%, hsl(var(--accent-rgb) / 0.05) 0%, transparent 50%);
+}
+
+/* Modern card with AI glow */
+.ai-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.5);
+  border-radius: calc(var(--radius) + 2px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    hsl(var(--primary) / 0.05),
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+
+.ai-card:hover::before {
+  left: 100%;
+}
+
+.ai-card:hover {
+  border-color: hsl(var(--primary) / 0.3);
+  box-shadow: 0 8px 32px -8px hsl(var(--primary) / 0.1);
+}
+
+/* Smooth page transitions */
+.page-transition {
+  animation: fade-in 0.3s ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Touch-friendly interactive elements */
+@media (hover: none) and (pointer: coarse) {
+  button, [role="button"], a {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 
 /* Premium liquid glass variant - AI Clean Style */
