@@ -3112,6 +3112,65 @@ export type Database = {
           },
         ]
       }
+      manual_quote_items: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          item_name: string
+          quantity: number
+          quote_id: string
+          sort_order: number | null
+          tax_rate: number | null
+          total_price: number
+          unit: string | null
+          unit_price: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          item_name: string
+          quantity?: number
+          quote_id: string
+          sort_order?: number | null
+          tax_rate?: number | null
+          total_price?: number
+          unit?: string | null
+          unit_price?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          item_name?: string
+          quantity?: number
+          quote_id?: string
+          sort_order?: number | null
+          tax_rate?: number | null
+          total_price?: number
+          unit?: string | null
+          unit_price?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manual_quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       measurement_fields: {
         Row: {
           created_at: string | null
@@ -3863,7 +3922,7 @@ export type Database = {
       pipeline_analytics: {
         Row: {
           avg_deal_size: number | null
-          avg_time_in_stage: unknown | null
+          avg_time_in_stage: unknown
           conversion_rate: number | null
           created_at: string
           id: string
@@ -3876,7 +3935,7 @@ export type Database = {
         }
         Insert: {
           avg_deal_size?: number | null
-          avg_time_in_stage?: unknown | null
+          avg_time_in_stage?: unknown
           conversion_rate?: number | null
           created_at?: string
           id?: string
@@ -3889,7 +3948,7 @@ export type Database = {
         }
         Update: {
           avg_deal_size?: number | null
-          avg_time_in_stage?: unknown | null
+          avg_time_in_stage?: unknown
           conversion_rate?: number | null
           created_at?: string
           id?: string
@@ -4935,6 +4994,54 @@ export type Database = {
         }
         Relationships: []
       }
+      shopify_integrations: {
+        Row: {
+          access_token: string | null
+          auto_sync_enabled: boolean | null
+          created_at: string | null
+          id: string
+          is_connected: boolean | null
+          last_sync_at: string | null
+          shop_domain: string
+          sync_images: boolean | null
+          sync_inventory: boolean | null
+          sync_prices: boolean | null
+          updated_at: string | null
+          user_id: string
+          webhook_secret: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          auto_sync_enabled?: boolean | null
+          created_at?: string | null
+          id?: string
+          is_connected?: boolean | null
+          last_sync_at?: string | null
+          shop_domain: string
+          sync_images?: boolean | null
+          sync_inventory?: boolean | null
+          sync_prices?: boolean | null
+          updated_at?: string | null
+          user_id: string
+          webhook_secret?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          auto_sync_enabled?: boolean | null
+          created_at?: string | null
+          id?: string
+          is_connected?: boolean | null
+          last_sync_at?: string | null
+          shop_domain?: string
+          sync_images?: boolean | null
+          sync_inventory?: boolean | null
+          sync_prices?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+          webhook_secret?: string | null
+        }
+        Relationships: []
+      }
       sms_campaigns: {
         Row: {
           created_at: string
@@ -5103,16 +5210,57 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_add_ons: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          feature_key: string
+          id: string
+          is_active: boolean | null
+          name: string
+          price_monthly: number
+          price_yearly: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          feature_key: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price_monthly?: number
+          price_yearly?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          feature_key?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price_monthly?: number
+          price_yearly?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       subscription_plans: {
         Row: {
           created_at: string
           description: string | null
           features: Json | null
+          features_included: Json | null
           id: string
           is_active: boolean | null
           max_projects: number | null
           max_users: number | null
           name: string
+          per_user_pricing: boolean | null
           price_monthly: number
           price_yearly: number
           stripe_price_id_monthly: string | null
@@ -5123,11 +5271,13 @@ export type Database = {
           created_at?: string
           description?: string | null
           features?: Json | null
+          features_included?: Json | null
           id?: string
           is_active?: boolean | null
           max_projects?: number | null
           max_users?: number | null
           name: string
+          per_user_pricing?: boolean | null
           price_monthly?: number
           price_yearly?: number
           stripe_price_id_monthly?: string | null
@@ -5138,11 +5288,13 @@ export type Database = {
           created_at?: string
           description?: string | null
           features?: Json | null
+          features_included?: Json | null
           id?: string
           is_active?: boolean | null
           max_projects?: number | null
           max_users?: number | null
           name?: string
+          per_user_pricing?: boolean | null
           price_monthly?: number
           price_yearly?: number
           stripe_price_id_monthly?: string | null
@@ -6097,6 +6249,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_subscription_add_ons: {
+        Row: {
+          activated_at: string | null
+          add_on_id: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          subscription_id: string | null
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string | null
+          add_on_id: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          subscription_id?: string | null
+          user_id: string
+        }
+        Update: {
+          activated_at?: string | null
+          add_on_id?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          subscription_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscription_add_ons_add_on_id_fkey"
+            columns: ["add_on_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_add_ons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_subscription_add_ons_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "user_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_subscriptions: {
         Row: {
           canceled_at: string | null
@@ -6108,6 +6305,7 @@ export type Database = {
           status: string | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
+          total_users: number | null
           trial_ends_at: string | null
           updated_at: string
           user_id: string
@@ -6122,6 +6320,7 @@ export type Database = {
           status?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          total_users?: number | null
           trial_ends_at?: string | null
           updated_at?: string
           user_id: string
@@ -6136,6 +6335,7 @@ export type Database = {
           status?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          total_users?: number | null
           trial_ends_at?: string | null
           updated_at?: string
           user_id?: string
@@ -6635,22 +6835,10 @@ export type Database = {
         }
         Returns: boolean
       }
-      cleanup_duplicate_invitations: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_expired_sessions: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      create_comprehensive_blind_templates: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      create_system_blind_templates: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_duplicate_invitations: { Args: never; Returns: undefined }
+      cleanup_expired_sessions: { Args: never; Returns: undefined }
+      create_comprehensive_blind_templates: { Args: never; Returns: undefined }
+      create_system_blind_templates: { Args: never; Returns: undefined }
       current_user_has_permission: {
         Args: { permission_name: string }
         Returns: boolean
@@ -6659,18 +6847,12 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: undefined
       }
-      fix_pending_invitations: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      fix_pending_invitations: { Args: never; Returns: Json }
       fix_user_permissions_for_role: {
         Args: { target_user_id: string }
         Returns: Json
       }
-      get_account_owner: {
-        Args: { user_id_param: string }
-        Returns: string
-      }
+      get_account_owner: { Args: { user_id_param: string }; Returns: string }
       get_default_permissions_for_role: {
         Args: { user_role: string }
         Returns: string[]
@@ -6730,14 +6912,8 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: string[]
       }
-      get_user_email: {
-        Args: { user_id: string }
-        Returns: string
-      }
-      has_permission: {
-        Args: { permission_name: string }
-        Returns: boolean
-      }
+      get_user_email: { Args: { user_id: string }; Returns: string }
+      has_permission: { Args: { permission_name: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -6753,46 +6929,22 @@ export type Database = {
           status: string
         }[]
       }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_admin_or_owner: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_valid_email: {
-        Args: { email_address: string }
-        Returns: boolean
-      }
+      is_admin: { Args: never; Returns: boolean }
+      is_admin_or_owner: { Args: never; Returns: boolean }
+      is_valid_email: { Args: { email_address: string }; Returns: boolean }
       link_user_to_account: {
         Args: { child_user_id: string; parent_user_id?: string }
         Returns: Json
       }
-      maintain_user_management_system: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      mark_user_offline: {
-        Args: { user_id: string }
-        Returns: undefined
-      }
+      maintain_user_management_system: { Args: never; Returns: Json }
+      mark_user_offline: { Args: { user_id: string }; Returns: undefined }
       normalize_treatment_category: {
         Args: { category_input: string }
         Returns: string
       }
-      refresh_client_stats: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      sanitize_phone_number: {
-        Args: { phone_number: string }
-        Returns: string
-      }
-      sanitize_text_input: {
-        Args: { input_text: string }
-        Returns: string
-      }
+      refresh_client_stats: { Args: never; Returns: undefined }
+      sanitize_phone_number: { Args: { phone_number: string }; Returns: string }
+      sanitize_text_input: { Args: { input_text: string }; Returns: string }
       sanitize_user_input: {
         Args: { input_text: string; max_length?: number }
         Returns: string
@@ -6807,14 +6959,8 @@ export type Database = {
         }
         Returns: string
       }
-      seed_roller_blind_defaults: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      seed_system_option_types: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      seed_roller_blind_defaults: { Args: never; Returns: undefined }
+      seed_system_option_types: { Args: never; Returns: undefined }
       trigger_automation_workflow: {
         Args: {
           entity_id: string
@@ -6828,10 +6974,7 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: undefined
       }
-      update_user_last_seen: {
-        Args: { user_id: string }
-        Returns: undefined
-      }
+      update_user_last_seen: { Args: { user_id: string }; Returns: undefined }
       validate_permission_dependencies: {
         Args: { permissions_param: string[]; user_id_param: string }
         Returns: Json
