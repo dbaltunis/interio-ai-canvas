@@ -22,3 +22,12 @@ verify_jwt = false
 [functions.email-status-checker]
 verify_jwt = true
 
+[functions.shopify-oauth-callback]
+verify_jwt = false
+
+[functions.shopify-sync-products]
+verify_jwt = true
+
+[functions.check-feature-access]
+verify_jwt = true
+
