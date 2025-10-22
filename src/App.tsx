@@ -24,6 +24,8 @@ import "@/styles/theme.css";
 import AcceptInvitation from "./pages/AcceptInvitation";
 import ResetPassword from "./pages/ResetPassword";
 import { PublicBookingPage } from "./components/calendar/PublicBookingPage";
+import { SubscriptionTest } from "./pages/SubscriptionTest";
+import { ManualQuoteTest } from "./pages/ManualQuoteTest";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -115,6 +117,23 @@ const App = () => {
                   <ProtectedRoute>
                     <ErrorBoundary>
                       <Settings />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+
+                {/* Test pages for Phase 1 features */}
+                <Route path="/test/subscriptions" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary>
+                      <SubscriptionTest />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+
+                <Route path="/test/manual-quotes" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary>
+                      <ManualQuoteTest />
                     </ErrorBoundary>
                   </ProtectedRoute>
                 } />
