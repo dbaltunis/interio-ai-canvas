@@ -242,15 +242,6 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
   });
 
   const handleSendEmail = async (emailData: { to: string; subject: string; message: string }) => {
-    if (!printRef.current) {
-      toast({
-        title: "Error",
-        description: "Quote template not ready. Please try again.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsSendingEmail(true);
     
     try {
@@ -259,16 +250,28 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
         description: "Please wait while we prepare your quote",
       });
 
-      // Import the new PDF generator
-      const { generateQuotePDFFromElement } = await import('@/utils/pdfGenerator');
+      // Use @react-pdf/renderer for professional PDF generation
+      const { pdf } = await import('@react-pdf/renderer');
+      const { QuotePDFDocument } = await import('../quotation/pdf/QuotePDFDocument');
       
-      // Generate PDF from the actual preview element
-      const pdfBlob = await generateQuotePDFFromElement(
-        printRef.current,
-        `quote-${project?.job_number || 'QT'}.pdf`
-      );
+      // Prepare data for PDF
+      const pdfProjectData = {
+        ...projectData,
+        items: quotationData.items,
+        windowSummaries: projectSummaries
+      };
       
-      console.log('PDF Blob generated:', pdfBlob.size, 'bytes');
+      // Generate PDF from React component (server-side rendering)
+      const pdfBlob = await pdf(
+        <QuotePDFDocument
+          blocks={templateBlocks}
+          projectData={pdfProjectData}
+          showDetailedBreakdown={true}
+          showImages={true}
+        />
+      ).toBlob();
+      
+      console.log('✅ Professional PDF generated:', pdfBlob.size, 'bytes');
 
       // Generate unique filename with timestamp to avoid conflicts
       const timestamp = Date.now();
