@@ -392,7 +392,9 @@ export const AuthPage = () => {
               <img 
                 src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
                 alt="InterioApp Logo" 
-                className="h-12 md:h-14 w-auto"
+                className={`h-12 md:h-14 w-auto transition-all duration-300 ${
+                  previewTheme === 'dark' ? 'brightness-0 invert' : ''
+                }`}
               />
               <span className={`text-2xl md:text-3xl font-bold ${previewTheme === 'dark' ? 'text-white' : 'text-primary'}`}>
                 InterioApp
