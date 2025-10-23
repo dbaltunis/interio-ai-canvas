@@ -7,10 +7,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from './AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, Sun, Moon, Eye, EyeOff, Mail } from 'lucide-react';
+import { Eye, EyeOff, Mail } from 'lucide-react';
 import { TypingAnimation } from './TypingAnimation';
 import { ThemePreview } from './ThemePreview';
 import { AnimatedGradient } from './AnimatedGradient';
+import { LampToggle } from './LampToggle';
 
 export const AuthPage = () => {
   const [searchParams] = useSearchParams();
@@ -386,33 +387,17 @@ export const AuthPage = () => {
         
         <div className="relative z-10 w-full flex flex-col justify-between p-12">
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-start">
             <div className="flex items-center gap-4">
               <img 
-                src="/lovable-uploads/2e31aee6-8e27-4ddd-96c1-0bcfe0f1be52.png" 
+                src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
                 alt="InterioApp Logo" 
-                className="h-16 md:h-20 w-auto"
+                className="h-16 md:h-20 lg:h-24 w-auto"
               />
-              <span className={`text-3xl font-bold ${previewTheme === 'dark' ? 'text-white' : 'text-primary'}`}>
+              <span className={`text-3xl md:text-4xl font-bold ${previewTheme === 'dark' ? 'text-white' : 'text-primary'}`}>
                 InterioApp
               </span>
             </div>
-            
-            {/* Theme toggle */}
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setPreviewTheme(prev => prev === 'dark' ? 'light' : 'dark')}
-              className={`
-                rounded-full transition-all duration-300
-                ${previewTheme === 'dark' 
-                  ? 'bg-white/10 border-white/20 text-white hover:bg-white/20' 
-                  : 'bg-primary/10 border-primary/20 text-primary hover:bg-primary/20'
-                }
-              `}
-            >
-              {previewTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </Button>
           </div>
 
           {/* Typing animation */}
@@ -421,10 +406,12 @@ export const AuthPage = () => {
             <ThemePreview previewTheme={previewTheme} />
           </div>
 
-          {/* Footer */}
-          <div className={`text-sm ${previewTheme === 'dark' ? 'text-white/60' : 'text-muted-foreground'}`}>
-            <p>Experience InterioApp in {previewTheme === 'dark' ? 'dark' : 'light'} mode</p>
-            <p className="mt-1">Toggle to see both themes in action ✨</p>
+          {/* Lamp Toggle at Bottom */}
+          <div className="flex justify-center">
+            <LampToggle 
+              previewTheme={previewTheme}
+              onToggle={() => setPreviewTheme(prev => prev === 'dark' ? 'light' : 'dark')}
+            />
           </div>
         </div>
       </div>

@@ -57,9 +57,15 @@ export const TypingAnimation = ({
   }, [currentText, isDeleting, isPaused, currentPhraseIndex, phrases, typingSpeed, deletingSpeed, pauseDuration]);
 
   return (
-    <div className="font-semibold text-3xl md:text-4xl lg:text-5xl min-h-[120px] flex items-center">
-      <span className="text-white">{currentText}</span>
-      <span className="animate-typing-cursor ml-1 text-white">|</span>
+    <div className="relative">
+      {/* Wallpaper background */}
+      <div className="absolute inset-0 -m-8 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10" />
+      
+      {/* Typing text */}
+      <div className="relative z-10 font-semibold text-3xl md:text-4xl lg:text-5xl min-h-[120px] flex items-center px-4">
+        <span className="text-white drop-shadow-lg">{currentText}</span>
+        <span className="animate-typing-cursor ml-1 text-white drop-shadow-lg">|</span>
+      </div>
     </div>
   );
 };
