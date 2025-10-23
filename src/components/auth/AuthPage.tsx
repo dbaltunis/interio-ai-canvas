@@ -427,9 +427,19 @@ export const AuthPage = () => {
       </div>
 
       {/* Right side - Auth form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-background animate-fade-in">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-background animate-fade-in relative overflow-hidden">
+        {/* Decorative elements for tablet viewers */}
+        <div className="hidden md:block lg:hidden absolute inset-0 pointer-events-none">
+          {/* Subtle corner decorations */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-40 h-40 bg-accent/5 rounded-full blur-3xl" />
+          {/* Decorative lines */}
+          <div className="absolute top-1/4 right-0 w-24 h-px bg-gradient-to-l from-primary/20 to-transparent" />
+          <div className="absolute bottom-1/3 left-0 w-32 h-px bg-gradient-to-r from-accent/20 to-transparent" />
+        </div>
+        
         {/* Mobile Logo */}
-        <div className="lg:hidden absolute top-8 left-8">
+        <div className="lg:hidden absolute top-8 left-8 z-10">
           <img 
             src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
             alt="InterioApp Logo" 
