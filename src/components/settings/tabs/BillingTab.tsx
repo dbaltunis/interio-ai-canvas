@@ -1,456 +1,412 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useUserSubscription } from "@/hooks/useUserSubscription";
+import { useUsageLimits } from "@/hooks/useUsageLimits";
+import { useAvailableAddOns, useUserAddOns, useActivateAddOn, useDeactivateAddOn } from "@/hooks/useUserAddOns";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
-  Calendar, 
-  Crown, 
-  Star, 
-  Users, 
-  FolderOpen, 
-  Download, 
-  AlertTriangle, 
-  ExternalLink,
-  CreditCard,
-  FileText,
-  Shield
+  CreditCard, 
+  TrendingUp, 
+  Package, 
+  Mail, 
+  Zap, 
+  Check, 
+  ArrowUpRight,
+  Infinity,
+  ShoppingCart,
+  Sparkles
 } from "lucide-react";
 import { format } from "date-fns";
 
-interface StripeSubscription {
-  id: string;
-  status: string;
-  customer: string;
-  current_period_end: number;
-  items: {
-    data: Array<{
-      price: {
-        id: string;
-        product: string;
-        unit_amount: number;
-        recurring: {
-          interval: string;
-        };
-      };
-    }>;
-  };
-}
-
-interface StripeInvoice {
-  id: string;
-  number: string;
-  amount_paid: number;
-  currency: string;
-  status: string;
-  created: number;
-  hosted_invoice_url: string;
-  invoice_pdf: string;
-}
-
 export const BillingTab = () => {
-  const { data: userProfile, isLoading: profileLoading } = useCurrentUserProfile();
-  const { toast } = useToast();
-  const [subscription, setSubscription] = useState<StripeSubscription | null>(null);
-  const [invoices, setInvoices] = useState<StripeInvoice[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [managingBilling, setManagingBilling] = useState(false);
+  const { data: userProfile } = useCurrentUserProfile();
+  const { data: subscription, isLoading: subscriptionLoading } = useUserSubscription();
+  const { inventory, emails, isLoading: usageLoading } = useUsageLimits();
+  const { data: availableAddOns } = useAvailableAddOns();
+  const { data: userAddOns } = useUserAddOns();
+  const activateAddOn = useActivateAddOn();
+  const deactivateAddOn = useDeactivateAddOn();
+  const navigate = useNavigate();
 
-  // Check if user is owner
   const isOwner = userProfile?.role === 'Owner';
 
-  useEffect(() => {
-    if (isOwner) {
-      fetchBillingData();
-    }
-  }, [isOwner]);
-
-  const fetchBillingData = async () => {
-    try {
-      setLoading(true);
-      
-      // Get current subscription
-      const { data: subData } = await supabase.functions.invoke('check-subscription');
-      if (subData?.subscription) {
-        setSubscription(subData.subscription);
-      }
-
-      // Get invoices
-      const { data: invoiceData } = await supabase.functions.invoke('get-invoices');
-      if (invoiceData?.invoices) {
-        setInvoices(invoiceData.invoices);
-      }
-    } catch (error) {
-      console.error('Error fetching billing data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load billing information.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleManageBilling = async () => {
-    try {
-      setManagingBilling(true);
-      const { data, error } = await supabase.functions.invoke('customer-portal');
-      
-      if (error) throw error;
-      
-      if (data?.url) {
-        window.open(data.url, '_blank');
-      }
-    } catch (error) {
-      console.error('Error opening customer portal:', error);
-      
-      // Show user-friendly error message with Stripe setup instructions
-      toast({
-        title: "Billing Portal Unavailable",
-        description: "Please contact support to manage your subscription. Our billing system is being configured.",
-        variant: "destructive",
-      });
-    } finally {
-      setManagingBilling(false);
-    }
-  };
-
-  const downloadInvoice = (invoice: StripeInvoice) => {
-    window.open(invoice.invoice_pdf, '_blank');
-  };
-
-  const formatCurrency = (amount: number, currency: string) => {
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency.toUpperCase(),
-    }).format(amount / 100);
+      currency: 'USD',
+    }).format(amount);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800 border-green-200';
-      case 'trialing': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'canceled': return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'past_due': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'unpaid': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
+  const getAddOnsByType = (type: 'capacity' | 'integration' | 'feature') => {
+    return availableAddOns?.filter(addon => addon.add_on_type === type) || [];
   };
 
-  if (profileLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-32 bg-muted rounded-lg"></div>
-          <div className="h-64 bg-muted rounded-lg"></div>
-        </div>
-      </div>
-    );
-  }
+  const isAddOnActive = (addOnId: string) => {
+    return userAddOns?.some(ua => ua.add_on_id === addOnId);
+  };
 
-  // Show access denied for non-owners
-  if (!isOwner) {
+  if (subscriptionLoading || usageLoading) {
     return (
-      <div className="space-y-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-8">
-              <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Access Restricted</h3>
-              <p className="text-muted-foreground">
-                Only the account owner can access billing information and manage subscriptions.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-32 bg-muted rounded-lg"></div>
-          <div className="h-64 bg-muted rounded-lg"></div>
-        </div>
+      <div className="space-y-6 animate-pulse">
+        <div className="h-48 bg-muted rounded-lg" />
+        <div className="h-64 bg-muted rounded-lg" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Stripe Setup Notice for Owners */}
-      <Alert className="border-blue-200 bg-blue-50">
-        <AlertDescription className="text-blue-800">
-          <strong>Setup Required:</strong> To enable subscription management, you need to activate the Stripe Customer Portal in your Stripe dashboard. 
-          This allows users to manage subscriptions, update payment methods, and download invoices.
-          <br />
-          <a 
-            href="https://docs.stripe.com/customer-management/activate-no-code-customer-portal" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="underline hover:no-underline mt-1 inline-block"
-          >
-            View Stripe Setup Guide →
-          </a>
-        </AlertDescription>
-      </Alert>
+      {/* Current Plan Overview */}
+      <Card className="border-primary/20 bg-gradient-to-br from-background to-primary/5">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl flex items-center gap-2">
+                <Sparkles className="h-6 w-6 text-primary" />
+                {subscription?.plan.name || 'Free Plan'}
+              </CardTitle>
+              <CardDescription className="text-base mt-1">
+                {formatCurrency(subscription?.plan.price_monthly || 0)}/user/month
+              </CardDescription>
+            </div>
+            <Badge variant="default" className="text-sm px-3 py-1">
+              {subscription?.status || 'trial'}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 bg-background rounded-lg border">
+              <p className="text-sm text-muted-foreground mb-1">Active Users</p>
+              <p className="text-2xl font-bold">
+                {(subscription?.plan as any)?.included_users || 1}
+              </p>
+            </div>
+            <div className="p-4 bg-background rounded-lg border">
+              <p className="text-sm text-muted-foreground mb-1">Monthly Cost</p>
+              <p className="text-2xl font-bold">
+                {formatCurrency((subscription?.plan.price_monthly || 0) * ((subscription?.plan as any)?.included_users || 1))}
+              </p>
+            </div>
+            <div className="p-4 bg-background rounded-lg border">
+              <p className="text-sm text-muted-foreground mb-1">Next Billing</p>
+              <p className="text-2xl font-bold">
+                {subscription?.current_period_end 
+                  ? format(new Date(subscription.current_period_end), 'MMM dd')
+                  : 'N/A'}
+              </p>
+            </div>
+          </div>
 
-      {/* Current Subscription */}
+          <Separator />
+
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Included in your plan:</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+              <div className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-primary" />
+                <span>CRM & Client Management</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-primary" />
+                <span>Manual Quotation System</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-primary" />
+                <span>Up to {inventory.unlimited ? '∞' : inventory.limit} inventory items</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-primary" />
+                <span>{emails.unlimited ? 'Unlimited' : emails.limit} emails/month</span>
+              </div>
+            </div>
+          </div>
+
+          <Button 
+            className="w-full" 
+            size="lg"
+            onClick={() => navigate('/settings/subscription')}
+          >
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Upgrade to Business Plan ($99/user)
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Usage & Limits */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Current Subscription
+            <TrendingUp className="h-5 w-5" />
+            Usage This Month
           </CardTitle>
           <CardDescription>
-            Your current plan and billing information
+            Track your resource consumption and limits
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          {subscription ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Crown className="h-6 w-6 text-primary" />
-                  <div>
-                    <h3 className="font-semibold text-lg">Premium Plan</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Full access to all features
-                    </p>
-                  </div>
-                </div>
-                <Badge className={getStatusColor(subscription.status)}>
-                  {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
-                </Badge>
+        <CardContent className="space-y-6">
+          {/* Inventory Usage */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">Inventory Items</span>
               </div>
-              
-              <Separator />
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Price</p>
-                  <p className="text-lg font-semibold">
-                    {formatCurrency(
-                      subscription.items.data[0]?.price.unit_amount || 0,
-                      'usd'
-                    )}/{subscription.items.data[0]?.price.recurring?.interval || 'month'}
-                  </p>
-                </div>
-                
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Next billing</p>
-                  <p className="text-lg font-semibold">
-                    {format(new Date(subscription.current_period_end * 1000), "MMM dd, yyyy")}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleManageBilling}
-                  disabled={managingBilling}
-                  className="flex items-center gap-2"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  {managingBilling ? 'Opening...' : 'Manage Subscription'}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <Crown className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Active Subscription</h3>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                {invoices.length > 0 
-                  ? "Your subscription has expired or been cancelled. You can reactivate anytime to restore full access to premium features."
-                  : "You're currently on the free plan. Upgrade to unlock advanced features and remove limitations."
-                }
-              </p>
-              <div className="space-y-3">
-                <Button 
-                  onClick={handleManageBilling} 
-                  disabled={managingBilling}
-                  className="flex items-center gap-2"
-                >
-                  <CreditCard className="h-4 w-4" />
-                  {managingBilling ? 'Loading...' : invoices.length > 0 ? 'Reactivate Subscription' : 'Subscribe Now'}
-                </Button>
-                {invoices.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    View your billing history below and manage your subscription anytime
-                  </p>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">
+                  {inventory.used} / {inventory.unlimited ? <Infinity className="h-4 w-4 inline" /> : inventory.limit}
+                </span>
+                {inventory.percentage >= 80 && !inventory.unlimited && (
+                  <Badge variant="destructive" className="text-xs">
+                    {Math.round(inventory.percentage)}%
+                  </Badge>
                 )}
               </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Billing History - Show even without active subscription if invoices exist */}
-      {(subscription || invoices.length > 0) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Billing History
-            </CardTitle>
-            <CardDescription>
-            {subscription 
-              ? "Download your invoices and view payment history"
-              : "Access your previous invoices and billing records"
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {invoices.length > 0 ? (
-            <div className="space-y-3">
-              {invoices.map((invoice) => (
-                <div
-                  key={invoice.id}
-                  className="flex items-center justify-between p-4 border border-border/50 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-muted rounded-lg">
-                      <FileText className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">
-                          Invoice #{invoice.number}
-                        </span>
-                        <Badge 
-                          variant={invoice.status === 'paid' ? 'default' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {invoice.status}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(invoice.created * 1000), "MMM dd, yyyy")} • 
-                        {formatCurrency(invoice.amount_paid, invoice.currency)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => downloadInvoice(invoice)}
-                      className="flex items-center gap-2"
-                    >
-                      <Download className="h-4 w-4" />
-                      Download
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => window.open(invoice.hosted_invoice_url, '_blank')}
-                      className="flex items-center gap-2"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      View
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Billing History</h3>
-              <p className="text-muted-foreground">
-                Your billing history will appear here once you subscribe to a plan.
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      )}
-
-      {/* Account Actions - Show different content based on subscription status */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            {subscription ? <AlertTriangle className="h-5 w-5" /> : <CreditCard className="h-5 w-5" />}
-            {subscription ? 'Account Management' : 'Subscription Options'}
-          </CardTitle>
-          <CardDescription>
-            {subscription 
-              ? 'Manage your subscription and billing settings'
-              : 'Start your subscription or manage your account'
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {subscription ? (
-              <div className="p-4 border border-orange-200 bg-orange-50 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5" />
-                  <div>
-                    <h4 className="font-medium text-orange-900">Cancel Subscription</h4>
-                    <p className="text-sm text-orange-700 mt-1">
-                      You can cancel your subscription at any time through the billing portal. 
-                      Your access will continue until the end of your current billing period.
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleManageBilling}
-                      disabled={managingBilling}
-                      className="mt-3 border-orange-300 text-orange-700 hover:bg-orange-100"
-                    >
-                      {managingBilling ? 'Opening...' : 'Manage Subscription'}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="p-4 border border-primary/20 bg-primary/5 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <Star className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
-                    <h4 className="font-medium text-primary">Upgrade to Premium</h4>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {invoices.length > 0 
-                        ? "Reactivate your subscription to regain access to all premium features."
-                        : "Unlock advanced features, remove limitations, and access priority support."
-                      }
-                    </p>
-                    <Button
-                      size="sm"
-                      onClick={handleManageBilling}
-                      disabled={managingBilling}
-                      className="mt-3"
-                    >
-                      {managingBilling ? 'Loading...' : invoices.length > 0 ? 'Reactivate Now' : 'Start Subscription'}
-                    </Button>
-                  </div>
-                </div>
-              </div>
+            {!inventory.unlimited && (
+              <>
+                <Progress value={inventory.percentage} className="h-2" />
+                {!inventory.canAdd && (
+                  <p className="text-sm text-destructive">
+                    Limit reached. Add Inventory Boost to continue adding products.
+                  </p>
+                )}
+              </>
             )}
-            
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                onClick={fetchBillingData}
-                disabled={loading}
-              >
-                Refresh Billing Data
-              </Button>
+          </div>
+
+          <Separator />
+
+          {/* Email Usage */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">Emails Sent</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">
+                  {emails.used} / {emails.unlimited ? <Infinity className="h-4 w-4 inline" /> : emails.limit}
+                </span>
+                {emails.percentage >= 80 && !emails.unlimited && (
+                  <Badge variant="destructive" className="text-xs">
+                    {Math.round(emails.percentage)}%
+                  </Badge>
+                )}
+              </div>
             </div>
+            {!emails.unlimited && (
+              <>
+                <Progress value={emails.percentage} className="h-2" />
+                {!emails.canSend && (
+                  <p className="text-sm text-destructive">
+                    Limit reached. Add an Email Pack to continue sending.
+                  </p>
+                )}
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
+
+      {/* Add-Ons Marketplace */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ShoppingCart className="h-5 w-5" />
+            Add-Ons & Upgrades
+          </CardTitle>
+          <CardDescription>
+            Enhance your workspace with additional capacity and integrations
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="capacity">
+            <TabsList className="w-full">
+              <TabsTrigger value="capacity" className="flex-1">
+                <Package className="h-4 w-4 mr-2" />
+                Capacity
+              </TabsTrigger>
+              <TabsTrigger value="integrations" className="flex-1">
+                <Zap className="h-4 w-4 mr-2" />
+                Integrations
+              </TabsTrigger>
+              <TabsTrigger value="features" className="flex-1">
+                <Sparkles className="h-4 w-4 mr-2" />
+                Features
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="capacity" className="space-y-4 mt-4">
+              {getAddOnsByType('capacity').map(addon => {
+                const isActive = isAddOnActive(addon.id);
+                return (
+                  <div key={addon.id} className="border rounded-lg p-4 flex items-start justify-between">
+                    <div className="space-y-1">
+                      <h4 className="font-medium flex items-center gap-2">
+                        {addon.name}
+                        {isActive && <Badge variant="default" className="text-xs">Active</Badge>}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">{addon.description}</p>
+                    </div>
+                    <div className="text-right flex flex-col items-end gap-2">
+                      <p className="font-bold">{formatCurrency(addon.price_monthly)}/mo</p>
+                      {isActive ? (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => {
+                            const userAddOn = userAddOns?.find(ua => ua.add_on_id === addon.id);
+                            if (userAddOn) deactivateAddOn.mutate(userAddOn.id);
+                          }}
+                          disabled={deactivateAddOn.isPending}
+                        >
+                          Remove
+                        </Button>
+                      ) : (
+                        <Button 
+                          size="sm"
+                          onClick={() => activateAddOn.mutate(addon.id)}
+                          disabled={activateAddOn.isPending}
+                        >
+                          <ArrowUpRight className="h-4 w-4 mr-1" />
+                          Add
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </TabsContent>
+
+            <TabsContent value="integrations" className="space-y-4 mt-4">
+              {getAddOnsByType('integration').map(addon => {
+                const isActive = isAddOnActive(addon.id);
+                return (
+                  <div key={addon.id} className="border rounded-lg p-4 flex items-start justify-between">
+                    <div className="space-y-1">
+                      <h4 className="font-medium flex items-center gap-2">
+                        {addon.name}
+                        {isActive && <Badge variant="default" className="text-xs">Active</Badge>}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">{addon.description}</p>
+                    </div>
+                    <div className="text-right flex flex-col items-end gap-2">
+                      <p className="font-bold">{formatCurrency(addon.price_monthly)}/mo</p>
+                      {isActive ? (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => {
+                            const userAddOn = userAddOns?.find(ua => ua.add_on_id === addon.id);
+                            if (userAddOn) deactivateAddOn.mutate(userAddOn.id);
+                          }}
+                          disabled={deactivateAddOn.isPending}
+                        >
+                          Remove
+                        </Button>
+                      ) : (
+                        <Button 
+                          size="sm"
+                          onClick={() => activateAddOn.mutate(addon.id)}
+                          disabled={activateAddOn.isPending}
+                        >
+                          <ArrowUpRight className="h-4 w-4 mr-1" />
+                          Add
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </TabsContent>
+
+            <TabsContent value="features" className="space-y-4 mt-4">
+              {getAddOnsByType('feature').map(addon => {
+                const isActive = isAddOnActive(addon.id);
+                return (
+                  <div key={addon.id} className="border rounded-lg p-4 flex items-start justify-between">
+                    <div className="space-y-1">
+                      <h4 className="font-medium flex items-center gap-2">
+                        {addon.name}
+                        {isActive && <Badge variant="default" className="text-xs">Active</Badge>}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">{addon.description}</p>
+                    </div>
+                    <div className="text-right flex flex-col items-end gap-2">
+                      <p className="font-bold">{formatCurrency(addon.price_monthly)}/mo</p>
+                      {isActive ? (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => {
+                            const userAddOn = userAddOns?.find(ua => ua.add_on_id === addon.id);
+                            if (userAddOn) deactivateAddOn.mutate(userAddOn.id);
+                          }}
+                          disabled={deactivateAddOn.isPending}
+                        >
+                          Remove
+                        </Button>
+                      ) : (
+                        <Button 
+                          size="sm"
+                          onClick={() => activateAddOn.mutate(addon.id)}
+                          disabled={activateAddOn.isPending}
+                        >
+                          <ArrowUpRight className="h-4 w-4 mr-1" />
+                          Add
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      {/* Active Add-Ons */}
+      {userAddOns && userAddOns.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Your Active Add-Ons
+            </CardTitle>
+            <CardDescription>
+              Manage your subscribed add-ons
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {userAddOns.map(userAddOn => (
+                <div key={userAddOn.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <p className="font-medium">{userAddOn.add_on?.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Active since {format(new Date(userAddOn.activated_at), 'MMM dd, yyyy')}
+                    </p>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => deactivateAddOn.mutate(userAddOn.id)}
+                    disabled={deactivateAddOn.isPending}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

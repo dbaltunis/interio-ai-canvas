@@ -7,6 +7,19 @@ export interface SubscriptionAddOn {
   price_yearly: number;
   is_active: boolean;
   display_order: number;
+  add_on_type: 'feature' | 'capacity' | 'integration';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UsageTracking {
+  id: string;
+  user_id: string;
+  period_start: string;
+  period_end: string;
+  inventory_items_count: number;
+  emails_sent_count: number;
+  active_integrations: string[];
   created_at: string;
   updated_at: string;
 }
