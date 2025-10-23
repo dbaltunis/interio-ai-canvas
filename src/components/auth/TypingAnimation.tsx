@@ -5,6 +5,7 @@ interface TypingAnimationProps {
   typingSpeed?: number;
   deletingSpeed?: number;
   pauseDuration?: number;
+  previewTheme?: 'light' | 'dark';
 }
 
 export const TypingAnimation = ({
@@ -12,6 +13,7 @@ export const TypingAnimation = ({
   typingSpeed = 100,
   deletingSpeed = 50,
   pauseDuration = 2000,
+  previewTheme = 'dark',
 }: TypingAnimationProps) => {
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
   const [currentText, setCurrentText] = useState('');
@@ -57,14 +59,20 @@ export const TypingAnimation = ({
   }, [currentText, isDeleting, isPaused, currentPhraseIndex, phrases, typingSpeed, deletingSpeed, pauseDuration]);
 
   return (
-    <div className="relative">
+    <div className="relative max-w-3xl">
       {/* Wallpaper background */}
-      <div className="absolute inset-0 -m-8 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10" />
+      <div className={`absolute inset-0 -m-6 backdrop-blur-sm rounded-2xl border ${
+        previewTheme === 'dark'
+          ? 'bg-white/5 border-white/10'
+          : 'bg-primary/5 border-primary/10'
+      }`} />
       
       {/* Typing text */}
-      <div className="relative z-10 font-semibold text-3xl md:text-4xl lg:text-5xl min-h-[120px] flex items-center px-4">
-        <span className="text-white drop-shadow-lg">{currentText}</span>
-        <span className="animate-typing-cursor ml-1 text-white drop-shadow-lg">|</span>
+      <div className={`relative z-10 font-semibold text-2xl md:text-3xl lg:text-4xl min-h-[80px] flex items-center px-4 ${
+        previewTheme === 'dark' ? 'text-white' : 'text-primary'
+      }`}>
+        <span className="drop-shadow-lg">{currentText}</span>
+        <span className="animate-typing-cursor ml-1 drop-shadow-lg">|</span>
       </div>
     </div>
   );

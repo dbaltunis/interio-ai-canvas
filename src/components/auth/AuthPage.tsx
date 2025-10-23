@@ -385,29 +385,29 @@ export const AuthPage = () => {
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <AnimatedGradient previewTheme={previewTheme} />
         
-        <div className="relative z-10 w-full flex flex-col justify-between p-12">
+        <div className="relative z-10 w-full flex flex-col justify-between p-8 lg:p-12">
           {/* Header */}
-          <div className="flex items-center justify-start">
-            <div className="flex items-center gap-4">
+          <div className="flex items-center justify-start mb-8">
+            <div className="flex items-center gap-3">
               <img 
                 src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
                 alt="InterioApp Logo" 
-                className="h-16 md:h-20 lg:h-24 w-auto"
+                className="h-12 md:h-14 w-auto"
               />
-              <span className={`text-3xl md:text-4xl font-bold ${previewTheme === 'dark' ? 'text-white' : 'text-primary'}`}>
+              <span className={`text-2xl md:text-3xl font-bold ${previewTheme === 'dark' ? 'text-white' : 'text-primary'}`}>
                 InterioApp
               </span>
             </div>
           </div>
 
           {/* Typing animation */}
-          <div className="flex-1 flex flex-col justify-center space-y-12">
-            <TypingAnimation phrases={typingPhrases} />
+          <div className="flex-1 flex flex-col justify-center space-y-8 py-8">
+            <TypingAnimation phrases={typingPhrases} previewTheme={previewTheme} />
             <ThemePreview previewTheme={previewTheme} />
           </div>
 
           {/* Lamp Toggle at Bottom */}
-          <div className="flex justify-center">
+          <div className="flex justify-center mt-8">
             <LampToggle 
               previewTheme={previewTheme}
               onToggle={() => setPreviewTheme(prev => prev === 'dark' ? 'light' : 'dark')}
