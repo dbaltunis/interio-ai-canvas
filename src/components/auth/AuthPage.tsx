@@ -7,8 +7,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from './AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { UserPlus, Mail, Eye, EyeOff } from 'lucide-react';
-import { AIBackground } from '@/components/common/AIBackground';
+import { Building2, Sun, Moon, Eye, EyeOff, Mail } from 'lucide-react';
+import { TypingAnimation } from './TypingAnimation';
+import { ThemePreview } from './ThemePreview';
+import { AnimatedGradient } from './AnimatedGradient';
 
 export const AuthPage = () => {
   const [searchParams] = useSearchParams();
@@ -25,10 +27,19 @@ export const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong' | null>(null);
+  const [previewTheme, setPreviewTheme] = useState<'light' | 'dark'>('dark');
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
 
   const invitationToken = searchParams.get('invitation');
+  
+  const typingPhrases = [
+    "Design beautiful curtains and blinds...",
+    "Manage projects seamlessly...",
+    "Create professional quotations...",
+    "Collaborate with your team...",
+    "Track jobs effortlessly...",
+  ];
 
   // Load invitation details if token is present
   useEffect(() => {
@@ -368,80 +379,54 @@ export const AuthPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden bg-background">
-      {/* Left Side - Branding (Desktop Only) */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-muted/30 via-background to-muted/20">
-        <div className="relative h-full flex flex-col justify-between px-12 xl:px-16 py-16 z-10">
-          {/* Top Section - Logo and Branding */}
-          <div>
-            <div className="mb-12">
-              <img 
-                src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
-                alt="InterioApp Logo" 
-                className="h-10 w-auto object-contain"
-              />
-            </div>
-
-            <div className="space-y-4 mb-16">
-              <h1 className="text-5xl xl:text-6xl font-bold leading-tight text-foreground">
+    <div className="min-h-screen flex overflow-hidden">
+      {/* Left side - Animated theme preview */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+        <AnimatedGradient previewTheme={previewTheme} />
+        
+        <div className="relative z-10 w-full flex flex-col justify-between p-12">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Building2 className={`h-10 w-10 ${previewTheme === 'dark' ? 'text-white' : 'text-primary'}`} />
+              <span className={`text-2xl font-bold ${previewTheme === 'dark' ? 'text-white' : 'text-primary'}`}>
                 InterioApp
-              </h1>
-              <p className="text-lg text-muted-foreground max-w-md">
-                The future of window décor is online and bespoke
-              </p>
+              </span>
             </div>
-
-            {/* Features */}
-            <div className="space-y-6">
-              <div className="flex items-start space-x-4">
-                <div className="mt-1 p-2.5 rounded-lg bg-primary/5 border border-primary/10">
-                  <UserPlus className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-base mb-1 text-foreground">Team Collaboration</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Work seamlessly with your team on projects
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-start space-x-4">
-                <div className="mt-1 p-2.5 rounded-lg bg-secondary/5 border border-secondary/10">
-                  <Mail className="h-5 w-5 text-secondary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-base mb-1 text-foreground">Client Management</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Manage clients, projects, and quotations in one place
-                  </p>
-                </div>
-              </div>
-            </div>
+            
+            {/* Theme toggle */}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setPreviewTheme(prev => prev === 'dark' ? 'light' : 'dark')}
+              className={`
+                rounded-full transition-all duration-300
+                ${previewTheme === 'dark' 
+                  ? 'bg-white/10 border-white/20 text-white hover:bg-white/20' 
+                  : 'bg-primary/10 border-primary/20 text-primary hover:bg-primary/20'
+                }
+              `}
+            >
+              {previewTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
           </div>
 
-          {/* Bottom Section - Trust Indicators */}
-          <div className="pt-8 border-t border-border">
-            <p className="text-sm text-muted-foreground mb-3">
-              Trusted by professionals worldwide
-            </p>
-            <div className="flex flex-wrap gap-2.5 mb-3">
-              <span className="px-3 py-1.5 rounded-full bg-background/20 backdrop-blur-md border border-foreground/10 text-xs font-medium hover:bg-background/30 transition-colors">🇳🇿 NZ</span>
-              <span className="px-3 py-1.5 rounded-full bg-background/20 backdrop-blur-md border border-foreground/10 text-xs font-medium hover:bg-background/30 transition-colors">🇦🇺 AU</span>
-              <span className="px-3 py-1.5 rounded-full bg-background/20 backdrop-blur-md border border-foreground/10 text-xs font-medium hover:bg-background/30 transition-colors">🇫🇷 FR</span>
-              <span className="px-3 py-1.5 rounded-full bg-background/20 backdrop-blur-md border border-foreground/10 text-xs font-medium hover:bg-background/30 transition-colors">🇧🇪 BE</span>
-              <span className="px-3 py-1.5 rounded-full bg-background/20 backdrop-blur-md border border-foreground/10 text-xs font-medium hover:bg-background/30 transition-colors">🇬🇧 UK</span>
-              <span className="px-3 py-1.5 rounded-full bg-background/20 backdrop-blur-md border border-foreground/10 text-xs font-medium hover:bg-background/30 transition-colors">🇿🇦 SA</span>
-              <span className="px-3 py-1.5 rounded-full bg-background/20 backdrop-blur-md border border-foreground/10 text-xs font-medium hover:bg-background/30 transition-colors">🇪🇺 EU</span>
-            </div>
-            <p className="text-xs text-foreground/40">
-              Offices in New Zealand, United Kingdom, France & South Africa
-            </p>
+          {/* Typing animation */}
+          <div className="flex-1 flex flex-col justify-center space-y-12">
+            <TypingAnimation phrases={typingPhrases} />
+            <ThemePreview previewTheme={previewTheme} />
+          </div>
+
+          {/* Footer */}
+          <div className={`text-sm ${previewTheme === 'dark' ? 'text-white/60' : 'text-muted-foreground'}`}>
+            <p>Experience InterioApp in {previewTheme === 'dark' ? 'dark' : 'light'} mode</p>
+            <p className="mt-1">Toggle to see both themes in action ✨</p>
           </div>
         </div>
       </div>
 
-      {/* Right Side - Auth Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-8 relative z-10">
+      {/* Right side - Auth form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-background animate-fade-in">
         {/* Mobile Logo */}
         <div className="lg:hidden absolute top-8 left-8">
           <img 
