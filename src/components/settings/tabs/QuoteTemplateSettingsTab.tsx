@@ -195,7 +195,7 @@ export const QuoteTemplateSettingsTab = () => {
       </div>
 
       <Tabs defaultValue="header" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="header">
             <FileText className="h-4 w-4 mr-2" />
             Header
@@ -210,7 +210,11 @@ export const QuoteTemplateSettingsTab = () => {
           </TabsTrigger>
           <TabsTrigger value="styling">
             <Eye className="h-4 w-4 mr-2" />
-            Styling
+            Display
+          </TabsTrigger>
+          <TabsTrigger value="printing">
+            <FileText className="h-4 w-4 mr-2" />
+            Printing
           </TabsTrigger>
         </TabsList>
 
@@ -435,9 +439,9 @@ export const QuoteTemplateSettingsTab = () => {
         <TabsContent value="styling" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Visual Styling</CardTitle>
+              <CardTitle>Display Options</CardTitle>
               <CardDescription>
-                Customize colors and fonts for your quotes
+                Control what information appears on your quotes
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -469,6 +473,67 @@ export const QuoteTemplateSettingsTab = () => {
                     />
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="printing" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Printing Configuration</CardTitle>
+              <CardDescription>
+                Set up how your quotes print and export to PDF
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg p-6">
+                <h4 className="font-bold text-blue-900 mb-3 flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Perfect Printing Guide
+                </h4>
+                <div className="space-y-3 text-sm text-blue-900">
+                  <div className="flex gap-2">
+                    <span className="font-semibold min-w-[120px]">Paper Size:</span>
+                    <span>A4 (210mm × 297mm)</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold min-w-[120px]">Orientation:</span>
+                    <span>Portrait</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold min-w-[120px]">Margins:</span>
+                    <span>Top/Bottom: 15mm, Left/Right: 10mm</span>
+                  </div>
+                  <Separator className="bg-blue-300" />
+                  <div>
+                    <span className="font-semibold block mb-2">✅ Before Printing:</span>
+                    <ul className="space-y-1 ml-4">
+                      <li>• Enable "Print backgrounds" in browser print settings</li>
+                      <li>• Set scaling to 100%</li>
+                      <li>• Choose "All pages" to print complete quote</li>
+                      <li>• Product images will print in full color</li>
+                      <li>• Gradient headers and styling preserved</li>
+                    </ul>
+                  </div>
+                  <Separator className="bg-blue-300" />
+                  <div>
+                    <span className="font-semibold block mb-2">💡 Pro Tips:</span>
+                    <ul className="space-y-1 ml-4">
+                      <li>• Use PDF download for digital sharing</li>
+                      <li>• Print preview shows exact layout</li>
+                      <li>• All customizations apply to both PDF and print</li>
+                      <li>• Itemized breakdowns display beautifully</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-amber-50 border border-amber-300 rounded-lg p-4">
+                <h5 className="font-semibold text-amber-900 mb-2">📋 Quote Customization</h5>
+                <p className="text-sm text-amber-800">
+                  Use the <strong>Header</strong>, <strong>Items</strong>, <strong>Footer</strong>, and <strong>Display</strong> tabs above to customize what appears on your quotes. All changes apply automatically to both screen view and printing.
+                </p>
               </div>
             </CardContent>
           </Card>

@@ -229,13 +229,64 @@ export const QuotationTab = ({ projectId }: QuotationTabProps) => {
     documentTitle: `quote-${project?.job_number || 'QT-' + Math.floor(Math.random() * 10000)}`,
     pageStyle: `
       @page {
-        size: A4;
-        margin: 0;
+        size: A4 portrait;
+        margin: 15mm 10mm;
       }
       @media print {
-        body {
+        html, body {
+          height: 100%;
+          width: 100%;
+          margin: 0;
+          padding: 0;
+          overflow: visible;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
+          color-adjust: exact;
+        }
+        
+        body * {
+          visibility: visible;
+        }
+        
+        /* Force colors to print */
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+        
+        /* Ensure backgrounds print */
+        .bg-gradient-to-r,
+        .bg-blue-50,
+        .bg-purple-50,
+        .bg-indigo-50 {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        
+        /* Page breaks */
+        .break-before {
+          page-break-before: always;
+        }
+        
+        .break-after {
+          page-break-after: always;
+        }
+        
+        .avoid-break {
+          page-break-inside: avoid;
+        }
+        
+        /* Hide non-printable elements */
+        button,
+        .no-print,
+        [data-no-print] {
+          display: none !important;
+        }
+        
+        /* Ensure table borders print */
+        table, th, td {
+          border-color: #000 !important;
         }
       }
     `
@@ -455,6 +506,9 @@ const projectData = {
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3">
         <div>
           <h2 className="text-base sm:text-lg font-semibold">Quotation</h2>
+          <p className="text-xs text-muted-foreground">
+            Customize quote appearance in <a href="#" onClick={(e) => { e.preventDefault(); window.location.hash = 'settings'; }} className="text-blue-600 hover:underline">Settings → Document Templates → Quote Settings</a>
+          </p>
         </div>
         
         {/* Compact Action Bar - Icon only on mobile */}
@@ -618,13 +672,15 @@ const projectData = {
       />
 
       {/* Hidden printable component for PDF generation */}
-      <div className="hidden">
+      <div className="hidden print:block">
         {templateBlocks && templateBlocks.length > 0 && (
           <PrintableQuote 
             ref={printRef}
             blocks={templateBlocks}
             projectData={projectData}
             isPrintMode={true}
+            showDetailedBreakdown={true}
+            showImages={true}
           />
         )}
       </div>

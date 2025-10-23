@@ -16,18 +16,19 @@ export const PrintableQuote = React.forwardRef<HTMLDivElement, PrintableQuotePro
         ref={ref}
         className="bg-white text-black"
         style={{
-          fontFamily: 'Arial, sans-serif',
-          fontSize: '14px',
-          lineHeight: '1.5',
+          fontFamily: 'Arial, Helvetica, sans-serif',
+          fontSize: '12px',
+          lineHeight: '1.4',
           color: '#000000',
           backgroundColor: '#ffffff',
-          width: '794px',
-          minWidth: '794px',
-          maxWidth: '794px',
-          padding: '0',
-          margin: '0',
+          width: '100%',
+          maxWidth: '210mm',
+          minHeight: '297mm',
+          padding: '15mm 10mm',
+          margin: '0 auto',
           boxSizing: 'border-box',
-          overflow: 'visible'
+          overflow: 'visible',
+          position: 'relative'
         }}
       >
         <LivePreview 
@@ -35,6 +36,8 @@ export const PrintableQuote = React.forwardRef<HTMLDivElement, PrintableQuotePro
           projectData={projectData}
           isEditable={false}
           isPrintMode={isPrintMode}
+          showDetailedBreakdown={showDetailedBreakdown !== undefined ? showDetailedBreakdown : true}
+          showImages={showImages !== undefined ? showImages : true}
         />
       </div>
     );
