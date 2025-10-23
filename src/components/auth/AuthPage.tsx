@@ -387,9 +387,13 @@ export const AuthPage = () => {
         <div className="relative z-10 w-full flex flex-col justify-between p-12">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Building2 className={`h-10 w-10 ${previewTheme === 'dark' ? 'text-white' : 'text-primary'}`} />
-              <span className={`text-2xl font-bold ${previewTheme === 'dark' ? 'text-white' : 'text-primary'}`}>
+            <div className="flex items-center gap-4">
+              <img 
+                src="/lovable-uploads/2e31aee6-8e27-4ddd-96c1-0bcfe0f1be52.png" 
+                alt="InterioApp Logo" 
+                className="h-16 md:h-20 w-auto"
+              />
+              <span className={`text-3xl font-bold ${previewTheme === 'dark' ? 'text-white' : 'text-primary'}`}>
                 InterioApp
               </span>
             </div>
