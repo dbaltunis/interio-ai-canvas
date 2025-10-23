@@ -427,16 +427,20 @@ export const AuthPage = () => {
       </div>
 
       {/* Right side - Auth form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 relative overflow-hidden">
-        {/* Background - gradient for tablet, plain for mobile/desktop */}
-        <div className="absolute inset-0 bg-background md:bg-gradient-to-br md:from-[#e8f0f2] md:via-[#f0f4f8] md:to-[#e0e8eb] lg:bg-background" />
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 relative overflow-hidden transition-colors duration-500">
+        {/* Background - changes with theme */}
+        <div className={`absolute inset-0 transition-all duration-500 ${
+          previewTheme === 'dark' 
+            ? 'bg-slate-900' 
+            : 'bg-gradient-to-br from-[#e8f0f2] via-[#f0f4f8] to-[#e0e8eb]'
+        }`} />
         
         {/* Mobile/Tablet Logo */}
-        <div className="lg:hidden absolute top-8 left-8 z-10">
+        <div className="lg:hidden absolute top-8 left-8 z-10 transition-all duration-500">
           <img 
             src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
             alt="InterioApp Logo" 
-            className="h-10 md:h-16 w-auto object-contain"
+            className="h-10 md:h-16 w-auto object-contain transition-all duration-500"
             style={{
               filter: previewTheme === 'dark' ? 'brightness(0) invert(1)' : 'none'
             }}
