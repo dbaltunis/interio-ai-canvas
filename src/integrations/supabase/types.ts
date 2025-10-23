@@ -5212,6 +5212,7 @@ export type Database = {
       }
       subscription_add_ons: {
         Row: {
+          add_on_type: string | null
           created_at: string | null
           description: string | null
           display_order: number | null
@@ -5224,6 +5225,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          add_on_type?: string | null
           created_at?: string | null
           description?: string | null
           display_order?: number | null
@@ -5236,6 +5238,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          add_on_type?: string | null
           created_at?: string | null
           description?: string | null
           display_order?: number | null
@@ -5251,12 +5254,16 @@ export type Database = {
       }
       subscription_plans: {
         Row: {
+          base_price_per_user: number | null
           created_at: string
           description: string | null
           features: Json | null
           features_included: Json | null
           id: string
+          included_users: number | null
           is_active: boolean | null
+          max_emails_per_month: number | null
+          max_inventory_items: number | null
           max_projects: number | null
           max_users: number | null
           name: string
@@ -5268,12 +5275,16 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          base_price_per_user?: number | null
           created_at?: string
           description?: string | null
           features?: Json | null
           features_included?: Json | null
           id?: string
+          included_users?: number | null
           is_active?: boolean | null
+          max_emails_per_month?: number | null
+          max_inventory_items?: number | null
           max_projects?: number | null
           max_users?: number | null
           name: string
@@ -5285,12 +5296,16 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          base_price_per_user?: number | null
           created_at?: string
           description?: string | null
           features?: Json | null
           features_included?: Json | null
           id?: string
+          included_users?: number | null
           is_active?: boolean | null
+          max_emails_per_month?: number | null
+          max_inventory_items?: number | null
           max_projects?: number | null
           max_users?: number | null
           name?: string
@@ -6350,6 +6365,42 @@ export type Database = {
           },
         ]
       }
+      user_usage_tracking: {
+        Row: {
+          active_integrations: Json | null
+          created_at: string | null
+          emails_sent_count: number | null
+          id: string
+          inventory_items_count: number | null
+          period_end: string
+          period_start: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          active_integrations?: Json | null
+          created_at?: string | null
+          emails_sent_count?: number | null
+          id?: string
+          inventory_items_count?: number | null
+          period_end: string
+          period_start: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          active_integrations?: Json | null
+          created_at?: string | null
+          emails_sent_count?: number | null
+          id?: string
+          inventory_items_count?: number | null
+          period_end?: string
+          period_start?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       vendors: {
         Row: {
           active: boolean | null
@@ -6853,6 +6904,26 @@ export type Database = {
         Returns: Json
       }
       get_account_owner: { Args: { user_id_param: string }; Returns: string }
+      get_current_usage: {
+        Args: { p_user_id: string }
+        Returns: {
+          active_integrations: Json | null
+          created_at: string | null
+          emails_sent_count: number | null
+          id: string
+          inventory_items_count: number | null
+          period_end: string
+          period_start: string
+          updated_at: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_usage_tracking"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       get_default_permissions_for_role: {
         Args: { user_role: string }
         Returns: string[]
@@ -6929,6 +7000,7 @@ export type Database = {
           status: string
         }[]
       }
+      increment_email_usage: { Args: { p_user_id: string }; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
       is_admin_or_owner: { Args: never; Returns: boolean }
       is_valid_email: { Args: { email_address: string }; Returns: boolean }
@@ -6961,6 +7033,7 @@ export type Database = {
       }
       seed_roller_blind_defaults: { Args: never; Returns: undefined }
       seed_system_option_types: { Args: never; Returns: undefined }
+      sync_inventory_usage: { Args: { p_user_id: string }; Returns: undefined }
       trigger_automation_workflow: {
         Args: {
           entity_id: string
