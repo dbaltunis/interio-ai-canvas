@@ -12,15 +12,16 @@ export const LampToggle = ({ previewTheme, onToggle }: LampToggleProps) => {
   return (
     <motion.button
       onClick={onToggle}
-      className={`p-3 rounded-full transition-all duration-300 ${
+      className={`p-4 rounded-full transition-all duration-300 border-2 ${
         isLightOn 
-          ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/50' 
-          : 'bg-white/10 text-white/70 hover:bg-white/20'
+          ? 'bg-amber-400 border-amber-500 text-white shadow-xl shadow-amber-500/50' 
+          : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'
       }`}
-      whileTap={{ scale: 0.95 }}
+      whileTap={{ scale: 0.9 }}
+      whileHover={{ scale: 1.05 }}
       aria-label="Toggle theme"
     >
-      <Lightbulb className="w-6 h-6" />
+      <Lightbulb className={`w-8 h-8 ${isLightOn ? 'fill-white' : ''}`} />
     </motion.button>
   );
 };
