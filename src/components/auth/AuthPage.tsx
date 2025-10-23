@@ -429,7 +429,7 @@ export const AuthPage = () => {
       {/* Right side - Auth form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 relative overflow-hidden">
         {/* Background - gradient for tablet, plain for mobile/desktop */}
-        <div className="absolute inset-0 md:bg-gradient-to-br md:from-muted/30 md:via-background md:to-muted/20 lg:bg-background" />
+        <div className="absolute inset-0 bg-background md:bg-gradient-to-br md:from-primary/10 md:via-accent/5 md:to-secondary/10 lg:bg-background" />
         
         {/* Mobile/Tablet Logo */}
         <div className="lg:hidden absolute top-8 left-8 z-10">
