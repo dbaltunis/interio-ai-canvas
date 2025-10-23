@@ -644,8 +644,18 @@ const LivePreviewBlock = ({
       
       const hasRealData = projectItems.length > 0 && !projectItems.every((item: any) => item._isPending);
 
-      // Get comprehensive breakdown using buildClientBreakdown
+      // Get comprehensive breakdown - prioritize item.children, then buildClientBreakdown
       const getItemizedBreakdown = (item: any) => {
+        // First, check if item has children array (from saved quote items)
+        if (item.children && Array.isArray(item.children) && item.children.length > 0) {
+          console.log('[DETAILED VIEW] Using item.children:', {
+            itemName: item.name,
+            childrenCount: item.children.length
+          });
+          return item.children;
+        }
+        
+        // Fallback to building from window summary
         const windowSummary = windowSummaries.find((ws: any) => ws.window_id === item.id);
         
         console.log('[DETAILED VIEW] Getting breakdown for item:', {
@@ -756,16 +766,16 @@ const LivePreviewBlock = ({
             </div>
           )}
 
-          <div className="border rounded-lg overflow-hidden w-full" style={{ maxWidth: '100%' }}>
+          <div className="border-2 border-gray-200 rounded-xl overflow-hidden w-full shadow-sm" style={{ maxWidth: '100%' }}>
             <table className="w-full border-collapse" style={{ tableLayout: 'fixed', maxWidth: '100%' }}>
-              <thead className="bg-gray-100 border-b-2 border-gray-400">
+              <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b-2 border-blue-200">
                 <tr>
-                  <th className="text-left px-2 py-2 text-sm font-semibold text-gray-700" style={{ width: '6%' }}>#</th>
-                  <th className="text-left px-2 py-2 text-sm font-semibold text-gray-700" style={{ width: '24%' }}>Product/Service</th>
-                  <th className="text-left px-2 py-2 text-sm font-semibold text-gray-700" style={{ width: '28%' }}>Description</th>
-                  <th className="text-center px-2 py-2 text-sm font-semibold text-gray-700" style={{ width: '10%' }}>Quantity</th>
-                  <th className="text-right px-2 py-2 text-sm font-semibold text-gray-700" style={{ width: '15%' }}>Price rate</th>
-                  <th className="text-right px-2 py-2 text-sm font-semibold text-gray-700" style={{ width: '17%' }}>
+                  <th className="text-left px-4 py-3 text-sm font-bold text-gray-800" style={{ width: '6%' }}>#</th>
+                  <th className="text-left px-4 py-3 text-sm font-bold text-gray-800" style={{ width: '24%' }}>Product/Service</th>
+                  <th className="text-left px-4 py-3 text-sm font-bold text-gray-800" style={{ width: '28%' }}>Description</th>
+                  <th className="text-center px-4 py-3 text-sm font-bold text-gray-800" style={{ width: '10%' }}>Quantity</th>
+                  <th className="text-right px-4 py-3 text-sm font-bold text-gray-800" style={{ width: '15%' }}>Price rate</th>
+                  <th className="text-right px-4 py-3 text-sm font-bold text-gray-800" style={{ width: '17%' }}>
                     Total {(userBusinessSettings?.pricing_settings as any)?.tax_inclusive ? `(incl. ${renderTokenValue('tax_label')})` : `without ${renderTokenValue('tax_label')}`}
                   </th>
                 </tr>
@@ -774,9 +784,9 @@ const LivePreviewBlock = ({
                 {Object.entries(groupedItems).map(([roomName, items]: [string, any]) => (
                   <React.Fragment key={roomName}>
                     {groupByRoom && hasRealData && (
-                      <tr className="bg-gray-100 border-t-2 border-gray-400">
-                        <td colSpan={6} className="px-4 py-2.5 font-semibold text-sm uppercase tracking-wide text-gray-700" style={{ wordWrap: 'break-word' }}>
-                          📍 {roomName}
+                      <tr className="bg-gradient-to-r from-purple-50 to-blue-50 border-t-2 border-blue-300">
+                        <td colSpan={6} className="px-4 py-3 font-bold text-sm uppercase tracking-wider text-blue-900 flex items-center gap-2" style={{ wordWrap: 'break-word' }}>
+                          <span className="text-blue-600">📍</span> {roomName}
                         </td>
                       </tr>
                     )}
@@ -787,56 +797,65 @@ const LivePreviewBlock = ({
                       return (
                         <React.Fragment key={`item-${roomName}-${itemIndex}`}>
                           {/* Main product row */}
-                          <tr className="border-t border-gray-300 hover:bg-gray-50/50">
-                            <td className="px-2 py-2 text-sm font-semibold align-top">{itemNumber}</td>
-                            <td className="px-2 py-2 text-sm font-semibold align-top">
-                              <div className="flex items-start gap-2">
+                          <tr className="border-t border-gray-200 hover:bg-blue-50/30 transition-colors">
+                            <td className="px-4 py-4 text-sm font-bold text-blue-600 align-top">{itemNumber}</td>
+                            <td className="px-4 py-4 text-sm font-bold text-gray-900 align-top">
+                              <div className="flex items-start gap-3">
                                 {showImages && item.image_url && (
-                                  <QuoteItemImage src={item.image_url} alt={item.name} size={60} />
+                                  <div className="flex-shrink-0">
+                                    <QuoteItemImage src={item.image_url} alt={item.name} size={64} className="rounded-lg shadow-sm border-2 border-gray-200" />
+                                  </div>
                                 )}
                                 <div className="flex-1">
-                                  {item.name || 'Window Treatment'}
+                                  <div className="font-bold text-gray-900">{item.name || 'Window Treatment'}</div>
+                                  {item.surface_name && (
+                                    <div className="text-xs text-gray-500 mt-1">{item.surface_name}</div>
+                                  )}
                                 </div>
                               </div>
                             </td>
-                            <td className="px-2 py-2 text-sm align-top">
+                            <td className="px-4 py-4 text-sm text-gray-700 align-top">
                               {item.description || item.treatment_type || ''}
                             </td>
-                            <td className="px-2 py-2 text-center text-sm align-top">{item.quantity || 1}</td>
-                            <td className="px-2 py-2 text-right text-sm align-top">
+                            <td className="px-4 py-4 text-center text-sm font-medium text-gray-800 align-top">{item.quantity || 1}</td>
+                            <td className="px-4 py-4 text-right text-sm text-gray-800 align-top">
                               {renderTokenValue('currency_symbol')}{(item.unit_price || 0).toFixed(2)}
                             </td>
-                            <td className="px-2 py-2 text-right font-semibold text-sm align-top">
+                            <td className="px-4 py-4 text-right font-bold text-sm text-blue-600 align-top">
                               {renderTokenValue('currency_symbol')}{(item.total || 0).toFixed(2)}
                             </td>
                           </tr>
                           
-                          {/* Detailed breakdown rows */}
-                          {showDetailedProducts && breakdown.length > 0 && (
-                            <tr>
-                              <td colSpan={6} className="px-2 py-2 bg-gray-50/30">
-                                <div className="ml-8 pl-4 border-l-2 border-gray-300 space-y-2">
+                          {/* Detailed breakdown rows - ALWAYS SHOW IF CHILDREN EXIST */}
+                          {breakdown.length > 0 && (
+                            <tr className="bg-gradient-to-r from-blue-50/30 to-purple-50/30">
+                              <td colSpan={6} className="px-4 py-3">
+                                <div className="ml-12 pl-6 border-l-4 border-blue-300 space-y-3">
+                                  <div className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-2">
+                                    {showDetailedProducts ? '📋 Itemized Breakdown:' : ''}
+                                  </div>
                                   {breakdown.map((breakdownItem: any, bidx: number) => (
-                                    <div key={bidx} className="flex items-start text-xs gap-2">
+                                    <div key={bidx} className="flex items-start gap-3 py-2 px-3 bg-white/60 rounded-lg border border-blue-100">
                                       {showImages && breakdownItem.image_url && (
-                                        <QuoteItemImage src={breakdownItem.image_url} alt={breakdownItem.name} size={40} />
+                                        <div className="flex-shrink-0">
+                                          <QuoteItemImage src={breakdownItem.image_url} alt={breakdownItem.name} size={48} className="rounded-md shadow-sm border border-gray-200" />
+                                        </div>
                                       )}
-                                      <span className="text-gray-400 mt-0.5">•</span>
-                                      <div className="flex-1">
-                                        <div className="font-medium text-gray-700">{breakdownItem.name}</div>
-                                        {breakdownItem.description && (
-                                          <div className="text-gray-500 text-xs">{breakdownItem.description}</div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-semibold text-gray-800 text-sm">{breakdownItem.name}</div>
+                                        {breakdownItem.description && breakdownItem.description !== '-' && (
+                                          <div className="text-gray-600 text-xs mt-0.5">{breakdownItem.description}</div>
                                         )}
-                                        {breakdownItem.quantity && breakdownItem.unit && (
-                                          <div className="text-gray-400 text-xs">
-                                            {typeof breakdownItem.quantity === 'number' ? breakdownItem.quantity.toFixed(2) : breakdownItem.quantity} {breakdownItem.unit} × {renderTokenValue('currency_symbol')}{(breakdownItem.unit_price || 0).toFixed(2)} = {renderTokenValue('currency_symbol')}{(breakdownItem.total_cost || 0).toFixed(2)}
+                                        <div className="flex items-center justify-between mt-1.5">
+                                          {breakdownItem.quantity && breakdownItem.unit && (
+                                            <div className="text-gray-500 text-xs font-medium">
+                                              {typeof breakdownItem.quantity === 'number' ? breakdownItem.quantity.toFixed(2) : breakdownItem.quantity} {breakdownItem.unit} × {renderTokenValue('currency_symbol')}{(breakdownItem.unit_price || 0).toFixed(2)}
+                                            </div>
+                                          )}
+                                          <div className="text-blue-600 font-bold text-sm">
+                                            {renderTokenValue('currency_symbol')}{(breakdownItem.total || breakdownItem.total_cost || 0).toFixed(2)}
                                           </div>
-                                        )}
-                                        {!breakdownItem.quantity && breakdownItem.total_cost > 0 && (
-                                          <div className="text-gray-400 text-xs">
-                                            {renderTokenValue('currency_symbol')}{(breakdownItem.total_cost || 0).toFixed(2)}
-                                          </div>
-                                        )}
+                                        </div>
                                       </div>
                                     </div>
                                   ))}
