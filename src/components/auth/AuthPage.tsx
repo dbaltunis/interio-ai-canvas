@@ -368,83 +368,63 @@ export const AuthPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden">
-      {/* Animated gradient mesh background for mobile/tablet */}
-      <div className="lg:hidden absolute inset-0 bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(var(--primary-rgb),0.1),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(var(--secondary-rgb),0.1),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_80%,rgba(var(--accent-rgb),0.08),transparent_50%)]" />
-      </div>
+    <div className="min-h-screen flex relative overflow-hidden bg-background">
+      {/* Left Side - Branding (Desktop Only) */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-muted/30 via-background to-muted/20">
+        <div className="relative h-full flex flex-col justify-between px-12 xl:px-16 py-16 z-10">
+          {/* Top Section - Logo and Branding */}
+          <div>
+            <div className="mb-12">
+              <img 
+                src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
+                alt="InterioApp Logo" 
+                className="h-10 w-auto object-contain"
+              />
+            </div>
 
-      {/* Left Side - AI Background & Branding (Desktop Only) */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-primary/10 via-secondary/5 to-accent/10">
-        {/* Animated mesh gradient background */}
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(var(--primary-rgb),0.15),transparent_50%)] animate-pulse" style={{ animationDuration: '8s' }} />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(var(--secondary-rgb),0.15),transparent_50%)] animate-pulse" style={{ animationDuration: '12s', animationDelay: '2s' }} />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--accent-rgb),0.1),transparent_70%)] animate-pulse" style={{ animationDuration: '10s', animationDelay: '4s' }} />
-        </div>
-        
-        {/* Floating orbs */}
-        <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-primary/20 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-1/3 right-1/4 w-40 h-40 bg-secondary/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '3s', animationDuration: '8s' }} />
-        <div className="absolute top-1/2 right-1/3 w-24 h-24 bg-accent/20 rounded-full blur-2xl animate-float" style={{ animationDelay: '1.5s', animationDuration: '6s' }} />
-        
-        <div className="relative h-full flex flex-col justify-center px-12 xl:px-16 z-10">
-          {/* Logo - Much Larger */}
-          <div className="mb-10">
-            <img 
-              src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
-              alt="InterioApp Logo" 
-              className="h-20 w-auto object-contain brightness-110 drop-shadow-2xl transition-transform duration-500 hover:scale-105"
-            />
-          </div>
-
-          {/* Main Heading with Enhanced Gradient Effect */}
-          <div className="space-y-4 mb-12">
-            <h1 className="text-6xl xl:text-7xl font-bold leading-tight">
-              <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent drop-shadow-[0_4px_12px_rgba(0,0,0,0.2)]">
+            <div className="space-y-4 mb-16">
+              <h1 className="text-5xl xl:text-6xl font-bold leading-tight text-foreground">
                 InterioApp
-              </span>
-            </h1>
-            <p className="text-xl xl:text-2xl text-foreground/80 font-light leading-relaxed">
-              The future of window décor is online and bespoke
-            </p>
-          </div>
+              </h1>
+              <p className="text-lg text-muted-foreground max-w-md">
+                The future of window décor is online and bespoke
+              </p>
+            </div>
 
-          {/* Features with glassmorphism */}
-          <div className="space-y-6 mb-12">
-            <div className="flex items-start space-x-4 group">
-              <div className="mt-1 p-3 rounded-xl bg-primary/10 backdrop-blur-md border border-primary/20 shadow-lg group-hover:bg-primary/20 transition-all duration-300">
-                <UserPlus className="h-6 w-6 text-primary" />
+            {/* Features */}
+            <div className="space-y-6">
+              <div className="flex items-start space-x-4">
+                <div className="mt-1 p-2.5 rounded-lg bg-primary/5 border border-primary/10">
+                  <UserPlus className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-base mb-1 text-foreground">Team Collaboration</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Work seamlessly with your team on projects
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-lg mb-1">Team Collaboration</h3>
-                <p className="text-sm text-foreground/70">
-                  Work seamlessly with your team on projects
-                </p>
+              
+              <div className="flex items-start space-x-4">
+                <div className="mt-1 p-2.5 rounded-lg bg-secondary/5 border border-secondary/10">
+                  <Mail className="h-5 w-5 text-secondary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-base mb-1 text-foreground">Client Management</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Manage clients, projects, and quotations in one place
+                  </p>
+                </div>
               </div>
             </div>
-            
-            <div className="flex items-start space-x-4 group">
-              <div className="mt-1 p-3 rounded-xl bg-secondary/10 backdrop-blur-md border border-secondary/20 shadow-lg group-hover:bg-secondary/20 transition-all duration-300">
-                <Mail className="h-6 w-6 text-secondary" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg mb-1">Client Management</h3>
-                <p className="text-sm text-foreground/70">
-                  Manage clients, projects, and quotations in one place
-                </p>
-              </div>
-            </div>
           </div>
 
-          {/* Global Presence with better styling */}
-          <div className="pt-8 border-t border-foreground/10">
-            <p className="text-sm text-foreground/60 mb-4 font-medium">
+          {/* Bottom Section - Trust Indicators */}
+          <div className="pt-8 border-t border-border">
+            <p className="text-sm text-muted-foreground mb-3">
               Trusted by professionals worldwide
             </p>
-            <div className="flex flex-wrap gap-2 mb-4">
+            <div className="flex flex-wrap gap-2.5 mb-3">
               <span className="px-3 py-1.5 rounded-full bg-background/20 backdrop-blur-md border border-foreground/10 text-xs font-medium hover:bg-background/30 transition-colors">🇳🇿 NZ</span>
               <span className="px-3 py-1.5 rounded-full bg-background/20 backdrop-blur-md border border-foreground/10 text-xs font-medium hover:bg-background/30 transition-colors">🇦🇺 AU</span>
               <span className="px-3 py-1.5 rounded-full bg-background/20 backdrop-blur-md border border-foreground/10 text-xs font-medium hover:bg-background/30 transition-colors">🇫🇷 FR</span>
@@ -461,208 +441,251 @@ export const AuthPage = () => {
       </div>
 
       {/* Right Side - Auth Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative z-10">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-8 relative z-10">
+        {/* Mobile Logo */}
+        <div className="lg:hidden absolute top-8 left-8">
+          <img 
+            src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
+            alt="InterioApp Logo" 
+            className="h-8 w-auto object-contain"
+          />
+        </div>
+
         <div className="w-full max-w-md">
-          {/* Mobile/Tablet Logo - Larger */}
-          <div className="lg:hidden mb-10 text-center">
-            <img 
-              src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
-              alt="InterioApp Logo" 
-              className="h-16 w-auto object-contain mx-auto mb-6 drop-shadow-xl transition-transform duration-500 hover:scale-105"
-            />
-            <h1 className="text-4xl font-bold mb-2">
-              <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent drop-shadow-lg">
-                InterioApp
-              </span>
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              The future of window décor is online and bespoke
-            </p>
-          </div>
-
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold mb-2">
-              {invitation 
-                ? 'Complete Your Registration'
-                : (isSignUp ? 'Create Account' : 'Welcome Back')}
-            </h2>
-            <p className="text-muted-foreground">
-              {invitation 
-                ? 'Set up your password to access your account'
-                : (isSignUp 
-                  ? 'Start managing your window treatment business' 
-                  : 'Sign in to continue to InterioApp')}
-            </p>
-          </div>
-          
-          <div>
-            {invitation && (
-              <Alert className="mb-6 border-accent/50 bg-accent/5">
-                <UserPlus className="h-4 w-4" />
-                <AlertDescription>
-                  You've been invited to join {invitation.invited_by_name}'s team as a{' '}
-                  <strong>{invitation.role}</strong>
-                </AlertDescription>
-              </Alert>
-            )}
-
-                {showResetForm ? (
-                  <form onSubmit={handlePasswordReset} className="space-y-4">
+          {showResetForm ? (
+            <Card className="border-border shadow-sm">
+              <CardHeader className="space-y-2">
+                <CardTitle className="text-2xl font-semibold text-foreground">
+                  Reset Password
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Enter your email to receive a reset link
+                </p>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handlePasswordReset} className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Email</label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         type="email"
-                        placeholder="Email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10"
+                        className="pl-10 h-10 bg-background border-input"
+                        placeholder="name@company.com"
                         required
                       />
                     </div>
-                    <Button type="submit" className="w-full" disabled={resetLoading}>
+                  </div>
+                  
+                  <div className="space-y-3 pt-2">
+                    <Button
+                      type="submit"
+                      className="w-full h-10 bg-foreground text-background hover:bg-foreground/90 font-medium"
+                      disabled={resetLoading}
+                    >
                       {resetLoading ? 'Sending...' : 'Send Reset Link'}
                     </Button>
+                    
                     <Button
                       type="button"
                       variant="ghost"
-                      className="w-full"
+                      className="w-full text-muted-foreground hover:text-foreground"
                       onClick={() => setShowResetForm(false)}
                     >
                       Back to Sign In
                     </Button>
-                  </form>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-border shadow-sm">
+              <CardHeader className="space-y-2 pb-6">
+                {invitation ? (
+                  <>
+                    <CardTitle className="text-2xl font-semibold text-foreground">
+                      Join Team
+                    </CardTitle>
+                    <Alert className="text-left bg-primary/5 border-primary/20">
+                      <AlertDescription className="text-sm">
+                        You've been invited to join <strong>{invitation.company_name}</strong> as a <strong>{invitation.role}</strong>
+                      </AlertDescription>
+                    </Alert>
+                  </>
                 ) : (
                   <>
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <CardTitle className="text-2xl font-semibold text-foreground">
+                      {isSignUp ? 'Create Account' : 'Welcome Back'}
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      {isSignUp ? 'Get started with InterioApp' : 'Sign in to continue to InterioApp'}
+                    </p>
+                  </>
+                )}
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Email</label>
+                      <Input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="h-10 bg-background border-input"
+                        placeholder="name@company.com"
+                        required
+                        disabled={!!invitation}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Password</label>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input
-                          type="email"
-                          placeholder="Email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          disabled={!!invitation}
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                      <div className="relative">
-                        <Input
-                          type={showPassword ? 'text' : 'password'}
-                          placeholder="Password"
+                          type={showPassword ? "text" : "password"}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
+                          className="pr-10 h-10 bg-background border-input"
+                          placeholder="••••••••"
                           required
                         />
                         <button
                           type="button"
-                          aria-label={showPassword ? 'Hide password' : 'Show password'}
-                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
-                          onClick={() => setShowPassword((v) => !v)}
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                         >
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
                       </div>
-                      <div className="text-right -mt-2">
-                        {!invitation && (
+                    </div>
+
+                    {isSignUp && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">Confirm Password</label>
+                        <div className="relative">
+                          <Input
+                            type={showConfirm ? "text" : "password"}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            className="pr-10 h-10 bg-background border-input"
+                            placeholder="••••••••"
+                            required
+                          />
                           <button
                             type="button"
-                            onClick={() => setShowResetForm(true)}
-                            className="text-sm text-primary hover:underline"
+                            onClick={() => setShowConfirm(!showConfirm)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                           >
-                            Forgot password?
+                            {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
-                        )}
-                      </div>
-                      
-                      {/* Password Strength Indicator - show for ALL signups */}
-                      {isSignUp && password && passwordStrength && (
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">Password strength:</span>
-                            <span className={`font-medium ${
-                              passwordStrength === 'weak' ? 'text-destructive' :
-                              passwordStrength === 'medium' ? 'text-yellow-600' :
-                              'text-green-600'
-                            }`}>
-                              {passwordStrength === 'weak' ? '⚠️ Weak' :
-                               passwordStrength === 'medium' ? '✓ Medium' :
-                               '✓✓ Strong'}
-                            </span>
-                          </div>
-                          <div className="flex gap-1">
-                            <div className={`h-1.5 flex-1 rounded-full ${
-                              passwordStrength === 'weak' ? 'bg-destructive' :
-                              passwordStrength === 'medium' ? 'bg-yellow-600' :
-                              'bg-green-600'
-                            }`} />
-                            <div className={`h-1.5 flex-1 rounded-full ${
-                              passwordStrength === 'medium' ? 'bg-yellow-600' :
-                              passwordStrength === 'strong' ? 'bg-green-600' :
-                              'bg-muted'
-                            }`} />
-                            <div className={`h-1.5 flex-1 rounded-full ${
-                              passwordStrength === 'strong' ? 'bg-green-600' : 'bg-muted'
-                            }`} />
-                          </div>
-                          {passwordStrength === 'weak' && (
-                            <p className="text-xs text-destructive">
-                              Use 8+ characters with uppercase, lowercase, numbers & symbols
-                            </p>
-                          )}
                         </div>
-                      )}
-
-                      {isSignUp && (
-                        <>
-                          <div className="relative">
-                            <Input
-                              type={showConfirm ? 'text' : 'password'}
-                              placeholder="Confirm Password"
-                              value={confirmPassword}
-                              onChange={(e) => setConfirmPassword(e.target.value)}
-                              required
-                            />
-                            <button
-                              type="button"
-                              aria-label={showConfirm ? 'Hide confirm password' : 'Show confirm password'}
-                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
-                              onClick={() => setShowConfirm((v) => !v)}
-                            >
-                              {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </button>
-                          </div>
-                          {confirmPassword.length > 0 && (
-                            <p className={`text-xs mt-1 ${password === confirmPassword ? 'text-muted-foreground' : 'text-destructive'}`}>
-                              {password === confirmPassword ? 'Passwords match' : 'Passwords do not match'}
+                        
+                        {passwordStrength && (
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2">
+                              <div className="h-1 flex-1 bg-muted rounded-full overflow-hidden">
+                                <div 
+                                  className={`h-full transition-all duration-300 ${
+                                    passwordStrength === 'weak' ? 'w-1/3 bg-destructive' :
+                                    passwordStrength === 'medium' ? 'w-2/3 bg-company-warning' :
+                                    'w-full bg-company-tertiary'
+                                  }`}
+                                />
+                              </div>
+                              <span className={`text-xs font-medium capitalize ${
+                                passwordStrength === 'weak' ? 'text-destructive' :
+                                passwordStrength === 'medium' ? 'text-company-warning' :
+                                'text-company-tertiary'
+                              }`}>
+                                {passwordStrength}
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Use 8+ characters with uppercase, lowercase, numbers, and symbols
                             </p>
-                          )}
-                        </>
-                      )}
-                      <Button type="submit" className="w-full" disabled={loading}>
-                        {loading ? 'Loading...' : (
-                          invitation ? 'Complete Registration' : (isSignUp ? 'Sign Up' : 'Sign In')
+                          </div>
                         )}
-                      </Button>
-                    </form>
-                    {!invitation && (
-                      <div className="mt-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => setIsSignUp(!isSignUp)}
-                          className="text-primary hover:underline"
-                        >
-                          {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
-                        </button>
                       </div>
-                        )}
-                      </>
                     )}
                   </div>
-                </div>
-              </div>
-            </div>
-          );
-        };
 
-        export default AuthPage;
+                  <div className="space-y-4 pt-2">
+                    {!isSignUp && (
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => setShowResetForm(true)}
+                          className="text-sm text-foreground hover:text-foreground/80 font-medium"
+                        >
+                          Forgot password?
+                        </button>
+                      </div>
+                    )}
+                    
+                    <Button
+                      type="submit"
+                      className="w-full h-10 bg-foreground text-background hover:bg-foreground/90 font-medium"
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        'Please wait...'
+                      ) : invitation ? (
+                        'Accept Invitation & Join'
+                      ) : isSignUp ? (
+                        'Create Account'
+                      ) : (
+                        'Sign In'
+                      )}
+                    </Button>
+
+                    <div className="text-center text-sm text-muted-foreground">
+                      {isSignUp ? (
+                        <>
+                          Already have an account?{' '}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!invitation) {
+                                setIsSignUp(false);
+                                setPassword('');
+                                setConfirmPassword('');
+                              }
+                            }}
+                            disabled={!!invitation}
+                            className={`font-medium text-foreground hover:underline ${invitation ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                            Sign in
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          Don't have an account?{' '}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsSignUp(true);
+                              setPassword('');
+                              setConfirmPassword('');
+                            }}
+                            className="font-medium text-foreground hover:underline"
+                          >
+                            Sign up
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AuthPage;
