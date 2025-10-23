@@ -428,11 +428,11 @@ export const AuthPage = () => {
 
       {/* Right side - Auth form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 relative overflow-hidden transition-colors duration-500">
-        {/* Background - changes with theme */}
-        <div className={`absolute inset-0 transition-all duration-500 ${
+        {/* Background - matches desktop left side for tablet/mobile, plain for desktop */}
+        <div className={`absolute inset-0 transition-all duration-500 lg:bg-background ${
           previewTheme === 'dark' 
-            ? 'bg-slate-900' 
-            : 'bg-gradient-to-br from-[#e8f0f2] via-[#f0f4f8] to-[#e0e8eb]'
+            ? 'bg-gradient-to-br from-[#0A2F35] via-[#1A4A52] to-[#2A5A62]' 
+            : 'bg-gradient-to-br from-[#E8F4F1] via-[#F5F9F7] to-[#FFFFFF]'
         }`} />
         
         {/* Mobile/Tablet Logo */}
