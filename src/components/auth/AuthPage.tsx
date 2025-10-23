@@ -427,12 +427,12 @@ export const AuthPage = () => {
       </div>
 
       {/* Right side - Auth form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 relative overflow-hidden transition-colors duration-500">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 relative overflow-hidden">
         {/* Background - gradient for tablet/mobile only, plain white for desktop */}
-        <div className={`absolute inset-0 transition-all duration-500 ${
+        <div className={`absolute inset-0 transition-all duration-500 lg:bg-white ${
           previewTheme === 'dark' 
-            ? 'bg-gradient-to-br from-[#0A2F35] via-[#1A4A52] to-[#2A5A62] lg:!bg-background' 
-            : 'bg-gradient-to-br from-[#E8F4F1] via-[#F5F9F7] to-[#FFFFFF] lg:!bg-background'
+            ? 'bg-gradient-to-br from-[#0A2F35] via-[#1A4A52] to-[#2A5A62]' 
+            : 'bg-gradient-to-br from-[#E8F4F1] via-[#F5F9F7] to-[#FFFFFF]'
         }`} />
         
         {/* Mobile/Tablet Logo */}
