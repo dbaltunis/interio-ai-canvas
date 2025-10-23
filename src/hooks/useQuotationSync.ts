@@ -7,6 +7,7 @@ import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
 import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
 import { useMarkupSettings } from "@/hooks/useMarkupSettings";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { supabase } from "@/integrations/supabase/client";
 
 interface QuotationSyncOptions {
   projectId: string;
@@ -391,6 +392,8 @@ export const useQuotationSync = ({
       quote.project_id === projectId && quote.status === 'draft'
     );
 
+    let quoteId: string;
+
     if (existingQuote) {
       // Update existing quote
       await updateQuote.mutateAsync({
@@ -401,13 +404,15 @@ export const useQuotationSync = ({
         notes: `Updated with ${quotationData.items.length} items - ${new Date().toISOString()}`,
         updated_at: new Date().toISOString()
       });
+      quoteId = existingQuote.id;
+      console.log('✅ QuotationSync: Updated quote', existingQuote.quote_number);
     } else if (autoCreateQuote && quotationData.baseSubtotal > 0) {
       // Create new quote
       const quoteNumber = `Q-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
       const validUntil = new Date();
       validUntil.setDate(validUntil.getDate() + 30);
 
-      await createQuote.mutateAsync({
+      const newQuote = await createQuote.mutateAsync({
         project_id: projectId,
         client_id: clientId,
         quote_number: quoteNumber,
@@ -420,7 +425,57 @@ export const useQuotationSync = ({
         notes: `Auto-generated from ${quotationData.items.length} project items`,
       });
       
-    console.log('✅ QuotationSync: Created new quote', quoteNumber);
+      quoteId = newQuote.id;
+      console.log('✅ QuotationSync: Created new quote', quoteNumber);
+    } else {
+      // Update reference data and return early
+      previousDataRef.current = currentData;
+      return;
+    }
+
+    // Save quote items to database
+    try {
+      const itemsToSave = quotationData.items.map((item, index) => ({
+        quote_id: quoteId,
+        name: item.name,
+        description: item.description || item.treatment_type || "",
+        quantity: item.quantity || 1,
+        unit_price: item.unit_price || item.total || 0,
+        total_price: item.total || 0,
+        product_details: {
+          room_id: item.room_id,
+          room_name: item.room_name,
+          surface_name: item.surface_name,
+          treatment_type: item.treatment_type,
+          image_url: item.image_url,
+          hasChildren: item.hasChildren || false,
+          children: item.children || [],
+        },
+        breakdown: item.breakdown || {},
+        currency: item.currency || "GBP",
+        sort_order: index,
+      }));
+
+      // Delete existing items for this quote
+      await supabase
+        .from("quote_items")
+        .delete()
+        .eq("quote_id", quoteId);
+
+      // Insert new items
+      if (itemsToSave.length > 0) {
+        const { error: itemsError } = await supabase
+          .from("quote_items")
+          .insert(itemsToSave);
+
+        if (itemsError) {
+          console.error("Error saving quote items:", itemsError);
+        } else {
+          console.log(`✅ QuotationSync: Saved ${itemsToSave.length} quote items`);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to save quote items:", error);
     }
 
     // Update reference data including window costs
