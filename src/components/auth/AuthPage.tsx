@@ -406,12 +406,20 @@ export const AuthPage = () => {
             <ThemePreview previewTheme={previewTheme} />
           </div>
 
-          {/* Lamp Toggle at Bottom */}
-          <div className="flex justify-center mt-8">
-            <LampToggle 
-              previewTheme={previewTheme}
-              onToggle={() => setPreviewTheme(prev => prev === 'dark' ? 'light' : 'dark')}
-            />
+          {/* Footer with theme info */}
+          <div className="space-y-4">
+            <div className={`text-sm text-center ${previewTheme === 'dark' ? 'text-white/60' : 'text-muted-foreground'}`}>
+              <p>Experience InterioApp in {previewTheme === 'dark' ? 'dark' : 'light'} mode</p>
+              <p className="mt-1">Toggle to see both themes in action ✨</p>
+            </div>
+            
+            {/* Lamp Toggle */}
+            <div className="flex justify-center">
+              <LampToggle 
+                previewTheme={previewTheme}
+                onToggle={() => setPreviewTheme(prev => prev === 'dark' ? 'light' : 'dark')}
+              />
+            </div>
           </div>
         </div>
       </div>
