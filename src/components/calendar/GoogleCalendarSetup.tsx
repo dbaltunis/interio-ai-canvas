@@ -1,11 +1,12 @@
-import { useGoogleCalendarIntegration } from "@/hooks/useGoogleCalendar";
+import { useGoogleCalendarIntegration, useGoogleCalendarSync } from "@/hooks/useGoogleCalendar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, CheckCircle2, Loader2 } from "lucide-react";
+import { Calendar, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
 
 export const GoogleCalendarSetup = () => {
   const { integration, isLoading, isConnected, connect, disconnect, isConnecting, isDisconnecting } = useGoogleCalendarIntegration();
+  const { syncFromGoogle, isSyncingFromGoogle } = useGoogleCalendarSync();
 
   if (isLoading) {
     return (
@@ -47,20 +48,42 @@ export const GoogleCalendarSetup = () => {
                 {integration?.calendar_id || 'primary'}
               </p>
             </div>
-            <Button 
-              onClick={() => disconnect()} 
-              variant="destructive"
-              disabled={isDisconnecting}
-            >
-              {isDisconnecting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Disconnecting...
-                </>
-              ) : (
-                'Disconnect Calendar'
-              )}
-            </Button>
+            
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => syncFromGoogle()} 
+                variant="default"
+                disabled={isSyncingFromGoogle}
+                className="flex-1"
+              >
+                {isSyncingFromGoogle ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Syncing Events...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Sync Events from Google
+                  </>
+                )}
+              </Button>
+              
+              <Button 
+                onClick={() => disconnect()} 
+                variant="destructive"
+                disabled={isDisconnecting}
+              >
+                {isDisconnecting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Disconnecting...
+                  </>
+                ) : (
+                  'Disconnect'
+                )}
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
