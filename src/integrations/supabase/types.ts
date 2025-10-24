@@ -360,17 +360,14 @@ export type Database = {
       appointments: {
         Row: {
           appointment_type: string | null
-          caldav_calendar_id: string | null
-          caldav_etag: string | null
-          caldav_uid: string | null
           client_id: string | null
           color: string | null
           created_at: string
           description: string | null
           end_time: string
+          google_event_id: string | null
           id: string
           invited_client_emails: string[] | null
-          last_caldav_sync: string | null
           location: string | null
           notification_enabled: boolean | null
           notification_minutes: number | null
@@ -385,17 +382,14 @@ export type Database = {
         }
         Insert: {
           appointment_type?: string | null
-          caldav_calendar_id?: string | null
-          caldav_etag?: string | null
-          caldav_uid?: string | null
           client_id?: string | null
           color?: string | null
           created_at?: string
           description?: string | null
           end_time: string
+          google_event_id?: string | null
           id?: string
           invited_client_emails?: string[] | null
-          last_caldav_sync?: string | null
           location?: string | null
           notification_enabled?: boolean | null
           notification_minutes?: number | null
@@ -410,17 +404,14 @@ export type Database = {
         }
         Update: {
           appointment_type?: string | null
-          caldav_calendar_id?: string | null
-          caldav_etag?: string | null
-          caldav_uid?: string | null
           client_id?: string | null
           color?: string | null
           created_at?: string
           description?: string | null
           end_time?: string
+          google_event_id?: string | null
           id?: string
           invited_client_emails?: string[] | null
-          last_caldav_sync?: string | null
           location?: string | null
           notification_enabled?: boolean | null
           notification_minutes?: number | null
@@ -922,54 +913,6 @@ export type Database = {
           user_id?: string
           website?: string | null
           zip_code?: string | null
-        }
-        Relationships: []
-      }
-      caldav_sync_log: {
-        Row: {
-          account_id: string
-          calendar_id: string | null
-          completed_at: string | null
-          created_at: string
-          error_message: string | null
-          events_created: number | null
-          events_deleted: number | null
-          events_synced: number | null
-          events_updated: number | null
-          id: string
-          started_at: string
-          status: string
-          sync_type: string
-        }
-        Insert: {
-          account_id: string
-          calendar_id?: string | null
-          completed_at?: string | null
-          created_at?: string
-          error_message?: string | null
-          events_created?: number | null
-          events_deleted?: number | null
-          events_synced?: number | null
-          events_updated?: number | null
-          id?: string
-          started_at?: string
-          status: string
-          sync_type: string
-        }
-        Update: {
-          account_id?: string
-          calendar_id?: string | null
-          completed_at?: string | null
-          created_at?: string
-          error_message?: string | null
-          events_created?: number | null
-          events_deleted?: number | null
-          events_synced?: number | null
-          events_updated?: number | null
-          id?: string
-          started_at?: string
-          status?: string
-          sync_type?: string
         }
         Relationships: []
       }
@@ -2258,6 +2201,54 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      google_calendar_sync_events: {
+        Row: {
+          appointment_id: string
+          created_at: string
+          google_event_id: string
+          id: string
+          integration_id: string
+          last_synced_at: string | null
+          sync_direction: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_id: string
+          created_at?: string
+          google_event_id: string
+          id?: string
+          integration_id: string
+          last_synced_at?: string | null
+          sync_direction: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string
+          created_at?: string
+          google_event_id?: string
+          id?: string
+          integration_id?: string
+          last_synced_at?: string | null
+          sync_direction?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_calendar_sync_events_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "google_calendar_sync_events_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integration_settings"
             referencedColumns: ["id"]
           },
         ]
