@@ -204,14 +204,13 @@ export const useGoogleCalendarIntegration = () => {
 
 export const useGoogleCalendarSync = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const syncToGoogle = useMutation({
     mutationFn: async (appointmentId: string) => {
-      // Call Supabase edge function to sync to Google Calendar
       const { data, error } = await supabase.functions.invoke('sync-to-google-calendar', {
         body: { appointmentId }
       });
-
       if (error) throw error;
       return data;
     },
@@ -232,22 +231,24 @@ export const useGoogleCalendarSync = () => {
 
   const syncFromGoogle = useMutation({
     mutationFn: async () => {
-      // Call Supabase edge function to sync from Google Calendar
       const { data, error } = await supabase.functions.invoke('sync-from-google-calendar');
-
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['google-calendar-integration'] });
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
       toast({
         title: "Success",
-        description: "Events synced from Google Calendar",
+        description: data?.imported 
+          ? `Imported ${data.imported} new events from Google Calendar`
+          : "Synced from Google Calendar",
       });
     },
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to sync from Google Calendar",
+        description: error.message || "Failed to sync from Google Calendar",
         variant: "destructive",
       });
     },
