@@ -11,6 +11,7 @@ import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { AuthPage } from "./components/auth/AuthPage";
 import { ErrorBoundary } from "./components/performance/ErrorBoundary";
 import { EmailRealtimeProvider } from "./contexts/EmailRealtimeContext";
+import { CalendarSyncProvider } from "./contexts/CalendarSyncContext";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
@@ -63,7 +64,8 @@ const App = () => {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <EmailRealtimeProvider>
-          <TooltipProvider>
+          <CalendarSyncProvider>
+            <TooltipProvider>
             {/* Ensure custom themes also apply the dark class */}
             <ThemeProvider
               attribute="class"
@@ -154,8 +156,9 @@ const App = () => {
                 </BrowserRouter>
               </ThemeProvider>
             </TooltipProvider>
-          </EmailRealtimeProvider>
-        </QueryClientProvider>
+          </CalendarSyncProvider>
+        </EmailRealtimeProvider>
+      </QueryClientProvider>
       </ErrorBoundary>
     );
   };
