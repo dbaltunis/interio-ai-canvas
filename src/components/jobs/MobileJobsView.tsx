@@ -47,10 +47,10 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
 
   if (isLoading) {
     return (
-      <div className="space-y-2 p-2 pb-20 animate-fade-in">
+      <div className="space-y-3 p-4 pb-20 animate-fade-in bg-background/50">
         {[...Array(5)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardContent className="p-2">
+          <Card key={i} className="animate-pulse rounded-xl border-border/40">
+            <CardContent className="p-4">
               <div className="h-20 bg-muted rounded" />
             </CardContent>
           </Card>
@@ -85,7 +85,7 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
   };
 
   return (
-    <div className="space-y-2 p-2 pb-20 animate-fade-in" data-create-project>
+    <div className="space-y-3 p-4 pb-20 animate-fade-in bg-background/50" data-create-project>
       {filteredQuotes.map((quote) => {
         const project = projects.find((p) => p.id === quote.project_id);
         const clientName = getClientName(quote, project);
@@ -94,10 +94,10 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
         return (
           <Card 
             key={quote.id} 
-            className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+            className="overflow-hidden cursor-pointer hover:shadow-md transition-all rounded-xl border-border/40 bg-card"
             onClick={() => onJobSelect(quote)}
           >
-            <CardContent className="p-2">
+            <CardContent className="p-4">
               <div className="flex items-start gap-3">
                 {/* Avatar */}
                 <Avatar className="h-10 w-10 shrink-0">

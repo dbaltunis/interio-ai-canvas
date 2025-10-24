@@ -228,7 +228,7 @@ const JobsPage = () => {
   return (
     <>
       <JobsFocusHandler />
-      <div className="bg-background min-h-screen animate-fade-in">
+      <div className="bg-background/50 min-h-screen animate-fade-in">
       <div className="space-y-4 p-4 lg:p-6">
         {/* Enhanced Header with Design System */}
         <div className="flex items-center justify-between">
@@ -279,8 +279,8 @@ const JobsPage = () => {
         </div>
 
         {/* Enhanced Jobs List */}
-        <Card className="rounded-lg shadow-sm">
-          <JobsTableView 
+        <Card className="rounded-xl shadow-sm border-border/40 bg-card">
+          <JobsTableView
             onJobSelect={handleJobSelect} 
             searchTerm={searchTerm}
             statusFilter={statusFilter}
