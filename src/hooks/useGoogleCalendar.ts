@@ -105,10 +105,10 @@ export const useGoogleCalendarIntegration = () => {
           // Verify origin for security
           if (event.origin !== 'https://ldgrcodffsalkevafbkb.supabase.co') return;
 
-          if (event.data.type === 'google-auth-success') {
+          if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
             window.removeEventListener('message', messageHandler);
             resolve(event.data);
-          } else if (event.data.type === 'google-auth-error') {
+          } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
             window.removeEventListener('message', messageHandler);
             reject(new Error(event.data.error || 'Authentication failed'));
           }
