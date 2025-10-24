@@ -73,6 +73,51 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
     fetchNotesCount();
   }, [projects]);
 
+  // Realtime subscription for note updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('mobile-project-notes-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'project_notes'
+        },
+        (payload: any) => {
+          const projectId = payload.new.project_id;
+          if (projectId) {
+            setProjectNotes(prev => ({
+              ...prev,
+              [projectId]: (prev[projectId] || 0) + 1
+            }));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'project_notes'
+        },
+        (payload: any) => {
+          const projectId = payload.old.project_id;
+          if (projectId) {
+            setProjectNotes(prev => ({
+              ...prev,
+              [projectId]: Math.max((prev[projectId] || 0) - 1, 0)
+            }));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const filteredQuotes = quotes.filter((quote) => {
     const project = projects.find((p) => p.id === quote.project_id);
     

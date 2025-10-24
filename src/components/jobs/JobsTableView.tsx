@@ -144,6 +144,51 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
     fetchIndicators();
   }, [projects]);
 
+  // Realtime subscription for note updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('project-notes-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'project_notes'
+        },
+        (payload: any) => {
+          const projectId = payload.new.project_id;
+          if (projectId) {
+            setProjectNotes(prev => ({
+              ...prev,
+              [projectId]: (prev[projectId] || 0) + 1
+            }));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'project_notes'
+        },
+        (payload: any) => {
+          const projectId = payload.old.project_id;
+          if (projectId) {
+            setProjectNotes(prev => ({
+              ...prev,
+              [projectId]: Math.max((prev[projectId] || 0) - 1, 0)
+            }));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   // Group quotes by project and filter
   const groupedData = projects.map(project => {
     const projectQuotes = quotes.filter(quote => quote.project_id === project.id);
