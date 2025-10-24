@@ -124,8 +124,9 @@ export const UnifiedAppointmentDialog = ({
       return;
     }
 
-    const startDateTime = new Date(`${event.date}T${event.startTime}`);
-    const endDateTime = new Date(`${event.date}T${event.endTime}`);
+    // Create dates in UTC to avoid timezone conversion issues
+    const startDateTime = new Date(`${event.date}T${event.startTime}:00.000Z`);
+    const endDateTime = new Date(`${event.date}T${event.endTime}:00.000Z`);
 
     const appointmentData = {
       title: event.title,
