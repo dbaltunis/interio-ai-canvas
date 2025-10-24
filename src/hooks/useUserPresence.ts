@@ -45,7 +45,7 @@ export const useUserPresence = () => {
         current_activity: undefined
       }));
     },
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 60000, // Refresh every 60 seconds (reduced from 30s)
   });
 
   // Update current user's presence using the new database functions
@@ -90,12 +90,12 @@ export const useUserPresence = () => {
     if (user) {
       updatePresenceMutation.mutate({ status: 'online' });
 
-      // Keep updating user activity every 30 seconds while active
+      // Keep updating user activity every 2 minutes while active (reduced frequency)
       const activityInterval = setInterval(() => {
         if (document.visibilityState === 'visible') {
           updatePresenceMutation.mutate({ status: 'online' });
         }
-      }, 30000);
+      }, 120000); // Changed from 30s to 2min
 
       // Handle tab visibility changes to set online/offline more reliably
       const onVisibilityChange = () => {
