@@ -21,8 +21,6 @@ export interface Appointment {
   invited_client_emails?: string[];
   notification_enabled?: boolean;
   notification_minutes?: number;
-  notification_methods?: string[];
-  custom_notification_message?: string;
   created_at: string;
   updated_at: string;
 }

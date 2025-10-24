@@ -48,8 +48,7 @@ export const UnifiedAppointmentDialog = ({
     selectedTeamMembers: [] as string[],
     inviteClientEmail: "",
     notification_enabled: false,
-    notification_minutes: 15,
-    notificationMethods: [] as string[]
+    notification_minutes: 15
   });
 
   const [selectedCalendars, setSelectedCalendars] = useState<string[]>([]);
@@ -86,8 +85,7 @@ export const UnifiedAppointmentDialog = ({
         selectedTeamMembers: appointment.team_member_ids || [],
         inviteClientEmail: appointment.invited_client_emails?.join(', ') || "",
         notification_enabled: appointment.notification_enabled || false,
-        notification_minutes: appointment.notification_minutes || 15,
-        notificationMethods: appointment.notification_methods || []
+        notification_minutes: appointment.notification_minutes || 15
       });
     } else if (selectedDate) {
       setEvent({
@@ -103,8 +101,7 @@ export const UnifiedAppointmentDialog = ({
         selectedTeamMembers: [],
         inviteClientEmail: "",
         notification_enabled: true, // Enable notifications by default for new events
-        notification_minutes: 15,
-        notificationMethods: []
+        notification_minutes: 15
       });
     }
   }, [appointment, selectedDate, defaultColors]);
@@ -140,8 +137,7 @@ export const UnifiedAppointmentDialog = ({
       team_member_ids: event.selectedTeamMembers,
       invited_client_emails: event.inviteClientEmail ? event.inviteClientEmail.split(',').map(email => email.trim()) : [],
       notification_enabled: event.notification_enabled,
-      notification_minutes: event.notification_minutes,
-      notification_methods: event.notificationMethods
+      notification_minutes: event.notification_minutes
     };
 
     try {
@@ -198,8 +194,7 @@ export const UnifiedAppointmentDialog = ({
       selectedTeamMembers: [],
       inviteClientEmail: "",
       notification_enabled: false,
-      notification_minutes: 15,
-      notificationMethods: []
+      notification_minutes: 15
     });
     setSelectedCalendars([]);
     setSyncToCalendars(false);
@@ -381,65 +376,8 @@ export const UnifiedAppointmentDialog = ({
                   onCheckedChange={(checked) => setEvent({ ...event, notification_enabled: checked })}
                 />
               </div>
-
               {event.notification_enabled && (
                 <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-                  <div>
-                    <Label className="text-sm font-medium mb-2 block">Notification methods</Label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="emailNotification"
-                          checked={event.notificationMethods?.includes('email') || false}
-                          onCheckedChange={(checked) => {
-                            const methods = event.notificationMethods || [];
-                            setEvent({
-                              ...event,
-                              notificationMethods: checked
-                                ? [...methods.filter(m => m !== 'email'), 'email']
-                                : methods.filter(m => m !== 'email')
-                            });
-                          }}
-                        />
-                        <Label htmlFor="emailNotification" className="text-sm">Email</Label>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="smsNotification"
-                          checked={event.notificationMethods?.includes('sms') || false}
-                          onCheckedChange={(checked) => {
-                            const methods = event.notificationMethods || [];
-                            setEvent({
-                              ...event,
-                              notificationMethods: checked
-                                ? [...methods.filter(m => m !== 'sms'), 'sms']
-                                : methods.filter(m => m !== 'sms')
-                            });
-                          }}
-                        />
-                        <Label htmlFor="smsNotification" className="text-sm">SMS</Label>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="inAppNotification"
-                          checked={event.notificationMethods?.includes('in_app') || false}
-                          onCheckedChange={(checked) => {
-                            const methods = event.notificationMethods || [];
-                            setEvent({
-                              ...event,
-                              notificationMethods: checked
-                                ? [...methods.filter(m => m !== 'in_app'), 'in_app']
-                                : methods.filter(m => m !== 'in_app')
-                            });
-                          }}
-                        />
-                        <Label htmlFor="inAppNotification" className="text-sm">In-app</Label>
-                      </div>
-                    </div>
-                  </div>
-
                   <div>
                     <Label htmlFor="notificationTiming" className="text-sm font-medium">Notify before event</Label>
                     <Select 
