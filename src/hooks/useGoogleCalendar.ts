@@ -59,22 +59,16 @@ export const useGoogleCalendarIntegration = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      const clientId = '1080600437939-i9nb8ctb5dqvu59dvvtor9j6mt2n02ve.apps.googleusercontent.com';
-      if (!clientId) {
-        throw new Error('Google Client ID not configured');
+      // Get OAuth URL from edge function which has access to secrets
+      const { data: urlData, error: urlError } = await supabase.functions.invoke('google-oauth-initiate', {
+        body: { userId: user.id }
+      });
+
+      if (urlError) {
+        throw new Error(urlError.message || 'Failed to generate OAuth URL');
       }
 
-      const redirectUri = `https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/google-oauth-callback`;
-      const scope = 'https://www.googleapis.com/auth/calendar';
-      
-      const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-        `client_id=${clientId}&` +
-        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-        `scope=${encodeURIComponent(scope)}&` +
-        `response_type=code&` +
-        `access_type=offline&` +
-        `prompt=consent&` +
-        `state=${user.id}`;
+      const googleAuthUrl = urlData.authUrl;
 
       // If redirect mode is requested, use full page redirect
       if (useRedirect) {
