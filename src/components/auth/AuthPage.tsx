@@ -452,8 +452,8 @@ export const AuthPage = () => {
         <div className="w-full max-w-md relative z-10 animate-fade-in">
           {showResetForm ? (
             <Card className="border-border shadow-sm">
-              <CardHeader className="space-y-2">
-                <CardTitle className="text-2xl font-semibold text-foreground">
+              <CardHeader className="space-y-1.5">
+                <CardTitle className="text-xl font-semibold text-foreground">
                   Reset Password
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
@@ -461,8 +461,8 @@ export const AuthPage = () => {
                 </p>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handlePasswordReset} className="space-y-4">
-                  <div className="space-y-2">
+                <form onSubmit={handlePasswordReset} className="space-y-3.5">
+                  <div className="space-y-1.5">
                     <label className="text-sm font-medium text-foreground">Email</label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -470,17 +470,17 @@ export const AuthPage = () => {
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10 h-10 bg-background border-input"
+                        className="pl-10 h-9 bg-background border-input"
                         placeholder="name@company.com"
                         required
                       />
                     </div>
                   </div>
                   
-                  <div className="space-y-3 pt-2">
+                  <div className="space-y-2.5 pt-1">
                     <Button
                       type="submit"
-                      className="w-full h-10 bg-foreground text-background hover:bg-foreground/90 font-medium"
+                      className="w-full h-9 bg-foreground text-background hover:bg-foreground/90 font-medium"
                       disabled={resetLoading}
                     >
                       {resetLoading ? 'Sending...' : 'Send Reset Link'}
@@ -500,10 +500,10 @@ export const AuthPage = () => {
             </Card>
           ) : (
             <Card className="border-border shadow-sm">
-              <CardHeader className="space-y-2 pb-6">
+              <CardHeader className="space-y-1.5 pb-5">
                 {invitation ? (
                   <>
-                    <CardTitle className="text-2xl font-semibold text-foreground">
+                    <CardTitle className="text-xl font-semibold text-foreground">
                       Join Team
                     </CardTitle>
                     <Alert className="text-left bg-primary/5 border-primary/20">
@@ -514,7 +514,7 @@ export const AuthPage = () => {
                   </>
                 ) : (
                   <>
-                    <CardTitle className="text-2xl font-semibold text-foreground">
+                    <CardTitle className="text-xl font-semibold text-foreground">
                       {isSignUp ? 'Create Account' : 'Welcome Back'}
                     </CardTitle>
                     <p className="text-sm text-muted-foreground">
@@ -524,29 +524,29 @@ export const AuthPage = () => {
                 )}
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-3.5">
+                    <div className="space-y-1.5">
                       <label className="text-sm font-medium text-foreground">Email</label>
                       <Input
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="h-10 bg-background border-input"
+                        className="h-9 bg-background border-input"
                         placeholder="name@company.com"
                         required
                         disabled={!!invitation}
                       />
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <label className="text-sm font-medium text-foreground">Password</label>
                       <div className="relative">
                         <Input
                           type={showPassword ? "text" : "password"}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="pr-10 h-10 bg-background border-input"
+                          className="pr-10 h-9 bg-background border-input"
                           placeholder="••••••••"
                           required
                         />
@@ -561,14 +561,14 @@ export const AuthPage = () => {
                     </div>
 
                     {isSignUp && (
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         <label className="text-sm font-medium text-foreground">Confirm Password</label>
                         <div className="relative">
                           <Input
                             type={showConfirm ? "text" : "password"}
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="pr-10 h-10 bg-background border-input"
+                            className="pr-10 h-9 bg-background border-input"
                             placeholder="••••••••"
                             required
                           />
