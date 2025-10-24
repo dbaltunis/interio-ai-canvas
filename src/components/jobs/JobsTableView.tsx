@@ -539,12 +539,12 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0 relative">
-                  <MoreHorizontal className="h-4 w-4" />
                   {projectNotes[project.id] > 0 && (
-                    <div className="absolute -top-1 -right-1 h-3 w-3 bg-blue-500 rounded-full border border-white flex items-center justify-center">
-                      <StickyNote className="h-2 w-2 text-white" />
-                    </div>
+                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-medium text-primary-foreground flex items-center justify-center">
+                      {projectNotes[project.id]}
+                    </span>
                   )}
+                  <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48 bg-popover text-popover-foreground border shadow-lg z-50">
@@ -556,11 +556,9 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
                   <StickyNote className="mr-2 h-4 w-4" />
                   Write Note
                   {projectNotes[project.id] > 0 && (
-                    <div className="ml-auto flex items-center">
-                      <div className="h-5 w-5 bg-blue-500 rounded-full flex items-center justify-center">
-                        <span className="text-[10px] font-semibold text-white">{projectNotes[project.id]}</span>
-                      </div>
-                    </div>
+                    <Badge variant="secondary" className="ml-auto">
+                      {projectNotes[project.id]}
+                    </Badge>
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onJobSelect({ id: project.id, projects: project })}>
