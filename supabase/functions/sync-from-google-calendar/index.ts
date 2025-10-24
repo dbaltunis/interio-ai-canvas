@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -32,6 +31,8 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
+    console.log('Syncing Google Calendar for user:', user.id);
+
     // Get the Google Calendar integration
     const { data: integration, error: integrationError } = await supabaseClient
       .from('integration_settings')
@@ -41,18 +42,17 @@ serve(async (req) => {
       .single();
 
     if (integrationError || !integration) {
+      console.error('Integration not found:', integrationError);
       throw new Error('Google Calendar not connected');
     }
 
-    // Get events from Google Calendar
-    const timeMin = new Date().toISOString();
-    const timeMax = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(); // 90 days
+    console.log('Found integration:', integration.id);
 
     let accessToken = integration.api_credentials?.access_token;
     
     // Check if token needs refresh
     if (integration.api_credentials?.expires_at && new Date(integration.api_credentials.expires_at) <= new Date()) {
-      // Refresh the token
+      console.log('Refreshing expired token...');
       const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: {
@@ -67,6 +67,8 @@ serve(async (req) => {
       });
 
       if (!refreshResponse.ok) {
+        const errorText = await refreshResponse.text();
+        console.error('Token refresh failed:', errorText);
         throw new Error('Failed to refresh Google token');
       }
 
@@ -84,10 +86,17 @@ serve(async (req) => {
           updated_at: new Date().toISOString(),
         })
         .eq('id', integration.id);
+      
+      console.log('Token refreshed successfully');
     }
 
+    // Get events from Google Calendar (next 90 days)
+    const timeMin = new Date().toISOString();
+    const timeMax = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
+
+    console.log('Fetching Google Calendar events...');
     const response = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`,
+      `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime&maxResults=250`,
       {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -96,11 +105,14 @@ serve(async (req) => {
     );
 
     if (!response.ok) {
-      throw new Error('Failed to fetch Google Calendar events');
+      const errorText = await response.text();
+      console.error('Google Calendar API error:', errorText);
+      throw new Error(`Failed to fetch Google Calendar events: ${response.status}`);
     }
 
     const data = await response.json();
     const events = data.items || [];
+    console.log(`Found ${events.length} events from Google Calendar`);
 
     // Get existing sync records to avoid duplicates
     const { data: existingSyncs } = await supabaseClient
@@ -109,47 +121,90 @@ serve(async (req) => {
       .eq('integration_id', integration.id);
 
     const existingEventIds = new Set(existingSyncs?.map(sync => sync.google_event_id) || []);
+    console.log(`Already synced ${existingEventIds.size} events`);
 
     let imported = 0;
+    const errors: string[] = [];
     
     for (const event of events) {
-      // Skip if already synced or doesn't have required fields
-      if (existingEventIds.has(event.id) || !event.start?.dateTime || !event.end?.dateTime) {
+      // Skip if already synced
+      if (existingEventIds.has(event.id)) {
         continue;
       }
 
-      // Create appointment from Google event
-      const { data: appointment, error: appointmentError } = await supabaseClient
-        .from('appointments_booked')
-        .insert({
-          user_id: user.id,
-          title: event.summary || 'Imported from Google Calendar',
-          description: event.description,
-          start_time: event.start.dateTime,
-          end_time: event.end.dateTime,
-          location: event.location,
-          status: 'scheduled',
-        })
-        .select()
-        .single();
+      // Skip all-day events or events without proper time info
+      if (!event.start?.dateTime || !event.end?.dateTime) {
+        continue;
+      }
 
-      if (!appointmentError && appointment) {
-        // Create sync record
-        await supabaseClient
-          .from('google_calendar_sync_events')
+      try {
+        // Parse date and time from the Google Calendar event
+        const startDateTime = new Date(event.start.dateTime);
+        const endDateTime = new Date(event.end.dateTime);
+        
+        const appointmentDate = startDateTime.toISOString().split('T')[0]; // YYYY-MM-DD
+        const appointmentTime = startDateTime.toTimeString().split(' ')[0]; // HH:MM:SS
+
+        // Create appointment from Google event
+        const { data: appointment, error: appointmentError } = await supabaseClient
+          .from('appointments_booked')
           .insert({
-            integration_id: integration.id,
-            appointment_id: appointment.id,
-            google_event_id: event.id,
-            sync_direction: 'from_google',
-          });
+            scheduler_id: null, // No scheduler for imported events
+            customer_name: event.summary || 'Imported Event',
+            customer_email: user.email || '',
+            customer_phone: '',
+            appointment_date: appointmentDate,
+            appointment_time: appointmentTime,
+            location_type: event.location ? 'on-site' : 'remote',
+            notes: event.description || '',
+            booking_message: `Imported from Google Calendar: ${event.summary || 'Untitled'}`,
+            customer_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            appointment_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            status: 'confirmed',
+          })
+          .select()
+          .single();
 
-        imported++;
+        if (appointmentError) {
+          console.error('Failed to create appointment:', appointmentError);
+          errors.push(`Event "${event.summary}": ${appointmentError.message}`);
+          continue;
+        }
+
+        if (appointment) {
+          // Create sync record
+          const { error: syncError } = await supabaseClient
+            .from('google_calendar_sync_events')
+            .insert({
+              integration_id: integration.id,
+              appointment_id: appointment.id,
+              google_event_id: event.id,
+              sync_direction: 'from_google',
+            });
+
+          if (syncError) {
+            console.error('Failed to create sync record:', syncError);
+          } else {
+            imported++;
+            console.log(`Imported event: ${event.summary}`);
+          }
+        }
+      } catch (err) {
+        console.error('Error processing event:', err);
+        errors.push(`Event "${event.summary}": ${err instanceof Error ? err.message : 'Unknown error'}`);
       }
     }
 
+    console.log(`Import complete: ${imported} events imported, ${errors.length} errors`);
+
     return new Response(
-      JSON.stringify({ success: true, imported }),
+      JSON.stringify({ 
+        success: true, 
+        imported, 
+        total: events.length,
+        alreadySynced: existingEventIds.size,
+        errors: errors.length > 0 ? errors : undefined
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
@@ -157,6 +212,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    console.error('Sync error:', error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error occurred' }),
       {
