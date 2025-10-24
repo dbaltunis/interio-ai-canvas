@@ -12,9 +12,11 @@ interface JobNotesDialogProps {
   onOpenChange: (open: boolean) => void;
   quote: any;
   project?: any;
+  onNoteSaved?: (projectId: string) => void;
+  onNoteDeleted?: (projectId: string) => void;
 }
 
-export const JobNotesDialog = ({ open, onOpenChange, quote, project }: JobNotesDialogProps) => {
+export const JobNotesDialog = ({ open, onOpenChange, quote, project, onNoteSaved, onNoteDeleted }: JobNotesDialogProps) => {
   const [note, setNote] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -37,6 +39,12 @@ export const JobNotesDialog = ({ open, onOpenChange, quote, project }: JobNotesD
     setIsLoading(true);
     try {
       await addNote(note.trim(), "general");
+      
+      // Immediately notify parent of note count change
+      if (project?.id && onNoteSaved) {
+        onNoteSaved(project.id);
+      }
+      
       toast({
         title: "Note Saved",
         description: "Your note has been added successfully",
@@ -58,6 +66,12 @@ export const JobNotesDialog = ({ open, onOpenChange, quote, project }: JobNotesD
   const handleDelete = async (id: string) => {
     try {
       await deleteNote(id);
+      
+      // Immediately notify parent of note count change
+      if (project?.id && onNoteDeleted) {
+        onNoteDeleted(project.id);
+      }
+      
       toast({ title: "Deleted", description: "Note removed" });
     } catch (error: any) {
       toast({ title: "Error", description: error?.message || "Unable to delete note", variant: "destructive" });

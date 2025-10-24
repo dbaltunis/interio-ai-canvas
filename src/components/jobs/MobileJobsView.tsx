@@ -230,6 +230,20 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
     setNotesDialogOpen(true);
   };
 
+  const handleNoteSaved = (projectId: string) => {
+    setProjectNotes(prev => ({
+      ...prev,
+      [projectId]: (prev[projectId] || 0) + 1
+    }));
+  };
+
+  const handleNoteDeleted = (projectId: string) => {
+    setProjectNotes(prev => ({
+      ...prev,
+      [projectId]: Math.max((prev[projectId] || 0) - 1, 0)
+    }));
+  };
+
   const handleNewQuote = async (project: any, e: React.MouseEvent) => {
     e.stopPropagation();
     
@@ -378,6 +392,8 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
         onOpenChange={setNotesDialogOpen}
         quote={selectedQuoteForNotes}
         project={selectedQuoteForNotes?.project}
+        onNoteSaved={handleNoteSaved}
+        onNoteDeleted={handleNoteDeleted}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

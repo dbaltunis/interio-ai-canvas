@@ -422,6 +422,20 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
     setNotesDialogOpen(true);
   };
 
+  const handleNoteSaved = (projectId: string) => {
+    setProjectNotes(prev => ({
+      ...prev,
+      [projectId]: (prev[projectId] || 0) + 1
+    }));
+  };
+
+  const handleNoteDeleted = (projectId: string) => {
+    setProjectNotes(prev => ({
+      ...prev,
+      [projectId]: Math.max((prev[projectId] || 0) - 1, 0)
+    }));
+  };
+
   if (isLoading) {
     return <JobsTableSkeleton />;
   }
@@ -803,6 +817,8 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
         onOpenChange={setNotesDialogOpen}
         quote={selectedQuoteForNotes?.id ? selectedQuoteForNotes : null}
         project={selectedQuoteForNotes?.project ? selectedQuoteForNotes.project : selectedQuoteForNotes}
+        onNoteSaved={handleNoteSaved}
+        onNoteDeleted={handleNoteDeleted}
       />
     </>
   );
