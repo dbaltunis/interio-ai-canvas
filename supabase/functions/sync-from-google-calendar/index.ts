@@ -120,7 +120,7 @@ serve(async (req) => {
 
       // Create appointment from Google event
       const { data: appointment, error: appointmentError } = await supabaseClient
-        .from('appointments')
+        .from('appointments_booked')
         .insert({
           user_id: user.id,
           title: event.summary || 'Imported from Google Calendar',
@@ -128,7 +128,6 @@ serve(async (req) => {
           start_time: event.start.dateTime,
           end_time: event.end.dateTime,
           location: event.location,
-          appointment_type: 'meeting',
           status: 'scheduled',
         })
         .select()
