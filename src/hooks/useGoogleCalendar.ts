@@ -11,8 +11,11 @@ interface GoogleCalendarIntegration {
   calendar_id: string | null;
   sync_enabled: boolean;
   token_expires_at: string | null;
+  last_sync: string | null;
   created_at: string;
   updated_at: string;
+  active: boolean;
+  configuration: any;
 }
 
 export const useGoogleCalendarIntegration = () => {
@@ -48,8 +51,11 @@ export const useGoogleCalendarIntegration = () => {
         calendar_id: config?.calendar_id || null,
         sync_enabled: config?.sync_enabled || false,
         token_expires_at: credentials?.expires_at || null,
+        last_sync: data.last_sync,
         created_at: data.created_at,
         updated_at: data.updated_at,
+        active: data.active || false,
+        configuration: config,
       } as GoogleCalendarIntegration;
     },
   });

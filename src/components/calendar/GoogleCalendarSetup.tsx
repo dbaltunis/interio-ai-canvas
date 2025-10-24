@@ -2,7 +2,8 @@ import { useGoogleCalendarIntegration, useGoogleCalendarSync } from "@/hooks/use
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
+import { Calendar, CheckCircle2, Loader2, XCircle, Clock } from "lucide-react";
+import { format } from "date-fns";
 
 export const GoogleCalendarSetup = () => {
   const { integration, isLoading, isConnected, connect, disconnect, isConnecting, isDisconnecting } = useGoogleCalendarIntegration();
@@ -28,13 +29,15 @@ export const GoogleCalendarSetup = () => {
               Google Calendar
             </CardTitle>
             <CardDescription>
-              Sync your appointments with Google Calendar
+              {isConnected 
+                ? "Your calendar is syncing automatically with Google Calendar" 
+                : "Connect your Google Calendar to sync events automatically"}
             </CardDescription>
           </div>
           {isConnected && (
             <Badge variant="default" className="flex items-center gap-1">
               <CheckCircle2 className="h-3 w-3" />
-              Connected
+              Auto-Sync Active
             </Badge>
           )}
         </div>
@@ -42,30 +45,47 @@ export const GoogleCalendarSetup = () => {
       <CardContent className="space-y-4">
         {isConnected ? (
           <div className="space-y-4">
-            <div className="rounded-lg border p-4 space-y-2">
-              <p className="text-sm font-medium">Calendar ID:</p>
-              <p className="text-sm text-muted-foreground font-mono break-all">
-                {integration?.calendar_id || 'primary'}
-              </p>
-            </div>
+            {integration?.calendar_id && (
+              <div className="rounded-lg border p-4 space-y-2">
+                <p className="text-sm font-medium">Calendar ID:</p>
+                <p className="text-sm text-muted-foreground font-mono break-all">
+                  {integration.calendar_id}
+                </p>
+              </div>
+            )}
             
+            {integration && (integration as any).last_sync && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Clock className="h-4 w-4" />
+                <span>Last synced: {format(new Date((integration as any).last_sync), "PPp")}</span>
+              </div>
+            )}
+
+            <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-2">
+              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                ✨ Automatic Two-Way Sync Active
+              </p>
+              <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+                <li>• Events you create here appear in Google Calendar instantly</li>
+                <li>• Google Calendar events sync to InterioApp automatically</li>
+                <li>• Changes made in either place are reflected everywhere</li>
+              </ul>
+            </div>
+
             <div className="flex gap-2">
               <Button 
                 onClick={() => syncFromGoogle()} 
-                variant="default"
+                variant="outline"
                 disabled={isSyncingFromGoogle}
                 className="flex-1"
               >
                 {isSyncingFromGoogle ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Syncing Events...
+                    Syncing...
                   </>
                 ) : (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Sync Events from Google
-                  </>
+                  "Manual Sync Now"
                 )}
               </Button>
               
@@ -87,9 +107,15 @@ export const GoogleCalendarSetup = () => {
           </div>
         ) : (
           <div className="space-y-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <XCircle className="h-4 w-4" />
+              <span>Not connected</span>
+            </div>
+
             <p className="text-sm text-muted-foreground">
-              Connect your Google Calendar to automatically sync appointments and keep everything in one place.
+              Connect your Google Calendar to automatically sync appointments and keep everything in one place. Events sync in both directions automatically.
             </p>
+            
             <Button 
               onClick={() => connect({})} 
               disabled={isConnecting}
