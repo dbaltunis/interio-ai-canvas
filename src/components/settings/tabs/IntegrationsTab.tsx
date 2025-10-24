@@ -2,20 +2,26 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Zap, CreditCard, MessageSquare, Calendar, Package, Building, Database } from "lucide-react";
+import { Mail, Zap, CreditCard, MessageSquare, Calendar, Package, Building, Database, AlertCircle, CheckCircle2, Globe } from "lucide-react";
 import { SendGridIntegrationTab } from "./SendGridIntegrationTab";
 import { GoogleCalendarTab } from "./GoogleCalendarTab";
 import { TIGPIMIntegrationTab } from "@/components/integrations/TIGPIMIntegrationTab";
 import { MYOBExoIntegrationTab } from "@/components/integrations/MYOBExoIntegrationTab";
 import { RFMSIntegrationTab } from "@/components/integrations/RFMSIntegrationTab";
 import { TwilioIntegrationTab } from "@/components/integrations/TwilioIntegrationTab";
+import { WebsiteAPIIntegrationTab } from "@/components/integrations/WebsiteAPIIntegrationTab";
 import { useIntegrations } from "@/hooks/useIntegrations";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export const IntegrationsTab = () => {
   const { integrations } = useIntegrations();
   
   const getIntegrationByType = (type: string) => 
     integrations.find(integration => integration.integration_type === type);
+
+  // Calculate integration status
+  const activeIntegrations = integrations.filter(i => i.active);
+  const totalIntegrations = integrations.length;
 
   return (
     <div className="space-y-6">
@@ -26,8 +32,24 @@ export const IntegrationsTab = () => {
         </p>
       </div>
 
+      {/* Integration Status Overview */}
+      <Alert className="border-primary/20 bg-primary/5">
+        <CheckCircle2 className="h-4 w-4 text-primary" />
+        <AlertTitle>Integration Status</AlertTitle>
+        <AlertDescription>
+          <div className="flex items-center gap-2 mt-2">
+            <Badge variant={activeIntegrations.length > 0 ? "default" : "secondary"}>
+              {activeIntegrations.length} of {totalIntegrations > 0 ? totalIntegrations : 8} integrations active
+            </Badge>
+            {activeIntegrations.length === 0 && (
+              <span className="text-xs text-muted-foreground">Configure integrations below to connect your services</span>
+            )}
+          </div>
+        </AlertDescription>
+      </Alert>
+
       <Tabs defaultValue="email" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="email" className="flex items-center gap-2">
             <Mail className="h-4 w-4" />
             Email
@@ -59,6 +81,10 @@ export const IntegrationsTab = () => {
           <TabsTrigger value="communication" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             Communication
+          </TabsTrigger>
+          <TabsTrigger value="website" className="flex items-center gap-2">
+            <Globe className="h-4 w-4" />
+            Website API
           </TabsTrigger>
         </TabsList>
 
@@ -118,6 +144,10 @@ export const IntegrationsTab = () => {
 
         <TabsContent value="communication">
           <TwilioIntegrationTab />
+        </TabsContent>
+
+        <TabsContent value="website">
+          <WebsiteAPIIntegrationTab integration={getIntegrationByType('website_api') as any} />
         </TabsContent>
       </Tabs>
     </div>
