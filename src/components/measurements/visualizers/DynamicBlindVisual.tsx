@@ -8,6 +8,7 @@ interface DynamicBlindVisualProps {
   mountType?: 'inside' | 'outside';
   chainSide?: 'left' | 'right';
   controlType?: string;
+  material?: any;
 }
 
 export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
@@ -17,7 +18,8 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
   blindType = 'roller',
   mountType = 'outside',
   chainSide = 'right',
-  controlType
+  controlType,
+  material
 }) => {
   const hasValue = (value: any) => value && value !== "" && value !== "0";
   const displayValue = (value: any) => `${value}cm`;
@@ -242,27 +244,40 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
         </div>
 
         {/* Roman Blind Fabric with Folds */}
-        <div className={`absolute ${blindWidth} bg-primary/30 backdrop-blur-[1px] shadow-lg`}
+        <div className={`absolute ${blindWidth} shadow-lg overflow-hidden`}
              style={{
                top: `calc(${blindTop.includes('24') ? '6rem' : '5rem'} + 0.75rem)`,
-               bottom: '4rem'
+               bottom: '4rem',
+               backgroundColor: material?.color || 'hsl(var(--primary) / 0.3)'
              }}>
+          {/* Fabric image if available */}
+          {material?.image_url && (
+            <div 
+              className="absolute inset-0 bg-cover bg-center opacity-90"
+              style={{
+                backgroundImage: `url(${material.image_url})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            />
+          )}
+          
           {/* Horizontal folds */}
           {Array.from({ length: foldCount }).map((_, i) => (
             <div
               key={i}
-              className="absolute left-0 right-0 h-1 bg-primary/20 shadow-inner"
+              className="absolute left-0 right-0 h-1 bg-foreground/20 shadow-inner z-10"
               style={{ 
                 bottom: `${(i / foldCount) * 100}%`,
               }}
             />
           ))}
           
-          {/* Fabric texture */}
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-primary/5"></div>
+          {/* Fabric texture overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-background/5 via-transparent to-background/10 z-5"></div>
           
           {/* Bottom bar */}
-          <div className="absolute -bottom-1 left-0 right-0 h-2 bg-gradient-to-b from-muted-foreground/60 to-muted-foreground/80 rounded-sm shadow-md"></div>
+          <div className="absolute -bottom-1 left-0 right-0 h-2 bg-gradient-to-b from-muted-foreground/60 to-muted-foreground/80 rounded-sm shadow-md z-20"></div>
         </div>
       </>
     );
