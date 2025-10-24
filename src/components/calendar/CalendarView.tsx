@@ -28,17 +28,14 @@ import { AppointmentSchedulerSlider } from "./AppointmentSchedulerSlider";
 import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
 import { CalendarFilterState } from "./CalendarFilters";
 import { DurationPicker } from "./TimePicker";
-import { CalendarSyncStatus } from "./CalendarSyncStatus";
-import { CalDAVSyncDialog } from "./CalDAVSyncDialog";
-import { CalendarStatusIndicator } from "./CalendarStatusIndicator";
+// CalDAV imports removed - using Google Calendar OAuth only
 import { UnifiedAppointmentDialog } from "./UnifiedAppointmentDialog";
 import { OfflineIndicator } from "./OfflineIndicator";
 import { CalendarSharingDialog } from "./sharing/CalendarSharingDialog";
 import { CalendarColorPicker } from "./colors/CalendarColorPicker";
 import { CalendarFilters } from "./filters/CalendarFilters";
 import { useCalendarColors } from "@/hooks/useCalendarColors";
-import { useTwoWaySync } from "@/hooks/useTwoWaySync";
-import { ConflictResolutionDialog } from "./sync/ConflictResolutionDialog";
+// Two-way sync removed - using Google Calendar OAuth only
 import { ConflictDialog } from "./ConflictDialog";
 import { TimezoneSettingsDialog } from "./timezone/TimezoneSettingsDialog";
 import { useTimezone } from "@/hooks/useTimezone";
@@ -58,7 +55,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const [showNewEventDialog, setShowNewEventDialog] = useState(false);
   const [showSchedulerSlider, setShowSchedulerSlider] = useState(false);
   const [showEventDetails, setShowEventDetails] = useState(false);
-  const [showCalDAVSync, setShowCalDAVSync] = useState(false);
+  // CalDAV sync removed
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showSharingDialog, setShowSharingDialog] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -90,7 +87,6 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const { data: teamMembers } = useTeamMembers();
   const { data: clients } = useClients();
   const { getColorForSource, getVisibilityForSource, addCalendarSource } = useCalendarColors();
-  const twoWaySync = useTwoWaySync();
   const createAppointment = useCreateAppointment();
   const { toast } = useToast();
   const { userTimezone, isTimezoneDifferent } = useTimezone();
@@ -166,11 +162,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
         project_id: projectId || undefined
       });
 
-      // Show CalDAV sync dialog for new appointment
-      setSelectedAppointment(newAppointment as any);
-      setShowCalDAVSync(true);
-
-      // Show success message with additional features note
+      // Show success message
       toast({
         title: "Event Created",
         description: `Event "${newEvent.title}" has been created successfully. ${
@@ -424,20 +416,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
     setFilters(newFilters);
   };
 
-  const handleTwoWaySync = async () => {
-    try {
-      // For demo, sync with the first available CalDAV calendar
-      // In real app, user would select which calendar to sync
-      const result = await twoWaySync.mutateAsync('default-calendar-id');
-      
-      if (result.conflicts.length > 0) {
-        setSyncConflicts(result.conflicts);
-        setShowConflictDialog(true);
-      }
-    } catch (error) {
-      console.error('Sync failed:', error);
-    }
-  };
+  // Two-way sync removed - using Google Calendar OAuth only
 
   // Filter appointments based on current filters
   const filteredAppointments = appointments?.filter(appointment => {
@@ -918,13 +897,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
         selectedDate={selectedDate}
       />
 
-      {/* CalDAV Sync Dialog */}
-      <CalDAVSyncDialog
-        open={showCalDAVSync}
-        onOpenChange={setShowCalDAVSync}
-        appointment={selectedAppointment}
-        onSyncComplete={() => setSelectedAppointment(null)}
-      />
+      {/* CalDAV Sync Dialog removed */}
 
       <CalendarSharingDialog
         open={showSharingDialog}
@@ -938,11 +911,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
         onOpenChange={setShowColorPicker}
       />
 
-      <ConflictResolutionDialog
-        open={showConflictDialog}
-        onOpenChange={setShowConflictDialog}
-        conflicts={syncConflicts}
-      />
+      {/* Conflict Resolution Dialog removed */}
 
       {/* Slot Conflict Dialog */}
       {conflictData && (

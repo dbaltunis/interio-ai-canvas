@@ -59,7 +59,6 @@ export const useGoogleCalendarIntegration = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Get OAuth URL from edge function which has access to secrets
       const { data: urlData, error: urlError } = await supabase.functions.invoke('google-oauth-initiate', {
         body: { userId: user.id }
       });
@@ -70,55 +69,54 @@ export const useGoogleCalendarIntegration = () => {
 
       const googleAuthUrl = urlData.authUrl;
 
-      // If redirect mode is requested, use full page redirect
-      if (useRedirect) {
+      // Try popup first, with automatic redirect fallback if blocked
+      if (!useRedirect) {
+        const width = 600;
+        const height = 700;
+        const left = window.screenX + (window.outerWidth - width) / 2;
+        const top = window.screenY + (window.outerHeight - height) / 2;
+        
+        const popup = window.open(
+          googleAuthUrl,
+          'Google Calendar Authorization',
+          `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
+        );
+
+        // If popup is blocked, automatically redirect instead
+        if (!popup || popup.closed) {
+          window.location.href = googleAuthUrl;
+          return new Promise(() => {}); // Never resolves as page redirects
+        }
+
+        // Listen for messages from the popup
+        return new Promise((resolve, reject) => {
+          const messageHandler = (event: MessageEvent) => {
+            if (event.origin !== 'https://ldgrcodffsalkevafbkb.supabase.co') return;
+
+            if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
+              window.removeEventListener('message', messageHandler);
+              resolve(event.data);
+            } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
+              window.removeEventListener('message', messageHandler);
+              reject(new Error(event.data.error || 'Authentication failed'));
+            }
+          };
+
+          window.addEventListener('message', messageHandler);
+
+          const checkClosed = setInterval(() => {
+            if (popup.closed) {
+              clearInterval(checkClosed);
+              window.removeEventListener('message', messageHandler);
+              reject(new Error('Authentication cancelled'));
+            }
+          }, 1000);
+        });
+      } else {
+        // Direct redirect mode
         window.location.href = googleAuthUrl;
-        return new Promise(() => {}); // Never resolves as page redirects
+        return new Promise(() => {});
       }
-
-      // Try popup mode first
-      const width = 600;
-      const height = 700;
-      const left = window.screenX + (window.outerWidth - width) / 2;
-      const top = window.screenY + (window.outerHeight - height) / 2;
-      
-      const popup = window.open(
-        googleAuthUrl,
-        'Google Calendar Authorization',
-        `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
-      );
-
-      if (!popup || popup.closed) {
-        // Popup was blocked, suggest allowing popups or using redirect
-        throw new Error('POPUP_BLOCKED');
-      }
-
-      // Listen for messages from the popup
-      return new Promise((resolve, reject) => {
-        const messageHandler = (event: MessageEvent) => {
-          // Verify origin for security
-          if (event.origin !== 'https://ldgrcodffsalkevafbkb.supabase.co') return;
-
-          if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
-            window.removeEventListener('message', messageHandler);
-            resolve(event.data);
-          } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
-            window.removeEventListener('message', messageHandler);
-            reject(new Error(event.data.error || 'Authentication failed'));
-          }
-        };
-
-        window.addEventListener('message', messageHandler);
-
-        // Check if popup was closed without completing auth
-        const checkClosed = setInterval(() => {
-          if (popup.closed) {
-            clearInterval(checkClosed);
-            window.removeEventListener('message', messageHandler);
-            reject(new Error('Authentication cancelled'));
-          }
-        }, 1000);
-      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['google-calendar-integration'] });
@@ -128,19 +126,11 @@ export const useGoogleCalendarIntegration = () => {
       });
     },
     onError: (error: Error) => {
-      if (error.message === 'POPUP_BLOCKED') {
-        toast({
-          title: "Popup Blocked",
-          description: "Please allow popups for this site, or we'll use a redirect instead.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to connect Google Calendar",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Error",
+        description: error.message || "Failed to connect Google Calendar",
+        variant: "destructive",
+      });
     },
   });
 

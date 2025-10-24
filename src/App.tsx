@@ -11,7 +11,7 @@ import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { AuthPage } from "./components/auth/AuthPage";
 import { ErrorBoundary } from "./components/performance/ErrorBoundary";
 import { EmailRealtimeProvider } from "./contexts/EmailRealtimeContext";
-import { CalendarSyncProvider } from "./contexts/CalendarSyncContext";
+// CalendarSyncProvider removed - using Google Calendar OAuth only
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
@@ -64,7 +64,6 @@ const App = () => {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <EmailRealtimeProvider>
-          <CalendarSyncProvider>
             <TooltipProvider>
             {/* Ensure custom themes also apply the dark class */}
             <ThemeProvider
@@ -156,7 +155,6 @@ const App = () => {
                 </BrowserRouter>
               </ThemeProvider>
             </TooltipProvider>
-          </CalendarSyncProvider>
         </EmailRealtimeProvider>
       </QueryClientProvider>
       </ErrorBoundary>

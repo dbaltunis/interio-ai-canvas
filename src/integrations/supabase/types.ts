@@ -925,116 +925,6 @@ export type Database = {
         }
         Relationships: []
       }
-      caldav_accounts: {
-        Row: {
-          account_name: string
-          active: boolean
-          created_at: string
-          email: string
-          id: string
-          last_sync_at: string | null
-          password_encrypted: string
-          server_url: string | null
-          sync_enabled: boolean
-          sync_token: string | null
-          updated_at: string
-          user_id: string
-          username: string
-        }
-        Insert: {
-          account_name: string
-          active?: boolean
-          created_at?: string
-          email: string
-          id?: string
-          last_sync_at?: string | null
-          password_encrypted: string
-          server_url?: string | null
-          sync_enabled?: boolean
-          sync_token?: string | null
-          updated_at?: string
-          user_id: string
-          username: string
-        }
-        Update: {
-          account_name?: string
-          active?: boolean
-          created_at?: string
-          email?: string
-          id?: string
-          last_sync_at?: string | null
-          password_encrypted?: string
-          server_url?: string | null
-          sync_enabled?: boolean
-          sync_token?: string | null
-          updated_at?: string
-          user_id?: string
-          username?: string
-        }
-        Relationships: []
-      }
-      caldav_calendars: {
-        Row: {
-          account_id: string
-          caldav_url: string | null
-          calendar_id: string
-          color: string | null
-          created_at: string
-          description: string | null
-          display_name: string
-          etag: string | null
-          id: string
-          last_sync_at: string | null
-          read_only: boolean
-          sync_enabled: boolean
-          sync_token: string | null
-          timezone: string | null
-          updated_at: string
-        }
-        Insert: {
-          account_id: string
-          caldav_url?: string | null
-          calendar_id: string
-          color?: string | null
-          created_at?: string
-          description?: string | null
-          display_name: string
-          etag?: string | null
-          id?: string
-          last_sync_at?: string | null
-          read_only?: boolean
-          sync_enabled?: boolean
-          sync_token?: string | null
-          timezone?: string | null
-          updated_at?: string
-        }
-        Update: {
-          account_id?: string
-          caldav_url?: string | null
-          calendar_id?: string
-          color?: string | null
-          created_at?: string
-          description?: string | null
-          display_name?: string
-          etag?: string | null
-          id?: string
-          last_sync_at?: string | null
-          read_only?: boolean
-          sync_enabled?: boolean
-          sync_token?: string | null
-          timezone?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "caldav_calendars_account_id_fkey"
-            columns: ["account_id"]
-            isOneToOne: false
-            referencedRelation: "caldav_accounts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       caldav_sync_log: {
         Row: {
           account_id: string
@@ -1081,22 +971,7 @@ export type Database = {
           status?: string
           sync_type?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "caldav_sync_log_account_id_fkey"
-            columns: ["account_id"]
-            isOneToOne: false
-            referencedRelation: "caldav_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "caldav_sync_log_calendar_id_fkey"
-            columns: ["calendar_id"]
-            isOneToOne: false
-            referencedRelation: "caldav_calendars"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       client_activity_log: {
         Row: {

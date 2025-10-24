@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Share, Plus, Minus, Palette, Users, Video, UserPlus, Bell, User } from "lucide-react";
 import { useCreateAppointment, useUpdateAppointment, useDeleteAppointment } from "@/hooks/useAppointments";
-import { useAppointmentCalDAVSync } from "@/hooks/useAppointmentCalDAVSync";
+// CalDAV sync removed - using Google Calendar OAuth only
 import { useOfflineSupport } from "@/hooks/useOfflineSupport";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useClients } from "@/hooks/useClients";
@@ -60,7 +60,7 @@ export const UnifiedAppointmentDialog = ({
   const createAppointment = useCreateAppointment();
   const updateAppointment = useUpdateAppointment();
   const deleteAppointment = useDeleteAppointment();
-  const { syncableCalendars, syncAppointmentToCalDAV } = useAppointmentCalDAVSync();
+  // CalDAV sync removed
   const { isOnline, queueOfflineOperation } = useOfflineSupport();
   const { data: teamMembers } = useTeamMembers();
   const { data: clients } = useClients();
@@ -155,23 +155,11 @@ export const UnifiedAppointmentDialog = ({
             ...appointmentData 
           } as any);
 
-          // Sync to selected calendars if enabled for editing
-          if (syncToCalendars && selectedCalendars.length > 0) {
-            await syncAppointmentToCalDAV.mutateAsync({
-              appointment: { ...appointment, ...appointmentData },
-              calendarIds: selectedCalendars
-            });
-          }
+          // CalDAV sync removed
         } else {
           const newAppointment = await createAppointment.mutateAsync(appointmentData as any);
           
-          // Auto-sync to selected calendars if enabled for creation
-          if (syncToCalendars && selectedCalendars.length > 0) {
-            await syncAppointmentToCalDAV.mutateAsync({
-              appointment: newAppointment,
-              calendarIds: selectedCalendars
-            });
-          }
+          // CalDAV sync removed
         }
       } else {
         // Queue for offline processing
@@ -266,7 +254,7 @@ export const UnifiedAppointmentDialog = ({
     }));
   };
 
-  const isLoading = createAppointment.isPending || updateAppointment.isPending || deleteAppointment.isPending || syncAppointmentToCalDAV.isPending;
+  const isLoading = createAppointment.isPending || updateAppointment.isPending || deleteAppointment.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -670,8 +658,8 @@ export const UnifiedAppointmentDialog = ({
             </>
           )}
 
-          {/* Calendar Sync Options */}
-          {syncableCalendars.length > 0 && (
+          {/* Calendar Sync Options removed - using Google Calendar OAuth only */}
+          {false && (
             <>
               <Separator />
               <div className="space-y-3">
@@ -688,7 +676,7 @@ export const UnifiedAppointmentDialog = ({
                 
                 {syncToCalendars && (
                   <div className="space-y-3 ml-2 pl-4 border-l-2 border-muted">
-                    {syncableCalendars.map((calendar) => (
+                    {[].map((calendar: any) => (
                       <div key={calendar.id} className="flex items-start space-x-2">
                         <Checkbox
                           id={`calendar-${calendar.id}`}
