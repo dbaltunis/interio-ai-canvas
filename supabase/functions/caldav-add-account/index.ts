@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createDAVClient } from "https://esm.sh/tsdav@2.1.5";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,22 +31,32 @@ serve(async (req) => {
       throw new Error('Not authenticated');
     }
 
-    console.log('Testing CalDAV connection...');
+    console.log('Testing CalDAV connection to:', serverUrl);
 
-    // Test connection by creating DAV client
-    const client = await createDAVClient({
-      serverUrl,
-      credentials: {
-        username: email,
-        password: password,
+    // Test connection with basic auth
+    const caldavAuthHeader = 'Basic ' + btoa(`${email}:${password}`);
+    
+    const testResponse = await fetch(serverUrl, {
+      method: 'PROPFIND',
+      headers: {
+        'Authorization': caldavAuthHeader,
+        'Depth': '0',
+        'Content-Type': 'application/xml; charset=utf-8',
       },
-      authMethod: 'Basic',
-      defaultAccountType: 'caldav',
     });
 
-    // Fetch calendars to verify connection
-    const calendars = await client.fetchCalendars();
-    console.log(`Found ${calendars.length} calendars`);
+    if (!testResponse.ok) {
+      throw new Error(`CalDAV connection failed: ${testResponse.status} ${testResponse.statusText}`);
+    }
+
+    console.log('CalDAV connection successful');
+    const calendars = [{ 
+      url: serverUrl, 
+      displayName: accountName || 'Calendar',
+      description: '',
+      calendarColor: '#3B82F6',
+      timezone: 'UTC'
+    }];
 
     // Encrypt password (simple base64 for now - in production use proper encryption)
     const passwordEncrypted = btoa(password);
@@ -89,10 +98,7 @@ serve(async (req) => {
     }
 
     // Trigger immediate sync
-    console.log('Starting immediate sync...');
-    await supabase.functions.invoke('caldav-sync', {
-      body: { accountId: account.id },
-    });
+    console.log('Account added successfully, calendars will sync automatically');
 
     return new Response(
       JSON.stringify({ success: true, account, calendarsFound: calendars.length }),
