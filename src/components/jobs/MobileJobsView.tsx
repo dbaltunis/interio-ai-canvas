@@ -1,19 +1,36 @@
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MoreVertical, MapPin, DollarSign } from "lucide-react";
-import { useQuotes } from "@/hooks/useQuotes";
+import { Eye, MoreVertical, Trash2, StickyNote, Copy, MapPin, DollarSign } from "lucide-react";
+import { useQuotes, useDeleteQuote } from "@/hooks/useQuotes";
 import { useProjects } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { formatJobNumber } from "@/lib/format-job-number";
+import { useUserCurrency, formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
 import { JobStatusBadge } from "./JobStatusBadge";
+import { JobNotesDialog } from "./JobNotesDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface MobileJobsViewProps {
   onJobSelect: (quote: any) => void;
@@ -25,6 +42,36 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
   const { data: quotes = [], isLoading } = useQuotes();
   const { data: projects = [] } = useProjects();
   const { data: clients = [] } = useClients();
+  const { toast } = useToast();
+  const deleteQuote = useDeleteQuote();
+  const userCurrency = useUserCurrency();
+  
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [quoteToDelete, setQuoteToDelete] = useState<any>(null);
+  const [notesDialogOpen, setNotesDialogOpen] = useState(false);
+  const [selectedQuoteForNotes, setSelectedQuoteForNotes] = useState<any>(null);
+  const [projectNotes, setProjectNotes] = useState<Record<string, number>>({});
+
+  // Fetch notes count for projects
+  useEffect(() => {
+    const fetchNotesCount = async () => {
+      const projectIds = projects.map(p => p.id);
+      if (projectIds.length === 0) return;
+
+      const { data: notesData } = await (supabase as any)
+        .from('project_notes')
+        .select('project_id', { count: 'exact', head: false })
+        .in('project_id', projectIds);
+
+      const notesCount: Record<string, number> = {};
+      (notesData || []).forEach((note: any) => {
+        notesCount[note.project_id] = (notesCount[note.project_id] || 0) + 1;
+      });
+      setProjectNotes(notesCount);
+    };
+
+    fetchNotesCount();
+  }, [projects]);
 
   const filteredQuotes = quotes.filter((quote) => {
     const project = projects.find((p) => p.id === quote.project_id);
@@ -84,12 +131,101 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
     return 'No Client';
   };
 
+  const getClientInitials = (clientName: string) => {
+    if (clientName === 'No Client') return 'NC';
+    const names = clientName.split(' ');
+    if (names.length >= 2) {
+      return (names[0][0] + names[1][0]).toUpperCase();
+    }
+    return clientName.substring(0, 2).toUpperCase();
+  };
+
+  const getClientAvatarColor = (clientName: string) => {
+    const colors = [
+      'bg-info',
+      'bg-success', 
+      'bg-primary',
+      'bg-warning',
+      'bg-secondary',
+      'bg-accent'
+    ];
+    const index = clientName.length % colors.length;
+    return colors[index];
+  };
+
+  const handleDeleteClick = (quote: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setQuoteToDelete(quote);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!quoteToDelete) return;
+    
+    try {
+      await deleteQuote.mutateAsync(quoteToDelete.id);
+      toast({
+        title: "Success",
+        description: "Quote deleted successfully",
+      });
+      setDeleteDialogOpen(false);
+      setQuoteToDelete(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete quote",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleNotesClick = (quote: any, project: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedQuoteForNotes({ ...quote, project });
+    setNotesDialogOpen(true);
+  };
+
+  const handleNewQuote = async (project: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    try {
+      const { data, error } = await supabase
+        .from('quotes')
+        .insert([{
+          project_id: project.id,
+          client_id: project.client_id,
+          status: 'draft',
+          total_amount: 0,
+          user_id: project.user_id,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "New quote created successfully",
+      });
+      
+      onJobSelect(data);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create new quote",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-3 p-4 pb-20 animate-fade-in bg-background/50" data-create-project>
       {filteredQuotes.map((quote) => {
         const project = projects.find((p) => p.id === quote.project_id);
         const clientName = getClientName(quote, project);
-        const initials = clientName === 'No Client' ? 'NC' : clientName.substring(0, 2).toUpperCase();
+        const initials = getClientInitials(clientName);
+        const avatarColor = getClientAvatarColor(clientName);
+        const notesCount = project ? projectNotes[project.id] || 0 : 0;
         
         return (
           <Card 
@@ -101,7 +237,7 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
               <div className="flex items-start gap-3">
                 {/* Avatar */}
                 <Avatar className="h-10 w-10 shrink-0">
-                  <AvatarFallback className="text-xs font-semibold">
+                  <AvatarFallback className={`${avatarColor} text-primary-foreground text-xs font-semibold`}>
                     {initials}
                   </AvatarFallback>
                 </Avatar>
@@ -113,9 +249,9 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-mono text-muted-foreground">
-                          {quote.quote_number?.substring(0, 7) || 'N/A'}
+                          {formatJobNumber(project?.job_number || quote.quote_number)}
                         </span>
-                        <JobStatusBadge status={quote.status} />
+                        <JobStatusBadge status={project?.status || quote.status} />
                       </div>
                       <h4 className="font-semibold text-sm line-clamp-1">
                         {clientName.length > 14 ? clientName.substring(0, 14) + '...' : clientName}
@@ -124,7 +260,12 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
                     
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0 relative">
+                          {notesCount > 0 && (
+                            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-medium text-primary-foreground flex items-center justify-center">
+                              {notesCount}
+                            </span>
+                          )}
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -133,7 +274,31 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
                           e.stopPropagation();
                           onJobSelect(quote);
                         }}>
-                          View Details
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Job
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => handleNotesClick(quote, project, e)}>
+                          <StickyNote className="h-4 w-4 mr-2" />
+                          Write Note
+                          {notesCount > 0 && (
+                            <Badge variant="secondary" className="ml-auto">
+                              {notesCount}
+                            </Badge>
+                          )}
+                        </DropdownMenuItem>
+                        {project && (
+                          <DropdownMenuItem onClick={(e) => handleNewQuote(project, e)}>
+                            <Copy className="h-4 w-4 mr-2" />
+                            New Quote
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          className="text-destructive focus:text-destructive"
+                          onClick={(e) => handleDeleteClick(quote, e)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Job
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -149,9 +314,8 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
                     )}
                     {quote.total_amount && (
                       <div className="flex items-center gap-1 shrink-0">
-                        <DollarSign className="h-3 w-3" />
                         <span className="font-semibold">
-                          ${quote.total_amount.toLocaleString()}
+                          {formatCurrency(quote.total_amount, userCurrency)}
                         </span>
                       </div>
                     )}
@@ -162,6 +326,31 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
           </Card>
         );
       })}
+
+      {/* Dialogs */}
+      <JobNotesDialog
+        open={notesDialogOpen}
+        onOpenChange={setNotesDialogOpen}
+        quote={selectedQuoteForNotes}
+        project={selectedQuoteForNotes?.project}
+      />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Quote</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this quote? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
