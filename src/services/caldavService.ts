@@ -274,6 +274,12 @@ class CalDAVService {
 
     if (!calendar || !calendar.caldav_accounts) return;
 
+    // Skip accounts without valid server URLs
+    if (!calendar.caldav_accounts.server_url || calendar.caldav_accounts.server_url.trim() === '') {
+      console.warn(`Skipping sync for calendar ${calendar.display_name} - no valid server URL configured`);
+      return;
+    }
+
     const client = await this.createDAVClient(calendar.caldav_accounts);
     
     try {

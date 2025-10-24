@@ -66,6 +66,12 @@ class BackgroundSyncService {
       for (const account of accounts) {
         if (!account.active || !account.sync_enabled) continue;
 
+        // Skip accounts without valid server URLs
+        if (!account.server_url || account.server_url.trim() === '') {
+          console.warn(`Skipping sync for account ${account.account_name} - no valid server URL`);
+          continue;
+        }
+
         try {
           await this.syncAccountCalendars(account);
         } catch (error) {
