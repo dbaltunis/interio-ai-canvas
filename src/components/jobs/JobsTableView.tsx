@@ -48,6 +48,7 @@ import { JobsTableSkeleton } from "./skeleton/JobsTableSkeleton";
 import { useUserCurrency, formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
 import { JobStatusBadge } from "./JobStatusBadge";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsTablet } from "@/hooks/use-tablet";
 import { MobileJobsView } from "./MobileJobsView";
 
 interface JobsTableViewProps {
@@ -61,6 +62,7 @@ const ITEMS_PER_PAGE = 20;
 
 export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleColumns }: JobsTableViewProps) => {
   const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
   const { data: quotes = [], isLoading, refetch } = useQuotes();
   const { data: projects = [] } = useProjects();
   const { data: clients = [] } = useClients();
@@ -78,6 +80,12 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
   const [projectNotes, setProjectNotes] = useState<Record<string, number>>({});
   const [projectAppointments, setProjectAppointments] = useState<Record<string, any[]>>({});
+
+  // Filter columns for tablet view - show only 5 most important columns
+  const tabletImportantColumns = ['job_no', 'client', 'status', 'total', 'actions'];
+  const displayColumns = isTablet 
+    ? visibleColumns.filter(col => tabletImportantColumns.includes(col.id))
+    : visibleColumns;
 
   // Return mobile view for mobile devices (AFTER all hooks are called)
   if (isMobile) {
@@ -583,7 +591,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/30 hover:bg-muted/30">
-              {visibleColumns.map((column) => (
+              {displayColumns.map((column) => (
                 <TableHead 
                   key={column.id}
                   className={`cursor-pointer hover:bg-muted/50 transition-colors font-normal ${column.id === 'actions' ? 'w-[70px]' : ''}`}
@@ -607,7 +615,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => onJobSelect({ id: project.id, projects: project })}
                     >
-                      {visibleColumns.map((column) => (
+                      {displayColumns.map((column) => (
                         <TableCell key={column.id}>
                           {renderCellContent(column.id, project, quotes, clientName, client)}
                         </TableCell>
