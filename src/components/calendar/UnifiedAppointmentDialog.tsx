@@ -20,6 +20,7 @@ import { useCalendarColors } from "@/hooks/useCalendarColors";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { AppointmentSharingDialog } from "./sharing/AppointmentSharingDialog";
 import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 
 interface UnifiedAppointmentDialogProps {
   open: boolean;
@@ -69,15 +70,17 @@ export const UnifiedAppointmentDialog = ({
 
   useEffect(() => {
     if (appointment) {
+      // Parse times in UTC to prevent timezone conversion on display
       const startDate = new Date(appointment.start_time);
       const endDate = new Date(appointment.end_time);
       
       setEvent({
         title: appointment.title || "",
         description: appointment.description || "",
-        date: format(startDate, 'yyyy-MM-dd'),
-        startTime: format(startDate, 'HH:mm'),
-        endTime: format(endDate, 'HH:mm'),
+        // Format in UTC timezone to preserve the stored time
+        date: formatInTimeZone(startDate, 'UTC', 'yyyy-MM-dd'),
+        startTime: formatInTimeZone(startDate, 'UTC', 'HH:mm'),
+        endTime: formatInTimeZone(endDate, 'UTC', 'HH:mm'),
         location: appointment.location || "",
         appointment_type: appointment.appointment_type || "meeting",
         color: appointment.color || defaultColors[0],
