@@ -49,8 +49,7 @@ export const UnifiedAppointmentDialog = ({
     inviteClientEmail: "",
     notification_enabled: false,
     notification_minutes: 15,
-    notificationMethods: [] as string[],
-    customNotificationMessage: ""
+    notificationMethods: [] as string[]
   });
 
   const [selectedCalendars, setSelectedCalendars] = useState<string[]>([]);
@@ -88,8 +87,7 @@ export const UnifiedAppointmentDialog = ({
         inviteClientEmail: appointment.invited_client_emails?.join(', ') || "",
         notification_enabled: appointment.notification_enabled || false,
         notification_minutes: appointment.notification_minutes || 15,
-        notificationMethods: appointment.notification_methods || [],
-        customNotificationMessage: appointment.custom_notification_message || ""
+        notificationMethods: appointment.notification_methods || []
       });
     } else if (selectedDate) {
       setEvent({
@@ -106,8 +104,7 @@ export const UnifiedAppointmentDialog = ({
         inviteClientEmail: "",
         notification_enabled: true, // Enable notifications by default for new events
         notification_minutes: 15,
-        notificationMethods: [],
-        customNotificationMessage: ""
+        notificationMethods: []
       });
     }
   }, [appointment, selectedDate, defaultColors]);
@@ -143,8 +140,7 @@ export const UnifiedAppointmentDialog = ({
       invited_client_emails: event.inviteClientEmail ? event.inviteClientEmail.split(',').map(email => email.trim()) : [],
       notification_enabled: event.notification_enabled,
       notification_minutes: event.notification_minutes,
-      notification_methods: event.notificationMethods,
-      custom_notification_message: event.customNotificationMessage
+      notification_methods: event.notificationMethods
     };
 
     try {
@@ -202,8 +198,7 @@ export const UnifiedAppointmentDialog = ({
       inviteClientEmail: "",
       notification_enabled: false,
       notification_minutes: 15,
-      notificationMethods: [],
-      customNotificationMessage: ""
+      notificationMethods: []
     });
     setSelectedCalendars([]);
     setSyncToCalendars(false);
@@ -465,17 +460,6 @@ export const UnifiedAppointmentDialog = ({
                     </Select>
                   </div>
 
-                  <div>
-                    <Label htmlFor="customMessage" className="text-sm font-medium">Custom message (optional)</Label>
-                    <Textarea
-                      id="customMessage"
-                      value={event.customNotificationMessage || ''}
-                      onChange={(e) => setEvent({ ...event, customNotificationMessage: e.target.value })}
-                      placeholder="Add a custom message to the notification..."
-                      rows={2}
-                      className="mt-1"
-                    />
-                  </div>
                 </div>
               )}
             </div>
