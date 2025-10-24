@@ -1,4 +1,3 @@
-
 project_id = "ldgrcodffsalkevafbkb"
 
 [functions.sendgrid-webhook]
@@ -30,4 +29,11 @@ verify_jwt = true
 
 [functions.check-feature-access]
 verify_jwt = true
+
+[functions.caldav-add-account]
+verify_jwt = true
+
+[functions.caldav-sync]
+verify_jwt = true
+
 
