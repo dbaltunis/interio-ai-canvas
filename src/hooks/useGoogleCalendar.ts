@@ -55,11 +55,10 @@ export const useGoogleCalendarIntegration = () => {
   });
 
   const connect = useMutation({
-    mutationFn: async () => {
+    mutationFn: async ({ useRedirect = false }: { useRedirect?: boolean } = {}) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Real Google OAuth flow - opens in popup
       const clientId = '1080600437939-i9nb8ctb5dqvu59dvvtor9j6mt2n02ve.apps.googleusercontent.com';
       if (!clientId) {
         throw new Error('Google Client ID not configured');
@@ -77,7 +76,13 @@ export const useGoogleCalendarIntegration = () => {
         `prompt=consent&` +
         `state=${user.id}`;
 
-      // Open OAuth in popup window
+      // If redirect mode is requested, use full page redirect
+      if (useRedirect) {
+        window.location.href = googleAuthUrl;
+        return new Promise(() => {}); // Never resolves as page redirects
+      }
+
+      // Try popup mode first
       const width = 600;
       const height = 700;
       const left = window.screenX + (window.outerWidth - width) / 2;
@@ -89,8 +94,9 @@ export const useGoogleCalendarIntegration = () => {
         `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
       );
 
-      if (!popup) {
-        throw new Error('Popup was blocked. Please allow popups for this site.');
+      if (!popup || popup.closed) {
+        // Popup was blocked, suggest allowing popups or using redirect
+        throw new Error('POPUP_BLOCKED');
       }
 
       // Listen for messages from the popup
@@ -128,11 +134,19 @@ export const useGoogleCalendarIntegration = () => {
       });
     },
     onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to connect Google Calendar",
-        variant: "destructive",
-      });
+      if (error.message === 'POPUP_BLOCKED') {
+        toast({
+          title: "Popup Blocked",
+          description: "Please allow popups for this site, or we'll use a redirect instead.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to connect Google Calendar",
+          variant: "destructive",
+        });
+      }
     },
   });
 

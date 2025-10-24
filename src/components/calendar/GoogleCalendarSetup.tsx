@@ -168,13 +168,23 @@ export const GoogleCalendarSetup = () => {
               </AlertDescription>
             </Alert>
 
-            <Button 
-              onClick={() => connect()}
-              disabled={isConnecting}
-              className="w-full"
-            >
-              {isConnecting ? "Connecting..." : "Connect Google Calendar"}
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => connect({})}
+                disabled={isConnecting}
+                className="flex-1"
+              >
+                {isConnecting ? "Connecting..." : "Connect (Popup)"}
+              </Button>
+              <Button 
+                onClick={() => connect({ useRedirect: true })}
+                disabled={isConnecting}
+                variant="outline"
+                className="flex-1"
+              >
+                Connect (Redirect)
+              </Button>
+            </div>
             
             <div className="text-xs text-muted-foreground">
               <p className="font-medium mb-1">What you get:</p>

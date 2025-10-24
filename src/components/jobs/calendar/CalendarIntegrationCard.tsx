@@ -18,7 +18,7 @@ export const CalendarIntegrationCard = () => {
   } = useGoogleCalendarIntegration();
 
   const handleConnect = () => {
-    connect();
+    connect({});
   };
 
   const handleDisconnect = () => {
