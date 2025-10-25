@@ -430,10 +430,10 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         </div>
         
         {/* Scrollable time grid */}
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden bg-background">
-          <div className="flex bg-background">
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden bg-card">
+          <div className="flex bg-card">
             {/* Fixed time labels column */}
-            <div className="w-16 border-r bg-background flex-shrink-0">
+            <div className="w-16 border-r bg-card flex-shrink-0">
               {timeSlots.map((time, index) => (
                 <div 
                   key={time} 
@@ -449,14 +449,14 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
             </div>
             
             {/* Day columns */}
-            <div className="flex-1 relative bg-background">
+            <div className="flex-1 relative bg-card">
               {/* Hour separation lines */}
               {timeSlots.map((time, index) => {
                 if (index % 2 === 0) { // Only on full hours
                   return (
-                    <div
-                      key={`hour-line-${index}`}
-                      className="absolute left-0 right-0 border-t border-muted/10 pointer-events-none z-5"
+                    <div 
+                      key={time} 
+                      className="absolute left-0 right-0 border-t border-border/30" 
                       style={{ top: `${index * 32}px` }}
                     />
                   );
@@ -464,7 +464,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                 return null;
               })}
               
-              <div className="grid grid-cols-7 h-full bg-background">
+              <div className="grid grid-cols-7 h-full bg-card">
                 {weekDays.map((day, dayIndex) => {
                   const dayEvents = getAllEventsForDate(day);
                   const isCurrentDay = isToday(day);
@@ -472,7 +472,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                   const showPreview = isCreatingEvent && eventCreationStart && isSameDay(eventCreationStart.date, day);
                   
                   return (
-                    <div key={day.toString()} className={`border-r relative bg-background ${
+                    <div key={day.toString()} className={`border-r relative bg-card ${
                       isCurrentDay ? 'ring-2 ring-primary/20 ring-inset' : ''
                     }`} style={{ height: `${timeSlots.length * 32}px` }}>
                       {/* Empty time slots - clickable areas */}
