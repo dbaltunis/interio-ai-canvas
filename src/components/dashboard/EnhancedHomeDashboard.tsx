@@ -9,7 +9,6 @@ import { CalendarConnectionCard } from "./CalendarConnectionCard";
 import { ShopifyConnectionCTA } from "./ShopifyConnectionCTA";
 import { ShopifyAnalyticsCard } from "./ShopifyAnalyticsCard";
 import { DraggableKPISection } from "./DraggableKPISection";
-import { TeamMembersWidget } from "./TeamMembersWidget";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useEmailKPIs } from "@/hooks/useEmails";
@@ -127,19 +126,15 @@ export const EnhancedHomeDashboard = () => {
       </div>
 
       {/* Top Widgets Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Shopify Section */}
         {isShopifyConnected ? (
           <ShopifyAnalyticsCard />
         ) : (
           <ShopifyConnectionCTA onConnect={() => {
-            // Connection handled by ShopifyIntegrationDialog in parent
             window.location.href = "/?tab=settings";
           }} />
         )}
-
-        {/* Team Members */}
-        <TeamMembersWidget />
 
         {/* Upcoming Events */}
         <UpcomingEventsWidget />
@@ -147,10 +142,7 @@ export const EnhancedHomeDashboard = () => {
 
       {/* Second Row - Email & Status */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Recent Emails */}
         <RecentEmailsWidget />
-        
-        {/* Status Overview - moved here for better mobile layout */}
         <StatusOverviewWidget />
       </div>
 

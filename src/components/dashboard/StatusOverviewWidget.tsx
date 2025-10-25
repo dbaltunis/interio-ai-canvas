@@ -27,14 +27,14 @@ export const StatusOverviewWidget = () => {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Project Status
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="truncate">Project Status</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-2 sm:space-y-3">
           {[1, 2, 3, 4].map(i => (
-            <Skeleton key={i} className="h-12 w-full" />
+            <Skeleton key={i} className="h-10 sm:h-12 w-full" />
           ))}
         </CardContent>
       </Card>
@@ -43,31 +43,31 @@ export const StatusOverviewWidget = () => {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5" />
-          Project Status Overview
+      <CardHeader className="pb-2 sm:pb-3">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="truncate">Project Status</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-2 sm:space-y-3">
         {Object.entries(statusConfig).map(([status, config]) => {
           const count = statusCounts[status] || 0;
           const percentage = totalProjects > 0 ? (count / totalProjects) * 100 : 0;
 
           return (
-            <div key={status} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Circle className={cn("h-3 w-3 fill-current", config.textColor)} />
-                  <span className="text-sm font-medium text-foreground">
+            <div key={status} className="space-y-1.5 sm:space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                  <Circle className={cn("h-2.5 w-2.5 sm:h-3 sm:w-3 fill-current shrink-0", config.textColor)} />
+                  <span className="text-xs sm:text-sm font-medium text-foreground truncate">
                     {config.label}
                   </span>
                 </div>
-                <span className="text-sm font-semibold text-foreground">
-                  {count} {count === 1 ? "project" : "projects"}
+                <span className="text-xs sm:text-sm font-semibold text-foreground shrink-0">
+                  {count}
                 </span>
               </div>
-              <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-secondary rounded-full h-1.5 sm:h-2 overflow-hidden">
                 <div
                   className={cn("h-full transition-all duration-500 rounded-full", config.color)}
                   style={{ width: `${percentage}%` }}
@@ -78,9 +78,9 @@ export const StatusOverviewWidget = () => {
         })}
         
         {totalProjects === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-20" />
-            <p className="text-sm">No projects yet</p>
+          <div className="text-center py-6 sm:py-8 text-muted-foreground">
+            <BarChart3 className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-20" />
+            <p className="text-xs sm:text-sm">No projects yet</p>
           </div>
         )}
       </CardContent>

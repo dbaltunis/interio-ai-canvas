@@ -36,13 +36,13 @@ export const RevenuePieChart = () => {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <DollarSign className="h-4 w-4 sm:h-5 sm:w-5" />
             Revenue Overview
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-48 sm:h-64 w-full" />
         </CardContent>
       </Card>
     );
@@ -50,32 +50,32 @@ export const RevenuePieChart = () => {
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            Revenue Overview
+      <CardHeader className="pb-2 sm:pb-3">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <DollarSign className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="truncate">Revenue</span>
           </CardTitle>
-          <div className="text-right">
-            <p className="text-2xl font-bold text-foreground">
+          <div className="text-right shrink-0">
+            <p className="text-lg sm:text-2xl font-bold text-foreground">
               ${totalRevenue.toLocaleString()}
             </p>
-            <p className="text-xs text-muted-foreground flex items-center gap-1 justify-end">
+            <p className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1 justify-end">
               <TrendingUp className="h-3 w-3" />
-              Total revenue
+              <span className="hidden sm:inline">Total revenue</span>
             </p>
           </div>
         </div>
       </CardHeader>
       <CardContent>
         {!hasData ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <DollarSign className="h-12 w-12 mx-auto mb-3 opacity-20" />
-            <p className="text-sm">No revenue data yet</p>
-            <p className="text-xs mt-1">Start by creating quotes and projects</p>
+          <div className="text-center py-8 sm:py-12 text-muted-foreground">
+            <DollarSign className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-20" />
+            <p className="text-xs sm:text-sm">No revenue data yet</p>
+            <p className="text-[10px] sm:text-xs mt-1">Start by creating quotes</p>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer width="100%" height={200} className="sm:h-[250px]">
             <PieChart>
               <Pie
                 data={chartData}
@@ -83,9 +83,10 @@ export const RevenuePieChart = () => {
                 cy="50%"
                 labelLine={false}
                 label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
+                outerRadius={60}
                 fill="#8884d8"
                 dataKey="value"
+                className="sm:outerRadius-80"
               >
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
@@ -97,12 +98,15 @@ export const RevenuePieChart = () => {
                   backgroundColor: "hsl(var(--card))",
                   border: "1px solid hsl(var(--border))",
                   borderRadius: "0.5rem",
+                  fontSize: "12px",
                 }}
               />
               <Legend
                 verticalAlign="bottom"
                 height={36}
                 iconType="circle"
+                wrapperStyle={{ fontSize: "11px" }}
+                className="sm:text-xs"
               />
             </PieChart>
           </ResponsiveContainer>
