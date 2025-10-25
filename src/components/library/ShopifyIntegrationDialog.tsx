@@ -4,11 +4,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ShoppingBag, Info } from "lucide-react";
-import { useShopifyIntegration } from "@/hooks/useShopifyIntegration";
-import { ShopifyOverviewTab } from "./shopify/ShopifyOverviewTab";
+import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
+import { ShopifyOverviewTabEnhanced } from "./shopify/ShopifyOverviewTabEnhanced";
 import { ShopifySetupTab } from "./shopify/ShopifySetupTab";
 import { ShopifySyncTab } from "./shopify/ShopifySyncTab";
 import { ShopifyStatusTab } from "./shopify/ShopifyStatusTab";
+import { ShopifyWebhookSetupTab } from "./shopify/ShopifyWebhookSetupTab";
+import { useSyncShopifyAnalytics } from "@/hooks/useShopifyAnalytics";
 
 interface ShopifyIntegrationDialogProps {
   open: boolean;
@@ -16,7 +18,8 @@ interface ShopifyIntegrationDialogProps {
 }
 
 export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrationDialogProps) => {
-  const { data: integration, isLoading } = useShopifyIntegration();
+  const { integration, isLoading, syncProducts } = useShopifyIntegrationReal();
+  const syncAnalytics = useSyncShopifyAnalytics();
   const [activeTab, setActiveTab] = useState("overview");
 
   const [formData, setFormData] = useState(() => ({
@@ -70,37 +73,43 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="setup">Setup</TabsTrigger>
             <TabsTrigger value="sync">Sync Settings</TabsTrigger>
+            <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
             <TabsTrigger value="status">Status</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
-            <ShopifyOverviewTab 
+            <ShopifyOverviewTabEnhanced 
               integration={integration} 
-              onGetStarted={handleGetStarted}
+              onSyncProducts={syncProducts}
+              onSyncAnalytics={() => syncAnalytics.mutate()}
             />
           </TabsContent>
 
           <TabsContent value="setup">
             <ShopifySetupTab 
-              integration={integration} 
+              integration={integration as any} 
               onSuccess={handleSetupSuccess}
             />
           </TabsContent>
 
           <TabsContent value="sync">
             <ShopifySyncTab 
-              integration={integration}
+              integration={integration as any}
               formData={formData}
               setFormData={setFormData}
             />
           </TabsContent>
 
+          <TabsContent value="webhooks">
+            <ShopifyWebhookSetupTab integration={integration} />
+          </TabsContent>
+
           <TabsContent value="status">
-            <ShopifyStatusTab integration={integration} />
+            <ShopifyStatusTab integration={integration as any} />
           </TabsContent>
         </Tabs>
       </DialogContent>

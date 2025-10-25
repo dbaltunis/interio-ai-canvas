@@ -18,11 +18,14 @@ import { ProtectedAnalytics } from "./ProtectedAnalytics";
 import { PermissionGuard } from "@/components/common/PermissionGuard";
 import { TeamPresenceCard } from "@/components/team/TeamPresenceCard";
 import { EnhancedDashboard } from "./EnhancedDashboard";
+import { ShopifyAnalyticsCard } from "./ShopifyAnalyticsCard";
+import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 
 const Dashboard = () => {
   const { data: stats, isLoading } = useDashboardStats();
   const userCurrency = useUserCurrency();
   const [viewMode, setViewMode] = useState<'classic' | 'crm'>('crm');
+  const { integration: shopifyIntegration } = useShopifyIntegrationReal();
 
   if (isLoading) {
     return (
@@ -75,6 +78,11 @@ const Dashboard = () => {
           </TabsList>
         </Tabs>
       </div>
+
+      {/* Shopify Analytics Card */}
+      {shopifyIntegration && (
+        <ShopifyAnalyticsCard />
+      )}
 
       {/* Enhanced Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

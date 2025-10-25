@@ -1117,6 +1117,8 @@ export type Database = {
           phone: string | null
           priority_level: string | null
           referral_source: string | null
+          shopify_customer_id: string | null
+          source: string | null
           stage_changed_at: string | null
           state: string | null
           tags: string[] | null
@@ -1154,6 +1156,8 @@ export type Database = {
           phone?: string | null
           priority_level?: string | null
           referral_source?: string | null
+          shopify_customer_id?: string | null
+          source?: string | null
           stage_changed_at?: string | null
           state?: string | null
           tags?: string[] | null
@@ -1191,6 +1195,8 @@ export type Database = {
           phone?: string | null
           priority_level?: string | null
           referral_source?: string | null
+          shopify_customer_id?: string | null
+          source?: string | null
           stage_changed_at?: string | null
           state?: string | null
           tags?: string[] | null
@@ -4286,6 +4292,9 @@ export type Database = {
           job_number: string | null
           name: string
           priority: string | null
+          shopify_order_id: string | null
+          shopify_order_number: string | null
+          source: string | null
           start_date: string | null
           status: string | null
           updated_at: string
@@ -4303,6 +4312,9 @@ export type Database = {
           job_number?: string | null
           name: string
           priority?: string | null
+          shopify_order_id?: string | null
+          shopify_order_number?: string | null
+          source?: string | null
           start_date?: string | null
           status?: string | null
           updated_at?: string
@@ -4320,6 +4332,9 @@ export type Database = {
           job_number?: string | null
           name?: string
           priority?: string | null
+          shopify_order_id?: string | null
+          shopify_order_number?: string | null
+          source?: string | null
           start_date?: string | null
           status?: string | null
           updated_at?: string
@@ -4859,6 +4874,54 @@ export type Database = {
           status?: string | null
           task_data?: Json | null
           task_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      shopify_analytics: {
+        Row: {
+          analytics_data: Json | null
+          avg_order_value: number | null
+          created_at: string | null
+          id: string
+          last_synced_at: string | null
+          orders_this_month: number | null
+          revenue_this_month: number | null
+          shop_domain: string
+          total_customers: number | null
+          total_orders: number | null
+          total_revenue: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          analytics_data?: Json | null
+          avg_order_value?: number | null
+          created_at?: string | null
+          id?: string
+          last_synced_at?: string | null
+          orders_this_month?: number | null
+          revenue_this_month?: number | null
+          shop_domain: string
+          total_customers?: number | null
+          total_orders?: number | null
+          total_revenue?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          analytics_data?: Json | null
+          avg_order_value?: number | null
+          created_at?: string | null
+          id?: string
+          last_synced_at?: string | null
+          orders_this_month?: number | null
+          revenue_this_month?: number | null
+          shop_domain?: string
+          total_customers?: number | null
+          total_orders?: number | null
+          total_revenue?: number | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -6765,6 +6828,10 @@ export type Database = {
       }
       delete_user_cascade: {
         Args: { user_id_param: string }
+        Returns: undefined
+      }
+      ensure_shopify_statuses: {
+        Args: { p_user_id: string }
         Returns: undefined
       }
       fix_pending_invitations: { Args: never; Returns: Json }

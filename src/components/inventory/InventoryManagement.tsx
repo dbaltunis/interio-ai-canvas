@@ -7,6 +7,7 @@ import { Plus, AlertTriangle, TrendingUp, Package } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { InventoryImportDialog } from "./InventoryImportDialog";
+import { ShopifyProductSyncButton } from "../library/shopify/ShopifyProductSyncButton";
 
 export const InventoryManagement = () => {
   // Permission checks
@@ -72,6 +73,7 @@ export const InventoryManagement = () => {
         </div>
         {canManageInventory && (
           <div className="flex items-center gap-2">
+            <ShopifyProductSyncButton />
             <InventoryImportDialog />
             <Button variant="default">
               <Plus className="mr-2 h-4 w-4" />
