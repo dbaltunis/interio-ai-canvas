@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, Plus, Mail, MessageSquare, MoreHorizontal } from "lucide-react";
@@ -15,13 +15,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DirectMessageDialog } from "@/components/collaboration/DirectMessageDialog";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const TeamMembersWidget = () => {
+  const { user } = useAuth();
   const { data: teamMembers = [], isLoading } = useTeamMembers();
   const { data: presenceData = [] } = useTeamPresence();
-  const { openConversation } = useDirectMessages();
+  const { openConversation, conversations = [] } = useDirectMessages();
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>();
+  const [recentMessageUsers, setRecentMessageUsers] = useState<Set<string>>(new Set());
 
   const getInitials = (name: string) => {
     return name
@@ -55,6 +60,73 @@ export const TeamMembersWidget = () => {
     setMessageDialogOpen(true);
     openConversation(userId);
   };
+
+  // Subscribe to real-time messages
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('team-messages-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'direct_messages',
+          filter: `recipient_id=eq.${user.id}`
+        },
+        (payload) => {
+          const message = payload.new as { sender_id: string; content: string; recipient_id: string };
+          
+          // Find sender info
+          const sender = teamMembers.find(m => m.id === message.sender_id);
+          const senderName = sender?.name || 'Team member';
+          
+          // Mark user as recently messaged
+          setRecentMessageUsers(prev => new Set([...prev, message.sender_id]));
+          
+          // Show notification
+          toast.message(`New message from ${senderName}`, {
+            description: message.content.substring(0, 100) + (message.content.length > 100 ? '...' : ''),
+            action: {
+              label: 'Reply',
+              onClick: () => handleSendMessage(message.sender_id)
+            }
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, teamMembers]);
+
+  // Sort team members - prioritize users with unread messages and recent messages
+  const sortedTeamMembers = [...teamMembers].sort((a, b) => {
+    // Check for unread messages in conversations
+    const aConversation = conversations.find(c => c.user_id === a.id);
+    const bConversation = conversations.find(c => c.user_id === b.id);
+    const aUnread = aConversation?.unread_count || 0;
+    const bUnread = bConversation?.unread_count || 0;
+    
+    // First priority: users with unread messages
+    if (aUnread !== bUnread) return bUnread - aUnread;
+    
+    // Second priority: users who recently sent messages
+    const aRecent = recentMessageUsers.has(a.id);
+    const bRecent = recentMessageUsers.has(b.id);
+    if (aRecent !== bRecent) return aRecent ? -1 : 1;
+    
+    // Third priority: online status
+    const aStatus = getPresenceStatus(a.id);
+    const bStatus = getPresenceStatus(b.id);
+    const statusOrder = { online: 0, away: 1, busy: 2, offline: 3 };
+    const aOrder = statusOrder[aStatus as keyof typeof statusOrder] ?? 3;
+    const bOrder = statusOrder[bStatus as keyof typeof statusOrder] ?? 3;
+    
+    return aOrder - bOrder;
+  });
 
   if (isLoading) {
     return (
@@ -109,13 +181,17 @@ export const TeamMembersWidget = () => {
           </div>
         ) : (
           <>
-            {teamMembers.slice(0, 5).map((member) => {
+            {sortedTeamMembers.slice(0, 5).map((member) => {
               const status = getPresenceStatus(member.id);
+              const conversation = conversations.find(c => c.user_id === member.id);
+              const hasUnread = (conversation?.unread_count || 0) > 0;
               
               return (
                 <div
                   key={member.id}
-                  className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                  className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border transition-colors ${
+                    hasUnread ? 'bg-primary/5 border-primary/20 hover:bg-primary/10' : 'bg-card hover:bg-accent/50'
+                  }`}
                 >
                   <div className="relative shrink-0">
                     <Avatar className="h-9 w-9 sm:h-10 sm:w-10 border-2 border-background">
@@ -132,9 +208,16 @@ export const TeamMembersWidget = () => {
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-xs sm:text-sm text-foreground truncate">
-                      {member.name}
-                    </h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className={`font-semibold text-xs sm:text-sm truncate ${hasUnread ? 'text-primary' : 'text-foreground'}`}>
+                        {member.name}
+                      </h4>
+                      {hasUnread && (
+                        <Badge variant="destructive" className="text-[10px] h-4 px-1">
+                          {conversation!.unread_count}
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
                       {member.role}
                     </p>
@@ -183,14 +266,14 @@ export const TeamMembersWidget = () => {
               );
             })}
             
-            {teamMembers.length > 5 && (
+            {sortedTeamMembers.length > 5 && (
               <Button 
                 variant="link" 
                 size="sm" 
                 className="w-full text-xs"
                 onClick={() => window.location.href = "/?tab=team"}
               >
-                View all {teamMembers.length} team members
+                View all {sortedTeamMembers.length} team members
               </Button>
             )}
           </>
