@@ -349,61 +349,64 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
             </CardContent>
           </Card>
 
-          {/* Quick Actions */}
+          {/* Appointment Scheduling */}
           <Card className="flex-shrink-0">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Quick Actions</CardTitle>
+              <CardTitle className="text-sm">Appointment Scheduling</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Manage booking templates and view appointments
+              </p>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Primary Action */}
+            <CardContent className="space-y-3">
+              {/* Primary Action - Create New Scheduler */}
               <Button 
                 onClick={onBookingLinks}
                 className="w-full"
                 size="sm"
               >
-                <Link2 className="h-4 w-4 mr-2" />
-                Create Schedule
+                <UserPlus className="h-4 w-4 mr-2" />
+                New Booking Template
               </Button>
               
-              {/* Management Actions */}
-              <div className="space-y-2">
-                <div className="text-xs font-medium text-muted-foreground px-1">
-                  Manage
-                </div>
+              {/* Management Section */}
+              <div className="space-y-2 pt-1">
                 <div className="grid grid-cols-1 gap-2">
                   <Button 
                     onClick={() => setShowSchedulerManagement(true)}
                     className="w-full justify-start"
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                   >
                     <Settings className="h-4 w-4 mr-2" />
-                    Schedules
+                    <div className="text-left flex-1">
+                      <div className="text-xs font-medium">Manage Templates</div>
+                    </div>
                   </Button>
                   
                   <Button 
                     onClick={() => setShowBookingManagement(true)}
                     className="w-full justify-start"
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                   >
-                    <Users className="h-4 w-4 mr-2" />
-                    Bookings
+                    <CalendarIcon className="h-4 w-4 mr-2" />
+                    <div className="text-left flex-1">
+                      <div className="text-xs font-medium">View Bookings</div>
+                    </div>
+                  </Button>
+                  
+                  <Button 
+                    onClick={() => setShowAnalytics(true)}
+                    className="w-full justify-start"
+                    variant="outline"
+                    size="sm"
+                  >
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    <div className="text-left flex-1">
+                      <div className="text-xs font-medium">View Analytics</div>
+                    </div>
                   </Button>
                 </div>
-              </div>
-              
-              {/* Analytics Action */}
-              <div className="pt-2 border-t">
-                <Button 
-                  onClick={() => setShowAnalytics(true)}
-                  className="w-full justify-start"
-                  variant="ghost"
-                  size="sm"
-                >
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  Analytics
-                </Button>
               </div>
             </CardContent>
           </Card>
