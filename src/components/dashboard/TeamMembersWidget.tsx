@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, Plus, Mail, MessageSquare, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useTeamPresence } from "@/hooks/useTeamPresence";
 import { useDirectMessages } from "@/hooks/useDirectMessages";
@@ -166,23 +167,25 @@ export const TeamMembersWidget = () => {
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-2 sm:space-y-3">
-        {sortedTeamMembers.length === 0 ? (
-          <div className="text-center py-6 sm:py-8 text-muted-foreground">
-            <Users className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-20" />
-            <p className="text-xs sm:text-sm">No team members yet</p>
-            <Button 
-              variant="link" 
-              size="sm" 
-              className="mt-1 sm:mt-2 text-xs"
-              onClick={() => window.location.href = "/?tab=team"}
-            >
-              Invite your first team member
-            </Button>
-          </div>
-        ) : (
-          <>
-            {sortedTeamMembers.slice(0, 5).map((member) => {
+      <CardContent className="p-0">
+        <ScrollArea className="h-[400px] px-4 sm:px-6">
+          <div className="space-y-2 sm:space-y-3 py-3">
+            {sortedTeamMembers.length === 0 ? (
+              <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                <Users className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-20" />
+                <p className="text-xs sm:text-sm">No team members yet</p>
+                <Button 
+                  variant="link" 
+                  size="sm" 
+                  className="mt-1 sm:mt-2 text-xs"
+                  onClick={() => window.location.href = "/?tab=team"}
+                >
+                  Invite your first team member
+                </Button>
+              </div>
+            ) : (
+              <>
+                {sortedTeamMembers.map((member) => {
               const status = getPresenceStatus(member.id);
               const conversation = conversations.find(c => c.user_id === member.id);
               const hasUnread = (conversation?.unread_count || 0) > 0;
@@ -263,22 +266,13 @@ export const TeamMembersWidget = () => {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                </div>
-              );
-            })}
-            
-            {sortedTeamMembers.length > 5 && (
-              <Button 
-                variant="link" 
-                size="sm" 
-                className="w-full text-xs"
-                onClick={() => window.location.href = "/?tab=team"}
-              >
-                View all {sortedTeamMembers.length} team members
-              </Button>
-            )}
-          </>
-        )}
+                  </div>
+                );
+              })}
+            </>
+          )}
+          </div>
+        </ScrollArea>
       </CardContent>
 
       <DirectMessageDialog 
