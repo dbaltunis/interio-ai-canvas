@@ -236,9 +236,12 @@ export const useGoogleCalendarSync = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['google-calendar-integration'] });
-      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+    onSuccess: async (data) => {
+      // Aggressive query invalidation and refetch
+      await queryClient.invalidateQueries({ queryKey: ['appointments'], refetchType: 'all' });
+      await queryClient.refetchQueries({ queryKey: ['appointments'] });
+      await queryClient.invalidateQueries({ queryKey: ['google-calendar-integration'] });
+      
       toast({
         title: "Success",
         description: data?.imported 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -284,7 +284,7 @@ export const UnifiedAppointmentDialog = ({
                 id="title"
                 placeholder="What's this event about?"
                 value={event.title}
-                onChange={(e) => setEvent({ ...event, title: e.target.value })}
+                onChange={useCallback((e) => setEvent(prev => ({ ...prev, title: e.target.value })), [])}
                 className="text-base"
               />
             </div>
@@ -293,13 +293,13 @@ export const UnifiedAppointmentDialog = ({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-1">
                 <Label htmlFor="date">Date *</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={event.date}
-                  onChange={(e) => setEvent({ ...event, date: e.target.value })}
-                  className="w-full"
-                />
+                  <Input
+                    id="date"
+                    type="date"
+                    value={event.date}
+                    onChange={useCallback((e) => setEvent(prev => ({ ...prev, date: e.target.value })), [])}
+                    className="w-full"
+                  />
               </div>
               <div>
                 <Label htmlFor="startTime" className="flex items-center gap-1">
@@ -320,7 +320,7 @@ export const UnifiedAppointmentDialog = ({
                     id="startTime"
                     type="time"
                     value={event.startTime}
-                    onChange={(e) => setEvent({ ...event, startTime: e.target.value })}
+                    onChange={useCallback((e) => setEvent(prev => ({ ...prev, startTime: e.target.value })), [])}
                     className="text-center"
                   />
                   <Button
@@ -350,7 +350,7 @@ export const UnifiedAppointmentDialog = ({
                     id="endTime"
                     type="time"
                     value={event.endTime}
-                    onChange={(e) => setEvent({ ...event, endTime: e.target.value })}
+                    onChange={useCallback((e) => setEvent(prev => ({ ...prev, endTime: e.target.value })), [])}
                     className="text-center"
                   />
                   <Button
@@ -474,7 +474,7 @@ export const UnifiedAppointmentDialog = ({
                 id="location"
                 placeholder="Where is this happening?"
                 value={event.location}
-                onChange={(e) => setEvent({ ...event, location: e.target.value })}
+                onChange={useCallback((e) => setEvent(prev => ({ ...prev, location: e.target.value })), [])}
               />
             </div>
 
@@ -487,7 +487,7 @@ export const UnifiedAppointmentDialog = ({
                 id="videoLink"
                 placeholder="https://meet.google.com/xxx-xxxx-xxx"
                 value={event.video_meeting_link}
-                onChange={(e) => setEvent({ ...event, video_meeting_link: e.target.value })}
+                onChange={useCallback((e) => setEvent(prev => ({ ...prev, video_meeting_link: e.target.value })), [])}
               />
             </div>
           </div>
@@ -528,11 +528,11 @@ export const UnifiedAppointmentDialog = ({
               <UserPlus className="w-3 h-3" />
               Invite Clients (emails)
             </Label>
-            <Input
+              <Input
               id="clientEmails"
               placeholder="client1@email.com, client2@email.com"
               value={event.inviteClientEmail}
-              onChange={(e) => setEvent({ ...event, inviteClientEmail: e.target.value })}
+              onChange={useCallback((e) => setEvent(prev => ({ ...prev, inviteClientEmail: e.target.value })), [])}
             />
           </div>
 
@@ -546,10 +546,18 @@ export const UnifiedAppointmentDialog = ({
               id="description"
               placeholder="Add more details about this event..."
               value={event.description}
-              onChange={(e) => setEvent({ ...event, description: e.target.value })}
+              onChange={useCallback((e) => setEvent(prev => ({ ...prev, description: e.target.value })), [])}
               rows={3}
             />
           </div>
+
+          {/* Google Calendar Badge */}
+          {isEditing && appointment?.google_event_id && (
+            <Badge variant="secondary" className="w-fit">
+              <CalendarDays className="w-3 h-3 mr-1" />
+              Synced with Google Calendar
+            </Badge>
+          )}
 
           {/* Appointment Metadata - only show when editing */}
           {isEditing && appointment && (

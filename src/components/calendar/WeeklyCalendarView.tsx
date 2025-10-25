@@ -247,8 +247,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       endTime = new Date(startTime.getTime() + (60 * 60 * 1000));
     }
     
-    // Calculate position based on 30-minute slots (20px each)
-    const slotHeight = 20;
+    // Calculate position based on 30-minute slots (32px each for better visibility)
+    const slotHeight = 32;
     
     // Calculate total minutes from midnight (00:00)
     let totalMinutesFromMidnight = startHour * 60 + startMinutes;
@@ -261,13 +261,13 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       if (totalMinutesFromMidnight < 0) totalMinutesFromMidnight = 0;
     }
     
-    // Convert minutes to pixels: each 30-minute slot = 20px
-    // So each minute = 20/30 = 0.6667px
-    const top = (totalMinutesFromMidnight * 20) / 30;
+    // Convert minutes to pixels: each 30-minute slot = 32px
+    // So each minute = 32/30 = 1.0667px
+    const top = (totalMinutesFromMidnight * 32) / 30;
 
     // Calculate duration and height with accurate minute conversion
     const durationInMinutes = Math.max((endTime.getTime() - startTime.getTime()) / (1000 * 60), 15);
-    const height = Math.max((durationInMinutes * 20) / 30, 15); // Minimum 15px height
+    const height = Math.max((durationInMinutes * 32) / 30, 24); // Minimum 24px height
 
     return { top, height, visible: true };
   };
@@ -315,7 +315,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     const minSlot = Math.min(eventCreationStart.timeSlot, eventCreationEnd.timeSlot);
     const maxSlot = Math.max(eventCreationStart.timeSlot, eventCreationEnd.timeSlot);
     
-    const slotHeight = 20;
+    const slotHeight = 32;
     const top = minSlot * slotHeight;
     const height = (maxSlot - minSlot + 1) * slotHeight;
     
@@ -403,10 +403,10 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         
         const eventHour = new Date(earliestEvent.start_time).getHours();
         const scrollToHour = Math.max(eventHour - 1, 0); // 1 hour before event
-        scrollPosition = (scrollToHour * 60 / 30) * 20; // Each 30-minute slot is 20px
+        scrollPosition = (scrollToHour * 60 / 30) * 32; // Each 30-minute slot is 32px
       } else {
         // Default to 8 AM if no events
-        scrollPosition = (8 * 60 / 30) * 20;
+        scrollPosition = (8 * 60 / 30) * 32;
       }
       
       scrollContainerRef.current.scrollTop = scrollPosition;
@@ -419,8 +419,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         {/* Week header with dates */}
         <div className="flex border-b bg-background sticky top-0 z-10 flex-shrink-0">
           <div className="w-16 border-r flex-shrink-0"></div>
-          <div className="flex-1">
-            <div className="grid grid-cols-7">
+          <div className="flex-1 overflow-x-auto">
+            <div className="grid grid-cols-7 min-w-full">
               {weekDays.map(day => {
                 const isCurrentDay = isToday(day);
                 const dayEvents = getAllEventsForDate(day);
@@ -447,14 +447,14 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         </div>
         
         {/* Scrollable time grid */}
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden">
-          <div className="flex">
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-auto">
+          <div className="flex min-w-full">
             {/* Fixed time labels column */}
-            <div className="w-16 border-r bg-muted/20 flex-shrink-0">
+            <div className="w-16 border-r bg-muted/20 flex-shrink-0 sticky left-0 z-10">
               {timeSlots.map((time, index) => (
                 <div 
                   key={time} 
-                className={`h-[20px] px-2 text-xs text-muted-foreground flex items-center justify-end ${
+                className={`h-[32px] px-2 text-xs text-muted-foreground flex items-center justify-end ${
                   index % 2 === 0 ? 'border-b border-muted/30' : 'border-b border-muted'
                 }`}
                 >
@@ -466,7 +466,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
             </div>
             
             {/* Day columns */}
-            <div className="flex-1 relative">
+            <div className="flex-1 relative min-w-0">
               {/* Hour separation lines */}
               {timeSlots.map((time, index) => {
                 if (index % 2 === 0) { // Only on full hours
@@ -474,14 +474,14 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                     <div
                       key={`hour-line-${index}`}
                       className="absolute left-0 right-0 border-t border-muted/10 pointer-events-none z-5"
-                      style={{ top: `${index * 20}px` }}
+                      style={{ top: `${index * 32}px` }}
                     />
                   );
                 }
                 return null;
               })}
               
-              <div className="grid grid-cols-7 h-full">
+              <div className="grid grid-cols-7 h-full min-w-full">
                 {weekDays.map((day, dayIndex) => {
                   const dayEvents = getAllEventsForDate(day);
                   const isCurrentDay = isToday(day);
@@ -491,7 +491,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                   return (
                     <div key={day.toString()} className={`border-r relative ${
                       isCurrentDay ? 'bg-primary/5' : ''
-                    }`} style={{ height: `${timeSlots.length * 20}px` }}>
+                    }`} style={{ height: `${timeSlots.length * 32}px` }}>
                       {/* Empty time slots - clickable areas */}
                       {timeSlots.map((time, index) => {
                         const isOccupied = isTimeSlotOccupied(day, time);
@@ -505,7 +505,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           return (
                             <div 
                               ref={setNodeRef}
-                              className={`h-[20px] transition-colors relative ${
+                              className={`h-[32px] transition-colors relative ${
                                  index % 2 === 0 ? 'border-b border-muted/30' : 'border-b border-muted'
                                } ${isOver ? 'bg-primary/30 border-primary border-2' : ''} ${
                                 isOccupied 
@@ -555,8 +555,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                            if (totalMinutesFromMidnight < 0) return null; // Don't show if before visible hours
                          }
                          
-                         // Each 30-minute slot is 20px, so each minute is 20/30 = 0.6667px
-                         const top = (totalMinutesFromMidnight * 20) / 30;
+                          // Each 30-minute slot is 32px, so each minute is 32/30 = 1.0667px
+                          const top = (totalMinutesFromMidnight * 32) / 30;
                          
                          // Debug logging
                          console.log('Current time debug:', {
