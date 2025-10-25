@@ -10,6 +10,7 @@ import { AddInventoryDialog } from "./AddInventoryDialog";
 import { EditInventoryDialog } from "./EditInventoryDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { JobsPagination } from "../jobs/JobsPagination";
 
 interface FabricInventoryViewProps {
   searchQuery: string;
@@ -24,11 +25,14 @@ const FABRIC_CATEGORIES = [
   { key: "sheer_fabric", label: "Sheer Fabrics" }
 ];
 
+const ITEMS_PER_PAGE = 24;
+
 export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryViewProps) => {
   const { data: inventory, refetch } = useEnhancedInventory();
   const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState("all");
   const [localSearch, setLocalSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fabricItems = inventory?.filter(item => 
     item.category === 'fabric' || 
@@ -56,6 +60,24 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
 
     return matchesGlobalSearch && matchesLocalSearch && matchesCategory;
   });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+  const paginatedItems = filteredItems.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+  
+  // Reset to page 1 when filters change
+  const handleCategoryChange = (category: string) => {
+    setActiveCategory(category);
+    setCurrentPage(1);
+  };
+  
+  const handleSearchChange = (search: string) => {
+    setLocalSearch(search);
+    setCurrentPage(1);
+  };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this fabric?')) return;
@@ -108,14 +130,14 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
           <Input
             placeholder="Search fabrics..."
             value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-9 h-9"
           />
         </div>
       </div>
 
       {/* Category Tabs */}
-      <Tabs value={activeCategory} onValueChange={setActiveCategory}>
+      <Tabs value={activeCategory} onValueChange={handleCategoryChange}>
         <TabsList className="bg-background border-b border-border/50 rounded-none p-0 h-auto flex w-full justify-start gap-0">
           {FABRIC_CATEGORIES.map((cat) => (
             <TabsTrigger
@@ -129,10 +151,11 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
         </TabsList>
 
         {FABRIC_CATEGORIES.map((cat) => (
-          <TabsContent key={cat.key} value={cat.key} className="mt-6">
+          <TabsContent key={cat.key} value={cat.key} className="mt-6 space-y-4">
             {viewMode === "grid" ? (
-              <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-                {filteredItems.map((item) => (
+              <>
+                <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                  {paginatedItems.map((item) => (
                   <Card key={item.id} className="group hover:shadow-lg transition-all overflow-hidden">
                     <div className="aspect-[16/5] relative overflow-hidden bg-muted">
                       {item.image_url ? (
@@ -204,10 +227,20 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
                       </div>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
+                  ))}
+                </div>
+                {totalPages > 1 && (
+                  <JobsPagination
+                    currentPage={currentPage}
+                    totalItems={filteredItems.length}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    onPageChange={setCurrentPage}
+                  />
+                )}
+              </>
             ) : (
-              <div className="rounded-md border">
+              <>
+                <div className="rounded-md border">
                 <table className="w-full">
                   <thead className="bg-muted/50">
                     <tr>
@@ -222,7 +255,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredItems.map((item) => (
+                    {paginatedItems.map((item) => (
                       <tr key={item.id} className="border-t hover:bg-muted/30">
                         <td className="px-4 py-3">
                           {item.image_url ? (
@@ -268,15 +301,19 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
                     ))}
                   </tbody>
                 </table>
-                {filteredItems.length === 0 && (
-                  <div className="p-8 text-center text-muted-foreground">
-                    No fabrics found
-                  </div>
-                )}
               </div>
+              {totalPages > 1 && (
+                <JobsPagination
+                  currentPage={currentPage}
+                  totalItems={filteredItems.length}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                  onPageChange={setCurrentPage}
+                />
+              )}
+            </>
             )}
 
-            {filteredItems.length === 0 && viewMode === "grid" && (
+            {filteredItems.length === 0 && (
               <Card className="p-12">
                 <div className="flex flex-col items-center justify-center text-center space-y-4">
                   <div className="p-4 rounded-full bg-muted">

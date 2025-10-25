@@ -16,6 +16,7 @@ import { InventoryDemoData } from "./InventoryDemoData";
 import { ReorderNotificationSystem } from "./ReorderNotificationSystem";
 import { InventoryImportExport } from "./InventoryImportExport";
 import { VendorDashboard } from "../vendors/VendorDashboard";
+import { MaterialOrderingWorkflow } from "./MaterialOrderingWorkflow";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useVendors } from "@/hooks/useVendors";
 import { HelpDrawer } from "@/components/ui/help-drawer";
@@ -32,10 +33,16 @@ export const ModernInventoryDashboard = () => {
   const { data: inventory, refetch } = useEnhancedInventory();
   const { data: vendors } = useVendors();
   const isMobile = useIsMobile();
+  
+  // Check if we have any stock tracking data
+  const hasStockTracking = inventory?.some(item => 
+    (item.reorder_point && item.reorder_point > 0) || 
+    (item.quantity && item.quantity > 0)
+  ) ?? false;
 
   return (
     <div className={cn("flex-1 space-y-4", isMobile ? "p-3 pb-20" : "p-6")}>
-      {/* Header with Design System */}
+      {/* Header - Minimal */}
       <div className={cn(
         "flex items-center",
         isMobile ? "flex-col gap-3" : "justify-between"
@@ -52,7 +59,7 @@ export const ModernInventoryDashboard = () => {
               "font-bold text-foreground",
               isMobile ? "text-lg" : "text-2xl"
             )}>
-              {isMobile ? "Library" : "Inventory Management"}
+              Library
             </h1>
             {!isMobile && <HelpIcon onClick={() => setShowHelp(true)} />}
           </div>
@@ -100,28 +107,20 @@ export const ModernInventoryDashboard = () => {
                 </Button>
               </div>
 
-              {/* Add Item Button */}
+              {/* Primary Actions */}
               <AddInventoryDialog
                 trigger={
-                  <Button variant="outline">
+                  <Button variant="default">
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Item
+                    Add
                   </Button>
                 }
                 onSuccess={refetch}
               />
 
-              {/* Import/Export - Primary Action */}
               <Button 
-                variant="default"
-                className="bg-primary text-white hover:bg-primary-600 rounded-md"
-                onClick={() => {
-                  setActiveTab("analytics");
-                  setTimeout(() => {
-                    const importExportElement = document.querySelector('[data-import-export]');
-                    importExportElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }, 100);
-                }}
+                variant="outline"
+                onClick={() => setActiveTab("analytics")}
               >
                 <ArrowRightLeft className="h-4 w-4 mr-2" />
                 Import/Export
@@ -172,6 +171,13 @@ export const ModernInventoryDashboard = () => {
             <Package className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
             <span>Vendors</span>
           </TabsTrigger>
+          <TabsTrigger value="ordering" className={cn(
+            "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
+            isMobile ? "px-3 py-2 text-xs" : "px-4 py-3 text-sm"
+          )}>
+            <ArrowRightLeft className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
+            <span>Ordering</span>
+          </TabsTrigger>
           {!isMobile && (
             <>
               <TabsTrigger value="assemblies" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">
@@ -186,13 +192,12 @@ export const ModernInventoryDashboard = () => {
           )}
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-8">
-          {/* Key Metrics */}
-          <div className="space-y-2">
-            <h2 className="text-xl font-semibold text-foreground">Key Metrics</h2>
-            <p className="text-sm text-muted-foreground">Overview of your inventory performance</p>
+        <TabsContent value="overview" className="space-y-6">
+          {/* Key Metrics - Minimal */}
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Key Metrics</h2>
           </div>
-          <InventoryStats />
+          <InventoryStats hasStockTracking={hasStockTracking} />
           {/* Quick Access */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-foreground">Quick Access</h2>
@@ -339,11 +344,13 @@ export const ModernInventoryDashboard = () => {
             </div>
           </div>
 
-          {/* Alerts & Notifications */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-foreground">Alerts & Notifications</h2>
-            <ReorderNotificationSystem />
-          </div>
+          {/* Alerts - Only show if stock tracking is enabled */}
+          {hasStockTracking && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-foreground">Alerts</h2>
+              <ReorderNotificationSystem />
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="fabrics" className="space-y-6">
@@ -362,6 +369,10 @@ export const ModernInventoryDashboard = () => {
           <VendorDashboard />
         </TabsContent>
 
+        <TabsContent value="ordering" className="space-y-6">
+          <MaterialOrderingWorkflow />
+        </TabsContent>
+
         <TabsContent value="assemblies" className="space-y-6">
           <AssemblyKitBuilder />
         </TabsContent>
@@ -370,7 +381,7 @@ export const ModernInventoryDashboard = () => {
           <InventoryAnalytics />
           
           {/* Import/Export Tools */}
-          <div data-import-export>
+          <div data-import-export className="mt-6">
             <InventoryImportExport />
           </div>
         </TabsContent>
