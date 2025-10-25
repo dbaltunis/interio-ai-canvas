@@ -183,6 +183,17 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
     <div className="w-80 min-w-80 max-w-80 border-r bg-background flex flex-col h-full flex-shrink-0">
       <ScrollArea className="flex-1">
         <div className="flex flex-col space-y-4 p-4">
+          {/* Collapse Button */}
+          <div className="flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleCollapse}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </div>
           {/* Mini Calendar */}
           <Card className="flex-shrink-0">
             <CardHeader className="pb-3">
@@ -218,18 +229,6 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
               />
             </CardContent>
           </Card>
-
-          {/* Collapse Button */}
-          <div className="flex justify-end">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggleCollapse}
-              className="h-8 w-8 p-0"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-          </div>
 
           {/* Upcoming Events */}
           <Card className="flex-1 min-h-0">
