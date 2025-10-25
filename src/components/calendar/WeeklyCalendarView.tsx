@@ -396,34 +396,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     }
   };
 
-  // Auto-scroll to earliest event or 8 AM (but not during event creation)
-  useEffect(() => {
-    if (scrollContainerRef.current && displayAppointments && !isCreatingEvent) {
-      let scrollPosition = 0;
-      
-      // Find earliest event in the current week
-      const weekEvents = displayAppointments.filter(appointment => {
-        const eventDate = new Date(appointment.start_time);
-        return weekDays.some(day => isSameDay(eventDate, day));
-      });
-      
-      if (weekEvents.length > 0) {
-        const earliestEvent = weekEvents.reduce((earliest, current) => {
-          return new Date(current.start_time) < new Date(earliest.start_time) ? current : earliest;
-        });
-        
-        const eventHour = new Date(earliestEvent.start_time).getHours();
-        const scrollToHour = Math.max(eventHour - 1, 0); // 1 hour before event
-        scrollPosition = (scrollToHour * 60 / 30) * 32; // Each 30-minute slot is 32px
-      } else {
-        // Default to 8 AM if no events
-        scrollPosition = (8 * 60 / 30) * 32;
-      }
-      
-      scrollContainerRef.current.scrollTop = scrollPosition;
-    }
-  }, [showExtendedHours, displayAppointments, weekDays, isCreatingEvent]);
-
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="h-full max-h-screen flex flex-col overflow-hidden" onMouseUp={handleMouseUp}>
