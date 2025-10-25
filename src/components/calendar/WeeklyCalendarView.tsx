@@ -730,9 +730,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                    <div className="flex items-start justify-between gap-1 mb-0.5">
                                      {/* Title and time - adaptive based on screen size */}
                                      <div className="flex-1 min-w-0">
-                                       {/* Event title - responsive font, allow more lines on tablet/mobile */}
+                                       {/* Event title - non-bold, smaller font on all screens */}
                                        <div 
-                                         className={`${isNarrowEvent ? 'font-normal text-[10px]' : 'font-normal md:font-medium text-[11px] md:text-[13px]'} leading-tight text-foreground dark:text-white break-words overflow-hidden`}
+                                         className={`${isNarrowEvent ? 'font-normal text-[10px]' : 'font-normal text-[11px]'} leading-tight text-foreground dark:text-white break-words overflow-hidden`}
                                          style={{ 
                                            display: '-webkit-box',
                                            WebkitLineClamp: finalHeight > 100 ? 4 : finalHeight > 70 ? 3 : finalHeight > 45 ? 2 : 1,
@@ -747,7 +747,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                         }
                                        </div>
                                        
-                                       {/* Time display - compact on narrow/tablet */}
+                                       {/* Time display - compact */}
                                        <div className={`flex items-center gap-0.5 ${isNarrowEvent ? 'text-[8px]' : 'text-[9px] md:text-[10px]'} leading-tight font-normal text-foreground/70 dark:text-white/70 mt-0.5`}>
                                          <span>{format(startTime, 'HH:mm')}</span>
                                          {!isNarrowEvent && (
