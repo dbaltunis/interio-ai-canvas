@@ -726,18 +726,18 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                  )}
 
                                   <div className="flex flex-col h-full pr-1 pb-1 overflow-hidden">
-                                   {/* Event content - adaptive to width and height */}
-                                   <div className={`flex items-start ${isNarrowEvent ? 'flex-col' : 'justify-between'} gap-1 mb-0.5`}>
-                                     {/* Left side: Title and time */}
-                                     <div className="flex-1 min-w-0 w-full">
-                                       {/* Event title - adaptive font size and weight */}
+                                   {/* Event content - adaptive to width, KEEP HORIZONTAL layout */}
+                                   <div className="flex items-start justify-between gap-1 mb-0.5">
+                                     {/* Title and time - more compact on narrow events */}
+                                     <div className="flex-1 min-w-0">
+                                       {/* Event title - smaller, non-bold on narrow events */}
                                        <div 
-                                         className={`${isNarrowEvent ? 'font-normal text-[11px]' : 'font-medium text-[13px]'} leading-tight text-foreground dark:text-white break-words overflow-hidden`}
+                                         className={`${isNarrowEvent ? 'font-normal text-[10px]' : 'font-medium text-[13px]'} leading-tight text-foreground dark:text-white break-words overflow-hidden`}
                                          style={{ 
                                            display: '-webkit-box',
-                                           WebkitLineClamp: finalHeight > 80 ? 3 : finalHeight > 50 ? 2 : 1,
+                                           WebkitLineClamp: 1,
                                            WebkitBoxOrient: 'vertical',
-                                           lineHeight: isNarrowEvent ? '1.2' : '1.3'
+                                           lineHeight: '1.2'
                                          }}>
                                         {event.isAvailableSlot 
                                           ? event.schedulerName 
@@ -747,17 +747,23 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                         }
                                        </div>
                                        
-                                       {/* Time display - smaller on narrow events */}
-                                       <div className={`flex items-center gap-1 ${isNarrowEvent ? 'text-[9px]' : 'text-[10px]'} leading-tight font-normal text-foreground/80 dark:text-white/80 mt-0.5`}>
-                                         <span>{format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}</span>
-                                         {!event.isAvailableSlot && event.notification_enabled && (
-                                           <Bell className={`${isNarrowEvent ? 'w-2.5 h-2.5' : 'w-3 h-3'} text-yellow-400`} />
+                                       {/* Time display - smaller and more compact on narrow events */}
+                                       <div className={`flex items-center gap-0.5 ${isNarrowEvent ? 'text-[8px]' : 'text-[10px]'} leading-tight font-normal text-foreground/70 dark:text-white/70 mt-0.5`}>
+                                         <span>{format(startTime, 'HH:mm')}</span>
+                                         {!isNarrowEvent && (
+                                           <>
+                                             <span>-</span>
+                                             <span>{format(endTime, 'HH:mm')}</span>
+                                           </>
+                                         )}
+                                         {!event.isAvailableSlot && event.notification_enabled && !isNarrowEvent && (
+                                           <Bell className="w-2.5 h-2.5 text-yellow-400 ml-0.5" />
                                          )}
                                        </div>
                                      </div>
                                      
-                                     {/* User avatar - hide on narrow events, show on wider ones */}
-                                     {!event.isAvailableSlot && !isNarrowEvent && (
+                                     {/* User avatar - hide on narrow events to save space */}
+                                     {!event.isAvailableSlot && !isNarrowEvent && finalHeight > 35 && (
                                        <div className="flex-shrink-0 mr-5">
                                          <Avatar className="h-5 w-5">
                                            <AvatarImage src="" alt="" />
