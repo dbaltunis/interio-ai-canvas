@@ -10,6 +10,7 @@ import { AddInventoryDialog } from "./AddInventoryDialog";
 import { EditInventoryDialog } from "./EditInventoryDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { JobsPagination } from "../jobs/JobsPagination";
 
 interface WallcoveringInventoryViewProps {
   searchQuery: string;
@@ -23,11 +24,14 @@ const WALLCOVERING_CATEGORIES = [
   { key: "panels", label: "Wall Panels / Murals" }
 ];
 
+const ITEMS_PER_PAGE = 24;
+
 export const WallcoveringInventoryView = ({ searchQuery, viewMode }: WallcoveringInventoryViewProps) => {
   const { data: inventory, refetch } = useEnhancedInventory();
   const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState("all");
   const [localSearch, setLocalSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const wallcoveringItems = inventory?.filter(item => 
     item.category === 'wallcovering' || 
@@ -47,6 +51,23 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
 
     return matchesGlobalSearch && matchesLocalSearch && matchesCategory;
   });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+  const paginatedItems = filteredItems.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+  
+  const handleCategoryChange = (category: string) => {
+    setActiveCategory(category);
+    setCurrentPage(1);
+  };
+  
+  const handleSearchChange = (search: string) => {
+    setLocalSearch(search);
+    setCurrentPage(1);
+  };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this wallcovering?')) return;
@@ -99,14 +120,14 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
           <Input
             placeholder="Search wallcoverings..."
             value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-9 h-9"
           />
         </div>
       </div>
 
       {/* Category Tabs */}
-      <Tabs value={activeCategory} onValueChange={setActiveCategory}>
+      <Tabs value={activeCategory} onValueChange={handleCategoryChange}>
         <TabsList className="bg-background border-b border-border/50 rounded-none p-0 h-auto flex w-full justify-start gap-0">
           {WALLCOVERING_CATEGORIES.map((cat) => (
             <TabsTrigger
@@ -120,10 +141,11 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
         </TabsList>
 
         {WALLCOVERING_CATEGORIES.map((cat) => (
-          <TabsContent key={cat.key} value={cat.key} className="mt-6">
+          <TabsContent key={cat.key} value={cat.key} className="mt-6 space-y-4">
             {viewMode === "grid" ? (
-              <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-                {filteredItems.map((item) => (
+              <>
+                <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                  {paginatedItems.map((item) => (
                   <Card key={item.id} className="group hover:shadow-lg transition-all overflow-hidden">
                     <div className="aspect-[16/5] relative overflow-hidden bg-muted">
                       {item.image_url ? (
@@ -232,10 +254,20 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
                       </div>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
+                  ))}
+                </div>
+                {totalPages > 1 && (
+                  <JobsPagination
+                    currentPage={currentPage}
+                    totalItems={filteredItems.length}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    onPageChange={setCurrentPage}
+                  />
+                )}
+              </>
             ) : (
-              <div className="rounded-md border">
+              <>
+                <div className="rounded-md border">
                 <table className="w-full">
                   <thead className="bg-muted/50">
                     <tr>
@@ -252,7 +284,7 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredItems.map((item) => (
+                    {paginatedItems.map((item) => (
                       <tr key={item.id} className="border-t hover:bg-muted/30">
                         <td className="px-4 py-3">
                           {item.image_url ? (
@@ -333,15 +365,19 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
                     ))}
                   </tbody>
                 </table>
-                {filteredItems.length === 0 && (
-                  <div className="p-8 text-center text-muted-foreground">
-                    No wallcoverings found
-                  </div>
-                )}
               </div>
+              {totalPages > 1 && (
+                <JobsPagination
+                  currentPage={currentPage}
+                  totalItems={filteredItems.length}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                  onPageChange={setCurrentPage}
+                />
+              )}
+            </>
             )}
 
-            {filteredItems.length === 0 && viewMode === "grid" && (
+            {filteredItems.length === 0 && (
               <Card className="p-12">
                 <div className="flex flex-col items-center justify-center text-center space-y-4">
                   <div className="p-4 rounded-full bg-muted">
