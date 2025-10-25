@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Share, Plus, Minus, Palette, Users, Video, UserPlus, Bell, User } from "lucide-react";
+import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Share, Plus, Minus, Palette, Users, Video, UserPlus, Bell, User, AlertCircle } from "lucide-react";
 import { useCreateAppointment, useUpdateAppointment, useDeleteAppointment } from "@/hooks/useAppointments";
 // CalDAV sync removed - using Google Calendar OAuth only
 import { useOfflineSupport } from "@/hooks/useOfflineSupport";
@@ -109,6 +110,14 @@ export const UnifiedAppointmentDialog = ({
     }
   }, [appointment, selectedDate, defaultColors]);
 
+  // Validate date range
+  const isValidDateRange = useMemo(() => {
+    if (!event.date || !event.startTime || !event.endTime) return true;
+    const start = new Date(`${event.date}T${event.startTime}`);
+    const end = new Date(`${event.date}T${event.endTime}`);
+    return end > start;
+  }, [event.date, event.startTime, event.endTime]);
+
   const handleSubmit = async () => {
     console.log('handleSubmit called with event:', event);
     console.log('isEditing:', isEditing);
@@ -121,6 +130,12 @@ export const UnifiedAppointmentDialog = ({
         startTime: event.startTime,
         endTime: event.endTime
       });
+      return;
+    }
+
+    // Additional validation for date range
+    if (!isValidDateRange) {
+      console.log('Invalid date range: end time must be after start time');
       return;
     }
 
@@ -349,6 +364,7 @@ export const UnifiedAppointmentDialog = ({
                   <Input
                     id="endTime"
                     type="time"
+                    min={event.startTime} // Prevent selecting time before start
                     value={event.endTime}
                     onChange={useCallback((e) => setEvent(prev => ({ ...prev, endTime: e.target.value })), [])}
                     className="text-center"
@@ -365,6 +381,16 @@ export const UnifiedAppointmentDialog = ({
                 </div>
               </div>
             </div>
+
+            {/* Date validation error */}
+            {!isValidDateRange && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  End time must be after start time
+                </AlertDescription>
+              </Alert>
+            )}
 
             {/* Notifications Section */}
             <div className="space-y-3">
@@ -649,7 +675,7 @@ export const UnifiedAppointmentDialog = ({
           <div className="flex flex-col sm:flex-row gap-2 pt-4">
             <Button
               onClick={handleSubmit}
-              disabled={!event.title || !event.date || !event.startTime || !event.endTime || isLoading}
+              disabled={!event.title || !event.date || !event.startTime || !event.endTime || !isValidDateRange || isLoading}
               className="flex-1 order-1 sm:order-1"
             >
               {isLoading ? (
