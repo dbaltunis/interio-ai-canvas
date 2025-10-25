@@ -38,6 +38,24 @@ serve(async (req) => {
 
     console.log('Found appointment:', appointment.title);
 
+    // Validate dates before proceeding
+    const startTime = new Date(appointment.start_time);
+    const endTime = new Date(appointment.end_time);
+
+    if (endTime <= startTime) {
+      console.error('Invalid date range for appointment:', appointment.id);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid date range: end time must be after start time',
+          appointmentId: appointment.id
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
     // Get Google Calendar integration for the user
     const { data: integration, error: integrationError } = await supabase
       .from('integration_settings')
