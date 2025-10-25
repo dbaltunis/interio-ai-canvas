@@ -720,18 +720,18 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                   </div>
                                  )}
 
-                                  <div className="flex flex-col h-full pr-1 pb-1">
-                                   {/* Event content - compact layout */}
-                                   <div className="flex items-start justify-between gap-1">
+                                  <div className="flex flex-col h-full pr-1 pb-1 overflow-hidden">
+                                   {/* Event content - responsive to height */}
+                                   <div className="flex items-start justify-between gap-1 mb-0.5">
                                      {/* Left side: Title and time */}
                                      <div className="flex-1 min-w-0">
-                                       {/* Event title - compact */}
-                                       <div className="font-normal text-[12px] leading-tight text-foreground dark:text-white break-words overflow-hidden" 
+                                       {/* Event title - shows more lines when taller */}
+                                       <div className="font-medium text-[13px] leading-tight text-foreground dark:text-white break-words overflow-hidden" 
                                             style={{ 
                                               display: '-webkit-box',
-                                              WebkitLineClamp: 1,
+                                              WebkitLineClamp: finalHeight > 80 ? 3 : finalHeight > 50 ? 2 : 1,
                                               WebkitBoxOrient: 'vertical',
-                                              lineHeight: '1.2'
+                                              lineHeight: '1.3'
                                             }}>
                                          {event.isAvailableSlot 
                                            ? event.schedulerName 
@@ -742,10 +742,10 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                        </div>
                                        
                                        {/* Time display with notification bell */}
-                                       <div className="flex items-center gap-1 text-[9px] leading-tight opacity-80 font-normal text-foreground dark:text-white/80 mt-0.5">
+                                       <div className="flex items-center gap-1 text-[10px] leading-tight font-medium text-foreground/80 dark:text-white/80 mt-0.5">
                                          <span>{format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}</span>
                                          {!event.isAvailableSlot && event.notification_enabled && (
-                                           <Bell className="w-2.5 h-2.5 text-yellow-400" />
+                                           <Bell className="w-3 h-3 text-yellow-400" />
                                          )}
                                        </div>
                                      </div>
@@ -753,9 +753,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                      {/* User avatar - positioned to not overlap drag handle */}
                                      {!event.isAvailableSlot && (
                                        <div className="flex-shrink-0 mr-5">
-                                         <Avatar className="h-4 w-4">
+                                         <Avatar className="h-5 w-5">
                                            <AvatarImage src="" alt="" />
-                                           <AvatarFallback className="text-[7px] bg-background/50 text-foreground">
+                                           <AvatarFallback className="text-[8px] bg-background/50 text-foreground font-medium">
                                              {event.isBooking 
                                                ? event.customer_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'C'
                                                : currentUserProfile?.display_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'ME'
@@ -766,21 +766,31 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                      )}
                                    </div>
                                   
-                                  {/* Notification and additional info for taller events */}
-                                  {finalHeight > 45 && (
-                                    <div className="flex items-center justify-between mt-1">
-                                      {/* Notification indicator */}
-                                      <div className="flex items-center gap-1">
-                                        <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" title="Email reminder set"></div>
-                                        <span className="text-[8px] text-foreground/60 dark:text-white/60">Reminder</span>
+                                  {/* Additional info for taller events */}
+                                  {finalHeight > 50 && (
+                                    <div className="mt-1 space-y-1 flex-1 overflow-hidden">
+                                      {/* Secondary info line */}
+                                      <div className="text-[10px] leading-tight text-foreground/70 dark:text-white/70 truncate">
+                                        {event.isBooking 
+                                          ? event.scheduler_name 
+                                          : event.isAvailableSlot
+                                          ? `${event.duration} min slot`
+                                          : event.location
+                                        }
                                       </div>
                                       
-                                      {/* Additional event info */}
-                                      {finalHeight > 60 && (
-                                        <div className="text-[9px] leading-tight truncate opacity-60 text-foreground dark:text-white/60">
+                                      {/* Description for even taller events - multiline */}
+                                      {finalHeight > 80 && (event.description || event.customer_phone) && (
+                                        <div className="text-[9px] leading-relaxed text-foreground/60 dark:text-white/60 break-words overflow-hidden"
+                                             style={{ 
+                                               display: '-webkit-box',
+                                               WebkitLineClamp: finalHeight > 120 ? 4 : 2,
+                                               WebkitBoxOrient: 'vertical',
+                                               lineHeight: '1.4'
+                                             }}>
                                           {event.isBooking 
-                                            ? event.scheduler_name 
-                                            : (event.location || event.description)
+                                            ? event.customer_phone 
+                                            : event.description
                                           }
                                         </div>
                                       )}
