@@ -603,7 +603,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           if (event.isAvailableSlot) {
                             // Available appointment slots: more visible accent color
                             return {
-                              background: 'hsl(var(--accent) / 0.25)',
+                              background: 'hsl(var(--accent) / 0.3)',
                               border: 'hsl(var(--accent))',
                               textClass: 'text-foreground',
                               isDashed: true,
@@ -613,7 +613,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           } else if (event.isBooking) {
                             // Booked appointments: stronger primary color
                             return {
-                              background: 'hsl(var(--primary) / 0.35)',
+                              background: 'hsl(var(--primary) / 0.4)',
                               border: 'hsl(var(--primary))',
                               textClass: 'text-foreground dark:text-white',
                               isDashed: false,
@@ -624,7 +624,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                             // Personal events: stronger event color visibility
                             const eventColor = event.color;
                             return {
-                              background: eventColor ? `${eventColor}40` : 'hsl(var(--muted) / 0.35)',
+                              background: eventColor ? `${eventColor}50` : 'hsl(var(--muted) / 0.4)',
                               border: eventColor || 'hsl(var(--accent))',
                               textClass: 'text-foreground dark:text-white',
                               isDashed: false,
