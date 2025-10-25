@@ -190,7 +190,7 @@ export const TeamMembersWidget = () => {
                   variant="link" 
                   size="sm" 
                   className="mt-1 sm:mt-2 text-xs"
-                  onClick={() => window.location.href = "/?tab=team"}
+                  onClick={() => navigate('/?tab=team')}
                 >
                   Invite your first team member
                 </Button>
@@ -271,7 +271,7 @@ export const TeamMembersWidget = () => {
                             Send Email
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem onClick={() => window.location.href = "/?tab=team"}>
+                        <DropdownMenuItem onClick={() => navigate('/?tab=team')}>
                           <Users className="h-4 w-4 mr-2" />
                           View All Team
                         </DropdownMenuItem>

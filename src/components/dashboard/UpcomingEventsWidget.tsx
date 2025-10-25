@@ -6,8 +6,10 @@ import { format, isToday, isTomorrow, isPast } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 
 export const UpcomingEventsWidget = () => {
+  const navigate = useNavigate();
   const { data: appointments, isLoading } = useAppointments();
   const { integration: calendarIntegration } = useGoogleCalendarIntegration();
 
@@ -61,7 +63,7 @@ export const UpcomingEventsWidget = () => {
           <div className="text-center py-6 sm:py-8 text-muted-foreground">
             <Calendar className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-20" />
             <p className="text-xs sm:text-sm">No upcoming appointments</p>
-            <Button variant="link" size="sm" className="mt-1 sm:mt-2 text-xs sm:text-sm">
+            <Button variant="link" size="sm" className="mt-1 sm:mt-2 text-xs sm:text-sm" onClick={() => navigate('/?tab=calendar')}>
               Schedule your first meeting
             </Button>
           </div>
@@ -74,6 +76,7 @@ export const UpcomingEventsWidget = () => {
               <div
                 key={apt.id}
                 className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                onClick={() => navigate(`/?tab=calendar&eventId=${apt.id}`)}
               >
                 <div className="flex flex-col items-center min-w-[50px] sm:min-w-[60px] pt-1">
                   <span className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase">

@@ -5,8 +5,10 @@ import { format, formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 export const RecentEmailsWidget = () => {
+  const navigate = useNavigate();
   const { data: emails, isLoading } = useEmails();
   const { data: emailKPIs } = useEmailKPIs();
 
@@ -83,6 +85,7 @@ export const RecentEmailsWidget = () => {
             <div
               key={email.id}
               className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+              onClick={() => navigate(`/?tab=projects&view=emails&emailId=${email.id}`)}
             >
               <div className="mt-0.5 sm:mt-1 shrink-0">
                 {getStatusIcon(email.status)}
