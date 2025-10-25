@@ -51,77 +51,74 @@ export const CalendarSyncToolbar = () => {
     : 'Never';
 
   return (
-    <div className="flex items-center gap-3 p-3 bg-muted/30 border-b">
-      <div className="flex items-center gap-2">
-        <Badge variant="outline" className="gap-1.5">
-          {integration?.active ? (
-            <>
-              <CheckCircle2 className="h-3 w-3 text-green-500" />
-              <span>Google Calendar Connected</span>
-            </>
-          ) : (
-            <>
-              <XCircle className="h-3 w-3 text-destructive" />
-              <span>Not Connected</span>
-            </>
-          )}
-        </Badge>
-        <span className="text-xs text-muted-foreground">
-          Last sync: {lastSyncTime}
-        </span>
-        {isSyncingFromGoogle && autoSyncEnabled && (
-          <Badge variant="secondary" className="gap-1.5 text-xs">
-            <RefreshCw className="h-3 w-3 animate-spin" />
-            Auto-syncing...
-          </Badge>
+    <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 border-b">
+      {/* Connection status */}
+      <div className="flex items-center gap-1.5">
+        {integration?.active ? (
+          <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+        ) : (
+          <XCircle className="h-3.5 w-3.5 text-destructive" />
         )}
+        <span className="text-xs text-muted-foreground">
+          {lastSyncTime}
+        </span>
       </div>
+
+      {/* Syncing indicator */}
+      {isSyncingFromGoogle && autoSyncEnabled && (
+        <div className="flex items-center gap-1">
+          <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />
+        </div>
+      )}
 
       <div className="flex-1" />
 
-      <div className="flex items-center gap-3">
+      {/* Controls group */}
+      <div className="flex items-center gap-2">
         {/* Auto-sync toggle */}
-        <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-background/50">
+        <div className="flex items-center gap-1.5">
           <Switch
             id="auto-sync"
             checked={autoSyncEnabled}
             onCheckedChange={setAutoSyncEnabled}
-            className="scale-90"
+            className="scale-75"
           />
-          <Label htmlFor="auto-sync" className="text-xs cursor-pointer whitespace-nowrap">
-            Auto-sync (5m)
+          <Label htmlFor="auto-sync" className="text-[11px] cursor-pointer text-muted-foreground whitespace-nowrap">
+            Auto (5m)
           </Label>
         </div>
 
         {/* Manual sync buttons */}
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
           onClick={() => syncFromGoogle()}
           disabled={isSyncingFromGoogle || isSyncingAll}
-          className="gap-2"
+          className="h-7 px-2 gap-1.5 text-xs"
+          title="Sync from Google Calendar"
         >
           {isSyncingFromGoogle ? (
-            <RefreshCw className="h-4 w-4 animate-spin" />
+            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
           ) : (
-            <Download className="h-4 w-4" />
+            <Download className="h-3.5 w-3.5" />
           )}
-          Sync from Google
+          <span className="hidden sm:inline">Import</span>
         </Button>
 
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
           onClick={() => syncAllToGoogle()}
           disabled={isSyncingFromGoogle || isSyncingAll}
-          className="gap-2"
+          className="h-7 px-2 gap-1.5 text-xs"
+          title="Sync all to Google Calendar"
         >
           {isSyncingAll ? (
-            <RefreshCw className="h-4 w-4 animate-spin" />
+            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
           ) : (
-            <Upload className="h-4 w-4" />
+            <Upload className="h-3.5 w-3.5" />
           )}
-          Sync All to Google
+          <span className="hidden sm:inline">Export</span>
         </Button>
       </div>
     </div>
