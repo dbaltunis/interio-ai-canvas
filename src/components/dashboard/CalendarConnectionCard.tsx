@@ -14,14 +14,16 @@ export const CalendarConnectionCard = () => {
 
   if (isConnected) {
     return (
-      <Card className="border-green-200 bg-green-50/50">
+      <Card className="glass-morphism border-green-500/30 bg-gradient-to-br from-green-500/5 to-transparent">
         <CardHeader className="pb-2 sm:pb-3">
           <div className="flex items-center justify-between gap-2">
             <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-              <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 shrink-0" />
+              <div className="p-1.5 rounded-lg bg-gradient-to-br from-green-500/20 to-green-600/10 border border-green-500/30">
+                <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
+              </div>
               <span className="truncate">Calendar Connected</span>
             </CardTitle>
-            <Badge variant="outline" className="text-green-700 border-green-300 text-xs shrink-0">
+            <Badge variant="outline" className="text-xs shrink-0 border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400">
               Active
             </Badge>
           </div>
@@ -64,10 +66,12 @@ export const CalendarConnectionCard = () => {
   }
 
   return (
-    <Card className="border-dashed">
+    <Card className="glass-morphism border-primary/20 border-dashed">
       <CardHeader className="pb-2 sm:pb-3">
         <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-          <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+          <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/30">
+            <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+          </div>
           <span className="truncate">Connect Google Calendar</span>
         </CardTitle>
       </CardHeader>

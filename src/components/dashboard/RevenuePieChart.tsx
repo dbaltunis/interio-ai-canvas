@@ -49,19 +49,21 @@ export const RevenuePieChart = () => {
   }
 
   return (
-    <Card>
+    <Card className="glass-morphism border-primary/20">
       <CardHeader className="pb-2 sm:pb-3">
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <DollarSign className="h-4 w-4 sm:h-5 sm:w-5" />
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-green-500/20 to-green-600/10 border border-green-500/30">
+              <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
+            </div>
             <span className="truncate">Revenue</span>
           </CardTitle>
           <div className="text-right shrink-0">
-            <p className="text-lg sm:text-2xl font-bold text-foreground">
+            <p className="text-xl sm:text-3xl font-bold bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
               ${totalRevenue.toLocaleString()}
             </p>
-            <p className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1 justify-end">
-              <TrendingUp className="h-3 w-3" />
+            <p className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1 justify-end mt-1">
+              <TrendingUp className="h-3 w-3 text-green-600" />
               <span className="hidden sm:inline">Total revenue</span>
             </p>
           </div>
