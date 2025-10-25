@@ -21,14 +21,18 @@ import { EnhancedPersonalizationTab } from "./tabs/EnhancedPersonalizationTab";
 import { SecurityPrivacyTab } from "./tabs/SecurityPrivacyTab";
 import { ShopifyStatusManagementTab } from "./tabs/ShopifyStatusManagementTab";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 
 export const SettingsView = () => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [showInteractiveDemo, setShowInteractiveDemo] = useState(false);
-  const [activeTab, setActiveTab] = useState("personal");
+  
+  // Read initial tab from URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const sectionParam = urlParams.get('section');
+  const [activeTab, setActiveTab] = useState(sectionParam || "personal");
 
   // Permission checks
   const canViewSettings = useHasPermission('view_settings');
