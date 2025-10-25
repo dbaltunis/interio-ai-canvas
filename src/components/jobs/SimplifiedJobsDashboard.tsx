@@ -18,12 +18,18 @@ import { useQuotes } from "@/hooks/useQuotes";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useClients } from "@/hooks/useClients";
 import { formatJobNumber } from "@/lib/format-job-number";
+import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
+import { ShopifyConnectionCTA } from "@/components/dashboard/ShopifyConnectionCTA";
+import { ShopifyAnalyticsCard } from "@/components/dashboard/ShopifyAnalyticsCard";
+import { ShopifyIntegrationDialog } from "@/components/library/ShopifyIntegrationDialog";
 
 export const SimplifiedJobsDashboard = () => {
+  const [showShopifyDialog, setShowShopifyDialog] = useState(false);
   const { data: projects = [] } = useProjects();
   const { data: quotes = [] } = useQuotes();
   const { data: stats } = useDashboardStats();
   const { data: clients = [] } = useClients();
+  const { integration, isLoading: isLoadingIntegration } = useShopifyIntegrationReal();
 
   // Calculate metrics based on projects (not quotes)
   const totalProjects = projects.length;
@@ -42,6 +48,15 @@ export const SimplifiedJobsDashboard = () => {
 
   return (
     <div className="space-y-6">
+      {/* Shopify Integration */}
+      {!isLoadingIntegration && (
+        integration?.shop_domain ? (
+          <ShopifyAnalyticsCard />
+        ) : (
+          <ShopifyConnectionCTA onConnect={() => setShowShopifyDialog(true)} />
+        )
+      )}
+
       {/* Key Metrics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -218,6 +233,12 @@ export const SimplifiedJobsDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Shopify Integration Dialog */}
+      <ShopifyIntegrationDialog 
+        open={showShopifyDialog} 
+        onOpenChange={setShowShopifyDialog} 
+      />
     </div>
   );
 };

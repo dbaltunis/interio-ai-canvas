@@ -85,16 +85,9 @@ export const InventoryManagement = () => {
             </p>
           </div>
         <div className="flex items-center gap-2">
-          <Button 
-            variant="outline"
-            onClick={() => setShowShopifyDialog(true)}
-          >
-            <ShoppingBag className="mr-2 h-4 w-4" />
-            Shopify Integration
-          </Button>
           {canManageInventory && (
             <>
-              <ShopifyProductSyncButton />
+              {integration?.shop_domain && <ShopifyProductSyncButton />}
               <InventoryImportDialog />
               <Button variant="default">
                 <Plus className="mr-2 h-4 w-4" />
@@ -104,6 +97,14 @@ export const InventoryManagement = () => {
           )}
         </div>
       </div>
+
+      {/* Shopify Quick Setup Banner - only show if not connected */}
+      {!integration?.shop_domain && (
+        <ShopifyQuickSetupBanner 
+          onOpenIntegration={() => setShowShopifyDialog(true)}
+          hasIntegration={!!integration?.shop_domain}
+        />
+      )}
 
       {/* Inventory Overview */}
       <div className="grid gap-4 md:grid-cols-4">
