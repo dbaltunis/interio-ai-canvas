@@ -419,8 +419,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         {/* Week header with dates */}
         <div className="flex border-b bg-background sticky top-0 z-10 flex-shrink-0">
           <div className="w-16 border-r flex-shrink-0"></div>
-          <div className="flex-1 overflow-x-auto">
-            <div className="grid grid-cols-7 min-w-full">
+          <div className="flex-1">
+            <div className="grid grid-cols-7">
               {weekDays.map(day => {
                 const isCurrentDay = isToday(day);
                 const dayEvents = getAllEventsForDate(day);
@@ -447,10 +447,10 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         </div>
         
         {/* Scrollable time grid */}
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-auto">
-          <div className="flex min-w-full">
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="flex">
             {/* Fixed time labels column */}
-            <div className="w-16 border-r bg-muted/20 flex-shrink-0 sticky left-0 z-10">
+            <div className="w-16 border-r bg-muted/20 flex-shrink-0">
               {timeSlots.map((time, index) => (
                 <div 
                   key={time} 
@@ -466,7 +466,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
             </div>
             
             {/* Day columns */}
-            <div className="flex-1 relative min-w-0">
+            <div className="flex-1 relative">
               {/* Hour separation lines */}
               {timeSlots.map((time, index) => {
                 if (index % 2 === 0) { // Only on full hours
@@ -481,7 +481,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                 return null;
               })}
               
-              <div className="grid grid-cols-7 h-full min-w-full">
+              <div className="grid grid-cols-7 h-full">
                 {weekDays.map((day, dayIndex) => {
                   const dayEvents = getAllEventsForDate(day);
                   const isCurrentDay = isToday(day);
