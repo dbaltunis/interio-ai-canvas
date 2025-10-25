@@ -9,6 +9,7 @@ import { CalendarConnectionCard } from "./CalendarConnectionCard";
 import { ShopifyConnectionCTA } from "./ShopifyConnectionCTA";
 import { ShopifyAnalyticsCard } from "./ShopifyAnalyticsCard";
 import { DraggableKPISection } from "./DraggableKPISection";
+import { TeamMembersWidget } from "./TeamMembersWidget";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useEmailKPIs } from "@/hooks/useEmails";
@@ -111,13 +112,13 @@ export const EnhancedHomeDashboard = () => {
   );
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header Section */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1">
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
+        <div className="flex-1 w-full">
           <WelcomeHeader />
         </div>
-        <div className="shrink-0 pt-2">
+        <div className="shrink-0 sm:pt-2 w-full sm:w-auto">
           <DashboardCustomizationButton
             kpiConfigs={kpiConfigs}
             onToggleKPI={toggleKPI}
@@ -126,22 +127,31 @@ export const EnhancedHomeDashboard = () => {
       </div>
 
       {/* Top Widgets Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {/* Shopify Section */}
-      {isShopifyConnected ? (
-        <ShopifyAnalyticsCard />
-      ) : (
-        <ShopifyConnectionCTA onConnect={() => {
-          // Connection handled by ShopifyIntegrationDialog in parent
-          window.location.href = "/?tab=settings";
-        }} />
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {/* Shopify Section */}
+        {isShopifyConnected ? (
+          <ShopifyAnalyticsCard />
+        ) : (
+          <ShopifyConnectionCTA onConnect={() => {
+            // Connection handled by ShopifyIntegrationDialog in parent
+            window.location.href = "/?tab=settings";
+          }} />
+        )}
+
+        {/* Team Members */}
+        <TeamMembersWidget />
 
         {/* Upcoming Events */}
         <UpcomingEventsWidget />
+      </div>
 
+      {/* Second Row - Email & Status */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Recent Emails */}
         <RecentEmailsWidget />
+        
+        {/* Status Overview - moved here for better mobile layout */}
+        <StatusOverviewWidget />
       </div>
 
       {/* Primary KPIs Section */}
@@ -154,11 +164,8 @@ export const EnhancedHomeDashboard = () => {
         />
       )}
 
-      {/* Revenue & Status Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <RevenuePieChart />
-        <StatusOverviewWidget />
-      </div>
+      {/* Revenue Chart */}
+      <RevenuePieChart />
 
       {/* Calendar Connection */}
       <CalendarConnectionCard />
