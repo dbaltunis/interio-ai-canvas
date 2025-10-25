@@ -20,9 +20,11 @@ import { DirectMessageDialog } from "@/components/collaboration/DirectMessageDia
 import { useAuth } from "@/components/auth/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 export const TeamMembersWidget = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { data: teamMembers = [], isLoading } = useTeamMembers();
   const { data: presenceData = [] } = useTeamPresence();
   const { openConversation, conversations = [] } = useDirectMessages();
@@ -30,6 +32,12 @@ export const TeamMembersWidget = () => {
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>();
   const [recentMessageUsers, setRecentMessageUsers] = useState<Set<string>>(new Set());
+
+  const handleAddTeamMember = () => {
+    console.log('Add team member clicked, navigating to settings...');
+    console.log('User role:', userRole);
+    navigate('/?tab=settings&section=users');
+  };
 
   const getInitials = (name: string) => {
     return name
@@ -163,7 +171,7 @@ export const TeamMembersWidget = () => {
               size="sm" 
               variant="outline" 
               className="gap-2 h-8 text-xs"
-              onClick={() => window.location.href = "/?tab=settings&section=users"}
+              onClick={handleAddTeamMember}
             >
               <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Add</span>
