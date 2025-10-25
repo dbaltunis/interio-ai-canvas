@@ -9,6 +9,8 @@ import { CalendarConnectionCard } from "./CalendarConnectionCard";
 import { ShopifyConnectionCTA } from "./ShopifyConnectionCTA";
 import { ShopifyAnalyticsCard } from "./ShopifyAnalyticsCard";
 import { DraggableKPISection } from "./DraggableKPISection";
+import { TeamMembersWidget } from "./TeamMembersWidget";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useEmailKPIs } from "@/hooks/useEmails";
@@ -117,7 +119,8 @@ export const EnhancedHomeDashboard = () => {
         <div className="flex-1 w-full">
           <WelcomeHeader />
         </div>
-        <div className="shrink-0 sm:pt-2 w-full sm:w-auto">
+        <div className="shrink-0 sm:pt-2 w-full sm:w-auto flex items-center gap-2">
+          <ThemeToggle />
           <DashboardCustomizationButton
             kpiConfigs={kpiConfigs}
             onToggleKPI={toggleKPI}
@@ -126,7 +129,7 @@ export const EnhancedHomeDashboard = () => {
       </div>
 
       {/* Top Widgets Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         {/* Shopify Section */}
         {isShopifyConnected ? (
           <ShopifyAnalyticsCard />
@@ -135,6 +138,9 @@ export const EnhancedHomeDashboard = () => {
             window.location.href = "/?tab=settings";
           }} />
         )}
+
+        {/* Team Members */}
+        <TeamMembersWidget />
 
         {/* Upcoming Events */}
         <UpcomingEventsWidget />
