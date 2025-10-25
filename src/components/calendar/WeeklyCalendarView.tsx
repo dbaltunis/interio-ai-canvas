@@ -597,9 +597,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         // Clear visual distinction between events, bookings, and available slots
                         const getEventStyling = (event: any) => {
                           if (event.isAvailableSlot) {
-                            // Available appointment slots: subtle accent background with accent border
+                            // Available appointment slots: subtle transparent with accent border
                             return {
-                              background: 'hsl(var(--accent) / 0.12)',
+                              background: 'hsl(var(--accent) / 0.08)',
                               border: 'hsl(var(--accent))',
                               textClass: 'text-foreground',
                               isDashed: true,
@@ -607,9 +607,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                               minHeight: 24,
                             } as const;
                           } else if (event.isBooking) {
-                            // Booked appointments: strong primary background with readable text
+                            // Booked appointments: semi-transparent primary background
                             return {
-                              background: 'hsl(var(--primary) / 0.35)',
+                              background: 'hsl(var(--primary) / 0.15)',
                               border: 'hsl(var(--primary))',
                               textClass: 'text-foreground',
                               isDashed: false,
@@ -617,10 +617,11 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                               minHeight: 32,
                             } as const;
                           } else {
-                            // Personal events: neutral muted background with colored border-left (if provided)
+                            // Personal events: use event color with transparency, or default to muted
+                            const eventColor = event.color;
                             return {
-                              background: 'hsl(var(--muted) / 0.6)',
-                              border: event.color || 'hsl(var(--accent))',
+                              background: eventColor ? `${eventColor}20` : 'hsl(var(--muted) / 0.15)',
+                              border: eventColor || 'hsl(var(--accent))',
                               textClass: 'text-foreground',
                               isDashed: false,
                               isCompact: false,
