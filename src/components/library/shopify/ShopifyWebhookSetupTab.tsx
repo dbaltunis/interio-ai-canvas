@@ -15,7 +15,7 @@ interface ShopifyWebhookSetupTabProps {
 
 export const ShopifyWebhookSetupTab = ({ integration }: ShopifyWebhookSetupTabProps) => {
   const { toast } = useToast();
-  const webhookUrl = `${window.location.origin}/api/webhooks/shopify`;
+  const webhookUrl = `https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/shopify-webhooks`;
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
