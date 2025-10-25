@@ -102,8 +102,9 @@ export const TeamMembersWidget = () => {
     };
   }, [user?.id, teamMembers]);
 
-  // Sort team members - prioritize users with unread messages and recent messages
-  const sortedTeamMembers = [...teamMembers].sort((a, b) => {
+  // Filter out current user and sort team members
+  const otherTeamMembers = teamMembers.filter(member => member.id !== user?.id);
+  const sortedTeamMembers = [...otherTeamMembers].sort((a, b) => {
     // Check for unread messages in conversations
     const aConversation = conversations.find(c => c.user_id === a.id);
     const bConversation = conversations.find(c => c.user_id === b.id);
@@ -166,7 +167,7 @@ export const TeamMembersWidget = () => {
         </div>
       </CardHeader>
       <CardContent className="space-y-2 sm:space-y-3">
-        {teamMembers.length === 0 ? (
+        {sortedTeamMembers.length === 0 ? (
           <div className="text-center py-6 sm:py-8 text-muted-foreground">
             <Users className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-20" />
             <p className="text-xs sm:text-sm">No team members yet</p>
