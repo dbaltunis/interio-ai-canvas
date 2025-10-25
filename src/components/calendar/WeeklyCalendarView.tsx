@@ -591,15 +591,19 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         // Find this event's index within the overlapping group (not the full array)
                         const overlappingIndex = overlappingEvents.findIndex(e => e.id === event.id);
                         
+                        // Calculate event width based on overlapping and screen size
                         const eventWidth = overlappingEvents.length > 1 ? `${98 / overlappingEvents.length}%` : '98%';
                         const eventLeft = overlappingEvents.length > 1 ? `${(98 / overlappingEvents.length) * overlappingIndex + 1}%` : '1%';
                         
-                        // Clear visual distinction between events, bookings, and available slots
+                        // Detect narrow events for adaptive styling
+                        const isNarrowEvent = overlappingEvents.length >= 3;
+                        
+                        // Clear visual distinction with MORE VISIBLE colors
                         const getEventStyling = (event: any) => {
                           if (event.isAvailableSlot) {
-                            // Available appointment slots: subtle transparent with accent border
+                            // Available appointment slots: more visible accent color
                             return {
-                              background: 'hsl(var(--accent) / 0.08)',
+                              background: 'hsl(var(--accent) / 0.25)',
                               border: 'hsl(var(--accent))',
                               textClass: 'text-foreground',
                               isDashed: true,
@@ -607,22 +611,22 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                               minHeight: 24,
                             } as const;
                           } else if (event.isBooking) {
-                            // Booked appointments: semi-transparent primary background
+                            // Booked appointments: stronger primary color
                             return {
-                              background: 'hsl(var(--primary) / 0.15)',
+                              background: 'hsl(var(--primary) / 0.35)',
                               border: 'hsl(var(--primary))',
-                              textClass: 'text-foreground',
+                              textClass: 'text-foreground dark:text-white',
                               isDashed: false,
                               isCompact: false,
                               minHeight: 32,
                             } as const;
                           } else {
-                            // Personal events: use event color with transparency, or default to muted
+                            // Personal events: stronger event color visibility
                             const eventColor = event.color;
                             return {
-                              background: eventColor ? `${eventColor}20` : 'hsl(var(--muted) / 0.15)',
+                              background: eventColor ? `${eventColor}40` : 'hsl(var(--muted) / 0.35)',
                               border: eventColor || 'hsl(var(--accent))',
-                              textClass: 'text-foreground',
+                              textClass: 'text-foreground dark:text-white',
                               isDashed: false,
                               isCompact: false,
                               minHeight: 32,
@@ -722,37 +726,38 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                  )}
 
                                   <div className="flex flex-col h-full pr-1 pb-1 overflow-hidden">
-                                   {/* Event content - responsive to height */}
-                                   <div className="flex items-start justify-between gap-1 mb-0.5">
+                                   {/* Event content - adaptive to width and height */}
+                                   <div className={`flex items-start ${isNarrowEvent ? 'flex-col' : 'justify-between'} gap-1 mb-0.5`}>
                                      {/* Left side: Title and time */}
-                                     <div className="flex-1 min-w-0">
-                                       {/* Event title - shows more lines when taller */}
-                                       <div className="font-medium text-[13px] leading-tight text-foreground dark:text-white break-words overflow-hidden" 
-                                            style={{ 
-                                              display: '-webkit-box',
-                                              WebkitLineClamp: finalHeight > 80 ? 3 : finalHeight > 50 ? 2 : 1,
-                                              WebkitBoxOrient: 'vertical',
-                                              lineHeight: '1.3'
-                                            }}>
-                                         {event.isAvailableSlot 
-                                           ? event.schedulerName 
-                                           : event.isBooking 
-                                           ? event.customer_name 
-                                           : event.title
-                                         }
+                                     <div className="flex-1 min-w-0 w-full">
+                                       {/* Event title - adaptive font size and weight */}
+                                       <div 
+                                         className={`${isNarrowEvent ? 'font-normal text-[11px]' : 'font-medium text-[13px]'} leading-tight text-foreground dark:text-white break-words overflow-hidden`}
+                                         style={{ 
+                                           display: '-webkit-box',
+                                           WebkitLineClamp: finalHeight > 80 ? 3 : finalHeight > 50 ? 2 : 1,
+                                           WebkitBoxOrient: 'vertical',
+                                           lineHeight: isNarrowEvent ? '1.2' : '1.3'
+                                         }}>
+                                        {event.isAvailableSlot 
+                                          ? event.schedulerName 
+                                          : event.isBooking 
+                                          ? event.customer_name 
+                                          : event.title
+                                        }
                                        </div>
                                        
-                                       {/* Time display with notification bell */}
-                                       <div className="flex items-center gap-1 text-[10px] leading-tight font-medium text-foreground/80 dark:text-white/80 mt-0.5">
+                                       {/* Time display - smaller on narrow events */}
+                                       <div className={`flex items-center gap-1 ${isNarrowEvent ? 'text-[9px]' : 'text-[10px]'} leading-tight font-normal text-foreground/80 dark:text-white/80 mt-0.5`}>
                                          <span>{format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}</span>
                                          {!event.isAvailableSlot && event.notification_enabled && (
-                                           <Bell className="w-3 h-3 text-yellow-400" />
+                                           <Bell className={`${isNarrowEvent ? 'w-2.5 h-2.5' : 'w-3 h-3'} text-yellow-400`} />
                                          )}
                                        </div>
                                      </div>
                                      
-                                     {/* User avatar - positioned to not overlap drag handle */}
-                                     {!event.isAvailableSlot && (
+                                     {/* User avatar - hide on narrow events, show on wider ones */}
+                                     {!event.isAvailableSlot && !isNarrowEvent && (
                                        <div className="flex-shrink-0 mr-5">
                                          <Avatar className="h-5 w-5">
                                            <AvatarImage src="" alt="" />
@@ -767,8 +772,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                      )}
                                    </div>
                                   
-                                  {/* Additional info for taller events */}
-                                  {finalHeight > 50 && (
+                                  {/* Additional info - only for taller and wider events */}
+                                  {finalHeight > 50 && !isNarrowEvent && (
                                     <div className="mt-1 space-y-1 flex-1 overflow-hidden">
                                       {/* Secondary info line */}
                                       <div className="text-[10px] leading-tight text-foreground/70 dark:text-white/70 truncate">
