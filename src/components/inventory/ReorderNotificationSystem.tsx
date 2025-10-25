@@ -8,8 +8,15 @@ import { AlertTriangle, Package, ShoppingCart, Bell } from "lucide-react";
 
 export const ReorderNotificationSystem = () => {
   const { data: inventory, isLoading } = useEnhancedInventory();
-  const lowStockItems = inventory?.filter(item => 
-    (item.quantity || 0) <= (item.reorder_point || 0)) || [];
+  // Only show alerts for items with stock tracking enabled (have a reorder_point set)
+  const lowStockItems = inventory?.filter(item => {
+    const threshold = item.reorder_point;
+    // Skip items without stock tracking (no reorder point set)
+    if (!threshold || threshold === 0 || !item.active) return false;
+    
+    const current = item.quantity || 0;
+    return current <= threshold;
+  }) || [];
 
   // Auto-create notifications for critically low items
   useEffect(() => {

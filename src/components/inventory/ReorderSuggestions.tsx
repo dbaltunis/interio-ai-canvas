@@ -8,11 +8,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 export const ReorderSuggestions = () => {
   const { data: items, isLoading } = useEnhancedInventory();
 
-  // Calculate items that need reordering
+  // Calculate items that need reordering - only for items with stock tracking enabled
   const lowStockItems = items?.filter(item => {
+    const threshold = item.reorder_point;
+    // Only show suggestions for items that have a reorder_point set (indicating they track stock)
+    if (!threshold || threshold === 0 || !item.active) return false;
+    
     const current = item.quantity || 0;
-    const threshold = item.reorder_point || 0;
-    return current <= threshold && item.active;
+    return current <= threshold;
   }) || [];
 
   if (isLoading) {
