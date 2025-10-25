@@ -91,16 +91,14 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
 
           <TabsContent value="setup">
             <ShopifySetupTab 
-              integration={integration as any} 
+              integration={integration} 
               onSuccess={handleSetupSuccess}
             />
           </TabsContent>
 
           <TabsContent value="sync">
             <ShopifySyncTab 
-              integration={integration as any}
-              formData={formData}
-              setFormData={setFormData}
+              integration={integration}
             />
           </TabsContent>
 
@@ -109,7 +107,7 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
           </TabsContent>
 
           <TabsContent value="status">
-            <ShopifyStatusTab integration={integration as any} />
+            <ShopifyStatusTab integration={integration} />
           </TabsContent>
         </Tabs>
       </DialogContent>

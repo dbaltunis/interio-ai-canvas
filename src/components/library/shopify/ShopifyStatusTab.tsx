@@ -3,9 +3,11 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ShopifyIntegration } from "@/hooks/useShopifyIntegration";
+import { Database } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, CheckCircle, XCircle, Clock } from "lucide-react";
+
+type ShopifyIntegration = Database['public']['Tables']['shopify_integrations']['Row'];
 
 interface ShopifyStatusTabProps {
   integration?: ShopifyIntegration | null;
@@ -21,28 +23,18 @@ export const ShopifyStatusTab = ({ integration }: ShopifyStatusTabProps) => {
     });
   };
 
-  const getSyncStatusIcon = (status: string) => {
-    switch (status) {
-      case 'syncing':
-        return <RefreshCw className="h-4 w-4 animate-spin" />;
-      case 'error':
-        return <XCircle className="h-4 w-4 text-red-500" />;
-      case 'idle':
-      default:
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+  const getConnectionStatusIcon = () => {
+    if (integration?.is_connected) {
+      return <CheckCircle className="h-4 w-4 text-green-500" />;
     }
+    return <XCircle className="h-4 w-4 text-gray-400" />;
   };
 
-  const getSyncStatusBadge = (status: string) => {
-    switch (status) {
-      case 'syncing':
-        return <Badge variant="secondary">Syncing</Badge>;
-      case 'error':
-        return <Badge variant="destructive">Error</Badge>;
-      case 'idle':
-      default:
-        return <Badge variant="default">Ready</Badge>;
+  const getConnectionStatusBadge = () => {
+    if (integration?.is_connected) {
+      return <Badge variant="default">Connected</Badge>;
     }
+    return <Badge variant="secondary">Not Connected</Badge>;
   };
 
   return (
@@ -51,7 +43,7 @@ export const ShopifyStatusTab = ({ integration }: ShopifyStatusTabProps) => {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <span>Connection Status</span>
-            {getSyncStatusIcon(integration?.sync_status || 'idle')}
+            {getConnectionStatusIcon()}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -65,7 +57,7 @@ export const ShopifyStatusTab = ({ integration }: ShopifyStatusTabProps) => {
             
             <div className="flex items-center justify-between">
               <span>Status:</span>
-              {getSyncStatusBadge(integration?.sync_status || 'idle')}
+              {getConnectionStatusBadge()}
             </div>
 
             <div className="flex items-center justify-between">
@@ -80,16 +72,6 @@ export const ShopifyStatusTab = ({ integration }: ShopifyStatusTabProps) => {
               <span className="text-sm text-gray-500">
                 {integration?.last_sync_at 
                   ? new Date(integration.last_sync_at).toLocaleString()
-                  : 'Never'
-                }
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span>Last Full Sync:</span>
-              <span className="text-sm text-gray-500">
-                {integration?.last_full_sync 
-                  ? new Date(integration.last_full_sync).toLocaleString()
                   : 'Never'
                 }
               </span>
@@ -115,7 +97,6 @@ export const ShopifyStatusTab = ({ integration }: ShopifyStatusTabProps) => {
                 {integration?.sync_inventory && <li>Inventory levels</li>}
                 {integration?.sync_prices && <li>Product prices</li>}
                 {integration?.sync_images && <li>Product images</li>}
-                {integration?.sync_products && <li>Product catalog</li>}
               </ul>
             </div>
           </div>

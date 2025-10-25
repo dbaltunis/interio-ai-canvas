@@ -4,20 +4,46 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { useUpdateShopifyIntegration, ShopifyIntegration } from "@/hooks/useShopifyIntegration";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
+import { useToast } from "@/hooks/use-toast";
 import { RefreshCw } from "lucide-react";
+
+type ShopifyIntegration = Database['public']['Tables']['shopify_integrations']['Row'];
 
 interface ShopifySyncTabProps {
   integration?: ShopifyIntegration | null;
-  formData?: any;
-  setFormData?: (data: any) => void;
 }
 
 export const ShopifySyncTab = ({ integration }: ShopifySyncTabProps) => {
-  const updateIntegration = useUpdateShopifyIntegration();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  const handleSyncSettingChange = (setting: string, value: boolean) => {
-    updateIntegration.mutate({ [setting]: value });
+  const handleSyncSettingChange = async (field: string, value: boolean) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('shopify_integrations')
+        .update({ [field]: value })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ["shopify-integration"] });
+      toast({
+        title: "Success",
+        description: "Setting updated successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -62,15 +88,6 @@ export const ShopifySyncTab = ({ integration }: ShopifySyncTabProps) => {
               onCheckedChange={(checked) => handleSyncSettingChange("sync_images", checked)}
             />
           </div>
-
-          <div className="flex items-center justify-between">
-            <Label htmlFor="sync-products">Sync Products</Label>
-            <Switch
-              id="sync-products"
-              checked={integration?.sync_products || false}
-              onCheckedChange={(checked) => handleSyncSettingChange("sync_products", checked)}
-            />
-          </div>
         </CardContent>
       </Card>
 
@@ -79,11 +96,11 @@ export const ShopifySyncTab = ({ integration }: ShopifySyncTabProps) => {
           <CardTitle>Manual Sync</CardTitle>
         </CardHeader>
         <CardContent>
-          <Button className="w-full" disabled={!integration?.active}>
+          <Button className="w-full" disabled={!integration?.is_connected}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Run Full Sync
           </Button>
-          {!integration?.active && (
+          {!integration?.is_connected && (
             <p className="text-sm text-gray-500 mt-2">
               Connect your Shopify store first to enable sync functionality
             </p>

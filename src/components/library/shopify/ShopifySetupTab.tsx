@@ -5,9 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { useShopifyIntegration, useUpdateShopifyIntegration, ShopifyIntegration } from "@/hooks/useShopifyIntegration";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+
+type ShopifyIntegration = Database['public']['Tables']['shopify_integrations']['Row'];
+type ShopifyIntegrationUpdate = Database['public']['Tables']['shopify_integrations']['Update'];
 
 interface ShopifySetupTabProps {
   integration?: ShopifyIntegration | null;
@@ -15,8 +20,9 @@ interface ShopifySetupTabProps {
 }
 
 export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps) => {
-  const updateIntegration = useUpdateShopifyIntegration();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
   
   const [shopDomain, setShopDomain] = useState(integration?.shop_domain || "");
   const [accessToken, setAccessToken] = useState("");
@@ -32,19 +38,71 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
       return;
     }
 
-    await updateIntegration.mutateAsync({
-      shop_domain: shopDomain,
-      access_token: accessToken,
-      webhook_secret: webhookSecret,
-      active: true,
-      sync_status: 'idle' as const
-    });
+    setIsLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
 
-    onSuccess?.();
+      const { data, error } = await supabase
+        .from('shopify_integrations')
+        .upsert([{
+          user_id: user.id,
+          shop_domain: shopDomain,
+          access_token: accessToken,
+          webhook_secret: webhookSecret,
+        }], {
+          onConflict: 'user_id,shop_domain',
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ["shopify-integration"] });
+      toast({
+        title: "Success",
+        description: "Shopify integration updated successfully",
+      });
+
+      onSuccess?.();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSyncSettingChange = async (field: keyof ShopifyIntegrationUpdate, value: boolean) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('shopify_integrations')
+        .update({ [field]: value })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ["shopify-integration"] });
+      toast({
+        title: "Success",
+        description: "Setting updated successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const handleTest = async () => {
-    // Mock testing connection
     toast({
       title: "Connection Test",
       description: "Testing connection to Shopify store...",
@@ -101,8 +159,8 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
             <Button onClick={handleTest} variant="outline">
               Test Connection
             </Button>
-            <Button onClick={handleSave} disabled={updateIntegration.isPending}>
-              {updateIntegration.isPending ? (
+            <Button onClick={handleSave} disabled={isLoading}>
+              {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Saving...
@@ -125,9 +183,7 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
             <Switch
               id="auto-sync"
               checked={integration?.auto_sync_enabled || false}
-              onCheckedChange={(checked) => 
-                updateIntegration.mutate({ auto_sync_enabled: checked })
-              }
+              onCheckedChange={(checked) => handleSyncSettingChange("auto_sync_enabled", checked)}
             />
           </div>
 
@@ -136,9 +192,7 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
             <Switch
               id="sync-inventory"
               checked={integration?.sync_inventory || false}
-              onCheckedChange={(checked) => 
-                updateIntegration.mutate({ sync_inventory: checked })
-              }
+              onCheckedChange={(checked) => handleSyncSettingChange("sync_inventory", checked)}
             />
           </div>
 
@@ -147,9 +201,7 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
             <Switch
               id="sync-prices"
               checked={integration?.sync_prices || false}
-              onCheckedChange={(checked) => 
-                updateIntegration.mutate({ sync_prices: checked })
-              }
+              onCheckedChange={(checked) => handleSyncSettingChange("sync_prices", checked)}
             />
           </div>
 
@@ -158,9 +210,7 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
             <Switch
               id="sync-images"
               checked={integration?.sync_images || false}
-              onCheckedChange={(checked) => 
-                updateIntegration.mutate({ sync_images: checked })
-              }
+              onCheckedChange={(checked) => handleSyncSettingChange("sync_images", checked)}
             />
           </div>
         </CardContent>
