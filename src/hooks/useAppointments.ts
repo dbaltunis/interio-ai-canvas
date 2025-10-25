@@ -61,12 +61,49 @@ export const useCreateAppointment = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
       toast({
         title: "Success",
         description: "Appointment created successfully",
       });
+
+      // Auto-sync to Google Calendar
+      try {
+        const { data: integration } = await supabase
+          .from('integration_settings')
+          .select('active')
+          .eq('user_id', data.user_id)
+          .eq('integration_type', 'google_calendar')
+          .single();
+
+        if (integration?.active) {
+          toast({
+            title: "Syncing...",
+            description: "Syncing to Google Calendar",
+          });
+
+          const { error: syncError } = await supabase.functions.invoke('sync-to-google-calendar', {
+            body: { appointmentId: data.id }
+          });
+
+          if (syncError) {
+            console.error('Sync error:', syncError);
+            toast({
+              title: "Sync Failed",
+              description: "Created appointment but failed to sync to Google Calendar. You can manually sync later.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Synced!",
+              description: "Appointment synced to Google Calendar",
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Auto-sync error:', error);
+      }
     },
     onError: (error) => {
       toast({
@@ -94,12 +131,53 @@ export const useUpdateAppointment = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
       toast({
         title: "Success",
         description: "Appointment updated successfully",
       });
+
+      // Auto-sync to Google Calendar if appointment details changed
+      const timeFieldsChanged = variables.start_time || variables.end_time || variables.title || variables.description || variables.location;
+      
+      if (timeFieldsChanged) {
+        try {
+          const { data: integration } = await supabase
+            .from('integration_settings')
+            .select('active')
+            .eq('user_id', data.user_id)
+            .eq('integration_type', 'google_calendar')
+            .single();
+
+          if (integration?.active) {
+            toast({
+              title: "Syncing...",
+              description: "Updating Google Calendar",
+            });
+
+            const { error: syncError } = await supabase.functions.invoke('sync-to-google-calendar', {
+              body: { appointmentId: data.id }
+            });
+
+            if (syncError) {
+              console.error('Sync error:', syncError);
+              toast({
+                title: "Sync Failed",
+                description: "Updated appointment but failed to sync to Google Calendar",
+                variant: "destructive",
+              });
+            } else {
+              toast({
+                title: "Synced!",
+                description: "Changes synced to Google Calendar",
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Auto-sync error:', error);
+        }
+      }
     },
     onError: (error) => {
       toast({

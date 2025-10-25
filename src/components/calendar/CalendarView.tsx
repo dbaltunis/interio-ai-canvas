@@ -40,6 +40,7 @@ import { ConflictDialog } from "./ConflictDialog";
 import { TimezoneSettingsDialog } from "./timezone/TimezoneSettingsDialog";
 import { useTimezone } from "@/hooks/useTimezone";
 import { TimezoneUtils } from "@/utils/timezoneUtils";
+import { CalendarSyncToolbar } from "./CalendarSyncToolbar";
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -527,6 +528,9 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
             </div>
           </div>
         </div>
+
+        {/* Google Calendar Sync Toolbar */}
+        <CalendarSyncToolbar />
 
         {/* Calendar Content */}
         <div className="flex-1 overflow-hidden min-h-0">

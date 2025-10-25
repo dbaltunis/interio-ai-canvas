@@ -215,6 +215,7 @@ export const useGoogleCalendarSync = () => {
       return data;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
       toast({
         title: "Success",
         description: "Event synced to Google Calendar",
@@ -254,10 +255,56 @@ export const useGoogleCalendarSync = () => {
     },
   });
 
+  const syncAllToGoogle = useMutation({
+    mutationFn: async () => {
+      const { data: appointments, error: fetchError } = await supabase
+        .from('appointments')
+        .select('id, google_event_id')
+        .is('google_event_id', null);
+
+      if (fetchError) throw fetchError;
+
+      const results = { success: 0, failed: 0 };
+      
+      for (const appointment of appointments || []) {
+        try {
+          const { error } = await supabase.functions.invoke('sync-to-google-calendar', {
+            body: { appointmentId: appointment.id }
+          });
+          if (error) {
+            results.failed++;
+          } else {
+            results.success++;
+          }
+        } catch (error) {
+          results.failed++;
+        }
+      }
+
+      return results;
+    },
+    onSuccess: (results) => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      toast({
+        title: "Batch Sync Complete",
+        description: `Synced ${results.success} appointments. ${results.failed > 0 ? `${results.failed} failed.` : ''}`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: "Failed to batch sync appointments",
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     syncToGoogle: syncToGoogle.mutate,
     syncFromGoogle: syncFromGoogle.mutate,
+    syncAllToGoogle: syncAllToGoogle.mutate,
     isSyncingToGoogle: syncToGoogle.isPending,
     isSyncingFromGoogle: syncFromGoogle.isPending,
+    isSyncingAll: syncAllToGoogle.isPending,
   };
 };
