@@ -593,7 +593,20 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         
                         const style = calculateEventStyle(startTime, endTime, showExtendedHours);
                         
-                        if (!style.visible) return null;
+                        // Debug logging for event visibility
+                        console.log('Event rendering check:', {
+                          title: event.title,
+                          startTime: startTime.toISOString(),
+                          endTime: endTime.toISOString(),
+                          style,
+                          showExtendedHours,
+                          visible: style.visible
+                        });
+                        
+                        if (!style.visible) {
+                          console.warn('Event not visible:', event.title, style);
+                          return null;
+                        }
                         
                         // Calculate overlapping events positioning
                         const overlappingEvents = dayEvents.filter(otherEvent => {
