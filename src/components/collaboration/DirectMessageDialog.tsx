@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useUserPresence } from '@/hooks/useUserPresence';
+import { useTeamMembers } from '@/hooks/useTeamMembers';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useUploadFile } from '@/hooks/useFileStorage';
 import { Send, Users, MessageCircle, Circle, Paperclip } from 'lucide-react';
@@ -24,6 +25,7 @@ interface DirectMessageDialogProps {
 export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSelectedUserId }: DirectMessageDialogProps) => {
   const { user } = useAuth();
   const { activeUsers = [], isLoading: presenceLoading } = useUserPresence();
+  const { data: teamMembers = [] } = useTeamMembers();
   const { 
     conversations = [], 
     messages = [], 
@@ -107,9 +109,33 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
   };
 
   // Get active user data for current conversation
-  const activeUserData = activeConversation ? 
+  // Check presence data first, then conversations, then team members
+  const rawUserData = activeConversation ? 
     activeUsers.find(u => u.user_id === activeConversation) ||
-    conversations.find(c => c.user_id === activeConversation) : null;
+    conversations.find(c => c.user_id === activeConversation) ||
+    teamMembers.find(m => m.id === activeConversation) : null;
+  
+  // Convert to consistent format with user_profile
+  let displayUserData: { user_id: string; status: string; user_profile: { display_name: string; avatar_url?: string; role?: string } } | null = null;
+  
+  if (rawUserData) {
+    if ('user_profile' in rawUserData) {
+      // Already has user_profile (UserPresence or Conversation)
+      displayUserData = rawUserData as { user_id: string; status: string; user_profile: { display_name: string; avatar_url?: string; role?: string } };
+    } else {
+      // TeamMember - convert to user_profile format
+      const teamMember = rawUserData as { id: string; name: string; avatar_url?: string; role?: string };
+      displayUserData = {
+        user_id: teamMember.id,
+        status: 'offline',
+        user_profile: {
+          display_name: teamMember.name,
+          avatar_url: teamMember.avatar_url,
+          role: teamMember.role
+        }
+      };
+    }
+  }
 
   // Auto-scroll to bottom when messages change or conversation opens
   useEffect(() => {
@@ -352,26 +378,26 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
 
           {/* Right Side - Chat Area */}
           <div className="flex-1 flex flex-col">
-            {activeConversation && activeUserData ? (
+            {activeConversation && displayUserData ? (
               <>
                 {/* Chat Header */}
                 <div className="p-4 border-b border-border">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={activeUserData.user_profile?.avatar_url} />
+                      <AvatarImage src={displayUserData.user_profile?.avatar_url} />
                       <AvatarFallback>
-                        {getInitials(activeUserData.user_profile?.display_name || '')}
+                        {getInitials(displayUserData.user_profile?.display_name || '')}
                       </AvatarFallback>
                     </Avatar>
                     
                     <div>
                       <h3 className="font-semibold text-foreground">
-                        {formatDisplayName(activeUserData.user_profile?.display_name || '')}
+                        {formatDisplayName(displayUserData.user_profile?.display_name || '')}
                       </h3>
                       <div className="flex items-center gap-2">
-                        <Circle className={`h-2 w-2 fill-current ${getStatusColor(('status' in activeUserData ? activeUserData.status : null) || 'offline')}`} />
+                        <Circle className={`h-2 w-2 fill-current ${getStatusColor(('status' in displayUserData ? displayUserData.status : null) || 'offline')}`} />
                         <p className="text-sm text-muted-foreground capitalize">
-                          {('status' in activeUserData ? activeUserData.status : null) || 'offline'}
+                          {('status' in displayUserData ? displayUserData.status : null) || 'offline'}
                         </p>
                       </div>
                     </div>
@@ -434,7 +460,7 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
                       <Paperclip className="h-4 w-4" />
                     </Button>
                     <Input
-                      placeholder={`Message ${activeUserData ? formatDisplayName(activeUserData.user_profile?.display_name || '') : ''}...`}
+                      placeholder={`Message ${displayUserData ? formatDisplayName(displayUserData.user_profile?.display_name || '') : ''}...`}
                       value={messageInput}
                       onChange={(e) => setMessageInput(e.target.value)}
                       onKeyPress={handleKeyPress}
