@@ -37,12 +37,12 @@ export const ShopifyConnectionCTA = ({ onConnect }: ShopifyConnectionCTAProps) =
         </div>
       </CardHeader>
       <CardContent className="relative">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mt-4">
-          <div className="flex gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-lg bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors min-w-0">
+        <div className="flex flex-col gap-3 mt-4">
+          <div className="flex gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-lg bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors">
             <div className="flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 flex items-center justify-center border border-blue-500/30">
               <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="flex-1 min-w-0">
               <h4 className="font-semibold text-xs sm:text-sm mb-1">Track Sales & Analytics</h4>
               <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed">
                 View orders, revenue, and customer metrics in real-time
@@ -50,11 +50,11 @@ export const ShopifyConnectionCTA = ({ onConnect }: ShopifyConnectionCTAProps) =
             </div>
           </div>
           
-          <div className="flex gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-lg bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors min-w-0">
+          <div className="flex gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-lg bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors">
             <div className="flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/10 flex items-center justify-center border border-purple-500/30">
               <Package className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 dark:text-purple-400" />
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="flex-1 min-w-0">
               <h4 className="font-semibold text-xs sm:text-sm mb-1">Sync Products & Inventory</h4>
               <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed">
                 Automatically sync products and manage stock levels
@@ -62,11 +62,11 @@ export const ShopifyConnectionCTA = ({ onConnect }: ShopifyConnectionCTAProps) =
             </div>
           </div>
           
-          <div className="flex gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-lg bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors min-w-0 md:col-span-2 lg:col-span-1">
+          <div className="flex gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-lg bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors">
             <div className="flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 flex items-center justify-center border border-orange-500/30">
               <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 dark:text-orange-400" />
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="flex-1 min-w-0">
               <h4 className="font-semibold text-xs sm:text-sm mb-1">Unified Dashboard</h4>
               <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed">
                 Manage both projects and e-commerce from one interface
