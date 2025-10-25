@@ -1,10 +1,10 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
@@ -121,27 +121,61 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
       <Card>
         <CardHeader>
           <CardTitle>Shopify Store Connection</CardTitle>
+          <CardDescription>
+            Enter your Shopify store credentials to connect. Don't have them yet? 
+            <Button 
+              variant="link" 
+              className="h-auto p-0 ml-1"
+              onClick={() => window.open('https://help.shopify.com/en/manual/apps/app-types/custom-apps', '_blank')}
+            >
+              Learn how to get your API credentials →
+            </Button>
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <Alert>
+            <AlertDescription className="text-sm">
+              <p className="font-semibold mb-2">Quick Setup Steps:</p>
+              <ol className="list-decimal list-inside space-y-1 text-xs">
+                <li>Go to your Shopify Admin → Settings → Apps and sales channels</li>
+                <li>Click "Develop apps" → "Create an app"</li>
+                <li>Install the app and get your Admin API access token</li>
+                <li>Copy your store domain (e.g., your-store.myshopify.com)</li>
+                <li>Paste both below and click Save</li>
+              </ol>
+            </AlertDescription>
+          </Alert>
+
           <div>
-            <Label htmlFor="shop-domain">Shop Domain</Label>
+            <Label htmlFor="shop-domain">
+              Shop Domain <span className="text-red-500">*</span>
+            </Label>
             <Input
               id="shop-domain"
               value={shopDomain}
               onChange={(e) => setShopDomain(e.target.value)}
               placeholder="your-store.myshopify.com"
+              className="font-mono"
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Your store's myshopify.com domain (found in Shopify Admin → Settings → Domains)
+            </p>
           </div>
 
           <div>
-            <Label htmlFor="access-token">Access Token</Label>
+            <Label htmlFor="access-token">
+              Admin API Access Token <span className="text-red-500">*</span>
+            </Label>
             <Input
               id="access-token"
               type="password"
               value={accessToken}
               onChange={(e) => setAccessToken(e.target.value)}
-              placeholder="Enter your Shopify access token"
+              placeholder="shpat_..."
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              From Shopify Admin → Settings → Apps and sales channels → Develop apps
+            </p>
           </div>
 
           <div>
@@ -151,8 +185,11 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
               type="password"
               value={webhookSecret}
               onChange={(e) => setWebhookSecret(e.target.value)}
-              placeholder="Enter webhook secret for security"
+              placeholder="Optional for added security"
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Optional: Add webhook signature verification for enhanced security
+            </p>
           </div>
 
           <div className="flex space-x-2">

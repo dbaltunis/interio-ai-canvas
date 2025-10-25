@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ShoppingBag, Info } from "lucide-react";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
+import { ShopifyGettingStartedGuide } from "./shopify/ShopifyGettingStartedGuide";
 import { ShopifyOverviewTabEnhanced } from "./shopify/ShopifyOverviewTabEnhanced";
 import { ShopifySetupTab } from "./shopify/ShopifySetupTab";
 import { ShopifySyncTab } from "./shopify/ShopifySyncTab";
@@ -20,7 +21,7 @@ interface ShopifyIntegrationDialogProps {
 export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrationDialogProps) => {
   const { integration, isLoading, syncProducts } = useShopifyIntegrationReal();
   const syncAnalytics = useSyncShopifyAnalytics();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("guide");
 
   const [formData, setFormData] = useState(() => ({
     shop_domain: integration?.shop_domain || "",
@@ -30,12 +31,15 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
     sync_images: integration?.sync_images !== undefined ? integration.sync_images : true,
   }));
 
+  // Show getting started guide if not connected yet
+  const showGettingStarted = !integration?.shop_domain || !integration?.access_token;
+
   const handleGetStarted = () => {
     setActiveTab("setup");
   };
 
   const handleSetupSuccess = () => {
-    setActiveTab("status");
+    setActiveTab("webhooks");
   };
 
   if (isLoading) {
@@ -73,13 +77,21 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="guide">Guide</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="setup">Setup</TabsTrigger>
-            <TabsTrigger value="sync">Sync Settings</TabsTrigger>
             <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+            <TabsTrigger value="sync">Sync</TabsTrigger>
             <TabsTrigger value="status">Status</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="guide">
+            <ShopifyGettingStartedGuide 
+              integration={integration}
+              onNavigateToTab={setActiveTab}
+            />
+          </TabsContent>
 
           <TabsContent value="overview">
             <ShopifyOverviewTabEnhanced 
@@ -96,14 +108,14 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
             />
           </TabsContent>
 
+          <TabsContent value="webhooks">
+            <ShopifyWebhookSetupTab integration={integration} />
+          </TabsContent>
+
           <TabsContent value="sync">
             <ShopifySyncTab 
               integration={integration}
             />
-          </TabsContent>
-
-          <TabsContent value="webhooks">
-            <ShopifyWebhookSetupTab integration={integration} />
           </TabsContent>
 
           <TabsContent value="status">

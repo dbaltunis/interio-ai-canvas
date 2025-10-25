@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,13 +9,19 @@ import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { InventoryImportDialog } from "./InventoryImportDialog";
 import { ShopifyProductSyncButton } from "../library/shopify/ShopifyProductSyncButton";
+import { ShopifyQuickSetupBanner } from "./ShopifyQuickSetupBanner";
+import { ShopifyIntegrationDialog } from "../library/ShopifyIntegrationDialog";
+import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 
 export const InventoryManagement = () => {
+  const [showShopifyDialog, setShowShopifyDialog] = useState(false);
+  
   // Permission checks
   const canViewInventory = useHasPermission('view_inventory');
   const canManageInventory = useHasPermission('manage_inventory');
 
   const { data: inventory, isLoading } = useEnhancedInventory();
+  const { integration } = useShopifyIntegrationReal();
   
   // Calculate low stock items from enhanced inventory
   const lowStockItems = inventory?.filter(item => 
@@ -63,14 +70,20 @@ export const InventoryManagement = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Inventory Management</h1>
-          <p className="text-muted-foreground">
-            Smart inventory tracking with real-time stock levels
-          </p>
-        </div>
+    <>
+      <div className="space-y-6">
+        <ShopifyQuickSetupBanner 
+          onOpenIntegration={() => setShowShopifyDialog(true)}
+          hasIntegration={!!integration?.shop_domain}
+        />
+        
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">Inventory Management</h1>
+            <p className="text-muted-foreground">
+              Smart inventory tracking with real-time stock levels
+            </p>
+          </div>
         {canManageInventory && (
           <div className="flex items-center gap-2">
             <ShopifyProductSyncButton />
@@ -247,6 +260,12 @@ export const InventoryManagement = () => {
           )}
         </CardContent>
       </div>
-    </div>
+      </div>
+
+      <ShopifyIntegrationDialog 
+        open={showShopifyDialog}
+        onOpenChange={setShowShopifyDialog}
+      />
+    </>
   );
 };
