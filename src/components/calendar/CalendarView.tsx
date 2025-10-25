@@ -465,14 +465,12 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
 
       {/* Main Calendar with proper scroll hierarchy */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        {/* Sticky Header Container - ALL headers here stay visible */}
+        {/* Sticky Header Container - Reorganized to save vertical space */}
         <div className="sticky top-0 z-20 bg-background border-b flex-shrink-0">
-          {/* Top Navigation Header */}
-          <div className="p-2 md:p-4 border-b">
-            <div className="flex items-center justify-between gap-2">
-              {/* Left section - Title and Navigation */}
-              <div className="flex items-center gap-2 md:gap-4">
-              <h1 className="text-lg md:text-2xl font-bold text-primary">Calendar</h1>
+          {/* Compact Navigation Header */}
+          <div className="p-2 md:p-3">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              {/* Left section - Navigation controls */}
               <div className="flex items-center gap-1 md:gap-2">
                 <Button
                   variant="outline"
@@ -499,12 +497,11 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
                   <ChevronRight className="h-4 w-4" />
                 </Button>
                 {!isMobile && (
-                  <h2 className="text-lg font-semibold ml-2">
+                  <h2 className="text-base md:text-lg font-semibold ml-2">
                     {format(currentDate, 'MMMM yyyy')}
                   </h2>
                 )}
               </div>
-            </div>
             
               {/* Right section - Filters and View selector */}
               <div className="flex items-center gap-2">

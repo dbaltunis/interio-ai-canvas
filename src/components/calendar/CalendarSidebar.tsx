@@ -218,8 +218,9 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
     <div className="w-80 min-w-80 max-w-80 border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300">
       <ScrollArea className="flex-1">
         <div className="flex flex-col space-y-4 p-4">
-          {/* Collapse Button */}
-          <div className="flex justify-end">
+          {/* Header with Calendar title and Collapse Button */}
+          <div className="flex items-center justify-between border-b pb-3">
+            <h1 className="text-xl font-bold text-primary">Calendar</h1>
             <Button
               variant="ghost"
               size="sm"
