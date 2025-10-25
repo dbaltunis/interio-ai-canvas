@@ -35,8 +35,19 @@ export const useAppointments = () => {
         .order('start_time', { ascending: true });
 
       if (error) throw error;
-      return data as Appointment[];
+      
+      // Filter out any invalid appointments (just in case)
+      const validAppointments = (data as Appointment[]).filter(appointment => {
+        const startTime = new Date(appointment.start_time);
+        const endTime = new Date(appointment.end_time);
+        return !isNaN(startTime.getTime()) && !isNaN(endTime.getTime()) && endTime > startTime;
+      });
+      
+      return validAppointments;
     },
+    // Reduce cache time to ensure fresh data
+    staleTime: 1000 * 60, // 1 minute
+    gcTime: 1000 * 60 * 5, // 5 minutes (formerly cacheTime)
   });
 };
 
