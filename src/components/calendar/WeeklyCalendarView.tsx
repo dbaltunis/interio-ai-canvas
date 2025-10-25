@@ -103,12 +103,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
   // Get events for a specific date with date validation
   const getEventsForDate = (date: Date) => {
-    if (!displayAppointments) {
-      console.log('No displayAppointments');
-      return [];
-    }
-    
-    const eventsForDate = displayAppointments
+    if (!displayAppointments) return [];
+    return displayAppointments
       .filter(appointment => {
         // Validate dates first
         const startTime = new Date(appointment.start_time);
@@ -120,19 +116,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
           return false;
         }
         
-        const matches = isSameDay(startTime, date);
-        if (matches) {
-          console.log(`Event "${appointment.title}" matches date ${format(date, 'yyyy-MM-dd')}:`, {
-            start: startTime.toISOString(),
-            end: endTime.toISOString(),
-            dateToCheck: date.toISOString()
-          });
-        }
-        return matches;
+        return isSameDay(startTime, date);
       });
-    
-    console.log(`Total events for ${format(date, 'yyyy-MM-dd')}:`, eventsForDate.length, eventsForDate.map(e => e.title));
-    return eventsForDate;
   };
 
   // Get booked appointments for a specific date as events
@@ -209,7 +194,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         };
       });
     
-    console.log('Available slots for', format(date, 'yyyy-MM-dd'), ':', availableSlots.length);
     return availableSlots;
   };
 
@@ -218,11 +202,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     const regularEvents = getEventsForDate(date);
     const bookedEvents = getBookedEventsForDate(date);
     const availableSlots = getAvailableSlotsForDate(date);
-    console.log('All events for', format(date, 'yyyy-MM-dd'), ':', { 
-      regularEvents: regularEvents.length, 
-      bookedEvents: bookedEvents.length,
-      availableSlots: availableSlots.length 
-    });
     return [...regularEvents, ...bookedEvents, ...availableSlots];
   };
 
@@ -596,7 +575,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                       })()}
                       
                       {/* Events and Appointments with validation */}
-                      {dayEvents.map((event, eventIndex) => {
+                      {(() => {
+                        console.log(`Rendering ${dayEvents.length} events for ${format(day, 'MMM d')}:`, dayEvents.map(e => e.title));
+                        return dayEvents.map((event, eventIndex) => {
                         const startTime = new Date(event.start_time);
                         const endTime = new Date(event.end_time);
                         
@@ -821,7 +802,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         };
                         
                         return <DraggableEvent key={event.id} />;
-                      })}
+                      });
+                      })()}
                     </div>
                   );
                 })}
