@@ -14,11 +14,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { DirectMessageDialog } from "@/components/collaboration/DirectMessageDialog";
 
 export const TeamMembersWidget = () => {
   const { data: teamMembers = [], isLoading } = useTeamMembers();
   const { data: presenceData = [] } = useTeamPresence();
   const { openConversation } = useDirectMessages();
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | undefined>();
 
   const getInitials = (name: string) => {
     return name
@@ -48,6 +51,8 @@ export const TeamMembersWidget = () => {
   };
 
   const handleSendMessage = (userId: string) => {
+    setSelectedUserId(userId);
+    setMessageDialogOpen(true);
     openConversation(userId);
   };
 
@@ -191,6 +196,12 @@ export const TeamMembersWidget = () => {
           </>
         )}
       </CardContent>
+
+      <DirectMessageDialog 
+        open={messageDialogOpen} 
+        onOpenChange={setMessageDialogOpen}
+        selectedUserId={selectedUserId}
+      />
     </Card>
   );
 };
