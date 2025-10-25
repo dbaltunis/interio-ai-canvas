@@ -103,8 +103,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
   // Get events for a specific date with date validation
   const getEventsForDate = (date: Date) => {
-    if (!displayAppointments) return [];
-    return displayAppointments
+    if (!displayAppointments) {
+      console.log('No displayAppointments');
+      return [];
+    }
+    
+    const eventsForDate = displayAppointments
       .filter(appointment => {
         // Validate dates first
         const startTime = new Date(appointment.start_time);
@@ -116,8 +120,19 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
           return false;
         }
         
-        return isSameDay(startTime, date);
+        const matches = isSameDay(startTime, date);
+        if (matches) {
+          console.log(`Event "${appointment.title}" matches date ${format(date, 'yyyy-MM-dd')}:`, {
+            start: startTime.toISOString(),
+            end: endTime.toISOString(),
+            dateToCheck: date.toISOString()
+          });
+        }
+        return matches;
       });
+    
+    console.log(`Total events for ${format(date, 'yyyy-MM-dd')}:`, eventsForDate.length, eventsForDate.map(e => e.title));
+    return eventsForDate;
   };
 
   // Get booked appointments for a specific date as events
@@ -593,20 +608,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         
                         const style = calculateEventStyle(startTime, endTime, showExtendedHours);
                         
-                        // Debug logging for event visibility
-                        console.log('Event rendering check:', {
-                          title: event.title,
-                          startTime: startTime.toISOString(),
-                          endTime: endTime.toISOString(),
-                          style,
-                          showExtendedHours,
-                          visible: style.visible
-                        });
-                        
-                        if (!style.visible) {
-                          console.warn('Event not visible:', event.title, style);
-                          return null;
-                        }
+                        if (!style.visible) return null;
                         
                         // Calculate overlapping events positioning
                         const overlappingEvents = dayEvents.filter(otherEvent => {
