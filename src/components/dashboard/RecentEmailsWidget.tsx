@@ -85,7 +85,7 @@ export const RecentEmailsWidget = () => {
             <div
               key={email.id}
               className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
-              onClick={() => navigate(`/?tab=projects&view=emails&emailId=${email.id}`)}
+              onClick={() => navigate('/?tab=quotes')}
             >
               <div className="mt-0.5 sm:mt-1 shrink-0">
                 {getStatusIcon(email.status)}
