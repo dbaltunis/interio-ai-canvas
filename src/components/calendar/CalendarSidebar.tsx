@@ -31,11 +31,26 @@ interface CalendarSidebarProps {
   currentDate: Date;
   onDateChange: (date: Date) => void;
   onBookingLinks: () => void;
-  isCollapsed?: boolean;
-  onToggleCollapse?: () => void;
 }
 
-export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isCollapsed = false, onToggleCollapse }: CalendarSidebarProps) => {
+export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: CalendarSidebarProps) => {
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("calendar.sidebarCollapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleCollapse = () => {
+    setIsCollapsed(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem("calendar.sidebarCollapsed", String(next));
+      } catch {}
+      return next;
+    });
+  };
   const [showSchedulerManagement, setShowSchedulerManagement] = useState(false);
   const [showBookingManagement, setShowBookingManagement] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -164,15 +179,35 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
 
   if (isCollapsed) {
     return (
-      <div className="w-16 min-w-16 border-r bg-background flex flex-col h-full flex-shrink-0">
+      <div className="w-12 min-w-12 border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300">
         <div className="p-2 border-b">
           <Button
             variant="ghost"
-            size="sm"
-            onClick={onToggleCollapse}
-            className="w-full h-8"
+            size="icon"
+            onClick={toggleCollapse}
+            className="w-8 h-8"
+            title="Expand sidebar"
           >
             <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex flex-col items-center gap-4 p-2 mt-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onBookingLinks}
+            title="Create Schedule"
+            className="w-8 h-8"
+          >
+            <Link2 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            title="Settings"
+            className="w-8 h-8"
+          >
+            <Settings className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -180,7 +215,7 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
   }
 
   return (
-    <div className="w-80 min-w-80 max-w-80 border-r bg-background flex flex-col h-full flex-shrink-0">
+    <div className="w-80 min-w-80 max-w-80 border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300">
       <ScrollArea className="flex-1">
         <div className="flex flex-col space-y-4 p-4">
           {/* Collapse Button */}
@@ -188,8 +223,9 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks, isC
             <Button
               variant="ghost"
               size="sm"
-              onClick={onToggleCollapse}
+              onClick={toggleCollapse}
               className="h-8 w-8 p-0"
+              title="Collapse sidebar"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>

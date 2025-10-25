@@ -398,9 +398,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="h-full max-h-screen flex flex-col overflow-hidden" onMouseUp={handleMouseUp}>
-        {/* Week header with dates */}
-        <div className="flex border-b bg-background sticky top-0 z-10 flex-shrink-0">
+      <div className="flex flex-col h-full" onMouseUp={handleMouseUp}>
+        {/* Week header with dates - parent will make it sticky */}
+        <div className="flex border-b bg-background flex-shrink-0">
           <div className="w-16 border-r flex-shrink-0"></div>
           <div className="flex-1">
             <div className="grid grid-cols-7">
@@ -429,8 +429,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
           </div>
         </div>
         
-        {/* Scrollable time grid */}
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden bg-card">
+        {/* Scrollable time grid - parent controls scrolling */}
+        <div ref={scrollContainerRef} className="flex-1 min-h-0 bg-card">
           <div className="flex bg-card">
             {/* Fixed time labels column */}
             <div className="w-16 border-r bg-card flex-shrink-0">

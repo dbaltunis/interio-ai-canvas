@@ -37,6 +37,7 @@ import { CalendarFilters, CalendarFilterState } from "./CalendarFilters";
 import { useCalendarColors } from "@/hooks/useCalendarColors";
 // Two-way sync removed - using Google Calendar OAuth only
 import { ConflictDialog } from "./ConflictDialog";
+import { useCompactMode } from "@/hooks/useCompactMode";
 import { TimezoneSettingsDialog } from "./timezone/TimezoneSettingsDialog";
 import { useTimezone } from "@/hooks/useTimezone";
 import { TimezoneUtils } from "@/utils/timezoneUtils";
@@ -69,10 +70,6 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
     proposedSlot: { date: Date; time: string };
   } | null>(null);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    const saved = localStorage.getItem('calendar-sidebar-collapsed');
-    return saved ? JSON.parse(saved) : false;
-  });
   const [filters, setFilters] = useState<CalendarFilterState>({
     searchTerm: "",
     userIds: [],
@@ -459,26 +456,22 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
 
   return (
     <div className="h-screen flex overflow-hidden">
-      {/* Sidebar */}
+      {/* Collapsible Sidebar - manages its own collapse state */}
       <CalendarSidebar 
         currentDate={currentDate}
         onDateChange={setCurrentDate}
         onBookingLinks={() => setShowSchedulerSlider(true)}
-        isCollapsed={sidebarCollapsed}
-        onToggleCollapse={() => {
-          const newState = !sidebarCollapsed;
-          setSidebarCollapsed(newState);
-          localStorage.setItem('calendar-sidebar-collapsed', JSON.stringify(newState));
-        }}
       />
 
-      {/* Main Calendar */}
+      {/* Main Calendar with proper scroll hierarchy */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        {/* Header */}
-        <div className="sticky top-0 z-10 border-b bg-background p-2 md:p-4 flex-shrink-0">
-          <div className="flex items-center justify-between gap-2">
-            {/* Left section - Title and Navigation */}
-            <div className="flex items-center gap-2 md:gap-4">
+        {/* Sticky Header Container - ALL headers here stay visible */}
+        <div className="sticky top-0 z-20 bg-background border-b flex-shrink-0">
+          {/* Top Navigation Header */}
+          <div className="p-2 md:p-4 border-b">
+            <div className="flex items-center justify-between gap-2">
+              {/* Left section - Title and Navigation */}
+              <div className="flex items-center gap-2 md:gap-4">
               <h1 className="text-lg md:text-2xl font-bold text-primary">Calendar</h1>
               <div className="flex items-center gap-1 md:gap-2">
                 <Button
@@ -513,30 +506,31 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
               </div>
             </div>
             
-            {/* Right section - Filters and View selector */}
-            <div className="flex items-center gap-2">
-              {/* Calendar Filters */}
-              <CalendarFilters onFiltersChange={setFilters} />
-              
-              <Select value={view} onValueChange={(value: CalendarView) => setView(value)}>
-                <SelectTrigger className={isMobile ? "w-20" : "w-32"}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="week">Week</SelectItem>
-                  <SelectItem value="month">Month</SelectItem>
-                  <SelectItem value="day">Day</SelectItem>
-                </SelectContent>
-              </Select>
+              {/* Right section - Filters and View selector */}
+              <div className="flex items-center gap-2">
+                {/* Calendar Filters */}
+                <CalendarFilters onFiltersChange={setFilters} />
+                
+                <Select value={view} onValueChange={(value: CalendarView) => setView(value)}>
+                  <SelectTrigger className={isMobile ? "w-20" : "w-32"}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="week">Week</SelectItem>
+                    <SelectItem value="month">Month</SelectItem>
+                    <SelectItem value="day">Day</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
+
+          {/* Google Calendar Sync Toolbar - stays sticky too */}
+          <CalendarSyncToolbar />
         </div>
 
-        {/* Google Calendar Sync Toolbar */}
-        <CalendarSyncToolbar />
-
-        {/* Calendar Content */}
-        <div className="flex-1 overflow-hidden min-h-0">
+        {/* Scrollable Calendar Content */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
           {view === 'week' && (
             <WeeklyCalendarView 
               currentDate={currentDate}
