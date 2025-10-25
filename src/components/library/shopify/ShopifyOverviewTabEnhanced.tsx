@@ -3,8 +3,12 @@ import { Badge } from "@/components/ui/badge";
 import { ShoppingBag, ShoppingCart, Package, RefreshCw, Upload, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Database } from "@/integrations/supabase/types";
+
+type ShopifyIntegration = Database['public']['Tables']['shopify_integrations']['Row'];
+
 interface ShopifyOverviewTabEnhancedProps {
-  integration: any;
+  integration: ShopifyIntegration | null;
   onSyncProducts?: () => void;
   onSyncAnalytics?: () => void;
 }
@@ -14,7 +18,7 @@ export const ShopifyOverviewTabEnhanced = ({
   onSyncProducts,
   onSyncAnalytics 
 }: ShopifyOverviewTabEnhancedProps) => {
-  const isConnected = integration?.is_connected || integration?.active;
+  const isConnected = integration?.is_connected;
 
   return (
     <div className="space-y-6">

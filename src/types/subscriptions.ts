@@ -39,16 +39,16 @@ export interface ShopifyIntegration {
   id: string;
   user_id: string;
   shop_domain: string;
-  access_token?: string;
-  webhook_secret?: string;
-  is_connected: boolean;
-  auto_sync_enabled: boolean;
-  sync_inventory: boolean;
-  sync_prices: boolean;
-  sync_images: boolean;
-  last_sync_at?: string;
-  created_at: string;
-  updated_at: string;
+  access_token: string | null;
+  webhook_secret: string | null;
+  is_connected: boolean | null;
+  auto_sync_enabled: boolean | null;
+  sync_inventory: boolean | null;
+  sync_prices: boolean | null;
+  sync_images: boolean | null;
+  last_sync_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export interface ManualQuoteItem {

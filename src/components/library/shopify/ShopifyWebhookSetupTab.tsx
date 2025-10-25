@@ -5,8 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Copy, ExternalLink, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Database } from "@/integrations/supabase/types";
+
+type ShopifyIntegration = Database['public']['Tables']['shopify_integrations']['Row'];
+
 interface ShopifyWebhookSetupTabProps {
-  integration: any;
+  integration: ShopifyIntegration | null;
 }
 
 export const ShopifyWebhookSetupTab = ({ integration }: ShopifyWebhookSetupTabProps) => {
