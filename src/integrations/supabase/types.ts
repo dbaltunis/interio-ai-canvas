@@ -6937,7 +6937,9 @@ export type Database = {
         }[]
       }
       increment_email_usage: { Args: { p_user_id: string }; Returns: undefined }
-      is_admin: { Args: never; Returns: boolean }
+      is_admin:
+        | { Args: never; Returns: boolean }
+        | { Args: { _user_id: string }; Returns: boolean }
       is_admin_or_owner: { Args: never; Returns: boolean }
       is_valid_email: { Args: { email_address: string }; Returns: boolean }
       link_user_to_account: {

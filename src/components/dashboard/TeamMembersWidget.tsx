@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useTeamPresence } from "@/hooks/useTeamPresence";
 import { useDirectMessages } from "@/hooks/useDirectMessages";
+import { useUserRole } from "@/hooks/useUserRole";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
@@ -25,6 +26,7 @@ export const TeamMembersWidget = () => {
   const { data: teamMembers = [], isLoading } = useTeamMembers();
   const { data: presenceData = [] } = useTeamPresence();
   const { openConversation, conversations = [] } = useDirectMessages();
+  const { data: userRole } = useUserRole();
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>();
   const [recentMessageUsers, setRecentMessageUsers] = useState<Set<string>>(new Set());
@@ -156,15 +158,17 @@ export const TeamMembersWidget = () => {
             <Users className="h-4 w-4 sm:h-5 sm:w-5" />
             <span className="truncate">Team</span>
           </CardTitle>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="gap-2 h-8 text-xs"
-            onClick={() => window.location.href = "/?tab=team"}
-          >
-            <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Add</span>
-          </Button>
+          {userRole?.isAdmin && (
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="gap-2 h-8 text-xs"
+              onClick={() => window.location.href = "/?tab=settings"}
+            >
+              <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Add</span>
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent className="p-0">
