@@ -163,7 +163,7 @@ export const TeamMembersWidget = () => {
               size="sm" 
               variant="outline" 
               className="gap-2 h-8 text-xs"
-              onClick={() => window.location.href = "/?tab=settings"}
+              onClick={() => window.location.href = "/?tab=settings&section=team"}
             >
               <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Add</span>
