@@ -575,9 +575,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                       })()}
                       
                       {/* Events and Appointments with validation */}
-                      {(() => {
-                        console.log(`Rendering ${dayEvents.length} events for ${format(day, 'MMM d')}:`, dayEvents.map(e => e.title));
-                        return dayEvents.map((event, eventIndex) => {
+                      {dayEvents.map((event, eventIndex) => {
                         const startTime = new Date(event.start_time);
                         const endTime = new Date(event.end_time);
                         
@@ -591,7 +589,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         
                         if (!style.visible) return null;
                         
-                        // Calculate overlapping events positioning
+                        // Calculate overlapping events positioning - FIXED
                         const overlappingEvents = dayEvents.filter(otherEvent => {
                           const otherStart = new Date(otherEvent.start_time);
                           const otherEnd = new Date(otherEvent.end_time);
@@ -601,8 +599,11 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           );
                         });
                         
+                        // Find this event's index within the overlapping group (not the full array)
+                        const overlappingIndex = overlappingEvents.findIndex(e => e.id === event.id);
+                        
                         const eventWidth = overlappingEvents.length > 1 ? `${98 / overlappingEvents.length}%` : '98%';
-                        const eventLeft = overlappingEvents.length > 1 ? `${(98 / overlappingEvents.length) * eventIndex + 1}%` : '1%';
+                        const eventLeft = overlappingEvents.length > 1 ? `${(98 / overlappingEvents.length) * overlappingIndex + 1}%` : '1%';
                         
                         // Clear visual distinction between events, bookings, and available slots
                         const getEventStyling = (event: any) => {
@@ -802,8 +803,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         };
                         
                         return <DraggableEvent key={event.id} />;
-                      });
-                      })()}
+                      })}
                     </div>
                   );
                 })}
