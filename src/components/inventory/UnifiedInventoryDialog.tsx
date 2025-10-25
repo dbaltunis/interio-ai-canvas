@@ -51,6 +51,7 @@ export const UnifiedInventoryDialog = ({
     description: "",
     sku: "",
     category: "",
+    subcategory: "",
     quantity: 0,
     unit: "meters",
     cost_price: 0,
@@ -104,6 +105,7 @@ export const UnifiedInventoryDialog = ({
         description: item.description || "",
         sku: item.sku || "",
         category: item.category || "",
+        subcategory: item.subcategory || "",
         quantity: item.quantity || 0,
         unit: item.unit || "meters",
         cost_price: item.cost_price || 0,
@@ -287,6 +289,7 @@ export const UnifiedInventoryDialog = ({
           description: "",
           sku: "",
           category: "",
+          subcategory: "",
           quantity: 0,
           unit: "meters",
           cost_price: 0,
@@ -340,10 +343,11 @@ export const UnifiedInventoryDialog = ({
     }
   };
 
-  const isRollerBlindFabric = formData.category === "roller_blind_fabric";
-  const isCurtainOrBlindFabric = ["curtain_fabric", "blind_fabric"].includes(formData.category);
-  const isFabric = ["curtain_fabric", "roller_blind_fabric", "blind_fabric", "venetian_slats", "shutter_panels", "wallcovering"].includes(formData.category);
-  const isHardware = ["track", "rod", "bracket", "motor", "accessory"].includes(formData.category);
+  const isRollerBlindFabric = formData.category === "fabric" && formData.subcategory === "roller_fabric";
+  const isCurtainOrBlindFabric = formData.category === "fabric" && ["curtain_fabric", "blind_fabric"].includes(formData.subcategory);
+  const isFabric = formData.category === "fabric";
+  const isHardware = formData.category === "hardware";
+  const isWallcovering = formData.category === "wallcovering";
 
   const profitPerUnit = formData.selling_price - formData.cost_price;
   const markupPercentage = formData.cost_price > 0 
@@ -394,30 +398,69 @@ export const UnifiedInventoryDialog = ({
               <CardHeader>
                 <CardTitle className="text-lg">Product Type</CardTitle>
               </CardHeader>
-              <CardContent>
-                <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                  <SelectTrigger className="bg-background">
-                    <SelectValue placeholder="Select product type" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border border-border max-h-[300px]" position="popper" sideOffset={4}>
-                    <SelectItem value="curtain_fabric">Curtain Fabric</SelectItem>
-                    <SelectItem value="roller_blind_fabric">Roller Blind Fabric</SelectItem>
-                    <SelectItem value="blind_fabric">Roman Blind Fabric</SelectItem>
-                    <SelectItem value="venetian_slats">Venetian Slats</SelectItem>
-                    <SelectItem value="shutter_panels">Shutter Panels</SelectItem>
-                    <SelectItem value="wallcovering">Wallcovering</SelectItem>
-                    <SelectItem value="track">Track System</SelectItem>
-                    <SelectItem value="rod">Rod System</SelectItem>
-                    <SelectItem value="bracket">Bracket</SelectItem>
-                    <SelectItem value="motor">Motor</SelectItem>
-                    <SelectItem value="accessory">Accessory</SelectItem>
-                  </SelectContent>
-                </Select>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="category">Main Category</Label>
+                  <Select 
+                    value={formData.category} 
+                    onValueChange={(value) => setFormData({ ...formData, category: value, subcategory: "" })}
+                  >
+                    <SelectTrigger className="bg-background">
+                      <SelectValue placeholder="Select main category" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border border-border" position="popper" sideOffset={4}>
+                      <SelectItem value="fabric">Fabrics</SelectItem>
+                      <SelectItem value="hardware">Hardware</SelectItem>
+                      <SelectItem value="wallcovering">Wallcoverings</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {formData.category && (
+                  <div>
+                    <Label htmlFor="subcategory">Subcategory</Label>
+                    <Select 
+                      value={formData.subcategory} 
+                      onValueChange={(value) => setFormData({ ...formData, subcategory: value })}
+                    >
+                      <SelectTrigger className="bg-background">
+                        <SelectValue placeholder="Select subcategory" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border border-border max-h-[300px]" position="popper" sideOffset={4}>
+                        {formData.category === "fabric" && (
+                          <>
+                            <SelectItem value="curtain_fabric">Curtain Fabric</SelectItem>
+                            <SelectItem value="roller_fabric">Roller Blind Fabric</SelectItem>
+                            <SelectItem value="blind_fabric">Roman Blind Fabric</SelectItem>
+                            <SelectItem value="furniture_fabric">Furniture Fabric</SelectItem>
+                            <SelectItem value="sheer_fabric">Sheer Fabric</SelectItem>
+                          </>
+                        )}
+                        {formData.category === "hardware" && (
+                          <>
+                            <SelectItem value="track">Track System</SelectItem>
+                            <SelectItem value="rod">Rod System</SelectItem>
+                            <SelectItem value="bracket">Bracket</SelectItem>
+                            <SelectItem value="motor">Motor</SelectItem>
+                            <SelectItem value="accessory">Accessory</SelectItem>
+                          </>
+                        )}
+                        {formData.category === "wallcovering" && (
+                          <>
+                            <SelectItem value="plain_wallpaper">Plain Wallpaper</SelectItem>
+                            <SelectItem value="patterned_wallpaper">Patterned Wallpaper</SelectItem>
+                            <SelectItem value="wall_panels_murals">Wall Panels / Murals</SelectItem>
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
 
-          {formData.category && (
+          {formData.subcategory && (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="basic">Basic Info</TabsTrigger>

@@ -108,6 +108,7 @@ export interface EnhancedInventoryItem {
   description?: string;
   sku?: string;
   category?: string;
+  subcategory?: string;
   quantity: number;
   unit?: string;
   cost_price: number;

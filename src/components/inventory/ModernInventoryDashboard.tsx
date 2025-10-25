@@ -221,7 +221,7 @@ export const ModernInventoryDashboard = () => {
                 <CardContent className="pt-0">
                   <div className="flex items-center justify-between">
                     <Badge variant="secondary" className="text-xs">
-                      {inventory?.filter(i => i.category === 'fabric' || i.category === 'curtain_fabric' || i.category === 'blind_fabric').length || 0} Items
+                      {inventory?.filter(i => i.category === 'fabric').length || 0} Items
                     </Badge>
                     <Button variant="ghost" size="sm" className="text-xs group-hover:text-primary">
                       View →
@@ -249,7 +249,7 @@ export const ModernInventoryDashboard = () => {
                 <CardContent className="pt-0">
                   <div className="flex items-center justify-between">
                     <Badge variant="secondary" className="text-xs">
-                      {inventory?.filter(i => i.category === 'track' || i.category === 'rod' || i.category === 'bracket' || i.category === 'motor' || i.category === 'accessory').length || 0} Items
+                      {inventory?.filter(i => i.category === 'hardware').length || 0} Items
                     </Badge>
                     <Button variant="ghost" size="sm" className="text-xs group-hover:text-primary">
                       View →
@@ -277,7 +277,7 @@ export const ModernInventoryDashboard = () => {
                 <CardContent className="pt-0">
                   <div className="flex items-center justify-between">
                     <Badge variant="secondary" className="text-xs">
-                      {inventory?.filter(i => i.category === 'wallcovering' || i.category === 'wallpaper').length || 0} Items
+                      {inventory?.filter(i => i.category === 'wallcovering').length || 0} Items
                     </Badge>
                     <Button variant="ghost" size="sm" className="text-xs group-hover:text-primary">
                       View →

@@ -1980,6 +1980,7 @@ export type Database = {
           service_rate: number | null
           sku: string | null
           sold_by_unit: string | null
+          subcategory: string | null
           supplier: string | null
           treatment_type: string | null
           unit: string | null
@@ -2050,6 +2051,7 @@ export type Database = {
           service_rate?: number | null
           sku?: string | null
           sold_by_unit?: string | null
+          subcategory?: string | null
           supplier?: string | null
           treatment_type?: string | null
           unit?: string | null
@@ -2120,6 +2122,7 @@ export type Database = {
           service_rate?: number | null
           sku?: string | null
           sold_by_unit?: string | null
+          subcategory?: string | null
           supplier?: string | null
           treatment_type?: string | null
           unit?: string | null

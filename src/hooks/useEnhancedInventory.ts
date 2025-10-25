@@ -11,6 +11,7 @@ export interface EnhancedInventoryItem {
   description?: string;
   sku?: string;
   category: string;
+  subcategory?: string;
   quantity?: number;
   unit?: string;
   cost_price?: number;
@@ -126,12 +127,13 @@ export const useCreateEnhancedInventoryItem = () => {
 
       // Whitelist fields to match enhanced_inventory_items schema
       const allowedKeys = [
-        'name','description','sku','category','quantity','unit','cost_price','selling_price','supplier','vendor_id','location','reorder_point','active',
+        'name','description','sku','category','subcategory','quantity','unit','cost_price','selling_price','supplier','vendor_id','location','reorder_point','active',
         'fabric_width','fabric_composition','fabric_care_instructions','fabric_origin','pattern_repeat_horizontal','pattern_repeat_vertical','fabric_grade','fabric_collection','is_flame_retardant',
         'hardware_finish','hardware_material','hardware_dimensions','hardware_weight','hardware_mounting_type','hardware_load_capacity',
         'price_per_yard','price_per_meter','price_per_unit','markup_percentage',
         'width','height','depth','weight','color','finish','collection_name','image_url',
-        'labor_hours','fullness_ratio','service_rate','treatment_type'
+        'labor_hours','fullness_ratio','service_rate','treatment_type',
+        'wallpaper_roll_width','wallpaper_roll_length','wallpaper_sold_by','wallpaper_unit_of_measure','wallpaper_match_type','wallpaper_horizontal_repeat','wallpaper_waste_factor','wallpaper_pattern_offset'
       ] as const;
 
       const item: Record<string, any> = { user_id: userId, active: true };

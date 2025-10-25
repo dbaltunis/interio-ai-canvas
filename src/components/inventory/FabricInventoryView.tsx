@@ -35,16 +35,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
   const [currentPage, setCurrentPage] = useState(1);
 
   const fabricItems = inventory?.filter(item => 
-    item.category === 'fabric' || 
-    item.category === 'curtain_fabric' || 
-    item.category === 'blind_fabric' ||
-    item.category === 'furniture_fabric' ||
-    item.category === 'sheer_fabric' ||
-    item.category === 'roller_fabric' ||
-    item.category === 'upholstery_fabric' ||
-    item.category === 'lining' ||
-    item.category === 'trimming' ||
-    item.category?.includes('fabric')
+    item.category === 'fabric'
   ) || [];
 
   const filteredItems = fabricItems.filter(item => {
@@ -56,7 +47,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
       item.supplier?.toLowerCase().includes(localSearch.toLowerCase());
     
     const matchesCategory = activeCategory === "all" || 
-      item.category?.includes(activeCategory);
+      item.subcategory === activeCategory;
 
     return matchesGlobalSearch && matchesLocalSearch && matchesCategory;
   });

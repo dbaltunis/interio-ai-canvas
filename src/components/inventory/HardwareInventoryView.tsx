@@ -19,10 +19,11 @@ interface HardwareInventoryViewProps {
 
 const HARDWARE_CATEGORIES = [
   { key: "all", label: "All Hardware" },
-  { key: "poles", label: "Poles" },
-  { key: "tracks", label: "Tracks" },
-  { key: "motors", label: "Motorisation" },
-  { key: "components", label: "Components" }
+  { key: "rod", label: "Rods/Poles" },
+  { key: "track", label: "Tracks" },
+  { key: "motor", label: "Motors" },
+  { key: "bracket", label: "Brackets" },
+  { key: "accessory", label: "Accessories" }
 ];
 
 const ITEMS_PER_PAGE = 24;
@@ -35,11 +36,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode }: HardwareInvento
   const [currentPage, setCurrentPage] = useState(1);
 
   const hardwareItems = inventory?.filter(item => 
-    item.category === 'track' || 
-    item.category === 'rod' || 
-    item.category === 'bracket' ||
-    item.category === 'motor' ||
-    item.category === 'accessory'
+    item.category === 'hardware'
   ) || [];
 
   const filteredItems = hardwareItems.filter(item => {
@@ -51,10 +48,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode }: HardwareInvento
       item.supplier?.toLowerCase().includes(localSearch.toLowerCase());
     
     const matchesCategory = activeCategory === "all" || 
-      (activeCategory === "poles" && item.category === "rod") ||
-      (activeCategory === "tracks" && item.category === "track") ||
-      (activeCategory === "motors" && item.category === "motor") ||
-      (activeCategory === "components" && (item.category === "bracket" || item.category === "accessory"));
+      item.subcategory === activeCategory;
 
     return matchesGlobalSearch && matchesLocalSearch && matchesCategory;
   });

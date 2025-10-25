@@ -183,7 +183,7 @@ export const InventoryDemoData = () => {
   };
 
   const fabricCount = sampleInventoryData.filter(item => 
-    item.category === "fabric" || item.category === "curtain_fabric").length;
+    item.category === "fabric").length;
   const hardwareCount = sampleInventoryData.filter(item => 
     ["track", "rod", "bracket", "motor", "accessory"].includes(item.category)).length;
 

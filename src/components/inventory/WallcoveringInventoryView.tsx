@@ -19,9 +19,9 @@ interface WallcoveringInventoryViewProps {
 
 const WALLCOVERING_CATEGORIES = [
   { key: "all", label: "All Wallcoverings" },
-  { key: "plain", label: "Plain Wallpapers" },
-  { key: "patterned", label: "Patterned Wallpapers" },
-  { key: "panels", label: "Wall Panels / Murals" }
+  { key: "plain_wallpaper", label: "Plain Wallpapers" },
+  { key: "patterned_wallpaper", label: "Patterned Wallpapers" },
+  { key: "wall_panels_murals", label: "Wall Panels / Murals" }
 ];
 
 const ITEMS_PER_PAGE = 24;
@@ -34,8 +34,7 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
   const [currentPage, setCurrentPage] = useState(1);
 
   const wallcoveringItems = inventory?.filter(item => 
-    item.category === 'wallcovering' || 
-    item.category === 'wallpaper'
+    item.category === 'wallcovering'
   ) || [];
 
   const filteredItems = wallcoveringItems.filter(item => {
@@ -47,7 +46,7 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
       item.supplier?.toLowerCase().includes(localSearch.toLowerCase());
     
     const matchesCategory = activeCategory === "all" || 
-      item.category?.includes(activeCategory);
+      item.subcategory === activeCategory;
 
     return matchesGlobalSearch && matchesLocalSearch && matchesCategory;
   });
