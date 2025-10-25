@@ -43,15 +43,17 @@ export const UpcomingEventsWidget = () => {
   }
 
   return (
-    <Card>
+    <Card className="glass-morphism border-primary/20">
       <CardHeader className="pb-2 sm:pb-3">
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/30">
+              <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            </div>
             <span className="truncate">Upcoming Events</span>
           </CardTitle>
           {calendarIntegration?.active && (
-            <Badge variant="outline" className="text-xs shrink-0">
+            <Badge variant="outline" className="text-xs shrink-0 border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400">
               <CheckCircle2 className="h-3 w-3 mr-1" />
               <span className="hidden sm:inline">Synced</span>
             </Badge>
@@ -75,14 +77,14 @@ export const UpcomingEventsWidget = () => {
             return (
               <div
                 key={apt.id}
-                className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/20 hover:bg-card/80 transition-all cursor-pointer hover-lift"
                 onClick={() => navigate(`/?tab=calendar&eventId=${apt.id}`)}
               >
-                <div className="flex flex-col items-center min-w-[50px] sm:min-w-[60px] pt-1">
-                  <span className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase">
+                <div className="flex flex-col items-center min-w-[56px] sm:min-w-[68px] p-2 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+                  <span className="text-[10px] sm:text-xs font-bold text-primary uppercase tracking-wide">
                     {format(startTime, "MMM")}
                   </span>
-                  <span className="text-xl sm:text-2xl font-bold text-foreground">
+                  <span className="text-2xl sm:text-3xl font-bold text-foreground mt-0.5">
                     {format(startTime, "d")}
                   </span>
                 </div>
@@ -110,7 +112,14 @@ export const UpcomingEventsWidget = () => {
                   )}
                 </div>
                 
-                <Badge variant={isToday(startTime) ? "default" : "secondary"} className="text-[10px] sm:text-xs shrink-0">
+                <Badge 
+                  variant={isToday(startTime) ? "default" : "secondary"} 
+                  className={`text-[10px] sm:text-xs shrink-0 ${
+                    isToday(startTime) 
+                      ? 'bg-gradient-to-r from-primary to-primary/80 shadow-sm' 
+                      : 'bg-muted/50 backdrop-blur-sm'
+                  }`}
+                >
                   {getDateLabel(startTime)}
                 </Badge>
               </div>

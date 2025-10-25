@@ -159,18 +159,20 @@ export const TeamMembersWidget = () => {
   }
 
   return (
-    <Card>
+    <Card className="glass-morphism border-primary/20">
       <CardHeader className="pb-2 sm:pb-3">
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Users className="h-4 w-4 sm:h-5 sm:w-5" />
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/30">
+              <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            </div>
             <span className="truncate">Team</span>
           </CardTitle>
           {userRole?.isAdmin && (
             <Button 
               size="sm" 
               variant="outline" 
-              className="gap-2 h-8 text-xs"
+              className="gap-2 h-8 text-xs hover-lift"
               onClick={handleAddTeamMember}
             >
               <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -205,21 +207,23 @@ export const TeamMembersWidget = () => {
               return (
                 <div
                   key={member.id}
-                  className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border transition-colors ${
-                    hasUnread ? 'bg-primary/5 border-primary/20 hover:bg-primary/10' : 'bg-card hover:bg-accent/50'
+                  className={`relative flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl border transition-all hover-lift ${
+                    hasUnread 
+                      ? 'bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-primary/30 shadow-sm' 
+                      : 'bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/20 hover:bg-card/80'
                   }`}
                 >
                   <div className="relative shrink-0">
-                    <Avatar className="h-9 w-9 sm:h-10 sm:w-10 border-2 border-background">
+                    <Avatar className="h-10 w-10 sm:h-11 sm:w-11 border-2 border-background shadow-sm">
                       {member.avatar_url ? (
                         <AvatarImage src={member.avatar_url} alt={member.name} />
                       ) : null}
-                      <AvatarFallback className="text-xs sm:text-sm font-semibold bg-primary/10 text-primary">
+                      <AvatarFallback className="text-xs sm:text-sm font-bold bg-gradient-to-br from-primary/20 to-primary/10 text-primary">
                         {getInitials(member.name)}
                       </AvatarFallback>
                     </Avatar>
                     <div
-                      className={`absolute bottom-0 right-0 h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full border-2 border-background ${getStatusColor(status)}`}
+                      className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 sm:h-3.5 sm:w-3.5 rounded-full border-2 border-background shadow-sm ${getStatusColor(status)}`}
                     />
                   </div>
                   
