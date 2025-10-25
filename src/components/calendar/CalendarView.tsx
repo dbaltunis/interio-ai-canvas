@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users, ChevronLeft, ChevronRight, MapPin, Palette, UserPlus, Video, Share, Bell } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users, ChevronLeft, ChevronRight, MapPin, Palette, UserPlus, Video, Share, Bell, SlidersHorizontal } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, isToday, addWeeks, subWeeks } from "date-fns";
@@ -26,14 +26,14 @@ import { WeeklyCalendarView } from "./WeeklyCalendarView";
 import { DailyCalendarView } from "./DailyCalendarView";
 import { AppointmentSchedulerSlider } from "./AppointmentSchedulerSlider";
 import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
-import { CalendarFilterState } from "./CalendarFilters";
+
 import { DurationPicker } from "./TimePicker";
 // CalDAV imports removed - using Google Calendar OAuth only
 import { UnifiedAppointmentDialog } from "./UnifiedAppointmentDialog";
 import { OfflineIndicator } from "./OfflineIndicator";
 import { CalendarSharingDialog } from "./sharing/CalendarSharingDialog";
 import { CalendarColorPicker } from "./colors/CalendarColorPicker";
-import { CalendarFilters } from "./filters/CalendarFilters";
+import { CalendarFilters, CalendarFilterState } from "./CalendarFilters";
 import { useCalendarColors } from "@/hooks/useCalendarColors";
 // Two-way sync removed - using Google Calendar OAuth only
 import { ConflictDialog } from "./ConflictDialog";
@@ -513,8 +513,11 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
               </div>
             </div>
             
-            {/* Right section - View selector */}
-            <div className="flex items-center">
+            {/* Right section - Filters and View selector */}
+            <div className="flex items-center gap-2">
+              {/* Calendar Filters */}
+              <CalendarFilters onFiltersChange={setFilters} />
+              
               <Select value={view} onValueChange={(value: CalendarView) => setView(value)}>
                 <SelectTrigger className={isMobile ? "w-20" : "w-32"}>
                   <SelectValue />
