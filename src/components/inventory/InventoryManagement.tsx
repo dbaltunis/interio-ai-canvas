@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, AlertTriangle, TrendingUp, Package } from "lucide-react";
+import { Plus, AlertTriangle, TrendingUp, Package, ShoppingBag } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { InventoryImportDialog } from "./InventoryImportDialog";
@@ -84,16 +84,25 @@ export const InventoryManagement = () => {
               Smart inventory tracking with real-time stock levels
             </p>
           </div>
-        {canManageInventory && (
-          <div className="flex items-center gap-2">
-            <ShopifyProductSyncButton />
-            <InventoryImportDialog />
-            <Button variant="default">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Item
-            </Button>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => setShowShopifyDialog(true)}
+          >
+            <ShoppingBag className="mr-2 h-4 w-4" />
+            Shopify Integration
+          </Button>
+          {canManageInventory && (
+            <>
+              <ShopifyProductSyncButton />
+              <InventoryImportDialog />
+              <Button variant="default">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Item
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Inventory Overview */}
