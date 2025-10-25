@@ -63,6 +63,23 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     };
     getCurrentUser();
   }, []);
+
+  // Auto-scroll to 7 AM on mount for better UX
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      // Each time slot is 32px high, and slots are every 30 minutes
+      // 7 AM = 7 hours from midnight = 14 slots (00:00, 00:30, 01:00... 07:00)
+      const slotHeight = 32;
+      const sevenAMSlotIndex = 14; // 7:00 AM is the 14th slot (0-indexed: slot 14)
+      const scrollPosition = sevenAMSlotIndex * slotHeight;
+      
+      // Smooth scroll to 7 AM
+      scrollContainerRef.current.scrollTo({
+        top: scrollPosition,
+        behavior: 'smooth'
+      });
+    }
+  }, []); // Empty dependency array = only run on mount
   
   // Event creation state
   const [isCreatingEvent, setIsCreatingEvent] = useState(false);
