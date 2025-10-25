@@ -1,13 +1,36 @@
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Upload, Download, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { RefreshCw, Upload, Download, CheckCircle2, XCircle, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useGoogleCalendarIntegration, useGoogleCalendarSync } from "@/hooks/useGoogleCalendar";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { formatDistanceToNow } from "date-fns";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { formatDistanceToNow, format } from "date-fns";
 import { useState, useEffect } from "react";
+import { CalendarFilters, CalendarFilterState } from "./CalendarFilters";
+import { useIsMobile } from "@/hooks/use-mobile";
 
-export const CalendarSyncToolbar = () => {
+type CalendarView = 'month' | 'week' | 'day';
+
+interface CalendarSyncToolbarProps {
+  currentDate?: Date;
+  view?: CalendarView;
+  onTodayClick?: () => void;
+  onPrevClick?: () => void;
+  onNextClick?: () => void;
+  onViewChange?: (view: CalendarView) => void;
+  onFiltersChange?: (filters: CalendarFilterState) => void;
+}
+
+export const CalendarSyncToolbar = ({
+  currentDate,
+  view,
+  onTodayClick,
+  onPrevClick,
+  onNextClick,
+  onViewChange,
+  onFiltersChange
+}: CalendarSyncToolbarProps) => {
   const { integration, isConnected } = useGoogleCalendarIntegration();
   const { syncFromGoogle, syncAllToGoogle, isSyncingFromGoogle, isSyncingAll } = useGoogleCalendarSync();
   
@@ -42,82 +65,139 @@ export const CalendarSyncToolbar = () => {
     return () => clearInterval(interval);
   }, [isConnected, autoSyncEnabled, syncFromGoogle]);
 
-  if (!isConnected) {
-    return null;
-  }
+  const isMobile = useIsMobile();
 
   const lastSyncTime = integration?.last_sync 
     ? formatDistanceToNow(new Date(integration.last_sync), { addSuffix: true })
     : 'Never';
 
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/30 border-b">
-      {/* Connection status */}
-      <div className="flex items-center gap-1.5">
-        {integration?.active ? (
-          <CheckCircle2 className="h-3 w-3 text-green-500" />
-        ) : (
-          <XCircle className="h-3 w-3 text-destructive" />
-        )}
-        <span className="text-[11px] text-muted-foreground">
-          {lastSyncTime}
-        </span>
-      </div>
+    <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 flex-wrap">
+      {/* Left section - Navigation controls */}
+      {currentDate && view && onTodayClick && onPrevClick && onNextClick && (
+        <div className="flex items-center gap-1 md:gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onTodayClick}
+            className="h-7 text-xs"
+          >
+            Today
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onPrevClick}
+            className="h-7 w-7"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onNextClick}
+            className="h-7 w-7"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          {!isMobile && (
+            <h2 className="text-sm md:text-base font-semibold ml-1">
+              {format(currentDate, 'MMMM yyyy')}
+            </h2>
+          )}
+        </div>
+      )}
 
-      {/* Syncing indicator */}
-      {isSyncingFromGoogle && autoSyncEnabled && (
-        <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />
+      {/* Google Calendar sync status (only if connected) */}
+      {isConnected && (
+        <div className="flex items-center gap-1.5">
+          {integration?.active ? (
+            <CheckCircle2 className="h-3 w-3 text-green-500" />
+          ) : (
+            <XCircle className="h-3 w-3 text-destructive" />
+          )}
+          <span className="text-[11px] text-muted-foreground">
+            {lastSyncTime}
+          </span>
+          {isSyncingFromGoogle && autoSyncEnabled && (
+            <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />
+          )}
+        </div>
       )}
 
       <div className="flex-1" />
 
-      {/* Controls group */}
-      <div className="flex items-center gap-1.5">
-        {/* Auto-sync toggle */}
-        <div className="flex items-center gap-1">
-          <Switch
-            id="auto-sync"
-            checked={autoSyncEnabled}
-            onCheckedChange={setAutoSyncEnabled}
-            className="scale-75"
-          />
-          <Label htmlFor="auto-sync" className="text-[11px] cursor-pointer text-muted-foreground whitespace-nowrap">
-            Auto (5m)
-          </Label>
-        </div>
+      {/* Right section - Filters, View, and Sync controls */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {/* Filters */}
+        {onFiltersChange && (
+          <CalendarFilters onFiltersChange={onFiltersChange} />
+        )}
 
-        {/* Manual sync buttons */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => syncFromGoogle()}
-          disabled={isSyncingFromGoogle || isSyncingAll}
-          className="h-6 px-2 gap-1 text-[11px]"
-          title="Sync from Google Calendar"
-        >
-          {isSyncingFromGoogle ? (
-            <RefreshCw className="h-3 w-3 animate-spin" />
-          ) : (
-            <Download className="h-3 w-3" />
-          )}
-          <span className="hidden sm:inline">Import</span>
-        </Button>
+        {/* View selector */}
+        {view && onViewChange && (
+          <Select value={view} onValueChange={onViewChange}>
+            <SelectTrigger className="w-24 h-7 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="month">Month</SelectItem>
+              <SelectItem value="week">Week</SelectItem>
+              <SelectItem value="day">Day</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
 
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => syncAllToGoogle()}
-          disabled={isSyncingFromGoogle || isSyncingAll}
-          className="h-6 px-2 gap-1 text-[11px]"
-          title="Sync all to Google Calendar"
-        >
-          {isSyncingAll ? (
-            <RefreshCw className="h-3 w-3 animate-spin" />
-          ) : (
-            <Upload className="h-3 w-3" />
-          )}
-          <span className="hidden sm:inline">Export</span>
-        </Button>
+        {/* Google Calendar sync controls (only if connected) */}
+        {isConnected && (
+          <>
+            {/* Auto-sync toggle */}
+            <div className="flex items-center gap-1">
+              <Switch
+                id="auto-sync"
+                checked={autoSyncEnabled}
+                onCheckedChange={setAutoSyncEnabled}
+                className="scale-75"
+              />
+              <Label htmlFor="auto-sync" className="text-[11px] cursor-pointer text-muted-foreground whitespace-nowrap">
+                Auto (5m)
+              </Label>
+            </div>
+
+            {/* Manual sync buttons */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => syncFromGoogle()}
+              disabled={isSyncingFromGoogle || isSyncingAll}
+              className="h-6 px-2 gap-1 text-[11px]"
+              title="Sync from Google Calendar"
+            >
+              {isSyncingFromGoogle ? (
+                <RefreshCw className="h-3 w-3 animate-spin" />
+              ) : (
+                <Download className="h-3 w-3" />
+              )}
+              <span className="hidden sm:inline">Import</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => syncAllToGoogle()}
+              disabled={isSyncingFromGoogle || isSyncingAll}
+              className="h-6 px-2 gap-1 text-[11px]"
+              title="Sync all to Google Calendar"
+            >
+              {isSyncingAll ? (
+                <RefreshCw className="h-3 w-3 animate-spin" />
+              ) : (
+                <Upload className="h-3 w-3" />
+              )}
+              <span className="hidden sm:inline">Export</span>
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );

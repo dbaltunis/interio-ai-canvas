@@ -465,65 +465,17 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
 
       {/* Main Calendar with proper scroll hierarchy */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        {/* Sticky Header Container - Reorganized to save vertical space */}
+        {/* Sticky Header Container - Single consolidated row */}
         <div className="sticky top-0 z-20 bg-background border-b flex-shrink-0">
-          {/* Compact Navigation Header */}
-          <div className="p-2 md:p-3">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              {/* Left section - Navigation controls */}
-              <div className="flex items-center gap-1 md:gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentDate(new Date())}
-                  className={isMobile ? "px-2" : ""}
-                >
-                  {isMobile ? <Clock className="h-4 w-4" /> : "Today"}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigateWeek('prev')}
-                  className="px-2"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigateWeek('next')}
-                  className="px-2"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                {!isMobile && (
-                  <h2 className="text-base md:text-lg font-semibold ml-2">
-                    {format(currentDate, 'MMMM yyyy')}
-                  </h2>
-                )}
-              </div>
-            
-              {/* Right section - Filters and View selector */}
-              <div className="flex items-center gap-2">
-                {/* Calendar Filters */}
-                <CalendarFilters onFiltersChange={setFilters} />
-                
-                <Select value={view} onValueChange={(value: CalendarView) => setView(value)}>
-                  <SelectTrigger className={isMobile ? "w-20" : "w-32"}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="week">Week</SelectItem>
-                    <SelectItem value="month">Month</SelectItem>
-                    <SelectItem value="day">Day</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          {/* Google Calendar Sync Toolbar - stays sticky too */}
-          <CalendarSyncToolbar />
+          <CalendarSyncToolbar 
+            currentDate={currentDate}
+            view={view}
+            onTodayClick={() => setCurrentDate(new Date())}
+            onPrevClick={() => navigateWeek('prev')}
+            onNextClick={() => navigateWeek('next')}
+            onViewChange={(value: CalendarView) => setView(value)}
+            onFiltersChange={setFilters}
+          />
         </div>
 
         {/* Scrollable Calendar Content */}
