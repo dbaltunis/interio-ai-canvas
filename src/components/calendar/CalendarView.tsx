@@ -495,7 +495,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   };
 
   return (
-    <div className="h-screen flex w-full">
+    <div className="h-full flex w-full">
       {/* Collapsible Sidebar - manages its own collapse state */}
       <CalendarSidebar
         currentDate={currentDate}
