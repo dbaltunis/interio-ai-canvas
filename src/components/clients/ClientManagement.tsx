@@ -9,6 +9,9 @@ import { Plus, Mail, Phone, MapPin, Users, Building2, User } from "lucide-react"
 import { useClients } from "@/hooks/useClients";
 import { useFormattedDates } from "@/hooks/useFormattedDate";
 import { ClientCreateForm } from "./ClientCreateForm";
+import { useIsTablet } from "@/hooks/use-tablet";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileClientView } from "./MobileClientView";
 
 export const ClientManagement = () => {
   const { data: clients, isLoading } = useClients();
@@ -20,6 +23,8 @@ export const ClientManagement = () => {
     false
   );
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const isTablet = useIsTablet();
+  const isMobile = useIsMobile();
 
   const getTypeColor = (type: string) => {
     return type === "B2B" 
@@ -66,6 +71,11 @@ export const ClientManagement = () => {
         return 'bg-muted text-muted-foreground border-border';
     }
   };
+
+  // Return mobile view for mobile devices
+  if (isMobile) {
+    return <MobileClientView onClientClick={(client) => console.log('Client clicked:', client)} />;
+  }
 
   if (showCreateForm) {
     return <ClientCreateForm onBack={() => setShowCreateForm(false)} />;
@@ -159,8 +169,8 @@ export const ClientManagement = () => {
                   <TableHead>Name/Company</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Contact</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Created</TableHead>
+                  {!isTablet && <TableHead>Location</TableHead>}
+                  {!isTablet && <TableHead>Created</TableHead>}
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -224,12 +234,16 @@ export const ClientManagement = () => {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      {client.city && client.state ? `${client.city}, ${client.state}` : "Not specified"}
-                    </TableCell>
-                    <TableCell>
-                      {formattedDates[client.id] || 'Loading...'}
-                    </TableCell>
+                    {!isTablet && (
+                      <TableCell>
+                        {client.city && client.state ? `${client.city}, ${client.state}` : "Not specified"}
+                      </TableCell>
+                    )}
+                    {!isTablet && (
+                      <TableCell>
+                        {formattedDates[client.id] || 'Loading...'}
+                      </TableCell>
+                    )}
                     <TableCell>
                       <div className="flex space-x-2">
                         <Button variant="ghost" size="sm">

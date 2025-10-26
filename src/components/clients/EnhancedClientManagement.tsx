@@ -9,11 +9,16 @@ import { Plus, Download, Upload, Filter, Mail, Phone, MoreHorizontal, User, Buil
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useClients } from "@/hooks/useClients";
 import { ClientCreateForm } from "./ClientCreateForm";
+import { useIsTablet } from "@/hooks/use-tablet";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileClientView } from "./MobileClientView";
 
 export const EnhancedClientManagement = () => {
   const { data: clients, isLoading } = useClients();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const isTablet = useIsTablet();
+  const isMobile = useIsMobile();
 
   const getTypeColor = (type: string) => {
     return type === "B2B" 
@@ -60,6 +65,11 @@ export const EnhancedClientManagement = () => {
         return 'bg-muted text-muted-foreground border-border';
     }
   };
+
+  // Return mobile view for mobile devices
+  if (isMobile) {
+    return <MobileClientView onClientClick={(client) => console.log('Client clicked:', client)} />;
+  }
 
   if (showCreateForm) {
     return <ClientCreateForm onBack={() => setShowCreateForm(false)} />;
@@ -135,8 +145,8 @@ export const EnhancedClientManagement = () => {
                   <TableHead className="font-semibold">Client Info</TableHead>
                   <TableHead className="font-semibold">Type</TableHead>
                   <TableHead className="font-semibold">Contact</TableHead>
-                  <TableHead className="font-semibold">Location</TableHead>
-                  <TableHead className="font-semibold">Created</TableHead>
+                  {!isTablet && <TableHead className="font-semibold">Location</TableHead>}
+                  {!isTablet && <TableHead className="font-semibold">Created</TableHead>}
                   <TableHead className="font-semibold">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -202,16 +212,20 @@ export const EnhancedClientManagement = () => {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-gray-600">
-                        {client.city && client.state ? `${client.city}, ${client.state}` : "Not specified"}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-gray-600">
-                        {new Date(client.created_at).toLocaleDateString()}
-                      </span>
-                    </TableCell>
+                    {!isTablet && (
+                      <TableCell>
+                        <span className="text-sm text-gray-600">
+                          {client.city && client.state ? `${client.city}, ${client.state}` : "Not specified"}
+                        </span>
+                      </TableCell>
+                    )}
+                    {!isTablet && (
+                      <TableCell>
+                        <span className="text-sm text-gray-600">
+                          {new Date(client.created_at).toLocaleDateString()}
+                        </span>
+                      </TableCell>
+                    )}
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
