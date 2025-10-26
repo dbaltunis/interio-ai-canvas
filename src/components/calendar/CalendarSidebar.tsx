@@ -215,9 +215,9 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
   }
 
   return (
-    <div className="w-80 min-w-80 max-w-80 border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300">
+    <div className="w-80 min-w-80 max-w-80 border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300 overflow-hidden">
       <ScrollArea className="flex-1">
-        <div className="flex flex-col space-y-4 p-4">
+        <div className="flex flex-col space-y-4 p-4 overflow-hidden">
           {/* Header with Calendar title and Collapse Button */}
           <div className="flex items-center justify-between border-b pb-3">
             <h1 className="text-xl font-bold text-primary">Calendar</h1>
@@ -232,11 +232,11 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
             </Button>
           </div>
           {/* Mini Calendar */}
-          <Card className="flex-shrink-0">
+          <Card className="flex-shrink-0 overflow-hidden">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm">Calendar</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-hidden">
               <Calendar
                 mode="single"
                 selected={sidebarDate}
@@ -268,11 +268,11 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
           </Card>
 
           {/* Upcoming Events */}
-          <Card className="flex-1 min-h-0">
+          <Card className="flex-1 min-h-0 overflow-hidden">
             <CardHeader className="pb-3 flex-shrink-0">
               <CardTitle className="text-sm">Upcoming Events</CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 min-h-0">
+            <CardContent className="flex-1 min-h-0 overflow-hidden">
               <div className="space-y-3 max-h-64 overflow-y-auto">
                 {upcomingEvents.length > 0 ? (
                   upcomingEvents.map(event => {
@@ -280,11 +280,11 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
                     const eventColor = event.color || '#3b82f6'; // Default blue
                     
                     return (
-                      <div 
-                        key={event.id} 
-                        className="relative p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors flex-shrink-0 cursor-pointer group"
-                        onClick={() => setSelectedEvent(event)}
-                      >
+                       <div 
+                          key={event.id} 
+                          className="relative p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors flex-shrink-0 cursor-pointer group overflow-hidden"
+                          onClick={() => setSelectedEvent(event)}
+                        >
                         {/* Enhanced color indicator */}
                         <div 
                           className="absolute left-0 top-0 bottom-0 w-2 rounded-l-lg opacity-80 group-hover:opacity-100 transition-opacity"
@@ -350,14 +350,14 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
           </Card>
 
           {/* Appointment Scheduling */}
-          <Card className="flex-shrink-0">
+          <Card className="flex-shrink-0 overflow-hidden">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm">Appointment Scheduling</CardTitle>
               <p className="text-xs text-muted-foreground mt-1">
                 Manage booking templates and view appointments
               </p>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 overflow-hidden">
               {/* Primary Action - Create New Scheduler */}
               <Button 
                 onClick={onBookingLinks}
