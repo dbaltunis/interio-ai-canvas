@@ -147,7 +147,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
       </div>
       
       {/* Scrollable time grid */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-auto bg-white">
+      <div ref={scrollContainerRef} className="flex-1 overflow-auto bg-white pb-32">
         <div className="relative">
           {timeSlots.map((time, index) => {
             const isHourSlot = index % 2 === 0;

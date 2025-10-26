@@ -430,7 +430,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         </div>
         
         {/* Scrollable time grid - fixed overflow for proper sticky behavior */}
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden bg-card">
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden bg-card pb-32">
           <div className="flex bg-card">
             {/* Fixed time labels column */}
             <div className="w-16 border-r bg-card flex-shrink-0">
