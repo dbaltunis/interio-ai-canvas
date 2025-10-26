@@ -2,8 +2,16 @@ import { useUserDisplay } from "@/hooks/useUserDisplay";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { DashboardCustomizationButton } from "./DashboardCustomizationButton";
+import type { KPIConfig } from "@/hooks/useKPIConfig";
 
-export const WelcomeHeader = () => {
+interface WelcomeHeaderProps {
+  kpiConfigs?: KPIConfig[];
+  onToggleKPI?: (id: string) => void;
+}
+
+export const WelcomeHeader = ({ kpiConfigs, onToggleKPI }: WelcomeHeaderProps) => {
   const { displayName, initials, avatarUrl, isLoading: userLoading } = useUserDisplay();
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
 
@@ -31,6 +39,17 @@ export const WelcomeHeader = () => {
       {/* Background gradient mesh */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary/5 to-transparent opacity-60" />
       <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl opacity-30" />
+      
+      {/* Action buttons in top-right corner */}
+      <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+        <ThemeToggle />
+        {kpiConfigs && onToggleKPI && (
+          <DashboardCustomizationButton
+            kpiConfigs={kpiConfigs}
+            onToggleKPI={onToggleKPI}
+          />
+        )}
+      </div>
       
       <div className="relative flex items-center gap-4 sm:gap-6">
         <div className="relative shrink-0">

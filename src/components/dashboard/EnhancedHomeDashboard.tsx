@@ -1,6 +1,5 @@
 import { useKPIConfig } from "@/hooks/useKPIConfig";
 import { WelcomeHeader } from "./WelcomeHeader";
-import { DashboardCustomizationButton } from "./DashboardCustomizationButton";
 import { UpcomingEventsWidget } from "./UpcomingEventsWidget";
 import { StatusOverviewWidget } from "./StatusOverviewWidget";
 import { RecentEmailsWidget } from "./RecentEmailsWidget";
@@ -10,11 +9,10 @@ import { ShopifyConnectionCTA } from "./ShopifyConnectionCTA";
 import { ShopifyAnalyticsCard } from "./ShopifyAnalyticsCard";
 import { DraggableKPISection } from "./DraggableKPISection";
 import { TeamMembersWidget } from "./TeamMembersWidget";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useEmailKPIs } from "@/hooks/useEmails";
-import { Users, FileText, Package, DollarSign, Mail, MousePointerClick, Clock, TrendingUp } from "lucide-react";
+import { Users, FileText, DollarSign, Mail, MousePointerClick, Clock } from "lucide-react";
 
 export const EnhancedHomeDashboard = () => {
   const { kpiConfigs, toggleKPI, reorderKPIs, getEnabledKPIs } = useKPIConfig();
@@ -115,18 +113,10 @@ export const EnhancedHomeDashboard = () => {
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
-        <div className="flex-1 w-full">
-          <WelcomeHeader />
-        </div>
-        <div className="shrink-0 sm:pt-2 w-full sm:w-auto flex items-center gap-2">
-          <ThemeToggle />
-          <DashboardCustomizationButton
-            kpiConfigs={kpiConfigs}
-            onToggleKPI={toggleKPI}
-          />
-        </div>
-      </div>
+      <WelcomeHeader 
+        kpiConfigs={kpiConfigs}
+        onToggleKPI={toggleKPI}
+      />
 
       {/* Top Widgets Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
