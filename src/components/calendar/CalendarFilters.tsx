@@ -94,7 +94,7 @@ export const CalendarFilters = ({ onFiltersChange }: CalendarFiltersProps) => {
           className={`h-7 relative ${hasActiveFilters ? 'border-primary bg-primary/5' : ''}`}
         >
           <Filter className="h-4 w-4" />
-          <span className="ml-2 hidden lg:inline">Filters</span>
+          <span className="ml-2 hidden xl:inline">Filters</span>
           {hasActiveFilters && (
             <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
           )}

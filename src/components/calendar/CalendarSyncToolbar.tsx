@@ -169,19 +169,19 @@ export const CalendarSyncToolbar = ({
                 onCheckedChange={setAutoSyncEnabled}
                 className="scale-75"
               />
-              <Label htmlFor="auto-sync" className="text-[10px] sm:text-[11px] cursor-pointer text-muted-foreground whitespace-nowrap hidden sm:block">
+              <Label htmlFor="auto-sync" className="text-[10px] sm:text-[11px] cursor-pointer text-muted-foreground whitespace-nowrap hidden md:block">
                 Auto 5m
               </Label>
             </div>
 
             {/* Manual sync buttons */}
-            {/* Manual sync buttons - Hidden on mobile */}
+            {/* Manual sync buttons - Hidden on smaller screens */}
             <Button
               variant="ghost"
               size="sm"
               onClick={() => syncFromGoogle()}
               disabled={isSyncingFromGoogle || isSyncingAll}
-              className="h-6 px-1.5 sm:px-2 gap-1 text-[11px] hidden lg:flex"
+              className="h-6 px-1.5 sm:px-2 gap-1 text-[11px] hidden xl:flex"
               title="Import from Google Calendar"
             >
               {isSyncingFromGoogle ? (
@@ -197,7 +197,7 @@ export const CalendarSyncToolbar = ({
               size="sm"
               onClick={() => syncAllToGoogle()}
               disabled={isSyncingFromGoogle || isSyncingAll}
-              className="h-6 px-1.5 sm:px-2 gap-1 text-[11px] hidden lg:flex"
+              className="h-6 px-1.5 sm:px-2 gap-1 text-[11px] hidden xl:flex"
               title="Export to Google Calendar"
             >
               {isSyncingAll ? (
