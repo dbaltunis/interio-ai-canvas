@@ -495,9 +495,9 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   };
 
   return (
-    <div className="h-screen flex overflow-hidden">
+    <div className="h-screen flex w-full">
       {/* Collapsible Sidebar - manages its own collapse state */}
-      <CalendarSidebar 
+      <CalendarSidebar
         currentDate={currentDate}
         onDateChange={setCurrentDate}
         onBookingLinks={() => setShowSchedulerSlider(true)}

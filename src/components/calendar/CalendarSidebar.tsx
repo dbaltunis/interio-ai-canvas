@@ -197,13 +197,14 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
 
   return (
     <div 
-      className={`border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300 relative z-10 ${
+      className={`border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300 relative z-30 ${
         isCollapsed ? 'w-12 min-w-12' : 'w-80 min-w-80 max-w-80'
       }`}
+      style={{ willChange: 'width' }}
     >
       {isCollapsed ? (
         <>
-          <div className="p-2 border-b bg-background">
+          <div className="p-2 border-b bg-background relative z-40">
             <Button
               variant="ghost"
               size="icon"
@@ -238,7 +239,7 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
         <ScrollArea className="flex-1">
           <div className="flex flex-col space-y-4 p-4">
             {/* Header with Calendar title and Collapse Button */}
-            <div className="flex items-center justify-between border-b pb-3 bg-background sticky top-0 z-20">
+            <div className="flex items-center justify-between border-b pb-3 bg-background sticky top-0 z-40">
               <h1 className="text-xl font-bold text-primary">Calendar</h1>
               <Button
                 variant="ghost"
