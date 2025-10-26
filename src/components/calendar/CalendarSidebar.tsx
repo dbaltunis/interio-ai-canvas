@@ -36,9 +36,11 @@ interface CalendarSidebarProps {
 export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: CalendarSidebarProps) => {
   const [isCollapsed, setIsCollapsed] = useState(() => {
     try {
-      return localStorage.getItem("calendar.sidebarCollapsed") === "true";
+      const stored = localStorage.getItem("calendar.sidebarCollapsed");
+      // Default to collapsed (true) if no stored value
+      return stored === null ? true : stored === "true";
     } catch {
-      return false;
+      return true; // Default to collapsed
     }
   });
 
@@ -179,13 +181,13 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
 
   if (isCollapsed) {
     return (
-      <div className="w-12 min-w-12 border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300">
-        <div className="p-2 border-b">
+      <div className="w-12 min-w-12 border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300 relative z-10">
+        <div className="p-2 border-b bg-background">
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleCollapse}
-            className="w-8 h-8"
+            className="w-8 h-8 hover:bg-accent"
             title="Expand sidebar"
           >
             <ChevronRight className="h-4 w-4" />
@@ -215,17 +217,17 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
   }
 
   return (
-    <div className="w-80 min-w-80 max-w-80 border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300">
+    <div className="w-80 min-w-80 max-w-80 border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300 relative z-10">
       <ScrollArea className="flex-1">
         <div className="flex flex-col space-y-4 p-4">
           {/* Header with Calendar title and Collapse Button */}
-          <div className="flex items-center justify-between border-b pb-3">
+          <div className="flex items-center justify-between border-b pb-3 bg-background sticky top-0 z-20">
             <h1 className="text-xl font-bold text-primary">Calendar</h1>
             <Button
               variant="ghost"
               size="sm"
               onClick={toggleCollapse}
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 hover:bg-accent"
               title="Collapse sidebar"
             >
               <ChevronLeft className="h-4 w-4" />
