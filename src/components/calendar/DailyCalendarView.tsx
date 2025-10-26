@@ -147,7 +147,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
       </div>
       
       {/* Scrollable time grid */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-auto">
+      <div ref={scrollContainerRef} className="flex-1 overflow-auto bg-white">
         <div className="relative">
           {timeSlots.map((time, index) => {
             const isHourSlot = index % 2 === 0;
@@ -168,7 +168,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                 
                 {/* Time slot */}
                 <div 
-                  className="flex-1 hover:bg-accent/30 cursor-pointer transition-colors relative"
+                  className="flex-1 hover:bg-accent/30 cursor-pointer transition-colors relative bg-white"
                   onClick={() => onTimeSlotClick?.(currentDate, time)}
                   title={`${format(currentDate, 'MMM d')} at ${time}`}
                 >
@@ -219,7 +219,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                 return (
                   <div
                     key={event.id}
-                    className="absolute left-2 right-2 rounded-lg border bg-card/95 backdrop-blur-sm hover:bg-card hover:shadow-lg transition-all pointer-events-auto cursor-pointer group overflow-hidden"
+                    className="absolute left-2 right-2 rounded-lg border border-border bg-white shadow-sm hover:shadow-md transition-all pointer-events-auto cursor-pointer group overflow-hidden"
                     style={{
                       top: `${style.top}px`,
                       height: `${style.height}px`,
@@ -236,7 +236,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                     
                     <div className="ml-3 p-2 pr-8 h-full flex flex-col justify-center">
                       {/* Title */}
-                      <div className="font-medium text-sm leading-tight line-clamp-1 group-hover:text-primary transition-colors">
+                      <div className="font-medium text-sm leading-tight line-clamp-1 group-hover:text-primary transition-colors text-foreground">
                         {event.title}
                       </div>
                       
@@ -278,7 +278,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                     
                     {/* Color dot indicator in top right */}
                     <div 
-                      className="absolute top-2 right-2 w-3 h-3 rounded-full border border-white/50 shadow-sm"
+                      className="absolute top-2 right-2 w-3 h-3 rounded-full border-2 border-white shadow-sm"
                       style={{ backgroundColor: eventColor }}
                     />
                   </div>
