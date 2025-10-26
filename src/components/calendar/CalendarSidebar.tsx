@@ -221,13 +221,13 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
         ) : (
           <div className="flex flex-col space-y-4 p-4">
             {/* Header with Calendar title and Collapse Button */}
-            <div className="flex items-center justify-between border-b pb-3 bg-background sticky top-0 z-40">
+            <div className="flex items-center justify-between border-b pb-3 mb-4 bg-background sticky top-0 z-50 -mt-0">
               <h1 className="text-xl font-bold text-primary">Calendar</h1>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={toggleCollapse}
-                className="h-8 w-8 p-0 hover:bg-accent"
+                className="h-8 w-8 p-0 hover:bg-accent shrink-0"
                 title="Collapse sidebar"
               >
                 <ChevronLeft className="h-4 w-4" />
