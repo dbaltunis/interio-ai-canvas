@@ -14,14 +14,13 @@ import { ShopifyAnalyticsCard } from "./ShopifyAnalyticsCard";
 import { DraggableKPISection } from "./DraggableKPISection";
 import { TeamMembersWidget } from "./TeamMembersWidget";
 import { RecentlyCreatedJobsWidget } from "./RecentlyCreatedJobsWidget";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useEmailKPIs } from "@/hooks/useEmails";
 import { ShopifyIntegrationDialog } from "@/components/library/ShopifyIntegrationDialog";
-import { Users, FileText, Package, DollarSign, Mail, MousePointerClick, Clock, TrendingUp, Settings2, Store } from "lucide-react";
+import { Users, FileText, Package, DollarSign, Mail, MousePointerClick, Clock, TrendingUp, Store } from "lucide-react";
 
 export const EnhancedHomeDashboard = () => {
   const [showShopifyDialog, setShowShopifyDialog] = useState(false);
@@ -127,23 +126,7 @@ export const EnhancedHomeDashboard = () => {
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
-        <div className="flex-1 w-full">
-          <WelcomeHeader />
-        </div>
-        <div className="shrink-0 sm:pt-2 w-full sm:w-auto flex items-center gap-2">
-          <ThemeToggle />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowWidgetCustomizer(true)}
-            className="gap-2"
-          >
-            <Settings2 className="h-4 w-4" />
-            <span className="hidden sm:inline">Customize</span>
-          </Button>
-        </div>
-      </div>
+      <WelcomeHeader onCustomizeClick={() => setShowWidgetCustomizer(true)} />
 
       {/* Dynamic Widgets Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">

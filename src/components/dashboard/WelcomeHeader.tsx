@@ -2,10 +2,18 @@ import { useUserDisplay } from "@/hooks/useUserDisplay";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Settings2, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
 
-export const WelcomeHeader = () => {
+interface WelcomeHeaderProps {
+  onCustomizeClick: () => void;
+}
+
+export const WelcomeHeader = ({ onCustomizeClick }: WelcomeHeaderProps) => {
   const { displayName, initials, avatarUrl, isLoading: userLoading } = useUserDisplay();
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
+  const { theme, setTheme } = useTheme();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -41,9 +49,40 @@ export const WelcomeHeader = () => {
         <h1 className="text-lg font-semibold text-foreground truncate">
           {getGreeting()}, {displayName}
         </h1>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          {stats?.pendingQuotes || 0} pending quotes • {stats?.totalClients || 0} clients
-        </p>
+        <div className="flex items-center gap-3 mt-1 flex-wrap">
+          <p className="text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground">{stats?.pendingQuotes || 0}</span> pending quotes
+          </p>
+          <span className="text-muted-foreground/40">•</span>
+          <p className="text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground">{stats?.totalClients || 0}</span> clients
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1 shrink-0">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          className="h-8 w-8 p-0 hover:bg-primary/10"
+          title="Toggle theme"
+        >
+          {theme === "dark" ? (
+            <Sun className="h-4 w-4" />
+          ) : (
+            <Moon className="h-4 w-4" />
+          )}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onCustomizeClick}
+          className="h-8 w-8 p-0 hover:bg-primary/10"
+          title="Customize dashboard"
+        >
+          <Settings2 className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );
