@@ -7,7 +7,8 @@ import type {
 } from "@/components/ui/toast"
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 3000 // Changed to 3 seconds
+const TOAST_REMOVE_DELAY = 3000 // 3 seconds for success toasts
+const ERROR_TOAST_REMOVE_DELAY = Infinity // Error toasts persist until manually closed
 
 type ToasterToast = ToastProps & {
   id: string
@@ -150,10 +151,21 @@ function toast({ ...props }: Toast) {
     })
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
 
-  // Auto-dismiss after delay
-  const timeout = setTimeout(() => {
-    dismiss()
-  }, TOAST_REMOVE_DELAY)
+  // Determine if this is an error/destructive toast
+  const isError = props.variant === "destructive" || 
+                  props.title?.toString().toLowerCase().includes("error") ||
+                  props.title?.toString().toLowerCase().includes("failed");
+  
+  // Error toasts don't auto-dismiss, success toasts do
+  const delay = isError ? ERROR_TOAST_REMOVE_DELAY : TOAST_REMOVE_DELAY;
+  
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  
+  if (delay !== Infinity) {
+    timeout = setTimeout(() => {
+      dismiss()
+    }, delay);
+  }
 
   dispatch({
     type: "ADD_TOAST",
@@ -163,7 +175,7 @@ function toast({ ...props }: Toast) {
       open: true,
       onOpenChange: (open) => {
         if (!open) {
-          clearTimeout(timeout)
+          if (timeout) clearTimeout(timeout)
           dismiss()
         }
       },

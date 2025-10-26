@@ -54,10 +54,7 @@ export const EditableFollowUpManager = ({ clientId }: EditableFollowUpManagerPro
 
       if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: "Follow-up reminder created",
-      });
+      // Removed unnecessary success toast
 
       setIsAddDialogOpen(false);
       setNewReminder({
@@ -88,10 +85,7 @@ export const EditableFollowUpManager = ({ clientId }: EditableFollowUpManagerPro
 
       if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: "Reminder updated",
-      });
+      // Removed unnecessary success toast
 
       setEditingReminder(null);
       queryClient.invalidateQueries({ queryKey: ["follow-up-reminders"] });
@@ -113,10 +107,7 @@ export const EditableFollowUpManager = ({ clientId }: EditableFollowUpManagerPro
 
       if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: "Reminder deleted",
-      });
+      // Removed unnecessary success toast
 
       queryClient.invalidateQueries({ queryKey: ["follow-up-reminders"] });
     } catch (error) {

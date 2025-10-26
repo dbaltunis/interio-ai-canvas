@@ -87,10 +87,7 @@ export const useCreateActivity = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["client-activities", data.client_id] });
-      toast({
-        title: "Activity logged",
-        description: "Activity has been recorded successfully",
-      });
+      // Removed unnecessary success toast
     },
     onError: (error: any) => {
       console.error("Failed to create activity:", error);

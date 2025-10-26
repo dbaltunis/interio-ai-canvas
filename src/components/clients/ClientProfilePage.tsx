@@ -81,10 +81,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         id: client.id,
         ...editedClient,
       });
-      toast({
-        title: "Success",
-        description: "Client updated successfully",
-      });
+      // Removed unnecessary success toast
       setIsEditing(false);
     } catch (error) {
       toast({
@@ -98,10 +95,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   const handleSyncDealValue = async () => {
     if (calculatedDealValue > 0) {
       setEditedClient({ ...editedClient, deal_value: calculatedDealValue });
-      toast({
-        title: "Deal value updated",
-        description: `Set to $${calculatedDealValue.toLocaleString()} from project quotes`,
-      });
+      // Removed unnecessary success toast - value updated silently
     } else {
       toast({
         title: "No quotes found",

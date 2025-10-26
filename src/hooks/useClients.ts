@@ -70,10 +70,7 @@ export const useCreateClient = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
-      toast({
-        title: "Success",
-        description: "Client created successfully",
-      });
+      // Removed unnecessary success toast
     },
     onError: (error: any) => {
       console.error("Failed to create client:", error);
@@ -104,10 +101,7 @@ export const useUpdateClient = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
-      toast({
-        title: "Success",
-        description: "Client updated successfully",
-      });
+      // Removed unnecessary success toast
     },
     onError: (error: any) => {
       console.error("Failed to update client:", error);
@@ -151,12 +145,8 @@ export const useDeleteClient = () => {
     onSuccess: () => {
       console.log("Client deletion successful, invalidating queries");
       queryClient.invalidateQueries({ queryKey: ["clients"] });
-      console.log("Queries invalidated, showing toast");
-      toast({
-        title: "Success",
-        description: "Client deleted successfully",
-      });
-      console.log("Toast shown, deletion complete");
+      console.log("Queries invalidated, deletion complete");
+      // Removed unnecessary success toast
     },
     onError: (error: any) => {
       console.error("Failed to delete client:", error);
@@ -190,10 +180,7 @@ export const useUpdateClientStage = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
-      toast({
-        title: "Success",
-        description: "Client stage updated successfully",
-      });
+      // Removed unnecessary success toast
     },
     onError: (error: any) => {
       console.error("Failed to update client stage:", error);

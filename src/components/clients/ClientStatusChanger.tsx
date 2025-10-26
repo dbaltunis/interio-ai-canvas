@@ -40,10 +40,7 @@ export const ClientStatusChanger = ({ clientId, currentStatus, clientName }: Cli
         stage_changed_at: new Date().toISOString()
       });
       
-      toast({
-        title: "Status Updated",
-        description: `${clientName} moved to ${FUNNEL_STAGES.find(s => s.value === newStatus)?.label}`,
-      });
+      // Removed unnecessary success toast - status change is visual
     } catch (error) {
       console.error("Failed to update client status:", error);
     } finally {
