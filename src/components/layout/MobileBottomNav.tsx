@@ -41,7 +41,7 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 lg:hidden z-50 glass-morphism-strong border-t border-border/50 pb-safe">
+      <nav className="fixed bottom-0 left-0 right-0 lg:hidden z-50 bg-background/95 backdrop-blur-md border-t border-border shadow-lg pb-safe">
         <div className="relative grid grid-cols-5 h-16">
           {/* First two items */}
           {navItems.slice(0, 2).map((item) => {
@@ -52,37 +52,37 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
                 key={item.id}
                 variant="ghost"
                 className={cn(
-                  "h-full rounded-none flex flex-col items-center justify-center gap-1 transition-all duration-200",
+                  "h-full rounded-none flex flex-col items-center justify-center gap-1 transition-all duration-200 relative",
                   isActive 
-                    ? "text-primary" 
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "text-primary bg-primary/10" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 )}
                 onClick={() => onTabChange(item.id)}
               >
                 <Icon className={cn(
                   "transition-all duration-200",
-                  isActive ? "h-5 w-5" : "h-4 w-4"
+                  isActive ? "h-6 w-6" : "h-5 w-5"
                 )} />
                 <span className={cn(
                   "text-[10px] font-medium transition-all duration-200",
-                  isActive ? "opacity-100" : "opacity-70"
+                  isActive ? "opacity-100 font-semibold" : "opacity-70"
                 )}>
                   {item.label}
                 </span>
                 {isActive && (
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-primary rounded-t-full" />
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-1 bg-primary rounded-t-full" />
                 )}
               </Button>
             );
           })}
           
-          {/* Center Create Button with InterioApp Brand Gradient */}
+          {/* Center Create Button - Clean primary color */}
           <div className="relative flex items-center justify-center">
             <Button
               onClick={() => setShowCreateDialog(true)}
-              className="absolute -top-6 h-14 w-14 rounded-full shadow-2xl hover:shadow-[0_0_40px_hsl(var(--primary)/0.6)] transition-all duration-300 hover:scale-110 border-2 border-white/30 bg-gradient-to-r from-primary via-secondary to-accent"
+              className="absolute -top-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 bg-primary hover:bg-primary/90 text-primary-foreground border-4 border-background"
             >
-              <Plus className="h-7 w-7 text-white drop-shadow-lg" />
+              <Plus className="h-6 w-6" />
             </Button>
           </div>
           
@@ -96,25 +96,25 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
                 key={item.id}
                 variant="ghost"
                 className={cn(
-                  "h-full rounded-none flex flex-col items-center justify-center gap-1 transition-all duration-200",
+                  "h-full rounded-none flex flex-col items-center justify-center gap-1 transition-all duration-200 relative",
                   isActive 
-                    ? "text-primary" 
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "text-primary bg-primary/10" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 )}
                 onClick={() => onTabChange(item.id)}
               >
                 <Icon className={cn(
                   "transition-all duration-200",
-                  isActive ? "h-5 w-5" : "h-4 w-4"
+                  isActive ? "h-6 w-6" : "h-5 w-5"
                 )} />
                 <span className={cn(
                   "text-[10px] font-medium transition-all duration-200",
-                  isActive ? "opacity-100" : "opacity-70"
+                  isActive ? "opacity-100 font-semibold" : "opacity-70"
                 )}>
                   {item.label}
                 </span>
                 {isActive && (
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-primary rounded-t-full" />
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-1 bg-primary rounded-t-full" />
                 )}
               </Button>
             );
