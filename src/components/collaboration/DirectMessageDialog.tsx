@@ -143,35 +143,24 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
           {activeConversation && displayUserData ? (
             <>
               {/* Chat Header */}
-              <div className="px-4 py-3 border-b border-border/50 bg-background/50 backdrop-blur-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={displayUserData.user_profile?.avatar_url} />
-                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                        {getInitials(displayUserData.user_profile?.display_name || '')}
-                      </AvatarFallback>
-                    </Avatar>
-                    
-                    <div>
-                      <h3 className="font-semibold text-foreground">
-                        {formatDisplayName(displayUserData.user_profile?.display_name || '')}
-                      </h3>
-                      <p className="text-xs text-muted-foreground capitalize flex items-center gap-1">
-                        <span className={`h-2 w-2 rounded-full ${getStatusColor(('status' in displayUserData ? displayUserData.status : null) || 'offline')}`} />
-                        {getStatusText(('status' in displayUserData ? displayUserData.status : null) || 'offline')}
-                      </p>
-                    </div>
-                  </div>
+              <div className="px-4 py-3 border-b border-border/30 bg-background/50 backdrop-blur-sm">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={displayUserData.user_profile?.avatar_url} />
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                      {getInitials(displayUserData.user_profile?.display_name || '')}
+                    </AvatarFallback>
+                  </Avatar>
                   
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={() => onOpenChange(false)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <div>
+                    <h3 className="font-semibold text-foreground">
+                      {formatDisplayName(displayUserData.user_profile?.display_name || '')}
+                    </h3>
+                    <p className="text-xs text-muted-foreground capitalize flex items-center gap-1">
+                      <span className={`h-2 w-2 rounded-full ${getStatusColor(('status' in displayUserData ? displayUserData.status : null) || 'offline')}`} />
+                      {getStatusText(('status' in displayUserData ? displayUserData.status : null) || 'offline')}
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -255,7 +244,7 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
               </div>
 
               {/* Message Input */}
-              <div className="p-3 border-t border-border/50 bg-background/95 backdrop-blur-sm">
+              <div className="p-3 border-t border-border/30 bg-background/95 backdrop-blur-sm">
                 <div className="flex gap-2 items-end">
                   <div className="flex-1 relative">
                     <Input
