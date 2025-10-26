@@ -1105,89 +1105,104 @@ export const UnifiedInventoryDialog = ({
                       </Alert>
                     )}
                     
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div>
-                        <Label htmlFor="unit">Unit</Label>
-                        <Select 
-                          value={formData.unit} 
-                          onValueChange={(value) => setFormData({ ...formData, unit: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="meters">Meters</SelectItem>
-                            <SelectItem value="yards">Yards</SelectItem>
-                            <SelectItem value="sqm">Square Meters</SelectItem>
-                            <SelectItem value="pieces">Pieces</SelectItem>
-                            <SelectItem value="rolls">Rolls</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="cost_price">
-                          Cost Price (Buying) per {formData.unit} ($)
-                        </Label>
-                        <Input
-                          id="cost_price"
-                          type="number"
-                          step="0.01"
-                          value={formData.cost_price || ""}
-                          onChange={(e) => setFormData({ ...formData, cost_price: parseFloat(e.target.value) || 0 })}
-                          placeholder="20.00"
-                          required
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">What you pay to supplier</p>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="selling_price">
-                          Selling Price (Retail) per {formData.unit} ($)
-                        </Label>
-                        <Input
-                          id="selling_price"
-                          type="number"
-                          step="0.01"
-                          value={formData.selling_price || ""}
-                          onChange={(e) => setFormData({ ...formData, selling_price: parseFloat(e.target.value) || 0 })}
-                          placeholder="40.00"
-                          required
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">What customer pays</p>
-                      </div>
-                    </div>
-
-                    {/* Profit Analysis - Admin Only */}
-                    {canViewMarkup && formData.cost_price > 0 && formData.selling_price > 0 && (
-                      <Card className="bg-muted/50">
-                        <CardHeader>
-                          <CardTitle className="text-base flex items-center gap-2">
-                            <TrendingUp className="h-4 w-4" />
-                            Profit Analysis
-                          </CardTitle>
-                          <CardDescription>Calculated automatically based on your pricing</CardDescription>
-                        </CardHeader>
-                        <CardContent className="grid gap-3 md:grid-cols-3">
+                    {/* Show simple pricing for non-track/rod items */}
+                    {formData.subcategory !== "track" && formData.subcategory !== "rod" && (
+                      <>
+                        <div className="grid gap-4 md:grid-cols-2">
                           <div>
-                            <Label className="text-xs text-muted-foreground">Profit per Unit</Label>
-                            <p className="text-xl font-bold">${profitPerUnit.toFixed(2)}</p>
+                            <Label htmlFor="unit">Unit</Label>
+                            <Select 
+                              value={formData.unit} 
+                              onValueChange={(value) => setFormData({ ...formData, unit: value })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="meters">Meters</SelectItem>
+                                <SelectItem value="yards">Yards</SelectItem>
+                                <SelectItem value="sqm">Square Meters</SelectItem>
+                                <SelectItem value="pieces">Pieces</SelectItem>
+                                <SelectItem value="rolls">Rolls</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
+
                           <div>
-                            <Label className="text-xs text-muted-foreground">Markup %</Label>
-                            <p className="text-xl font-bold">{markupPercentage.toFixed(1)}%</p>
+                            <Label htmlFor="cost_price">
+                              Cost Price (Buying) per {formData.unit} ($)
+                            </Label>
+                            <Input
+                              id="cost_price"
+                              type="number"
+                              step="0.01"
+                              value={formData.cost_price || ""}
+                              onChange={(e) => setFormData({ ...formData, cost_price: parseFloat(e.target.value) || 0 })}
+                              placeholder="20.00"
+                              required
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">What you pay to supplier</p>
                           </div>
+
                           <div>
-                            <Label className="text-xs text-muted-foreground">Profit Margin %</Label>
-                            <p className={`text-xl font-bold ${getMarginColor()}`}>
-                              {marginPercentage.toFixed(1)}%
-                              {marginPercentage >= 30 && " 🟢"}
-                              {marginPercentage >= 15 && marginPercentage < 30 && " 🟡"}
-                              {marginPercentage < 15 && " 🔴"}
-                            </p>
+                            <Label htmlFor="selling_price">
+                              Selling Price (Retail) per {formData.unit} ($)
+                            </Label>
+                            <Input
+                              id="selling_price"
+                              type="number"
+                              step="0.01"
+                              value={formData.selling_price || ""}
+                              onChange={(e) => setFormData({ ...formData, selling_price: parseFloat(e.target.value) || 0 })}
+                              placeholder="40.00"
+                              required
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">What customer pays</p>
                           </div>
-                        </CardContent>
-                      </Card>
+                        </div>
+
+                        {/* Profit Analysis - Admin Only */}
+                        {canViewMarkup && formData.cost_price > 0 && formData.selling_price > 0 && (
+                          <Card className="bg-muted/50">
+                            <CardHeader>
+                              <CardTitle className="text-base flex items-center gap-2">
+                                <TrendingUp className="h-4 w-4" />
+                                Profit Analysis
+                              </CardTitle>
+                              <CardDescription>Calculated automatically based on your pricing</CardDescription>
+                            </CardHeader>
+                            <CardContent className="grid gap-3 md:grid-cols-3">
+                              <div>
+                                <Label className="text-xs text-muted-foreground">Profit per Unit</Label>
+                                <p className="text-xl font-bold">${profitPerUnit.toFixed(2)}</p>
+                              </div>
+                              <div>
+                                <Label className="text-xs text-muted-foreground">Markup %</Label>
+                                <p className="text-xl font-bold">{markupPercentage.toFixed(1)}%</p>
+                              </div>
+                              <div>
+                                <Label className="text-xs text-muted-foreground">Profit Margin %</Label>
+                                <p className={`text-xl font-bold ${getMarginColor()}`}>
+                                  {marginPercentage.toFixed(1)}%
+                                  {marginPercentage >= 30 && " 🟢"}
+                                  {marginPercentage >= 15 && marginPercentage < 30 && " 🟡"}
+                                  {marginPercentage < 15 && " 🔴"}
+                                </p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </>
+                    )}
+
+                    {/* Info for track/rod items - they use pricing grid below */}
+                    {(formData.subcategory === "track" || formData.subcategory === "rod") && (
+                      <Alert>
+                        <DollarSign className="h-4 w-4" />
+                        <AlertDescription>
+                          Track and rod pricing is managed through the Length-Based Pricing Grid below
+                        </AlertDescription>
+                      </Alert>
                     )}
                   </CardContent>
                 </Card>
