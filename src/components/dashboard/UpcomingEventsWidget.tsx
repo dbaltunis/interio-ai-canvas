@@ -79,6 +79,7 @@ export const UpcomingEventsWidget = () => {
                 key={apt.id}
                 className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/20 hover:bg-card/80 transition-all cursor-pointer hover-lift"
                 onClick={() => {
+                  console.log('[UpcomingEvents] Clicking event, id:', apt.id, 'title:', apt.title);
                   sessionStorage.setItem('openEventId', apt.id);
                   navigate(`/?tab=calendar&eventId=${apt.id}`);
                 }}

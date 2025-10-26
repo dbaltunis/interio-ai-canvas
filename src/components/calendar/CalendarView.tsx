@@ -79,6 +79,9 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
     statuses: []
   });
   
+  // Log on every render to debug
+  console.log('[CalendarView] Component rendering, searchParams:', Object.fromEntries(searchParams.entries()));
+  
   // Enable real-time updates
   useRealtimeBookings();
   
