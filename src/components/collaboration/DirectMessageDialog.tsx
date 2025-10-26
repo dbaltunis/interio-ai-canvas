@@ -138,7 +138,7 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl h-[85vh] p-0 flex flex-col overflow-hidden rounded-2xl">
+      <DialogContent className="max-w-[95vw] w-full h-[95vh] p-0 flex flex-col overflow-hidden rounded-2xl">
         <div className="flex flex-col h-full bg-background">
           {activeConversation && displayUserData ? (
             <>
