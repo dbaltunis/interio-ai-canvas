@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useCreateScheduler, useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface AppointmentSchedulerSliderProps {
   isOpen: boolean;
@@ -598,46 +599,99 @@ export const AppointmentSchedulerSlider = ({ isOpen, onClose }: AppointmentSched
               </div>
             ) : (
               /* Weekly Preview */
-              <div className="space-y-4">
-                <div className="text-center">
-                  <h3 className="text-lg font-medium">{form.name || 'Unnamed Schedule'}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {form.duration} min appointments • {form.bufferTime} min buffer
-                  </p>
+              <div className="space-y-6">
+                {/* Header */}
+                <div className="text-center space-y-2 pb-4 border-b">
+                  <h3 className="text-xl md:text-2xl font-semibold">
+                    {form.name || 'Unnamed Schedule'}
+                  </h3>
+                  <div className="flex items-center justify-center gap-3 text-sm text-muted-foreground flex-wrap">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted rounded-full">
+                      <Clock className="h-4 w-4" />
+                      <span>{form.duration} min</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted rounded-full">
+                      <span className="font-medium">Buffer:</span>
+                      <span>{form.bufferTime} min</span>
+                    </div>
+                  </div>
                 </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Available Time Slots</CardTitle>
+                <Card className="border-2">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      Available Time Slots
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                      {generateWeeklyPreview().length} slots available per week
+                    </p>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-7 gap-2">
-                      {WEEKDAYS.map(day => (
-                        <div key={day.key} className="text-center">
-                          <div className="font-medium text-sm mb-2 p-2 bg-muted rounded">
-                            {day.short}
-                          </div>
-                          <div className="space-y-1">
-                            {generateWeeklyPreview()
-                              .filter(slot => slot.day === day.short)
-                              .slice(0, 8)
-                              .map((slot, index) => (
-                                <div
-                                  key={index}
-                                  className="text-xs p-1 bg-primary/10 text-primary rounded border"
-                                >
-                                  {slot.time}
-                                </div>
-                              ))}
-                            {generateWeeklyPreview().filter(slot => slot.day === day.short).length > 8 && (
-                              <div className="text-xs text-muted-foreground">
-                                +{generateWeeklyPreview().filter(slot => slot.day === day.short).length - 8} more
+                    <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+                      <div className="grid grid-cols-7 gap-1.5 md:gap-3 min-w-[600px] md:min-w-0">
+                        {WEEKDAYS.map(day => {
+                          const daySlots = generateWeeklyPreview().filter(slot => slot.day === day.short);
+                          const isEnabled = form.availability[day.key]?.enabled;
+                          
+                          return (
+                            <div key={day.key} className="flex flex-col min-w-0">
+                              {/* Day header */}
+                              <div className={cn(
+                                "font-semibold text-xs md:text-sm py-2 md:py-2.5 px-1 md:px-2 rounded-t-lg text-center transition-colors",
+                                isEnabled 
+                                  ? "bg-primary text-primary-foreground" 
+                                  : "bg-muted text-muted-foreground"
+                              )}>
+                                <div className="hidden md:block">{day.label}</div>
+                                <div className="md:hidden">{day.short}</div>
                               </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                              
+                              {/* Time slots */}
+                              <div className={cn(
+                                "border rounded-b-lg p-1.5 md:p-2 min-h-[200px] space-y-1",
+                                isEnabled ? "bg-background" : "bg-muted/30"
+                              )}>
+                                {!isEnabled ? (
+                                  <div className="flex items-center justify-center h-full text-xs text-muted-foreground">
+                                    Closed
+                                  </div>
+                                ) : daySlots.length === 0 ? (
+                                  <div className="flex items-center justify-center h-full text-xs text-muted-foreground">
+                                    No slots
+                                  </div>
+                                ) : (
+                                  <>
+                                    {daySlots.slice(0, 6).map((slot, index) => (
+                                      <div
+                                        key={index}
+                                        className="text-[10px] md:text-xs py-1 md:py-1.5 px-1 md:px-2 bg-primary/10 hover:bg-primary/20 text-primary font-medium rounded text-center transition-colors whitespace-nowrap"
+                                      >
+                                        {slot.time}
+                                      </div>
+                                    ))}
+                                    {daySlots.length > 6 && (
+                                      <div className="text-[10px] md:text-xs text-center py-1 text-muted-foreground font-medium">
+                                        +{daySlots.length - 6} more
+                                      </div>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
+                    
+                    {/* Summary */}
+                    {generateWeeklyPreview().length > 0 && (
+                      <div className="mt-4 pt-4 border-t text-center">
+                        <p className="text-sm text-muted-foreground">
+                          Total: <span className="font-semibold text-foreground">{generateWeeklyPreview().length}</span> available slots per week
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
