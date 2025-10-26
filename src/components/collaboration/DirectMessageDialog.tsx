@@ -11,8 +11,8 @@ import { useUserPresence } from '@/hooks/useUserPresence';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useUploadFile } from '@/hooks/useFileStorage';
-import { Send, Users, MessageCircle, Circle, Paperclip } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { Send, Users, MessageCircle, Circle, Paperclip, Check, CheckCheck, X } from 'lucide-react';
+import { formatDistanceToNow, format, isToday, isYesterday, isSameDay } from 'date-fns';
 import { formatDisplayName, getInitials } from '@/utils/userDisplay';
 import { toast } from 'sonner';
 
@@ -101,11 +101,54 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'online': return 'text-green-500';
-      case 'away': return 'text-yellow-500';
-      case 'busy': return 'text-red-500';
-      default: return 'text-muted-foreground';
+      case 'online': return 'bg-green-500';
+      case 'away': return 'bg-yellow-500';
+      case 'busy': return 'bg-red-500';
+      default: return 'bg-gray-400';
     }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'online': return 'online';
+      case 'away': return 'away';
+      case 'busy': return 'busy';
+      default: return 'offline';
+    }
+  };
+
+  const formatMessageTime = (date: Date) => {
+    if (isToday(date)) {
+      return format(date, 'h:mm a');
+    } else if (isYesterday(date)) {
+      return `Yesterday ${format(date, 'h:mm a')}`;
+    } else {
+      return format(date, 'MMM d, h:mm a');
+    }
+  };
+
+  const formatDateDivider = (date: Date) => {
+    if (isToday(date)) return 'Today';
+    if (isYesterday(date)) return 'Yesterday';
+    return format(date, 'MMMM d, yyyy');
+  };
+
+  // Group messages by date
+  const groupMessagesByDate = (messages: any[]) => {
+    const groups: { date: Date; messages: any[] }[] = [];
+    
+    messages.forEach((message) => {
+      const messageDate = new Date(message.created_at);
+      const existingGroup = groups.find(g => isSameDay(g.date, messageDate));
+      
+      if (existingGroup) {
+        existingGroup.messages.push(message);
+      } else {
+        groups.push({ date: messageDate, messages: [message] });
+      }
+    });
+    
+    return groups;
   };
 
   // Get active user data for current conversation
@@ -163,285 +206,296 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[80vh] p-0 flex flex-col">
+      <DialogContent className="max-w-5xl h-[85vh] p-0 flex flex-col overflow-hidden rounded-2xl">
         <div className="flex h-full min-h-0">
           {/* Left Sidebar - User List */}
-          <div className="w-1/3 border-r border-border flex flex-col">
-            <DialogHeader className="p-4 border-b border-border">
-              <DialogTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Team Members
-              </DialogTitle>
-              <DialogDescription className="text-sm text-muted-foreground">
-                Select a team member to start messaging
-              </DialogDescription>
-            </DialogHeader>
+          <div className="w-80 border-r border-border/50 flex flex-col bg-muted/20">
+            <div className="p-4 border-b border-border/50 bg-background/50 backdrop-blur-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  <h2 className="font-semibold text-lg">Chats</h2>
+                </div>
+              </div>
+            </div>
 
-            <ScrollArea className="flex-1 p-4">
-              {/* Online Users */}
-              {onlineUsers.length > 0 && (
-                <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Circle className="h-2 w-2 fill-green-500 text-green-500" />
-                    <h3 className="text-sm font-medium text-muted-foreground">
-                      Online ({onlineUsers.length})
-                    </h3>
-                  </div>
-                  
-                  {onlineUsers.map((user) => {
-                    const isActive = activeConversation === user.user_id;
-                    const conversation = conversations.find(c => c.user_id === user.user_id);
-                    
-                    return (
-                      <Button
-                        key={user.user_id}
-                        variant={isActive ? "secondary" : "ghost"}
-                        className="w-full justify-start p-4 h-auto mb-2 rounded-lg hover:bg-accent/50 transition-all duration-200"
-                        onClick={() => handleUserSelect(user.user_id)}
-                      >
-                        <div className="flex items-center gap-3 w-full">
-                          <div className="relative">
-                            <Avatar className="h-10 w-10">
-                              <AvatarImage src={user.user_profile?.avatar_url} />
-                              <AvatarFallback className="text-sm">
-                                {getInitials(user.user_profile?.display_name || '')}
-                              </AvatarFallback>
-                            </Avatar>
-                            <Circle className={`absolute -bottom-1 -right-1 h-3 w-3 fill-current ${getStatusColor(user.status)}`} />
-                          </div>
-                          
-                          <div className="flex-1 min-w-0 text-left">
-                            <div className="flex items-center justify-between mb-1">
-                              <p className="font-medium truncate text-foreground">
-                                {formatDisplayName(user.user_profile?.display_name || '')}
-                              </p>
-                              {conversation && conversation.unread_count > 0 && (
-                                <Badge variant="destructive" className="text-xs h-5 px-2">
-                                  {conversation.unread_count}
-                                </Badge>
-                              )}
+            <ScrollArea className="flex-1">
+              <div className="p-2">
+                {/* Online Users */}
+                {onlineUsers.length > 0 && (
+                  <div className="mb-1">
+                    {onlineUsers.map((user) => {
+                      const isActive = activeConversation === user.user_id;
+                      const conversation = conversations.find(c => c.user_id === user.user_id);
+                      
+                      return (
+                        <button
+                          key={user.user_id}
+                          className={`w-full p-3 rounded-xl hover:bg-accent/80 transition-all duration-200 mb-1 ${
+                            isActive ? 'bg-accent' : ''
+                          }`}
+                          onClick={() => handleUserSelect(user.user_id)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="relative">
+                              <Avatar className="h-12 w-12">
+                                <AvatarImage src={user.user_profile?.avatar_url} />
+                                <AvatarFallback className="text-sm bg-primary/10 text-primary font-semibold">
+                                  {getInitials(user.user_profile?.display_name || '')}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-background ${getStatusColor(user.status)}`} />
                             </div>
                             
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-xs">
-                                {user.user_profile?.role}
-                              </Badge>
-                              {user.current_activity && (
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {user.current_activity}
+                            <div className="flex-1 min-w-0 text-left">
+                              <div className="flex items-center justify-between">
+                                <p className="font-semibold truncate text-foreground text-sm">
+                                  {formatDisplayName(user.user_profile?.display_name || '')}
                                 </p>
-                              )}
+                                {conversation && conversation.unread_count > 0 && (
+                                  <div className="bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 min-w-[20px] px-1.5 flex items-center justify-center">
+                                    {conversation.unread_count > 9 ? '9+' : conversation.unread_count}
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {user.current_activity || user.user_profile?.role || 'Available'}
+                              </p>
                             </div>
                           </div>
-                        </div>
-                      </Button>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Away/Busy Users */}
-              {awayUsers.length > 0 && (
-                <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Circle className="h-2 w-2 fill-yellow-500 text-yellow-500" />
-                    <h3 className="text-sm font-medium text-muted-foreground">
-                      Away/Busy ({awayUsers.length})
-                    </h3>
+                        </button>
+                      );
+                    })}
                   </div>
-                  
-                  {awayUsers.map((user) => {
-                    const isActive = activeConversation === user.user_id;
-                    const conversation = conversations.find(c => c.user_id === user.user_id);
-                    
-                    return (
-                      <Button
-                        key={user.user_id}
-                        variant={isActive ? "secondary" : "ghost"}
-                        className="w-full justify-start p-4 h-auto mb-2 rounded-lg hover:bg-accent/50 transition-all duration-200 opacity-75"
-                        onClick={() => handleUserSelect(user.user_id)}
-                      >
-                        <div className="flex items-center gap-3 w-full">
-                          <div className="relative">
-                            <Avatar className="h-10 w-10">
-                              <AvatarImage src={user.user_profile?.avatar_url} />
-                              <AvatarFallback className="text-sm">
-                                {getInitials(user.user_profile?.display_name || '')}
-                              </AvatarFallback>
-                            </Avatar>
-                            <Circle className={`absolute -bottom-1 -right-1 h-3 w-3 fill-current ${getStatusColor(user.status)}`} />
-                          </div>
-                          
-                          <div className="flex-1 min-w-0 text-left">
-                            <div className="flex items-center justify-between mb-1">
-                              <p className="font-medium truncate text-foreground">
-                                {formatDisplayName(user.user_profile?.display_name || '')}
-                              </p>
-                              {conversation && conversation.unread_count > 0 && (
-                                <Badge variant="destructive" className="text-xs h-5 px-2">
-                                  {conversation.unread_count}
-                                </Badge>
-                              )}
+                )}
+
+                {/* Away/Busy Users */}
+                {awayUsers.length > 0 && (
+                  <div className="mb-1">
+                    {awayUsers.map((user) => {
+                      const isActive = activeConversation === user.user_id;
+                      const conversation = conversations.find(c => c.user_id === user.user_id);
+                      
+                      return (
+                        <button
+                          key={user.user_id}
+                          className={`w-full p-3 rounded-xl hover:bg-accent/80 transition-all duration-200 mb-1 opacity-70 ${
+                            isActive ? 'bg-accent' : ''
+                          }`}
+                          onClick={() => handleUserSelect(user.user_id)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="relative">
+                              <Avatar className="h-12 w-12">
+                                <AvatarImage src={user.user_profile?.avatar_url} />
+                                <AvatarFallback className="text-sm bg-muted text-muted-foreground">
+                                  {getInitials(user.user_profile?.display_name || '')}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-background ${getStatusColor(user.status)}`} />
                             </div>
                             
-                            <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="text-xs">
-                                {user.status}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                      </Button>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Loading State */}
-              {presenceLoading && (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">Loading team members...</p>
-                </div>
-              )}
-
-              {/* Offline Users */}
-              {offlineUsers.length > 0 && (
-                <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Circle className="h-2 w-2 fill-gray-400 text-gray-400" />
-                    <h3 className="text-sm font-medium text-muted-foreground">
-                      Offline ({offlineUsers.length})
-                    </h3>
-                  </div>
-                  
-                  {offlineUsers.map((user) => {
-                    const isActive = activeConversation === user.user_id;
-                    const conversation = conversations.find(c => c.user_id === user.user_id);
-                    
-                    return (
-                      <Button
-                        key={user.user_id}
-                        variant={isActive ? "secondary" : "ghost"}
-                        className="w-full justify-start p-4 h-auto mb-2 rounded-lg hover:bg-accent/50 transition-all duration-200 opacity-60"
-                        onClick={() => handleUserSelect(user.user_id)}
-                      >
-                        <div className="flex items-center gap-3 w-full">
-                          <div className="relative">
-                            <Avatar className="h-10 w-10">
-                              <AvatarImage src={user.user_profile?.avatar_url} />
-                              <AvatarFallback className="text-sm">
-                                {getInitials(user.user_profile?.display_name || '')}
-                              </AvatarFallback>
-                            </Avatar>
-                            <Circle className={`absolute -bottom-1 -right-1 h-3 w-3 fill-current ${getStatusColor(user.status)}`} />
-                          </div>
-                          
-                          <div className="flex-1 min-w-0 text-left">
-                            <div className="flex items-center justify-between mb-1">
-                              <p className="font-medium truncate text-foreground">
-                                {formatDisplayName(user.user_profile?.display_name || '')}
-                              </p>
-                              {conversation && conversation.unread_count > 0 && (
-                                <Badge variant="destructive" className="text-xs h-5 px-2">
-                                  {conversation.unread_count}
-                                </Badge>
-                              )}
-                            </div>
-                            
-                            <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="text-xs">
-                                {user.status}
-                              </Badge>
-                              {user.last_seen && (
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {formatDistanceToNow(new Date(user.last_seen), { addSuffix: true })}
+                            <div className="flex-1 min-w-0 text-left">
+                              <div className="flex items-center justify-between">
+                                <p className="font-semibold truncate text-foreground text-sm">
+                                  {formatDisplayName(user.user_profile?.display_name || '')}
                                 </p>
-                              )}
+                                {conversation && conversation.unread_count > 0 && (
+                                  <div className="bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 min-w-[20px] px-1.5 flex items-center justify-center">
+                                    {conversation.unread_count > 9 ? '9+' : conversation.unread_count}
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground truncate capitalize">
+                                {user.status}
+                              </p>
                             </div>
                           </div>
-                        </div>
-                      </Button>
-                    );
-                  })}
-                </div>
-              )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
 
-              {/* Empty State */}
-              {!presenceLoading && otherUsers.length === 0 && (
-                <div className="text-center py-8">
-                  <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">No other team members</p>
-                </div>
-              )}
+                {/* Offline Users */}
+                {offlineUsers.length > 0 && (
+                  <div className="mb-1">
+                    {offlineUsers.map((user) => {
+                      const isActive = activeConversation === user.user_id;
+                      const conversation = conversations.find(c => c.user_id === user.user_id);
+                      
+                      return (
+                        <button
+                          key={user.user_id}
+                          className={`w-full p-3 rounded-xl hover:bg-accent/80 transition-all duration-200 mb-1 opacity-50 ${
+                            isActive ? 'bg-accent' : ''
+                          }`}
+                          onClick={() => handleUserSelect(user.user_id)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="relative">
+                              <Avatar className="h-12 w-12 grayscale">
+                                <AvatarImage src={user.user_profile?.avatar_url} />
+                                <AvatarFallback className="text-sm bg-muted text-muted-foreground">
+                                  {getInitials(user.user_profile?.display_name || '')}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-background ${getStatusColor(user.status)}`} />
+                            </div>
+                            
+                            <div className="flex-1 min-w-0 text-left">
+                              <div className="flex items-center justify-between">
+                                <p className="font-semibold truncate text-foreground text-sm">
+                                  {formatDisplayName(user.user_profile?.display_name || '')}
+                                </p>
+                                {conversation && conversation.unread_count > 0 && (
+                                  <div className="bg-muted text-muted-foreground text-xs font-bold rounded-full h-5 min-w-[20px] px-1.5 flex items-center justify-center">
+                                    {conversation.unread_count > 9 ? '9+' : conversation.unread_count}
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {user.last_seen 
+                                  ? `Last seen ${formatDistanceToNow(new Date(user.last_seen), { addSuffix: true })}`
+                                  : 'Offline'
+                                }
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Empty State */}
+                {!presenceLoading && otherUsers.length === 0 && (
+                  <div className="text-center py-12">
+                    <Users className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                    <p className="text-sm text-muted-foreground">No team members</p>
+                  </div>
+                )}
+              </div>
             </ScrollArea>
           </div>
 
           {/* Right Side - Chat Area */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col bg-background">
             {activeConversation && displayUserData ? (
               <>
-                {/* Chat Header */}
-                <div className="p-4 border-b border-border">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={displayUserData.user_profile?.avatar_url} />
-                      <AvatarFallback>
-                        {getInitials(displayUserData.user_profile?.display_name || '')}
-                      </AvatarFallback>
-                    </Avatar>
-                    
-                    <div>
-                      <h3 className="font-semibold text-foreground">
-                        {formatDisplayName(displayUserData.user_profile?.display_name || '')}
-                      </h3>
-                      <div className="flex items-center gap-2">
-                        <Circle className={`h-2 w-2 fill-current ${getStatusColor(('status' in displayUserData ? displayUserData.status : null) || 'offline')}`} />
-                        <p className="text-sm text-muted-foreground capitalize">
-                          {('status' in displayUserData ? displayUserData.status : null) || 'offline'}
+                {/* Chat Header - WhatsApp Style */}
+                <div className="px-4 py-3 border-b border-border/50 bg-background/50 backdrop-blur-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={displayUserData.user_profile?.avatar_url} />
+                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                          {getInitials(displayUserData.user_profile?.display_name || '')}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      <div>
+                        <h3 className="font-semibold text-foreground">
+                          {formatDisplayName(displayUserData.user_profile?.display_name || '')}
+                        </h3>
+                        <p className="text-xs text-muted-foreground capitalize">
+                          {getStatusText(('status' in displayUserData ? displayUserData.status : null) || 'offline')}
                         </p>
                       </div>
                     </div>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => onOpenChange(false)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
 
-                {/* Messages */}
-                <ScrollArea className="flex-1 min-h-0 p-4">
-                  {messagesLoading ? (
-                    <div className="flex items-center justify-center h-full">
-                      <p className="text-muted-foreground">Loading messages...</p>
-                    </div>
-                  ) : messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center min-h-[200px]">
-                      <MessageCircle className="h-16 w-16 text-muted-foreground mb-4" />
-                      <p className="text-lg font-medium text-foreground mb-2">Start the conversation!</p>
-                      <p className="text-muted-foreground">Send a message to begin chatting</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4 pb-4">
-                      {messages.map((message, index) => (
-                        <div
-                          key={message.id}
-                          className={`flex ${message.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}
-                        >
-                          <div className={`max-w-[70%] p-3 rounded-2xl ${
-                            message.sender_id === user?.id
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted text-foreground'
-                          }`}>
-                            <p className="text-sm break-words">{message.content}</p>
-                            <p className="text-xs mt-1 opacity-70">
-                              {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
-                            </p>
-                          </div>
+                {/* Messages - WhatsApp Style */}
+                <div className="flex-1 overflow-hidden bg-muted/10" style={{ 
+                  backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, hsl(var(--muted)/0.03) 10px, hsl(var(--muted)/0.03) 20px)`
+                }}>
+                  <ScrollArea className="h-full">
+                    {messagesLoading ? (
+                      <div className="flex items-center justify-center h-full">
+                        <p className="text-muted-foreground text-sm">Loading messages...</p>
+                      </div>
+                    ) : messages.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                        <div className="bg-primary/10 p-6 rounded-full mb-4">
+                          <MessageCircle className="h-12 w-12 text-primary" />
                         </div>
-                      ))}
-                      <div ref={messagesEndRef} />
-                    </div>
-                  )}
-                </ScrollArea>
+                        <p className="text-base font-medium text-foreground mb-2">No messages yet</p>
+                        <p className="text-sm text-muted-foreground">Send a message to start the conversation</p>
+                      </div>
+                    ) : (
+                      <div className="p-4 space-y-1">
+                        {groupMessagesByDate(messages).map((group, groupIndex) => (
+                          <div key={groupIndex}>
+                            {/* Date Divider */}
+                            <div className="flex items-center justify-center my-4">
+                              <div className="bg-muted/80 px-3 py-1 rounded-full">
+                                <p className="text-xs font-medium text-muted-foreground">
+                                  {formatDateDivider(group.date)}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            {/* Messages */}
+                            {group.messages.map((message) => {
+                              const isOwn = message.sender_id === user?.id;
+                              const messageTime = new Date(message.created_at);
+                              
+                              return (
+                                <div
+                                  key={message.id}
+                                  className={`flex items-end gap-2 mb-1 ${isOwn ? 'justify-end' : 'justify-start'}`}
+                                >
+                                  {!isOwn && (
+                                    <Avatar className="h-8 w-8 shrink-0">
+                                      <AvatarImage src={displayUserData.user_profile?.avatar_url} />
+                                      <AvatarFallback className="text-xs bg-muted">
+                                        {getInitials(displayUserData.user_profile?.display_name || '')}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                  )}
+                                  
+                                  <div className={`group max-w-[75%] ${isOwn ? 'items-end' : 'items-start'} flex flex-col`}>
+                                    <div className={`px-3 py-2 rounded-2xl shadow-sm ${
+                                      isOwn
+                                        ? 'bg-primary text-primary-foreground rounded-br-sm'
+                                        : 'bg-background border border-border/50 text-foreground rounded-bl-sm'
+                                    }`}>
+                                      <p className="text-sm break-words whitespace-pre-wrap leading-relaxed">
+                                        {message.content}
+                                      </p>
+                                      <div className="flex items-center justify-end gap-1 mt-1">
+                                        <p className={`text-[10px] ${isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                                          {format(messageTime, 'h:mm a')}
+                                        </p>
+                                        {isOwn && (
+                                          <CheckCheck className={`h-3 w-3 ${isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'}`} />
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ))}
+                        <div ref={messagesEndRef} />
+                      </div>
+                    )}
+                  </ScrollArea>
+                </div>
 
-                {/* Message Input - Fixed at bottom */}
-                <div className="p-4 border-t border-border bg-background/95 backdrop-blur-sm">
+                {/* Message Input - WhatsApp Style */}
+                <div className="p-3 border-t border-border/50 bg-background/95 backdrop-blur-sm">
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -451,27 +505,29 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
                   />
                   <div className="flex gap-2 items-end">
                     <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="shrink-0 h-10"
+                      variant="ghost" 
+                      size="icon"
+                      className="h-10 w-10 shrink-0 rounded-full hover:bg-primary/10"
                       onClick={handleFileUpload}
                       disabled={uploadFile.isPending}
                     >
-                      <Paperclip className="h-4 w-4" />
+                      <Paperclip className="h-5 w-5 text-muted-foreground" />
                     </Button>
-                    <Input
-                      placeholder={`Message ${displayUserData ? formatDisplayName(displayUserData.user_profile?.display_name || '') : ''}...`}
-                      value={messageInput}
-                      onChange={(e) => setMessageInput(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      disabled={sendingMessage}
-                      className="flex-1"
-                    />
+                    <div className="flex-1 relative">
+                      <Input
+                        placeholder="Type a message..."
+                        value={messageInput}
+                        onChange={(e) => setMessageInput(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        disabled={sendingMessage}
+                        className="rounded-full bg-muted/50 border-0 pr-12 py-5 focus-visible:ring-1"
+                      />
+                    </div>
                     <Button
                       onClick={handleSendMessage}
                       disabled={!messageInput.trim() || sendingMessage}
-                      size="sm"
-                      className="shrink-0 h-10"
+                      size="icon"
+                      className="h-10 w-10 shrink-0 rounded-full"
                     >
                       <Send className="h-4 w-4" />
                     </Button>
@@ -479,11 +535,13 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
                 </div>
               </>
             ) : (
-              <div className="flex-1 flex items-center justify-center bg-muted/20">
-                <div className="text-center">
-                  <MessageCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-lg font-medium text-foreground mb-2">Select a conversation</p>
-                  <p className="text-muted-foreground">Choose someone to start messaging</p>
+              <div className="flex-1 flex items-center justify-center bg-muted/10">
+                <div className="text-center p-8">
+                  <div className="bg-primary/10 p-8 rounded-full mx-auto w-fit mb-4">
+                    <MessageCircle className="h-16 w-16 text-primary" />
+                  </div>
+                  <p className="text-lg font-semibold text-foreground mb-2">Select a chat</p>
+                  <p className="text-sm text-muted-foreground">Choose a conversation from the list to start messaging</p>
                 </div>
               </div>
             )}
