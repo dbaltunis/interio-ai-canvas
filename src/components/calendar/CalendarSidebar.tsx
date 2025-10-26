@@ -195,60 +195,61 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
     });
   };
 
-  if (isCollapsed) {
-    return (
-      <div className="w-12 min-w-12 border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300 relative z-10">
-        <div className="p-2 border-b bg-background">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleCollapse}
-            className="w-8 h-8 hover:bg-accent"
-            title="Expand sidebar"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="flex flex-col items-center gap-4 p-2 mt-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onBookingLinks}
-            title="Create Schedule"
-            className="w-8 h-8"
-          >
-            <Link2 className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            title="Settings"
-            className="w-8 h-8"
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="w-80 min-w-80 max-w-80 border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300 relative z-10">
-      <ScrollArea className="flex-1">
-        <div className="flex flex-col space-y-4 p-4">
-          {/* Header with Calendar title and Collapse Button */}
-          <div className="flex items-center justify-between border-b pb-3 bg-background sticky top-0 z-20">
-            <h1 className="text-xl font-bold text-primary">Calendar</h1>
+    <div 
+      className={`border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300 relative z-10 ${
+        isCollapsed ? 'w-12 min-w-12' : 'w-80 min-w-80 max-w-80'
+      }`}
+    >
+      {isCollapsed ? (
+        <>
+          <div className="p-2 border-b bg-background">
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={toggleCollapse}
-              className="h-8 w-8 p-0 hover:bg-accent"
-              title="Collapse sidebar"
+              className="w-8 h-8 hover:bg-accent"
+              title="Expand sidebar"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
+          <div className="flex flex-col items-center gap-4 p-2 mt-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onBookingLinks}
+              title="Create Schedule"
+              className="w-8 h-8"
+            >
+              <Link2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              title="Settings"
+              className="w-8 h-8"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+          </div>
+        </>
+      ) : (
+        <ScrollArea className="flex-1">
+          <div className="flex flex-col space-y-4 p-4">
+            {/* Header with Calendar title and Collapse Button */}
+            <div className="flex items-center justify-between border-b pb-3 bg-background sticky top-0 z-20">
+              <h1 className="text-xl font-bold text-primary">Calendar</h1>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleCollapse}
+                className="h-8 w-8 p-0 hover:bg-accent"
+                title="Collapse sidebar"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </div>
           {/* Mini Calendar */}
           <Card className="flex-shrink-0">
             <CardHeader className="pb-3">
@@ -430,8 +431,9 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
           </Card>
         </div>
       </ScrollArea>
+      )}
 
-      {/* Dialogs */}
+      {/* Dialogs - always rendered, controlled by state */}
       <Dialog open={showSchedulerManagement} onOpenChange={setShowSchedulerManagement}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
