@@ -3,113 +3,108 @@ import { Skeleton } from "@/components/ui/skeleton";
 export const CalendarSkeleton = () => {
   return (
     <div className="h-screen flex overflow-hidden">
-      {/* Sidebar Skeleton */}
-      <div className="w-72 border-r bg-background p-4 flex-shrink-0">
-        {/* Mini calendar skeleton */}
-        <div className="space-y-4">
-          <Skeleton className="h-6 w-24" />
-          <div className="space-y-3">
-            {/* Calendar grid skeleton */}
-            <div className="grid grid-cols-7 gap-1">
-              {Array.from({ length: 35 }).map((_, i) => (
-                <Skeleton key={i} className="h-8 w-8 rounded" />
-              ))}
-            </div>
-          </div>
-          
-          {/* Sidebar buttons */}
-          <div className="space-y-2 pt-4">
-            <Skeleton className="h-10 w-full rounded-md" />
-            <Skeleton className="h-10 w-full rounded-md" />
-            <Skeleton className="h-10 w-full rounded-md" />
-          </div>
-        </div>
-      </div>
-
-      {/* Main Calendar Area */}
+      {/* Main Calendar Area - No sidebar for desktop/tablet */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        {/* Header Skeleton */}
-        <div className="sticky top-0 z-10 border-b bg-background p-2 md:p-4 flex-shrink-0">
-          <div className="flex items-center justify-between gap-2">
-            {/* Left section - Title and Navigation */}
-            <div className="flex items-center gap-2 md:gap-4">
-              <Skeleton className="h-8 w-20" />
-              <div className="flex items-center gap-1 md:gap-2">
-                <Skeleton className="h-9 w-16 rounded-md" />
-                <Skeleton className="h-9 w-9 rounded-md" />
-                <Skeleton className="h-9 w-9 rounded-md" />
-                <Skeleton className="h-6 w-32 ml-2" />
-              </div>
+        {/* Header Skeleton - Updated toolbar */}
+        <div className="sticky top-0 z-20 border-b bg-background flex-shrink-0">
+          <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 flex-wrap">
+            {/* Left section - Navigation controls */}
+            <div className="flex items-center gap-1 md:gap-2">
+              <Skeleton className="h-7 w-16 rounded-md" /> {/* Today button */}
+              <Skeleton className="h-7 w-7 rounded-md" /> {/* Prev button */}
+              <Skeleton className="h-7 w-7 rounded-md" /> {/* Next button */}
+              <Skeleton className="h-4 w-32 ml-1" /> {/* Month/Year */}
             </div>
             
-            {/* Right section - View selector */}
-            <Skeleton className="h-9 w-20 rounded-md" />
+            <div className="flex-1" />
+            
+            {/* Right section - Controls */}
+            <div className="flex items-center gap-1.5">
+              <Skeleton className="h-7 w-32 rounded-md" /> {/* Appointment Scheduling */}
+              <Skeleton className="h-7 w-7 rounded-md" /> {/* Filters */}
+              <Skeleton className="h-7 w-7 rounded-md" /> {/* Calendar picker */}
+              <Skeleton className="h-7 w-24 rounded-md" /> {/* View selector */}
+            </div>
           </div>
         </div>
 
         {/* Calendar Content Skeleton */}
         <div className="flex-1 overflow-hidden min-h-0">
           {/* Week view skeleton */}
-          <div className="h-full flex flex-col">
-            {/* Week header with days */}
-            <div className="flex border-b bg-background sticky top-0 z-10 flex-shrink-0">
+          <div className="h-full flex flex-col pt-3">
+            {/* Week header with dates - Sticky */}
+            <div className="flex border-b bg-background flex-shrink-0 sticky top-0 z-10">
               <div className="w-16 border-r flex-shrink-0"></div>
               <div className="flex-1">
                 <div className="grid grid-cols-7">
                   {Array.from({ length: 7 }).map((_, i) => (
                     <div key={i} className="p-2 text-center border-r">
-                      <Skeleton className="h-4 w-8 mx-auto mb-1" />
-                      <Skeleton className="h-6 w-6 mx-auto rounded-full" />
+                      <Skeleton className="h-3 w-8 mx-auto mb-1" />
+                      <Skeleton className="h-7 w-7 mx-auto rounded-full" />
                     </div>
                   ))}
                 </div>
               </div>
             </div>
             
-            {/* Time grid skeleton */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden">
-              <div className="flex">
+            {/* Time grid skeleton - Larger rows */}
+            <div className="flex-1 overflow-y-auto overflow-x-hidden bg-card pb-32">
+              <div className="flex bg-card">
                 {/* Time labels column */}
-                <div className="w-16 border-r flex-shrink-0">
-                  {Array.from({ length: 20 }).map((_, index) => (
-                    <div key={index} className="h-[20px] px-2 text-xs flex items-center justify-end border-b">
+                <div className="w-16 border-r bg-card flex-shrink-0">
+                  {Array.from({ length: 48 }).map((_, index) => (
+                    <div 
+                      key={index} 
+                      className={`h-[32px] px-2 text-xs flex items-center justify-end ${
+                        index % 2 === 0 ? 'border-b border-muted/30' : 'border-b border-muted'
+                      }`}
+                    >
                       {index % 2 === 0 && (
-                        <Skeleton className="h-3 w-8" />
+                        <Skeleton className="h-2.5 w-8" />
                       )}
                     </div>
                   ))}
                 </div>
                 
                 {/* Calendar grid skeleton */}
-                <div className="flex-1 relative">
+                <div className="flex-1 relative bg-card">
                   {/* Hour separation lines */}
-                  {Array.from({ length: 10 }).map((_, index) => (
+                  {Array.from({ length: 24 }).map((_, index) => (
                     <div
                       key={index}
-                      className="absolute left-0 right-0 border-t border-muted/30 pointer-events-none"
-                      style={{ top: `${index * 40}px` }}
+                      className="absolute left-0 right-0 border-t border-border/30 pointer-events-none"
+                      style={{ top: `${index * 64}px` }}
                     />
                   ))}
                   
                   <div className="grid grid-cols-7">
                     {Array.from({ length: 7 }).map((_, dayIndex) => (
-                      <div key={dayIndex} className="relative border-r" style={{ height: '400px' }}>
-                        {/* Sample event skeletons */}
+                      <div key={dayIndex} className="relative border-r min-h-[1536px]">
+                        {/* Sample event skeletons with better spacing */}
                         {dayIndex % 2 === 0 && (
                           <Skeleton 
-                            className="absolute left-1 right-1 rounded"
+                            className="absolute left-1 right-1 rounded-2xl"
                             style={{ 
-                              top: `${60 + dayIndex * 20}px`, 
-                              height: '60px' 
+                              top: `${200 + dayIndex * 30}px`, 
+                              height: '80px' 
                             }}
                           />
                         )}
                         {dayIndex % 3 === 0 && (
                           <Skeleton 
-                            className="absolute left-1 right-1 rounded"
+                            className="absolute left-1 right-1 rounded-2xl"
                             style={{ 
-                              top: `${180 + dayIndex * 15}px`, 
-                              height: '40px' 
+                              top: `${450 + dayIndex * 25}px`, 
+                              height: '64px' 
+                            }}
+                          />
+                        )}
+                        {(dayIndex + 1) % 4 === 0 && (
+                          <Skeleton 
+                            className="absolute left-1 right-1 rounded-2xl"
+                            style={{ 
+                              top: `${700 + dayIndex * 20}px`, 
+                              height: '96px' 
                             }}
                           />
                         )}
