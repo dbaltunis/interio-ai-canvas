@@ -64,6 +64,31 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     getCurrentUser();
   }, []);
 
+  // Auto-scroll to 7 AM on mount for better UX
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      // Each time slot is 32px high, and slots are every 30 minutes
+      // 7 AM = 7 hours from midnight = 14 slots (00:00, 00:30, 01:00... 07:00)
+      const slotHeight = 32;
+      const sevenAMSlotIndex = 14; // 7:00 AM is the 14th slot (0-indexed: slot 14)
+      const scrollPosition = sevenAMSlotIndex * slotHeight;
+      
+      // Smooth scroll to 7 AM
+      scrollContainerRef.current.scrollTo({
+        top: scrollPosition,
+        behavior: 'smooth'
+      });
+    }
+  }, []); // Empty dependency array = only run on mount
+  
+  // Event creation state
+  const [isCreatingEvent, setIsCreatingEvent] = useState(false);
+  const [eventCreationStart, setEventCreationStart] = useState<{ date: Date; timeSlot: number } | null>(null);
+  const [eventCreationEnd, setEventCreationEnd] = useState<{ date: Date; timeSlot: number } | null>(null);
+  
+  // Drag and drop state
+  const [activeEvent, setActiveEvent] = useState<any>(null);
+
   // Generate all 24-hour time slots (00:00 to 23:30)
   const allTimeSlots = (() => {
     const slots = [];
@@ -80,48 +105,6 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   // Default to full 24-hour view, with toggle for working hours
   const [showExtendedHours, setShowExtendedHours] = useState(true);
   const timeSlots = showExtendedHours ? allTimeSlots : allTimeSlots.slice(12, 44); // Working hours: 6 AM to 10 PM
-
-  // Auto-scroll to 7 AM on mount for better UX
-  useEffect(() => {
-    console.log('=== SCROLL EFFECT RUNNING ===');
-    console.log('scrollContainerRef.current:', scrollContainerRef.current);
-    console.log('timeSlots length:', timeSlots.length);
-    console.log('First few timeSlots:', timeSlots.slice(0, 5));
-    
-    const timer = setTimeout(() => {
-      console.log('=== INSIDE TIMEOUT ===');
-      if (scrollContainerRef.current) {
-        // Find the index of 7:00 AM in the current timeSlots array
-        const sevenAMIndex = timeSlots.findIndex(slot => slot === '07:00');
-        console.log('sevenAMIndex:', sevenAMIndex);
-        
-        if (sevenAMIndex !== -1) {
-          const slotHeight = 32;
-          const scrollPosition = sevenAMIndex * slotHeight;
-          console.log('Attempting scroll to position:', scrollPosition);
-          scrollContainerRef.current.scrollTop = scrollPosition;
-          console.log('scrollTop after setting:', scrollContainerRef.current.scrollTop);
-          console.log(`✅ Scrolled to 7 AM at index ${sevenAMIndex}, position ${scrollPosition}px`);
-        } else {
-          // If 7 AM isn't in the visible range, scroll to the top
-          scrollContainerRef.current.scrollTop = 0;
-          console.log('⚠️ 7 AM not in visible range, scrolled to top');
-        }
-      } else {
-        console.log('❌ scrollContainerRef.current is NULL');
-      }
-    }, 100);
-    
-    return () => clearTimeout(timer);
-  }, [currentDate, timeSlots]); // Add timeSlots as dependency
-  
-  // Event creation state
-  const [isCreatingEvent, setIsCreatingEvent] = useState(false);
-  const [eventCreationStart, setEventCreationStart] = useState<{ date: Date; timeSlot: number } | null>(null);
-  const [eventCreationEnd, setEventCreationEnd] = useState<{ date: Date; timeSlot: number } | null>(null);
-  
-  // Drag and drop state
-  const [activeEvent, setActiveEvent] = useState<any>(null);
 
   // Get week days starting from Sunday
   const getWeekDays = () => {

@@ -64,10 +64,12 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
     return { top, height, visible: true };
   };
 
-  // Auto-scroll to 7 AM on mount
+  // Auto-scroll to current time on mount
   useEffect(() => {
-    if (scrollContainerRef.current) {
-      const scrollToHour = 7; // Always scroll to 7 AM
+    if (scrollContainerRef.current && isToday(currentDate)) {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const scrollToHour = Math.max(0, currentHour - 2); // Scroll 2 hours before current time
       const scrollPosition = (scrollToHour - 6) * 96; // Each hour is 96px (2 slots * 48px)
       scrollContainerRef.current.scrollTop = Math.max(0, scrollPosition);
     }

@@ -108,10 +108,7 @@ const Index = () => {
     const currentTab = searchParams.get('tab') || "projects";
     if (activeTab !== currentTab) {
       console.warn('[NAV] Index: activeTab changed, updating URL from', currentTab, 'to', activeTab);
-      // Preserve other search params like eventId
-      const newParams = new URLSearchParams(searchParams);
-      newParams.set('tab', activeTab);
-      setSearchParams(newParams, { replace: true });
+      setSearchParams({ tab: activeTab }, { replace: true });
     }
     sessionStorage.setItem('active_tab', activeTab);
   }, [activeTab]);

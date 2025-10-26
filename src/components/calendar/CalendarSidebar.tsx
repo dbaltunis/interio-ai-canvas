@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { AppointmentEditSidebar } from './AppointmentEditSidebar';
@@ -34,28 +34,28 @@ interface CalendarSidebarProps {
 }
 
 export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: CalendarSidebarProps) => {
-  const [isCollapsed, setIsCollapsed] = useState(false); // Always start expanded
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("calendar.sidebarCollapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
 
   const toggleCollapse = () => {
     setIsCollapsed(prev => {
       const next = !prev;
       try {
         localStorage.setItem("calendar.sidebarCollapsed", String(next));
-      } catch (e) {
-        console.error('[CalendarSidebar] Failed to save collapse state:', e);
-      }
+      } catch {}
       return next;
     });
   };
-  
   const [showSchedulerManagement, setShowSchedulerManagement] = useState(false);
   const [showBookingManagement, setShowBookingManagement] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [sidebarDate, setSidebarDate] = useState<Date | undefined>(currentDate);
-  
-  // Removed problematic useEffect - no need to sync sidebarDate with currentDate constantly
-  
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const appointmentEdit = useAppointmentEdit();
   const { data: appointments } = useAppointments();
@@ -177,62 +177,60 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
     });
   };
 
+  if (isCollapsed) {
+    return (
+      <div className="w-12 min-w-12 border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300">
+        <div className="p-2 border-b">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleCollapse}
+            className="w-8 h-8"
+            title="Expand sidebar"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex flex-col items-center gap-4 p-2 mt-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onBookingLinks}
+            title="Create Schedule"
+            className="w-8 h-8"
+          >
+            <Link2 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            title="Settings"
+            className="w-8 h-8"
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div 
-      className={`border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300 relative z-30 overflow-hidden ${
-        isCollapsed ? 'w-12 min-w-12' : 'w-80 min-w-80 max-w-80'
-      }`}
-      style={{ willChange: 'width' }}
-    >
-      <ScrollArea className="w-full h-full">
-        {isCollapsed ? (
-          <>
-            <div className="p-2 border-b bg-background relative z-40">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleCollapse}
-                className="w-8 h-8 hover:bg-accent"
-                title="Expand sidebar"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="flex flex-col items-center gap-4 p-2 mt-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onBookingLinks}
-                title="Create Schedule"
-                className="w-8 h-8"
-              >
-                <Link2 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                title="Settings"
-                className="w-8 h-8"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-            </div>
-          </>
-        ) : (
-          <div className="flex flex-col space-y-4 p-4">
-            {/* Header with Calendar title and Collapse Button */}
-            <div className="flex items-center justify-between border-b pb-3 mb-4 bg-background sticky top-0 z-50 -mt-0">
-              <h1 className="text-xl font-bold text-primary">Calendar</h1>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleCollapse}
-                className="h-8 w-8 p-0 hover:bg-accent shrink-0"
-                title="Collapse sidebar"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-            </div>
+    <div className="w-80 min-w-80 max-w-80 border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300">
+      <ScrollArea className="flex-1">
+        <div className="flex flex-col space-y-4 p-4">
+          {/* Header with Calendar title and Collapse Button */}
+          <div className="flex items-center justify-between border-b pb-3">
+            <h1 className="text-xl font-bold text-primary">Calendar</h1>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleCollapse}
+              className="h-8 w-8 p-0"
+              title="Collapse sidebar"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </div>
           {/* Mini Calendar */}
           <Card className="flex-shrink-0">
             <CardHeader className="pb-3">
@@ -270,12 +268,13 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
           </Card>
 
           {/* Upcoming Events */}
-          <Card className="flex-shrink-0">
+          <Card className="flex-1 min-h-0">
             <CardHeader className="pb-3 flex-shrink-0">
               <CardTitle className="text-sm">Upcoming Events</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 max-h-64 overflow-y-auto">
-              {upcomingEvents.length > 0 ? (
+            <CardContent className="flex-1 min-h-0">
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {upcomingEvents.length > 0 ? (
                   upcomingEvents.map(event => {
                     const attendees = getAttendeeInfo(event);
                     const eventColor = event.color || '#3b82f6'; // Default blue
@@ -346,6 +345,7 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
                     No upcoming events
                   </div>
                 )}
+              </div>
             </CardContent>
           </Card>
 
@@ -410,11 +410,10 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
               </div>
             </CardContent>
           </Card>
-          </div>
-        )}
+        </div>
       </ScrollArea>
 
-      {/* Dialogs - always rendered, controlled by state */}
+      {/* Dialogs */}
       <Dialog open={showSchedulerManagement} onOpenChange={setShowSchedulerManagement}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>

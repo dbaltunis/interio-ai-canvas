@@ -59,19 +59,18 @@ export const RecentEmailsWidget = () => {
   }
 
   return (
-    <Card className="glass-morphism border-primary/20">
+    <Card>
       <CardHeader className="pb-2 sm:pb-3">
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30">
-              <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
-            </div>
+            <Mail className="h-4 w-4 sm:h-5 sm:w-5" />
             <span className="truncate">Recent Emails</span>
           </CardTitle>
           {emailKPIs && (
-            <Badge variant="outline" className="text-xs shrink-0 border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400">
-              {emailKPIs.openRate.toFixed(1)}% open
-            </Badge>
+            <div className="flex items-center gap-2 text-[10px] sm:text-xs text-muted-foreground shrink-0">
+              <span className="hidden sm:inline">{emailKPIs.openRate.toFixed(1)}% open</span>
+              <span className="sm:hidden">{emailKPIs.openRate.toFixed(0)}%</span>
+            </div>
           )}
         </div>
       </CardHeader>
@@ -85,7 +84,7 @@ export const RecentEmailsWidget = () => {
           recentEmails.map((email) => (
             <div
               key={email.id}
-              className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/20 hover:bg-card/80 transition-all cursor-pointer hover-lift"
+              className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
               onClick={() => navigate('/?tab=quotes')}
             >
               <div className="mt-0.5 sm:mt-1 shrink-0">

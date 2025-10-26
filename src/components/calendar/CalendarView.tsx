@@ -2,8 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users, ChevronLeft, ChevronRight, MapPin, Palette, UserPlus, Video, Share, Bell, SlidersHorizontal } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useState } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, isToday, addWeeks, subWeeks } from "date-fns";
 import { MobileCalendarView } from "./MobileCalendarView";
 import { useHasPermission } from "@/hooks/usePermissions";
@@ -52,7 +51,6 @@ interface CalendarViewProps {
 
 const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const isMobile = useIsMobile();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date()); // Pre-select today
   const [view, setView] = useState<CalendarView>('week'); // Default to week view
@@ -79,9 +77,6 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
     statuses: []
   });
   
-  // Log on every render to debug
-  console.log('[CalendarView] Component rendering, searchParams:', Object.fromEntries(searchParams.entries()));
-  
   // Enable real-time updates
   useRealtimeBookings();
   
@@ -93,41 +88,6 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const createAppointment = useCreateAppointment();
   const { toast } = useToast();
   const { userTimezone, isTimezoneDifferent } = useTimezone();
-
-  // Handle eventId from URL or sessionStorage (for opening specific events from dashboard)
-  useEffect(() => {
-    // Check URL first
-    let eventId = searchParams.get('eventId');
-    
-    // If not in URL, check sessionStorage
-    if (!eventId) {
-      eventId = sessionStorage.getItem('openEventId');
-    }
-    
-    console.log('[CalendarView] Effect running - eventId:', eventId, 'appointments:', appointments?.length);
-    
-    if (eventId && appointments && appointments.length > 0) {
-      const appointment = appointments.find(apt => apt.id === eventId);
-      
-      if (appointment) {
-        console.log('[CalendarView] Opening event:', appointment.title);
-        setSelectedAppointment(appointment);
-        setShowEditDialog(true);
-        
-        // Clear from both URL and sessionStorage
-        sessionStorage.removeItem('openEventId');
-        const newParams = new URLSearchParams(searchParams);
-        newParams.delete('eventId');
-        setSearchParams(newParams, { replace: true });
-      } else {
-        console.log('[CalendarView] Event not found:', eventId);
-      }
-    } else if (eventId && (!appointments || appointments.length === 0)) {
-      // Store in sessionStorage if appointments aren't loaded yet
-      console.log('[CalendarView] Storing eventId in sessionStorage, waiting for appointments');
-      sessionStorage.setItem('openEventId', eventId);
-    }
-  }, [appointments, searchParams, setSearchParams]);
 
   // Return mobile view for mobile devices (AFTER all hooks are called)
   if (isMobile) {
@@ -495,9 +455,9 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   };
 
   return (
-    <div className="h-full flex w-full">
+    <div className="h-screen flex overflow-hidden">
       {/* Collapsible Sidebar - manages its own collapse state */}
-      <CalendarSidebar
+      <CalendarSidebar 
         currentDate={currentDate}
         onDateChange={setCurrentDate}
         onBookingLinks={() => setShowSchedulerSlider(true)}

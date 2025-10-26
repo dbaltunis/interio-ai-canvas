@@ -20,7 +20,6 @@ import { useClients } from "@/hooks/useClients";
 import { useCalendarColors } from "@/hooks/useCalendarColors";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { AppointmentSharingDialog } from "./sharing/AppointmentSharingDialog";
-import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 
@@ -61,7 +60,6 @@ export const UnifiedAppointmentDialog = ({
   const createAppointment = useCreateAppointment();
   const updateAppointment = useUpdateAppointment();
   const deleteAppointment = useDeleteAppointment();
-  const { toast } = useToast();
   // CalDAV sync removed
   const { isOnline, queueOfflineOperation } = useOfflineSupport();
   const { data: teamMembers } = useTeamMembers();
@@ -191,23 +189,12 @@ export const UnifiedAppointmentDialog = ({
   };
 
   const handleDelete = async () => {
-    if (!appointment?.id) return;
-    
     try {
       await deleteAppointment.mutateAsync(appointment.id);
-      toast({
-        title: "Event deleted",
-        description: "The event has been successfully deleted.",
-      });
       onOpenChange(false);
       resetForm();
     } catch (error) {
       console.error('Failed to delete appointment:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete the event. Please try again.",
-        variant: "destructive",
-      });
     }
   };
 
@@ -737,14 +724,10 @@ export const UnifiedAppointmentDialog = ({
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleDelete();
-                        }}
+                        onClick={handleDelete}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        disabled={deleteAppointment.isPending}
                       >
-                        {deleteAppointment.isPending ? "Deleting..." : "Delete"}
+                        Delete
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
