@@ -83,21 +83,32 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
   // Auto-scroll to 7 AM on mount for better UX
   useEffect(() => {
+    console.log('=== SCROLL EFFECT RUNNING ===');
+    console.log('scrollContainerRef.current:', scrollContainerRef.current);
+    console.log('timeSlots length:', timeSlots.length);
+    console.log('First few timeSlots:', timeSlots.slice(0, 5));
+    
     const timer = setTimeout(() => {
+      console.log('=== INSIDE TIMEOUT ===');
       if (scrollContainerRef.current) {
         // Find the index of 7:00 AM in the current timeSlots array
         const sevenAMIndex = timeSlots.findIndex(slot => slot === '07:00');
+        console.log('sevenAMIndex:', sevenAMIndex);
         
         if (sevenAMIndex !== -1) {
           const slotHeight = 32;
           const scrollPosition = sevenAMIndex * slotHeight;
+          console.log('Attempting scroll to position:', scrollPosition);
           scrollContainerRef.current.scrollTop = scrollPosition;
-          console.log(`Scrolled to 7 AM at index ${sevenAMIndex}, position ${scrollPosition}px`);
+          console.log('scrollTop after setting:', scrollContainerRef.current.scrollTop);
+          console.log(`✅ Scrolled to 7 AM at index ${sevenAMIndex}, position ${scrollPosition}px`);
         } else {
           // If 7 AM isn't in the visible range, scroll to the top
           scrollContainerRef.current.scrollTop = 0;
-          console.log('7 AM not in visible range, scrolled to top');
+          console.log('⚠️ 7 AM not in visible range, scrolled to top');
         }
+      } else {
+        console.log('❌ scrollContainerRef.current is NULL');
       }
     }, 100);
     
