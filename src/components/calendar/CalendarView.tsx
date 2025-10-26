@@ -43,6 +43,9 @@ import { TimezoneSettingsDialog } from "./timezone/TimezoneSettingsDialog";
 import { useTimezone } from "@/hooks/useTimezone";
 import { TimezoneUtils } from "@/utils/timezoneUtils";
 import { CalendarSyncToolbar } from "./CalendarSyncToolbar";
+import { SchedulerManagement } from "./SchedulerManagement";
+import { BookingManagement } from "./BookingManagement";
+import { AnalyticsDashboard } from "./AnalyticsDashboard";
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -53,12 +56,17 @@ interface CalendarViewProps {
 const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
+  const isDesktop = !isMobile && !isTablet;
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date()); // Pre-select today
   const [view, setView] = useState<CalendarView>('week'); // Default to week view
   const [showNewEventDialog, setShowNewEventDialog] = useState(false);
   const [showSchedulerSlider, setShowSchedulerSlider] = useState(false);
   const [showEventDetails, setShowEventDetails] = useState(false);
+  // Appointment scheduling dialogs
+  const [showSchedulerManagement, setShowSchedulerManagement] = useState(false);
+  const [showBookingManagement, setShowBookingManagement] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   // CalDAV sync removed
   const [showEditDialog, setShowEditDialog] = useState(false);
   
@@ -465,8 +473,8 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
 
   return (
     <div className="h-screen flex overflow-hidden">
-      {/* Collapsible Sidebar - Hidden on tablets */}
-      {!isTablet && (
+      {/* Collapsible Sidebar - Hidden on desktop and tablets */}
+      {!isDesktop && !isTablet && (
         <CalendarSidebar 
           currentDate={currentDate}
           onDateChange={setCurrentDate}
@@ -488,6 +496,9 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
             onFiltersChange={setFilters}
             onSchedulerClick={() => setShowSchedulerSlider(true)}
             onDateChange={setCurrentDate}
+            onManageTemplates={() => setShowSchedulerManagement(true)}
+            onViewBookings={() => setShowBookingManagement(true)}
+            onViewAnalytics={() => setShowAnalytics(true)}
           />
         </div>
 
@@ -847,6 +858,34 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
         isOpen={showSchedulerSlider}
         onClose={() => setShowSchedulerSlider(false)}
       />
+
+      {/* Appointment Scheduling Management Dialogs */}
+      <Dialog open={showSchedulerManagement} onOpenChange={setShowSchedulerManagement}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Manage Appointment Schedulers</DialogTitle>
+          </DialogHeader>
+          <SchedulerManagement />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showBookingManagement} onOpenChange={setShowBookingManagement}>
+        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Booking Management</DialogTitle>
+          </DialogHeader>
+          <BookingManagement />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showAnalytics} onOpenChange={setShowAnalytics}>
+        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Analytics Dashboard</DialogTitle>
+          </DialogHeader>
+          <AnalyticsDashboard />
+        </DialogContent>
+      </Dialog>
 
       {/* Unified Appointment Dialog for both create and edit */}
       <UnifiedAppointmentDialog

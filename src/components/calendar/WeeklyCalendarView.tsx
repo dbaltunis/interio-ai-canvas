@@ -399,8 +399,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="flex flex-col h-full pt-3" onMouseUp={handleMouseUp}>
-        {/* Week header with dates - NOT scrollable, always visible */}
-        <div className="flex border-b bg-background flex-shrink-0">
+        {/* Week header with dates - Sticky header that stays fixed on scroll */}
+        <div className="flex border-b bg-background flex-shrink-0 sticky top-0 z-10">
           <div className="w-16 border-r flex-shrink-0"></div>
           <div className="flex-1">
             <div className="grid grid-cols-7">

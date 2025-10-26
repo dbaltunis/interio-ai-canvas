@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Upload, Download, CheckCircle2, XCircle, AlertCircle, ChevronLeft, ChevronRight, Link2, Calendar as CalendarIcon } from "lucide-react";
+import { RefreshCw, Upload, Download, CheckCircle2, XCircle, AlertCircle, ChevronLeft, ChevronRight, Link2, Calendar as CalendarIcon, UserPlus, Settings as SettingsIcon, BarChart3 } from "lucide-react";
 import { useGoogleCalendarIntegration, useGoogleCalendarSync } from "@/hooks/useGoogleCalendar";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { formatDistanceToNow, format } from "date-fns";
 import { useState, useEffect } from "react";
 import { CalendarFilters, CalendarFilterState } from "./CalendarFilters";
@@ -25,6 +26,9 @@ interface CalendarSyncToolbarProps {
   onFiltersChange?: (filters: CalendarFilterState) => void;
   onSchedulerClick?: () => void;
   onDateChange?: (date: Date) => void;
+  onManageTemplates?: () => void;
+  onViewBookings?: () => void;
+  onViewAnalytics?: () => void;
 }
 
 export const CalendarSyncToolbar = ({
@@ -36,7 +40,10 @@ export const CalendarSyncToolbar = ({
   onViewChange,
   onFiltersChange,
   onSchedulerClick,
-  onDateChange
+  onDateChange,
+  onManageTemplates,
+  onViewBookings,
+  onViewAnalytics
 }: CalendarSyncToolbarProps) => {
   const { integration, isConnected } = useGoogleCalendarIntegration();
   const { syncFromGoogle, syncAllToGoogle, isSyncingFromGoogle, isSyncingAll } = useGoogleCalendarSync();
@@ -75,6 +82,7 @@ export const CalendarSyncToolbar = ({
   }, [isConnected, autoSyncEnabled, syncFromGoogle]);
 
   const isMobile = useIsMobile();
+  const isDesktop = !isMobile && !isTablet;
 
   // Format last sync time - shorter for mobile
   const getLastSyncText = () => {
@@ -148,12 +156,48 @@ export const CalendarSyncToolbar = ({
 
       {/* Right section - Filters, View, and Sync controls */}
       <div className="flex items-center gap-1.5 flex-wrap">
+        {/* Appointment Scheduling Dropdown - Desktop only */}
+        {isDesktop && onSchedulerClick && onManageTemplates && onViewBookings && onViewAnalytics && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs gap-1.5"
+              >
+                <CalendarIcon className="h-3.5 w-3.5" />
+                <span className="hidden lg:inline">Appointment Scheduling</span>
+                <span className="lg:hidden">Scheduling</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={onSchedulerClick}>
+                <UserPlus className="h-4 w-4 mr-2" />
+                New Booking Template
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onManageTemplates}>
+                <SettingsIcon className="h-4 w-4 mr-2" />
+                Manage Templates
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onViewBookings}>
+                <CalendarIcon className="h-4 w-4 mr-2" />
+                View Bookings
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onViewAnalytics}>
+                <BarChart3 className="h-4 w-4 mr-2" />
+                View Analytics
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
         {/* Filters */}
         {onFiltersChange && (
           <CalendarFilters onFiltersChange={onFiltersChange} />
         )}
 
-        {/* Scheduler button - Only on tablets */}
+        {/* Scheduler button - Tablets only */}
         {isTablet && onSchedulerClick && (
           <Button
             variant="ghost"
@@ -166,8 +210,8 @@ export const CalendarSyncToolbar = ({
           </Button>
         )}
 
-        {/* Calendar picker - Only on tablets */}
-        {isTablet && currentDate && onDateChange && (
+        {/* Calendar picker - Desktop (week/day view) and Tablets */}
+        {((isDesktop && view && view !== 'month') || isTablet) && currentDate && onDateChange && (
           <Popover open={showCalendarPicker} onOpenChange={setShowCalendarPicker}>
             <PopoverTrigger asChild>
               <Button
