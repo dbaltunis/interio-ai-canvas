@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Mail, Phone, User, Building2, MoreHorizontal, Star, TrendingUp, Clock, AlertCircle, Target, Calendar, MessageSquare, Briefcase, Package } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { formatDistanceToNow, isPast } from "date-fns";
+import { useIsTablet } from "@/hooks/use-tablet";
 
 interface Client {
   id: string;
@@ -43,6 +44,21 @@ interface ClientListViewProps {
 }
 
 export const ClientListView = ({ clients, onClientClick, isLoading }: ClientListViewProps) => {
+  const isTablet = useIsTablet();
+
+  const getClientAvatarColor = (clientName: string) => {
+    const colors = [
+      'bg-blue-500',
+      'bg-green-500', 
+      'bg-purple-500',
+      'bg-orange-500',
+      'bg-pink-500',
+      'bg-cyan-500'
+    ];
+    const index = clientName.length % colors.length;
+    return colors[index];
+  };
+
   const getTypeColor = (type: string) => {
     return type === "B2B" 
       ? "bg-blue-100 text-blue-800" 
@@ -54,15 +70,32 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
   };
 
   const getStageColor = (stage: string) => {
-    const colors = {
-      'lead': 'bg-gray-100 text-gray-800',
-      'qualification': 'bg-blue-100 text-blue-800',
-      'proposal': 'bg-yellow-100 text-yellow-800',
-      'negotiation': 'bg-orange-100 text-orange-800',
-      'closed_won': 'bg-green-100 text-green-800',
-      'closed_lost': 'bg-red-100 text-red-800'
-    };
-    return colors[stage as keyof typeof colors] || colors.lead;
+    switch (stage?.toLowerCase()) {
+      case 'lead':
+        return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'contacted':
+        return 'bg-purple-100 text-purple-700 border-purple-200';
+      case 'qualified':
+        return 'bg-green-100 text-green-700 border-green-200';
+      case 'proposal':
+        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      case 'negotiation':
+        return 'bg-orange-100 text-orange-700 border-orange-200';
+      case 'approved':
+        return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      case 'lost':
+        return 'bg-red-100 text-red-700 border-red-200';
+      case 'client':
+        return 'bg-primary/10 text-primary border-primary/20';
+      case 'qualification':
+        return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'closed_won':
+        return 'bg-green-100 text-green-700 border-green-200';
+      case 'closed_lost':
+        return 'bg-red-100 text-red-700 border-red-200';
+      default:
+        return 'bg-muted text-muted-foreground border-border';
+    }
   };
 
   const getPriorityColor = (priority: string) => {
@@ -122,17 +155,22 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                   <TableHead className="text-muted-foreground font-medium w-16">#</TableHead>
                   <TableHead className="text-muted-foreground font-medium">Client</TableHead>
                   <TableHead className="text-muted-foreground font-medium">Stage</TableHead>
-                  <TableHead className="text-muted-foreground font-medium">Deal Value</TableHead>
-                  <TableHead className="text-muted-foreground font-medium">Source</TableHead>
-                  <TableHead className="text-muted-foreground font-medium">Last Activity</TableHead>
-                  <TableHead className="text-muted-foreground font-medium">Next Follow-up</TableHead>
-                  <TableHead className="text-muted-foreground font-medium">Probability</TableHead>
-                  <TableHead className="text-muted-foreground font-medium">Activity</TableHead>
+                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Deal Value</TableHead>}
+                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Source</TableHead>}
+                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Last Activity</TableHead>}
+                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Next Follow-up</TableHead>}
+                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Probability</TableHead>}
+                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Activity</TableHead>}
                   <TableHead className="text-muted-foreground font-medium text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {clients.map((client, index) => (
+                {clients.map((client, index) => {
+                  const displayName = client.client_type === 'B2B' ? client.company_name : client.name;
+                  const initials = (displayName || 'U').substring(0, 2).toUpperCase();
+                  const avatarColor = getClientAvatarColor(displayName || 'Unknown');
+                  
+                  return (
                   <TableRow 
                     key={client.id} 
                     className="hover:bg-muted/50 cursor-pointer border-border/50"
@@ -145,8 +183,8 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                     <TableCell className="font-medium max-w-[280px]">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-9 w-9 flex-shrink-0">
-                          <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                            {((client.client_type === 'B2B' ? client.company_name : client.name) || 'U').substring(0, 2).toUpperCase()}
+                          <AvatarFallback className={`${avatarColor} text-white text-xs font-semibold`}>
+                            {initials}
                           </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0 flex-1">
@@ -173,81 +211,93 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                     </TableCell>
                     
                     <TableCell>
-                      <Badge className={`${getStageColor(client.funnel_stage || 'lead')} border-0 text-xs font-medium`} variant="outline">
+                      <Badge className={`${getStageColor(client.funnel_stage || 'lead')} border text-xs font-medium`} variant="outline">
                         {(client.funnel_stage || 'lead').replace('_', ' ').toUpperCase()}
                       </Badge>
                     </TableCell>
                     
-                    <TableCell>
-                      {client.deal_value && client.deal_value > 0 ? (
-                        <div className="font-bold text-foreground">
-                          ${client.deal_value.toLocaleString()}
-                        </div>
-                      ) : (
-                        <div className="text-muted-foreground text-sm">—</div>
-                      )}
-                    </TableCell>
-                    
-                    <TableCell>
-                      {client.lead_source ? (
-                        <Badge variant="secondary" className="text-xs">
-                          {client.lead_source.replace('_', ' ')}
-                        </Badge>
-                      ) : (
-                        <div className="text-muted-foreground text-sm">—</div>
-                      )}
-                    </TableCell>
-                    
-                    <TableCell>
-                      {client.last_contact_date ? (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="h-3.5 w-3.5" />
-                          {formatDistanceToNow(new Date(client.last_contact_date), { addSuffix: true })}
-                        </div>
-                      ) : (
-                        <div className="text-muted-foreground text-sm">No activity</div>
-                      )}
-                    </TableCell>
-                    
-                    <TableCell>
-                      {client.follow_up_date ? (
-                        <Badge 
-                          variant={isPast(new Date(client.follow_up_date)) ? "destructive" : "secondary"}
-                          className="text-xs flex items-center gap-1 w-fit"
-                        >
-                          <Calendar className="h-3 w-3" />
-                          {formatDistanceToNow(new Date(client.follow_up_date), { addSuffix: true })}
-                        </Badge>
-                      ) : (
-                        <div className="text-muted-foreground text-sm">—</div>
-                      )}
-                    </TableCell>
-                    
-                    <TableCell>
-                      {client.conversion_probability ? (
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">
-                              {client.conversion_probability}%
-                            </span>
+                    {!isTablet && (
+                      <TableCell>
+                        {client.deal_value && client.deal_value > 0 ? (
+                          <div className="font-bold text-foreground">
+                            ${client.deal_value.toLocaleString()}
                           </div>
-                          <Progress value={client.conversion_probability} className="h-1.5" />
-                        </div>
-                      ) : (
-                        <div className="text-muted-foreground text-sm">—</div>
-                      )}
-                    </TableCell>
-                    
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {client.projectCount && client.projectCount > 0 && (
-                          <Badge variant="outline" className="text-xs flex items-center gap-1">
-                            <Briefcase className="h-3 w-3" />
-                            {client.projectCount}
-                          </Badge>
+                        ) : (
+                          <div className="text-muted-foreground text-sm">—</div>
                         )}
-                      </div>
-                    </TableCell>
+                      </TableCell>
+                    )}
+                    
+                    {!isTablet && (
+                      <TableCell>
+                        {client.lead_source ? (
+                          <Badge variant="secondary" className="text-xs">
+                            {client.lead_source.replace('_', ' ')}
+                          </Badge>
+                        ) : (
+                          <div className="text-muted-foreground text-sm">—</div>
+                        )}
+                      </TableCell>
+                    )}
+                    
+                    {!isTablet && (
+                      <TableCell>
+                        {client.last_contact_date ? (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Clock className="h-3.5 w-3.5" />
+                            {formatDistanceToNow(new Date(client.last_contact_date), { addSuffix: true })}
+                          </div>
+                        ) : (
+                          <div className="text-muted-foreground text-sm">No activity</div>
+                        )}
+                      </TableCell>
+                    )}
+                    
+                    {!isTablet && (
+                      <TableCell>
+                        {client.follow_up_date ? (
+                          <Badge 
+                            variant={isPast(new Date(client.follow_up_date)) ? "destructive" : "secondary"}
+                            className="text-xs flex items-center gap-1 w-fit"
+                          >
+                            <Calendar className="h-3 w-3" />
+                            {formatDistanceToNow(new Date(client.follow_up_date), { addSuffix: true })}
+                          </Badge>
+                        ) : (
+                          <div className="text-muted-foreground text-sm">—</div>
+                        )}
+                      </TableCell>
+                    )}
+                    
+                    {!isTablet && (
+                      <TableCell>
+                        {client.conversion_probability ? (
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-muted-foreground">
+                                {client.conversion_probability}%
+                              </span>
+                            </div>
+                            <Progress value={client.conversion_probability} className="h-1.5" />
+                          </div>
+                        ) : (
+                          <div className="text-muted-foreground text-sm">—</div>
+                        )}
+                      </TableCell>
+                    )}
+                    
+                    {!isTablet && (
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {client.projectCount && client.projectCount > 0 && (
+                            <Badge variant="outline" className="text-xs flex items-center gap-1">
+                              <Briefcase className="h-3 w-3" />
+                              {client.projectCount}
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                    )}
                     
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -278,7 +328,8 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
