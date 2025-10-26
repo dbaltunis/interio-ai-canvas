@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Download, Upload, Filter, Mail, Phone, MoreHorizontal, User, Building2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -22,6 +23,42 @@ export const EnhancedClientManagement = () => {
 
   const getTypeIcon = (type: string) => {
     return type === "B2B" ? <Building2 className="h-4 w-4" /> : <User className="h-4 w-4" />;
+  };
+
+  const getClientAvatarColor = (clientName: string) => {
+    const colors = [
+      'bg-blue-500',
+      'bg-green-500', 
+      'bg-purple-500',
+      'bg-orange-500',
+      'bg-pink-500',
+      'bg-cyan-500'
+    ];
+    const index = clientName.length % colors.length;
+    return colors[index];
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'lead':
+        return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'contacted':
+        return 'bg-purple-100 text-purple-700 border-purple-200';
+      case 'qualified':
+        return 'bg-green-100 text-green-700 border-green-200';
+      case 'proposal':
+        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      case 'negotiation':
+        return 'bg-orange-100 text-orange-700 border-orange-200';
+      case 'approved':
+        return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      case 'lost':
+        return 'bg-red-100 text-red-700 border-red-200';
+      case 'client':
+        return 'bg-primary/10 text-primary border-primary/20';
+      default:
+        return 'bg-muted text-muted-foreground border-border';
+    }
   };
 
   if (showCreateForm) {
@@ -104,30 +141,50 @@ export const EnhancedClientManagement = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {clients.map((client) => (
+                {clients.map((client) => {
+                  const displayName = client.client_type === 'B2B' ? client.company_name : client.name;
+                  const initials = (displayName || 'U').substring(0, 2).toUpperCase();
+                  const avatarColor = getClientAvatarColor(displayName || 'Unknown');
+                  const statusColor = getStatusColor(client.funnel_stage || '');
+                  
+                  return (
                   <TableRow key={client.id} className="hover:bg-gray-50">
                     <TableCell>
-                      <div>
-                        <div className="font-medium text-gray-900">
-                          {client.client_type === 'B2B' ? client.company_name : client.name}
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10 shrink-0">
+                          <AvatarFallback className={`${avatarColor} text-white text-xs font-semibold`}>
+                            {initials}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {displayName}
+                          </div>
+                          {client.client_type === 'B2B' && client.contact_person && (
+                            <div className="text-sm text-gray-500">
+                              Contact: {client.contact_person}
+                            </div>
+                          )}
+                          {client.notes && (
+                            <div className="text-sm text-gray-500 truncate max-w-xs mt-1">
+                              {client.notes}
+                            </div>
+                          )}
                         </div>
-                        {client.client_type === 'B2B' && client.contact_person && (
-                          <div className="text-sm text-gray-500">
-                            Contact: {client.contact_person}
-                          </div>
-                        )}
-                        {client.notes && (
-                          <div className="text-sm text-gray-500 truncate max-w-xs mt-1">
-                            {client.notes}
-                          </div>
-                        )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={`${getTypeColor(client.client_type || 'B2C')} border-0 flex items-center space-x-1 w-fit`} variant="secondary">
-                        {getTypeIcon(client.client_type || 'B2C')}
-                        <span>{client.client_type || 'B2C'}</span>
-                      </Badge>
+                      <div className="space-y-1">
+                        <Badge className={`${getTypeColor(client.client_type || 'B2C')} border-0 flex items-center space-x-1 w-fit`} variant="secondary">
+                          {getTypeIcon(client.client_type || 'B2C')}
+                          <span>{client.client_type || 'B2C'}</span>
+                        </Badge>
+                        {client.funnel_stage && (
+                          <Badge variant="outline" className={`text-xs border ${statusColor}`}>
+                            {client.funnel_stage.replace('_', ' ')}
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
@@ -182,7 +239,8 @@ export const EnhancedClientManagement = () => {
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           )}
