@@ -37,10 +37,9 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
   const [isCollapsed, setIsCollapsed] = useState(() => {
     try {
       const stored = localStorage.getItem("calendar.sidebarCollapsed");
-      // Default to collapsed (true) if no stored value
-      return stored === null ? true : stored === "true";
+      return stored === "true";
     } catch {
-      return true; // Default to collapsed
+      return false; // Default to expanded
     }
   });
 
@@ -49,7 +48,6 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
       const next = !prev;
       try {
         localStorage.setItem("calendar.sidebarCollapsed", String(next));
-        console.log('[CalendarSidebar] Toggled collapse to:', next);
       } catch (e) {
         console.error('[CalendarSidebar] Failed to save collapse state:', e);
       }
@@ -57,13 +55,6 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
     });
   };
   
-  // Sync localStorage on mount to ensure consistency
-  useEffect(() => {
-    try {
-      localStorage.setItem("calendar.sidebarCollapsed", String(isCollapsed));
-      console.log('[CalendarSidebar] Initialized with collapsed:', isCollapsed);
-    } catch {}
-  }, []);
   const [showSchedulerManagement, setShowSchedulerManagement] = useState(false);
   const [showBookingManagement, setShowBookingManagement] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
