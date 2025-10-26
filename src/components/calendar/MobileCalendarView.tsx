@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { 
   Calendar as CalendarIcon, 
   ChevronLeft, 
@@ -31,6 +33,7 @@ export const MobileCalendarView = () => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showSchedulerSlider, setShowSchedulerSlider] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [showCalendarPicker, setShowCalendarPicker] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [filters, setFilters] = useState<CalendarFilterState>({
     searchTerm: "",
@@ -106,6 +109,30 @@ export const MobileCalendarView = () => {
           >
             <Link2 className="h-4 w-4" />
           </Button>
+          <Popover open={showCalendarPicker} onOpenChange={setShowCalendarPicker}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(isMobile && "h-8 w-8 p-0")}
+              >
+                <CalendarIcon className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => {
+                  if (date) {
+                    setSelectedDate(date);
+                    setShowCalendarPicker(false);
+                  }
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
           <Button
             variant="outline"
             size="sm"
