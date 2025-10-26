@@ -465,12 +465,14 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
 
   return (
     <div className="h-screen flex overflow-hidden">
-      {/* Collapsible Sidebar - manages its own collapse state */}
-      <CalendarSidebar 
-        currentDate={currentDate}
-        onDateChange={setCurrentDate}
-        onBookingLinks={() => setShowSchedulerSlider(true)}
-      />
+      {/* Collapsible Sidebar - Hidden on tablets */}
+      {!isTablet && (
+        <CalendarSidebar 
+          currentDate={currentDate}
+          onDateChange={setCurrentDate}
+          onBookingLinks={() => setShowSchedulerSlider(true)}
+        />
+      )}
 
       {/* Main Calendar with proper scroll hierarchy */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
