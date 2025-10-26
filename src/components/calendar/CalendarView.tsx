@@ -94,25 +94,26 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   // Handle eventId from URL parameters (e.g., from dashboard navigation)
   useEffect(() => {
     const eventId = searchParams.get('eventId');
-    console.log('[CalendarView] Checking eventId from URL:', eventId);
-    console.log('[CalendarView] Appointments loaded:', appointments?.length);
+    console.log('[CalendarView] URL eventId check:', eventId, 'Appointments:', appointments?.length, 'Loading:', appointmentsLoading);
     
-    if (eventId && appointments) {
+    if (eventId && appointments && appointments.length > 0) {
       const appointment = appointments.find(apt => apt.id === eventId);
-      console.log('[CalendarView] Found appointment:', appointment);
+      console.log('[CalendarView] Searching for appointment ID:', eventId, 'Found:', !!appointment);
       
       if (appointment) {
-        console.log('[CalendarView] Opening appointment details for:', appointment.title);
+        console.log('[CalendarView] Opening event dialog for:', appointment.title);
         setSelectedAppointment(appointment);
         setShowEditDialog(true);
         
-        // Remove the eventId param after opening
+        // Remove eventId from URL after opening the dialog
         const newParams = new URLSearchParams(searchParams);
         newParams.delete('eventId');
         setSearchParams(newParams, { replace: true });
+      } else {
+        console.warn('[CalendarView] Event not found in appointments:', eventId);
       }
     }
-  }, [searchParams, appointments, setSearchParams]);
+  }, [searchParams, appointments, appointmentsLoading]);
 
   // Return mobile view for mobile devices (AFTER all hooks are called)
   if (isMobile) {
