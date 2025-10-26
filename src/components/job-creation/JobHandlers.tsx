@@ -36,11 +36,6 @@ export const useJobHandlers = (project: any) => {
         name: `Room ${roomNumber}`,
         room_type: "living_room"
       });
-
-      toast({
-        title: "Success",
-        description: `Room created successfully`,
-      });
     } catch (error) {
       console.error("Failed to create room:", error);
       toast({

@@ -53,10 +53,6 @@ export const EnhancedJobsManagement = () => {
   const handleProjectCreated = (project: any) => {
     setCreateProjectDialogOpen(false);
     setSelectedProjectId(project.id);
-    toast({
-      title: "Success",
-      description: "Project created successfully",
-    });
   };
 
   const formatCurrency = (amount: number) => {

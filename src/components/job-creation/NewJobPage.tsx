@@ -120,11 +120,6 @@ export const NewJobPage = ({ onBack }: NewJobPageProps) => {
         
         setCurrentProject(newProject);
         console.log("Created new project:", newProject.id);
-        
-        toast({
-          title: "New Job Created",
-          description: `Job #${jobNumber} created successfully.`,
-        });
       } catch (error) {
         console.error("Failed to create default project:", error);
         toast({

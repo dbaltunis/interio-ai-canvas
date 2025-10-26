@@ -140,11 +140,6 @@ const JobsPage = () => {
         newParams.set('jobId', newProject.id);
         return newParams;
       });
-
-      toast({
-        title: "Success",
-        description: "New job created successfully",
-      });
     } catch (error) {
       console.error("Failed to create new job:", error);
       toast({

@@ -79,10 +79,6 @@ export const ManualQuoteTest = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['test-quotes'] });
       setSelectedQuoteId(data.id);
-      toast({
-        title: 'Test quote created',
-        description: `Quote ${data.quote_number} has been created`,
-      });
     },
     onError: (error) => {
       toast({

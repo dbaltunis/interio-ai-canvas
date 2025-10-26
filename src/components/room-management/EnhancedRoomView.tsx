@@ -44,11 +44,6 @@ export const EnhancedRoomView = ({ project, clientId }: EnhancedRoomViewProps) =
       for (const surfaceTemplate of template.surfaces) {
         await handleCreateSurface(newRoom.id, surfaceTemplate.type);
       }
-
-      toast({
-        title: "Success",
-        description: `Room created from template: ${customName || template.name}`,
-      });
     } catch (error) {
       console.error("Failed to create room from template:", error);
       toast({

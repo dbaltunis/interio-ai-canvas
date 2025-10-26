@@ -57,10 +57,6 @@ export const useCreateWindow = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["surfaces"] });
-      toast({
-        title: "Success",
-        description: "Surface created successfully",
-      });
     },
     onError: (error) => {
       console.error("Create surface error:", error);

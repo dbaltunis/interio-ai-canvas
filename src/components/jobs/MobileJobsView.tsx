@@ -261,11 +261,6 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
         .single();
 
       if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "New quote created successfully",
-      });
       
       onJobSelect(data);
     } catch (error) {

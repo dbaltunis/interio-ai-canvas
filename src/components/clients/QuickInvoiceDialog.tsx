@@ -61,11 +61,6 @@ export const QuickInvoiceDialog = ({ open, onOpenChange, client }: QuickInvoiceD
 
       if (error) throw error;
 
-      toast({
-        title: "Quote created!",
-        description: `Quote ${finalQuoteNumber} created for ${client.name} by ${businessSettings?.company_name || 'your company'}`,
-      });
-
       // Reset form and close dialog
       setQuoteNumber('');
       setAmount('');

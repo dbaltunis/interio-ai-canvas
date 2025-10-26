@@ -137,11 +137,6 @@ export const StreamlinedJobsInterface = ({
       setSelectedSurface(newSurface.id);
       setWindowSelectionOpen(false);
       setTreatmentDialogOpen(true);
-      
-      toast({
-        title: "Success",
-        description: `Window "${windowName}" created successfully`,
-      });
     } catch (error) {
       console.error("Failed to create window:", error);
       toast({

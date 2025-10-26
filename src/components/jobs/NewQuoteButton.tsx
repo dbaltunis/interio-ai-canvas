@@ -18,11 +18,6 @@ export const NewQuoteButton = ({ projectId }: NewQuoteButtonProps) => {
         status: "draft",
         notes: "New quote created for project"
       });
-
-      toast({
-        title: "Quote Created",
-        description: "A new quote has been created for this project"
-      });
     } catch (error) {
       console.error("Error creating quote:", error);
       toast({

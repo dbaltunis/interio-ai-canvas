@@ -66,10 +66,6 @@ export const useCreateRoom = () => {
     onSuccess: (data) => {
       // Invalidate all room queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
-      toast({
-        title: "Success",
-        description: "Room created successfully",
-      });
     },
     onError: (error) => {
       console.error("Failed to create room:", error);

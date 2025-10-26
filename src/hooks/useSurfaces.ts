@@ -77,11 +77,6 @@ export const useCreateSurface = () => {
       
       // Force refetch with fresh data
       queryClient.refetchQueries({ queryKey: ["surfaces", data.project_id] });
-      
-      toast({
-        title: "Success",
-        description: "Window created successfully",
-      });
     },
     onError: (error) => {
       console.error("=== SURFACE CREATION ERROR ===");

@@ -59,11 +59,6 @@ export const QuickJobDialog = ({ open, onOpenChange, client }: QuickJobDialogPro
 
       if (error) throw error;
 
-      toast({
-        title: "Project created!",
-        description: `Project "${projectName}" created for ${client.name}`,
-      });
-
       // Reset form and close dialog
       setProjectName('');
       setDescription('');
