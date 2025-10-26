@@ -35,13 +35,13 @@ export const WelcomeHeader = ({ kpiConfigs, onToggleKPI }: WelcomeHeaderProps) =
   }
 
   return (
-    <div className="relative overflow-hidden rounded-xl p-6 sm:p-8 animate-fade-in glass-morphism-strong border-primary/20">
+    <div className="relative overflow-hidden rounded-xl p-4 sm:p-6 md:p-8 animate-fade-in glass-morphism-strong border-primary/20">
       {/* Background gradient mesh */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary/5 to-transparent opacity-60" />
       <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl opacity-30" />
       
-      {/* Action buttons in top-right corner */}
-      <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+      {/* Action buttons - responsive positioning */}
+      <div className="relative sm:absolute sm:top-4 sm:right-4 flex items-center justify-end gap-2 z-10 mb-3 sm:mb-0">
         <ThemeToggle />
         {kpiConfigs && onToggleKPI && (
           <DashboardCustomizationButton
@@ -51,28 +51,28 @@ export const WelcomeHeader = ({ kpiConfigs, onToggleKPI }: WelcomeHeaderProps) =
         )}
       </div>
       
-      <div className="relative flex items-center gap-4 sm:gap-6">
+      <div className="relative flex items-start sm:items-center gap-3 sm:gap-6">
         <div className="relative shrink-0">
-          <Avatar className="h-14 w-14 sm:h-20 sm:w-20 border-2 border-primary/30 shadow-lg">
+          <Avatar className="h-12 w-12 sm:h-16 md:h-20 sm:w-16 md:w-20 border-2 border-primary/30 shadow-lg">
             {avatarUrl ? (
               <AvatarImage src={avatarUrl} alt={displayName} />
             ) : null}
-            <AvatarFallback className="text-base sm:text-xl font-bold bg-gradient-to-br from-primary/20 to-primary/10 text-primary">
+            <AvatarFallback className="text-sm sm:text-base md:text-xl font-bold bg-gradient-to-br from-primary/20 to-primary/10 text-primary">
               {initials}
             </AvatarFallback>
           </Avatar>
-          <div className="absolute -bottom-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 bg-green-500 rounded-full border-2 border-background shadow-sm" />
+          <div className="absolute -bottom-1 -right-1 h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 bg-green-500 rounded-full border-2 border-background shadow-sm" />
         </div>
         
-        <div className="flex-1 min-w-0">
-          <h1 className="text-xl sm:text-3xl font-bold text-foreground truncate mb-1 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+        <div className="flex-1 min-w-0 pr-20 sm:pr-0">
+          <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-foreground mb-1 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text leading-tight">
             {getGreeting()}, {displayName}! 👋
           </h1>
-          <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-muted-foreground">
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-background/50 backdrop-blur-sm border border-border/50">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground mt-2">
+            <span className="flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-background/50 backdrop-blur-sm border border-border/50">
               <span className="font-semibold text-primary">{stats?.pendingQuotes || 0}</span> pending quotes
             </span>
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-background/50 backdrop-blur-sm border border-border/50">
+            <span className="flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-background/50 backdrop-blur-sm border border-border/50">
               <span className="font-semibold text-primary">{stats?.totalClients || 0}</span> clients
             </span>
           </div>
