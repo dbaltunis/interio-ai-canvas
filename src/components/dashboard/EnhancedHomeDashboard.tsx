@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useKPIConfig } from "@/hooks/useKPIConfig";
 import { WelcomeHeader } from "./WelcomeHeader";
 import { DashboardCustomizationButton } from "./DashboardCustomizationButton";
@@ -14,9 +15,11 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useEmailKPIs } from "@/hooks/useEmails";
+import { ShopifyIntegrationDialog } from "@/components/library/ShopifyIntegrationDialog";
 import { Users, FileText, Package, DollarSign, Mail, MousePointerClick, Clock, TrendingUp } from "lucide-react";
 
 export const EnhancedHomeDashboard = () => {
+  const [showShopifyDialog, setShowShopifyDialog] = useState(false);
   const { kpiConfigs, toggleKPI, reorderKPIs, getEnabledKPIs } = useKPIConfig();
   const { data: stats } = useDashboardStats();
   const { data: emailKPIs } = useEmailKPIs();
@@ -134,9 +137,7 @@ export const EnhancedHomeDashboard = () => {
         {isShopifyConnected ? (
           <ShopifyAnalyticsCard />
         ) : (
-          <ShopifyConnectionCTA onConnect={() => {
-            window.location.href = "/?tab=settings";
-          }} />
+          <ShopifyConnectionCTA onConnect={() => setShowShopifyDialog(true)} />
         )}
 
         {/* Team Members */}
@@ -187,6 +188,12 @@ export const EnhancedHomeDashboard = () => {
           onReorder={(activeId, overId) => reorderKPIs("business", activeId, overId)}
         />
       )}
+      
+      {/* Shopify Integration Dialog */}
+      <ShopifyIntegrationDialog 
+        open={showShopifyDialog} 
+        onOpenChange={setShowShopifyDialog} 
+      />
     </div>
   );
 };
