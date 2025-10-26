@@ -114,7 +114,7 @@ const Index = () => {
       setSearchParams(newParams, { replace: true });
     }
     sessionStorage.setItem('active_tab', activeTab);
-  }, [activeTab, searchParams, setSearchParams]);
+  }, [activeTab]);
 
   const handleTabChange = (tabId: string) => {
     const currentIndex = tabOrder.indexOf(activeTab);
