@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { AppointmentEditSidebar } from './AppointmentEditSidebar';
@@ -49,15 +49,31 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
       const next = !prev;
       try {
         localStorage.setItem("calendar.sidebarCollapsed", String(next));
-      } catch {}
+        console.log('[CalendarSidebar] Toggled collapse to:', next);
+      } catch (e) {
+        console.error('[CalendarSidebar] Failed to save collapse state:', e);
+      }
       return next;
     });
   };
+  
+  // Sync localStorage on mount to ensure consistency
+  useEffect(() => {
+    try {
+      localStorage.setItem("calendar.sidebarCollapsed", String(isCollapsed));
+      console.log('[CalendarSidebar] Initialized with collapsed:', isCollapsed);
+    } catch {}
+  }, []);
   const [showSchedulerManagement, setShowSchedulerManagement] = useState(false);
   const [showBookingManagement, setShowBookingManagement] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [sidebarDate, setSidebarDate] = useState<Date | undefined>(currentDate);
+  
+  // Update sidebar date when currentDate prop changes
+  useEffect(() => {
+    setSidebarDate(currentDate);
+  }, [currentDate]);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const appointmentEdit = useAppointmentEdit();
   const { data: appointments } = useAppointments();
