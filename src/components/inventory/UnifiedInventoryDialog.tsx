@@ -46,6 +46,9 @@ export const UnifiedInventoryDialog = ({
   const { data: userRole } = useUserRole();
   const canViewMarkup = userRole?.canViewMarkup || false;
 
+  const [pricingGridRows, setPricingGridRows] = useState<Array<{ length: string; price: string }>>([]);
+  const [variants, setVariants] = useState<Array<{ type: string; name: string; sku: string; priceModifier: string }>>([]);
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -1188,6 +1191,203 @@ export const UnifiedInventoryDialog = ({
                     )}
                   </CardContent>
                 </Card>
+
+                {/* CSV Pricing Grid - Track/Rod Hardware Only */}
+                {(formData.subcategory === "track" || formData.subcategory === "rod") && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Length-Based Pricing Grid</CardTitle>
+                      <CardDescription>Upload a CSV file with pricing per length or add rows manually</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex gap-2">
+                        <Input
+                          type="file"
+                          accept=".csv"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                const csv = event.target?.result as string;
+                                const rows = csv.split('\n').slice(1); // Skip header
+                                const parsedRows = rows
+                                  .filter(row => row.trim())
+                                  .map(row => {
+                                    const [length, price] = row.split(',');
+                                    return { length: length?.trim() || '', price: price?.trim() || '' };
+                                  });
+                                setPricingGridRows(parsedRows);
+                                toast({ title: "CSV uploaded", description: `${parsedRows.length} pricing rows loaded` });
+                              };
+                              reader.readAsText(file);
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            const csv = "Length (m),Price ($)\n1.0,20.00\n1.5,25.00\n2.0,30.00";
+                            const blob = new Blob([csv], { type: 'text/csv' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'pricing-template.csv';
+                            a.click();
+                          }}
+                        >
+                          Download Template
+                        </Button>
+                      </div>
+
+                      <div className="space-y-2">
+                        {pricingGridRows.map((row, index) => (
+                          <div key={index} className="flex gap-2">
+                            <Input
+                              placeholder="Length (m)"
+                              value={row.length}
+                              onChange={(e) => {
+                                const updated = [...pricingGridRows];
+                                updated[index].length = e.target.value;
+                                setPricingGridRows(updated);
+                              }}
+                            />
+                            <Input
+                              placeholder="Price ($)"
+                              value={row.price}
+                              onChange={(e) => {
+                                const updated = [...pricingGridRows];
+                                updated[index].price = e.target.value;
+                                setPricingGridRows(updated);
+                              }}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setPricingGridRows(pricingGridRows.filter((_, i) => i !== index));
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPricingGridRows([...pricingGridRows, { length: '', price: '' }])}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Row
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Hardware Variants - Track/Rod Hardware Only */}
+                {(formData.subcategory === "track" || formData.subcategory === "rod") && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Product Variants</CardTitle>
+                      <CardDescription>Add finials, brackets, colors, and other variant options</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {variants.map((variant, index) => (
+                        <div key={index} className="grid gap-2 md:grid-cols-4 items-end p-3 border rounded-lg">
+                          <div>
+                            <Label className="text-xs">Type</Label>
+                            <Select
+                              value={variant.type}
+                              onValueChange={(value) => {
+                                const updated = [...variants];
+                                updated[index].type = value;
+                                setVariants(updated);
+                              }}
+                            >
+                              <SelectTrigger className="h-9">
+                                <SelectValue placeholder="Type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="finial">Finial</SelectItem>
+                                <SelectItem value="bracket">Bracket</SelectItem>
+                                <SelectItem value="color">Color</SelectItem>
+                                <SelectItem value="finish">Finish</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="text-xs">Name</Label>
+                            <Input
+                              className="h-9"
+                              placeholder="e.g., Chrome Finial"
+                              value={variant.name}
+                              onChange={(e) => {
+                                const updated = [...variants];
+                                updated[index].name = e.target.value;
+                                setVariants(updated);
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">SKU (optional)</Label>
+                            <Input
+                              className="h-9"
+                              placeholder="Optional"
+                              value={variant.sku}
+                              onChange={(e) => {
+                                const updated = [...variants];
+                                updated[index].sku = e.target.value;
+                                setVariants(updated);
+                              }}
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <div className="flex-1">
+                              <Label className="text-xs">Price + ($)</Label>
+                              <Input
+                                className="h-9"
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                value={variant.priceModifier}
+                                onChange={(e) => {
+                                  const updated = [...variants];
+                                  updated[index].priceModifier = e.target.value;
+                                  setVariants(updated);
+                                }}
+                              />
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-9 w-9"
+                              onClick={() => {
+                                setVariants(variants.filter((_, i) => i !== index));
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setVariants([...variants, { type: '', name: '', sku: '', priceModifier: '' }])}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Variant
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
 
               {/* VENDOR & STOCK TAB */}
