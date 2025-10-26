@@ -62,10 +62,6 @@ export const ClientManagementPage = ({ onBack, onClientSelect }: ClientManagemen
         zip_code: "",
         notes: ""
       });
-      toast({
-        title: "Success",
-        description: "Client created successfully",
-      });
     } catch (error) {
       toast({
         title: "Error",

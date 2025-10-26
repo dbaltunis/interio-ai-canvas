@@ -284,10 +284,6 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
     };
 
     onSave(curtainData);
-    toast({
-      title: "Curtain Added",
-      description: "Curtain has been successfully added to the project"
-    });
   };
 
   if (isLoading) {
