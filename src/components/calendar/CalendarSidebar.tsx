@@ -179,12 +179,12 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
 
   return (
     <div 
-      className={`border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300 relative z-30 ${
+      className={`border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300 relative z-30 overflow-hidden ${
         isCollapsed ? 'w-12 min-w-12' : 'w-80 min-w-80 max-w-80'
       }`}
       style={{ willChange: 'width' }}
     >
-      <ScrollArea className="flex-1 h-full">
+      <ScrollArea className="w-full h-full">
         {isCollapsed ? (
           <>
             <div className="p-2 border-b bg-background relative z-40">
