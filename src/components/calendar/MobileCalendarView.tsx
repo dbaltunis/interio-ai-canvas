@@ -120,6 +120,11 @@ export const MobileCalendarView = () => {
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="end">
+              <div className="p-3 border-b bg-muted/30">
+                <p className="text-xs text-muted-foreground">
+                  Today: <span className="font-medium text-foreground">{format(new Date(), 'MMM dd, yyyy')}</span>
+                </p>
+              </div>
               <Calendar
                 mode="single"
                 selected={selectedDate}
