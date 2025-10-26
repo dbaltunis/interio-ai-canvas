@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useKPIConfig } from "@/hooks/useKPIConfig";
+import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
 import { WelcomeHeader } from "./WelcomeHeader";
 import { DashboardCustomizationButton } from "./DashboardCustomizationButton";
+import { DashboardWidgetCustomizer } from "./DashboardWidgetCustomizer";
 import { UpcomingEventsWidget } from "./UpcomingEventsWidget";
 import { StatusOverviewWidget } from "./StatusOverviewWidget";
 import { RecentEmailsWidget } from "./RecentEmailsWidget";
@@ -12,19 +14,24 @@ import { ShopifyAnalyticsCard } from "./ShopifyAnalyticsCard";
 import { DraggableKPISection } from "./DraggableKPISection";
 import { TeamMembersWidget } from "./TeamMembersWidget";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { Button } from "@/components/ui/button";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useEmailKPIs } from "@/hooks/useEmails";
 import { ShopifyIntegrationDialog } from "@/components/library/ShopifyIntegrationDialog";
-import { Users, FileText, Package, DollarSign, Mail, MousePointerClick, Clock, TrendingUp } from "lucide-react";
+import { Users, FileText, Package, DollarSign, Mail, MousePointerClick, Clock, TrendingUp, Settings2 } from "lucide-react";
 
 export const EnhancedHomeDashboard = () => {
   const [showShopifyDialog, setShowShopifyDialog] = useState(false);
+  const [showWidgetCustomizer, setShowWidgetCustomizer] = useState(false);
   const { kpiConfigs, toggleKPI, reorderKPIs, getEnabledKPIs } = useKPIConfig();
+  const { widgets, toggleWidget, reorderWidgets, getEnabledWidgets } = useDashboardWidgets();
   const { data: stats } = useDashboardStats();
   const { data: emailKPIs } = useEmailKPIs();
   const { integration: shopifyIntegration } = useShopifyIntegrationReal();
   const isShopifyConnected = !!shopifyIntegration?.is_connected;
+
+  const enabledWidgets = getEnabledWidgets();
 
   // Prepare KPI data for primary metrics
   const primaryKPIs = [
@@ -124,33 +131,48 @@ export const EnhancedHomeDashboard = () => {
         </div>
         <div className="shrink-0 sm:pt-2 w-full sm:w-auto flex items-center gap-2">
           <ThemeToggle />
-          <DashboardCustomizationButton
-            kpiConfigs={kpiConfigs}
-            onToggleKPI={toggleKPI}
-          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowWidgetCustomizer(true)}
+            className="gap-2"
+          >
+            <Settings2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Customize</span>
+          </Button>
         </div>
       </div>
 
-      {/* Top Widgets Row */}
+      {/* Dynamic Widgets Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-        {/* Shopify Section */}
-        {isShopifyConnected ? (
-          <ShopifyAnalyticsCard />
-        ) : (
-          <ShopifyConnectionCTA onConnect={() => setShowShopifyDialog(true)} />
-        )}
-
-        {/* Team Members */}
-        <TeamMembersWidget />
-
-        {/* Upcoming Events */}
-        <UpcomingEventsWidget />
-      </div>
-
-      {/* Second Row - Email & Status */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <RecentEmailsWidget />
-        <StatusOverviewWidget />
+        {enabledWidgets.map((widget) => {
+          switch (widget.id) {
+            case "shopify":
+              return (
+                <div key={widget.id}>
+                  {isShopifyConnected ? (
+                    <ShopifyAnalyticsCard />
+                  ) : (
+                    <ShopifyConnectionCTA onConnect={() => setShowShopifyDialog(true)} />
+                  )}
+                </div>
+              );
+            case "team":
+              return <TeamMembersWidget key={widget.id} />;
+            case "events":
+              return <UpcomingEventsWidget key={widget.id} />;
+            case "emails":
+              return <RecentEmailsWidget key={widget.id} />;
+            case "status":
+              return <StatusOverviewWidget key={widget.id} />;
+            case "revenue":
+              return <RevenuePieChart key={widget.id} />;
+            case "calendar-connection":
+              return <CalendarConnectionCard key={widget.id} />;
+            default:
+              return null;
+          }
+        })}
       </div>
 
       {/* Primary KPIs Section */}
@@ -162,12 +184,6 @@ export const EnhancedHomeDashboard = () => {
           onReorder={(activeId, overId) => reorderKPIs("primary", activeId, overId)}
         />
       )}
-
-      {/* Revenue Chart */}
-      <RevenuePieChart />
-
-      {/* Calendar Connection */}
-      <CalendarConnectionCard />
 
       {/* Email Performance KPIs */}
       {filteredEmailKPIs.length > 0 && (
@@ -189,10 +205,18 @@ export const EnhancedHomeDashboard = () => {
         />
       )}
       
-      {/* Shopify Integration Dialog */}
+      {/* Dialogs */}
       <ShopifyIntegrationDialog 
         open={showShopifyDialog} 
         onOpenChange={setShowShopifyDialog} 
+      />
+      
+      <DashboardWidgetCustomizer
+        open={showWidgetCustomizer}
+        onOpenChange={setShowWidgetCustomizer}
+        widgets={widgets}
+        onToggle={toggleWidget}
+        onReorder={reorderWidgets}
       />
     </div>
   );
