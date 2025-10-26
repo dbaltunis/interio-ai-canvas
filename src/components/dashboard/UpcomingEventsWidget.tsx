@@ -2,7 +2,7 @@ import { useAppointments } from "@/hooks/useAppointments";
 import { useGoogleCalendarIntegration } from "@/hooks/useGoogleCalendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Clock, MapPin, Video, CheckCircle2 } from "lucide-react";
-import { format, isToday, isTomorrow, isPast } from "date-fns";
+import { format, isToday, isTomorrow, isPast, isWithinInterval, addHours } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,8 +14,15 @@ export const UpcomingEventsWidget = () => {
   const { data: appointments, isLoading } = useAppointments();
   const { integration: calendarIntegration } = useGoogleCalendarIntegration();
 
+  // Filter events to only show those within the next 24 hours
+  const now = new Date();
+  const next24Hours = addHours(now, 24);
+  
   const upcomingAppointments = appointments
-    ?.filter(apt => !isPast(new Date(apt.start_time))) || [];
+    ?.filter(apt => {
+      const startTime = new Date(apt.start_time);
+      return isWithinInterval(startTime, { start: now, end: next24Hours });
+    }) || [];
 
   const getDateLabel = (date: Date) => {
     if (isToday(date)) return "Today";
@@ -87,12 +94,12 @@ export const UpcomingEventsWidget = () => {
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-sm text-foreground truncate">
+                  <h4 className="font-semibold text-sm text-foreground break-words line-clamp-2">
                     {apt.title}
                   </h4>
-                  <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    {format(startTime, "h:mm a")}
+                  <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground flex-wrap">
+                    <Clock className="h-3 w-3 shrink-0" />
+                    <span className="whitespace-nowrap">{format(startTime, "h:mm a")}</span>
                   </div>
                 </div>
                 
