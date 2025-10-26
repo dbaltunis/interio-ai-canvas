@@ -194,24 +194,25 @@ export const TeamMembersWidget = () => {
             return (
               <div
                 key={member.id}
-                className="flex items-center gap-2.5 p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                className="flex items-center gap-2.5 p-3 rounded-lg bg-background border border-border hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
+                onClick={() => handleSendMessage(member.id)}
               >
                 <div className="relative shrink-0">
-                  <Avatar className="h-8 w-8 border-2 border-background">
+                  <Avatar className="h-10 w-10 border-2 border-background ring-2 ring-primary/10">
                     {member.avatar_url ? (
                       <AvatarImage src={member.avatar_url} alt={member.name} />
                     ) : null}
-                    <AvatarFallback className="text-xs font-semibold bg-muted text-foreground">
+                    <AvatarFallback className="text-sm font-semibold bg-gradient-to-br from-primary/20 to-primary/10 text-primary">
                       {getInitials(member.name)}
                     </AvatarFallback>
                   </Avatar>
                   <div
-                    className={`absolute bottom-0 right-0 h-2 w-2 rounded-full border border-background ${getStatusColor(status)}`}
+                    className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background ${getStatusColor(status)}`}
                   />
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-sm truncate text-foreground">
+                  <h4 className="font-semibold text-sm truncate text-foreground">
                     {member.name}
                   </h4>
                   <p className="text-xs text-muted-foreground truncate">
@@ -219,20 +220,15 @@ export const TeamMembersWidget = () => {
                   </p>
                 </div>
                 
-                {hasUnread && (
-                  <Badge variant="default" className="h-5 px-1.5 text-xs">
-                    {conversation!.unread_count}
+                {hasUnread ? (
+                  <Badge variant="default" className="h-6 px-2 text-xs font-semibold bg-primary">
+                    {conversation!.unread_count} new
                   </Badge>
+                ) : (
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <MessageSquare className="h-3.5 w-3.5" />
+                  </div>
                 )}
-                
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
-                  className="h-7 w-7 p-0 shrink-0"
-                  onClick={() => handleSendMessage(member.id)}
-                >
-                  <MessageSquare className="h-3.5 w-3.5" />
-                </Button>
               </div>
             );
           })

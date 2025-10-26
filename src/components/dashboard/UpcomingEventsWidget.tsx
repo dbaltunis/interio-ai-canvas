@@ -67,34 +67,43 @@ export const UpcomingEventsWidget = () => {
         ) : (
           upcomingAppointments.map((apt) => {
             const startTime = new Date(apt.start_time);
+            const dateLabel = getDateLabel(startTime);
             
             return (
               <div
                 key={apt.id}
-                className="flex items-start gap-2.5 p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
+                className="flex items-center gap-3 p-2.5 rounded-lg bg-background border border-border hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
                 onClick={() => navigate(`/?tab=calendar&eventId=${apt.id}`)}
               >
-                <div className="flex flex-col items-center min-w-[45px] pt-0.5">
-                  <span className="text-xs font-medium text-muted-foreground uppercase">
+                <div className="flex flex-col items-center justify-center min-w-[50px] h-[50px] rounded-lg bg-background border border-border shadow-sm">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
                     {format(startTime, "MMM")}
                   </span>
-                  <span className="text-xl font-bold text-foreground">
+                  <span className="text-2xl font-bold text-foreground leading-none">
                     {format(startTime, "d")}
                   </span>
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-sm text-foreground truncate">
+                  <h4 className="font-semibold text-sm text-foreground truncate">
                     {apt.title}
                   </h4>
-                  <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
                     <Clock className="h-3 w-3" />
                     {format(startTime, "h:mm a")}
                   </div>
                 </div>
                 
-                <Badge variant={isToday(startTime) ? "default" : "secondary"} className="text-xs shrink-0 h-5">
-                  {getDateLabel(startTime)}
+                <Badge 
+                  variant={isToday(startTime) ? "default" : "secondary"} 
+                  className="text-xs shrink-0 h-6 px-2.5 flex items-center justify-center font-medium"
+                  style={isToday(startTime) ? {} : isTomorrow(startTime) ? { 
+                    backgroundColor: 'hsl(var(--primary) / 0.15)',
+                    color: 'hsl(var(--primary))',
+                    borderColor: 'hsl(var(--primary) / 0.3)'
+                  } : {}}
+                >
+                  {dateLabel}
                 </Badge>
               </div>
             );
