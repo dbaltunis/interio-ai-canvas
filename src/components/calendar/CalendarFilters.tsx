@@ -90,10 +90,11 @@ export const CalendarFilters = ({ onFiltersChange }: CalendarFiltersProps) => {
       <PopoverTrigger asChild>
         <Button 
           variant="outline" 
-          className={`relative ${hasActiveFilters ? 'border-primary bg-primary/5' : ''}`}
+          size="sm"
+          className={`h-7 relative ${hasActiveFilters ? 'border-primary bg-primary/5' : ''}`}
         >
-          <Filter className="h-4 w-4 mr-2" />
-          Filters
+          <Filter className="h-4 w-4" />
+          <span className="ml-2 hidden lg:inline">Filters</span>
           {hasActiveFilters && (
             <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
           )}

@@ -175,12 +175,13 @@ export const CalendarSyncToolbar = ({
             </div>
 
             {/* Manual sync buttons */}
+            {/* Manual sync buttons - Hidden on mobile */}
             <Button
               variant="ghost"
               size="sm"
               onClick={() => syncFromGoogle()}
               disabled={isSyncingFromGoogle || isSyncingAll}
-              className="h-6 px-1.5 sm:px-2 gap-1 text-[11px]"
+              className="h-6 px-1.5 sm:px-2 gap-1 text-[11px] hidden lg:flex"
               title="Import from Google Calendar"
             >
               {isSyncingFromGoogle ? (
@@ -188,7 +189,7 @@ export const CalendarSyncToolbar = ({
               ) : (
                 <Download className="h-3 w-3" />
               )}
-              <span className="hidden md:inline">Import</span>
+              <span>Import</span>
             </Button>
 
             <Button
@@ -196,7 +197,7 @@ export const CalendarSyncToolbar = ({
               size="sm"
               onClick={() => syncAllToGoogle()}
               disabled={isSyncingFromGoogle || isSyncingAll}
-              className="h-6 px-1.5 sm:px-2 gap-1 text-[11px]"
+              className="h-6 px-1.5 sm:px-2 gap-1 text-[11px] hidden lg:flex"
               title="Export to Google Calendar"
             >
               {isSyncingAll ? (
@@ -204,7 +205,7 @@ export const CalendarSyncToolbar = ({
               ) : (
                 <Upload className="h-3 w-3" />
               )}
-              <span className="hidden md:inline">Export</span>
+              <span>Export</span>
             </Button>
           </>
         )}
