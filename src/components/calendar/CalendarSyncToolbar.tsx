@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Upload, Download, CheckCircle2, XCircle, AlertCircle, ChevronLeft, ChevronRight, Link2 } from "lucide-react";
+import { RefreshCw, Upload, Download, CheckCircle2, XCircle, AlertCircle, ChevronLeft, ChevronRight, Link2, Calendar as CalendarIcon } from "lucide-react";
 import { useGoogleCalendarIntegration, useGoogleCalendarSync } from "@/hooks/useGoogleCalendar";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { formatDistanceToNow, format } from "date-fns";
 import { useState, useEffect } from "react";
 import { CalendarFilters, CalendarFilterState } from "./CalendarFilters";
@@ -22,6 +24,7 @@ interface CalendarSyncToolbarProps {
   onViewChange?: (view: CalendarView) => void;
   onFiltersChange?: (filters: CalendarFilterState) => void;
   onSchedulerClick?: () => void;
+  onDateChange?: (date: Date) => void;
 }
 
 export const CalendarSyncToolbar = ({
@@ -32,11 +35,13 @@ export const CalendarSyncToolbar = ({
   onNextClick,
   onViewChange,
   onFiltersChange,
-  onSchedulerClick
+  onSchedulerClick,
+  onDateChange
 }: CalendarSyncToolbarProps) => {
   const { integration, isConnected } = useGoogleCalendarIntegration();
   const { syncFromGoogle, syncAllToGoogle, isSyncingFromGoogle, isSyncingAll } = useGoogleCalendarSync();
   const isTablet = useIsTablet();
+  const [showCalendarPicker, setShowCalendarPicker] = useState(false);
   
   // Auto-sync state
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(() => {
@@ -159,6 +164,40 @@ export const CalendarSyncToolbar = ({
           >
             <Link2 className="h-4 w-4" />
           </Button>
+        )}
+
+        {/* Calendar picker - Only on tablets */}
+        {isTablet && currentDate && onDateChange && (
+          <Popover open={showCalendarPicker} onOpenChange={setShowCalendarPicker}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0"
+                title="Pick a date"
+              >
+                <CalendarIcon className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <div className="p-3 border-b bg-muted/30">
+                <p className="text-xs text-muted-foreground">
+                  Today: <span className="font-medium text-foreground">{format(new Date(), 'MMM dd, yyyy')}</span>
+                </p>
+              </div>
+              <Calendar
+                mode="single"
+                selected={currentDate}
+                onSelect={(date) => {
+                  if (date) {
+                    onDateChange(date);
+                    setShowCalendarPicker(false);
+                  }
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         )}
 
         {/* View selector */}

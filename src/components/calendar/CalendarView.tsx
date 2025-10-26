@@ -487,6 +487,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
             onViewChange={(value: CalendarView) => setView(value)}
             onFiltersChange={setFilters}
             onSchedulerClick={() => setShowSchedulerSlider(true)}
+            onDateChange={setCurrentDate}
           />
         </div>
 
