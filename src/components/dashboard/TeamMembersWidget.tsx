@@ -260,7 +260,7 @@ export const TeamMembersWidget = () => {
                           <MoreHorizontal className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="start">
                         <DropdownMenuItem onClick={() => handleSendMessage(member.id)}>
                           <MessageSquare className="h-4 w-4 mr-2" />
                           Send Message
