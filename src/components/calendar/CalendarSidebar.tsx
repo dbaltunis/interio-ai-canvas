@@ -279,13 +279,12 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
           </Card>
 
           {/* Upcoming Events */}
-          <Card className="flex-1 min-h-0">
+          <Card className="flex-shrink-0">
             <CardHeader className="pb-3 flex-shrink-0">
               <CardTitle className="text-sm">Upcoming Events</CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 min-h-0">
-              <div className="space-y-3 max-h-64 overflow-y-auto">
-                {upcomingEvents.length > 0 ? (
+            <CardContent className="space-y-3 max-h-64 overflow-y-auto">
+              {upcomingEvents.length > 0 ? (
                   upcomingEvents.map(event => {
                     const attendees = getAttendeeInfo(event);
                     const eventColor = event.color || '#3b82f6'; // Default blue
@@ -356,7 +355,6 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
                     No upcoming events
                   </div>
                 )}
-              </div>
             </CardContent>
           </Card>
 
