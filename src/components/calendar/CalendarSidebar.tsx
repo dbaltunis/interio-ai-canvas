@@ -37,15 +37,21 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
   const [isCollapsed, setIsCollapsed] = useState(() => {
     try {
       const stored = localStorage.getItem("calendar.sidebarCollapsed");
-      return stored === "true";
+      console.log('[CalendarSidebar] INITIAL STATE - localStorage value:', stored);
+      // FORCE EXPANDED - ignore localStorage for now
+      localStorage.removeItem("calendar.sidebarCollapsed");
+      console.log('[CalendarSidebar] FORCING EXPANDED STATE');
+      return false; // Always start expanded
     } catch {
       return false; // Default to expanded
     }
   });
 
   const toggleCollapse = () => {
+    console.log('[CalendarSidebar] Toggle clicked, current state:', isCollapsed);
     setIsCollapsed(prev => {
       const next = !prev;
+      console.log('[CalendarSidebar] New state will be:', next);
       try {
         localStorage.setItem("calendar.sidebarCollapsed", String(next));
       } catch (e) {
@@ -186,6 +192,8 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
     });
   };
 
+  console.log('[CalendarSidebar] RENDER - isCollapsed:', isCollapsed);
+  
   return (
     <div 
       className={`border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300 relative z-30 ${
