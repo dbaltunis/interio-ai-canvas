@@ -197,68 +197,72 @@ export const TeamMembersWidget = () => {
           )}
         </div>
       </CardHeader>
-      <CardContent className="pt-0 space-y-2">
+      <CardContent className="pt-0">
         {sortedTeamMembers.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
             <Users className="h-10 w-10 mx-auto mb-2 opacity-20" />
             <p className="text-xs">No team members yet</p>
           </div>
         ) : (
-          sortedTeamMembers.slice(0, 5).map((member) => {
-            const status = getPresenceStatus(member.id);
-            const conversation = conversations.find(c => c.user_id === member.id);
-            const hasUnread = (conversation?.unread_count || 0) > 0;
-            const unreadCount = conversation?.unread_count || 0;
-            const avatarColor = getAvatarColor(member.name);
-            
-            return (
-              <div
-                key={member.id}
-                className="flex items-center gap-2.5 p-3 rounded-lg bg-background border border-border hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
-                onClick={() => handleSendMessage(member.id)}
-              >
-                <div className="relative shrink-0">
-                  <Avatar className="h-10 w-10 border-2 border-background ring-2 ring-primary/10">
-                    {member.avatar_url ? (
-                      <AvatarImage src={member.avatar_url} alt={member.name} />
-                    ) : null}
-                    <AvatarFallback className={`text-sm font-semibold ${avatarColor} text-white`}>
-                      {getInitials(member.name)}
-                    </AvatarFallback>
-                  </Avatar>
+          <ScrollArea className="h-[400px] pr-4">
+            <div className="space-y-2">
+              {sortedTeamMembers.map((member) => {
+                const status = getPresenceStatus(member.id);
+                const conversation = conversations.find(c => c.user_id === member.id);
+                const hasUnread = (conversation?.unread_count || 0) > 0;
+                const unreadCount = conversation?.unread_count || 0;
+                const avatarColor = getAvatarColor(member.name);
+                
+                return (
                   <div
-                    className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background ${getStatusColor(status)}`}
-                  />
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-sm truncate text-foreground">
-                    {member.name}
-                  </h4>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {member.role}
-                  </p>
-                </div>
-                
-                {hasUnread ? (
-                  <div className="relative shrink-0">
-                    <div className="p-2 rounded-full bg-primary/10">
-                      <MessageCircle className="h-4 w-4 text-primary" />
+                    key={member.id}
+                    className="flex items-center gap-2.5 p-3 rounded-lg bg-background border border-border hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
+                    onClick={() => handleSendMessage(member.id)}
+                  >
+                    <div className="relative shrink-0">
+                      <Avatar className="h-10 w-10 border-2 border-background ring-2 ring-primary/10">
+                        {member.avatar_url ? (
+                          <AvatarImage src={member.avatar_url} alt={member.name} />
+                        ) : null}
+                        <AvatarFallback className={`text-sm font-semibold ${avatarColor} text-white`}>
+                          {getInitials(member.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div
+                        className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background ${getStatusColor(status)}`}
+                      />
                     </div>
-                    <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary flex items-center justify-center">
-                      <span className="text-[10px] font-bold text-primary-foreground">
-                        {unreadCount > 9 ? '9+' : unreadCount}
-                      </span>
+                    
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-sm truncate text-foreground">
+                        {member.name}
+                      </h4>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {member.role}
+                      </p>
                     </div>
+                    
+                    {hasUnread ? (
+                      <div className="relative shrink-0">
+                        <div className="p-2 rounded-full bg-primary/10">
+                          <MessageCircle className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary flex items-center justify-center">
+                          <span className="text-[10px] font-bold text-primary-foreground">
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-2 rounded-full bg-muted/50 hover:bg-primary/10 transition-colors">
+                        <MessageCircle className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="p-2 rounded-full bg-muted/50 hover:bg-primary/10 transition-colors">
-                    <MessageCircle className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
-                  </div>
-                )}
-              </div>
-            );
-          })
+                );
+              })}
+            </div>
+          </ScrollArea>
         )}
       </CardContent>
 

@@ -8,6 +8,7 @@ export interface DashboardWidget {
   enabled: boolean;
   order: number;
   category: "analytics" | "communication" | "finance" | "integrations";
+  size: "small" | "medium" | "large";
 }
 
 const DEFAULT_WIDGETS: DashboardWidget[] = [
@@ -18,6 +19,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     enabled: true,
     order: 1,
     category: "integrations",
+    size: "medium",
   },
   {
     id: "team",
@@ -26,6 +28,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     enabled: true,
     order: 2,
     category: "communication",
+    size: "small",
   },
   {
     id: "events",
@@ -34,6 +37,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     enabled: true,
     order: 3,
     category: "communication",
+    size: "small",
   },
   {
     id: "emails",
@@ -42,6 +46,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     enabled: true,
     order: 4,
     category: "communication",
+    size: "small",
   },
   {
     id: "status",
@@ -50,6 +55,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     enabled: true,
     order: 5,
     category: "analytics",
+    size: "small",
   },
   {
     id: "revenue",
@@ -58,6 +64,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     enabled: true,
     order: 6,
     category: "finance",
+    size: "medium",
   },
   {
     id: "calendar-connection",
@@ -66,6 +73,16 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     enabled: true,
     order: 7,
     category: "integrations",
+    size: "small",
+  },
+  {
+    id: "recent-jobs",
+    name: "Recently Created Jobs",
+    description: "Latest projects and jobs",
+    enabled: true,
+    order: 8,
+    category: "analytics",
+    size: "medium",
   },
 ];
 
@@ -121,6 +138,13 @@ export const useDashboardWidgets = () => {
     setWidgets(updatedWidgets);
   };
 
+  const updateWidgetSize = (widgetId: string, size: "small" | "medium" | "large") => {
+    const updatedWidgets = widgets.map(w =>
+      w.id === widgetId ? { ...w, size } : w
+    );
+    saveWidgets(updatedWidgets);
+  };
+
   const toggleWidget = (widgetId: string) => {
     const updatedWidgets = widgets.map(w =>
       w.id === widgetId ? { ...w, enabled: !w.enabled } : w
@@ -157,5 +181,6 @@ export const useDashboardWidgets = () => {
     toggleWidget,
     reorderWidgets,
     getEnabledWidgets,
+    updateWidgetSize,
   };
 };

@@ -6,6 +6,7 @@ import { format, isToday, isTomorrow, isPast } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 
 export const UpcomingEventsWidget = () => {
@@ -14,8 +15,7 @@ export const UpcomingEventsWidget = () => {
   const { integration: calendarIntegration } = useGoogleCalendarIntegration();
 
   const upcomingAppointments = appointments
-    ?.filter(apt => !isPast(new Date(apt.start_time)))
-    ?.slice(0, 5) || [];
+    ?.filter(apt => !isPast(new Date(apt.start_time))) || [];
 
   const getDateLabel = (date: Date) => {
     if (isToday(date)) return "Today";
@@ -58,14 +58,16 @@ export const UpcomingEventsWidget = () => {
           )}
         </div>
       </CardHeader>
-      <CardContent className="pt-0 space-y-2">
+      <CardContent className="pt-0">
         {upcomingAppointments.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
             <Calendar className="h-10 w-10 mx-auto mb-2 opacity-20" />
             <p className="text-xs">No upcoming appointments</p>
           </div>
         ) : (
-          upcomingAppointments.map((apt) => {
+          <ScrollArea className="h-[400px] pr-4">
+            <div className="space-y-2">
+              {upcomingAppointments.map((apt) => {
             const startTime = new Date(apt.start_time);
             const dateLabel = getDateLabel(startTime);
             
@@ -107,7 +109,9 @@ export const UpcomingEventsWidget = () => {
                 </Badge>
               </div>
             );
-          })
+          })}
+            </div>
+          </ScrollArea>
         )}
       </CardContent>
     </Card>

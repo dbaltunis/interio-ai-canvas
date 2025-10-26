@@ -4,6 +4,7 @@ import { Mail, Send, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
@@ -12,7 +13,7 @@ export const RecentEmailsWidget = () => {
   const { data: emails, isLoading } = useEmails();
   const { data: emailKPIs } = useEmailKPIs();
 
-  const recentEmails = emails?.slice(0, 5) || [];
+  const recentEmails = emails?.slice(0, 10) || [];
 
   const getStatusIcon = (status?: string) => {
     switch (status) {
@@ -73,14 +74,16 @@ export const RecentEmailsWidget = () => {
           )}
         </div>
       </CardHeader>
-      <CardContent className="pt-0 space-y-2">
+      <CardContent className="pt-0">
         {recentEmails.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
             <Mail className="h-10 w-10 mx-auto mb-2 opacity-20" />
             <p className="text-xs">No emails sent yet</p>
           </div>
         ) : (
-          recentEmails.map((email) => (
+          <ScrollArea className="h-[400px] pr-4">
+            <div className="space-y-2">
+              {recentEmails.map((email) => (
             <div
               key={email.id}
               className="flex items-start gap-2.5 p-3 rounded-lg bg-background border border-border hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
@@ -120,7 +123,9 @@ export const RecentEmailsWidget = () => {
                 </div>
               </div>
             </div>
-          ))
+          ))}
+            </div>
+          </ScrollArea>
         )}
       </CardContent>
     </Card>

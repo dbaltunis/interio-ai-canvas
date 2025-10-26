@@ -3,6 +3,7 @@ import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, Circle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 export const StatusOverviewWidget = () => {
@@ -35,11 +36,8 @@ export const StatusOverviewWidget = () => {
 
   const totalProjects = projects?.length || 0;
 
-  // Filter to only show statuses that have projects or are commonly used
-  const displayStatuses = jobStatuses.filter(status => 
-    statusCounts[status.name] > 0 || 
-    ['Draft', 'Planning', 'In Production', 'Completed', 'Cancelled'].includes(status.name)
-  );
+  // Show all statuses from database
+  const displayStatuses = jobStatuses;
 
   if (isLoading) {
     return (
@@ -67,14 +65,16 @@ export const StatusOverviewWidget = () => {
           Project Status
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0 space-y-2.5">
+      <CardContent className="pt-0">
         {displayStatuses.length === 0 && totalProjects === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
             <BarChart3 className="h-10 w-10 mx-auto mb-2 opacity-20" />
             <p className="text-xs">No projects yet</p>
           </div>
         ) : (
-          displayStatuses.map((status) => {
+          <ScrollArea className="h-[350px] pr-4">
+            <div className="space-y-2.5">
+              {displayStatuses.map((status) => {
             const count = statusCounts[status.name] || 0;
             const percentage = totalProjects > 0 ? (count / totalProjects) * 100 : 0;
             const colors = getStatusColor(status.color);
@@ -100,7 +100,9 @@ export const StatusOverviewWidget = () => {
                 </div>
               </div>
             );
-          })
+          })}
+            </div>
+          </ScrollArea>
         )}
       </CardContent>
     </Card>

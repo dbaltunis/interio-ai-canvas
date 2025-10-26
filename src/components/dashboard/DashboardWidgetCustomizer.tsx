@@ -19,7 +19,11 @@ import {
   Mail, 
   BarChart3, 
   DollarSign,
-  Link2
+  Link2,
+  Briefcase,
+  Maximize2,
+  Minimize2,
+  Square
 } from "lucide-react";
 import { DashboardWidget } from "@/hooks/useDashboardWidgets";
 import { cn } from "@/lib/utils";
@@ -30,6 +34,7 @@ interface DashboardWidgetCustomizerProps {
   widgets: DashboardWidget[];
   onToggle: (widgetId: string) => void;
   onReorder: (widgetId: string, direction: "up" | "down") => void;
+  onSizeChange?: (widgetId: string, size: "small" | "medium" | "large") => void;
 }
 
 const getWidgetIcon = (widgetId: string) => {
@@ -41,8 +46,18 @@ const getWidgetIcon = (widgetId: string) => {
     status: BarChart3,
     revenue: DollarSign,
     "calendar-connection": Link2,
+    "recent-jobs": Briefcase,
   };
   return icons[widgetId] || BarChart3;
+};
+
+const getSizeIcon = (size: string) => {
+  switch (size) {
+    case "small": return Minimize2;
+    case "medium": return Square;
+    case "large": return Maximize2;
+    default: return Square;
+  }
 };
 
 const getCategoryColor = (category: string) => {
@@ -61,6 +76,7 @@ export const DashboardWidgetCustomizer = ({
   widgets,
   onToggle,
   onReorder,
+  onSizeChange,
 }: DashboardWidgetCustomizerProps) => {
   const [filter, setFilter] = useState<string>("all");
 
@@ -193,6 +209,27 @@ export const DashboardWidgetCustomizer = ({
 
                   {/* Controls */}
                   <div className="flex items-center gap-2 shrink-0">
+                    {/* Size selector */}
+                    {onSizeChange && (
+                      <div className="flex items-center gap-1 mr-2">
+                        {(["small", "medium", "large"] as const).map((size) => {
+                          const SizeIcon = getSizeIcon(size);
+                          return (
+                            <Button
+                              key={size}
+                              variant={widget.size === size ? "default" : "ghost"}
+                              size="sm"
+                              onClick={() => onSizeChange(widget.id, size)}
+                              className="h-8 w-8 p-0"
+                              title={`${size.charAt(0).toUpperCase() + size.slice(1)} size`}
+                            >
+                              <SizeIcon className="h-3.5 w-3.5" />
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    
                     {/* Reorder buttons */}
                     <div className="flex flex-col gap-0.5">
                       <Button

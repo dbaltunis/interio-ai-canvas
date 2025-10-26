@@ -13,19 +13,21 @@ import { ShopifyConnectionCTA } from "./ShopifyConnectionCTA";
 import { ShopifyAnalyticsCard } from "./ShopifyAnalyticsCard";
 import { DraggableKPISection } from "./DraggableKPISection";
 import { TeamMembersWidget } from "./TeamMembersWidget";
+import { RecentlyCreatedJobsWidget } from "./RecentlyCreatedJobsWidget";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useEmailKPIs } from "@/hooks/useEmails";
 import { ShopifyIntegrationDialog } from "@/components/library/ShopifyIntegrationDialog";
-import { Users, FileText, Package, DollarSign, Mail, MousePointerClick, Clock, TrendingUp, Settings2 } from "lucide-react";
+import { Users, FileText, Package, DollarSign, Mail, MousePointerClick, Clock, TrendingUp, Settings2, Store } from "lucide-react";
 
 export const EnhancedHomeDashboard = () => {
   const [showShopifyDialog, setShowShopifyDialog] = useState(false);
   const [showWidgetCustomizer, setShowWidgetCustomizer] = useState(false);
   const { kpiConfigs, toggleKPI, reorderKPIs, getEnabledKPIs } = useKPIConfig();
-  const { widgets, toggleWidget, reorderWidgets, getEnabledWidgets } = useDashboardWidgets();
+  const { widgets, toggleWidget, reorderWidgets, getEnabledWidgets, updateWidgetSize } = useDashboardWidgets();
   const { data: stats } = useDashboardStats();
   const { data: emailKPIs } = useEmailKPIs();
   const { integration: shopifyIntegration } = useShopifyIntegrationReal();
@@ -146,29 +148,66 @@ export const EnhancedHomeDashboard = () => {
       {/* Dynamic Widgets Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         {enabledWidgets.map((widget) => {
+          const sizeClasses = {
+            small: "col-span-1",
+            medium: "col-span-1 xl:col-span-2",
+            large: "col-span-1 xl:col-span-3"
+          };
+          
           switch (widget.id) {
             case "shopify":
-              return (
-                <div key={widget.id}>
-                  {isShopifyConnected ? (
-                    <ShopifyAnalyticsCard />
-                  ) : (
-                    <ShopifyConnectionCTA onConnect={() => setShowShopifyDialog(true)} />
-                  )}
+              return isShopifyConnected ? (
+                <div key={widget.id} className={sizeClasses[widget.size]}>
+                  <ShopifyAnalyticsCard />
                 </div>
+              ) : (
+                <Card 
+                  key={widget.id}
+                  className={`${sizeClasses[widget.size]} border border-border/50 bg-card/50 hover:border-primary/40 transition-colors cursor-pointer`}
+                  onClick={() => setShowShopifyDialog(true)}
+                >
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                      <Store className="h-4 w-4" />
+                      E-Commerce Integration
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="text-center py-6">
+                      <Store className="h-10 w-10 mx-auto mb-3 text-muted-foreground/20" />
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Connect your Shopify store to display products and orders
+                      </p>
+                      <Button size="sm" variant="outline" className="gap-2">
+                        <Store className="h-4 w-4" />
+                        Connect Store
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               );
+            
             case "team":
-              return <TeamMembersWidget key={widget.id} />;
+              return <div key={widget.id} className={sizeClasses[widget.size]}><TeamMembersWidget /></div>;
+            
             case "events":
-              return <UpcomingEventsWidget key={widget.id} />;
+              return <div key={widget.id} className={sizeClasses[widget.size]}><UpcomingEventsWidget /></div>;
+            
             case "emails":
-              return <RecentEmailsWidget key={widget.id} />;
+              return <div key={widget.id} className={sizeClasses[widget.size]}><RecentEmailsWidget /></div>;
+            
             case "status":
-              return <StatusOverviewWidget key={widget.id} />;
+              return <div key={widget.id} className={sizeClasses[widget.size]}><StatusOverviewWidget /></div>;
+            
             case "revenue":
-              return <RevenuePieChart key={widget.id} />;
+              return <div key={widget.id} className={sizeClasses[widget.size]}><RevenuePieChart /></div>;
+            
             case "calendar-connection":
-              return <CalendarConnectionCard key={widget.id} />;
+              return <div key={widget.id} className={sizeClasses[widget.size]}><CalendarConnectionCard /></div>;
+            
+            case "recent-jobs":
+              return <div key={widget.id} className={sizeClasses[widget.size]}><RecentlyCreatedJobsWidget /></div>;
+            
             default:
               return null;
           }
@@ -217,6 +256,7 @@ export const EnhancedHomeDashboard = () => {
         widgets={widgets}
         onToggle={toggleWidget}
         onReorder={reorderWidgets}
+        onSizeChange={updateWidgetSize}
       />
     </div>
   );
