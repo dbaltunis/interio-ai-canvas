@@ -67,9 +67,19 @@ export const CalendarSyncToolbar = ({
 
   const isMobile = useIsMobile();
 
-  const lastSyncTime = integration?.last_sync 
-    ? formatDistanceToNow(new Date(integration.last_sync), { addSuffix: true })
-    : 'Never';
+  // Format last sync time - shorter for mobile
+  const getLastSyncText = () => {
+    if (!integration?.last_sync) return 'Never';
+    
+    const secondsAgo = Math.floor((Date.now() - new Date(integration.last_sync).getTime()) / 1000);
+    
+    if (secondsAgo < 60) return 'Now';
+    if (secondsAgo < 3600) return `${Math.floor(secondsAgo / 60)}m ago`;
+    if (secondsAgo < 86400) return `${Math.floor(secondsAgo / 3600)}h ago`;
+    return `${Math.floor(secondsAgo / 86400)}d ago`;
+  };
+  
+  const lastSyncTime = getLastSyncText();
 
   return (
     <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 flex-wrap">
@@ -159,8 +169,8 @@ export const CalendarSyncToolbar = ({
                 onCheckedChange={setAutoSyncEnabled}
                 className="scale-75"
               />
-              <Label htmlFor="auto-sync" className="text-[11px] cursor-pointer text-muted-foreground whitespace-nowrap">
-                Auto (5m)
+              <Label htmlFor="auto-sync" className="text-[10px] sm:text-[11px] cursor-pointer text-muted-foreground whitespace-nowrap hidden sm:block">
+                Auto 5m
               </Label>
             </div>
 
@@ -170,15 +180,15 @@ export const CalendarSyncToolbar = ({
               size="sm"
               onClick={() => syncFromGoogle()}
               disabled={isSyncingFromGoogle || isSyncingAll}
-              className="h-6 px-2 gap-1 text-[11px]"
-              title="Sync from Google Calendar"
+              className="h-6 px-1.5 sm:px-2 gap-1 text-[11px]"
+              title="Import from Google Calendar"
             >
               {isSyncingFromGoogle ? (
                 <RefreshCw className="h-3 w-3 animate-spin" />
               ) : (
                 <Download className="h-3 w-3" />
               )}
-              <span className="hidden sm:inline">Import</span>
+              <span className="hidden md:inline">Import</span>
             </Button>
 
             <Button
@@ -186,15 +196,15 @@ export const CalendarSyncToolbar = ({
               size="sm"
               onClick={() => syncAllToGoogle()}
               disabled={isSyncingFromGoogle || isSyncingAll}
-              className="h-6 px-2 gap-1 text-[11px]"
-              title="Sync all to Google Calendar"
+              className="h-6 px-1.5 sm:px-2 gap-1 text-[11px]"
+              title="Export to Google Calendar"
             >
               {isSyncingAll ? (
                 <RefreshCw className="h-3 w-3 animate-spin" />
               ) : (
                 <Upload className="h-3 w-3" />
               )}
-              <span className="hidden sm:inline">Export</span>
+              <span className="hidden md:inline">Export</span>
             </Button>
           </>
         )}
