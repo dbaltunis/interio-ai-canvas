@@ -240,11 +240,13 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                         {event.title}
                       </div>
                       
-                      {/* Time */}
-                      <div className="flex items-center text-xs text-muted-foreground mt-1">
-                        <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
-                        {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
-                      </div>
+                      {/* Time - only show if there's enough height */}
+                      {style.height > 50 && (
+                        <div className="flex items-center text-xs text-muted-foreground mt-1">
+                          <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
+                          {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
+                        </div>
+                      )}
                       
                       {/* Location - only show if there's enough height */}
                       {style.height > 70 && event.location && (
