@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Plus, Mail, MessageSquare, MoreHorizontal } from "lucide-react";
+import { Users, Plus, Mail, MessageCircle, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -32,6 +32,24 @@ export const TeamMembersWidget = () => {
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>();
   const [recentMessageUsers, setRecentMessageUsers] = useState<Set<string>>(new Set());
+
+  const getAvatarColor = (name: string) => {
+    const colors = [
+      'bg-blue-500',
+      'bg-green-500', 
+      'bg-purple-500',
+      'bg-orange-500',
+      'bg-pink-500',
+      'bg-indigo-500',
+      'bg-teal-500',
+      'bg-rose-500',
+      'bg-cyan-500',
+      'bg-amber-500',
+    ];
+    
+    const charSum = name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    return colors[charSum % colors.length];
+  };
 
   const handleAddTeamMember = () => {
     console.log('Add team member clicked, navigating to settings...');
@@ -190,6 +208,8 @@ export const TeamMembersWidget = () => {
             const status = getPresenceStatus(member.id);
             const conversation = conversations.find(c => c.user_id === member.id);
             const hasUnread = (conversation?.unread_count || 0) > 0;
+            const unreadCount = conversation?.unread_count || 0;
+            const avatarColor = getAvatarColor(member.name);
             
             return (
               <div
@@ -202,7 +222,7 @@ export const TeamMembersWidget = () => {
                     {member.avatar_url ? (
                       <AvatarImage src={member.avatar_url} alt={member.name} />
                     ) : null}
-                    <AvatarFallback className="text-sm font-semibold bg-gradient-to-br from-primary/20 to-primary/10 text-primary">
+                    <AvatarFallback className={`text-sm font-semibold ${avatarColor} text-white`}>
                       {getInitials(member.name)}
                     </AvatarFallback>
                   </Avatar>
@@ -221,12 +241,19 @@ export const TeamMembersWidget = () => {
                 </div>
                 
                 {hasUnread ? (
-                  <Badge variant="default" className="h-6 px-2 text-xs font-semibold bg-primary">
-                    {conversation!.unread_count} new
-                  </Badge>
+                  <div className="relative shrink-0">
+                    <div className="p-2 rounded-full bg-primary/10">
+                      <MessageCircle className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary flex items-center justify-center">
+                      <span className="text-[10px] font-bold text-primary-foreground">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    </div>
+                  </div>
                 ) : (
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <MessageSquare className="h-3.5 w-3.5" />
+                  <div className="p-2 rounded-full bg-muted/50 hover:bg-primary/10 transition-colors">
+                    <MessageCircle className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
                   </div>
                 )}
               </div>
