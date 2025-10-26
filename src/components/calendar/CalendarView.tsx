@@ -2,7 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users, ChevronLeft, ChevronRight, MapPin, Palette, UserPlus, Video, Share, Bell, SlidersHorizontal } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useState } from "react";
+import { useIsTablet } from "@/hooks/use-tablet";
+import { useState, useEffect } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, isToday, addWeeks, subWeeks } from "date-fns";
 import { MobileCalendarView } from "./MobileCalendarView";
 import { useHasPermission } from "@/hooks/usePermissions";
@@ -51,6 +52,7 @@ interface CalendarViewProps {
 
 const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date()); // Pre-select today
   const [view, setView] = useState<CalendarView>('week'); // Default to week view
@@ -59,6 +61,13 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const [showEventDetails, setShowEventDetails] = useState(false);
   // CalDAV sync removed
   const [showEditDialog, setShowEditDialog] = useState(false);
+  
+  // Auto-switch from month view on tablet
+  useEffect(() => {
+    if (isTablet && view === 'month') {
+      setView('week');
+    }
+  }, [isTablet, view]);
   const [showSharingDialog, setShowSharingDialog] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showConflictDialog, setShowConflictDialog] = useState(false);
@@ -475,6 +484,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
             onNextClick={() => navigateWeek('next')}
             onViewChange={(value: CalendarView) => setView(value)}
             onFiltersChange={setFilters}
+            onSchedulerClick={() => setShowSchedulerSlider(true)}
           />
         </div>
 

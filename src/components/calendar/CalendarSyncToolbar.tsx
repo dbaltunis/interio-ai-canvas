@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Upload, Download, CheckCircle2, XCircle, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { RefreshCw, Upload, Download, CheckCircle2, XCircle, AlertCircle, ChevronLeft, ChevronRight, Link2 } from "lucide-react";
 import { useGoogleCalendarIntegration, useGoogleCalendarSync } from "@/hooks/useGoogleCalendar";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -9,6 +9,7 @@ import { formatDistanceToNow, format } from "date-fns";
 import { useState, useEffect } from "react";
 import { CalendarFilters, CalendarFilterState } from "./CalendarFilters";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsTablet } from "@/hooks/use-tablet";
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -20,6 +21,7 @@ interface CalendarSyncToolbarProps {
   onNextClick?: () => void;
   onViewChange?: (view: CalendarView) => void;
   onFiltersChange?: (filters: CalendarFilterState) => void;
+  onSchedulerClick?: () => void;
 }
 
 export const CalendarSyncToolbar = ({
@@ -29,10 +31,12 @@ export const CalendarSyncToolbar = ({
   onPrevClick,
   onNextClick,
   onViewChange,
-  onFiltersChange
+  onFiltersChange,
+  onSchedulerClick
 }: CalendarSyncToolbarProps) => {
   const { integration, isConnected } = useGoogleCalendarIntegration();
   const { syncFromGoogle, syncAllToGoogle, isSyncingFromGoogle, isSyncingAll } = useGoogleCalendarSync();
+  const isTablet = useIsTablet();
   
   // Auto-sync state
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(() => {
@@ -144,6 +148,19 @@ export const CalendarSyncToolbar = ({
           <CalendarFilters onFiltersChange={onFiltersChange} />
         )}
 
+        {/* Scheduler button - Only on tablets */}
+        {isTablet && onSchedulerClick && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onSchedulerClick}
+            className="h-7 w-7 p-0"
+            title="Booking Templates"
+          >
+            <Link2 className="h-4 w-4" />
+          </Button>
+        )}
+
         {/* View selector */}
         {view && onViewChange && (
           <Select value={view} onValueChange={onViewChange}>
@@ -151,7 +168,7 @@ export const CalendarSyncToolbar = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="month">Month</SelectItem>
+              {!isTablet && <SelectItem value="month">Month</SelectItem>}
               <SelectItem value="week">Week</SelectItem>
               <SelectItem value="day">Day</SelectItem>
             </SelectContent>
