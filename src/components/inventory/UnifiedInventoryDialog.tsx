@@ -506,47 +506,49 @@ export const UnifiedInventoryDialog = ({
                       />
                     </div>
 
-                    {/* Category selection - both create and edit modes */}
-                    <div>
-                      <div className="flex items-center gap-1 mb-2">
-                        <Label htmlFor="category">Category</Label>
-                        <FieldHelp content="Choose the specific fabric or hardware type for better organization" />
+                    {/* Category selection - only show in edit mode */}
+                    {mode === "edit" && (
+                      <div>
+                        <div className="flex items-center gap-1 mb-2">
+                          <Label htmlFor="category">Category</Label>
+                          <FieldHelp content="Choose the specific fabric or hardware type for better organization" />
+                        </div>
+                        <Select
+                          value={formData.category}
+                          onValueChange={(value) => setFormData({ ...formData, category: value })}
+                        >
+                          <SelectTrigger id="category" className="bg-background hover:bg-accent cursor-pointer">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover border border-border max-h-[300px]" position="popper" sideOffset={4}>
+                            <SelectItem value="fabric">Fabric (General)</SelectItem>
+                            <SelectItem value="curtain_fabric">Curtain Fabrics</SelectItem>
+                            <SelectItem value="roller_fabric">Roller Fabrics</SelectItem>
+                            <SelectItem value="furniture_fabric">Furniture Fabrics</SelectItem>
+                            <SelectItem value="sheer_fabric">Sheer Fabrics</SelectItem>
+                            <SelectItem value="blind_fabric">Blind Fabric</SelectItem>
+                            <SelectItem value="upholstery_fabric">Upholstery Fabric</SelectItem>
+                            <SelectItem value="lining">Lining/Interlining</SelectItem>
+                            <SelectItem value="trimming">Trimming/Passementerie</SelectItem>
+                            <SelectItem value="hardware">Hardware (General)</SelectItem>
+                            <SelectItem value="track_system">Track System</SelectItem>
+                            <SelectItem value="rod_system">Rod System</SelectItem>
+                            <SelectItem value="bracket">Bracket/Mounting</SelectItem>
+                            <SelectItem value="motor">Motorization</SelectItem>
+                            <SelectItem value="chain">Chain/Cord</SelectItem>
+                            <SelectItem value="venetian_slats">Venetian Slats</SelectItem>
+                            <SelectItem value="shutter_panels">Shutter Panels</SelectItem>
+                            <SelectItem value="wallcovering">Wallcovering (General)</SelectItem>
+                            <SelectItem value="wallpaper">Wallpaper</SelectItem>
+                            <SelectItem value="accessory">Accessory</SelectItem>
+                            <SelectItem value="service">Service/Labor</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Choose the specific fabric or hardware type for better organization
+                        </p>
                       </div>
-                      <Select
-                        value={formData.category}
-                        onValueChange={(value) => setFormData({ ...formData, category: value })}
-                      >
-                        <SelectTrigger id="category" className="bg-background hover:bg-accent cursor-pointer">
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover border border-border max-h-[300px]" position="popper" sideOffset={4}>
-                          <SelectItem value="fabric">Fabric (General)</SelectItem>
-                          <SelectItem value="curtain_fabric">Curtain Fabrics</SelectItem>
-                          <SelectItem value="roller_fabric">Roller Fabrics</SelectItem>
-                          <SelectItem value="furniture_fabric">Furniture Fabrics</SelectItem>
-                          <SelectItem value="sheer_fabric">Sheer Fabrics</SelectItem>
-                          <SelectItem value="blind_fabric">Blind Fabric</SelectItem>
-                          <SelectItem value="upholstery_fabric">Upholstery Fabric</SelectItem>
-                          <SelectItem value="lining">Lining/Interlining</SelectItem>
-                          <SelectItem value="trimming">Trimming/Passementerie</SelectItem>
-                          <SelectItem value="hardware">Hardware (General)</SelectItem>
-                          <SelectItem value="track_system">Track System</SelectItem>
-                          <SelectItem value="rod_system">Rod System</SelectItem>
-                          <SelectItem value="bracket">Bracket/Mounting</SelectItem>
-                          <SelectItem value="motor">Motorization</SelectItem>
-                          <SelectItem value="chain">Chain/Cord</SelectItem>
-                          <SelectItem value="venetian_slats">Venetian Slats</SelectItem>
-                          <SelectItem value="shutter_panels">Shutter Panels</SelectItem>
-                          <SelectItem value="wallcovering">Wallcovering (General)</SelectItem>
-                          <SelectItem value="wallpaper">Wallpaper</SelectItem>
-                          <SelectItem value="accessory">Accessory</SelectItem>
-                          <SelectItem value="service">Service/Labor</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Choose the specific fabric or hardware type for better organization
-                      </p>
-                    </div>
+                    )}
 
                     {/* Shopify-compatible Product Type */}
 
