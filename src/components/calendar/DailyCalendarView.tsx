@@ -1,6 +1,10 @@
 import { format, isSameDay, isToday } from "date-fns";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useState, useRef, useEffect } from "react";
+import { Clock, MapPin } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useClients } from "@/hooks/useClients";
+import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 
 interface DailyCalendarViewProps {
   currentDate: Date;
@@ -10,7 +14,45 @@ interface DailyCalendarViewProps {
 
 export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }: DailyCalendarViewProps) => {
   const { data: appointments } = useAppointments();
+  const { data: clients } = useClients();
+  const { data: currentUserProfile } = useCurrentUserProfile();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Helper function to get client name
+  const getClientName = (clientId?: string) => {
+    if (!clientId || !clients) return null;
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return null;
+    return client.client_type === 'B2B' ? client.company_name : client.name;
+  };
+
+  // Helper function to get attendee info with avatar data
+  const getAttendeeInfo = (event: any) => {
+    const attendees = [];
+    
+    // Add organizer (current user)
+    if (currentUserProfile) {
+      attendees.push({
+        id: currentUserProfile.user_id,
+        name: currentUserProfile.display_name || 'You',
+        avatar: currentUserProfile.avatar_url,
+        isOwner: true
+      });
+    }
+    
+    // Add client if exists
+    const clientName = getClientName(event.client_id);
+    if (clientName) {
+      attendees.push({
+        id: event.client_id,
+        name: clientName,
+        avatar: null,
+        isOwner: false
+      });
+    }
+    
+    return attendees;
+  };
 
   // Generate extended time slots from 6 AM to 10 PM
   const timeSlots = (() => {
@@ -171,49 +213,74 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                 
                 if (!style.visible) return null;
                 
-                // Color coding by appointment color or type
-                const getEventColor = (event: any) => {
-                  if (event.color) {
-                    return `text-white border-l-4`;
-                  }
-                  
-                  switch (event.appointment_type) {
-                    case 'meeting': return 'bg-blue-500/90 text-white border-blue-600';
-                    case 'consultation': return 'bg-green-500/90 text-white border-green-600';
-                    case 'call': return 'bg-primary/90 text-primary-foreground border-primary';
-                    case 'follow-up': return 'bg-orange-500/90 text-white border-orange-600';
-                    default: return 'bg-primary/90 text-primary-foreground border-primary';
-                  }
-                };
+                const attendees = getAttendeeInfo(event);
+                const eventColor = event.color || '#3b82f6'; // Default blue
                 
                 return (
                   <div
                     key={event.id}
-                    className={`absolute left-1 right-1 rounded border-l-4 p-2 text-sm overflow-hidden cursor-pointer hover:shadow-lg transition-all z-10 pointer-events-auto ${
-                      getEventColor(event)
-                    }`}
+                    className="absolute left-2 right-2 rounded-lg border bg-card/95 backdrop-blur-sm hover:bg-card hover:shadow-lg transition-all pointer-events-auto cursor-pointer group overflow-hidden"
                     style={{
                       top: `${style.top}px`,
                       height: `${style.height}px`,
-                      marginLeft: `${eventIndex * 4}px`, // Slight offset for overlapping events
                       zIndex: 10 + eventIndex,
-                      backgroundColor: event.color || undefined,
-                      borderLeftColor: event.color || undefined
                     }}
                     onClick={() => onEventClick?.(event.id)}
                     title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
                   >
-                    <div className="font-semibold truncate leading-tight text-base">
-                      {event.title}
-                    </div>
-                    <div className="text-sm opacity-90 leading-tight">
-                      {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
-                    </div>
-                    {style.height > 60 && event.location && (
-                      <div className="text-sm opacity-75 leading-tight truncate mt-1">
-                        📍 {event.location}
+                    {/* Left color border */}
+                    <div 
+                      className="absolute left-0 top-0 bottom-0 w-1 opacity-80 group-hover:opacity-100 transition-opacity"
+                      style={{ backgroundColor: eventColor }}
+                    />
+                    
+                    <div className="ml-3 p-2 pr-8 h-full flex flex-col justify-center">
+                      {/* Title */}
+                      <div className="font-medium text-sm leading-tight line-clamp-1 group-hover:text-primary transition-colors">
+                        {event.title}
                       </div>
-                    )}
+                      
+                      {/* Time */}
+                      <div className="flex items-center text-xs text-muted-foreground mt-1">
+                        <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
+                        {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
+                      </div>
+                      
+                      {/* Location - only show if there's enough height */}
+                      {style.height > 70 && event.location && (
+                        <div className="flex items-center text-xs text-muted-foreground mt-1">
+                          <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
+                          <span className="truncate">{event.location}</span>
+                        </div>
+                      )}
+                      
+                      {/* Attendees - only show if there's enough height */}
+                      {style.height > 90 && attendees.length > 0 && (
+                        <div className="flex items-center mt-2 gap-1">
+                          <div className="flex -space-x-1">
+                            {attendees.slice(0, 3).map((attendee) => (
+                              <Avatar key={attendee.id} className="w-5 h-5 border border-background">
+                                <AvatarImage src={attendee.avatar || undefined} />
+                                <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                  {attendee.name.charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                            ))}
+                            {attendees.length > 3 && (
+                              <div className="w-5 h-5 rounded-full bg-muted border border-background flex items-center justify-center">
+                                <span className="text-xs text-muted-foreground">+{attendees.length - 3}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Color dot indicator in top right */}
+                    <div 
+                      className="absolute top-2 right-2 w-3 h-3 rounded-full border border-white/50 shadow-sm"
+                      style={{ backgroundColor: eventColor }}
+                    />
                   </div>
                 );
               })}
