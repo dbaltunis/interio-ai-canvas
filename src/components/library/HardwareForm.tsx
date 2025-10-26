@@ -1,17 +1,33 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Upload, X, Plus, Download } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface HardwareFormProps {
   onClose: () => void;
 }
 
+interface PricingGridRow {
+  length: string;
+  price: string;
+}
+
+interface Variant {
+  id: string;
+  type: 'finial' | 'bracket' | 'color' | 'finish' | 'other';
+  name: string;
+  sku?: string;
+  priceModifier?: string; // Additional cost
+}
+
 export const HardwareForm = ({ onClose }: HardwareFormProps) => {
+  const { toast } = useToast();
   const [hardwareData, setHardwareData] = useState({
     name: "",
     code: "",
@@ -34,9 +50,27 @@ export const HardwareForm = ({ onClose }: HardwareFormProps) => {
     specifications: ""
   });
 
+  const [pricingGrid, setPricingGrid] = useState<PricingGridRow[]>([]);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [variants, setVariants] = useState<Variant[]>([]);
+  const [newVariant, setNewVariant] = useState({
+    type: 'finial' as Variant['type'],
+    name: '',
+    sku: '',
+    priceModifier: ''
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Hardware data:", hardwareData);
+    console.log("Hardware data:", {
+      ...hardwareData,
+      pricingGrid,
+      variants
+    });
+    toast({
+      title: "Hardware Saved",
+      description: `${hardwareData.name} has been added with ${pricingGrid.length} pricing tiers and ${variants.length} variants.`
+    });
     onClose();
   };
 
@@ -45,6 +79,105 @@ export const HardwareForm = ({ onClose }: HardwareFormProps) => {
     if (file) {
       setHardwareData(prev => ({ ...prev, image: file }));
     }
+  };
+
+  const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.csv')) {
+      toast({
+        title: "Invalid File",
+        description: "Please upload a CSV file",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setCsvFile(file);
+    
+    // Parse CSV
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      const rows = text.split('\n').map(row => row.split(','));
+      
+      // Skip header row if present
+      const dataRows = rows[0][0].toLowerCase().includes('length') ? rows.slice(1) : rows;
+      
+      const parsedGrid: PricingGridRow[] = dataRows
+        .filter(row => row.length >= 2 && row[0].trim() && row[1].trim())
+        .map(row => ({
+          length: row[0].trim(),
+          price: row[1].trim()
+        }));
+
+      setPricingGrid(parsedGrid);
+      toast({
+        title: "CSV Uploaded",
+        description: `Successfully imported ${parsedGrid.length} pricing tiers`
+      });
+    };
+    
+    reader.readAsText(file);
+  };
+
+  const downloadCSVTemplate = () => {
+    const template = 'Length (cm),Price ($)\n100,25.00\n150,35.00\n200,45.00\n250,55.00\n300,65.00';
+    const blob = new Blob([template], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'pricing_grid_template.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const addVariant = () => {
+    if (!newVariant.name.trim()) {
+      toast({
+        title: "Invalid Variant",
+        description: "Please enter a variant name",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const variant: Variant = {
+      id: Date.now().toString(),
+      ...newVariant
+    };
+
+    setVariants([...variants, variant]);
+    setNewVariant({
+      type: 'finial',
+      name: '',
+      sku: '',
+      priceModifier: ''
+    });
+
+    toast({
+      title: "Variant Added",
+      description: `${variant.name} has been added`
+    });
+  };
+
+  const removeVariant = (id: string) => {
+    setVariants(variants.filter(v => v.id !== id));
+  };
+
+  const removePricingRow = (index: number) => {
+    setPricingGrid(pricingGrid.filter((_, i) => i !== index));
+  };
+
+  const addManualPricingRow = () => {
+    setPricingGrid([...pricingGrid, { length: '', price: '' }]);
+  };
+
+  const updatePricingRow = (index: number, field: 'length' | 'price', value: string) => {
+    const updated = [...pricingGrid];
+    updated[index][field] = value;
+    setPricingGrid(updated);
   };
 
   return (
@@ -81,7 +214,7 @@ export const HardwareForm = ({ onClose }: HardwareFormProps) => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="curtain-tracks">Curtain Tracks</SelectItem>
-              <SelectItem value="curtain-poles">Curtain Poles</SelectItem>
+              <SelectItem value="curtain-poles">Curtain Poles / Rods</SelectItem>
               <SelectItem value="motorized-systems">Motorized Systems</SelectItem>
               <SelectItem value="brackets">Brackets & Fixings</SelectItem>
               <SelectItem value="tie-backs">Tie-backs & Hold-backs</SelectItem>
@@ -111,7 +244,7 @@ export const HardwareForm = ({ onClose }: HardwareFormProps) => {
 
       <div className="grid grid-cols-3 gap-4">
         <div>
-          <Label htmlFor="price">Price</Label>
+          <Label htmlFor="price">Base Price</Label>
           <div className="relative mt-1">
             <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
             <Input
@@ -153,6 +286,182 @@ export const HardwareForm = ({ onClose }: HardwareFormProps) => {
           />
         </div>
       </div>
+
+      <Card className="border-2 border-dashed">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Upload className="h-4 w-4" />
+            Pricing Grid (Length-based)
+          </CardTitle>
+          <CardDescription>
+            Upload a CSV file with length and price columns for track/rod pricing
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleCSVUpload}
+                className="hidden"
+                id="csvUpload"
+              />
+              <label htmlFor="csvUpload">
+                <Button type="button" variant="outline" className="w-full" asChild>
+                  <span>
+                    <Upload className="h-4 w-4 mr-2" />
+                    {csvFile ? csvFile.name : 'Upload CSV'}
+                  </span>
+                </Button>
+              </label>
+            </div>
+            <Button 
+              type="button" 
+              variant="ghost" 
+              size="icon"
+              onClick={downloadCSVTemplate}
+              title="Download template"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm"
+              onClick={addManualPricingRow}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add Row
+            </Button>
+          </div>
+
+          {pricingGrid.length > 0 && (
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground mb-2">
+                <div className="col-span-5">Length</div>
+                <div className="col-span-6">Price</div>
+                <div className="col-span-1"></div>
+              </div>
+              {pricingGrid.map((row, index) => (
+                <div key={index} className="grid grid-cols-12 gap-2">
+                  <Input
+                    value={row.length}
+                    onChange={(e) => updatePricingRow(index, 'length', e.target.value)}
+                    placeholder="e.g., 100cm"
+                    className="col-span-5"
+                  />
+                  <div className="col-span-6 relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                    <Input
+                      value={row.price}
+                      onChange={(e) => updatePricingRow(index, 'price', e.target.value)}
+                      placeholder="0.00"
+                      className="pl-7"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removePricingRow(index)}
+                    className="col-span-1 h-10 w-10 p-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-2 border-dashed">
+        <CardHeader>
+          <CardTitle className="text-base">Variant Options</CardTitle>
+          <CardDescription>
+            Add finials, brackets, colors, and other variants for this hardware
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-12 gap-2">
+            <Select 
+              value={newVariant.type} 
+              onValueChange={(value) => setNewVariant(prev => ({ ...prev, type: value as Variant['type'] }))}
+            >
+              <SelectTrigger className="col-span-3">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="finial">Finial</SelectItem>
+                <SelectItem value="bracket">Bracket</SelectItem>
+                <SelectItem value="color">Color</SelectItem>
+                <SelectItem value="finish">Finish</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              value={newVariant.name}
+              onChange={(e) => setNewVariant(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Variant name"
+              className="col-span-4"
+            />
+            <Input
+              value={newVariant.sku}
+              onChange={(e) => setNewVariant(prev => ({ ...prev, sku: e.target.value }))}
+              placeholder="SKU (optional)"
+              className="col-span-3"
+            />
+            <div className="col-span-1 relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+              <Input
+                value={newVariant.priceModifier}
+                onChange={(e) => setNewVariant(prev => ({ ...prev, priceModifier: e.target.value }))}
+                placeholder="0"
+                className="pl-6"
+              />
+            </div>
+            <Button
+              type="button"
+              onClick={addVariant}
+              size="sm"
+              className="col-span-1"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {variants.length > 0 && (
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {variants.map((variant) => (
+                <div key={variant.id} className="flex items-center gap-2 p-2 rounded-lg border bg-muted/30">
+                  <Badge variant="outline" className="capitalize">
+                    {variant.type}
+                  </Badge>
+                  <span className="font-medium flex-1">{variant.name}</span>
+                  {variant.sku && (
+                    <span className="text-xs text-muted-foreground">{variant.sku}</span>
+                  )}
+                  {variant.priceModifier && (
+                    <span className="text-sm font-semibold text-primary">
+                      +${variant.priceModifier}
+                    </span>
+                  )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeVariant(variant.id)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
@@ -267,7 +576,9 @@ export const HardwareForm = ({ onClose }: HardwareFormProps) => {
               />
               <label htmlFor="imageUpload" className="cursor-pointer">
                 <div className="text-gray-500">
-                  <span className="bg-gray-200 px-3 py-1 rounded text-sm">no file selected</span>
+                  <span className="bg-gray-200 px-3 py-1 rounded text-sm">
+                    {hardwareData.image ? hardwareData.image.name : 'no file selected'}
+                  </span>
                   <span className="ml-2">upload an image</span>
                 </div>
               </label>
