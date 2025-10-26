@@ -59,68 +59,59 @@ export const RecentEmailsWidget = () => {
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-2 sm:pb-3">
+    <Card className="border border-border/50 bg-card/50">
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-2">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Mail className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="truncate">Recent Emails</span>
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+            <Mail className="h-4 w-4" />
+            Recent Emails
           </CardTitle>
           {emailKPIs && (
-            <div className="flex items-center gap-2 text-[10px] sm:text-xs text-muted-foreground shrink-0">
-              <span className="hidden sm:inline">{emailKPIs.openRate.toFixed(1)}% open</span>
-              <span className="sm:hidden">{emailKPIs.openRate.toFixed(0)}%</span>
-            </div>
+            <span className="text-xs text-muted-foreground">
+              {emailKPIs.openRate.toFixed(0)}% open
+            </span>
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-2 sm:space-y-3">
+      <CardContent className="pt-0 space-y-2">
         {recentEmails.length === 0 ? (
-          <div className="text-center py-6 sm:py-8 text-muted-foreground">
-            <Mail className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-20" />
-            <p className="text-xs sm:text-sm">No emails sent yet</p>
+          <div className="text-center py-6 text-muted-foreground">
+            <Mail className="h-10 w-10 mx-auto mb-2 opacity-20" />
+            <p className="text-xs">No emails sent yet</p>
           </div>
         ) : (
           recentEmails.map((email) => (
             <div
               key={email.id}
-              className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+              className="flex items-start gap-2.5 p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
               onClick={() => navigate('/?tab=quotes')}
             >
-              <div className="mt-0.5 sm:mt-1 shrink-0">
+              <div className="mt-0.5 shrink-0">
                 {getStatusIcon(email.status)}
               </div>
               
               <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2 mb-1">
-                  <h4 className="font-semibold text-xs sm:text-sm text-foreground truncate">
+                <div className="flex items-start justify-between gap-2 mb-0.5">
+                  <h4 className="font-medium text-sm text-foreground truncate">
                     {email.subject || "No subject"}
                   </h4>
-                  <Badge variant={getStatusVariant(email.status)} className="text-[10px] sm:text-xs shrink-0">
+                  <Badge variant={getStatusVariant(email.status)} className="text-xs shrink-0 h-5">
                     {email.status || "pending"}
                   </Badge>
                 </div>
                 
-                <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
+                <p className="text-xs text-muted-foreground truncate">
                   To: {email.recipient_email}
                 </p>
                 
-                <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-2 text-[10px] sm:text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                   <span className="truncate">
                     {email.created_at ? formatDistanceToNow(new Date(email.created_at), { addSuffix: true }) : ""}
                   </span>
                   {email.open_count > 0 && (
-                    <span className="flex items-center gap-1 shrink-0">
+                    <span className="flex items-center gap-0.5 shrink-0">
                       <CheckCircle2 className="h-3 w-3 text-green-600" />
-                      <span className="hidden sm:inline">Opened ({email.open_count})</span>
-                      <span className="sm:hidden">{email.open_count}</span>
-                    </span>
-                  )}
-                  {email.click_count > 0 && (
-                    <span className="flex items-center gap-1 shrink-0">
-                      <CheckCircle2 className="h-3 w-3 text-blue-600" />
-                      <span className="hidden sm:inline">Clicked ({email.click_count})</span>
-                      <span className="sm:hidden">{email.click_count}</span>
+                      {email.open_count}
                     </span>
                   )}
                 </div>

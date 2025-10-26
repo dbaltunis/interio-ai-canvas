@@ -60,18 +60,18 @@ export const StatusOverviewWidget = () => {
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-2 sm:pb-3">
-        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-          <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />
-          <span className="truncate">Project Status</span>
+    <Card className="border border-border/50 bg-card/50">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base font-semibold">
+          <BarChart3 className="h-4 w-4" />
+          Project Status
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2 sm:space-y-3">
+      <CardContent className="pt-0 space-y-2.5">
         {displayStatuses.length === 0 && totalProjects === 0 ? (
-          <div className="text-center py-6 sm:py-8 text-muted-foreground">
-            <BarChart3 className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-20" />
-            <p className="text-xs sm:text-sm">No projects yet</p>
+          <div className="text-center py-6 text-muted-foreground">
+            <BarChart3 className="h-10 w-10 mx-auto mb-2 opacity-20" />
+            <p className="text-xs">No projects yet</p>
           </div>
         ) : (
           displayStatuses.map((status) => {
@@ -80,19 +80,19 @@ export const StatusOverviewWidget = () => {
             const colors = getStatusColor(status.color);
 
             return (
-              <div key={status.id} className="space-y-1.5 sm:space-y-2">
+              <div key={status.id} className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                    <Circle className={cn("h-2.5 w-2.5 sm:h-3 sm:w-3 fill-current shrink-0", colors.text)} />
-                    <span className="text-xs sm:text-sm font-medium text-foreground truncate">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Circle className={cn("h-2.5 w-2.5 fill-current shrink-0", colors.text)} />
+                    <span className="text-sm font-medium text-foreground truncate">
                       {status.name}
                     </span>
                   </div>
-                  <span className="text-xs sm:text-sm font-semibold text-foreground shrink-0">
+                  <span className="text-sm font-semibold text-foreground shrink-0">
                     {count}
                   </span>
                 </div>
-                <div className="w-full bg-secondary rounded-full h-1.5 sm:h-2 overflow-hidden">
+                <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
                   <div
                     className={cn("h-full transition-all duration-500 rounded-full", colors.bg)}
                     style={{ width: `${percentage}%` }}

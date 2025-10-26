@@ -49,33 +49,28 @@ export const RevenuePieChart = () => {
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-2 sm:pb-3">
+    <Card className="border border-border/50 bg-card/50">
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-2">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <DollarSign className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="truncate">Revenue</span>
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+            <DollarSign className="h-4 w-4" />
+            Revenue
           </CardTitle>
           <div className="text-right shrink-0">
-            <p className="text-lg sm:text-2xl font-bold text-foreground">
+            <p className="text-xl font-bold text-foreground">
               ${totalRevenue.toLocaleString()}
-            </p>
-            <p className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1 justify-end">
-              <TrendingUp className="h-3 w-3" />
-              <span className="hidden sm:inline">Total revenue</span>
             </p>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0">
         {!hasData ? (
-          <div className="text-center py-8 sm:py-12 text-muted-foreground">
-            <DollarSign className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-20" />
-            <p className="text-xs sm:text-sm">No revenue data yet</p>
-            <p className="text-[10px] sm:text-xs mt-1">Start by creating quotes</p>
+          <div className="text-center py-8 text-muted-foreground">
+            <DollarSign className="h-10 w-10 mx-auto mb-2 opacity-20" />
+            <p className="text-xs">No revenue data yet</p>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={200} className="sm:h-[250px]">
+          <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie
                 data={chartData}
@@ -86,7 +81,6 @@ export const RevenuePieChart = () => {
                 outerRadius={60}
                 fill="#8884d8"
                 dataKey="value"
-                className="sm:outerRadius-80"
               >
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
@@ -106,7 +100,6 @@ export const RevenuePieChart = () => {
                 height={36}
                 iconType="circle"
                 wrapperStyle={{ fontSize: "11px" }}
-                className="sm:text-xs"
               />
             </PieChart>
           </ResponsiveContainer>

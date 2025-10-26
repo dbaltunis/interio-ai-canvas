@@ -43,74 +43,57 @@ export const UpcomingEventsWidget = () => {
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-2 sm:pb-3">
+    <Card className="border border-border/50 bg-card/50">
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-2">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="truncate">Upcoming Events</span>
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+            <Calendar className="h-4 w-4" />
+            Upcoming Events
           </CardTitle>
           {calendarIntegration?.active && (
-            <Badge variant="outline" className="text-xs shrink-0">
+            <Badge variant="outline" className="text-xs h-5">
               <CheckCircle2 className="h-3 w-3 mr-1" />
-              <span className="hidden sm:inline">Synced</span>
+              Synced
             </Badge>
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-2 sm:space-y-3">
+      <CardContent className="pt-0 space-y-2">
         {upcomingAppointments.length === 0 ? (
-          <div className="text-center py-6 sm:py-8 text-muted-foreground">
-            <Calendar className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-20" />
-            <p className="text-xs sm:text-sm">No upcoming appointments</p>
-            <Button variant="link" size="sm" className="mt-1 sm:mt-2 text-xs sm:text-sm" onClick={() => navigate('/?tab=calendar')}>
-              Schedule your first meeting
-            </Button>
+          <div className="text-center py-6 text-muted-foreground">
+            <Calendar className="h-10 w-10 mx-auto mb-2 opacity-20" />
+            <p className="text-xs">No upcoming appointments</p>
           </div>
         ) : (
           upcomingAppointments.map((apt) => {
             const startTime = new Date(apt.start_time);
-            const endTime = new Date(apt.end_time);
             
             return (
               <div
                 key={apt.id}
-                className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                className="flex items-start gap-2.5 p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
                 onClick={() => navigate(`/?tab=calendar&eventId=${apt.id}`)}
               >
-                <div className="flex flex-col items-center min-w-[50px] sm:min-w-[60px] pt-1">
-                  <span className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase">
+                <div className="flex flex-col items-center min-w-[45px] pt-0.5">
+                  <span className="text-xs font-medium text-muted-foreground uppercase">
                     {format(startTime, "MMM")}
                   </span>
-                  <span className="text-xl sm:text-2xl font-bold text-foreground">
+                  <span className="text-xl font-bold text-foreground">
                     {format(startTime, "d")}
                   </span>
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-xs sm:text-sm text-foreground truncate">
+                  <h4 className="font-medium text-sm text-foreground truncate">
                     {apt.title}
                   </h4>
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1 text-[10px] sm:text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      <span className="truncate">{format(startTime, "h:mm a")}</span>
-                    </span>
-                    {apt.location && (
-                      <span className="flex items-center gap-1 truncate">
-                        <MapPin className="h-3 w-3 shrink-0" />
-                        <span className="truncate">{apt.location}</span>
-                      </span>
-                    )}
+                  <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    {format(startTime, "h:mm a")}
                   </div>
-                  {apt.description && (
-                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 truncate">
-                      {apt.description}
-                    </p>
-                  )}
                 </div>
                 
-                <Badge variant={isToday(startTime) ? "default" : "secondary"} className="text-[10px] sm:text-xs shrink-0">
+                <Badge variant={isToday(startTime) ? "default" : "secondary"} className="text-xs shrink-0 h-5">
                   {getDateLabel(startTime)}
                 </Badge>
               </div>
