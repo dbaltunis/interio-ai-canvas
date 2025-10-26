@@ -2,7 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon, Plus, Settings, Link2, Clock, Users, ChevronLeft, ChevronRight, MapPin, Palette, UserPlus, Video, Share, Bell, SlidersHorizontal } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, isToday, addWeeks, subWeeks } from "date-fns";
 import { MobileCalendarView } from "./MobileCalendarView";
 import { useHasPermission } from "@/hooks/usePermissions";
@@ -51,6 +52,7 @@ interface CalendarViewProps {
 
 const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const isMobile = useIsMobile();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date()); // Pre-select today
   const [view, setView] = useState<CalendarView>('week'); // Default to week view
@@ -88,6 +90,20 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const createAppointment = useCreateAppointment();
   const { toast } = useToast();
   const { userTimezone, isTimezoneDifferent } = useTimezone();
+
+  // Handle eventId from URL parameters (e.g., from dashboard navigation)
+  useEffect(() => {
+    const eventId = searchParams.get('eventId');
+    if (eventId && appointments) {
+      const appointment = appointments.find(apt => apt.id === eventId);
+      if (appointment) {
+        handleAppointmentClick(appointment);
+        // Remove the eventId param after opening
+        searchParams.delete('eventId');
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [searchParams, appointments]);
 
   // Return mobile view for mobile devices (AFTER all hooks are called)
   if (isMobile) {
