@@ -106,12 +106,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const { toast } = useToast();
   const { userTimezone, isTimezoneDifferent } = useTimezone();
 
-  // Return mobile view for mobile devices (AFTER all hooks are called)
-  if (isMobile) {
-    return <MobileCalendarView />;
-  }
-
-  // New appointment form state
+  // New appointment form state - MOVED BEFORE EARLY RETURN
   const [newEvent, setNewEvent] = useState({
     title: '',
     description: '',
@@ -129,6 +124,11 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
     notificationTiming: '15',
     customNotificationMessage: ''
   });
+
+  // Return mobile view for mobile devices (AFTER all hooks are called)
+  if (isMobile) {
+    return <MobileCalendarView />;
+  }
 
   const handleCreateEvent = async () => {
     console.log("handleCreateEvent called", newEvent);
