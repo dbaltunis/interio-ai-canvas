@@ -91,29 +91,35 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const { toast } = useToast();
   const { userTimezone, isTimezoneDifferent } = useTimezone();
 
-  // Handle eventId from URL parameters (e.g., from dashboard navigation)
+  // Handle eventId from URL or sessionStorage (for opening specific events from dashboard)
   useEffect(() => {
-    const eventId = searchParams.get('eventId');
-    console.log('[CalendarView] URL eventId check:', eventId, 'Appointments:', appointments?.length, 'Loading:', appointmentsLoading);
+    // Check URL first
+    let eventId = searchParams.get('eventId');
+    
+    // If not in URL, check sessionStorage
+    if (!eventId) {
+      eventId = sessionStorage.getItem('openEventId');
+    }
     
     if (eventId && appointments && appointments.length > 0) {
       const appointment = appointments.find(apt => apt.id === eventId);
-      console.log('[CalendarView] Searching for appointment ID:', eventId, 'Found:', !!appointment);
       
       if (appointment) {
-        console.log('[CalendarView] Opening event dialog for:', appointment.title);
+        console.log('[CalendarView] Opening event:', appointment.title);
         setSelectedAppointment(appointment);
         setShowEditDialog(true);
         
-        // Remove eventId from URL after opening the dialog
+        // Clear from both URL and sessionStorage
+        sessionStorage.removeItem('openEventId');
         const newParams = new URLSearchParams(searchParams);
         newParams.delete('eventId');
         setSearchParams(newParams, { replace: true });
-      } else {
-        console.warn('[CalendarView] Event not found in appointments:', eventId);
       }
+    } else if (eventId && !appointments) {
+      // Store in sessionStorage if appointments aren't loaded yet
+      sessionStorage.setItem('openEventId', eventId);
     }
-  }, [searchParams, appointments, appointmentsLoading]);
+  }, [appointments, searchParams]);
 
   // Return mobile view for mobile devices (AFTER all hooks are called)
   if (isMobile) {

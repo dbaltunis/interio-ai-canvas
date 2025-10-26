@@ -78,7 +78,10 @@ export const UpcomingEventsWidget = () => {
               <div
                 key={apt.id}
                 className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/20 hover:bg-card/80 transition-all cursor-pointer hover-lift"
-                onClick={() => navigate(`/?tab=calendar&eventId=${apt.id}`)}
+                onClick={() => {
+                  sessionStorage.setItem('openEventId', apt.id);
+                  navigate(`/?tab=calendar&eventId=${apt.id}`);
+                }}
               >
                 <div className="flex flex-col items-center min-w-[56px] sm:min-w-[68px] p-2 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
                   <span className="text-[10px] sm:text-xs font-bold text-primary uppercase tracking-wide">
