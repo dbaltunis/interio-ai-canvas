@@ -81,31 +81,31 @@ export const UpcomingEventsWidget = () => {
             return (
               <div
                 key={apt.id}
-                className="flex items-center gap-3 p-2.5 rounded-lg bg-background border border-border hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
+                className="flex items-center gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-lg bg-background border border-border hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
                 onClick={() => navigate(`/?tab=calendar&eventId=${apt.id}`)}
               >
-                <div className="flex flex-col items-center justify-center min-w-[50px] h-[50px] rounded-lg bg-background border border-border shadow-sm">
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                <div className="flex flex-col items-center justify-center min-w-[40px] sm:min-w-[50px] h-[40px] sm:h-[50px] rounded-lg bg-background border border-border shadow-sm">
+                  <span className="text-[9px] sm:text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
                     {format(startTime, "MMM")}
                   </span>
-                  <span className="text-2xl font-bold text-foreground leading-none">
+                  <span className="text-xl sm:text-2xl font-bold text-foreground leading-none">
                     {format(startTime, "d")}
                   </span>
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-sm text-foreground break-words line-clamp-2">
+                  <h4 className="font-semibold text-xs sm:text-sm text-foreground break-words line-clamp-1 sm:line-clamp-2">
                     {apt.title}
                   </h4>
-                  <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground flex-wrap">
-                    <Clock className="h-3 w-3 shrink-0" />
+                  <div className="flex items-center gap-1 sm:gap-1.5 mt-0.5 text-[10px] sm:text-xs text-muted-foreground flex-wrap">
+                    <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 shrink-0" />
                     <span className="whitespace-nowrap">{format(startTime, "h:mm a")}</span>
                   </div>
                 </div>
                 
                 <Badge 
                   variant={isToday(startTime) ? "default" : "secondary"} 
-                  className="text-xs shrink-0 h-6 px-2.5 flex items-center justify-center font-medium"
+                  className="text-[10px] sm:text-xs shrink-0 h-5 sm:h-6 px-1.5 sm:px-2.5 flex items-center justify-center font-medium"
                   style={isToday(startTime) ? {} : isTomorrow(startTime) ? { 
                     backgroundColor: 'hsl(var(--primary) / 0.15)',
                     color: 'hsl(var(--primary))',
