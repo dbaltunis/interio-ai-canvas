@@ -1100,7 +1100,7 @@ export const UnifiedInventoryDialog = ({
                       <Alert className="bg-primary/5 border-primary/20">
                         <TrendingUp className="h-4 w-4" />
                         <AlertDescription className="text-sm">
-                          Admin View: You can see profit margins and markup calculations
+                          <strong>Admin Privileges Active:</strong> As an administrator, you have access to view cost prices, profit margins, and markup calculations. Regular staff members will only see selling prices.
                         </AlertDescription>
                       </Alert>
                     )}
@@ -1199,8 +1199,14 @@ export const UnifiedInventoryDialog = ({
                     {(formData.subcategory === "track" || formData.subcategory === "rod") && (
                       <Alert>
                         <DollarSign className="h-4 w-4" />
-                        <AlertDescription>
-                          Track and rod pricing is managed through the Length-Based Pricing Grid below
+                        <AlertDescription className="space-y-1">
+                          <div><strong>Length-Based Pricing:</strong> Tracks and rods use a pricing grid instead of fixed prices.</div>
+                          <div className="text-xs text-muted-foreground">
+                            • Define prices for different lengths in {formData.unit || 'meters'} (e.g., 1.0m = $20, 1.5m = $25, 2.0m = $30)<br />
+                            • Set your typical length range (min/max) in the grid below<br />
+                            • The system will charge the price matching the closest length in your grid<br />
+                            • Common range: 0.3m (30cm) to 6.0m (600cm)
+                          </div>
                         </AlertDescription>
                       </Alert>
                     )}
@@ -1212,7 +1218,10 @@ export const UnifiedInventoryDialog = ({
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-base">Length-Based Pricing Grid</CardTitle>
-                      <CardDescription>Upload a CSV file with pricing per length or add rows manually</CardDescription>
+                      <CardDescription>
+                        Define selling prices for different lengths. Add rows for each length you offer (e.g., 0.3m to 6.0m range). 
+                        The system will use the closest matching length when calculating quotes.
+                      </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="flex gap-2">
@@ -1308,7 +1317,10 @@ export const UnifiedInventoryDialog = ({
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-base">Product Variants</CardTitle>
-                      <CardDescription>Add finials, brackets, colors, and other variant options</CardDescription>
+                      <CardDescription>
+                        Add optional accessories and variations (finials, brackets, colors, finishes). 
+                        Each variant can have an additional price modifier that gets added to the base price.
+                      </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {variants.map((variant, index) => (
