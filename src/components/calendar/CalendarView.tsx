@@ -101,6 +101,8 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
       eventId = sessionStorage.getItem('openEventId');
     }
     
+    console.log('[CalendarView] Effect running - eventId:', eventId, 'appointments:', appointments?.length);
+    
     if (eventId && appointments && appointments.length > 0) {
       const appointment = appointments.find(apt => apt.id === eventId);
       
@@ -114,12 +116,15 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
         const newParams = new URLSearchParams(searchParams);
         newParams.delete('eventId');
         setSearchParams(newParams, { replace: true });
+      } else {
+        console.log('[CalendarView] Event not found:', eventId);
       }
-    } else if (eventId && !appointments) {
+    } else if (eventId && (!appointments || appointments.length === 0)) {
       // Store in sessionStorage if appointments aren't loaded yet
+      console.log('[CalendarView] Storing eventId in sessionStorage, waiting for appointments');
       sessionStorage.setItem('openEventId', eventId);
     }
-  }, [appointments, searchParams]);
+  }, [appointments, searchParams, setSearchParams]);
 
   // Return mobile view for mobile devices (AFTER all hooks are called)
   if (isMobile) {
