@@ -24,6 +24,12 @@ export const detectTreatmentType = (template: any): TreatmentCategory => {
   // Priority 2: Check curtain_type field (from curtain_templates table)
   if (template?.curtain_type) {
     const curtainType = template.curtain_type.toLowerCase();
+    
+    // Check for wallpaper first
+    if (curtainType === 'wallpaper' || curtainType.includes('wallpaper')) {
+      return 'wallpaper';
+    }
+    
     if (curtainType === 'roller_blind' || curtainType === 'roller blind' || curtainType.includes('roller')) {
       return 'roller_blinds';
     }
