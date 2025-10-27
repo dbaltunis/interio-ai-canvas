@@ -560,6 +560,37 @@ export function WindowSummaryCard({
                       <h4 className="text-sm font-semibold text-foreground">Detailed Cost Breakdown</h4>
                     </div>
 
+                    {/* Wallpaper calculation details */}
+                    {treatmentType === 'wallpaper' && summary && (
+                      <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 mb-3">
+                        <div className="text-xs font-semibold text-foreground mb-2">Wallpaper Calculations</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <span className="text-muted-foreground">Wall Area:</span>
+                            <span className="font-medium text-foreground ml-2">
+                              {((Number(summary.linear_meters) || 0) * (summary.widths_required || 1) / 100).toFixed(2)} m²
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Strips Required:</span>
+                            <span className="font-medium text-foreground ml-2">{summary.widths_required || 1}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Total Length:</span>
+                            <span className="font-medium text-foreground ml-2">
+                              {(Number(summary.linear_meters) || 0).toFixed(2)}m
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Sold By:</span>
+                            <span className="font-medium text-foreground ml-2">
+                              {summary.fabric_details?.sold_by === 'per_roll' ? 'roll' : 'meter'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="space-y-3">
                       {/* Render all breakdown items from enrichedBreakdown */}
                       {enrichedBreakdown.map((item) => {
