@@ -240,6 +240,56 @@ export const useQuotationSync = ({
             });
           }
 
+          // DETAILED BREAKDOWN - Hardware (Tracks/Rods with length-based pricing)
+          if (summary.hardware_cost && summary.hardware_cost > 0) {
+            const hardwareDetails = summary.hardware_details || {};
+            const hardwareName = hardwareDetails.name || 'Track/Rod';
+            const orderedLength = summary.track_width_cm || summary.width || 100;
+            
+            // Check if hardware has length-based pricing in metadata
+            let calculatedPrice = summary.hardware_cost;
+            let priceDescription = hardwareName;
+            
+            if (hardwareDetails.metadata) {
+              const metadata = hardwareDetails.metadata;
+              
+              if (metadata.pricingMode === 'simple' && metadata.pricePerMeter && metadata.maxLength) {
+                // Simple pricing: Calculate based on price per meter
+                const pricingUnit = metadata.pricingUnit || 100; // Default to 100cm = 1m
+                const lengthInPricingUnits = orderedLength / pricingUnit;
+                calculatedPrice = lengthInPricingUnits * parseFloat(metadata.pricePerMeter);
+                priceDescription = `${hardwareName} - ${orderedLength}cm @ $${metadata.pricePerMeter}/m`;
+              } else if (metadata.pricingMode === 'advanced' && metadata.lengthPricingGrid) {
+                // Advanced pricing: Look up tier from grid
+                const grid = metadata.lengthPricingGrid;
+                let matchedPrice = null;
+                
+                for (const tier of grid) {
+                  if (orderedLength >= tier.from && orderedLength <= tier.to) {
+                    matchedPrice = tier.price;
+                    break;
+                  }
+                }
+                
+                if (matchedPrice) {
+                  calculatedPrice = matchedPrice;
+                  priceDescription = `${hardwareName} - ${orderedLength}cm`;
+                }
+              }
+            }
+            
+            parentItem.children.push({
+              id: `${window.window_id}-hardware`,
+              name: 'Track/Rod',
+              description: priceDescription,
+              quantity: orderedLength,
+              unit: 'cm',
+              unit_price: calculatedPrice / orderedLength,
+              total: calculatedPrice,
+              isChild: true
+            });
+          }
+
           // DETAILED BREAKDOWN - Options (CRITICAL: Include options cost!)
           if (summary.options_cost && summary.options_cost > 0) {
             const selectedOptions = summary.selected_options || [];

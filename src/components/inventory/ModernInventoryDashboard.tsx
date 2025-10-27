@@ -9,6 +9,9 @@ import { InventoryStats } from "./InventoryStats";
 import { FabricInventoryView } from "./FabricInventoryView";
 import { HardwareInventoryView } from "./HardwareInventoryView";
 import { WallcoveringInventoryView } from "./WallcoveringInventoryView";
+import { HeadingInventoryView } from "./HeadingInventoryView";
+import { TrimmingsInventoryView } from "./TrimmingsInventoryView";
+import { RemnantsInventoryView } from "./RemnantsInventoryView";
 import { AssemblyKitBuilder } from "./AssemblyKitBuilder";
 import { InventoryAnalytics } from "./InventoryAnalytics";
 import { AddInventoryDialog } from "./AddInventoryDialog";
@@ -163,6 +166,27 @@ export const ModernInventoryDashboard = () => {
           )}>
             <Wallpaper className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
             <span>{isMobile ? "Walls" : "Wallcoverings"}</span>
+          </TabsTrigger>
+          <TabsTrigger value="headings" className={cn(
+            "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
+            isMobile ? "px-3 py-2 text-xs" : "px-4 py-3 text-sm"
+          )}>
+            <Minus className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
+            <span>Tapes</span>
+          </TabsTrigger>
+          <TabsTrigger value="trimmings" className={cn(
+            "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
+            isMobile ? "px-3 py-2 text-xs" : "px-4 py-3 text-sm"
+          )}>
+            <Palette className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
+            <span>Trimmings</span>
+          </TabsTrigger>
+          <TabsTrigger value="remnants" className={cn(
+            "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
+            isMobile ? "px-3 py-2 text-xs" : "px-4 py-3 text-sm"
+          )}>
+            <Package className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
+            <span>Remnants</span>
           </TabsTrigger>
           <TabsTrigger value="vendors" className={cn(
             "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
@@ -363,6 +387,18 @@ export const ModernInventoryDashboard = () => {
 
         <TabsContent value="wallcoverings" className="space-y-6">
           <WallcoveringInventoryView searchQuery={searchQuery} viewMode={viewMode} />
+        </TabsContent>
+
+        <TabsContent value="headings" className="space-y-6">
+          <HeadingInventoryView searchQuery={searchQuery} viewMode={viewMode} />
+        </TabsContent>
+
+        <TabsContent value="trimmings" className="space-y-6">
+          <TrimmingsInventoryView searchQuery={searchQuery} viewMode={viewMode} />
+        </TabsContent>
+
+        <TabsContent value="remnants" className="space-y-6">
+          <RemnantsInventoryView searchQuery={searchQuery} viewMode={viewMode} />
         </TabsContent>
 
         <TabsContent value="vendors" className="space-y-6">
