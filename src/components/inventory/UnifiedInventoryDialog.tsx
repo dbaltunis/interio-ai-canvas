@@ -90,6 +90,18 @@ export const UnifiedInventoryDialog = ({
     'yards': 'yd'
   };
   const lengthLabel = unitLabels[lengthUnit] || lengthUnit;
+  
+  // Pricing unit labels (for realistic pricing display)
+  const getPricingUnitLabel = () => {
+    if (lengthUnit === 'mm') return 'meter (1000mm)';
+    if (lengthUnit === 'cm') return 'meter (100cm)';
+    if (lengthUnit === 'm') return 'meter';
+    if (lengthUnit === 'inches') return 'foot (12in)';
+    if (lengthUnit === 'feet') return 'foot';
+    if (lengthUnit === 'yards') return 'yard';
+    return lengthUnit;
+  };
+  const pricingUnitLabel = getPricingUnitLabel();
 
   const [pricingMode, setPricingMode] = useState<'simple' | 'advanced'>('simple');
   const [pricePerMeter, setPricePerMeter] = useState<string>('');
@@ -1366,26 +1378,26 @@ export const UnifiedInventoryDialog = ({
                               <div>
                                 <h4 className="text-sm font-semibold">Simple Pricing</h4>
                                 <p className="text-xs text-muted-foreground">
-                                  Set one price per {lengthLabel}. Total price = (length × price per {lengthLabel}).
+                                  Set one price per {pricingUnitLabel}. System auto-calculates total based on length.
                                 </p>
                               </div>
                               
                               <div className="grid gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
                                   <Label htmlFor="pricePerMeter">
-                                    Price per {lengthLabel} ({currencySymbol})
+                                    Price per {pricingUnitLabel} ({currencySymbol})
                                   </Label>
                                   <Input
                                     id="pricePerMeter"
                                     type="number"
                                     step="0.01"
                                     min="0"
-                                    placeholder={`e.g., 17.00`}
+                                    placeholder="e.g., 17.00"
                                     value={pricePerMeter}
                                     onChange={(e) => setPricePerMeter(e.target.value)}
                                   />
                                   <p className="text-xs text-muted-foreground">
-                                    Example: {currencySymbol}17.00 per {lengthLabel}
+                                    Example: {currencySymbol}17.00 per {pricingUnitLabel}
                                   </p>
                                 </div>
                                 
@@ -1413,7 +1425,7 @@ export const UnifiedInventoryDialog = ({
                                   <AlertDescription className="text-xs">
                                     <strong>Example calculation:</strong> For {maxLength}{lengthLabel}, 
                                     customer pays {currencySymbol}{(parseFloat(pricePerMeter) * parseFloat(maxLength)).toFixed(2)} 
-                                    ({maxLength} × {currencySymbol}{pricePerMeter})
+                                    ({maxLength}{lengthLabel} × {currencySymbol}{pricePerMeter} per {pricingUnitLabel})
                                   </AlertDescription>
                                 </Alert>
                               )}
