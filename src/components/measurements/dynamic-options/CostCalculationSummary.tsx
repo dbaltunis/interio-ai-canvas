@@ -4,6 +4,7 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import { calculateBlindCosts, isBlindCategory } from "./utils/blindCostCalculator";
 import { calculateWallpaperCost } from "@/utils/wallpaperCalculations";
+import { detectTreatmentType } from "@/utils/treatmentTypeDetection";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 
 // Simple SVG icons
@@ -90,13 +91,15 @@ export const CostCalculationSummary = ({
     return `${symbol}${price.toFixed(2)}`;
   };
 
-  const treatmentCategory = template.treatment_category?.toLowerCase() || '';
+  // Use proper treatment detection instead of template.treatment_category
+  const treatmentCategory = detectTreatmentType(template);
   const width = parseFloat(measurements.rail_width) || 0;
   const height = parseFloat(measurements.drop) || 0;
 
   console.log('🔍 CostCalculationSummary Debug:', {
     treatmentCategory,
     templateName: template.name,
+    curtainType: template.curtain_type,
     width,
     height,
     isBlind: isBlindCategory(treatmentCategory, template.name),
