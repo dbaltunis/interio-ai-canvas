@@ -22,6 +22,7 @@ import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Check } from "lucide-react";
+import { InventoryMultiSelect } from "./InventoryMultiSelect";
 
 const STORAGE_KEY = "inventory_draft_data";
 
@@ -101,6 +102,7 @@ export const UnifiedInventoryDialog = ({
     quantityPerUnit?: number;
   }>>([]);
   const [openPopoverIndex, setOpenPopoverIndex] = useState<number | null>(null);
+  const [selectedInventoryIds, setSelectedInventoryIds] = useState<string[]>([]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -1382,131 +1384,79 @@ export const UnifiedInventoryDialog = ({
                     <CardHeader>
                       <CardTitle className="text-base">Product Components (BOM)</CardTitle>
                       <CardDescription>
-                        Select components from your inventory (brackets, finials, etc.) to create a complete product bundle. 
-                        The system will track stock and pricing from your actual inventory items.
+                        Select multiple components from your inventory to create a complete product bundle. 
+                        The system will track stock levels and pricing from your actual inventory items.
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      {variants.map((variant, index) => {
-                        const selectedItem = variant.inventoryItemId 
-                          ? allInventory.find(item => item.id === variant.inventoryItemId)
-                          : null;
-                        
-                        return (
-                          <div key={index} className="p-4 border rounded-lg space-y-3 bg-muted/30">
-                            {/* Source Toggle */}
-                            <div className="flex items-center justify-between">
-                              <Label className="text-sm font-medium">Component {index + 1}</Label>
-                              <div className="flex items-center gap-2">
-                                <Label className="text-xs text-muted-foreground">Source:</Label>
-                                <Select
-                                  value={variant.source}
-                                  onValueChange={(value: 'manual' | 'inventory') => {
-                                    const updated = [...variants];
-                                    updated[index].source = value;
-                                    // Reset fields when switching
-                                    if (value === 'inventory') {
-                                      updated[index].inventoryItemId = undefined;
-                                      updated[index].priceModifier = '';
-                                    }
-                                    setVariants(updated);
-                                  }}
-                                >
-                                  <SelectTrigger className="h-8 w-[140px]">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="inventory">From Inventory</SelectItem>
-                                    <SelectItem value="manual">Create New</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
+                    <CardContent className="space-y-6">
+                      {/* Multi-Select Inventory Picker */}
+                      <InventoryMultiSelect
+                        allInventory={allInventory}
+                        selectedIds={selectedInventoryIds}
+                        onSelectionChange={(ids) => {
+                          setSelectedInventoryIds(ids);
+                          
+                          // Auto-create/update variants from selected inventory
+                          const newVariants = ids.map(id => {
+                            const item = allInventory.find(i => i.id === id);
+                            const existingVariant = variants.find(v => v.inventoryItemId === id);
+                            
+                            if (existingVariant) {
+                              return existingVariant;
+                            }
+                            
+                            return {
+                              type: item?.subcategory || 'other',
+                              name: item?.name || '',
+                              sku: item?.sku || '',
+                              priceModifier: item?.selling_price?.toString() || '0',
+                              source: 'inventory' as const,
+                              inventoryItemId: id,
+                              quantityPerUnit: 1
+                            };
+                          });
+                          
+                          setVariants(newVariants);
+                        }}
+                        currencySymbol={currencySymbol}
+                        categoryFilter="hardware"
+                        label="Search & Select Components"
+                        placeholder={`Search ${allInventory.filter(i => i.category === 'hardware').length}+ hardware items...`}
+                      />
 
-                            {/* Inventory Selection Mode */}
-                            {variant.source === 'inventory' ? (
-                              <div className="grid gap-3 md:grid-cols-2">
-                                <div className="col-span-2">
-                                  <Label className="text-xs">Select Inventory Item</Label>
-                                  <Popover 
-                                    open={openPopoverIndex === index} 
-                                    onOpenChange={(open) => setOpenPopoverIndex(open ? index : null)}
-                                    modal={true}
-                                  >
-                                    <PopoverTrigger asChild>
-                                      <Button
-                                        variant="outline"
-                                        role="combobox"
-                                        aria-expanded={openPopoverIndex === index}
-                                        className="w-full justify-between h-9"
-                                        type="button"
-                                      >
-                                        {selectedItem ? (
-                                          <span className="flex items-center gap-2">
-                                            <span className="font-medium">{selectedItem.name}</span>
-                                            <span className="text-xs text-muted-foreground">({selectedItem.sku || 'No SKU'})</span>
-                                          </span>
-                                        ) : (
-                                          "Search inventory..."
-                                        )}
-                                        <Package className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                      </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent 
-                                      className="w-[400px] p-0" 
-                                      align="start"
-                                      style={{ zIndex: 99999 }}
-                                      onInteractOutside={(e) => {
-                                        // Prevent closing when clicking inside the dialog
-                                        const target = e.target as HTMLElement;
-                                        if (target.closest('[role="dialog"]')) {
-                                          e.preventDefault();
-                                        }
-                                      }}
-                                    >
-                                      <Command>
-                                        <CommandInput placeholder="Search items..." className="h-9" />
-                                        <CommandEmpty>No inventory items found.</CommandEmpty>
-                                        <CommandList>
-                                          <CommandGroup>
-                                            {allInventory
-                                              .filter(item => item.category === 'hardware')
-                                              .map((item) => (
-                                                <CommandItem
-                                                  key={item.id}
-                                                  value={`${item.name} ${item.sku || ''}`}
-                                                  onSelect={() => {
-                                                    const updated = [...variants];
-                                                    updated[index].inventoryItemId = item.id;
-                                                    updated[index].name = item.name || '';
-                                                    updated[index].sku = item.sku || '';
-                                                    updated[index].priceModifier = item.selling_price?.toString() || '0';
-                                                    setVariants(updated);
-                                                    setOpenPopoverIndex(null); // Close popover after selection
-                                                  }}
-                                                >
-                                                  <div className="flex items-center justify-between w-full">
-                                                    <div className="flex-1">
-                                                      <div className="font-medium">{item.name}</div>
-                                                      <div className="text-xs text-muted-foreground">
-                                                        {item.sku || 'No SKU'} • {currencySymbol}{item.selling_price || 0}
-                                                      </div>
-                                                    </div>
-                                                    {selectedItem?.id === item.id && (
-                                                      <Check className="h-4 w-4" />
-                                                    )}
-                                                  </div>
-                                                </CommandItem>
-                                              ))}
-                                          </CommandGroup>
-                                        </CommandList>
-                                      </Command>
-                                    </PopoverContent>
-                                  </Popover>
-                                </div>
+                      {/* Component Configuration */}
+                      {variants.length > 0 && (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-sm font-medium">Configure Components</Label>
+                            <span className="text-xs text-muted-foreground">
+                              {variants.length} component{variants.length > 1 ? 's' : ''} selected
+                            </span>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            {variants.map((variant, index) => {
+                              const item = allInventory.find(i => i.id === variant.inventoryItemId);
+                              if (!item) return null;
 
-                                {selectedItem && (
-                                  <>
+                              return (
+                                <div key={variant.inventoryItemId} className="p-3 border rounded-lg bg-background space-y-2">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-medium text-sm">{item.name}</div>
+                                      <div className="text-xs text-muted-foreground">
+                                        {item.sku && <span>{item.sku} • </span>}
+                                        {item.subcategory && <span className="capitalize">{item.subcategory} • </span>}
+                                        <span>Stock: {item.quantity || 0}</span>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-sm font-medium">{currencySymbol}{item.selling_price || 0}</div>
+                                      <div className="text-xs text-muted-foreground">per unit</div>
+                                    </div>
+                                  </div>
+
+                                  <div className="grid grid-cols-2 gap-2">
                                     <div>
                                       <Label className="text-xs">Type</Label>
                                       <Select
@@ -1517,8 +1467,8 @@ export const UnifiedInventoryDialog = ({
                                           setVariants(updated);
                                         }}
                                       >
-                                        <SelectTrigger className="h-9">
-                                          <SelectValue placeholder="Select type" />
+                                        <SelectTrigger className="h-8">
+                                          <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
                                           <SelectItem value="finial">Finial</SelectItem>
@@ -1532,13 +1482,13 @@ export const UnifiedInventoryDialog = ({
                                     </div>
 
                                     <div>
-                                      <Label className="text-xs">Quantity per {lengthLabel}</Label>
+                                      <Label className="text-xs">Qty per {lengthLabel}</Label>
                                       <Input
-                                        className="h-9"
+                                        className="h-8"
                                         type="number"
                                         min="0"
-                                        step="1"
-                                        placeholder="e.g., 2"
+                                        step="0.1"
+                                        placeholder="1"
                                         value={variant.quantityPerUnit || ''}
                                         onChange={(e) => {
                                           const updated = [...variants];
@@ -1547,132 +1497,49 @@ export const UnifiedInventoryDialog = ({
                                         }}
                                       />
                                     </div>
+                                  </div>
 
-                                    <div className="col-span-2 p-3 bg-primary/5 rounded-md border border-primary/20">
-                                      <div className="grid grid-cols-2 gap-2 text-xs">
-                                        <div>
-                                          <span className="text-muted-foreground">Item Price:</span>
-                                          <span className="ml-2 font-medium">{currencySymbol}{selectedItem.selling_price || 0}</span>
-                                        </div>
-                                        <div>
-                                          <span className="text-muted-foreground">Stock:</span>
-                                          <span className="ml-2 font-medium">{selectedItem.quantity || 0} units</span>
-                                        </div>
-                                        <div className="col-span-2">
-                                          <span className="text-muted-foreground">Cost per {lengthLabel}:</span>
-                                          <span className="ml-2 font-medium">
-                                            {currencySymbol}{((selectedItem.selling_price || 0) * (variant.quantityPerUnit || 0)).toFixed(2)}
-                                          </span>
-                                        </div>
-                                      </div>
+                                  {/* Cost Calculation */}
+                                  <div className="p-2 bg-primary/5 rounded border border-primary/20">
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="text-muted-foreground">
+                                        Cost per {lengthLabel}:
+                                      </span>
+                                      <span className="font-bold text-primary">
+                                        {currencySymbol}{((item.selling_price || 0) * (variant.quantityPerUnit || 0)).toFixed(2)}
+                                      </span>
                                     </div>
-                                  </>
-                                )}
-                              </div>
-                            ) : (
-                              /* Manual Creation Mode */
-                              <div className="grid gap-2 md:grid-cols-4">
-                                <div>
-                                  <Label className="text-xs">Type</Label>
-                                  <Select
-                                    value={variant.type}
-                                    onValueChange={(value) => {
-                                      const updated = [...variants];
-                                      updated[index].type = value;
-                                      setVariants(updated);
-                                    }}
-                                  >
-                                    <SelectTrigger className="h-9">
-                                      <SelectValue placeholder="Type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="finial">Finial</SelectItem>
-                                      <SelectItem value="bracket">Bracket</SelectItem>
-                                      <SelectItem value="color">Color</SelectItem>
-                                      <SelectItem value="finish">Finish</SelectItem>
-                                      <SelectItem value="other">Other</SelectItem>
-                                    </SelectContent>
-                                  </Select>
+                                  </div>
                                 </div>
-                                <div>
-                                  <Label className="text-xs">Name</Label>
-                                  <Input
-                                    className="h-9"
-                                    placeholder="e.g., Chrome Finial"
-                                    value={variant.name}
-                                    onChange={(e) => {
-                                      const updated = [...variants];
-                                      updated[index].name = e.target.value;
-                                      setVariants(updated);
-                                    }}
-                                  />
-                                </div>
-                                <div>
-                                  <Label className="text-xs">SKU (optional)</Label>
-                                  <Input
-                                    className="h-9"
-                                    placeholder="Optional"
-                                    value={variant.sku}
-                                    onChange={(e) => {
-                                      const updated = [...variants];
-                                      updated[index].sku = e.target.value;
-                                      setVariants(updated);
-                                    }}
-                                  />
-                                </div>
-                                <div>
-                                  <Label className="text-xs">Price + ({currencySymbol})</Label>
-                                  <Input
-                                    className="h-9"
-                                    type="number"
-                                    step="0.01"
-                                    placeholder="0.00"
-                                    value={variant.priceModifier}
-                                    onChange={(e) => {
-                                      const updated = [...variants];
-                                      updated[index].priceModifier = e.target.value;
-                                      setVariants(updated);
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            )}
+                              );
+                            })}
+                          </div>
 
-                            {/* Delete Button */}
-                            <div className="flex justify-end pt-2">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 text-destructive hover:text-destructive"
-                                onClick={() => {
-                                  setVariants(variants.filter((_, i) => i !== index));
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Remove Component
-                              </Button>
+                          {/* Total Cost Summary */}
+                          <div className="p-4 bg-accent/10 border-2 border-accent/30 rounded-lg">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="text-sm font-medium">Total Components Cost per {lengthLabel}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {variants.length} components × quantities
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-2xl font-bold text-accent">
+                                  {currencySymbol}
+                                  {variants.reduce((sum, variant) => {
+                                    const item = allInventory.find(i => i.id === variant.inventoryItemId);
+                                    return sum + ((item?.selling_price || 0) * (variant.quantityPerUnit || 0));
+                                  }, 0).toFixed(2)}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  + base track price from grid
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        );
-                      })}
-                      
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setVariants([...variants, { 
-                          type: '', 
-                          name: '', 
-                          sku: '', 
-                          priceModifier: '',
-                          source: 'inventory',
-                          quantityPerUnit: 1
-                        }])}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Component
-                      </Button>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )}
