@@ -3,10 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface MaterialOrder {
-  type: 'deduction' | 'purchase_order';
+  type: 'allocated' | 'needed';
   material: string;
   quantity: number;
   status: string;
+  inventoryId?: string;
 }
 
 export const useConvertQuoteToMaterials = () => {
@@ -15,9 +16,6 @@ export const useConvertQuoteToMaterials = () => {
 
   return useMutation({
     mutationFn: async ({ projectId }: { projectId: string }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
       // Get project treatments
       const { data: treatments, error: treatmentsError } = await supabase
         .from('treatments')
@@ -66,45 +64,22 @@ export const useConvertQuoteToMaterials = () => {
                 .eq('id', inventoryItem.id);
 
               createdOrders.push({
-                type: 'deduction',
+                type: 'allocated',
                 material: item.name,
                 quantity: item.quantity,
-                status: 'allocated'
+                status: 'allocated',
+                inventoryId: inventoryItem.id
               });
             }
           } else {
-            // Create purchase order item
-            const { data: po, error: poError } = await supabase
-              .from('purchase_orders')
-              .insert({
-                user_id: user.id,
-                order_number: `PO-${Date.now()}`,
-                status: 'pending',
-                order_date: new Date().toISOString(),
-                total_amount: item.total_cost || 0,
-                notes: `Materials for ${treatment.treatment_type} in project`
-              })
-              .select()
-              .single();
-
-            if (!poError && po) {
-              await supabase
-                .from('purchase_order_items')
-                .insert({
-                  purchase_order_id: po.id,
-                  inventory_item_id: inventoryItem?.id,
-                  quantity: item.quantity,
-                  unit_price: item.unit_price || 0,
-                  total_price: item.total_cost || 0
-                });
-
-              createdOrders.push({
-                type: 'purchase_order',
-                material: item.name,
-                quantity: item.quantity,
-                status: 'pending'
-              });
-            }
+            // Material needs to be ordered
+            createdOrders.push({
+              type: 'needed',
+              material: item.name,
+              quantity: item.quantity,
+              status: 'needs_purchase',
+              inventoryId: inventoryItem?.id
+            });
           }
         }
       }
@@ -116,12 +91,12 @@ export const useConvertQuoteToMaterials = () => {
       queryClient.invalidateQueries({ queryKey: ["purchase-orders"] });
       queryClient.invalidateQueries({ queryKey: ["project-material-allocations"] });
       
-      const deductions = data.createdOrders.filter(o => o.type === 'deduction').length;
-      const orders = data.createdOrders.filter(o => o.type === 'purchase_order').length;
+      const allocated = data.createdOrders.filter(o => o.type === 'allocated').length;
+      const needed = data.createdOrders.filter(o => o.type === 'needed').length;
       
       toast({
         title: "Materials Processed",
-        description: `${deductions} items allocated from inventory, ${orders} purchase orders created`,
+        description: `${allocated} items allocated from inventory${needed > 0 ? `, ${needed} items need to be ordered` : ''}`,
       });
     },
     onError: (error: any) => {

@@ -1,9 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Square, Settings2, DollarSign, Plus, Edit, Trash2 } from "lucide-react";
+import { MapPin, Square, Settings2, DollarSign, Plus, Edit, Trash2, Lock } from "lucide-react";
 import { useState } from "react";
 import { InteractiveProjectDialog } from "./InteractiveProjectDialog";
+import { useStatusPermissions } from "@/hooks/useStatusPermissions";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProjectOverviewProps {
   project: any;
@@ -32,8 +34,24 @@ export const ProjectOverview = ({
   const [dialogType, setDialogType] = useState<'rooms' | 'surfaces' | 'treatments' | 'connect'>('rooms');
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [editingRoomName, setEditingRoomName] = useState("");
+  const { toast } = useToast();
+  
+  // Check if status allows editing
+  const { canEdit, isLocked, statusInfo } = useStatusPermissions(project?.status);
+  
+  const handleActionClick = (action: () => void) => {
+    if (!canEdit) {
+      toast({
+        title: "Action Not Allowed",
+        description: `Project is ${statusInfo?.action === 'locked' ? 'locked' : 'read-only'} in ${project?.status} status`,
+        variant: "destructive"
+      });
+      return;
+    }
+    action();
+  };
 
-  console.log("ProjectOverview render data:", { project, rooms, surfaces, treatments });
+  console.log("ProjectOverview render data:", { project, rooms, surfaces, treatments, canEdit, isLocked });
 
   // Safely calculate totals with error handling
   const calculateTreatmentTotal = (treatment: any) => {
@@ -53,13 +71,17 @@ export const ProjectOverview = ({
   }, 0) || 0;
 
   const handleCardClick = (type: 'rooms' | 'surfaces' | 'treatments' | 'connect') => {
-    setDialogType(type);
-    setDialogOpen(true);
+    handleActionClick(() => {
+      setDialogType(type);
+      setDialogOpen(true);
+    });
   };
 
   const handleEditRoom = (room: any) => {
-    setEditingRoomId(room.id);
-    setEditingRoomName(room.name);
+    handleActionClick(() => {
+      setEditingRoomId(room.id);
+      setEditingRoomName(room.name);
+    });
   };
 
   const handleSaveRoomEdit = async (roomId: string) => {
@@ -96,58 +118,58 @@ export const ProjectOverview = ({
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card 
-          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 hover:border-primary"
-          onClick={() => handleCardClick('rooms')}
+          className={`${!canEdit ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105'} border-2 ${!canEdit ? 'border-gray-300' : 'hover:border-primary'}`}
+          onClick={() => canEdit && handleCardClick('rooms')}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Rooms</CardTitle>
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-muted-foreground" />
-              <Plus className="h-3 w-3 text-primary" />
+              {isLocked ? <Lock className="h-3 w-3 text-destructive" /> : <Plus className="h-3 w-3 text-primary" />}
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{rooms?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
-              Click to add rooms
+              {isLocked ? 'Status locked' : 'Click to add rooms'}
             </p>
           </CardContent>
         </Card>
 
         <Card 
-          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 hover:border-primary"
-          onClick={() => handleCardClick('surfaces')}
+          className={`${!canEdit ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105'} border-2 ${!canEdit ? 'border-gray-300' : 'hover:border-primary'}`}
+          onClick={() => canEdit && handleCardClick('surfaces')}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Surfaces</CardTitle>
             <div className="flex items-center gap-2">
               <Square className="h-4 w-4 text-muted-foreground" />
-              <Plus className="h-3 w-3 text-primary" />
+              {isLocked ? <Lock className="h-3 w-3 text-destructive" /> : <Plus className="h-3 w-3 text-primary" />}
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{surfaces?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
-              Click to add windows & walls
+              {isLocked ? 'Status locked' : 'Click to add windows & walls'}
             </p>
           </CardContent>
         </Card>
 
         <Card 
-          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 hover:border-primary"
-          onClick={() => handleCardClick('treatments')}
+          className={`${!canEdit ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105'} border-2 ${!canEdit ? 'border-gray-300' : 'hover:border-primary'}`}
+          onClick={() => canEdit && handleCardClick('treatments')}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Treatments</CardTitle>
             <div className="flex items-center gap-2">
               <Settings2 className="h-4 w-4 text-muted-foreground" />
-              <Plus className="h-3 w-3 text-primary" />
+              {isLocked ? <Lock className="h-3 w-3 text-destructive" /> : <Plus className="h-3 w-3 text-primary" />}
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{treatments?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
-              Click for advanced treatments
+              {isLocked ? 'Status locked' : 'Click for advanced treatments'}
             </p>
           </CardContent>
         </Card>
