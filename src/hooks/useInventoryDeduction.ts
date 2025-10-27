@@ -12,6 +12,7 @@ interface MaterialUsage {
   costImpact: number;
   surfaceId: string;
   surfaceName?: string;
+  isTracked: boolean;
 }
 
 interface DeductionParams {
@@ -28,7 +29,10 @@ export const useInventoryDeduction = () => {
     mutationFn: async ({ projectId, projectName, materials }: DeductionParams) => {
       const results = [];
       
-      for (const material of materials) {
+      // Safety check: only process tracked items
+      const trackedMaterials = materials.filter(m => m.isTracked);
+      
+      for (const material of trackedMaterials) {
         // Calculate new quantity
         const newQuantity = material.currentQuantity - material.quantityUsed;
         

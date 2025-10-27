@@ -25,6 +25,7 @@ interface MaterialUsage {
   surfaceId: string;
   surfaceName?: string;
   lowStock: boolean;
+  isTracked: boolean;
 }
 
 interface InventoryDeductionDialogProps {
@@ -42,8 +43,11 @@ export const InventoryDeductionDialog = ({
   projectId,
   projectName,
 }: InventoryDeductionDialogProps) => {
+  // Filter out non-tracked items
+  const trackedMaterials = materials.filter(m => m.isTracked);
+  
   const [selectedItems, setSelectedItems] = useState<Set<string>>(
-    new Set(materials.filter(m => !m.lowStock).map(m => m.itemId))
+    new Set(trackedMaterials.filter(m => !m.lowStock).map(m => m.itemId))
   );
   const deductInventory = useInventoryDeduction();
 
@@ -58,7 +62,7 @@ export const InventoryDeductionDialog = ({
   };
 
   const handleDeduct = async () => {
-    const selectedMaterials = materials.filter(m => selectedItems.has(m.itemId));
+    const selectedMaterials = trackedMaterials.filter(m => selectedItems.has(m.itemId));
     
     await deductInventory.mutateAsync({
       projectId,
@@ -69,14 +73,14 @@ export const InventoryDeductionDialog = ({
     onOpenChange(false);
   };
 
-  const totalCost = materials
+  const totalCost = trackedMaterials
     .filter(m => selectedItems.has(m.itemId))
     .reduce((sum, m) => sum + m.costImpact, 0);
 
-  const lowStockItems = materials.filter(m => m.lowStock);
-  const availableItems = materials.filter(m => !m.lowStock);
+  const lowStockItems = trackedMaterials.filter(m => m.lowStock);
+  const availableItems = trackedMaterials.filter(m => !m.lowStock);
 
-  if (materials.length === 0) {
+  if (trackedMaterials.length === 0) {
     return null;
   }
 
