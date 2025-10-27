@@ -19,6 +19,7 @@ export const useProjectMaterialsUsage = (projectId: string | undefined) => {
   return useQuery({
     queryKey: ['project-materials-usage', projectId],
     enabled: !!projectId,
+    staleTime: 0, // Always fetch fresh data
     queryFn: async () => {
       if (!projectId) return [];
 
