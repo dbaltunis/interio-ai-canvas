@@ -140,24 +140,6 @@ export const DynamicWindowWorksheet = forwardRef<{
     enabled: !!surfaceId
   });
 
-  // DEBUG: Monitor wallpaper state changes
-  useEffect(() => {
-    if (treatmentCategory === 'wallpaper') {
-      console.log('🎨 Wallpaper State Debug:', {
-        treatmentCategory,
-        templateCategory: selectedTemplate?.treatment_category,
-        templateName: selectedTemplate?.name,
-        hasWallWidth: !!measurements.wall_width,
-        hasWallHeight: !!measurements.wall_height,
-        wallWidth: measurements.wall_width,
-        wallHeight: measurements.wall_height,
-        hasFabric: !!selectedItems.fabric,
-        fabricName: selectedItems.fabric?.name,
-        fabricData: selectedItems.fabric
-      });
-    }
-  }, [treatmentCategory, measurements.wall_width, measurements.wall_height, selectedItems.fabric, selectedTemplate]);
-
   // Load existing data and sync with Enhanced mode
   useEffect(() => {
     // Priority 1: Load from windows_summary table if available
