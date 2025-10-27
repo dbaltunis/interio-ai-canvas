@@ -76,8 +76,10 @@ export const HeadingInventoryView = ({ searchQuery, viewMode }: HeadingInventory
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <CardTitle className="text-base">{heading.name}</CardTitle>
-                    {heading.description && (
-                      <CardDescription className="text-xs mt-1">{heading.description}</CardDescription>
+                    {heading.treatment_type && (
+                      <Badge variant="secondary" className="mt-1 text-xs capitalize">
+                        {heading.treatment_type}
+                      </Badge>
                     )}
                   </div>
                   <div className="flex gap-1">
