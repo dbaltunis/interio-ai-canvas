@@ -876,7 +876,7 @@ export const DynamicWindowWorksheet = forwardRef<{
                   name: liningItem.name,
                   quantity: linearMeters,
                   unit: 'm',
-                  unit_price: liningItem.selling_price || liningItem.unit_price || 0,
+                  unit_price: liningItem.selling_price || liningItem.cost_price || 0,
                   total_cost: finalLiningCost,
                   category: 'lining'
                 });
@@ -894,7 +894,7 @@ export const DynamicWindowWorksheet = forwardRef<{
                   name: headingItem.name,
                   quantity: linearMeters,
                   unit: 'm',
-                  unit_price: headingItem.selling_price || headingItem.unit_price || 0,
+                  unit_price: headingItem.selling_price || headingItem.cost_price || 0,
                   total_cost: finalHeadingCost,
                   category: 'heading'
                 });
@@ -910,7 +910,7 @@ export const DynamicWindowWorksheet = forwardRef<{
                 name: selectedItems.hardware.name,
                 quantity: 1,
                 unit: 'set',
-                unit_price: selectedItems.hardware.selling_price || selectedItems.hardware.unit_price || 0,
+                unit_price: selectedItems.hardware.selling_price || selectedItems.hardware.cost_price || 0,
                 total_cost: hardwareCost,
                 category: 'hardware'
               });
@@ -925,8 +925,8 @@ export const DynamicWindowWorksheet = forwardRef<{
                 name: selectedItems.material.name,
                 quantity: selectedItems.material.quantity || 1,
                 unit: selectedItems.material.unit || 'unit',
-                unit_price: selectedItems.material.selling_price || selectedItems.material.unit_price || 0,
-                total_cost: selectedItems.material.selling_price || selectedItems.material.unit_price || 0,
+                unit_price: selectedItems.material.selling_price || selectedItems.material.cost_price || 0,
+                total_cost: selectedItems.material.selling_price || selectedItems.material.cost_price || 0,
                 category: 'material'
               });
             }

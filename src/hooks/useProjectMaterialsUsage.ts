@@ -71,23 +71,30 @@ export const useProjectMaterialsUsage = (projectId: string | undefined) => {
           }
           
           // Fetch current inventory data using the stored itemId
-          const { data: inventoryData } = await supabase
+          const { data: inventoryData, error: inventoryError } = await supabase
             .from(item.itemTable)
             .select('quantity, name, reorder_point, unit')
             .eq('id', item.itemId)
             .maybeSingle();
 
-          if (inventoryData && item.quantity > 0) {
-            const quantity = inventoryData.quantity || 0;
-            const reorderPoint = inventoryData.reorder_point || 0;
+          if (inventoryError || !inventoryData) {
+            if (inventoryError) {
+              console.error('[MATERIALS] Error fetching inventory item:', inventoryError);
+            }
+            continue;
+          }
+
+          if (item.quantity > 0 && 'name' in inventoryData) {
+            const quantity = (inventoryData as any).quantity || 0;
+            const reorderPoint = (inventoryData as any).reorder_point || 0;
             const isTracked = quantity > 0 || reorderPoint > 0;
             
             materials.push({
               itemId: item.itemId,
               itemTable: item.itemTable as 'enhanced_inventory_items',
-              itemName: inventoryData.name,
+              itemName: (inventoryData as any).name,
               quantityUsed: item.quantity,
-              unit: inventoryData.unit || item.unit || 'unit',
+              unit: (inventoryData as any).unit || item.unit || 'unit',
               currentQuantity: quantity,
               costImpact: item.total_cost || 0,
               surfaceId: treatment.window_id || treatment.id,
@@ -97,7 +104,7 @@ export const useProjectMaterialsUsage = (projectId: string | undefined) => {
             });
             
             console.log('[MATERIALS] Added material:', {
-              name: inventoryData.name,
+              name: (inventoryData as any).name,
               category: item.category,
               quantityUsed: item.quantity,
               currentStock: quantity
