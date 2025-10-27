@@ -101,7 +101,12 @@ export const CostCalculationSummary = ({
     height,
     isBlind: isBlindCategory(treatmentCategory, template.name),
     measurements,
-    selectedFabric: selectedFabric?.name
+    selectedFabric: selectedFabric?.name,
+    wallWidth: measurements.wall_width,
+    wallHeight: measurements.wall_height,
+    hasWallDimensions: !!(measurements.wall_width && measurements.wall_height),
+    hasFabric: !!selectedFabric,
+    isWallpaper: treatmentCategory === 'wallpaper'
   });
 
   // WALLPAPER: Add before blind check

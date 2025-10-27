@@ -28,7 +28,19 @@ export const calculateWallpaperCost = (
   wallHeightCm: number,
   wallpaper: any
 ): WallpaperCalculation | null => {
+  console.log('📐 calculateWallpaperCost called:', {
+    wallWidthCm,
+    wallHeightCm,
+    wallpaperName: wallpaper?.name,
+    wallpaperData: wallpaper
+  });
+  
   if (!wallWidthCm || !wallHeightCm || !wallpaper) {
+    console.warn('❌ calculateWallpaperCost: Missing required data', {
+      hasWidth: !!wallWidthCm,
+      hasHeight: !!wallHeightCm,
+      hasWallpaper: !!wallpaper
+    });
     return null;
   }
 
@@ -78,7 +90,7 @@ export const calculateWallpaperCost = (
   const totalCost = quantity * pricePerUnit;
   const squareMeters = (wallWidthCm * wallHeightCm) / 10000;
   
-  return {
+  const result = {
     stripsNeeded,
     rollsNeeded,
     totalMeters,
@@ -97,4 +109,8 @@ export const calculateWallpaperCost = (
     patternRepeatsInStrip,
     matchType
   };
+  
+  console.log('✅ calculateWallpaperCost result:', result);
+  
+  return result;
 };
