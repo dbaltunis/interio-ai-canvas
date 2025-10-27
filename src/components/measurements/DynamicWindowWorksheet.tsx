@@ -162,11 +162,16 @@ export const DynamicWindowWorksheet = forwardRef<{
       // STEP 2: Restore Treatment/Template
       if (templateDetails) {
         setSelectedTemplate(templateDetails);
+        
+        // Detect treatment category from template (prioritize curtain_type for wallpaper)
+        const detectedCategory = detectTreatmentType(templateDetails);
+        setTreatmentCategory(detectedCategory);
+        setSelectedTreatmentType(detectedCategory);
       }
-      if (existingWindowSummary.treatment_type) {
+      if (existingWindowSummary.treatment_type && !templateDetails) {
         setSelectedTreatmentType(existingWindowSummary.treatment_type);
       }
-      if (existingWindowSummary.treatment_category) {
+      if (existingWindowSummary.treatment_category && !templateDetails) {
         setTreatmentCategory(existingWindowSummary.treatment_category as TreatmentCategory);
       }
       
@@ -1126,6 +1131,12 @@ export const DynamicWindowWorksheet = forwardRef<{
                 selectedCoveringId={selectedTemplate?.id || ""} 
                 onCoveringSelect={template => {
                   setSelectedTemplate(template);
+                  if (template) {
+                    // Detect and set the correct treatment category
+                    const detectedCategory = detectTreatmentType(template);
+                    setTreatmentCategory(detectedCategory);
+                    setSelectedTreatmentType(detectedCategory);
+                  }
                 }} 
                 disabled={readOnly}
                 visualKey={selectedWindowType?.visual_key}
