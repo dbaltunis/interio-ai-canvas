@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSuppliers } from "@/hooks/useSuppliers";
-import { useTreatments } from "@/hooks/useTreatments";
+import { useProjectMaterialsUsage } from "@/hooks/useProjectMaterialsUsage";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
@@ -25,160 +25,28 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
   const { data: allocations, isLoading } = useProjectMaterialAllocations(projectId);
   const { data: inventory } = useEnhancedInventory();
   const { data: suppliers } = useSuppliers();
-  const { data: treatments, isLoading: treatmentsLoading } = useTreatments(projectId);
+  const { data: treatmentMaterials = [], isLoading: materialsLoading } = useProjectMaterialsUsage(projectId);
 
-  // Extract materials from treatments
-  const treatmentMaterials = useMemo(() => {
-    if (!treatments || !inventory) {
-      console.log('[MATERIALS] No treatments or inventory:', { treatments: !!treatments, inventory: !!inventory });
-      return [];
-    }
+  // Transform materials for display
+  const displayMaterials = useMemo(() => {
+    console.log('[MATERIALS] Processing materials:', treatmentMaterials.length, 'items');
+    
+    return treatmentMaterials.map((material) => ({
+      id: `${material.itemId}-${material.surfaceId}`,
+      name: material.itemName,
+      category: 'material',
+      quantity: material.quantityUsed,
+      unit: material.unit,
+      supplier: inventory?.find(item => item.id === material.itemId)?.supplier,
+      source: 'Treatment Material',
+      treatment_name: material.surfaceName || 'Window',
+      fabric_id: material.itemId,
+      currentQuantity: material.currentQuantity,
+      lowStock: material.lowStock,
+      isTracked: material.isTracked
+    }));
+  }, [treatmentMaterials, inventory]);
 
-    console.log('[MATERIALS] Processing treatments:', treatments.length, 'treatments');
-    console.log('[MATERIALS] Sample treatment:', treatments[0]);
-
-    const materials: Array<{
-      id: string;
-      name: string;
-      category: string;
-      quantity: number;
-      unit: string;
-      supplier?: string;
-      source: string;
-      treatment_name: string;
-      fabric_id?: string;
-    }> = [];
-
-    treatments.forEach((treatment, idx) => {
-      console.log(`[MATERIALS] ========== Treatment ${idx + 1}/${treatments.length} ==========`);
-      console.log('[MATERIALS] Full treatment object:', treatment);
-      
-      // Extract fabric materials
-      const fabricDetails = typeof treatment.fabric_details === 'object' && treatment.fabric_details 
-        ? treatment.fabric_details as Record<string, any> 
-        : {};
-      
-      const calculationDetails = typeof treatment.calculation_details === 'object' && treatment.calculation_details
-        ? treatment.calculation_details as Record<string, any>
-        : {};
-      
-      console.log('[MATERIALS] fabricDetails:', fabricDetails);
-      console.log('[MATERIALS] calculationDetails:', calculationDetails);
-      
-      // Try multiple field name variations for fabric ID (camelCase and snake_case)
-      const fabricId = fabricDetails.fabricId || fabricDetails.fabric_id || fabricDetails.selectedFabric || fabricDetails.selected_fabric;
-      console.log('[MATERIALS] Fabric ID found:', fabricId);
-        
-      if (fabricId) {
-        const fabricItem = inventory.find(item => item.id === fabricId);
-        console.log('[MATERIALS] Fabric item from inventory:', fabricItem);
-        
-        if (fabricItem) {
-          // Calculate fabric usage from treatment - try multiple field names
-          const fabricUsage = calculationDetails.fabricUsage || 
-                            calculationDetails.fabric_usage ||
-                            fabricDetails.fabricUsage || 
-                            fabricDetails.fabric_usage ||
-                            calculationDetails.linear_meters ||
-                            calculationDetails.linearMeters ||
-                            0;
-
-          console.log('[MATERIALS] Fabric usage calculated:', fabricUsage);
-
-          materials.push({
-            id: `${treatment.id}-fabric`,
-            name: fabricItem.name,
-            category: fabricItem.category || 'fabric',
-            quantity: parseFloat(String(fabricUsage)) || 0,
-            unit: fabricItem.unit || 'meter',
-            supplier: fabricItem.supplier,
-            source: 'Treatment Fabric',
-            treatment_name: treatment.treatment_type || 'Treatment',
-            fabric_id: fabricItem.id,
-          });
-          
-          console.log('[MATERIALS] ✅ Added fabric material:', materials[materials.length - 1]);
-        } else {
-          console.warn('[MATERIALS] ⚠️ Fabric item not found in inventory for ID:', fabricId);
-        }
-      } else {
-        console.log('[MATERIALS] ⚠️ No fabric ID found in treatment');
-      }
-
-      // Extract lining materials - try multiple field names
-      const liningId = fabricDetails.liningFabricId || fabricDetails.lining_fabric_id || fabricDetails.selectedLining || fabricDetails.selected_lining;
-      console.log('[MATERIALS] Lining ID found:', liningId);
-      
-      if (liningId) {
-        const liningItem = inventory.find(item => item.id === liningId);
-        console.log('[MATERIALS] Lining item from inventory:', liningItem);
-        
-        if (liningItem) {
-          const liningUsage = calculationDetails.liningUsage || 
-                            calculationDetails.lining_usage ||
-                            fabricDetails.liningUsage || 
-                            fabricDetails.lining_usage ||
-                            0;
-          
-          console.log('[MATERIALS] Lining usage calculated:', liningUsage);
-
-          materials.push({
-            id: `${treatment.id}-lining`,
-            name: liningItem.name,
-            category: liningItem.category || 'lining',
-            quantity: parseFloat(String(liningUsage)) || 0,
-            unit: liningItem.unit || 'meter',
-            supplier: liningItem.supplier,
-            source: 'Treatment Lining',
-            treatment_name: treatment.treatment_type || 'Treatment',
-            fabric_id: liningItem.id,
-          });
-          
-          console.log('[MATERIALS] ✅ Added lining material:', materials[materials.length - 1]);
-        } else {
-          console.warn('[MATERIALS] ⚠️ Lining item not found in inventory for ID:', liningId);
-        }
-      }
-
-      // Extract hardware/components - try multiple field names
-      const treatmentDetails = typeof treatment.treatment_details === 'object' && treatment.treatment_details
-        ? treatment.treatment_details as Record<string, any>
-        : {};
-      
-      const hardwareId = treatmentDetails.hardwareId || treatmentDetails.hardware_id || treatmentDetails.selectedHardware || treatmentDetails.selected_hardware;
-      console.log('[MATERIALS] Hardware ID found:', hardwareId);
-        
-      if (hardwareId) {
-        const hardwareItem = inventory.find(item => item.id === hardwareId);
-        console.log('[MATERIALS] Hardware item from inventory:', hardwareItem);
-        
-        if (hardwareItem) {
-          materials.push({
-            id: `${treatment.id}-hardware`,
-            name: hardwareItem.name,
-            category: hardwareItem.category || 'hardware',
-            quantity: treatment.quantity || 1,
-            unit: hardwareItem.unit || 'unit',
-            supplier: hardwareItem.supplier,
-            source: 'Treatment Hardware',
-            treatment_name: treatment.treatment_type || 'Treatment',
-          });
-          
-          console.log('[MATERIALS] ✅ Added hardware material:', materials[materials.length - 1]);
-        } else {
-          console.warn('[MATERIALS] ⚠️ Hardware item not found in inventory for ID:', hardwareId);
-        }
-      }
-      
-      console.log(`[MATERIALS] Treatment ${idx + 1} complete. Total materials so far: ${materials.length}`);
-    });
-
-    console.log('[MATERIALS] ========== EXTRACTION COMPLETE ==========');
-    console.log('[MATERIALS] Total materials extracted:', materials.length);
-    console.log('[MATERIALS] All materials:', materials);
-
-    return materials;
-  }, [treatments, inventory]);
 
   // Toggle material selection
   const toggleMaterialSelection = (materialId: string) => {
@@ -193,7 +61,7 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
 
   // Select all materials
   const selectAllMaterials = () => {
-    setSelectedMaterials(new Set(treatmentMaterials.map(m => m.id)));
+    setSelectedMaterials(new Set(displayMaterials.map(m => m.id)));
   };
 
   // Deselect all materials
@@ -203,7 +71,7 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
 
   // Export selected materials
   const exportSelectedMaterials = () => {
-    const selected = treatmentMaterials.filter(m => selectedMaterials.has(m.id));
+    const selected = displayMaterials.filter(m => selectedMaterials.has(m.id));
     if (selected.length === 0) {
       toast.error("No materials selected");
       return;
@@ -252,7 +120,7 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
     }
   };
 
-  if (isLoading || treatmentsLoading) {
+  if (isLoading || materialsLoading) {
     return <div className="p-4">Loading materials...</div>;
   }
 
@@ -306,7 +174,7 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="ml-2">
-                {treatmentMaterials.length} items detected
+                {displayMaterials.length} items detected
               </Badge>
               {selectedMaterials.size > 0 && (
                 <Badge variant="default">
@@ -317,7 +185,7 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
           </div>
         </CardHeader>
         <CardContent>
-          {treatmentMaterials.length === 0 ? (
+          {displayMaterials.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
               <h3 className="font-medium text-lg mb-1">No materials detected yet</h3>
@@ -355,9 +223,9 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-12">
+                  <TableHead className="w-12">
                       <Checkbox
-                        checked={selectedMaterials.size === treatmentMaterials.length}
+                        checked={selectedMaterials.size === displayMaterials.length && displayMaterials.length > 0}
                         onCheckedChange={(checked) => {
                           if (checked) {
                             selectAllMaterials();
@@ -376,7 +244,7 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {treatmentMaterials.map((material) => (
+                  {displayMaterials.map((material) => (
                     <TableRow 
                       key={material.id} 
                       className="cursor-pointer hover:bg-muted/50"
