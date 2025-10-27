@@ -103,19 +103,23 @@ export const InventorySelectionPanel = ({
     }
 
     try {
-      // Determine the correct category to save to database
-      let dbCategory = activeCategory;
+      // Determine the correct category and subcategory
+      let mainCategory = activeCategory;
+      let subCategory = activeCategory;
       
-      // Map fabric category to treatment-specific category
+      // Map fabric category to proper category/subcategory structure
       if (activeCategory === "fabric") {
+        mainCategory = "fabric";
         if (treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds') {
-          dbCategory = 'curtain_fabric';
+          subCategory = 'curtain_fabric';
         } else if (treatmentCategory === 'roller_blinds') {
-          dbCategory = 'roller_fabric';
+          subCategory = 'roller_fabric';
         } else if (treatmentCategory === 'panel_glide') {
-          dbCategory = 'panel_glide_fabric';
+          subCategory = 'panel_glide_fabric';
         } else if (treatmentCategory === 'wallpaper') {
-          dbCategory = 'wallcovering';
+          subCategory = 'wallcovering';
+        } else {
+          subCategory = 'curtain_fabric'; // Default to curtain fabric
         }
       }
 
@@ -125,7 +129,8 @@ export const InventorySelectionPanel = ({
         selling_price: parseFloat(manualEntry.price),
         unit: manualEntry.unit,
         quantity: 0,
-        category: dbCategory,
+        category: mainCategory,
+        subcategory: subCategory,
       };
 
       // Add fabric-specific fields if category is fabric

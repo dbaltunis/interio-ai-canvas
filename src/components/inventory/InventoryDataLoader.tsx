@@ -9,7 +9,8 @@ const sampleInventoryData = [
   {
     name: "Luxury Velvet Navy",
     description: "Premium velvet curtain fabric in deep navy blue with rich texture",
-    category: "curtain_fabric",
+    category: "fabric",
+    subcategory: "curtain_fabric",
     sku: "LVN-001",
     quantity: 45,
     unit_price: 28.50,
@@ -28,7 +29,8 @@ const sampleInventoryData = [
   {
     name: "Blackout Lining White",
     description: "High-quality blackout lining fabric for complete light control",
-    category: "lining_fabric",
+    category: "fabric",
+    subcategory: "lining_fabric",
     sku: "BLW-002",
     quantity: 78,
     unit_price: 15.75,
@@ -47,7 +49,8 @@ const sampleInventoryData = [
   {
     name: "Professional Track System",
     description: "Heavy-duty curtain track for commercial installations",
-    category: "track",
+    category: "hardware",
+    subcategory: "track",
     sku: "PTS-001",
     quantity: 12,
     unit_price: 85.00,
@@ -66,7 +69,8 @@ const sampleInventoryData = [
   {
     name: "Silent Glide Motor",
     description: "Quiet electric motor for automated curtains",
-    category: "motor",
+    category: "hardware",
+    subcategory: "motor",
     sku: "SGM-001",
     quantity: 8,
     unit_price: 245.00,

@@ -33,7 +33,8 @@ export const useTreatmentSpecificFabrics = (treatmentCategory: TreatmentCategory
       const { data, error } = await supabase
         .from("enhanced_inventory_items")
         .select("*")
-        .in("category", categories)
+        .eq("category", "fabric")
+        .in("subcategory", categories)
         .eq("active", true)
         .order("name");
 
