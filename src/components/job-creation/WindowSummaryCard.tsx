@@ -9,6 +9,7 @@ import { useCompactMode } from "@/hooks/useCompactMode";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { WindowRenameButton } from "./WindowRenameButton";
 import { TreatmentTypeIndicator } from "../measurements/TreatmentTypeIndicator";
+import { CostSummaryCard } from "@/components/job-creation/treatment-pricing/CostSummaryCard";
 
 // Lazy load heavy components - use direct import for now to avoid build issues
 import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown";
@@ -193,14 +194,17 @@ export function WindowSummaryCard({
       }
     }
 
-    items.push({
-      id: 'manufacturing',
-      name: 'Manufacturing',
-      description: summary.manufacturing_type,
-      total_cost: Number(summary.manufacturing_cost) || 0,
-      category: 'manufacturing',
-      details: { type: summary.manufacturing_type },
-    });
+    // Only add manufacturing cost for non-wallpaper treatments
+    if (treatmentType !== 'wallpaper') {
+      items.push({
+        id: 'manufacturing',
+        name: 'Manufacturing',
+        description: summary.manufacturing_type,
+        total_cost: Number(summary.manufacturing_cost) || 0,
+        category: 'manufacturing',
+        details: { type: summary.manufacturing_type },
+      });
+    }
 
     // Add hardware cost if available
     if (Number(summary.hardware_cost) > 0 || summary.hardware_details) {
@@ -235,6 +239,32 @@ export function WindowSummaryCard({
     }
 
     return items;
+  }, [summary]);
+
+  // Prepare costs object for CostSummaryCard
+  const costSummaryData = useMemo(() => {
+    if (!summary) return null;
+
+    return {
+      fabricCost: String(summary.fabric_cost || 0),
+      optionsCost: String(summary.options_cost || 0),
+      laborCost: String(summary.manufacturing_cost || 0),
+      totalCost: String(summary.total_cost || 0),
+      fabricUsage: String(summary.linear_meters || 0),
+      fabricOrientation: (summary as any).fabric_orientation,
+      warnings: (summary as any).warnings || [],
+      seamsRequired: (summary as any).seams_required || 0,
+      seamLaborHours: (summary as any).seam_labor_hours || 0,
+      widthsRequired: summary.widths_required || 1,
+      optionDetails: Array.isArray(summary.selected_options) 
+        ? summary.selected_options.map((opt: any) => ({
+            name: opt.name || opt.label || 'Option',
+            cost: Number(opt.cost || 0),
+            method: opt.method || '',
+            calculation: opt.calculation || opt.description || ''
+          }))
+        : []
+    };
   }, [summary]);
 
   const displayName = treatmentLabel || surface.name;
@@ -512,6 +542,20 @@ export function WindowSummaryCard({
               {/* Expandable Cost Breakdown - Use enrichedBreakdown for accurate costs */}
               {showBreakdown && (
                 <div className="border-t p-3 bg-muted/20">
+                  {/* Show CostSummaryCard for detailed breakdown */}
+                  {costSummaryData && (
+                    <div className="mb-4">
+                      <CostSummaryCard 
+                        costs={costSummaryData}
+                        treatmentType={treatmentType}
+                        selectedOptions={Array.isArray(summary?.selected_options) ? summary.selected_options.map((opt: any) => opt.id || opt.name) : []}
+                        availableOptions={[]}
+                        hierarchicalOptions={[]}
+                        formData={{ quantity: 1 }}
+                      />
+                    </div>
+                  )}
+                  
                   <div className="space-y-2">
                     {/* Render all breakdown items from enrichedBreakdown for accuracy */}
                     {enrichedBreakdown.map((item) => {
