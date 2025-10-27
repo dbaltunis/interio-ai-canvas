@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Calendar, Users, DollarSign, CalendarCheck, UserPlus, FileText, Mail, Printer } from "lucide-react";
+import { ArrowLeft, Calendar, Users, DollarSign, CalendarCheck, UserPlus, FileText, Mail, Printer, Package } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +14,7 @@ import { useUpdateQuote } from "@/hooks/useQuotes";
 import { useUpdateProject } from "@/hooks/useProjects";
 import { useNavigate } from "react-router-dom";
 import { useProjectStatusChange } from "@/hooks/useProjectStatusChange";
+import { useMaterialAllocation } from "@/hooks/useMaterialAllocation";
 import { LeftoverCaptureDialog } from "../projects/LeftoverCaptureDialog";
 import { InventoryDeductionDialog } from "../projects/InventoryDeductionDialog";
 
@@ -68,9 +69,13 @@ export const ProjectHeader = ({
     ? projectId.project_id 
     : projectId;
   
-  const { showLeftoverDialog, setShowLeftoverDialog, leftovers, showDeductionDialog, setShowDeductionDialog, materialsUsage } = useProjectStatusChange({
+  const { showLeftoverDialog, setShowLeftoverDialog, leftovers } = useProjectStatusChange({
     projectId: actualProjectId,
     currentStatus: displayStatus,
+  });
+
+  const { showAllocationDialog, setShowAllocationDialog, materialsUsage, triggerAllocation, hasMaterials } = useMaterialAllocation({
+    projectId: actualProjectId
   });
 
   // Update display status when currentStatus prop changes
@@ -344,6 +349,19 @@ export const ProjectHeader = ({
             </SelectContent>
           </Select>
 
+          {/* Allocate Materials Button */}
+          {hasMaterials && (
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={triggerAllocation}
+              className="flex items-center gap-2"
+            >
+              <Package className="h-4 w-4" />
+              <span>Allocate Materials</span>
+            </Button>
+          )}
+
           <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
             <DialogTrigger asChild>
               <Button size="sm" variant="outline" className="relative">
@@ -558,12 +576,12 @@ export const ProjectHeader = ({
         </DialogContent>
       </Dialog>
 
-      {/* Inventory Deduction Dialog */}
+      {/* Inventory Allocation Dialog */}
       <InventoryDeductionDialog
-        open={showDeductionDialog}
+        open={showAllocationDialog}
         onOpenChange={(open) => {
-          setShowDeductionDialog(open);
-          // Show leftover dialog after deduction if there are leftovers
+          setShowAllocationDialog(open);
+          // Show leftover dialog after allocation if there are leftovers
           if (!open && leftovers.length > 0) {
             setTimeout(() => setShowLeftoverDialog(true), 300);
           }

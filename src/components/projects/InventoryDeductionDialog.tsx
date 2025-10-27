@@ -16,7 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface MaterialUsage {
   itemId: string;
-  itemTable: 'fabrics' | 'hardware_inventory' | 'heading_inventory' | 'enhanced_inventory_items';
+  itemTable: 'enhanced_inventory_items';
   itemName: string;
   quantityUsed: number;
   unit: string;

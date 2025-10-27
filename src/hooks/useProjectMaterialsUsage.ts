@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface MaterialUsage {
   itemId: string;
-  itemTable: 'fabrics' | 'hardware_inventory' | 'heading_inventory' | 'enhanced_inventory_items';
+  itemTable: 'enhanced_inventory_items';
   itemName: string;
   quantityUsed: number;
   unit: string;
@@ -58,30 +58,29 @@ export const useProjectMaterialsUsage = (projectId: string | undefined) => {
         // FABRIC - Calculate actual usage
         const fabricId = fabricDetails.id || summary.selected_fabric_id;
         if (fabricId && summary.linear_meters > 0) {
-          // Fetch current fabric inventory
+          // Fetch current fabric inventory from enhanced_inventory_items
           const { data: fabricData } = await supabase
-            .from('fabrics' as any)
-            .select('quantity, name, reorder_point')
+            .from('enhanced_inventory_items')
+            .select('quantity, name, reorder_point, unit')
             .eq('id', fabricId)
-            .single();
+            .maybeSingle();
 
           if (fabricData) {
-            const name = (fabricData as any).name;
-            const quantity = (fabricData as any).quantity || 0;
-            const reorderPoint = (fabricData as any).reorder_point || 0;
+            const quantity = fabricData.quantity || 0;
+            const reorderPoint = fabricData.reorder_point || 0;
             
             // Only include if item is being tracked (quantity > 0 OR reorder_point > 0)
             const isTracked = quantity > 0 || reorderPoint > 0;
             
-            if (name && isTracked) {
+            if (fabricData.name && isTracked) {
               const usedMeters = summary.linear_meters || 0;
               
               materials.push({
                 itemId: fabricId,
-                itemTable: 'fabrics',
-                itemName: name || fabricDetails.name || 'Fabric',
+                itemTable: 'enhanced_inventory_items',
+                itemName: fabricData.name || fabricDetails.name || 'Fabric',
                 quantityUsed: usedMeters,
-                unit: 'm',
+                unit: fabricData.unit || 'm',
                 currentQuantity: quantity,
                 costImpact: summary.fabric_cost || 0,
                 surfaceId: summary.window_id,
@@ -97,31 +96,29 @@ export const useProjectMaterialsUsage = (projectId: string | undefined) => {
         const hardwareId = hardwareDetails.id || summary.selected_hardware_id;
         if (hardwareId) {
           const { data: hardwareData } = await supabase
-            .from('hardware_inventory' as any)
+            .from('enhanced_inventory_items')
             .select('quantity, name, unit, reorder_point')
             .eq('id', hardwareId)
-            .single();
+            .maybeSingle();
 
           if (hardwareData) {
-            const name = (hardwareData as any).name;
-            const quantity = (hardwareData as any).quantity || 0;
-            const unit = (hardwareData as any).unit;
-            const reorderPoint = (hardwareData as any).reorder_point || 0;
+            const quantity = hardwareData.quantity || 0;
+            const reorderPoint = hardwareData.reorder_point || 0;
             
             // Only include if item is being tracked (quantity > 0 OR reorder_point > 0)
             const isTracked = quantity > 0 || reorderPoint > 0;
             
-            if (name && isTracked) {
+            if (hardwareData.name && isTracked) {
               const trackWidthCm = summary.rail_width || summary.drop || 0;
               const usedMeters = trackWidthCm / 100;
               
               if (usedMeters > 0) {
                 materials.push({
                   itemId: hardwareId,
-                  itemTable: 'hardware_inventory',
-                  itemName: name || hardwareDetails.name || 'Hardware',
+                  itemTable: 'enhanced_inventory_items',
+                  itemName: hardwareData.name || hardwareDetails.name || 'Hardware',
                   quantityUsed: usedMeters,
-                  unit: unit || 'm',
+                  unit: hardwareData.unit || 'm',
                   currentQuantity: quantity,
                   costImpact: summary.hardware_cost || 0,
                   surfaceId: summary.window_id,
@@ -138,21 +135,19 @@ export const useProjectMaterialsUsage = (projectId: string | undefined) => {
         const headingId = headingDetails.id || summary.selected_heading_id;
         if (headingId) {
           const { data: headingData } = await supabase
-            .from('heading_inventory' as any)
+            .from('enhanced_inventory_items')
             .select('quantity, name, unit, reorder_point')
             .eq('id', headingId)
-            .single();
+            .maybeSingle();
 
           if (headingData) {
-            const name = (headingData as any).name;
-            const quantity = (headingData as any).quantity || 0;
-            const unit = (headingData as any).unit;
-            const reorderPoint = (headingData as any).reorder_point || 0;
+            const quantity = headingData.quantity || 0;
+            const reorderPoint = headingData.reorder_point || 0;
             
             // Only include if item is being tracked (quantity > 0 OR reorder_point > 0)
             const isTracked = quantity > 0 || reorderPoint > 0;
             
-            if (name && isTracked) {
+            if (headingData.name && isTracked) {
               const widthsRequired = summary.widths_required || 0;
               const fabricWidth = fabricDetails.width || 137;
               const finishedWidthCm = widthsRequired * fabricWidth;
@@ -161,10 +156,10 @@ export const useProjectMaterialsUsage = (projectId: string | undefined) => {
               if (usedMeters > 0) {
                 materials.push({
                   itemId: headingId,
-                  itemTable: 'heading_inventory',
-                  itemName: name || headingDetails.heading_name || 'Heading',
+                  itemTable: 'enhanced_inventory_items',
+                  itemName: headingData.name || headingDetails.heading_name || 'Heading',
                   quantityUsed: usedMeters,
-                  unit: unit || 'm',
+                  unit: headingData.unit || 'm',
                   currentQuantity: quantity,
                   costImpact: summary.heading_cost || 0,
                   surfaceId: summary.window_id,
