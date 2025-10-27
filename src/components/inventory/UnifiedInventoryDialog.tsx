@@ -1431,6 +1431,7 @@ export const UnifiedInventoryDialog = ({
                                   <Popover 
                                     open={openPopoverIndex === index} 
                                     onOpenChange={(open) => setOpenPopoverIndex(open ? index : null)}
+                                    modal={true}
                                   >
                                     <PopoverTrigger asChild>
                                       <Button
@@ -1451,7 +1452,18 @@ export const UnifiedInventoryDialog = ({
                                         <Package className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                       </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-[400px] p-0 z-[10000]" align="start">
+                                    <PopoverContent 
+                                      className="w-[400px] p-0" 
+                                      align="start"
+                                      style={{ zIndex: 99999 }}
+                                      onInteractOutside={(e) => {
+                                        // Prevent closing when clicking inside the dialog
+                                        const target = e.target as HTMLElement;
+                                        if (target.closest('[role="dialog"]')) {
+                                          e.preventDefault();
+                                        }
+                                      }}
+                                    >
                                       <Command>
                                         <CommandInput placeholder="Search items..." className="h-9" />
                                         <CommandEmpty>No inventory items found.</CommandEmpty>
