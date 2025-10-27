@@ -91,8 +91,11 @@ export const UnifiedInventoryDialog = ({
   };
   const lengthLabel = unitLabels[lengthUnit] || lengthUnit;
 
+  const [pricingMode, setPricingMode] = useState<'simple' | 'advanced'>('simple');
+  const [pricePerMeter, setPricePerMeter] = useState<string>('');
+  const [maxLength, setMaxLength] = useState<string>('');
   const [pricingGridRows, setPricingGridRows] = useState<Array<{ length: string; price: string }>>([]);
-  const [variants, setVariants] = useState<Array<{ 
+  const [variants, setVariants] = useState<Array<{
     type: string; 
     name: string; 
     sku: string; 
@@ -204,6 +207,23 @@ export const UnifiedInventoryDialog = ({
         wallpaper_pattern_offset: item.wallpaper_pattern_offset || 0
       });
       setTrackInventory(item.quantity > 0);
+      
+      // Load pricing data for tracks/rods
+      if (item.metadata) {
+        const metadata = typeof item.metadata === 'string' ? JSON.parse(item.metadata) : item.metadata;
+        if (metadata.pricingMode) {
+          setPricingMode(metadata.pricingMode);
+        }
+        if (metadata.pricePerMeter) {
+          setPricePerMeter(String(metadata.pricePerMeter));
+        }
+        if (metadata.maxLength) {
+          setMaxLength(String(metadata.maxLength));
+        }
+        if (metadata.lengthPricingGrid) {
+          setPricingGridRows(metadata.lengthPricingGrid);
+        }
+      }
     }
   }, [mode, item, open, toast]);
 
@@ -325,13 +345,29 @@ export const UnifiedInventoryDialog = ({
     e.preventDefault();
     
     try {
-      const cleanData = {
+      const cleanData: any = {
         ...formData,
         cost_price: formData.cost_price || 0,
         selling_price: formData.selling_price || 0,
         quantity: trackInventory ? formData.quantity : 0,
         reorder_point: trackInventory ? formData.reorder_point : 0
       };
+      
+      // Add pricing metadata for tracks/rods
+      if (formData.subcategory === 'track' || formData.subcategory === 'rod') {
+        const pricingMetadata: any = {
+          pricingMode,
+        };
+        
+        if (pricingMode === 'simple') {
+          pricingMetadata.pricePerMeter = parseFloat(pricePerMeter) || 0;
+          pricingMetadata.maxLength = parseFloat(maxLength) || 0;
+        } else {
+          pricingMetadata.lengthPricingGrid = pricingGridRows.filter(row => row.length && row.price);
+        }
+        
+        cleanData.metadata = pricingMetadata;
+      }
       
       // Remove empty fields
       Object.keys(cleanData).forEach(key => {
@@ -1279,101 +1315,230 @@ export const UnifiedInventoryDialog = ({
                   </CardContent>
                 </Card>
 
-                {/* CSV Pricing Grid - Track/Rod Hardware Only */}
+                {/* Pricing Configuration - Track/Rod Hardware Only */}
                 {(formData.subcategory === "track" || formData.subcategory === "rod") && (
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-base">Length-Based Pricing Grid</CardTitle>
+                      <CardTitle className="text-base">Pricing Configuration</CardTitle>
                       <CardDescription>
-                        Define selling prices for different lengths. Add rows for each length you offer (e.g., 0.3{lengthLabel} to 6.0{lengthLabel} range). 
-                        The system will use the closest matching length when calculating quotes.
+                        Configure how pricing works for different lengths of this item.
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex gap-2">
-                        <Input
-                          type="file"
-                          accept=".csv"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onload = (event) => {
-                                const csv = event.target?.result as string;
-                                const rows = csv.split('\n').slice(1); // Skip header
-                                const parsedRows = rows
-                                  .filter(row => row.trim())
-                                  .map(row => {
-                                    const [length, price] = row.split(',');
-                                    return { length: length?.trim() || '', price: price?.trim() || '' };
-                                  });
-                                setPricingGridRows(parsedRows);
-                                toast({ title: "CSV uploaded", description: `${parsedRows.length} pricing rows loaded` });
-                              };
-                              reader.readAsText(file);
-                            }
-                          }}
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => {
-                            const csv = `Length (${lengthLabel}),Price (${currencySymbol})\n1.0,20.00\n1.5,25.00\n2.0,30.00`;
-                            const blob = new Blob([csv], { type: 'text/csv' });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = 'pricing-template.csv';
-                            a.click();
-                          }}
-                        >
-                          Download Template
-                        </Button>
+                    <CardContent className="space-y-6">
+                      {/* Pricing Mode Toggle */}
+                      <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium">Pricing Mode</p>
+                          <p className="text-xs text-muted-foreground">
+                            {pricingMode === 'simple' 
+                              ? 'Simple: Fixed price per unit length' 
+                              : 'Advanced: Different prices for specific lengths'}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant={pricingMode === 'simple' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setPricingMode('simple')}
+                          >
+                            Simple
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={pricingMode === 'advanced' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setPricingMode('advanced')}
+                          >
+                            Advanced
+                          </Button>
+                        </div>
                       </div>
 
-                      <div className="space-y-2">
-                        {pricingGridRows.map((row, index) => (
-                          <div key={index} className="flex gap-2">
-                            <Input
-                              placeholder={`Length (${lengthLabel})`}
-                              value={row.length}
-                              onChange={(e) => {
-                                const updated = [...pricingGridRows];
-                                updated[index].length = e.target.value;
-                                setPricingGridRows(updated);
-                              }}
-                            />
-                            <Input
-                              placeholder={`Price (${currencySymbol})`}
-                              value={row.price}
-                              onChange={(e) => {
-                                const updated = [...pricingGridRows];
-                                updated[index].price = e.target.value;
-                                setPricingGridRows(updated);
-                              }}
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                setPricingGridRows(pricingGridRows.filter((_, i) => i !== index));
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                      {/* Simple Pricing Mode */}
+                      {pricingMode === 'simple' && (
+                        <div className="space-y-4 p-4 border rounded-lg">
+                          <div className="flex items-start gap-2">
+                            <div className="p-2 bg-blue-500/10 rounded-lg">
+                              <DollarSign className="h-4 w-4 text-blue-500" />
+                            </div>
+                            <div className="flex-1 space-y-3">
+                              <div>
+                                <h4 className="text-sm font-semibold">Simple Pricing</h4>
+                                <p className="text-xs text-muted-foreground">
+                                  Set one price per {lengthLabel}. Total price = (length × price per {lengthLabel}).
+                                </p>
+                              </div>
+                              
+                              <div className="grid gap-4 md:grid-cols-2">
+                                <div className="space-y-2">
+                                  <Label htmlFor="pricePerMeter">
+                                    Price per {lengthLabel} ({currencySymbol})
+                                  </Label>
+                                  <Input
+                                    id="pricePerMeter"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder={`e.g., 17.00`}
+                                    value={pricePerMeter}
+                                    onChange={(e) => setPricePerMeter(e.target.value)}
+                                  />
+                                  <p className="text-xs text-muted-foreground">
+                                    Example: {currencySymbol}17.00 per {lengthLabel}
+                                  </p>
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  <Label htmlFor="maxLength">
+                                    Maximum Length ({lengthLabel})
+                                  </Label>
+                                  <Input
+                                    id="maxLength"
+                                    type="number"
+                                    step="0.1"
+                                    min="0"
+                                    placeholder={`e.g., 600`}
+                                    value={maxLength}
+                                    onChange={(e) => setMaxLength(e.target.value)}
+                                  />
+                                  <p className="text-xs text-muted-foreground">
+                                    Maximum length available for quotes
+                                  </p>
+                                </div>
+                              </div>
+
+                              {pricePerMeter && maxLength && (
+                                <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
+                                  <AlertDescription className="text-xs">
+                                    <strong>Example calculation:</strong> For {maxLength}{lengthLabel}, 
+                                    customer pays {currencySymbol}{(parseFloat(pricePerMeter) * parseFloat(maxLength)).toFixed(2)} 
+                                    ({maxLength} × {currencySymbol}{pricePerMeter})
+                                  </AlertDescription>
+                                </Alert>
+                              )}
+                            </div>
                           </div>
-                        ))}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setPricingGridRows([...pricingGridRows, { length: '', price: '' }])}
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Row
-                        </Button>
-                      </div>
+                        </div>
+                      )}
+
+                      {/* Advanced Pricing Mode */}
+                      {pricingMode === 'advanced' && (
+                        <div className="space-y-4 p-4 border rounded-lg">
+                          <div className="flex items-start gap-2">
+                            <div className="p-2 bg-purple-500/10 rounded-lg">
+                              <TrendingUp className="h-4 w-4 text-purple-500" />
+                            </div>
+                            <div className="flex-1 space-y-3">
+                              <div>
+                                <h4 className="text-sm font-semibold">Length-Based Pricing Grid</h4>
+                                <p className="text-xs text-muted-foreground">
+                                  Define the <strong>TOTAL PRICE</strong> for specific lengths. 
+                                  The system will match the customer's requested length to the closest available length in your grid.
+                                </p>
+                              </div>
+
+                              <Alert className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900">
+                                <AlertDescription className="text-xs space-y-2">
+                                  <p><strong>Important:</strong> Enter the TOTAL PRICE for each length, not incremental prices.</p>
+                                  <p className="font-mono bg-background/50 p-2 rounded">
+                                    Example: 100{lengthLabel} = {currencySymbol}17 • 200{lengthLabel} = {currencySymbol}34 • 300{lengthLabel} = {currencySymbol}51
+                                  </p>
+                                </AlertDescription>
+                              </Alert>
+
+                              <div className="flex gap-2">
+                                <Input
+                                  type="file"
+                                  accept=".csv"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const reader = new FileReader();
+                                      reader.onload = (event) => {
+                                        const csv = event.target?.result as string;
+                                        const rows = csv.split('\n').slice(1);
+                                        const parsedRows = rows
+                                          .filter(row => row.trim())
+                                          .map(row => {
+                                            const [length, price] = row.split(',');
+                                            return { length: length?.trim() || '', price: price?.trim() || '' };
+                                          });
+                                        setPricingGridRows(parsedRows);
+                                        toast({ title: "CSV uploaded", description: `${parsedRows.length} pricing rows loaded` });
+                                      };
+                                      reader.readAsText(file);
+                                    }
+                                  }}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => {
+                                    const csv = `Length (${lengthLabel}),Price (${currencySymbol})\n100,17.00\n200,34.00\n300,51.00`;
+                                    const blob = new Blob([csv], { type: 'text/csv' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = 'pricing-template.csv';
+                                    a.click();
+                                  }}
+                                >
+                                  Download Template
+                                </Button>
+                              </div>
+
+                              <div className="space-y-2">
+                                {pricingGridRows.map((row, index) => (
+                                  <div key={index} className="flex gap-2">
+                                    <Input
+                                      placeholder={`Length (${lengthLabel})`}
+                                      value={row.length}
+                                      type="number"
+                                      step="0.1"
+                                      onChange={(e) => {
+                                        const updated = [...pricingGridRows];
+                                        updated[index].length = e.target.value;
+                                        setPricingGridRows(updated);
+                                      }}
+                                    />
+                                    <Input
+                                      placeholder={`Total Price (${currencySymbol})`}
+                                      value={row.price}
+                                      type="number"
+                                      step="0.01"
+                                      onChange={(e) => {
+                                        const updated = [...pricingGridRows];
+                                        updated[index].price = e.target.value;
+                                        setPricingGridRows(updated);
+                                      }}
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => {
+                                        setPricingGridRows(pricingGridRows.filter((_, i) => i !== index));
+                                      }}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ))}
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setPricingGridRows([...pricingGridRows, { length: '', price: '' }])}
+                                >
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Add Row
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )}
