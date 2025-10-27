@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, AlertCircle, ShoppingCart, Sparkles, FileDown } from "lucide-react";
+import { Plus, Package, AlertCircle, ShoppingCart, Sparkles, FileDown, Wand2 } from "lucide-react";
 import { useProjectMaterialAllocations } from "@/hooks/useProjectMaterialAllocations";
 import { AllocateMaterialDialog } from "./AllocateMaterialDialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,6 +12,8 @@ import { useSuppliers } from "@/hooks/useSuppliers";
 import { useProjectMaterialsUsage } from "@/hooks/useProjectMaterialsUsage";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { useConvertQuoteToMaterials } from "@/hooks/useConvertQuoteToMaterials";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface ProjectMaterialsTabProps {
   projectId: string;
@@ -19,6 +21,7 @@ interface ProjectMaterialsTabProps {
 
 export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
   const [showAllocateDialog, setShowAllocateDialog] = useState(false);
+  const [showProcessDialog, setShowProcessDialog] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
   const [vendorFilter, setVendorFilter] = useState("all");
   const [selectedMaterials, setSelectedMaterials] = useState<Set<string>>(new Set());
@@ -26,6 +29,16 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
   const { data: inventory } = useEnhancedInventory();
   const { data: suppliers } = useSuppliers();
   const { data: treatmentMaterials = [], isLoading: materialsLoading } = useProjectMaterialsUsage(projectId);
+  const convertMaterials = useConvertQuoteToMaterials();
+  
+  const handleProcessMaterials = async () => {
+    try {
+      await convertMaterials.mutateAsync({ projectId });
+      setShowProcessDialog(false);
+    } catch (error) {
+      console.error("Failed to process materials:", error);
+    }
+  };
 
   // Transform materials for display
   const displayMaterials = useMemo(() => {
@@ -164,6 +177,43 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* Automatic Material Processing Card - PROMINENT */}
+      <Card className="border-primary/50 bg-primary/5">
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <CardTitle className="flex items-center gap-2">
+                <Wand2 className="h-5 w-5 text-primary" />
+                Automatic Material Processing
+              </CardTitle>
+              <CardDescription>
+                Extract all materials from your quote and automatically check inventory
+              </CardDescription>
+            </div>
+            <Button onClick={() => setShowProcessDialog(true)} size="lg" className="gap-2">
+              <Sparkles className="h-4 w-4" />
+              Process Quote Materials
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-green-500" />
+              <span>Items in stock → Deduct from inventory</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-orange-500" />
+              <span>Items not in stock → Create purchase list</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-blue-500" />
+              <span>Automatic vendor matching</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
       {/* Auto-Extracted Materials from Treatments */}
       <Card>
         <CardHeader>
@@ -508,6 +558,54 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* Material Processing Confirmation Dialog */}
+      <Dialog open={showProcessDialog} onOpenChange={setShowProcessDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Automatic Material Processing</DialogTitle>
+            <DialogDescription>
+              This will analyze your quote and automatically:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid gap-3">
+              <div className="flex items-start gap-3 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                <div className="h-2 w-2 rounded-full bg-green-500 mt-2" />
+                <div>
+                  <p className="font-medium text-green-900 dark:text-green-100">Deduct from Inventory</p>
+                  <p className="text-sm text-green-700 dark:text-green-300">Materials in stock will be automatically allocated and deducted from your inventory</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                <div className="h-2 w-2 rounded-full bg-orange-500 mt-2" />
+                <div>
+                  <p className="font-medium text-orange-900 dark:text-orange-100">Create Purchase Requirements</p>
+                  <p className="text-sm text-orange-700 dark:text-orange-300">Materials not in stock will be added to your purchase list with supplier information</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="h-2 w-2 rounded-full bg-blue-500 mt-2" />
+                <div>
+                  <p className="font-medium text-blue-900 dark:text-blue-100">Vendor Matching</p>
+                  <p className="text-sm text-blue-700 dark:text-blue-300">System will automatically match materials to your preferred vendors</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setShowProcessDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleProcessMaterials} disabled={convertMaterials.isPending}>
+                {convertMaterials.isPending ? 'Processing...' : 'Process Materials'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <AllocateMaterialDialog
         projectId={projectId}

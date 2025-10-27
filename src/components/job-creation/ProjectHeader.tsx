@@ -14,7 +14,6 @@ import { useUpdateQuote } from "@/hooks/useQuotes";
 import { useUpdateProject } from "@/hooks/useProjects";
 import { useNavigate } from "react-router-dom";
 import { useProjectStatusChange } from "@/hooks/useProjectStatusChange";
-import { useConvertQuoteToMaterials } from "@/hooks/useConvertQuoteToMaterials";
 import { LeftoverCaptureDialog } from "../projects/LeftoverCaptureDialog";
 import { InventoryDeductionDialog } from "../projects/InventoryDeductionDialog";
 
@@ -73,20 +72,6 @@ export const ProjectHeader = ({
     projectId: actualProjectId,
     currentStatus: displayStatus,
   });
-
-  const convertMaterials = useConvertQuoteToMaterials();
-  const [showMaterialDialog, setShowMaterialDialog] = useState(false);
-  
-  const handleAllocateMaterials = async () => {
-    if (!actualProjectId) return;
-    
-    try {
-      await convertMaterials.mutateAsync({ projectId: actualProjectId });
-      setShowMaterialDialog(false);
-    } catch (error) {
-      console.error("Failed to allocate materials:", error);
-    }
-  };
 
   // Update display status when currentStatus prop changes
   useEffect(() => {
@@ -359,20 +344,6 @@ export const ProjectHeader = ({
             </SelectContent>
           </Select>
 
-          {/* Allocate Materials Button */}
-          {actualProjectId && (
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={() => setShowMaterialDialog(true)}
-              className="flex items-center gap-2"
-              disabled={convertMaterials.isPending}
-            >
-              <Package className="h-4 w-4" />
-              <span>{convertMaterials.isPending ? 'Processing...' : 'Process Materials'}</span>
-            </Button>
-          )}
-
           <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
             <DialogTrigger asChild>
               <Button size="sm" variant="outline" className="relative">
@@ -583,30 +554,6 @@ export const ProjectHeader = ({
                 Cancel
               </Button>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Material Processing Confirmation Dialog */}
-      <Dialog open={showMaterialDialog} onOpenChange={setShowMaterialDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Process Quote Materials</DialogTitle>
-            <DialogDescription>
-              This will review all materials in the quote and:
-              <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>Allocate available materials from inventory</li>
-                <li>Create purchase requirements for unavailable items</li>
-              </ul>
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowMaterialDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAllocateMaterials} disabled={convertMaterials.isPending}>
-              {convertMaterials.isPending ? 'Processing...' : 'Process Materials'}
-            </Button>
           </div>
         </DialogContent>
       </Dialog>
