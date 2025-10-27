@@ -539,17 +539,30 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   // Get selected curtain template details
   const selectedCovering = curtainTemplates.find(c => c.id === selectedWindowCovering);
 
-  // Debug: Log button state
+  // Debug: Log button state and component mount
   useEffect(() => {
+    console.log("🟢 EnhancedMeasurementWorksheet MOUNTED/UPDATED");
     console.log("🔍 SAVE BUTTON STATE CHECK:", {
       isSaving,
       projectId,
       surfaceId,
       selectedWindowCovering,
       selectedCovering: selectedCovering?.name || 'NOT SELECTED',
-      buttonWillBeDisabled: !!(isSaving || !projectId || !surfaceId || !selectedCovering)
+      buttonWillBeDisabled: !!(isSaving || !projectId || !surfaceId || !selectedCovering),
+      readOnly
     });
-  }, [isSaving, projectId, surfaceId, selectedCovering, selectedWindowCovering]);
+    
+    // Alert user if button is disabled
+    if (!selectedCovering && !readOnly) {
+      console.warn("⚠️ SAVE DISABLED: No window covering selected. Please select a treatment type first.");
+    }
+    if (!projectId) {
+      console.error("❌ SAVE DISABLED: No projectId provided");
+    }
+    if (!surfaceId) {
+      console.error("❌ SAVE DISABLED: No surfaceId provided");
+    }
+  }, [isSaving, projectId, surfaceId, selectedCovering, selectedWindowCovering, readOnly]);
 
   // Filter inventory based on selected covering category
   const getInventoryForCovering = (covering: any) => {

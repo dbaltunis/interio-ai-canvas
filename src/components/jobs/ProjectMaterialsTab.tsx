@@ -33,9 +33,12 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
   
   const handleProcessMaterials = async () => {
     try {
+      console.log('[MATERIALS] Processing materials - checking treatmentMaterials:', treatmentMaterials);
+      
       if (treatmentMaterials.length === 0) {
-        toast.error("No materials found", {
-          description: "Make sure you've saved treatments with fabrics selected in the Measurements tab"
+        toast.error("No materials found to process", {
+          description: "Go to 'Rooms & Treatments' tab, select a window, configure the treatment, select a fabric, and click 'Save Configuration' first.",
+          duration: 8000
         });
         setShowProcessDialog(false);
         return;
@@ -56,6 +59,11 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
         projectId, 
         materials: materialsToProcess 
       });
+      
+      toast.success("Materials processed successfully!", {
+        description: `Processed ${materialsToProcess.length} material(s)`
+      });
+      
       setShowProcessDialog(false);
     } catch (error: any) {
       console.error("Failed to process materials:", error);
@@ -202,6 +210,30 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* Warning Banner when no materials found */}
+      {displayMaterials.length === 0 && (
+        <Card className="border-orange-500/50 bg-orange-50/50 dark:bg-orange-950/20">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <AlertCircle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-1" />
+              <div className="space-y-2">
+                <h3 className="font-semibold text-orange-900 dark:text-orange-100">No Materials Detected</h3>
+                <p className="text-sm text-orange-800 dark:text-orange-200">
+                  To process materials for this job, you need to:
+                </p>
+                <ol className="text-sm text-orange-800 dark:text-orange-200 list-decimal list-inside space-y-1 ml-2">
+                  <li>Go to the <strong>Rooms & Treatments</strong> tab</li>
+                  <li>Select a window/surface from the room</li>
+                  <li>Configure the treatment (select type, fabric, dimensions)</li>
+                  <li>Click <strong>Save Configuration</strong> button</li>
+                  <li>Return here to process the materials</li>
+                </ol>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       {/* Automatic Material Processing Card - PROMINENT */}
       <Card className="border-primary/50 bg-primary/5">
         <CardHeader>
