@@ -148,24 +148,39 @@ export function WindowSummaryCard({
                        summary.fabric_details?.fabric_name ||  
                        (isBlindsOrShutters ? 'Material' : treatmentType === 'wallpaper' ? 'Wallpaper Material' : 'Fabric');
     
-    // Build description based on treatment type
+    // Build description and pricing based on treatment type
     let fabricDescription = '';
+    let fabricQuantity = Number(summary.linear_meters) || 0;
+    let fabricUnit = 'm';
+    let fabricUnitPrice = Number(summary.price_per_meter) || 0;
+    
     if (treatmentType === 'wallpaper') {
-      // For wallpaper: show meters and area
-      const squareMeters = (Number(summary.linear_meters) || 0) * (summary.widths_required || 1) / 100;
-      fabricDescription = `${fabricName} • ${(Number(summary.linear_meters) || 0).toFixed(2)}m • ${squareMeters.toFixed(2)} m²`;
+      // For wallpaper: check if sold per roll or per meter
+      const wallpaperDetails = summary.fabric_details || summary.material_details || {};
+      const soldBy = wallpaperDetails.sold_by || 'meter';
+      
+      if (soldBy === 'per_roll') {
+        const rollsNeeded = Math.ceil(fabricQuantity / (Number(wallpaperDetails.wallpaper_roll_length) || 10));
+        fabricQuantity = rollsNeeded;
+        fabricUnit = 'roll';
+        fabricUnitPrice = Number(wallpaperDetails.price_per_roll) || fabricUnitPrice;
+        fabricDescription = `${rollsNeeded} roll${rollsNeeded > 1 ? 's' : ''} • ${fabricQuantity * (Number(wallpaperDetails.wallpaper_roll_length) || 10)}m total`;
+      } else {
+        const squareMeters = fabricQuantity * (summary.widths_required || 1) / 100;
+        fabricDescription = `${fabricQuantity.toFixed(2)}m • ${squareMeters.toFixed(2)} m²`;
+      }
     } else {
       // For curtains/blinds: show linear meters and widths
-      fabricDescription = `${fabricName} • ${(Number(summary.linear_meters) || 0).toFixed(2)}m • ${summary.widths_required || 1} width(s)`;
+      fabricDescription = `${fabricQuantity.toFixed(2)}m • ${summary.widths_required || 1} width(s)`;
     }
     
     items.push({
       id: 'fabric',
       name: fabricName,
       description: fabricDescription,
-      quantity: Number(summary.linear_meters) || 0,
-      unit: 'm',
-      unit_price: Number(summary.price_per_meter) || 0,
+      quantity: fabricQuantity,
+      unit: fabricUnit,
+      unit_price: fabricUnitPrice,
       total_cost: actualFabricCost,
       category: 'fabric',
       details: {
@@ -173,17 +188,21 @@ export function WindowSummaryCard({
         linear_meters: summary.linear_meters,
         price_per_meter: summary.price_per_meter,
         fabric_name: fabricName,
+        sold_by: treatmentType === 'wallpaper' ? (summary.fabric_details?.sold_by || 'meter') : undefined,
       },
     });
 
     if (Number(summary.lining_cost) > 0) {
+      const liningMeters = Number(summary.linear_meters) || 0;
+      const liningPricePerMetre = Number(summary.lining_details?.price_per_metre) || 0;
+      
       items.push({
         id: 'lining',
         name: summary.lining_details?.type || 'Lining',
-        description: summary.lining_details?.type,
-        quantity: Number(summary.linear_meters) || 0,
+        description: `${liningMeters.toFixed(2)}m lining material`,
+        quantity: liningMeters,
         unit: 'm',
-        unit_price: Number(summary.lining_details?.price_per_metre) || undefined,
+        unit_price: liningPricePerMetre,
         total_cost: Number(summary.lining_cost) || 0,
         category: 'lining',
         details: summary.lining_details || undefined,
@@ -222,10 +241,18 @@ export function WindowSummaryCard({
       const hardwareName = summary.hardware_details?.name || 
                           summary.hardware_details?.hardware_name || 
                           'Hardware';
+      const hardwareQuantity = Number(summary.hardware_details?.quantity) || 1;
+      const hardwareUnitPrice = Number(summary.hardware_details?.unit_price) || 
+                                Number(summary.hardware_details?.price) ||
+                                Number(summary.hardware_cost) / hardwareQuantity;
+      
       items.push({
         id: 'hardware',
         name: hardwareName,
-        description: hardwareName,
+        description: hardwareQuantity > 1 ? `${hardwareQuantity} unit${hardwareQuantity > 1 ? 's' : ''}` : hardwareName,
+        quantity: hardwareQuantity,
+        unit: 'unit',
+        unit_price: hardwareUnitPrice,
         total_cost: Number(summary.hardware_cost) || 0,
         category: 'hardware',
         details: summary.hardware_details,
@@ -530,32 +557,48 @@ export function WindowSummaryCard({
                   <div className="p-4 space-y-3">
                     <div className="flex items-center gap-2 pb-2 border-b border-border">
                       <Calculator className="h-4 w-4 text-primary" />
-                      <h4 className="text-sm font-semibold text-foreground">Cost Breakdown</h4>
+                      <h4 className="text-sm font-semibold text-foreground">Detailed Cost Breakdown</h4>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {/* Render all breakdown items from enrichedBreakdown */}
                       {enrichedBreakdown.map((item) => {
-                        // Skip zero-cost items and handle options separately
+                        // Skip zero-cost items
                         if (item.total_cost === 0) return null;
                         const isOption = item.category === 'option' || item.category === 'options';
+                        const hasQuantityPricing = item.quantity && item.unit && item.unit_price;
                         
                         return (
-                          <div key={item.id} className={`flex items-start justify-between py-2 ${!isOption ? 'border-b border-border/50' : ''}`}>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium text-foreground">{item.name}</div>
-                              {item.description && (
-                                <div className="text-xs text-muted-foreground mt-0.5">{item.description}</div>
-                              )}
-                              {item.quantity && item.unit && (
-                                <div className="text-xs text-muted-foreground mt-0.5">
-                                  {Number(item.quantity).toFixed(2)} {item.unit}
-                                  {item.unit_price && ` × ${formatCurrency(item.unit_price, userCurrency)}`}
+                          <div key={item.id} className={`rounded-lg bg-card border border-border p-3 ${isOption ? 'bg-muted/50' : ''}`}>
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-semibold text-foreground">{item.name}</div>
+                                {item.description && (
+                                  <div className="text-xs text-muted-foreground mt-1">{item.description}</div>
+                                )}
+                                {hasQuantityPricing && (
+                                  <div className="text-xs font-medium text-foreground/80 mt-1.5 space-y-0.5">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-muted-foreground">Quantity:</span>
+                                      <span>{Number(item.quantity).toFixed(2)} {item.unit}{Number(item.quantity) > 1 && item.unit !== 'm²' ? 's' : ''}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-muted-foreground">Unit Price:</span>
+                                      <span>{formatCurrency(item.unit_price, userCurrency)}/{item.unit}</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-right flex-shrink-0">
+                                <div className="text-base font-bold text-foreground">
+                                  {formatCurrency(item.total_cost, userCurrency)}
                                 </div>
-                              )}
-                            </div>
-                            <div className="font-semibold text-foreground ml-3 flex-shrink-0">
-                              {formatCurrency(item.total_cost, userCurrency)}
+                                {hasQuantityPricing && (
+                                  <div className="text-xs text-muted-foreground mt-1">
+                                    {Number(item.quantity).toFixed(2)} × {formatCurrency(item.unit_price, userCurrency)}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         );
@@ -563,10 +606,10 @@ export function WindowSummaryCard({
                     </div>
 
                     {/* Total */}
-                    <div className="border-t-2 border-primary/20 pt-3">
+                    <div className="border-t-2 border-primary/20 pt-3 mt-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-base font-bold text-foreground">Total</span>
-                        <span className="text-lg font-bold text-primary">
+                        <span className="text-base font-bold text-foreground">Total Cost</span>
+                        <span className="text-xl font-bold text-primary">
                           {formatCurrency(summary?.total_cost || 0, userCurrency)}
                         </span>
                       </div>
