@@ -55,81 +55,53 @@ export const useProjectMaterialsUsage = (projectId: string | undefined) => {
 
       for (const treatment of treatments) {
         const calcDetails = (treatment.calculation_details as any) || {};
-        const fabricDetails = (treatment.fabric_details as any) || {};
+        const breakdown = calcDetails.breakdown || [];
         
         console.log('[MATERIALS] Processing treatment:', {
           id: treatment.id,
-          fabricDetails,
-          calcDetails: Object.keys(calcDetails)
+          treatmentName: treatment.product_name,
+          breakdownCount: breakdown.length
         });
         
-        // FABRIC - Get from fabric_details.fabric_id or fabric_details.id
-        const fabricId = fabricDetails.fabric_id || fabricDetails.id;
-        if (fabricId) {
-          const { data: fabricData } = await supabase
-            .from('enhanced_inventory_items')
-            .select('quantity, name, reorder_point, unit')
-            .eq('id', fabricId)
-            .maybeSingle();
-
-          if (fabricData) {
-            const quantity = fabricData.quantity || 0;
-            const reorderPoint = fabricData.reorder_point || 0;
-            const isTracked = quantity > 0 || reorderPoint > 0;
-            
-            // Get fabric usage from calculation details
-            const fabricMeters = calcDetails.fabricMeters || calcDetails.fabricUsage?.meters || 0;
-            
-            if (fabricData.name && fabricMeters > 0) {
-              materials.push({
-                itemId: fabricId,
-                itemTable: 'enhanced_inventory_items',
-                itemName: fabricData.name,
-                quantityUsed: fabricMeters,
-                unit: fabricData.unit || 'm',
-                currentQuantity: quantity,
-                costImpact: treatment.material_cost || 0,
-                surfaceId: treatment.window_id || treatment.id,
-                surfaceName: surfaceMap.get(treatment.window_id) || 'Treatment',
-                lowStock: quantity < fabricMeters,
-                isTracked
-              });
-            }
-          }
-        }
-
-        // PRODUCTS - Extract from breakdown in calculation_details
-        const breakdown = calcDetails.breakdown || [];
+        // Process each item in the enhanced breakdown
         for (const item of breakdown) {
-          if (!item.name || !item.quantity) continue;
+          if (!item.itemId || !item.itemTable || !item.quantity) {
+            console.warn('[MATERIALS] Skipping item with missing data:', item);
+            continue;
+          }
           
-          // Try to match to inventory
-          const { data: inventoryItem } = await supabase
-            .from('enhanced_inventory_items')
-            .select('id, quantity, name, unit, reorder_point')
-            .ilike('name', `%${item.name}%`)
+          // Fetch current inventory data using the stored itemId
+          const { data: inventoryData } = await supabase
+            .from(item.itemTable)
+            .select('quantity, name, reorder_point, unit')
+            .eq('id', item.itemId)
             .maybeSingle();
 
-          if (inventoryItem) {
-            const quantity = inventoryItem.quantity || 0;
-            const reorderPoint = inventoryItem.reorder_point || 0;
+          if (inventoryData && item.quantity > 0) {
+            const quantity = inventoryData.quantity || 0;
+            const reorderPoint = inventoryData.reorder_point || 0;
             const isTracked = quantity > 0 || reorderPoint > 0;
             
-            if (isTracked) {
-              materials.push({
-                itemId: inventoryItem.id,
-                itemTable: 'enhanced_inventory_items',
-                itemName: inventoryItem.name,
-                quantityUsed: item.quantity,
-                unit: inventoryItem.unit || item.unit || 'unit',
-                currentQuantity: quantity,
-                costImpact: item.cost || 0,
-                surfaceId: treatment.window_id || treatment.id,
-                surfaceName: surfaceMap.get(treatment.window_id) || 'Treatment',
-                lowStock: quantity < item.quantity,
-                isTracked
-              });
-            }
+            materials.push({
+              itemId: item.itemId,
+              itemTable: item.itemTable as 'enhanced_inventory_items',
+              itemName: inventoryData.name,
+              quantityUsed: item.quantity,
+              unit: inventoryData.unit || item.unit || 'unit',
+              currentQuantity: quantity,
+              costImpact: item.total_cost || 0,
+              surfaceId: treatment.window_id || treatment.id,
+              surfaceName: surfaceMap.get(treatment.window_id) || treatment.product_name || 'Treatment',
+              lowStock: quantity < item.quantity,
+              isTracked
+            });
+            
+            console.log('[MATERIALS] Added material:', {
+              name: inventoryData.name,
+              category: item.category,
+              quantityUsed: item.quantity,
+              currentStock: quantity
+            });
           }
         }
       }

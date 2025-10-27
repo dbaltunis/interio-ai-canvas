@@ -1,4 +1,4 @@
-import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
+import { useState, useEffect, forwardRef, useImperativeHandle, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -81,6 +81,7 @@ export const DynamicWindowWorksheet = forwardRef<{
   const [isLayeredMode, setIsLayeredMode] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastSaveTime, setLastSaveTime] = useState<number | null>(null);
+  const lastSavedState = useRef<any>(null);
 
   // Hooks
   const {
@@ -369,17 +370,25 @@ export const DynamicWindowWorksheet = forwardRef<{
     selectedWindowType
   ]);
 
-  // Track unsaved changes
+  // Track unsaved changes - compare with last saved state
   useEffect(() => {
-    const hasChanges = !!(
-      selectedTemplate ||
-      selectedItems.fabric ||
-      selectedItems.hardware ||
-      Object.keys(measurements).length > 0
-    );
+    const currentState = {
+      templateId: selectedTemplate?.id,
+      fabricId: selectedItems.fabric?.id,
+      hardwareId: selectedItems.hardware?.id,
+      materialId: selectedItems.material?.id,
+      measurements: JSON.stringify(measurements),
+      heading: selectedHeading,
+      lining: selectedLining
+    };
+    
+    // If we have a last saved state, compare with it
+    const hasChanges = lastSavedState.current 
+      ? JSON.stringify(currentState) !== JSON.stringify(lastSavedState.current)
+      : !!(selectedTemplate || selectedItems.fabric || selectedItems.hardware || Object.keys(measurements).length > 0);
 
     setHasUnsavedChanges(hasChanges);
-  }, [selectedTemplate, selectedItems, measurements]);
+  }, [selectedTemplate, selectedItems, measurements, selectedHeading, selectedLining]);
 
   // Enhanced auto-save implementation with cross-mode data
   useImperativeHandle(ref, () => ({
@@ -831,12 +840,103 @@ export const DynamicWindowWorksheet = forwardRef<{
           if (projectId && surfaceId) {
             console.log('💾 Creating/updating treatment record for materials...');
             
+            // Generate descriptive treatment name
+            const windowName = surfaceData?.name || 'Window';
+            const templateName = selectedTemplate?.name || 'Treatment';
+            const fabricName = selectedItems.fabric?.name || '';
+            const treatmentName = [windowName, templateName, fabricName].filter(Boolean).join(' - ');
+            
+            // Build comprehensive breakdown with ALL materials
+            const breakdown = [];
+            
+            // Add fabric
+            if (selectedItems.fabric && linearMeters > 0) {
+              breakdown.push({
+                id: 'fabric',
+                itemId: selectedItems.fabric.id,
+                itemTable: 'enhanced_inventory_items',
+                name: selectedItems.fabric.name,
+                quantity: linearMeters,
+                unit: 'm',
+                unit_price: selectedItems.fabric.selling_price || selectedItems.fabric.unit_price || 0,
+                total_cost: fabricCost,
+                category: 'fabric',
+                image_url: selectedItems.fabric.image_url
+              });
+            }
+            
+            // Add lining
+            if (selectedLining && selectedLining !== 'none' && finalLiningCost > 0) {
+              const liningItem = headingInventory.find((h: any) => h.name?.toLowerCase().includes('lining'));
+              if (liningItem) {
+                breakdown.push({
+                  id: 'lining',
+                  itemId: liningItem.id,
+                  itemTable: 'enhanced_inventory_items',
+                  name: liningItem.name,
+                  quantity: linearMeters,
+                  unit: 'm',
+                  unit_price: liningItem.selling_price || liningItem.unit_price || 0,
+                  total_cost: finalLiningCost,
+                  category: 'lining'
+                });
+              }
+            }
+            
+            // Add heading/interlining
+            if (selectedHeading && selectedHeading !== 'none' && finalHeadingCost > 0) {
+              const headingItem = headingInventory.find((h: any) => h.name?.toLowerCase().includes(selectedHeading.toLowerCase()));
+              if (headingItem) {
+                breakdown.push({
+                  id: 'heading',
+                  itemId: headingItem.id,
+                  itemTable: 'enhanced_inventory_items',
+                  name: headingItem.name,
+                  quantity: linearMeters,
+                  unit: 'm',
+                  unit_price: headingItem.selling_price || headingItem.unit_price || 0,
+                  total_cost: finalHeadingCost,
+                  category: 'heading'
+                });
+              }
+            }
+            
+            // Add hardware
+            if (selectedItems.hardware) {
+              breakdown.push({
+                id: 'hardware',
+                itemId: selectedItems.hardware.id,
+                itemTable: 'enhanced_inventory_items',
+                name: selectedItems.hardware.name,
+                quantity: 1,
+                unit: 'set',
+                unit_price: selectedItems.hardware.selling_price || selectedItems.hardware.unit_price || 0,
+                total_cost: hardwareCost,
+                category: 'hardware'
+              });
+            }
+            
+            // Add material (for blinds/shutters/wallpaper)
+            if (selectedItems.material) {
+              breakdown.push({
+                id: 'material',
+                itemId: selectedItems.material.id,
+                itemTable: 'enhanced_inventory_items',
+                name: selectedItems.material.name,
+                quantity: selectedItems.material.quantity || 1,
+                unit: selectedItems.material.unit || 'unit',
+                unit_price: selectedItems.material.selling_price || selectedItems.material.unit_price || 0,
+                total_cost: selectedItems.material.selling_price || selectedItems.material.unit_price || 0,
+                category: 'material'
+              });
+            }
+            
             const treatmentData = {
               user_id: user.id,
               project_id: projectId,
               window_id: surfaceId,
               treatment_type: selectedTemplate?.name || 'Unknown',
-              product_name: selectedTemplate?.name || 'Treatment',
+              product_name: treatmentName, // Enhanced descriptive name
               fabric_type: selectedItems.fabric?.name || null,
               total_price: finalTotalCost,
               material_cost: fabricCost,
@@ -855,56 +955,38 @@ export const DynamicWindowWorksheet = forwardRef<{
                 liningCost: finalLiningCost,
                 headingCost: finalHeadingCost,
                 manufacturingCost,
-                breakdown: [
-                  {
-                    id: 'fabric',
-                    name: selectedItems.fabric?.name || 'Fabric',
-                    quantity: linearMeters,
-                    unit: 'm',
-                    unit_price: selectedItems.fabric?.selling_price || selectedItems.fabric?.unit_price || 0,
-                    total_cost: fabricCost,
-                    category: 'fabric',
-                    image_url: selectedItems.fabric?.image_url
-                  }
-                ]
+                hardwareCost,
+                breakdown // Enhanced breakdown with all materials
               },
               treatment_details: summaryData
             };
 
-            // Check if treatment exists for this window
-            const { data: existingTreatment } = await supabase
+            // Use proper upsert with onConflict
+            const { error: treatmentError } = await supabase
               .from('treatments')
-              .select('id')
-              .eq('window_id', surfaceId)
-              .maybeSingle();
+              .upsert(treatmentData, { 
+                onConflict: 'window_id',
+                ignoreDuplicates: false 
+              });
 
-            if (existingTreatment) {
-              // Update existing treatment
-              const { error: treatmentError } = await supabase
-                .from('treatments')
-                .update(treatmentData)
-                .eq('id', existingTreatment.id);
-
-              if (treatmentError) {
-                console.error("❌ Treatment update error:", treatmentError);
-              } else {
-                console.log('✅ Treatment record updated successfully');
-              }
+            if (treatmentError) {
+              console.error("❌ Treatment upsert error:", treatmentError);
+              // Don't throw - allow summary save to succeed
             } else {
-              // Insert new treatment
-              const { error: treatmentError } = await supabase
-                .from('treatments')
-                .insert(treatmentData);
-
-              if (treatmentError) {
-                console.error("❌ Treatment insert error:", treatmentError);
-              } else {
-                console.log('✅ Treatment record created successfully');
-              }
+              console.log('✅ Treatment record saved successfully:', treatmentName);
             }
           }
 
-          // Mark as saved
+          // Mark as saved and update last saved state
+          lastSavedState.current = {
+            templateId: selectedTemplate?.id,
+            fabricId: selectedItems.fabric?.id,
+            hardwareId: selectedItems.hardware?.id,
+            materialId: selectedItems.material?.id,
+            measurements: JSON.stringify(measurements),
+            heading: selectedHeading,
+            lining: selectedLining
+          };
           setHasUnsavedChanges(false);
           setLastSaveTime(Date.now());
           
