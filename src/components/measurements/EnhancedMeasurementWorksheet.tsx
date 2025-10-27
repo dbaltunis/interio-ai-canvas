@@ -539,6 +539,18 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   // Get selected curtain template details
   const selectedCovering = curtainTemplates.find(c => c.id === selectedWindowCovering);
 
+  // Debug: Log button state
+  useEffect(() => {
+    console.log("🔍 SAVE BUTTON STATE CHECK:", {
+      isSaving,
+      projectId,
+      surfaceId,
+      selectedWindowCovering,
+      selectedCovering: selectedCovering?.name || 'NOT SELECTED',
+      buttonWillBeDisabled: !!(isSaving || !projectId || !surfaceId || !selectedCovering)
+    });
+  }, [isSaving, projectId, surfaceId, selectedCovering, selectedWindowCovering]);
+
   // Filter inventory based on selected covering category
   const getInventoryForCovering = (covering: any) => {
     if (!covering) return [];
