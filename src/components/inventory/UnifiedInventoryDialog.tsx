@@ -17,6 +17,8 @@ import { useVendors } from "@/hooks/useVendors";
 import { useUserRole } from "@/hooks/useUserRole";
 import { FieldHelp } from "@/components/ui/field-help";
 import { supabase } from "@/integrations/supabase/client";
+import { useBusinessSettings, defaultMeasurementUnits } from "@/hooks/useBusinessSettings";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 const STORAGE_KEY = "inventory_draft_data";
 
@@ -49,6 +51,40 @@ export const UnifiedInventoryDialog = ({
   const { data: vendors = [] } = useVendors();
   const { data: userRole } = useUserRole();
   const canViewMarkup = userRole?.canViewMarkup || false;
+  const { data: businessSettings } = useBusinessSettings();
+  const { data: userPreferences } = useUserPreferences();
+
+  // Get user's measurement units and currency
+  const measurementUnits = businessSettings?.measurement_units 
+    ? (typeof businessSettings.measurement_units === 'string' 
+        ? JSON.parse(businessSettings.measurement_units) 
+        : businessSettings.measurement_units)
+    : defaultMeasurementUnits;
+  
+  const currency = userPreferences?.currency || measurementUnits.currency || 'USD';
+  const lengthUnit = measurementUnits.fabric || measurementUnits.length || 'm';
+  
+  // Currency symbols
+  const currencySymbols: Record<string, string> = {
+    'NZD': 'NZ$',
+    'AUD': 'A$',
+    'USD': '$',
+    'GBP': '£',
+    'EUR': '€',
+    'ZAR': 'R'
+  };
+  const currencySymbol = currencySymbols[currency] || currency;
+
+  // Unit labels
+  const unitLabels: Record<string, string> = {
+    'mm': 'mm',
+    'cm': 'cm',
+    'm': 'm',
+    'inches': 'in',
+    'feet': 'ft',
+    'yards': 'yd'
+  };
+  const lengthLabel = unitLabels[lengthUnit] || lengthUnit;
 
   const [pricingGridRows, setPricingGridRows] = useState<Array<{ length: string; price: string }>>([]);
   const [variants, setVariants] = useState<Array<{ type: string; name: string; sku: string; priceModifier: string }>>([]);
@@ -1145,7 +1181,7 @@ export const UnifiedInventoryDialog = ({
 
                           <div>
                             <Label htmlFor="cost_price">
-                              Cost Price (Buying) per {formData.unit} ($)
+                              Cost Price (Buying) per {formData.unit} ({currencySymbol})
                             </Label>
                             <Input
                               id="cost_price"
@@ -1161,7 +1197,7 @@ export const UnifiedInventoryDialog = ({
 
                           <div>
                             <Label htmlFor="selling_price">
-                              Selling Price (Retail) per {formData.unit} ($)
+                              Selling Price (Retail) per {formData.unit} ({currencySymbol})
                             </Label>
                             <Input
                               id="selling_price"
@@ -1217,10 +1253,10 @@ export const UnifiedInventoryDialog = ({
                         <AlertDescription className="space-y-1">
                           <div><strong>Length-Based Pricing:</strong> Tracks and rods use a pricing grid instead of fixed prices.</div>
                           <div className="text-xs text-muted-foreground">
-                            • Define prices for different lengths in {formData.unit || 'meters'} (e.g., 1.0m = $20, 1.5m = $25, 2.0m = $30)<br />
+                            • Define prices for different lengths in {lengthLabel} (e.g., 1.0{lengthLabel} = {currencySymbol}20, 1.5{lengthLabel} = {currencySymbol}25, 2.0{lengthLabel} = {currencySymbol}30)<br />
                             • Set your typical length range (min/max) in the grid below<br />
                             • The system will charge the price matching the closest length in your grid<br />
-                            • Common range: 0.3m (30cm) to 6.0m (600cm)
+                            • Common range: {lengthUnit === 'm' ? '0.3m (30cm) to 6.0m (600cm)' : lengthUnit === 'feet' ? '1ft to 20ft' : lengthUnit === 'inches' ? '12in to 240in' : `0.3${lengthLabel} to 6.0${lengthLabel}`}
                           </div>
                         </AlertDescription>
                       </Alert>
@@ -1234,7 +1270,7 @@ export const UnifiedInventoryDialog = ({
                     <CardHeader>
                       <CardTitle className="text-base">Length-Based Pricing Grid</CardTitle>
                       <CardDescription>
-                        Define selling prices for different lengths. Add rows for each length you offer (e.g., 0.3m to 6.0m range). 
+                        Define selling prices for different lengths. Add rows for each length you offer (e.g., 0.3{lengthLabel} to 6.0{lengthLabel} range). 
                         The system will use the closest matching length when calculating quotes.
                       </CardDescription>
                     </CardHeader>
@@ -1267,7 +1303,7 @@ export const UnifiedInventoryDialog = ({
                           type="button"
                           variant="outline"
                           onClick={() => {
-                            const csv = "Length (m),Price ($)\n1.0,20.00\n1.5,25.00\n2.0,30.00";
+                            const csv = `Length (${lengthLabel}),Price (${currencySymbol})\n1.0,20.00\n1.5,25.00\n2.0,30.00`;
                             const blob = new Blob([csv], { type: 'text/csv' });
                             const url = URL.createObjectURL(blob);
                             const a = document.createElement('a');
@@ -1284,7 +1320,7 @@ export const UnifiedInventoryDialog = ({
                         {pricingGridRows.map((row, index) => (
                           <div key={index} className="flex gap-2">
                             <Input
-                              placeholder="Length (m)"
+                              placeholder={`Length (${lengthLabel})`}
                               value={row.length}
                               onChange={(e) => {
                                 const updated = [...pricingGridRows];
@@ -1293,7 +1329,7 @@ export const UnifiedInventoryDialog = ({
                               }}
                             />
                             <Input
-                              placeholder="Price ($)"
+                              placeholder={`Price (${currencySymbol})`}
                               value={row.price}
                               onChange={(e) => {
                                 const updated = [...pricingGridRows];
@@ -1390,7 +1426,7 @@ export const UnifiedInventoryDialog = ({
                           </div>
                           <div className="flex gap-2">
                             <div className="flex-1">
-                              <Label className="text-xs">Price + ($)</Label>
+                              <Label className="text-xs">Price + ({currencySymbol})</Label>
                               <Input
                                 className="h-9"
                                 type="number"
