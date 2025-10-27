@@ -188,15 +188,13 @@ export const useDeleteQuote = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("quotes")
         .delete()
-        .eq("id", id)
-        .select()
-        .single();
+        .eq("id", id);
 
       if (error) throw error;
-      return data;
+      return { id };
     },
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ["quotes"] });
