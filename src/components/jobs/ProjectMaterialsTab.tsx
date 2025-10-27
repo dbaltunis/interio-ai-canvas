@@ -134,19 +134,37 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
     }, {} as Record<string, typeof selected>);
 
     // Create order summary text
-    let orderText = "MATERIALS ORDER\n\n";
+    let orderText = `MATERIALS ORDER\n`;
+    orderText += `Generated: ${new Date().toLocaleString()}\n`;
+    orderText += `Total Items: ${selected.length}\n\n`;
+    
     Object.entries(bySupplier).forEach(([supplier, materials]) => {
       orderText += `\n${supplier}\n${"=".repeat(50)}\n`;
       materials.forEach(mat => {
-        orderText += `${mat.name} - ${mat.quantity.toFixed(2)} ${mat.unit}\n`;
+        orderText += `• ${mat.name}\n`;
+        orderText += `  Quantity: ${mat.quantity.toFixed(2)} ${mat.unit}\n`;
         orderText += `  Category: ${mat.category}\n`;
         orderText += `  Treatment: ${mat.treatment_name}\n\n`;
       });
     });
 
-    // Copy to clipboard
-    navigator.clipboard.writeText(orderText);
-    toast.success(`Order list for ${selected.length} items copied to clipboard!`);
+    // Download as text file
+    const blob = new Blob([orderText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `materials-order-${Date.now()}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    // Also copy to clipboard
+    navigator.clipboard.writeText(orderText).then(() => {
+      toast.success(`Order list downloaded and copied to clipboard! (${selected.length} items)`);
+    }).catch(() => {
+      toast.success(`Order list downloaded! (${selected.length} items)`);
+    });
   };
 
   const getInventoryItem = (itemId: string) => {
