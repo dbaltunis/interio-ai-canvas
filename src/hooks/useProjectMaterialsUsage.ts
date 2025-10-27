@@ -22,14 +22,25 @@ export const useProjectMaterialsUsage = (projectId: string | undefined) => {
     queryFn: async () => {
       if (!projectId) return [];
 
+      console.log('[MATERIALS] Fetching treatments for project:', projectId);
+
       // Fetch treatments for the project
       const { data: treatments, error: treatmentsError } = await supabase
         .from('treatments')
         .select('*')
         .eq('project_id', projectId);
 
-      if (treatmentsError) throw treatmentsError;
-      if (!treatments || treatments.length === 0) return [];
+      if (treatmentsError) {
+        console.error('[MATERIALS] Error fetching treatments:', treatmentsError);
+        throw treatmentsError;
+      }
+      
+      console.log('[MATERIALS] Found treatments:', treatments?.length || 0);
+      
+      if (!treatments || treatments.length === 0) {
+        console.warn('[MATERIALS] No treatments found - user needs to save treatments with fabrics');
+        return [];
+      }
 
       const materials: MaterialUsage[] = [];
       
@@ -45,6 +56,12 @@ export const useProjectMaterialsUsage = (projectId: string | undefined) => {
       for (const treatment of treatments) {
         const calcDetails = (treatment.calculation_details as any) || {};
         const fabricDetails = (treatment.fabric_details as any) || {};
+        
+        console.log('[MATERIALS] Processing treatment:', {
+          id: treatment.id,
+          fabricDetails,
+          calcDetails: Object.keys(calcDetails)
+        });
         
         // FABRIC - Get from fabric_details.fabric_id or fabric_details.id
         const fabricId = fabricDetails.fabric_id || fabricDetails.id;

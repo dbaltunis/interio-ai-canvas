@@ -33,6 +33,14 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
   
   const handleProcessMaterials = async () => {
     try {
+      if (treatmentMaterials.length === 0) {
+        toast.error("No materials found", {
+          description: "Make sure you've saved treatments with fabrics selected in the Measurements tab"
+        });
+        setShowProcessDialog(false);
+        return;
+      }
+
       // Transform treatmentMaterials to the format needed by the hook
       const materialsToProcess = treatmentMaterials.map(m => ({
         itemId: m.itemId,
@@ -42,13 +50,18 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
         currentQuantity: m.currentQuantity
       }));
       
+      console.log('[MATERIALS] Processing materials:', materialsToProcess);
+      
       await convertMaterials.mutateAsync({ 
         projectId, 
         materials: materialsToProcess 
       });
       setShowProcessDialog(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to process materials:", error);
+      toast.error("Failed to process materials", {
+        description: error.message || "Please check console for details"
+      });
     }
   };
 
