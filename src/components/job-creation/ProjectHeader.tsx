@@ -13,6 +13,8 @@ import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useUpdateQuote } from "@/hooks/useQuotes";
 import { useUpdateProject } from "@/hooks/useProjects";
 import { useNavigate } from "react-router-dom";
+import { useProjectStatusChange } from "@/hooks/useProjectStatusChange";
+import { LeftoverCaptureDialog } from "../projects/LeftoverCaptureDialog";
 
 interface ProjectHeaderProps {
   projectName: string;
@@ -60,6 +62,15 @@ export const ProjectHeader = ({
   const [displayStatus, setDisplayStatus] = useState(currentStatus);
   const [showStatusActionDialog, setShowStatusActionDialog] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+  
+  const actualProjectId = (typeof projectId === 'object' && projectId && 'project_id' in projectId) 
+    ? projectId.project_id 
+    : projectId;
+  
+  const { showLeftoverDialog, setShowLeftoverDialog, leftovers } = useProjectStatusChange({
+    projectId: actualProjectId,
+    currentStatus: displayStatus,
+  });
 
   // Update display status when currentStatus prop changes
   useEffect(() => {
