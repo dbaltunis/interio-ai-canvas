@@ -9,7 +9,7 @@ import { useCompactMode } from "@/hooks/useCompactMode";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { WindowRenameButton } from "./WindowRenameButton";
 import { TreatmentTypeIndicator } from "../measurements/TreatmentTypeIndicator";
-import { CostSummaryCard } from "@/components/job-creation/treatment-pricing/CostSummaryCard";
+import { Calculator } from "lucide-react";
 
 // Lazy load heavy components - use direct import for now to avoid build issues
 import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown";
@@ -146,12 +146,23 @@ export function WindowSummaryCard({
     const fabricName = summary.material_details?.name ||
                        summary.fabric_details?.name || 
                        summary.fabric_details?.fabric_name ||  
-                       (isBlindsOrShutters ? 'Material' : 'Fabric');
+                       (isBlindsOrShutters ? 'Material' : treatmentType === 'wallpaper' ? 'Wallpaper Material' : 'Fabric');
+    
+    // Build description based on treatment type
+    let fabricDescription = '';
+    if (treatmentType === 'wallpaper') {
+      // For wallpaper: show meters and area
+      const squareMeters = (Number(summary.linear_meters) || 0) * (summary.widths_required || 1) / 100;
+      fabricDescription = `${fabricName} • ${(Number(summary.linear_meters) || 0).toFixed(2)}m • ${squareMeters.toFixed(2)} m²`;
+    } else {
+      // For curtains/blinds: show linear meters and widths
+      fabricDescription = `${fabricName} • ${(Number(summary.linear_meters) || 0).toFixed(2)}m • ${summary.widths_required || 1} width(s)`;
+    }
     
     items.push({
       id: 'fabric',
       name: fabricName,
-      description: `${fabricName} • ${fmtMeasurement(Number(summary.linear_meters)) || '0.00cm'} • ${summary.widths_required || 1} width(s)`,
+      description: fabricDescription,
       quantity: Number(summary.linear_meters) || 0,
       unit: 'm',
       unit_price: Number(summary.price_per_meter) || 0,
@@ -199,7 +210,7 @@ export function WindowSummaryCard({
       items.push({
         id: 'manufacturing',
         name: 'Manufacturing',
-        description: summary.manufacturing_type,
+        description: summary.manufacturing_type || 'Assembly & Manufacturing',
         total_cost: Number(summary.manufacturing_cost) || 0,
         category: 'manufacturing',
         details: { type: summary.manufacturing_type },
@@ -239,32 +250,6 @@ export function WindowSummaryCard({
     }
 
     return items;
-  }, [summary]);
-
-  // Prepare costs object for CostSummaryCard
-  const costSummaryData = useMemo(() => {
-    if (!summary) return null;
-
-    return {
-      fabricCost: String(summary.fabric_cost || 0),
-      optionsCost: String(summary.options_cost || 0),
-      laborCost: String(summary.manufacturing_cost || 0),
-      totalCost: String(summary.total_cost || 0),
-      fabricUsage: String(summary.linear_meters || 0),
-      fabricOrientation: (summary as any).fabric_orientation,
-      warnings: (summary as any).warnings || [],
-      seamsRequired: (summary as any).seams_required || 0,
-      seamLaborHours: (summary as any).seam_labor_hours || 0,
-      widthsRequired: summary.widths_required || 1,
-      optionDetails: Array.isArray(summary.selected_options) 
-        ? summary.selected_options.map((opt: any) => ({
-            name: opt.name || opt.label || 'Option',
-            cost: Number(opt.cost || 0),
-            method: opt.method || '',
-            calculation: opt.calculation || opt.description || ''
-          }))
-        : []
-    };
   }, [summary]);
 
   const displayName = treatmentLabel || surface.name;
@@ -539,52 +524,53 @@ export function WindowSummaryCard({
               </div>
 
 
-              {/* Expandable Cost Breakdown - Use enrichedBreakdown for accurate costs */}
+              {/* Expandable Cost Breakdown - Clean, organized breakdown */}
               {showBreakdown && (
-                <div className="border-t p-3 bg-muted/20">
-                  {/* Show CostSummaryCard for detailed breakdown */}
-                  {costSummaryData && (
-                    <div className="mb-4">
-                      <CostSummaryCard 
-                        costs={costSummaryData}
-                        treatmentType={treatmentType}
-                        selectedOptions={Array.isArray(summary?.selected_options) ? summary.selected_options.map((opt: any) => opt.id || opt.name) : []}
-                        availableOptions={[]}
-                        hierarchicalOptions={[]}
-                        formData={{ quantity: 1 }}
-                      />
+                <div className="border-t bg-muted/30">
+                  <div className="p-4 space-y-3">
+                    <div className="flex items-center gap-2 pb-2 border-b border-border">
+                      <Calculator className="h-4 w-4 text-primary" />
+                      <h4 className="text-sm font-semibold text-foreground">Cost Breakdown</h4>
                     </div>
-                  )}
-                  
-                  <div className="space-y-2">
-                    {/* Render all breakdown items from enrichedBreakdown for accuracy */}
-                    {enrichedBreakdown.map((item) => {
-                      // Skip options here - they're rendered separately below
-                      if (item.category === 'option' || item.category === 'options') return null;
-                      
-                      return (
-                        <div key={item.id} className="border rounded-lg p-3">
-                          <SummaryItem
-                            title={item.name}
-                            main={formatCurrency(item.total_cost, userCurrency)}
-                            sub={item.description || ''}
-                          />
-                        </div>
-                      );
-                    })}
 
-                    {/* Selected Options - show ALL options from enrichedBreakdown */}
-                    {enrichedBreakdown
-                      .filter(item => item.category === 'option' || item.category === 'options')
-                      .map((item) => (
-                        <div key={item.id} className="border rounded-lg p-3">
-                          <SummaryItem
-                            title={item.name}
-                            main={formatCurrency(item.total_cost, userCurrency)}
-                            sub={item.description}
-                          />
-                        </div>
-                      ))}
+                    <div className="space-y-2">
+                      {/* Render all breakdown items from enrichedBreakdown */}
+                      {enrichedBreakdown.map((item) => {
+                        // Skip zero-cost items and handle options separately
+                        if (item.total_cost === 0) return null;
+                        const isOption = item.category === 'option' || item.category === 'options';
+                        
+                        return (
+                          <div key={item.id} className={`flex items-start justify-between py-2 ${!isOption ? 'border-b border-border/50' : ''}`}>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-foreground">{item.name}</div>
+                              {item.description && (
+                                <div className="text-xs text-muted-foreground mt-0.5">{item.description}</div>
+                              )}
+                              {item.quantity && item.unit && (
+                                <div className="text-xs text-muted-foreground mt-0.5">
+                                  {Number(item.quantity).toFixed(2)} {item.unit}
+                                  {item.unit_price && ` × ${formatCurrency(item.unit_price, userCurrency)}`}
+                                </div>
+                              )}
+                            </div>
+                            <div className="font-semibold text-foreground ml-3 flex-shrink-0">
+                              {formatCurrency(item.total_cost, userCurrency)}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Total */}
+                    <div className="border-t-2 border-primary/20 pt-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-base font-bold text-foreground">Total</span>
+                        <span className="text-lg font-bold text-primary">
+                          {formatCurrency(summary?.total_cost || 0, userCurrency)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
