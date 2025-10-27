@@ -556,6 +556,15 @@ export const ProjectHeader = ({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Leftover Capture Dialog */}
+      <LeftoverCaptureDialog
+        open={showLeftoverDialog}
+        onOpenChange={setShowLeftoverDialog}
+        leftovers={leftovers}
+        projectId={actualProjectId || ''}
+        projectName={projectName}
+      />
     </header>
   );
 };
