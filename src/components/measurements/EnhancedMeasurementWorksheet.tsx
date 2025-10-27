@@ -194,6 +194,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const [activeTab, setActiveTab] = useState("measurements");
   const [calculatedCost, setCalculatedCost] = useState(0);
   const [fabricCalculation, setFabricCalculation] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
   
   // Dynamic options state - isolated per window
   const [selectedHeading, setSelectedHeading] = useState(() => 
@@ -1280,20 +1281,30 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                 <Button 
                   onClick={async () => {
                     const { toast } = await import("@/hooks/use-toast");
+                    setIsSaving(true);
                     try {
-                      console.log("Starting save process...");
+                      console.log("🚀 SAVE BUTTON CLICKED - Starting save process...");
+                      console.log("  selectedCovering:", selectedCovering?.name);
+                      console.log("  projectId:", projectId);
+                      console.log("  surfaceId:", surfaceId);
+                      console.log("  selectedFabric:", selectedFabric);
                       
                       // Save measurements first
                       await handleSaveMeasurements();
-                      console.log("Measurements saved successfully");
+                      console.log("✅ Measurements saved successfully");
                       
                       // Save treatment if window covering is selected
                       if (selectedCovering && projectId && surfaceId) {
-                        console.log("Saving treatment configuration...");
+                        console.log("🔄 Saving treatment configuration...");
                         await handleSaveTreatmentConfig();
-                        console.log("Treatment saved successfully");
+                        console.log("✅ Treatment saved successfully");
+                        
+                        toast({
+                          title: "✅ Configuration Saved",
+                          description: "Treatment configuration saved successfully",
+                        });
                       } else {
-                        console.log("Skipping treatment save - missing requirements:", {
+                        console.log("⚠️ Skipping treatment save - missing requirements:", {
                           selectedCovering: !!selectedCovering,
                           projectId: !!projectId,
                           surfaceId: !!surfaceId
@@ -1318,19 +1329,19 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                         }
                       }, 500);
                       
-                      // Close worksheet
-                      onClose?.();
-                    } catch (error) {
-                      console.error("Save failed:", error);
+                    } catch (error: any) {
+                      console.error("❌ Save failed:", error);
                       toast({
-                        title: "Save Failed",
-                        description: `Failed to save worksheet data: ${error.message}`,
-                        variant: "destructive"
+                        title: "Error",
+                        description: error.message || "Failed to save configuration",
+                        variant: "destructive",
                       });
+                    } finally {
+                      setIsSaving(false);
                     }
-                  }}
-                  disabled={createMeasurement.isPending || updateMeasurement.isPending || createTreatment.isPending || updateTreatment.isPending}
-                  className="flex items-center gap-2"
+                  }} 
+                  disabled={isSaving || !projectId || !surfaceId || !selectedCovering} 
+                  className="w-full"
                 >
                   <Save className="h-4 w-4" />
                   {(createMeasurement.isPending || updateMeasurement.isPending || createTreatment.isPending || updateTreatment.isPending) ? "Saving..." : "Save"}
