@@ -13,22 +13,28 @@ export interface TreatmentConfig {
 }
 
 export const detectTreatmentType = (template: any): TreatmentCategory => {
-  // Priority 1: Check if template has explicit treatment_category field
+  // Priority 1: Check curtain_type field for wallpaper FIRST (special case override)
+  if (template?.curtain_type) {
+    const curtainType = template.curtain_type.toLowerCase();
+    
+    // Wallpaper check takes highest priority
+    if (curtainType === 'wallpaper' || curtainType.includes('wallpaper')) {
+      return 'wallpaper';
+    }
+  }
+  
+  // Priority 2: Check if template has explicit treatment_category field
   if (template?.treatment_category) {
     const category = template.treatment_category;
     // Map database categories to internal categories
     if (category === 'cellular_shades') return 'cellular_shades';
+    if (category === 'wallpaper') return 'wallpaper';
     return category as TreatmentCategory;
   }
   
-  // Priority 2: Check curtain_type field (from curtain_templates table)
+  // Priority 3: Check remaining curtain_type patterns
   if (template?.curtain_type) {
     const curtainType = template.curtain_type.toLowerCase();
-    
-    // Check for wallpaper first
-    if (curtainType === 'wallpaper' || curtainType.includes('wallpaper')) {
-      return 'wallpaper';
-    }
     
     if (curtainType === 'roller_blind' || curtainType === 'roller blind' || curtainType.includes('roller')) {
       return 'roller_blinds';
@@ -63,7 +69,7 @@ export const detectTreatmentType = (template: any): TreatmentCategory => {
     }
   }
   
-  // Priority 3: Fallback to name-based detection
+  // Priority 4: Fallback to name-based detection
   const name = template?.name?.toLowerCase() || '';
   const description = template?.description?.toLowerCase() || '';
   
