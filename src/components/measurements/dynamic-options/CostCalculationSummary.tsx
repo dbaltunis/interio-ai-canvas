@@ -3,6 +3,7 @@ import { Calculator, Info, Settings } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import { calculateBlindCosts, isBlindCategory } from "./utils/blindCostCalculator";
+import { calculateWallpaperCost } from "@/utils/wallpaperCalculations";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 
 // Simple SVG icons
@@ -102,6 +103,76 @@ export const CostCalculationSummary = ({
     measurements,
     selectedFabric: selectedFabric?.name
   });
+
+  // WALLPAPER: Add before blind check
+  if (treatmentCategory === 'wallpaper' && measurements.wall_width && measurements.wall_height && selectedFabric) {
+    const wallWidth = parseFloat(measurements.wall_width) || 0;
+    const wallHeight = parseFloat(measurements.wall_height) || 0;
+    
+    const wallpaperCalc = calculateWallpaperCost(wallWidth, wallHeight, selectedFabric);
+    
+    if (!wallpaperCalc) {
+      return (
+        <div className="p-4 border rounded-lg bg-muted/50">
+          <p className="text-sm text-muted-foreground">
+            Unable to calculate wallpaper costs. Please check measurements and wallpaper selection.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-card border border-border rounded-lg p-3 space-y-3">
+        <div className="flex items-center gap-2 pb-2 border-b border-border">
+          <Calculator className="h-4 w-4 text-primary" />
+          <h3 className="text-base font-semibold text-card-foreground">Wallpaper Cost Summary</h3>
+        </div>
+
+        <div className="grid gap-2 text-sm">
+          {/* Wallpaper Material */}
+          <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+              <div className="flex flex-col min-w-0">
+                <span className="text-card-foreground font-medium">Wallpaper Material</span>
+                <span className="text-xs text-muted-foreground truncate">
+                  {selectedFabric.name} - {wallpaperCalc.quantity.toFixed(2)} {wallpaperCalc.unitLabel}{wallpaperCalc.quantity > 1 && wallpaperCalc.unitLabel !== 'm²' ? 's' : ''}
+                </span>
+              </div>
+            </div>
+            <span className="font-semibold text-card-foreground ml-2">{formatPrice(wallpaperCalc.totalCost)}</span>
+          </div>
+        </div>
+
+        {/* Total */}
+        <div className="border-t-2 border-primary/20 pt-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-lg font-bold text-card-foreground">Total</span>
+            <span className="text-xl font-bold text-primary">{formatPrice(wallpaperCalc.totalCost)}</span>
+          </div>
+        </div>
+
+        {/* Pricing Details */}
+        <details className="text-xs text-muted-foreground group">
+          <summary className="cursor-pointer font-medium text-card-foreground flex items-center gap-1.5 py-1.5 hover:text-primary transition-colors border-t border-border/50 pt-2">
+            <Info className="h-3.5 w-3.5" />
+            <span>Wallpaper Details</span>
+            <span className="ml-auto text-xs group-open:rotate-180 transition-transform">▼</span>
+          </summary>
+          <div className="space-y-2 mt-3 pl-4 border-l-2 border-primary/20">
+            <div className="space-y-0.5">
+              <div className="text-card-foreground font-medium">Wallpaper: {selectedFabric.name}</div>
+              <div>Wall Area: {wallpaperCalc.squareMeters.toFixed(2)} m²</div>
+              <div>Strips Required: {wallpaperCalc.stripsNeeded}</div>
+              <div>Total Length: {wallpaperCalc.totalMeters.toFixed(2)}m</div>
+              {wallpaperCalc.soldBy === 'per_roll' && <div>Rolls: {wallpaperCalc.rollsNeeded}</div>}
+              <div>Sold By: {wallpaperCalc.unitLabel}</div>
+            </div>
+          </div>
+        </details>
+      </div>
+    );
+  }
 
   // BLINDS: Use clean calculator (check both category and template name)
   if (isBlindCategory(treatmentCategory, template.name) && width > 0 && height > 0) {

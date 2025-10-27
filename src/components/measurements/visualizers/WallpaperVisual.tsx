@@ -3,8 +3,10 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Ruler, Maximize2, Info, ChevronDown } from "lucide-react";
+import { Ruler, Maximize2, Info, ChevronDown, DollarSign } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { calculateWallpaperCost } from "@/utils/wallpaperCalculations";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -28,68 +30,39 @@ export const WallpaperVisual = ({
 }: WallpaperVisualProps) => {
   const [isExplanationOpen, setIsExplanationOpen] = useStateReact(false);
   const [isCalcDetailsOpen, setIsCalcDetailsOpen] = useStateReact(false);
+  const { units } = useMeasurementUnits();
+  
   const wallWidth = parseFloat(measurements.wall_width) || 0;
   const wallHeight = parseFloat(measurements.wall_height) || 0;
-  
-  // Wallpaper specifications from inventory
-  const rollWidth = selectedWallpaper?.wallpaper_roll_width || 53; // cm
-  const rollLength = selectedWallpaper?.wallpaper_roll_length || 10; // meters
-  const patternRepeat = selectedWallpaper?.pattern_repeat_vertical || 0; // cm
-  const matchType = selectedWallpaper?.wallpaper_match_type || 'straight';
-  const wasteFactor = selectedWallpaper?.wallpaper_waste_factor || 10; // percentage
   
   // Check if we have measurements
   const hasMeasurements = wallWidth > 0 && wallHeight > 0;
   
-  // Calculate wallpaper usage with CORRECTED logic
+  // Use centralized calculation utility
   const calculation = useMemo(() => {
-    if (!wallWidth || !wallHeight || !selectedWallpaper) return null;
-    
-    const widthInCm = wallWidth;
-    const heightInCm = wallHeight;
-    
-    // Calculate length per strip based on pattern matching
-    let lengthPerStripCm = heightInCm;
-    let patternRepeatsInStrip = 0;
-    
-    if (patternRepeat > 0 && matchType !== 'none' && matchType !== 'random') {
-      // Add ONE pattern repeat for matching
-      lengthPerStripCm = heightInCm + patternRepeat;
-      patternRepeatsInStrip = Math.ceil(heightInCm / patternRepeat);
-    }
-    
-    const lengthPerStripM = lengthPerStripCm / 100; // Convert to meters
-    
-    // Calculate how many strips we need for the wall width
-    const stripsNeeded = Math.ceil(widthInCm / rollWidth);
-    
-    // Calculate how many strips we can get from one roll
-    const stripsPerRoll = Math.floor(rollLength / lengthPerStripM);
-    
-    // Calculate number of rolls needed
-    const rollsNeeded = stripsPerRoll > 0 ? Math.ceil(stripsNeeded / stripsPerRoll) : 0;
-    
-    // Calculate leftover material
-    const totalStripsFromRolls = rollsNeeded * stripsPerRoll;
-    const leftoverStrips = totalStripsFromRolls - stripsNeeded;
-    const leftoverLengthM = leftoverStrips * lengthPerStripM;
-    
-    // Calculate realistic waste (not inflated by pattern matching)
-    const actualWastePercentage = wasteFactor; // Use configured waste factor
-    
-    return {
-      stripsNeeded,
-      rollsNeeded,
-      lengthPerStripM: lengthPerStripM.toFixed(2),
-      lengthPerStripCm: lengthPerStripCm.toFixed(1),
-      stripsPerRoll,
-      leftoverStrips,
-      leftoverLengthM: leftoverLengthM.toFixed(2),
-      wastePercentage: actualWastePercentage,
-      patternRepeatsInStrip,
-      matchType
+    return calculateWallpaperCost(wallWidth, wallHeight, selectedWallpaper);
+  }, [wallWidth, wallHeight, selectedWallpaper]);
+
+  // Format price with currency
+  const formatPrice = (price: number) => {
+    const currencySymbols: Record<string, string> = {
+      'NZD': 'NZ$',
+      'AUD': 'A$',
+      'USD': '$',
+      'GBP': '£',
+      'EUR': '€',
+      'ZAR': 'R'
     };
-  }, [wallWidth, wallHeight, rollWidth, rollLength, patternRepeat, matchType, wasteFactor, selectedWallpaper]);
+    const symbol = currencySymbols[units.currency] || units.currency;
+    return `${symbol}${price.toFixed(2)}`;
+  };
+  
+  // Legacy display values for existing UI
+  const rollWidth = selectedWallpaper?.wallpaper_roll_width || 53;
+  const rollLength = selectedWallpaper?.wallpaper_roll_length || 10;
+  const patternRepeat = selectedWallpaper?.pattern_repeat_vertical || 0;
+  const matchType = selectedWallpaper?.wallpaper_match_type || 'straight';
+  const wasteFactor = selectedWallpaper?.wallpaper_waste_factor || 10;
   
   // Create wallpaper pattern for visual
   const createWallpaperPattern = () => {
@@ -213,12 +186,12 @@ export const WallpaperVisual = ({
                       <div className="bg-blue-50 dark:bg-blue-950/30 p-2 rounded text-sm flex items-center justify-between hover:bg-blue-100 dark:hover:bg-blue-950/50 transition-colors">
                         <div className="flex items-center gap-2">
                           <Badge variant="secondary" className="text-xs">
-                            {selectedWallpaper?.wallpaper_sold_by === 'per_roll' ? 'Sold by Roll' : 
-                             selectedWallpaper?.wallpaper_sold_by === 'per_sqm' ? 'Sold per m²' : 'Sold per Meter'}
+                            {calculation.soldBy === 'per_roll' ? 'Sold by Roll' : 
+                             calculation.soldBy === 'per_sqm' ? 'Sold per m²' : 'Sold per Meter'}
                           </Badge>
                           <span className="text-xs font-medium">
-                            {calculation.stripsNeeded} strips × {calculation.lengthPerStripCm}cm = {(calculation.stripsNeeded * Number(calculation.lengthPerStripM)).toFixed(2)}m
-                            {selectedWallpaper?.wallpaper_sold_by === 'per_roll' && ` (${calculation.rollsNeeded} roll${calculation.rollsNeeded > 1 ? 's' : ''})`}
+                            {calculation.stripsNeeded} strips × {calculation.lengthPerStripCm.toFixed(1)}cm = {calculation.totalMeters.toFixed(2)}m
+                            {calculation.soldBy === 'per_roll' && ` (${calculation.rollsNeeded} roll${calculation.rollsNeeded > 1 ? 's' : ''})`}
                           </span>
                         </div>
                         <ChevronDown className={`h-4 w-4 transition-transform ${isCalcDetailsOpen ? 'rotate-180' : ''}`} />
@@ -236,14 +209,14 @@ export const WallpaperVisual = ({
                           )}
                         </p>
                         <p className="text-muted-foreground leading-relaxed ml-2">
-                          • Strip length: {calculation.lengthPerStripCm}cm ({calculation.lengthPerStripM}m)
+                          • Strip length: {calculation.lengthPerStripCm.toFixed(1)}cm ({calculation.lengthPerStripM.toFixed(2)}m)
                         </p>
                         <p className="text-muted-foreground leading-relaxed ml-2">
                           • Strips needed: {calculation.stripsNeeded} (wall width {wallWidth}cm ÷ roll width {rollWidth}cm)
                         </p>
                         <p className="font-medium ml-2">
-                          = Total: {(calculation.stripsNeeded * Number(calculation.lengthPerStripM)).toFixed(2)}m
-                          {selectedWallpaper?.wallpaper_sold_by === 'per_roll' && ` ≈ ${calculation.rollsNeeded} roll${calculation.rollsNeeded > 1 ? 's' : ''}`}
+                          = Total: {calculation.totalMeters.toFixed(2)}m
+                          {calculation.soldBy === 'per_roll' && ` ≈ ${calculation.rollsNeeded} roll${calculation.rollsNeeded > 1 ? 's' : ''}`}
                         </p>
                       </div>
                     </CollapsibleContent>
@@ -351,7 +324,7 @@ export const WallpaperVisual = ({
                 )}
               </div>
               
-              {/* Main calculations with tooltips - removing redundant selling info */}
+              {/* Main calculations */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center gap-1.5">
@@ -590,6 +563,36 @@ export const WallpaperVisual = ({
                 </ol>
               </CollapsibleContent>
             </Collapsible>
+          </Card>
+        )}
+        
+        {/* Pricing Summary */}
+        {calculation && selectedWallpaper && (
+          <Card className="p-4 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800">
+            <h3 className="font-semibold flex items-center gap-2 mb-3">
+              <DollarSign className="h-4 w-4" />
+              Pricing Summary
+            </h3>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Unit Price:</span>
+                <span className="font-medium">{formatPrice(calculation.pricePerUnit)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Quantity:</span>
+                <span className="font-medium">{calculation.quantity.toFixed(2)} {calculation.unitLabel}{calculation.quantity > 1 && calculation.unitLabel !== 'm²' ? 's' : ''}</span>
+              </div>
+              <div className="flex justify-between text-sm pb-2 border-b">
+                <span className="text-muted-foreground">Area:</span>
+                <span className="font-medium">{calculation.squareMeters.toFixed(2)} m²</span>
+              </div>
+              <div className="border-t pt-2 mt-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-bold">Total Cost:</span>
+                  <span className="text-xl font-bold text-primary">{formatPrice(calculation.totalCost)}</span>
+                </div>
+              </div>
+            </div>
           </Card>
         )}
       </div>

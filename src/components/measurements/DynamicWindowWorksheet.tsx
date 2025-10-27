@@ -24,6 +24,8 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { convertLength } from "@/hooks/useBusinessSettings";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { detectTreatmentType, getTreatmentConfig, TreatmentCategory } from "@/utils/treatmentTypeDetection";
+import { calculateWallpaperCost } from "@/utils/wallpaperCalculations";
+
 interface DynamicWindowWorksheetProps {
   clientId?: string;
   projectId?: string;
@@ -433,68 +435,34 @@ export const DynamicWindowWorksheet = forwardRef<{
             const wallHeight = parseFloat(measurements.wall_height || '0');
             
             if (wallWidth > 0 && wallHeight > 0 && selectedItems.fabric) {
-              // Get wallpaper specs
-              const rollWidth = selectedItems.fabric.wallpaper_roll_width || 53;
-              const rollLength = selectedItems.fabric.wallpaper_roll_length || 10;
-              const patternRepeat = selectedItems.fabric.pattern_repeat_vertical || 0;
-              const matchType = selectedItems.fabric.wallpaper_match_type || 'straight';
+              const wallpaperCalc = calculateWallpaperCost(wallWidth, wallHeight, selectedItems.fabric);
               
-              // Calculate length per strip based on pattern matching
-              let lengthPerStripCm = wallHeight;
-              if (patternRepeat > 0 && matchType !== 'none' && matchType !== 'random') {
-                lengthPerStripCm = wallHeight + patternRepeat;
+              if (wallpaperCalc) {
+                fabricCost = wallpaperCalc.totalCost;
+                totalCost = fabricCost;
+                linearMeters = wallpaperCalc.totalMeters;
+                
+                wallpaperDetails = {
+                  wall_width: wallWidth,
+                  wall_height: wallHeight,
+                  roll_width: selectedItems.fabric.wallpaper_roll_width || 53,
+                  roll_length: selectedItems.fabric.wallpaper_roll_length || 10,
+                  pattern_repeat: selectedItems.fabric.pattern_repeat_vertical || 0,
+                  match_type: selectedItems.fabric.wallpaper_match_type || 'straight',
+                  length_per_strip_m: wallpaperCalc.lengthPerStripM,
+                  strips_needed: wallpaperCalc.stripsNeeded,
+                  total_meters: wallpaperCalc.totalMeters,
+                  rolls_needed: wallpaperCalc.rollsNeeded,
+                  sold_by: wallpaperCalc.soldBy,
+                  quantity: wallpaperCalc.quantity,
+                  unit_label: wallpaperCalc.unitLabel,
+                  price_per_unit: wallpaperCalc.pricePerUnit,
+                  wallpaper_cost: wallpaperCalc.totalCost,
+                  total_cost: wallpaperCalc.totalCost
+                };
+                
+                console.log("💰 Wallpaper autoSave calculation:", wallpaperDetails);
               }
-              const lengthPerStripM = lengthPerStripCm / 100;
-              
-              // Calculate strips needed
-              const stripsNeeded = Math.ceil(wallWidth / rollWidth);
-              
-              // Calculate total meters needed
-              const totalMeters = stripsNeeded * lengthPerStripM;
-              
-              // Calculate rolls needed
-              const stripsPerRoll = Math.floor(rollLength / lengthPerStripM);
-              const rollsNeeded = stripsPerRoll > 0 ? Math.ceil(stripsNeeded / stripsPerRoll) : 0;
-              
-              const pricePerUnit = selectedItems.fabric.unit_price || selectedItems.fabric.selling_price || selectedItems.fabric.price_per_meter || 0;
-              const soldBy = selectedItems.fabric.wallpaper_sold_by || 'per_meter';
-              
-              let quantity = totalMeters;
-              let unitLabel = 'meter';
-              
-              if (soldBy === 'per_roll') {
-                quantity = rollsNeeded;
-                unitLabel = 'roll';
-              } else if (soldBy === 'per_sqm') {
-                const wallWidthM = wallWidth / 100;
-                const wallHeightM = wallHeight / 100;
-                quantity = wallWidthM * wallHeightM;
-                unitLabel = 'm²';
-              }
-              
-              fabricCost = quantity * pricePerUnit;
-              totalCost = fabricCost;
-              linearMeters = totalMeters;
-              
-              wallpaperDetails = {
-                wall_width: wallWidth,
-                wall_height: wallHeight,
-                roll_width: rollWidth,
-                roll_length: rollLength,
-                pattern_repeat: patternRepeat,
-                match_type: matchType,
-                length_per_strip_m: lengthPerStripM,
-                strips_needed: stripsNeeded,
-                total_meters: totalMeters,
-                rolls_needed: rollsNeeded,
-                sold_by: soldBy,
-                quantity: quantity,
-                unit_label: unitLabel,
-                price_per_unit: pricePerUnit,
-                wallpaper_cost: fabricCost
-              };
-              
-              console.log("💰 Wallpaper autoSave calculation:", wallpaperDetails);
             }
           } else if (displayCategory === 'blinds' || displayCategory === 'shutters') {
             // BLIND/SHUTTER CALCULATIONS
