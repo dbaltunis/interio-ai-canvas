@@ -100,6 +100,7 @@ export const UnifiedInventoryDialog = ({
     inventoryItemId?: string;
     quantityPerUnit?: number;
   }>>([]);
+  const [openPopoverIndex, setOpenPopoverIndex] = useState<number | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -1427,12 +1428,17 @@ export const UnifiedInventoryDialog = ({
                               <div className="grid gap-3 md:grid-cols-2">
                                 <div className="col-span-2">
                                   <Label className="text-xs">Select Inventory Item</Label>
-                                  <Popover>
+                                  <Popover 
+                                    open={openPopoverIndex === index} 
+                                    onOpenChange={(open) => setOpenPopoverIndex(open ? index : null)}
+                                  >
                                     <PopoverTrigger asChild>
                                       <Button
                                         variant="outline"
                                         role="combobox"
+                                        aria-expanded={openPopoverIndex === index}
                                         className="w-full justify-between h-9"
+                                        type="button"
                                       >
                                         {selectedItem ? (
                                           <span className="flex items-center gap-2">
@@ -1445,7 +1451,7 @@ export const UnifiedInventoryDialog = ({
                                         <Package className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                       </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-[400px] p-0" align="start">
+                                    <PopoverContent className="w-[400px] p-0 z-[10000]" align="start">
                                       <Command>
                                         <CommandInput placeholder="Search items..." className="h-9" />
                                         <CommandEmpty>No inventory items found.</CommandEmpty>
@@ -1464,6 +1470,7 @@ export const UnifiedInventoryDialog = ({
                                                     updated[index].sku = item.sku || '';
                                                     updated[index].priceModifier = item.selling_price?.toString() || '0';
                                                     setVariants(updated);
+                                                    setOpenPopoverIndex(null); // Close popover after selection
                                                   }}
                                                 >
                                                   <div className="flex items-center justify-between w-full">
