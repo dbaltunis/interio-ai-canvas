@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Minus, Plus, Search, Image as ImageIcon, Trash2, Edit } from "lucide-react";
+import { Minus, Image as ImageIcon, Trash2, Edit } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { AddInventoryDialog } from "./AddInventoryDialog";
 import { EditInventoryDialog } from "./EditInventoryDialog";
@@ -32,7 +32,6 @@ export const HardwareInventoryView = ({ searchQuery, viewMode }: HardwareInvento
   const { data: inventory, refetch } = useEnhancedInventory();
   const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState("all");
-  const [localSearch, setLocalSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
   const hardwareItems = inventory?.filter(item => 
@@ -41,16 +40,13 @@ export const HardwareInventoryView = ({ searchQuery, viewMode }: HardwareInvento
 
   const filteredItems = hardwareItems.filter(item => {
     const matchesGlobalSearch = item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.sku?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesLocalSearch = item.name?.toLowerCase().includes(localSearch.toLowerCase()) ||
-      item.sku?.toLowerCase().includes(localSearch.toLowerCase()) ||
-      item.supplier?.toLowerCase().includes(localSearch.toLowerCase());
+      item.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.supplier?.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesCategory = activeCategory === "all" || 
       item.subcategory === activeCategory;
 
-    return matchesGlobalSearch && matchesLocalSearch && matchesCategory;
+    return matchesGlobalSearch && matchesCategory;
   });
 
   // Pagination
@@ -62,11 +58,6 @@ export const HardwareInventoryView = ({ searchQuery, viewMode }: HardwareInvento
   
   const handleCategoryChange = (category: string) => {
     setActiveCategory(category);
-    setCurrentPage(1);
-  };
-  
-  const handleSearchChange = (search: string) => {
-    setLocalSearch(search);
     setCurrentPage(1);
   };
 
@@ -114,30 +105,6 @@ export const HardwareInventoryView = ({ searchQuery, viewMode }: HardwareInvento
               {filteredItems.length} hardware items in inventory
             </p>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Search - Compact */}
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search hardware..."
-              value={localSearch}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-9 h-9"
-            />
-          </div>
-          {/* Add Button with Context */}
-          <AddInventoryDialog
-            trigger={
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add
-              </Button>
-            }
-            onSuccess={refetch}
-            initialCategory="hardware"
-            initialSubcategory={activeCategory !== "all" ? activeCategory : undefined}
-          />
         </div>
       </div>
 
@@ -327,7 +294,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode }: HardwareInvento
                   <div>
                     <h3 className="text-lg font-semibold">No hardware found</h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {localSearch || searchQuery ? 'Try adjusting your search' : 'Add your first hardware item to get started'}
+                      {searchQuery ? 'Try adjusting your search' : 'Add your first hardware item to get started'}
                     </p>
                   </div>
                 </div>
