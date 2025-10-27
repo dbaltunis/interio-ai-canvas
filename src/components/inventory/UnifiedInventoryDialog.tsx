@@ -26,6 +26,8 @@ interface UnifiedInventoryDialogProps {
   mode: "create" | "edit";
   item?: any;
   onSuccess?: () => void;
+  initialCategory?: string;
+  initialSubcategory?: string;
 }
 
 export const UnifiedInventoryDialog = ({ 
@@ -33,7 +35,9 @@ export const UnifiedInventoryDialog = ({
   onOpenChange, 
   mode, 
   item, 
-  onSuccess 
+  onSuccess,
+  initialCategory,
+  initialSubcategory
 }: UnifiedInventoryDialogProps) => {
   const [activeTab, setActiveTab] = useState("basic");
   const [trackInventory, setTrackInventory] = useState(mode === "edit" ? (item?.quantity > 0) : false);
@@ -98,9 +102,20 @@ export const UnifiedInventoryDialog = ({
             title: "Draft Restored",
             description: "Your unsaved work has been restored.",
           });
-        } catch (error) {
-          console.error("Failed to restore draft:", error);
+        } catch (e) {
+          console.error("Failed to parse draft data", e);
         }
+      } else if (initialCategory || initialSubcategory) {
+        // Pre-populate with initial values if provided
+        setFormData(prev => ({
+          ...prev,
+          category: initialCategory || prev.category,
+          subcategory: initialSubcategory || prev.subcategory,
+        }));
+        toast({
+          title: "Context Applied",
+          description: `Pre-filled with ${initialCategory || 'current'} category${initialSubcategory ? ` and ${initialSubcategory} subcategory` : ''}.`,
+        });
       }
     } else if (mode === "edit" && item) {
       setFormData({

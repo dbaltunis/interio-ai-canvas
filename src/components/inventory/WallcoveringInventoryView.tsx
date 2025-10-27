@@ -113,14 +113,28 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
             </p>
           </div>
         </div>
-        {/* Search - Compact */}
-        <div className="relative w-64">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search wallcoverings..."
-            value={localSearch}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-9 h-9"
+        <div className="flex items-center gap-2">
+          {/* Search - Compact */}
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search wallcoverings..."
+              value={localSearch}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-9 h-9"
+            />
+          </div>
+          {/* Add Button with Context */}
+          <AddInventoryDialog
+            trigger={
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add
+              </Button>
+            }
+            onSuccess={refetch}
+            initialCategory="wallcovering"
+            initialSubcategory={activeCategory !== "all" ? activeCategory : undefined}
           />
         </div>
       </div>

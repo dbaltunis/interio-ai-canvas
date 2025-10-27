@@ -6,9 +6,11 @@ import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
 interface AddInventoryDialogProps {
   trigger?: React.ReactNode;
   onSuccess?: () => void;
+  initialCategory?: string;
+  initialSubcategory?: string;
 }
 
-export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogProps) => {
+export const AddInventoryDialog = ({ trigger, onSuccess, initialCategory, initialSubcategory }: AddInventoryDialogProps) => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -27,6 +29,8 @@ export const AddInventoryDialog = ({ trigger, onSuccess }: AddInventoryDialogPro
         onOpenChange={setOpen}
         mode="create"
         onSuccess={onSuccess}
+        initialCategory={initialCategory}
+        initialSubcategory={initialSubcategory}
       />
     </>
   );
