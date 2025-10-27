@@ -1,12 +1,10 @@
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { formatJobNumber } from "@/lib/format-job-number";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, FolderOpen, User, Package, FileText, Wrench, Mail, Calendar, MapPin, DollarSign, Clock } from "lucide-react";
+import { ArrowLeft, User, Package, FileText, Wrench, Mail, Calendar, Clock } from "lucide-react";
 import { useProjects, useUpdateProject } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
 import { ProjectDetailsTab } from "./tabs/ProjectDetailsTab";
@@ -47,25 +45,6 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
 
   const handleUpdateProject = async (projectData: any) => {
     await updateProject.mutateAsync(projectData);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed": return "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800";
-      case "in-production": return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800";
-      case "approved": return "bg-primary/10 text-primary border-primary/20";
-      case "quoted": return "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800";
-      case "measuring": return "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800";
-      case "cancelled": return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800";
-      default: return "bg-muted text-muted-foreground border-border";
-    }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount || 0);
   };
 
   const tabs = [
@@ -182,50 +161,38 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               </TabsContent>
 
               <TabsContent value="rooms" className="mt-0">
-                <div className="modern-card">
-                  <div className="p-6">
-                    <RoomsTab projectId={jobId} />
-                  </div>
+                <div className="modern-card p-6">
+                  <RoomsTab projectId={jobId} />
                 </div>
               </TabsContent>
 
               <TabsContent value="quotation" className="mt-0">
-                <div className="modern-card overflow-hidden">
-                  <div className="p-2 sm:p-4 lg:p-6">
-                    <QuotationTab projectId={jobId} />
-                  </div>
+                <div className="modern-card p-2 sm:p-4 lg:p-6">
+                  <QuotationTab projectId={jobId} />
                 </div>
               </TabsContent>
 
               <TabsContent value="materials" className="mt-0">
-                <div className="modern-card">
-                  <div className="p-6">
-                    <ProjectMaterialsTab projectId={jobId} />
-                  </div>
+                <div className="modern-card p-6">
+                  <ProjectMaterialsTab projectId={jobId} />
                 </div>
               </TabsContent>
 
               <TabsContent value="workroom" className="mt-0">
-                <div className="modern-card">
-                  <div className="p-6">
-                    <WorkroomTab projectId={jobId} />
-                  </div>
+                <div className="modern-card p-6">
+                  <WorkroomTab projectId={jobId} />
                 </div>
               </TabsContent>
 
               <TabsContent value="emails" className="mt-0">
-                <div className="modern-card">
-                  <div className="p-6">
-                    <EmailsTab projectId={jobId} />
-                  </div>
+                <div className="modern-card p-6">
+                  <EmailsTab projectId={jobId} />
                 </div>
               </TabsContent>
 
               <TabsContent value="calendar" className="mt-0">
-                <div className="modern-card">
-                  <div className="p-6">
-                    <CalendarTab projectId={jobId} />
-                  </div>
+                <div className="modern-card p-6">
+                  <CalendarTab projectId={jobId} />
                 </div>
               </TabsContent>
             </div>
