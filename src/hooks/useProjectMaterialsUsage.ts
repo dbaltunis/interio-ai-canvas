@@ -22,43 +22,33 @@ export const useProjectMaterialsUsage = (projectId: string | undefined) => {
     queryFn: async () => {
       if (!projectId) return [];
 
-      // Fetch surfaces for the project
-      const { data: surfaces, error: surfacesError } = await supabase
-        .from('surfaces')
-        .select('id, name')
+      // Fetch treatments for the project
+      const { data: treatments, error: treatmentsError } = await supabase
+        .from('treatments')
+        .select('*')
         .eq('project_id', projectId);
 
-      if (surfacesError) throw surfacesError;
-      
-      const surfaceIds = (surfaces || []).map(s => s.id);
-      if (surfaceIds.length === 0) return [];
-
-      // Fetch window summaries for those surfaces
-      const { data: summaries, error } = await supabase
-        .from('windows_summary')
-        .select('*')
-        .in('window_id', surfaceIds);
-
-      if (error) throw error;
-      if (!summaries || summaries.length === 0) return [];
+      if (treatmentsError) throw treatmentsError;
+      if (!treatments || treatments.length === 0) return [];
 
       const materials: MaterialUsage[] = [];
       
-      // Create surface lookup map
-      const surfaceMap = new Map(surfaces.map(s => [s.id, s]));
+      // Get surface names for display
+      const windowIds = [...new Set(treatments.map((t: any) => t.window_id).filter(Boolean))];
+      const { data: surfaces } = await supabase
+        .from('surfaces')
+        .select('id, name')
+        .in('id', windowIds);
+      
+      const surfaceMap = new Map(surfaces?.map(s => [s.id, s.name]) || []);
 
-      for (const summary of summaries) {
-        const surface = surfaceMap.get(summary.window_id);
+      for (const treatment of treatments) {
+        const calcDetails = (treatment.calculation_details as any) || {};
+        const fabricDetails = (treatment.fabric_details as any) || {};
         
-        // Parse JSON fields
-        const fabricDetails = summary.fabric_details as any || {};
-        const hardwareDetails = summary.hardware_details as any || {};
-        const headingDetails = summary.heading_details as any || {};
-
-        // FABRIC - Calculate actual usage
-        const fabricId = fabricDetails.id || summary.selected_fabric_id;
-        if (fabricId && summary.linear_meters > 0) {
-          // Fetch current fabric inventory from enhanced_inventory_items
+        // FABRIC - Get from fabric_details.fabric_id or fabric_details.id
+        const fabricId = fabricDetails.fabric_id || fabricDetails.id;
+        if (fabricId) {
           const { data: fabricData } = await supabase
             .from('enhanced_inventory_items')
             .select('quantity, name, reorder_point, unit')
@@ -68,106 +58,60 @@ export const useProjectMaterialsUsage = (projectId: string | undefined) => {
           if (fabricData) {
             const quantity = fabricData.quantity || 0;
             const reorderPoint = fabricData.reorder_point || 0;
-            
-            // Only include if item is being tracked (quantity > 0 OR reorder_point > 0)
             const isTracked = quantity > 0 || reorderPoint > 0;
             
-            if (fabricData.name && isTracked) {
-              const usedMeters = summary.linear_meters || 0;
-              
+            // Get fabric usage from calculation details
+            const fabricMeters = calcDetails.fabricMeters || calcDetails.fabricUsage?.meters || 0;
+            
+            if (fabricData.name && fabricMeters > 0) {
               materials.push({
                 itemId: fabricId,
                 itemTable: 'enhanced_inventory_items',
-                itemName: fabricData.name || fabricDetails.name || 'Fabric',
-                quantityUsed: usedMeters,
+                itemName: fabricData.name,
+                quantityUsed: fabricMeters,
                 unit: fabricData.unit || 'm',
                 currentQuantity: quantity,
-                costImpact: summary.fabric_cost || 0,
-                surfaceId: summary.window_id,
-                surfaceName: surface?.name,
-                lowStock: quantity < usedMeters,
-                isTracked: true
+                costImpact: treatment.material_cost || 0,
+                surfaceId: treatment.window_id || treatment.id,
+                surfaceName: surfaceMap.get(treatment.window_id) || 'Treatment',
+                lowStock: quantity < fabricMeters,
+                isTracked
               });
             }
           }
         }
 
-        // HARDWARE - Calculate actual usage
-        const hardwareId = hardwareDetails.id || summary.selected_hardware_id;
-        if (hardwareId) {
-          const { data: hardwareData } = await supabase
+        // PRODUCTS - Extract from breakdown in calculation_details
+        const breakdown = calcDetails.breakdown || [];
+        for (const item of breakdown) {
+          if (!item.name || !item.quantity) continue;
+          
+          // Try to match to inventory
+          const { data: inventoryItem } = await supabase
             .from('enhanced_inventory_items')
-            .select('quantity, name, unit, reorder_point')
-            .eq('id', hardwareId)
+            .select('id, quantity, name, unit, reorder_point')
+            .ilike('name', `%${item.name}%`)
             .maybeSingle();
 
-          if (hardwareData) {
-            const quantity = hardwareData.quantity || 0;
-            const reorderPoint = hardwareData.reorder_point || 0;
-            
-            // Only include if item is being tracked (quantity > 0 OR reorder_point > 0)
+          if (inventoryItem) {
+            const quantity = inventoryItem.quantity || 0;
+            const reorderPoint = inventoryItem.reorder_point || 0;
             const isTracked = quantity > 0 || reorderPoint > 0;
             
-            if (hardwareData.name && isTracked) {
-              const trackWidthCm = summary.rail_width || summary.drop || 0;
-              const usedMeters = trackWidthCm / 100;
-              
-              if (usedMeters > 0) {
-                materials.push({
-                  itemId: hardwareId,
-                  itemTable: 'enhanced_inventory_items',
-                  itemName: hardwareData.name || hardwareDetails.name || 'Hardware',
-                  quantityUsed: usedMeters,
-                  unit: hardwareData.unit || 'm',
-                  currentQuantity: quantity,
-                  costImpact: summary.hardware_cost || 0,
-                  surfaceId: summary.window_id,
-                  surfaceName: surface?.name,
-                  lowStock: quantity < usedMeters,
-                  isTracked: true
-                });
-              }
-            }
-          }
-        }
-
-        // HEADING - Calculate actual usage
-        const headingId = headingDetails.id || summary.selected_heading_id;
-        if (headingId) {
-          const { data: headingData } = await supabase
-            .from('enhanced_inventory_items')
-            .select('quantity, name, unit, reorder_point')
-            .eq('id', headingId)
-            .maybeSingle();
-
-          if (headingData) {
-            const quantity = headingData.quantity || 0;
-            const reorderPoint = headingData.reorder_point || 0;
-            
-            // Only include if item is being tracked (quantity > 0 OR reorder_point > 0)
-            const isTracked = quantity > 0 || reorderPoint > 0;
-            
-            if (headingData.name && isTracked) {
-              const widthsRequired = summary.widths_required || 0;
-              const fabricWidth = fabricDetails.width || 137;
-              const finishedWidthCm = widthsRequired * fabricWidth;
-              const usedMeters = finishedWidthCm / 100;
-              
-              if (usedMeters > 0) {
-                materials.push({
-                  itemId: headingId,
-                  itemTable: 'enhanced_inventory_items',
-                  itemName: headingData.name || headingDetails.heading_name || 'Heading',
-                  quantityUsed: usedMeters,
-                  unit: headingData.unit || 'm',
-                  currentQuantity: quantity,
-                  costImpact: summary.heading_cost || 0,
-                  surfaceId: summary.window_id,
-                  surfaceName: surface?.name,
-                  lowStock: quantity < usedMeters,
-                  isTracked: true
-                });
-              }
+            if (isTracked) {
+              materials.push({
+                itemId: inventoryItem.id,
+                itemTable: 'enhanced_inventory_items',
+                itemName: inventoryItem.name,
+                quantityUsed: item.quantity,
+                unit: inventoryItem.unit || item.unit || 'unit',
+                currentQuantity: quantity,
+                costImpact: item.cost || 0,
+                surfaceId: treatment.window_id || treatment.id,
+                surfaceName: surfaceMap.get(treatment.window_id) || 'Treatment',
+                lowStock: quantity < item.quantity,
+                isTracked
+              });
             }
           }
         }
