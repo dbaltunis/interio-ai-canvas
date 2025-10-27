@@ -142,104 +142,151 @@ export const DynamicWindowWorksheet = forwardRef<{
 
   // Load existing data and sync with Enhanced mode
   useEffect(() => {
-    // Priority 1: Load from windows_summary table if available
-    if (existingWindowSummary) {
-      const measurementsDetails = existingWindowSummary.measurements_details as any || {};
-      const templateDetails = existingWindowSummary.template_details as any;
-      const fabricDetails = existingWindowSummary.fabric_details as any;
-      
-      // STEP 1: Restore Window Type
-      if (existingWindowSummary.window_type_id) {
-        const windowTypeData = {
-          id: existingWindowSummary.window_type_id,
-          name: existingWindowSummary.window_type,
-          key: existingWindowSummary.window_type_key,
-          visual_key: existingWindowSummary.window_type_key
-        };
-        setSelectedWindowType(windowTypeData);
-      }
-      
-      // STEP 2: Restore Treatment/Template
-      if (templateDetails) {
-        setSelectedTemplate(templateDetails);
+    // Async function to handle data loading
+    const loadData = async () => {
+      // Priority 1: Load from windows_summary table if available
+      if (existingWindowSummary) {
+        const measurementsDetails = existingWindowSummary.measurements_details as any || {};
+        const templateDetails = existingWindowSummary.template_details as any;
+        const fabricDetails = existingWindowSummary.fabric_details as any;
         
-        // Detect treatment category from template (prioritize curtain_type for wallpaper)
-        const detectedCategory = detectTreatmentType(templateDetails);
-        setTreatmentCategory(detectedCategory);
-        setSelectedTreatmentType(detectedCategory);
+        // STEP 1: Restore Window Type
+        if (existingWindowSummary.window_type_id) {
+          const windowTypeData = {
+            id: existingWindowSummary.window_type_id,
+            name: existingWindowSummary.window_type,
+            key: existingWindowSummary.window_type_key,
+            visual_key: existingWindowSummary.window_type_key
+          };
+          setSelectedWindowType(windowTypeData);
+        }
+        
+        // STEP 2: Restore Treatment/Template
+        let detectedCategory: TreatmentCategory = 'curtains';
+        if (templateDetails) {
+          setSelectedTemplate(templateDetails);
+          
+          // Detect treatment category from template (prioritize curtain_type for wallpaper)
+          detectedCategory = detectTreatmentType(templateDetails);
+          setTreatmentCategory(detectedCategory);
+          setSelectedTreatmentType(detectedCategory);
+        }
+        if (existingWindowSummary.treatment_type && !templateDetails) {
+          setSelectedTreatmentType(existingWindowSummary.treatment_type);
+        }
+        if (existingWindowSummary.treatment_category && !templateDetails) {
+          setTreatmentCategory(existingWindowSummary.treatment_category as TreatmentCategory);
+        }
+        
+        // STEP 3: Restore Inventory Selections
+        const restoredItems: any = {};
+        
+        // Restore fabric selection - for wallpaper, fetch fresh from inventory to get all properties
+        if (fabricDetails && (fabricDetails.fabric_id || fabricDetails.id)) {
+          const fabricId = fabricDetails.fabric_id || fabricDetails.id;
+          
+          // For wallpaper, fetch complete item from inventory to ensure all properties are loaded
+          if (detectedCategory === 'wallpaper') {
+            try {
+              const { data: freshWallpaper } = await supabase
+                .from('enhanced_inventory_items')
+                .select('*')
+                .eq('id', fabricId)
+                .single();
+              
+              if (freshWallpaper) {
+                restoredItems.fabric = freshWallpaper;
+                console.log('✅ Restored fresh wallpaper with all properties:', {
+                  id: freshWallpaper.id,
+                  name: freshWallpaper.name,
+                  roll_width: freshWallpaper.wallpaper_roll_width,
+                  roll_length: freshWallpaper.wallpaper_roll_length,
+                  pattern_repeat: freshWallpaper.pattern_repeat_vertical,
+                  match_type: freshWallpaper.wallpaper_match_type
+                });
+              } else {
+                // Fallback to saved details if fetch fails
+                restoredItems.fabric = {
+                  ...fabricDetails,
+                  id: fabricId,
+                  fabric_id: fabricId
+                };
+              }
+            } catch (error) {
+              console.error('Error fetching fresh wallpaper:', error);
+              // Fallback to saved details
+              restoredItems.fabric = {
+                ...fabricDetails,
+                id: fabricId,
+                fabric_id: fabricId
+              };
+            }
+          } else {
+            // For non-wallpaper, use saved details
+            restoredItems.fabric = {
+              ...fabricDetails,
+              id: fabricId,
+              fabric_id: fabricId
+            };
+          }
+        } else if (existingWindowSummary.selected_fabric_id && fabricDetails) {
+          restoredItems.fabric = {
+            ...fabricDetails,
+            id: existingWindowSummary.selected_fabric_id,
+            fabric_id: existingWindowSummary.selected_fabric_id
+          };
+        }
+        
+        // Restore hardware selection
+        if (existingWindowSummary.selected_hardware_id && existingWindowSummary.hardware_details && typeof existingWindowSummary.hardware_details === 'object') {
+          const hardwareDetails = existingWindowSummary.hardware_details as any;
+          restoredItems.hardware = {
+            id: existingWindowSummary.selected_hardware_id,
+            ...hardwareDetails
+          };
+        }
+        
+        // Restore material selection
+        if (existingWindowSummary.selected_material_id && existingWindowSummary.material_details && typeof existingWindowSummary.material_details === 'object') {
+          const materialDetails = existingWindowSummary.material_details as any;
+          restoredItems.material = {
+            id: existingWindowSummary.selected_material_id,
+            ...materialDetails
+          };
+        }
+        
+        if (Object.keys(restoredItems).length > 0) {
+          setSelectedItems(restoredItems);
+        }
+        
+        // Restore heading and lining
+        if (existingWindowSummary.selected_heading_id) {
+          setSelectedHeading(existingWindowSummary.selected_heading_id);
+        }
+        if (existingWindowSummary.selected_lining_type) {
+          setSelectedLining(existingWindowSummary.selected_lining_type);
+        }
+        
+        // STEP 4: Restore Measurements
+        if (measurementsDetails) {
+          setMeasurements(measurementsDetails);
+        }
+        
+        // Set fabric calculation if available
+        if (existingWindowSummary.linear_meters && existingWindowSummary.fabric_cost) {
+          setFabricCalculation({
+            linearMeters: existingWindowSummary.linear_meters,
+            totalCost: existingWindowSummary.fabric_cost,
+            pricePerMeter: existingWindowSummary.price_per_meter,
+            widthsRequired: existingWindowSummary.widths_required
+          });
+        }
+        return;
       }
-      if (existingWindowSummary.treatment_type && !templateDetails) {
-        setSelectedTreatmentType(existingWindowSummary.treatment_type);
-      }
-      if (existingWindowSummary.treatment_category && !templateDetails) {
-        setTreatmentCategory(existingWindowSummary.treatment_category as TreatmentCategory);
-      }
-      
-      // STEP 3: Restore Inventory Selections
-      const restoredItems: any = {};
-      
-      // Restore fabric selection
-      if (fabricDetails && (fabricDetails.fabric_id || fabricDetails.id)) {
-        const fabricId = fabricDetails.fabric_id || fabricDetails.id;
-        restoredItems.fabric = {
-          ...fabricDetails,
-          id: fabricId,
-          fabric_id: fabricId
-        };
-      } else if (existingWindowSummary.selected_fabric_id && fabricDetails) {
-        restoredItems.fabric = {
-          ...fabricDetails,
-          id: existingWindowSummary.selected_fabric_id,
-          fabric_id: existingWindowSummary.selected_fabric_id
-        };
-      }
-      
-      // Restore hardware selection
-      if (existingWindowSummary.selected_hardware_id && existingWindowSummary.hardware_details && typeof existingWindowSummary.hardware_details === 'object') {
-        const hardwareDetails = existingWindowSummary.hardware_details as any;
-        restoredItems.hardware = {
-          id: existingWindowSummary.selected_hardware_id,
-          ...hardwareDetails
-        };
-      }
-      
-      // Restore material selection
-      if (existingWindowSummary.selected_material_id && existingWindowSummary.material_details && typeof existingWindowSummary.material_details === 'object') {
-        const materialDetails = existingWindowSummary.material_details as any;
-        restoredItems.material = {
-          id: existingWindowSummary.selected_material_id,
-          ...materialDetails
-        };
-      }
-      
-      if (Object.keys(restoredItems).length > 0) {
-        setSelectedItems(restoredItems);
-      }
-      
-      // Restore heading and lining
-      if (existingWindowSummary.selected_heading_id) {
-        setSelectedHeading(existingWindowSummary.selected_heading_id);
-      }
-      if (existingWindowSummary.selected_lining_type) {
-        setSelectedLining(existingWindowSummary.selected_lining_type);
-      }
-      
-      // STEP 4: Restore Measurements
-      if (measurementsDetails) {
-        setMeasurements(measurementsDetails);
-      }
-      
-      // Set fabric calculation if available
-      if (existingWindowSummary.linear_meters && existingWindowSummary.fabric_cost) {
-        setFabricCalculation({
-          linearMeters: existingWindowSummary.linear_meters,
-          totalCost: existingWindowSummary.fabric_cost,
-          pricePerMeter: existingWindowSummary.price_per_meter,
-          widthsRequired: existingWindowSummary.widths_required
-        });
-      }
-      return;
-    }
+    };
+
+    // Call the async function
+    loadData();
 
     // Priority 2: Load from existingMeasurement (legacy support)
     if (existingMeasurement) {
