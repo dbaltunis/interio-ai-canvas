@@ -10,6 +10,7 @@ import { Settings, Plus, Edit, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useJobStatuses, useCreateJobStatus, useUpdateJobStatus, useDeleteJobStatus } from "@/hooks/useJobStatuses";
 import { LoadingFallback } from "@/components/ui/loading-fallback";
+import { SeedJobStatuses } from "../SeedJobStatuses";
 
 interface Status {
   id: number;
@@ -105,6 +106,7 @@ export const StatusManagement = () => {
 
   return (
     <>
+      <SeedJobStatuses />
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
