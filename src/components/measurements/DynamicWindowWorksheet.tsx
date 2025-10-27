@@ -827,6 +827,83 @@ export const DynamicWindowWorksheet = forwardRef<{
           
           console.log('✅ Summary data saved successfully');
 
+          // CRITICAL: Also save to treatments table for material processing
+          if (projectId && surfaceId) {
+            console.log('💾 Creating/updating treatment record for materials...');
+            
+            const treatmentData = {
+              user_id: user.id,
+              project_id: projectId,
+              window_id: surfaceId,
+              treatment_type: selectedTemplate?.name || 'Unknown',
+              product_name: selectedTemplate?.name || 'Treatment',
+              fabric_type: selectedItems.fabric?.name || null,
+              total_price: finalTotalCost,
+              material_cost: fabricCost,
+              labor_cost: manufacturingCost,
+              fabric_details: selectedItems.fabric ? {
+                id: selectedItems.fabric.id,
+                fabric_id: selectedItems.fabric.id,
+                name: selectedItems.fabric.name,
+                fabric_width: selectedItems.fabric.fabric_width,
+                selling_price: selectedItems.fabric.selling_price || selectedItems.fabric.unit_price
+              } : null,
+              calculation_details: {
+                fabricMeters: linearMeters,
+                totalCost: finalTotalCost,
+                fabricCost,
+                liningCost: finalLiningCost,
+                headingCost: finalHeadingCost,
+                manufacturingCost,
+                breakdown: [
+                  {
+                    id: 'fabric',
+                    name: selectedItems.fabric?.name || 'Fabric',
+                    quantity: linearMeters,
+                    unit: 'm',
+                    unit_price: selectedItems.fabric?.selling_price || selectedItems.fabric?.unit_price || 0,
+                    total_cost: fabricCost,
+                    category: 'fabric',
+                    image_url: selectedItems.fabric?.image_url
+                  }
+                ]
+              },
+              treatment_details: summaryData
+            };
+
+            // Check if treatment exists for this window
+            const { data: existingTreatment } = await supabase
+              .from('treatments')
+              .select('id')
+              .eq('window_id', surfaceId)
+              .maybeSingle();
+
+            if (existingTreatment) {
+              // Update existing treatment
+              const { error: treatmentError } = await supabase
+                .from('treatments')
+                .update(treatmentData)
+                .eq('id', existingTreatment.id);
+
+              if (treatmentError) {
+                console.error("❌ Treatment update error:", treatmentError);
+              } else {
+                console.log('✅ Treatment record updated successfully');
+              }
+            } else {
+              // Insert new treatment
+              const { error: treatmentError } = await supabase
+                .from('treatments')
+                .insert(treatmentData);
+
+              if (treatmentError) {
+                console.error("❌ Treatment insert error:", treatmentError);
+              } else {
+                console.log('✅ Treatment record created successfully');
+              }
+            }
+          }
+
           // Mark as saved
           setHasUnsavedChanges(false);
           setLastSaveTime(Date.now());
