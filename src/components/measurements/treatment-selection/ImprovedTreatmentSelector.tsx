@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Loader2, X } from "lucide-react";
@@ -21,8 +21,20 @@ export const ImprovedTreatmentSelector = ({
   const [showSearch, setShowSearch] = useState(false);
   const {
     data: curtainTemplates = [],
-    isLoading
+    isLoading,
+    isError,
+    error
   } = useCurtainTemplates();
+
+  // Log loading and error states
+  useEffect(() => {
+    if (isError) {
+      console.error("❌ Error loading treatments:", error);
+    }
+    if (isLoading) {
+      console.log("⏳ Loading treatments...");
+    }
+  }, [isLoading, isError, error]);
 
   // Filter treatments based on window type
   const filteredTemplates = curtainTemplates.filter(template => {
@@ -79,6 +91,19 @@ export const ImprovedTreatmentSelector = ({
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
               <p className="text-sm text-muted-foreground">Loading treatments...</p>
             </div>
+          </div>
+        ) : isError ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="flex flex-col items-center gap-2 text-destructive">
+              <p className="text-sm">Failed to load treatments</p>
+              <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+                Retry
+              </Button>
+            </div>
+          </div>
+        ) : filteredTemplates.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-sm text-muted-foreground">No treatments available</p>
           </div>
         ) : (
           <div className="pr-3">

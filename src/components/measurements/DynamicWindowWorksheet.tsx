@@ -85,9 +85,6 @@ export const DynamicWindowWorksheet = forwardRef<{
 
   // Hooks
   const {
-    data: curtainTemplates = []
-  } = useCurtainTemplates();
-  const {
     data: windowCoverings = []
   } = useWindowCoverings();
   const {
@@ -321,8 +318,8 @@ export const DynamicWindowWorksheet = forwardRef<{
           label: "Restore",
           onClick: () => {
             if (draft.templateId) {
-              const template = curtainTemplates.find(t => t.id === draft.templateId);
-              if (template) setSelectedTemplate(template);
+              // Template will be loaded from windows_summary instead
+              setSelectedTemplate(draft.templateId);
             }
             if (draft.measurements) setMeasurements(draft.measurements);
             if (draft.selectedOptions) setSelectedOptions(draft.selectedOptions);

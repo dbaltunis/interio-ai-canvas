@@ -115,22 +115,29 @@ export const useCurtainTemplates = () => {
     staleTime: 5 * 60 * 1000, // 5 minutes - prevent redundant fetches
     gcTime: 10 * 60 * 1000, // 10 minutes cache
     queryFn: async () => {
+      const startTime = performance.now();
+      console.log("🔍 [useCurtainTemplates] Starting query...");
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
+      console.log("✅ [useCurtainTemplates] User authenticated:", user.id);
 
-      // Get account owner to fetch account-level templates
-      const { data: accountOwnerId } = await supabase.rpc('get_account_owner', { 
-        user_id_param: user.id 
-      });
-
+      // RLS policies will filter by account owner automatically
       const { data, error } = await supabase
         .from("curtain_templates" as any)
         .select("*")
         .eq("active", true)
-        .eq("user_id", accountOwnerId || user.id)
         .order("name");
 
-      if (error) throw error;
+      const endTime = performance.now();
+      console.log(`✅ [useCurtainTemplates] Query completed in ${(endTime - startTime).toFixed(2)}ms`);
+      console.log(`📊 [useCurtainTemplates] Loaded ${data?.length || 0} templates`);
+
+      if (error) {
+        console.error("❌ [useCurtainTemplates] Query error:", error);
+        throw error;
+      }
+      
       return (data as unknown) as CurtainTemplate[];
     },
   });
