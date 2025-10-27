@@ -447,9 +447,10 @@ export function WindowSummaryCard({
                     {treatmentType === 'wallpaper' && (
                       <>
                         <div className="space-y-0.5">
-                          <div className="text-xs text-muted-foreground">Width</div>
+                          <div className="text-xs text-muted-foreground">Wall Width</div>
                           <div className="font-semibold text-sm">
                             {fmtMeasurement(
+                              Number(summary.measurements_details?.wall_width) || 
                               Number(summary.measurements_details?.width) || 
                               Number(surface.measurement_a) || 
                               Number(surface.width) || 0
@@ -457,9 +458,10 @@ export function WindowSummaryCard({
                           </div>
                         </div>
                         <div className="space-y-0.5">
-                          <div className="text-xs text-muted-foreground">Height</div>
+                          <div className="text-xs text-muted-foreground">Wall Height</div>
                           <div className="font-semibold text-sm">
                             {fmtMeasurement(
+                              Number(summary.measurements_details?.wall_height) || 
                               Number(summary.measurements_details?.height) || 
                               Number(surface.measurement_b) || 
                               Number(surface.height) || 0
