@@ -10,77 +10,75 @@ interface MaterialOrder {
   inventoryId?: string;
 }
 
+interface MaterialToProcess {
+  itemId: string;
+  itemName: string;
+  quantityUsed: number;
+  unit: string;
+  currentQuantity: number;
+}
+
 export const useConvertQuoteToMaterials = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ projectId }: { projectId: string }) => {
-      // Get project treatments
-      const { data: treatments, error: treatmentsError } = await supabase
-        .from('treatments')
-        .select('*, calculation_details')
-        .eq('project_id', projectId);
-
-      if (treatmentsError) throw treatmentsError;
-      if (!treatments || treatments.length === 0) {
-        throw new Error("No treatments found for this project");
+    mutationFn: async ({ 
+      projectId, 
+      materials 
+    }: { 
+      projectId: string;
+      materials: MaterialToProcess[];
+    }) => {
+      if (!materials || materials.length === 0) {
+        throw new Error("No materials found for this project. Please ensure treatments with fabrics are added.");
       }
 
       const createdOrders: MaterialOrder[] = [];
 
-      // Process each treatment's calculation details for materials
-      for (const treatment of treatments) {
-        const calcDetails = (treatment.calculation_details as any) || {};
-        const breakdown = calcDetails.breakdown || [];
+      // Process each material
+      for (const material of materials) {
+        const quantityNeeded = material.quantityUsed;
+        const availableQuantity = material.currentQuantity;
 
-        for (const item of breakdown) {
-          if (!item.name || !item.quantity) continue;
+        if (quantityNeeded <= 0) continue;
 
-          // Try to find matching inventory item
-          const { data: inventoryItem } = await supabase
-            .from('enhanced_inventory_items')
-            .select('id, quantity, name, unit, cost_price')
-            .ilike('name', `%${item.name}%`)
-            .maybeSingle();
+        if (availableQuantity >= quantityNeeded) {
+          // Allocate from inventory
+          const { error: allocationError } = await supabase
+            .from('project_material_allocations')
+            .insert({
+              project_id: projectId,
+              inventory_item_id: material.itemId,
+              allocated_quantity: quantityNeeded,
+              used_quantity: 0,
+              status: 'allocated'
+            });
 
-          if (inventoryItem && inventoryItem.quantity >= item.quantity) {
-            // Allocate from inventory
-            const { error: allocationError } = await supabase
-              .from('project_material_allocations')
-              .insert({
-                project_id: projectId,
-                inventory_item_id: inventoryItem.id,
-                allocated_quantity: item.quantity,
-                used_quantity: 0,
-                status: 'allocated'
-              });
+          if (!allocationError) {
+            // Update inventory quantity
+            await supabase
+              .from('enhanced_inventory_items')
+              .update({ quantity: availableQuantity - quantityNeeded })
+              .eq('id', material.itemId);
 
-            if (!allocationError) {
-              // Update inventory quantity
-              await supabase
-                .from('enhanced_inventory_items')
-                .update({ quantity: inventoryItem.quantity - item.quantity })
-                .eq('id', inventoryItem.id);
-
-              createdOrders.push({
-                type: 'allocated',
-                material: item.name,
-                quantity: item.quantity,
-                status: 'allocated',
-                inventoryId: inventoryItem.id
-              });
-            }
-          } else {
-            // Material needs to be ordered
             createdOrders.push({
-              type: 'needed',
-              material: item.name,
-              quantity: item.quantity,
-              status: 'needs_purchase',
-              inventoryId: inventoryItem?.id
+              type: 'allocated',
+              material: material.itemName,
+              quantity: quantityNeeded,
+              status: 'allocated',
+              inventoryId: material.itemId
             });
           }
+        } else {
+          // Material needs to be ordered
+          createdOrders.push({
+            type: 'needed',
+            material: material.itemName,
+            quantity: quantityNeeded - availableQuantity,
+            status: 'needs_purchase',
+            inventoryId: material.itemId
+          });
         }
       }
 

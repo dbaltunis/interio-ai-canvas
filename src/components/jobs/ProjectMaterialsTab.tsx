@@ -33,7 +33,19 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
   
   const handleProcessMaterials = async () => {
     try {
-      await convertMaterials.mutateAsync({ projectId });
+      // Transform treatmentMaterials to the format needed by the hook
+      const materialsToProcess = treatmentMaterials.map(m => ({
+        itemId: m.itemId,
+        itemName: m.itemName,
+        quantityUsed: m.quantityUsed,
+        unit: m.unit,
+        currentQuantity: m.currentQuantity
+      }));
+      
+      await convertMaterials.mutateAsync({ 
+        projectId, 
+        materials: materialsToProcess 
+      });
       setShowProcessDialog(false);
     } catch (error) {
       console.error("Failed to process materials:", error);
