@@ -91,7 +91,13 @@ export function WindowSummaryCard({
     console.log('📊 WindowSummaryCard:', {
       windowId,
       hasSummary: !!summary,
-      total: summary?.total_cost
+      total: summary?.total_cost,
+      treatmentType,
+      // Wallpaper debugging
+      linear_meters: summary?.linear_meters,
+      widths_required: summary?.widths_required,
+      wall_width: summary?.measurements_details?.wall_width,
+      wall_height: summary?.measurements_details?.wall_height
     });
   }
 
@@ -561,14 +567,19 @@ export function WindowSummaryCard({
                     </div>
 
                     {/* Wallpaper calculation details */}
-                    {treatmentType === 'wallpaper' && summary && (
+                    {treatmentType === 'wallpaper' && summary && summary.measurements_details && (
                       <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 mb-3">
                         <div className="text-xs font-semibold text-foreground mb-2">Wallpaper Calculations</div>
                         <div className="grid grid-cols-2 gap-2 text-xs">
                           <div>
                             <span className="text-muted-foreground">Wall Area:</span>
                             <span className="font-medium text-foreground ml-2">
-                              {((Number(summary.linear_meters) || 0) * (summary.widths_required || 1) / 100).toFixed(2)} m²
+                              {(() => {
+                                const wallWidth = Number(summary.measurements_details?.wall_width) || 0;
+                                const wallHeight = Number(summary.measurements_details?.wall_height) || 0;
+                                const areaM2 = (wallWidth * wallHeight) / 10000; // cm² to m²
+                                return areaM2.toFixed(2);
+                              })()} m²
                             </span>
                           </div>
                           <div>
