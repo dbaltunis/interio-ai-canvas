@@ -2597,39 +2597,75 @@ export type Database = {
       }
       inventory_movements: {
         Row: {
+          cost_impact: number | null
           created_at: string
+          created_by: string | null
           id: string
           inventory_id: string
+          item_name: string | null
+          item_table: string | null
+          metadata: Json | null
           movement_date: string | null
           movement_type: string
           notes: string | null
+          project_id: string | null
           quantity: number
+          quantity_after: number | null
+          quantity_before: number | null
+          quantity_change: number | null
+          reason: string | null
           reference_id: string | null
           reference_type: string | null
+          surface_id: string | null
+          unit: string | null
           user_id: string
         }
         Insert: {
+          cost_impact?: number | null
           created_at?: string
+          created_by?: string | null
           id?: string
           inventory_id: string
+          item_name?: string | null
+          item_table?: string | null
+          metadata?: Json | null
           movement_date?: string | null
           movement_type: string
           notes?: string | null
+          project_id?: string | null
           quantity: number
+          quantity_after?: number | null
+          quantity_before?: number | null
+          quantity_change?: number | null
+          reason?: string | null
           reference_id?: string | null
           reference_type?: string | null
+          surface_id?: string | null
+          unit?: string | null
           user_id: string
         }
         Update: {
+          cost_impact?: number | null
           created_at?: string
+          created_by?: string | null
           id?: string
           inventory_id?: string
+          item_name?: string | null
+          item_table?: string | null
+          metadata?: Json | null
           movement_date?: string | null
           movement_type?: string
           notes?: string | null
+          project_id?: string | null
           quantity?: number
+          quantity_after?: number | null
+          quantity_before?: number | null
+          quantity_change?: number | null
+          reason?: string | null
           reference_id?: string | null
           reference_type?: string | null
+          surface_id?: string | null
+          unit?: string | null
           user_id?: string
         }
         Relationships: [
@@ -2638,6 +2674,20 @@ export type Database = {
             columns: ["inventory_id"]
             isOneToOne: false
             referencedRelation: "inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_surface_id_fkey"
+            columns: ["surface_id"]
+            isOneToOne: false
+            referencedRelation: "surfaces"
             referencedColumns: ["id"]
           },
         ]

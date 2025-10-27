@@ -15,6 +15,7 @@ import { useUpdateProject } from "@/hooks/useProjects";
 import { useNavigate } from "react-router-dom";
 import { useProjectStatusChange } from "@/hooks/useProjectStatusChange";
 import { LeftoverCaptureDialog } from "../projects/LeftoverCaptureDialog";
+import { InventoryDeductionDialog } from "../projects/InventoryDeductionDialog";
 
 interface ProjectHeaderProps {
   projectName: string;
@@ -67,7 +68,7 @@ export const ProjectHeader = ({
     ? projectId.project_id 
     : projectId;
   
-  const { showLeftoverDialog, setShowLeftoverDialog, leftovers } = useProjectStatusChange({
+  const { showLeftoverDialog, setShowLeftoverDialog, leftovers, showDeductionDialog, setShowDeductionDialog, materialsUsage } = useProjectStatusChange({
     projectId: actualProjectId,
     currentStatus: displayStatus,
   });
@@ -556,6 +557,21 @@ export const ProjectHeader = ({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Inventory Deduction Dialog */}
+      <InventoryDeductionDialog
+        open={showDeductionDialog}
+        onOpenChange={(open) => {
+          setShowDeductionDialog(open);
+          // Show leftover dialog after deduction if there are leftovers
+          if (!open && leftovers.length > 0) {
+            setTimeout(() => setShowLeftoverDialog(true), 300);
+          }
+        }}
+        materials={materialsUsage}
+        projectId={actualProjectId || ''}
+        projectName={projectName}
+      />
 
       {/* Leftover Capture Dialog */}
       <LeftoverCaptureDialog
