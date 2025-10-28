@@ -32,43 +32,47 @@ export const BatchOrdersView = () => {
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Batch Orders</CardTitle>
-              <CardDescription>
-                Consolidated orders organized by supplier
-              </CardDescription>
-            </div>
-            <Button
-              onClick={() => setShowCreateBatch(true)}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              New Batch Order
-            </Button>
-          </div>
-          
-          {/* Status Filter Chips */}
-          <div className="flex gap-2 mt-4 flex-wrap">
-            {statusOptions.map((option) => (
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Batch Orders</CardTitle>
+                <CardDescription className="hidden sm:block">
+                  Consolidated orders organized by supplier
+                </CardDescription>
+              </div>
               <Button
-                key={option.value}
-                variant={statusFilter === option.value ? "default" : "outline"}
+                onClick={() => setShowCreateBatch(true)}
+                className="flex items-center gap-2"
                 size="sm"
-                onClick={() => setStatusFilter(option.value)}
-                className="flex items-center gap-1.5"
               >
-                {option.label}
-                {option.count > 0 && (
-                  <Badge 
-                    variant={statusFilter === option.value ? "secondary" : "outline"}
-                    className="ml-1 h-5 min-w-5 px-1.5"
-                  >
-                    {option.count}
-                  </Badge>
-                )}
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">New Batch Order</span>
+                <span className="sm:hidden">New</span>
               </Button>
-            ))}
+            </div>
+            
+            {/* Status Filter Chips - Responsive */}
+            <div className="flex flex-wrap gap-2">
+              {statusOptions.map((option) => (
+                <Button
+                  key={option.value}
+                  variant={statusFilter === option.value ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter(option.value)}
+                  className="flex items-center gap-1.5 text-xs"
+                >
+                  {option.label}
+                  {option.count > 0 && (
+                    <Badge 
+                      variant={statusFilter === option.value ? "secondary" : "outline"}
+                      className="ml-1 h-5 min-w-5 px-1.5"
+                    >
+                      {option.count}
+                    </Badge>
+                  )}
+                </Button>
+              ))}
+            </div>
           </div>
         </CardHeader>
         <CardContent>

@@ -19,17 +19,17 @@ export const OrderingHubPage = () => {
   const pendingOrdersCount = batchOrders?.filter(b => b.status === 'draft').length || 0;
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-4 sm:space-y-6 pb-16">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Material Purchasing</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Material Purchasing</h1>
+        <p className="text-muted-foreground text-sm sm:text-base">
           Manage material orders, create supplier batches, and track deliveries
         </p>
       </div>
 
       {/* Stats Overview */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Materials in Queue</CardTitle>
@@ -71,27 +71,27 @@ export const OrderingHubPage = () => {
       </div>
 
       {/* Main Tabs */}
-      <Tabs defaultValue="queue" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="queue" className="flex items-center gap-2">
+      <Tabs defaultValue="queue" className="space-y-4 sm:space-y-6">
+        <TabsList className="grid w-full grid-cols-4 h-auto">
+          <TabsTrigger value="queue" className="flex items-center gap-2 py-2">
             <Package className="h-4 w-4" />
             <span className="hidden sm:inline">Material Queue</span>
-            <span className="sm:hidden">Queue</span>
+            <span className="sm:hidden text-xs">Queue</span>
           </TabsTrigger>
-          <TabsTrigger value="batches" className="flex items-center gap-2">
+          <TabsTrigger value="batches" className="flex items-center gap-2 py-2">
             <ShoppingCart className="h-4 w-4" />
             <span className="hidden sm:inline">Batch Orders</span>
-            <span className="sm:hidden">Orders</span>
+            <span className="sm:hidden text-xs">Orders</span>
           </TabsTrigger>
-          <TabsTrigger value="tracking" className="flex items-center gap-2">
+          <TabsTrigger value="tracking" className="flex items-center gap-2 py-2">
             <TruckIcon className="h-4 w-4" />
             <span className="hidden sm:inline">Tracking</span>
-            <span className="sm:hidden">Track</span>
+            <span className="sm:hidden text-xs">Track</span>
           </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
+          <TabsTrigger value="settings" className="flex items-center gap-2 py-2">
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">Schedule</span>
-            <span className="sm:hidden">Setup</span>
+            <span className="sm:hidden text-xs">Setup</span>
           </TabsTrigger>
         </TabsList>
 

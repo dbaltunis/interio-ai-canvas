@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal, Trash2, Edit, Lock } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
+import { MaterialQueueRow } from "./MaterialQueueRow";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -85,120 +86,57 @@ export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectio
   }
 
   return (
-    <div className="border rounded-md">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-12">
-              <Checkbox
-                checked={selectedItems.length === items.length}
-                onCheckedChange={handleSelectAll}
-              />
-            </TableHead>
-            <TableHead>Job #</TableHead>
-            <TableHead>Job Name</TableHead>
-            <TableHead>Client</TableHead>
-            <TableHead>Material</TableHead>
-            <TableHead className="text-right">Quantity</TableHead>
-            {canViewCosts && <TableHead className="text-right">Unit Cost</TableHead>}
-            {canViewCosts && <TableHead className="text-right">Total Cost</TableHead>}
-            <TableHead>Supplier</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Priority</TableHead>
-            <TableHead className="w-12"></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell>
+    <div className="space-y-4">
+      {/* Mobile View - Cards */}
+      <div className="lg:hidden space-y-3">
+        {items.map((item) => (
+          <MaterialQueueRow
+            key={item.id}
+            item={item}
+            isSelected={selectedItems.includes(item.id)}
+            onSelect={(checked) => handleSelectItem(item.id, !!checked)}
+            canViewCosts={canViewCosts}
+          />
+        ))}
+      </div>
+
+      {/* Desktop View - Table */}
+      <div className="hidden lg:block border rounded-md overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-12">
                 <Checkbox
-                  checked={selectedItems.includes(item.id)}
-                  onCheckedChange={(checked) => handleSelectItem(item.id, !!checked)}
+                  checked={selectedItems.length === items.length}
+                  onCheckedChange={handleSelectAll}
                 />
-              </TableCell>
-              <TableCell className="font-mono text-sm">
-                {item.projects?.job_number || '—'}
-              </TableCell>
-              <TableCell className="font-medium">
-                <div className="max-w-[200px] truncate">
-                  {item.projects?.name || item.quotes?.project_name || '—'}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="max-w-[150px] truncate">
-                  {item.clients?.name || '—'}
-                </div>
-              </TableCell>
-              <TableCell className="font-medium">
-                <div className="max-w-[200px]">
-                  <div className="truncate">{item.material_name}</div>
-                  {item.metadata?.treatment_name && (
-                    <div className="text-xs text-muted-foreground truncate">{item.metadata.treatment_name}</div>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="whitespace-nowrap">
-                  {item.quantity} {item.unit}
-                </div>
-                {item.metadata?.current_stock > 0 && (
-                  <div className="text-xs text-muted-foreground">
-                    ({item.metadata.current_stock} in stock)
-                  </div>
-                )}
-              </TableCell>
-              {canViewCosts && (
-                <TableCell className="text-right text-muted-foreground">
-                  ${item.unit_cost?.toFixed(2) || '0.00'}
-                </TableCell>
-              )}
-              {canViewCosts && (
-                <TableCell className="text-right font-medium">
-                  ${item.total_cost?.toFixed(2) || '0.00'}
-                </TableCell>
-              )}
-              <TableCell>
-                <div className="max-w-[150px] truncate">
-                  {item.vendors?.name || <span className="text-muted-foreground">Unassigned</span>}
-                </div>
-              </TableCell>
-              <TableCell>
-                <Badge variant={statusColors[item.status as keyof typeof statusColors] || "secondary"}>
-                  {statusLabels[item.status as keyof typeof statusLabels] || item.status}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge variant={priorityColors[item.priority as keyof typeof priorityColors] || "secondary"}>
-                  {priorityLabels[item.priority as keyof typeof priorityLabels] || item.priority}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="text-destructive"
-                      onClick={() => deleteMaterial.mutate(item.id)}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Remove
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
+              </TableHead>
+              <TableHead>Job #</TableHead>
+              <TableHead>Job Name</TableHead>
+              <TableHead>Client</TableHead>
+              <TableHead>Material</TableHead>
+              <TableHead className="text-right">Quantity</TableHead>
+              {canViewCosts && <TableHead className="text-right">Unit Cost</TableHead>}
+              {canViewCosts && <TableHead className="text-right">Total Cost</TableHead>}
+              <TableHead>Supplier</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Priority</TableHead>
+              <TableHead className="w-12"></TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {items.map((item) => (
+              <MaterialQueueRow
+                key={item.id}
+                item={item}
+                isSelected={selectedItems.includes(item.id)}
+                onSelect={(checked) => handleSelectItem(item.id, !!checked)}
+                canViewCosts={canViewCosts}
+              />
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 };

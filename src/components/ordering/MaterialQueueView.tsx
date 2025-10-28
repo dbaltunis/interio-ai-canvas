@@ -52,21 +52,23 @@ export const MaterialQueueView = () => {
       
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Material Queue</CardTitle>
-              <CardDescription>
-                Manage materials requiring supplier orders or stock allocation
-              </CardDescription>
-            </div>
-            <div className="flex gap-2">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Material Queue</CardTitle>
+                <CardDescription className="hidden sm:block">
+                  Manage materials requiring supplier orders or stock allocation
+                </CardDescription>
+              </div>
               <Button
                 onClick={handleCreateBatch}
                 disabled={selectedItems.length === 0}
                 className="flex items-center gap-2"
+                size="sm"
               >
                 <PackagePlus className="h-4 w-4" />
-                Create Batch Order
+                <span className="hidden sm:inline">Create Batch Order</span>
+                <span className="sm:hidden">Batch</span>
                 {selectedItems.length > 0 && (
                   <Badge variant="secondary" className="ml-1">
                     {selectedItems.length}
@@ -74,32 +76,32 @@ export const MaterialQueueView = () => {
                 )}
               </Button>
             </div>
-          </div>
-          
-          {/* Status Filter Chips */}
-          <div className="flex gap-2 mt-4 flex-wrap">
-            {statusOptions.map((option) => (
-              <Button
-                key={option.value}
-                variant={statusFilter === option.value ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setStatusFilter(option.value);
-                  setSelectedItems([]);
-                }}
-                className="flex items-center gap-1.5"
-              >
-                {option.label}
-                {option.count > 0 && (
-                  <Badge 
-                    variant={statusFilter === option.value ? "secondary" : "outline"}
-                    className="ml-1 h-5 min-w-5 px-1.5"
-                  >
-                    {option.count}
-                  </Badge>
-                )}
-              </Button>
-            ))}
+            
+            {/* Status Filter Chips - Responsive */}
+            <div className="flex flex-wrap gap-2">
+              {statusOptions.map((option) => (
+                <Button
+                  key={option.value}
+                  variant={statusFilter === option.value ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setStatusFilter(option.value);
+                    setSelectedItems([]);
+                  }}
+                  className="flex items-center gap-1.5 text-xs"
+                >
+                  {option.label}
+                  {option.count > 0 && (
+                    <Badge 
+                      variant={statusFilter === option.value ? "secondary" : "outline"}
+                      className="ml-1 h-5 min-w-5 px-1.5"
+                    >
+                      {option.count}
+                    </Badge>
+                  )}
+                </Button>
+              ))}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
