@@ -102,7 +102,7 @@ export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectio
                 {item.quantity} {item.unit}
               </TableCell>
               <TableCell>
-                {item.suppliers?.name || <span className="text-muted-foreground">Unassigned</span>}
+                {item.vendors?.name || <span className="text-muted-foreground">Unassigned</span>}
               </TableCell>
               <TableCell>
                 {item.quotes?.project_name || item.clients?.name || '—'}

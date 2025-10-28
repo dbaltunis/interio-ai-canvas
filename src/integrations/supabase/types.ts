@@ -871,10 +871,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "batch_orders_supplier_id_fkey"
+            foreignKeyName: "batch_orders_vendor_id_fkey"
             columns: ["supplier_id"]
             isOneToOne: false
-            referencedRelation: "suppliers"
+            referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
         ]
@@ -3348,10 +3348,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "material_order_queue_supplier_id_fkey"
+            foreignKeyName: "material_order_queue_vendor_id_fkey"
             columns: ["supplier_id"]
             isOneToOne: false
-            referencedRelation: "suppliers"
+            referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
         ]
@@ -5683,10 +5683,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "supplier_lead_times_supplier_id_fkey"
+            foreignKeyName: "supplier_lead_times_vendor_id_fkey"
             columns: ["supplier_id"]
             isOneToOne: false
-            referencedRelation: "suppliers"
+            referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
         ]

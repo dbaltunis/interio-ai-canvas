@@ -41,7 +41,7 @@ export const useMaterialQueue = (filters?: MaterialQueueFilters) => {
         .from('material_order_queue')
         .select(`
           *,
-          suppliers(id, name),
+          vendors:supplier_id(id, name),
           quotes(id, project_name, client_id),
           clients(id, name)
         `)

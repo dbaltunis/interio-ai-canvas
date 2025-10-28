@@ -26,10 +26,10 @@ export const OrderScheduleSettings = () => {
   const updateSettings = useUpdateScheduleSettings();
 
   const { data: suppliers } = useQuery({
-    queryKey: ['suppliers'],
+    queryKey: ['vendors'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('suppliers')
+        .from('vendors')
         .select('*')
         .eq('active', true)
         .order('name');

@@ -47,7 +47,7 @@ export const useBatchOrders = (filters?: { status?: string; supplier_id?: string
         .from('batch_orders')
         .select(`
           *,
-          suppliers(id, name, email, phone)
+          vendors:supplier_id(id, name, email, phone)
         `)
         .order('created_at', { ascending: false });
 

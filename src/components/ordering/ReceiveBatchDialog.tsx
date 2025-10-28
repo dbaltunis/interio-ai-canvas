@@ -97,7 +97,7 @@ export const ReceiveBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }
         <DialogHeader>
           <DialogTitle>Receive Batch Order</DialogTitle>
           <DialogDescription>
-            Record received items for batch #{batchOrder.batch_number} from {batchOrder.suppliers?.name}
+            Record received items for batch #{batchOrder.batch_number} from {batchOrder.vendors?.name}
           </DialogDescription>
         </DialogHeader>
 

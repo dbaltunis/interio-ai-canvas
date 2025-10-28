@@ -80,7 +80,7 @@ export const BatchOrdersList = ({ orders, isLoading }: BatchOrdersListProps) => 
                 <div>
                   <CardTitle className="text-lg">{order.batch_number}</CardTitle>
                   <CardDescription>
-                    {order.suppliers?.name || 'Unknown Supplier'}
+                    {order.vendors?.name || 'Unknown Supplier'}
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-2">

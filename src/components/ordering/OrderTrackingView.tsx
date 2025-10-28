@@ -60,7 +60,7 @@ export const OrderTrackingView = () => {
                   <div>
                     <CardTitle className="text-lg">{order.batch_number}</CardTitle>
                     <CardDescription>
-                      {order.suppliers?.name}
+                      {order.vendors?.name}
                     </CardDescription>
                   </div>
                   <Badge variant={statusColors[order.status as keyof typeof statusColors] || "secondary"}>

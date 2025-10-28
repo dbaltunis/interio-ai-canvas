@@ -37,7 +37,7 @@ export const BatchOrderDetails = ({ batchOrder }: BatchOrderDetailsProps) => {
             <div>
               <CardTitle>Batch Order #{batchOrder.batch_number}</CardTitle>
               <CardDescription>
-                {batchOrder.suppliers?.name}
+                {batchOrder.vendors?.name}
               </CardDescription>
             </div>
             <Badge className={`${config.color} text-white`}>

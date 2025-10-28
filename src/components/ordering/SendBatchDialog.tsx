@@ -46,7 +46,7 @@ export const SendBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: S
       });
 
       // TODO: Send email to supplier if enabled
-      if (sendEmail && batchOrder.suppliers?.email) {
+      if (sendEmail && batchOrder.vendors?.email) {
         toast.info("Email notification feature coming soon");
       }
 
@@ -82,7 +82,7 @@ export const SendBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: S
         <DialogHeader>
           <DialogTitle>Send Batch Order</DialogTitle>
           <DialogDescription>
-            Send batch order #{batchOrder.batch_number} to {batchOrder.suppliers?.name}
+            Send batch order #{batchOrder.batch_number} to {batchOrder.vendors?.name || 'Unknown Supplier'}
           </DialogDescription>
         </DialogHeader>
 
@@ -91,7 +91,7 @@ export const SendBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: S
           <div className="p-4 border rounded-lg bg-muted/50 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Supplier:</span>
-              <span className="font-medium">{batchOrder.suppliers?.name}</span>
+              <span className="font-medium">{batchOrder.vendors?.name}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Total Items:</span>
@@ -101,10 +101,10 @@ export const SendBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: S
               <span className="text-muted-foreground">Total Amount:</span>
               <span className="font-medium">${Number(batchOrder.total_amount || 0).toFixed(2)}</span>
             </div>
-            {batchOrder.suppliers?.email && (
+            {batchOrder.vendors?.email && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Email:</span>
-                <span className="font-medium">{batchOrder.suppliers.email}</span>
+                <span className="font-medium">{batchOrder.vendors.email}</span>
               </div>
             )}
           </div>
@@ -131,7 +131,7 @@ export const SendBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: S
           </div>
 
           {/* Email Option */}
-          {batchOrder.suppliers?.email && (
+          {batchOrder.vendors?.email && (
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="send-email"
