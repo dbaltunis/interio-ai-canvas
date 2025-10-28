@@ -19,6 +19,7 @@ export const JobStatusBadge = ({ statusId, fallbackText = "No Status" }: JobStat
         .from("job_statuses")
         .select("*")
         .eq("id", statusId)
+        .eq("is_active", true)
         .single();
 
       if (error) {
