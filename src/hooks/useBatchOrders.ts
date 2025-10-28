@@ -74,7 +74,12 @@ export const useBatchOrderItems = (batchId: string) => {
         .from('batch_order_items')
         .select(`
           *,
-          material_order_queue(material_type, metadata),
+          material_order_queue(
+            material_type, 
+            metadata,
+            projects!material_order_queue_project_id_fkey(id, job_number, name, client_id),
+            clients(id, name)
+          ),
           quotes(project_name)
         `)
         .eq('batch_order_id', batchId)

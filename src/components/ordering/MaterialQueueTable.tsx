@@ -33,6 +33,22 @@ const priorityLabels = {
   low: "Low",
 };
 
+const statusColors = {
+  pending: "default",
+  in_batch: "secondary",
+  ordered: "default",
+  received: "default",
+  cancelled: "destructive",
+} as const;
+
+const statusLabels = {
+  pending: "Pending",
+  in_batch: "In Batch",
+  ordered: "Ordered",
+  received: "Received",
+  cancelled: "Cancelled",
+};
+
 export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectionChange }: MaterialQueueTableProps) => {
   const deleteMaterial = useDeleteMaterialQueueItem();
 
@@ -76,14 +92,15 @@ export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectio
                 onCheckedChange={handleSelectAll}
               />
             </TableHead>
+            <TableHead>Job #</TableHead>
+            <TableHead>Job Name</TableHead>
+            <TableHead>Client</TableHead>
             <TableHead>Material</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Action Required</TableHead>
             <TableHead className="text-right">Quantity</TableHead>
             <TableHead className="text-right">Unit Cost</TableHead>
             <TableHead className="text-right">Total Cost</TableHead>
             <TableHead>Supplier</TableHead>
-            <TableHead>Job/Client</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead>Priority</TableHead>
             <TableHead className="w-12"></TableHead>
           </TableRow>
@@ -97,23 +114,35 @@ export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectio
                   onCheckedChange={(checked) => handleSelectItem(item.id, !!checked)}
                 />
               </TableCell>
-              <TableCell className="font-medium">{item.material_name}</TableCell>
-              <TableCell className="capitalize">{item.material_type?.replace('_', ' ')}</TableCell>
+              <TableCell className="font-mono text-sm">
+                {item.projects?.job_number || '—'}
+              </TableCell>
+              <TableCell className="font-medium">
+                <div className="max-w-[200px] truncate">
+                  {item.projects?.name || item.quotes?.project_name || '—'}
+                </div>
+              </TableCell>
               <TableCell>
-                {item.metadata?.source_type === 'order_from_supplier' ? (
-                  <Badge variant="default" className="bg-orange-500">Order from Supplier</Badge>
-                ) : item.metadata?.source_type === 'allocate_from_stock' ? (
-                  <Badge variant="secondary">Allocate from Stock</Badge>
-                ) : (
-                  <Badge variant="outline">Process</Badge>
-                )}
+                <div className="max-w-[150px] truncate">
+                  {item.clients?.name || '—'}
+                </div>
+              </TableCell>
+              <TableCell className="font-medium">
+                <div className="max-w-[200px]">
+                  <div className="truncate">{item.material_name}</div>
+                  {item.metadata?.treatment_name && (
+                    <div className="text-xs text-muted-foreground truncate">{item.metadata.treatment_name}</div>
+                  )}
+                </div>
               </TableCell>
               <TableCell className="text-right">
-                {item.quantity} {item.unit}
+                <div className="whitespace-nowrap">
+                  {item.quantity} {item.unit}
+                </div>
                 {item.metadata?.current_stock > 0 && (
-                  <span className="text-xs text-muted-foreground ml-1">
+                  <div className="text-xs text-muted-foreground">
                     ({item.metadata.current_stock} in stock)
-                  </span>
+                  </div>
                 )}
               </TableCell>
               <TableCell className="text-right text-muted-foreground">
@@ -123,15 +152,14 @@ export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectio
                 ${item.total_cost?.toFixed(2) || '0.00'}
               </TableCell>
               <TableCell>
-                {item.vendors?.name || <span className="text-muted-foreground">Unassigned</span>}
+                <div className="max-w-[150px] truncate">
+                  {item.vendors?.name || <span className="text-muted-foreground">Unassigned</span>}
+                </div>
               </TableCell>
               <TableCell>
-                <div className="space-y-0.5">
-                  <div className="font-medium text-sm">{item.quotes?.project_name || '—'}</div>
-                  {item.metadata?.treatment_name && (
-                    <div className="text-xs text-muted-foreground">{item.metadata.treatment_name}</div>
-                  )}
-                </div>
+                <Badge variant={statusColors[item.status as keyof typeof statusColors] || "secondary"}>
+                  {statusLabels[item.status as keyof typeof statusLabels] || item.status}
+                </Badge>
               </TableCell>
               <TableCell>
                 <Badge variant={priorityColors[item.priority as keyof typeof priorityColors] || "secondary"}>

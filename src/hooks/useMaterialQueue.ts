@@ -42,7 +42,8 @@ export const useMaterialQueue = (filters?: MaterialQueueFilters) => {
         .select(`
           *,
           vendors:supplier_id(id, name),
-          quotes(id, quote_number, client_id),
+          quotes(id, quote_number, project_name, client_id),
+          projects!material_order_queue_project_id_fkey(id, job_number, name, client_id),
           clients(id, name)
         `)
         .order('needed_by_date', { ascending: true, nullsFirst: false });
