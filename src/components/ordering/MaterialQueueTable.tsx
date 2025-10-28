@@ -170,29 +170,63 @@ export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectio
                         <Checkbox
                           checked={isSelected}
                           onCheckedChange={(checked) => handleSelectItem(item.id, !!checked)}
-                          className="mt-1"
+                          className="mt-3"
                         />
                         
-                        {/* Material Image Placeholder */}
-                        <div className="w-16 h-16 bg-muted rounded flex items-center justify-center flex-shrink-0">
-                          <Package className="h-6 w-6 text-muted-foreground" />
+                        {/* Material Image */}
+                        <div className="w-20 h-20 bg-muted rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0 border">
+                          {item.inventory_items?.image_url ? (
+                            <img 
+                              src={item.inventory_items.image_url} 
+                              alt={item.material_name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Package className="h-8 w-8 text-muted-foreground" />
+                          )}
                         </div>
 
                         {/* Material Details */}
                         <div className="flex-1 min-w-0 space-y-2">
-                          <div>
-                            <h4 className="font-medium">{item.material_name}</h4>
-                            {item.metadata?.treatment_name && (
-                              <p className="text-xs text-muted-foreground">
-                                For: {item.metadata.treatment_name}
-                              </p>
-                            )}
+                          <div className="flex items-start gap-2">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-base">{item.material_name}</h4>
+                              {item.inventory_items?.description && (
+                                <p className="text-sm text-muted-foreground line-clamp-1">
+                                  {item.inventory_items.description}
+                                </p>
+                              )}
+                              {item.inventory_items?.sku && (
+                                <p className="text-xs text-muted-foreground font-mono">
+                                  SKU: {item.inventory_items.sku}
+                                </p>
+                              )}
+                            </div>
+                            
+                            {/* Workflow Stage Indicator */}
+                            <div className="flex-shrink-0">
+                              {item.metadata?.source_type === 'allocate_from_stock' ? (
+                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
+                                  📦 From Stock
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-300">
+                                  🛒 Order Required
+                                </Badge>
+                              )}
+                            </div>
                           </div>
 
-                          <div className="flex flex-wrap gap-3 text-sm">
+                          {item.metadata?.treatment_name && (
+                            <p className="text-xs text-muted-foreground">
+                              For: <span className="font-medium">{item.metadata.treatment_name}</span>
+                            </p>
+                          )}
+
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
                             <div>
                               <span className="text-muted-foreground">Qty:</span>{' '}
-                              <span className="font-medium">{item.quantity} {item.unit}</span>
+                              <span className="font-semibold">{item.quantity} {item.unit}</span>
                             </div>
                             
                             {canViewCosts && (
@@ -205,7 +239,7 @@ export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectio
                                 <div className="text-muted-foreground">•</div>
                                 <div>
                                   <span className="text-muted-foreground">Total:</span>{' '}
-                                  <span className="font-medium">${item.total_cost?.toFixed(2) || '0.00'}</span>
+                                  <span className="font-semibold">${item.total_cost?.toFixed(2) || '0.00'}</span>
                                 </div>
                               </>
                             )}
@@ -213,8 +247,34 @@ export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectio
                             <div className="text-muted-foreground">•</div>
                             <div>
                               <span className="text-muted-foreground">Supplier:</span>{' '}
-                              <span>{item.vendors?.name || 'Unassigned'}</span>
+                              <span className="font-medium">{item.vendors?.name || 'Unassigned'}</span>
                             </div>
+                            
+                            {item.metadata?.current_stock > 0 && (
+                              <>
+                                <div className="text-muted-foreground">•</div>
+                                <div className="text-green-600 dark:text-green-400">
+                                  <span className="font-medium">{item.metadata.current_stock} in stock</span>
+                                </div>
+                              </>
+                            )}
+                          </div>
+
+                          {/* Responsible Person */}
+                          {item.profiles?.display_name && (
+                            <div className="text-xs text-muted-foreground">
+                              Added by: <span className="font-medium">{item.profiles.display_name}</span>
+                            </div>
+                          )}
+                          
+                          {/* Status Badge */}
+                          <div>
+                            <Badge 
+                              variant={statusColors[item.status as keyof typeof statusColors] || "secondary"}
+                              className="text-xs"
+                            >
+                              {statusLabels[item.status as keyof typeof statusLabels] || item.status}
+                            </Badge>
                           </div>
                         </div>
 
