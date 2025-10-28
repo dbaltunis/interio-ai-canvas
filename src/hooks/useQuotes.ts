@@ -75,12 +75,29 @@ export const useCreateQuote = () => {
         quoteNumber = `QT-${String(((count || 0) + 1)).padStart(4, '0')}`;
       }
 
+      // Get first Quote status (slot 1) if status_id not provided
+      let statusId = quote.status_id;
+      if (!statusId) {
+        const { data: firstStatus } = await supabase
+          .from("job_statuses")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("category", "Quote")
+          .eq("is_active", true)
+          .order("slot_number", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        
+        statusId = firstStatus?.id || null;
+      }
+
       const { data, error } = await supabase
         .from("quotes")
         .insert({
           ...quote,
           user_id: user.id,
-          quote_number: quoteNumber
+          quote_number: quoteNumber,
+          status_id: statusId,
         })
         .select()
         .single();

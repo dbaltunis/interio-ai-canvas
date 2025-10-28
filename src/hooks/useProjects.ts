@@ -61,18 +61,20 @@ export const useCreateProject = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Get default status if status_id not provided
+      // Get first Project status (slot 5) if status_id not provided
       let statusId = project.status_id;
       if (!statusId) {
-        const { data: defaultStatus } = await supabase
+        const { data: firstStatus } = await supabase
           .from("job_statuses")
           .select("id")
           .eq("user_id", user.id)
-          .eq("is_default", true)
+          .eq("category", "Project")
           .eq("is_active", true)
+          .order("slot_number", { ascending: true })
+          .limit(1)
           .maybeSingle();
         
-        statusId = defaultStatus?.id || null;
+        statusId = firstStatus?.id || null;
       }
 
       const { data, error } = await supabase
