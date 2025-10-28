@@ -2902,7 +2902,9 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean
+          is_default: boolean | null
           name: string
+          slot_number: number | null
           sort_order: number | null
           updated_at: string
           user_id: string
@@ -2915,7 +2917,9 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          is_default?: boolean | null
           name: string
+          slot_number?: number | null
           sort_order?: number | null
           updated_at?: string
           user_id: string
@@ -2928,7 +2932,9 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          is_default?: boolean | null
           name?: string
+          slot_number?: number | null
           sort_order?: number | null
           updated_at?: string
           user_id?: string
