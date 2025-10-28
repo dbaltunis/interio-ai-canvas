@@ -28,6 +28,13 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
   const { data: queueItems } = useMaterialQueue({ status: 'pending' });
   const bulkAddToQueue = useBulkAddToQueue();
   
+  console.log('[COMPONENT MOUNT] ProjectMaterialsTab rendered', {
+    projectId,
+    treatmentMaterialsCount: treatmentMaterials.length,
+    selectedCount: selectedMaterials.size,
+    bulkAddToQueueExists: !!bulkAddToQueue
+  });
+  
   const currentQuote = quotes?.find(q => q.project_id === projectId);
   
   // Count materials already in queue for this project
@@ -312,7 +319,10 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
                 </div>
                 <div className="flex gap-2">
                   <Button
-                    onClick={handleSendSelectedToPurchasing}
+                    onClick={(e) => {
+                      console.log('[BUTTON CLICK] Send to Purchasing button clicked', e);
+                      handleSendSelectedToPurchasing();
+                    }}
                     disabled={selectedMaterials.size === 0 || isProcessing}
                     variant="default"
                     size="sm"
