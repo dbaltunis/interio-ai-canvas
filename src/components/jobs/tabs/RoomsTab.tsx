@@ -9,6 +9,8 @@ import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
 import { useWorkroomSync } from "@/hooks/useWorkroomSync";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { EmptyQuoteVersionState } from "@/components/jobs/EmptyQuoteVersionState";
+import { useQuoteVersions } from "@/hooks/useQuoteVersions";
 
 interface RoomsTabProps {
   projectId: string;
@@ -20,9 +22,14 @@ export const RoomsTab = ({ projectId, quoteId }: RoomsTabProps) => {
   const { data: treatments } = useTreatments(projectId, quoteId);
   const { data: rooms } = useRooms(projectId, quoteId);
   const { data: surfaces } = useSurfaces(projectId);
-const { data: projectSummaries } = useProjectWindowSummaries(projectId);
+  const { data: projectSummaries } = useProjectWindowSummaries(projectId);
   const { data: businessSettings } = useBusinessSettings();
+  const { quoteVersions } = useQuoteVersions(projectId);
   const project = projects?.find(p => p.id === projectId);
+  
+  // Find current quote version number
+  const currentQuote = quoteVersions?.find(q => q.id === quoteId);
+  const currentVersion = currentQuote?.version || 1;
 
   // Auto-sync room and treatment data to quotations and workroom
   const quotationSync = useQuotationSync({
@@ -76,6 +83,9 @@ const { data: projectSummaries } = useProjectWindowSummaries(projectId);
   console.log('RoomsTab: Display total (no markup/tax):', displayTotal);
   console.log('RoomsTab: Price source:', summariesTotal > 0 ? 'windows_summary table' : 'treatments table');
 
+  // Check if this is an empty quote version
+  const isEmptyVersion = roomCount === 0 && quoteId;
+
   return (
     <div className="space-y-4">
       {/* Compact Header - Reduced spacing and size */}
@@ -84,6 +94,7 @@ const { data: projectSummaries } = useProjectWindowSummaries(projectId);
           <h2 className="text-lg font-semibold">Rooms & Worksheets</h2>
           <p className="text-sm text-muted-foreground">
             {roomCount} room{roomCount !== 1 ? 's' : ''}, {treatmentCount} treatment{treatmentCount !== 1 ? 's' : ''}
+            {quoteId && ` • Version ${currentVersion}`}
           </p>
         </div>
         <div className="text-right">
@@ -102,8 +113,15 @@ const { data: projectSummaries } = useProjectWindowSummaries(projectId);
         </div>
       </div>
 
-      {/* Enhanced Room Management - This handles all room display and management */}
-      <EnhancedRoomView project={project} clientId={project.client_id} />
+      {/* Show empty state for empty quote versions */}
+      {isEmptyVersion ? (
+        <EmptyQuoteVersionState 
+          currentVersion={currentVersion}
+        />
+      ) : (
+        /* Enhanced Room Management - This handles all room display and management */
+        <EnhancedRoomView project={project} clientId={project.client_id} />
+      )}
     </div>
   );
 };

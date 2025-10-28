@@ -25,6 +25,8 @@ export const useQuoteVersions = (projectId: string) => {
   // Create a new quote version (duplicate current quote with rooms and treatments)
   const duplicateQuote = useMutation({
     mutationFn: async (currentQuote: any) => {
+      console.log('🔄 Starting quote duplication...', { quoteId: currentQuote.id, version: currentQuote.version });
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
@@ -33,12 +35,14 @@ export const useQuoteVersions = (projectId: string) => {
         Math.max(max, (quote as any).version || 1), 0) || 0;
       
       const newVersion = maxVersion + 1;
+      console.log('📊 Version info:', { maxVersion, newVersion });
       
       // Generate new quote number with version
       // Always use the first quote's base number to ensure consistency
       const firstQuote = quoteVersions?.[0];
       const baseQuoteNumber = firstQuote?.quote_number?.split('-v')[0] || currentQuote.quote_number.split('-v')[0];
       const newQuoteNumber = newVersion === 1 ? baseQuoteNumber : `${baseQuoteNumber}-v${newVersion}`;
+      console.log('🔢 Quote numbers:', { baseQuoteNumber, newQuoteNumber });
 
       // Get first "Quote" category status as default (Draft status)
       let firstQuoteStatus = await supabase
@@ -65,6 +69,7 @@ export const useQuoteVersions = (projectId: string) => {
       }
       
       // Create new quote version
+      console.log('➕ Creating new quote...');
       const { data: newQuote, error: quoteError } = await supabase
         .from("quotes")
         .insert({
@@ -81,62 +86,120 @@ export const useQuoteVersions = (projectId: string) => {
         .select()
         .single();
 
-      if (quoteError) throw quoteError;
+      if (quoteError) {
+        console.error('❌ Failed to create quote:', quoteError);
+        throw quoteError;
+      }
+      
+      console.log('✅ Quote created:', newQuote.id);
       
       // Duplicate rooms linked to the current quote (by quote_id)
-      const { data: rooms } = await supabase
+      console.log('🏠 Fetching rooms for quote:', currentQuote.id);
+      const { data: rooms, error: roomsFetchError } = await supabase
         .from("rooms")
         .select("*")
         .eq("quote_id", currentQuote.id);
       
+      if (roomsFetchError) {
+        console.error('❌ Failed to fetch rooms:', roomsFetchError);
+        throw new Error(`Failed to fetch rooms: ${roomsFetchError.message}`);
+      }
+      
+      console.log('📦 Found rooms:', rooms?.length || 0);
+      
       if (rooms && rooms.length > 0) {
         const roomsToInsert = rooms.map(room => ({
-          ...room,
-          id: undefined,
+          project_id: room.project_id,
           quote_id: newQuote.id,
-          created_at: undefined,
-          updated_at: undefined,
+          name: room.name,
+          room_type: room.room_type,
+          notes: room.notes,
+          user_id: room.user_id,
         }));
         
+        console.log('🏗️ Inserting rooms:', roomsToInsert.length);
         const { data: newRooms, error: roomsError } = await supabase
           .from("rooms")
           .insert(roomsToInsert)
           .select();
         
-        if (roomsError) console.error("Error duplicating rooms:", roomsError);
+        if (roomsError) {
+          console.error('❌ Failed to duplicate rooms:', roomsError);
+          throw new Error(`Failed to duplicate rooms: ${roomsError.message}`);
+        }
+        
+        console.log('✅ Rooms duplicated:', newRooms?.length || 0);
         
         // Create room ID mapping for treatments
-        if (newRooms) {
+        if (newRooms && newRooms.length > 0) {
           const roomIdMap = new Map();
           rooms.forEach((oldRoom, index) => {
-            roomIdMap.set(oldRoom.id, newRooms[index]?.id);
+            if (newRooms[index]) {
+              roomIdMap.set(oldRoom.id, newRooms[index].id);
+              console.log(`🔗 Room mapping: ${oldRoom.name} (${oldRoom.id}) -> (${newRooms[index].id})`);
+            }
           });
           
           // Duplicate treatments (by quote_id)
-          const { data: treatments } = await supabase
+          console.log('🎨 Fetching treatments for quote:', currentQuote.id);
+          const { data: treatments, error: treatmentsFetchError } = await supabase
             .from("treatments")
             .select("*")
             .eq("quote_id", currentQuote.id);
           
+          if (treatmentsFetchError) {
+            console.error('❌ Failed to fetch treatments:', treatmentsFetchError);
+            throw new Error(`Failed to fetch treatments: ${treatmentsFetchError.message}`);
+          }
+          
+          console.log('📦 Found treatments:', treatments?.length || 0);
+          
           if (treatments && treatments.length > 0) {
             const treatmentsToInsert = treatments.map(treatment => ({
-              ...treatment,
-              id: undefined,
+              project_id: treatment.project_id,
               quote_id: newQuote.id,
               room_id: roomIdMap.get(treatment.room_id) || treatment.room_id,
-              created_at: undefined,
-              updated_at: undefined,
+              window_id: treatment.window_id,
+              treatment_type: treatment.treatment_type,
+              product_name: treatment.product_name,
+              quantity: treatment.quantity,
+              unit_price: treatment.unit_price,
+              total_price: treatment.total_price,
+              material_cost: treatment.material_cost,
+              labor_cost: treatment.labor_cost,
+              measurements: treatment.measurements,
+              fabric_details: treatment.fabric_details,
+              treatment_details: treatment.treatment_details,
+              calculation_details: treatment.calculation_details,
+              notes: treatment.notes,
+              user_id: treatment.user_id,
+              color: treatment.color,
+              fabric_type: treatment.fabric_type,
+              hardware: treatment.hardware,
             }));
             
+            console.log('🎨 Inserting treatments:', treatmentsToInsert.length);
             const { error: treatmentsError } = await supabase
               .from("treatments")
               .insert(treatmentsToInsert);
             
-            if (treatmentsError) console.error("Error duplicating treatments:", treatmentsError);
+            if (treatmentsError) {
+              console.error('❌ Failed to duplicate treatments:', treatmentsError);
+              throw new Error(`Failed to duplicate treatments: ${treatmentsError.message}`);
+            }
+            
+            console.log('✅ Treatments duplicated successfully');
+          } else {
+            console.log('ℹ️ No treatments to duplicate');
           }
+        } else {
+          console.log('⚠️ No new rooms created, skipping treatment duplication');
         }
+      } else {
+        console.log('ℹ️ No rooms to duplicate');
       }
 
+      console.log('🎉 Quote duplication completed successfully');
       return newQuote;
     },
     onSuccess: (newQuote) => {

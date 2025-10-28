@@ -35,6 +35,8 @@ import { useClients } from "@/hooks/useClients";
 import { QuotationSkeleton } from "@/components/jobs/quotation/QuotationSkeleton";
 import { QuotePreview } from "@/components/quotation/QuotePreview";
 import { WorkOrderView } from "@/components/quotation/WorkOrderView";
+import { EmptyQuoteVersionState } from "@/components/jobs/EmptyQuoteVersionState";
+import { useQuoteVersions } from "@/hooks/useQuoteVersions";
 
 interface QuotationTabProps {
   projectId: string;
@@ -64,6 +66,14 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   const { data: surfaces } = useSurfaces(projectId);
   const { data: projectSummaries } = useProjectWindowSummaries(projectId);
   const { data: businessSettings } = useBusinessSettings();
+  const { quoteVersions } = useQuoteVersions(projectId);
+  
+  // Find current quote version number
+  const currentQuote = quoteVersions?.find(q => q.id === quoteId);
+  const currentVersion = currentQuote?.version || 1;
+  
+  // Check if this is an empty quote version
+  const isEmptyVersion = (rooms?.length || 0) === 0 && quoteId;
   
   // Fetch client data for the project
   const { data: client } = useQuery({
@@ -608,7 +618,11 @@ const projectData = {
       />
 
       {/* Quote Document Preview - Centered and properly scaled */}
-      {selectedTemplate && (
+      {isEmptyVersion ? (
+        <EmptyQuoteVersionState 
+          currentVersion={currentVersion}
+        />
+      ) : selectedTemplate ? (
         <section className="mt-2 sm:mt-4" key={`preview-${projectSummaries?.projectTotal}-${quotationData.total}-${selectedTemplateId}`}>
           <div className="w-full flex justify-center">
             <div className="transform scale-[0.38] sm:scale-[0.55] md:scale-[0.65] lg:scale-75 xl:scale-90 origin-top">
@@ -645,7 +659,7 @@ const projectData = {
             </div>
           </div>
         </section>
-      )}
+      ) : null}
       <JobNotesDialog
         open={notesOpen}
         onOpenChange={(open) => { setNotesOpen(open); if (!open) setSelectedQuote(null); }}
