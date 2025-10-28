@@ -37,6 +37,8 @@ export const useMaterialQueue = (filters?: MaterialQueueFilters) => {
   return useQuery({
     queryKey: ['material-queue-v2', filters],
     queryFn: async () => {
+      console.log('[useMaterialQueue] Fetching with filters:', filters);
+      
       let query = supabase
         .from('material_order_queue')
         .select(`
@@ -68,7 +70,16 @@ export const useMaterialQueue = (filters?: MaterialQueueFilters) => {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      console.log('[useMaterialQueue] Query result:', { 
+        dataCount: data?.length, 
+        error,
+        firstItem: data?.[0]
+      });
+
+      if (error) {
+        console.error('[useMaterialQueue] Query error:', error);
+        throw error;
+      }
       return data as any[];
     },
   });

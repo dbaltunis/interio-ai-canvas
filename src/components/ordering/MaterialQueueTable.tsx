@@ -162,16 +162,16 @@ export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectio
                   const isSelected = selectedItems.includes(item.id);
                   
                   return (
-                    <div 
-                      key={item.id}
-                      className="p-4 hover:bg-muted/30 transition-colors"
-                    >
-                      <div className="flex items-start gap-3">
-                        <Checkbox
-                          checked={isSelected}
-                          onCheckedChange={(checked) => handleSelectItem(item.id, !!checked)}
-                          className="mt-3"
-                        />
+                      <div 
+                        key={item.id}
+                        className="p-4 hover:bg-muted/30 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={(checked) => handleSelectItem(item.id, !!checked)}
+                            className="self-start mt-2"
+                          />
                         
                         {/* Material Image */}
                         <div className="w-20 h-20 bg-muted rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0 border">
