@@ -35,7 +35,7 @@ export interface MaterialQueueFilters {
 
 export const useMaterialQueue = (filters?: MaterialQueueFilters) => {
   return useQuery({
-    queryKey: ['material-queue', filters],
+    queryKey: ['material-queue-v2', filters],
     queryFn: async () => {
       let query = supabase
         .from('material_order_queue')
@@ -121,7 +121,7 @@ export const useCreateMaterialQueueItem = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['material-queue'] });
+      queryClient.invalidateQueries({ queryKey: ['material-queue-v2'] });
       queryClient.invalidateQueries({ queryKey: ['material-queue-stats'] });
       toast.success('Material added to queue');
     },
@@ -147,7 +147,7 @@ export const useUpdateMaterialQueueItem = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['material-queue'] });
+      queryClient.invalidateQueries({ queryKey: ['material-queue-v2'] });
       queryClient.invalidateQueries({ queryKey: ['material-queue-stats'] });
     },
     onError: (error: any) => {
@@ -169,7 +169,7 @@ export const useDeleteMaterialQueueItem = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['material-queue'] });
+      queryClient.invalidateQueries({ queryKey: ['material-queue-v2'] });
       queryClient.invalidateQueries({ queryKey: ['material-queue-stats'] });
       toast.success('Material removed from queue');
     },
@@ -247,7 +247,7 @@ export const useBulkAddToQueue = () => {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['material-queue'] });
+      queryClient.invalidateQueries({ queryKey: ['material-queue-v2'] });
       queryClient.invalidateQueries({ queryKey: ['material-queue-stats'] });
       queryClient.invalidateQueries({ queryKey: ['treatment-materials-status'] });
     },
