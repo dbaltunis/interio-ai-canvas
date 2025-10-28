@@ -38,13 +38,13 @@ export const JobStatusDropdown = ({
   const canViewAllJobs = useHasPermission('view_all_jobs');
   const canEditJobs = canCreateJobs || canViewAllJobs;
 
-  // Filter statuses based on job type - show all statuses for projects
+  // Filter statuses based on job type
   const availableStatuses = jobStatuses.filter(status => {
     if (jobType === "quote") {
       return status.category.toLowerCase() === "quote";
     } else {
-      // For projects, show all statuses (no category restriction)
-      return true;
+      // For projects, only show Project category statuses
+      return status.category.toLowerCase() === "project";
     }
   });
 
