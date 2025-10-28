@@ -181,21 +181,35 @@ export const useBulkAddToQueue = () => {
 
   return useMutation({
     mutationFn: async (items: Partial<MaterialQueueItem>[]) => {
+      console.log('[useBulkAddToQueue] Inserting items:', items);
+      
       const { data, error } = await supabase
         .from('material_order_queue')
         .insert(items as any)
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useBulkAddToQueue] Insert failed:', {
+          error,
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
+        throw error;
+      }
+      
+      console.log('[useBulkAddToQueue] Insert successful:', data);
       return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['material-queue'] });
       queryClient.invalidateQueries({ queryKey: ['material-queue-stats'] });
-      toast.success(`${data.length} materials added to queue`);
+      // Don't show toast here - let the component show a more detailed success message
     },
     onError: (error: any) => {
-      toast.error('Failed to add materials: ' + error.message);
+      console.error('[useBulkAddToQueue] Mutation error:', error);
+      // Don't show toast here - let the component handle the error display
     },
   });
 };
