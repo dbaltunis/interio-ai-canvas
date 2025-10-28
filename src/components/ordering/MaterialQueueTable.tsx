@@ -260,12 +260,6 @@ export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectio
                             )}
                           </div>
 
-                          {/* Responsible Person */}
-                          {item.profiles?.display_name && (
-                            <div className="text-xs text-muted-foreground">
-                              Added by: <span className="font-medium">{item.profiles.display_name}</span>
-                            </div>
-                          )}
                           
                           {/* Status Badge */}
                           <div>
