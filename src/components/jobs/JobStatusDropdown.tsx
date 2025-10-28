@@ -94,11 +94,6 @@ export const JobStatusDropdown = ({
       
       onStatusChange?.(statusName);
       setIsOpen(false);
-      
-      toast({
-        title: "Success",
-        description: `${jobType === "quote" ? "Quote" : "Project"} status updated to ${statusName}`,
-      });
     } catch (error) {
       console.error("Error updating status:", error);
       toast({

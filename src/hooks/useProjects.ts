@@ -121,10 +121,6 @@ export const useUpdateProject = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast({
-        title: "Success",
-        description: "Project updated successfully",
-      });
     },
     onError: (error: any) => {
       toast({

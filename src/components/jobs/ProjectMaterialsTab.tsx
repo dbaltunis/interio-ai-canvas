@@ -14,7 +14,6 @@ import { useNavigate } from "react-router-dom";
 import { useQuotes } from "@/hooks/useQuotes";
 import { supabase } from "@/integrations/supabase/client";
 import { MaterialsWorkflowStatus } from "./MaterialsWorkflowStatus";
-import { StatusUpdatePrompt } from "./StatusUpdatePrompt";
 import { useProjects } from "@/hooks/useProjects";
 import { formatCurrency } from "@/utils/currency";
 import { useTreatmentMaterialsStatus } from "@/hooks/useProjectMaterialsStatus";
@@ -28,7 +27,6 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedMaterials, setSelectedMaterials] = useState<Set<string>>(new Set());
-  const [showStatusPrompt, setShowStatusPrompt] = useState(false);
   const { data: inventory } = useEnhancedInventory();
   const { data: treatmentMaterials = [], isLoading: materialsLoading } = useProjectMaterialsUsage(projectId);
   const { data: quotes } = useQuotes();
@@ -130,12 +128,6 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
       
       // Clear selection and invalidate queries to refresh the display
       setSelectedMaterials(new Set());
-      
-      // Prompt to update job status if in quote/draft stage
-      const currentStatus = currentProject?.status?.toLowerCase() || '';
-      if (['quote', 'draft', 'pending', 'sent'].includes(currentStatus)) {
-        setShowStatusPrompt(true);
-      }
     } catch (error: any) {
       console.error("[SEND TO PURCHASING] Failed to send materials:", {
         error,
@@ -264,14 +256,6 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
     <div className="space-y-6">
       {/* Materials Workflow Status */}
       <MaterialsWorkflowStatus projectId={projectId} />
-      
-      {/* Status Update Prompt Dialog */}
-      <StatusUpdatePrompt
-        open={showStatusPrompt}
-        onOpenChange={setShowStatusPrompt}
-        projectId={projectId}
-        currentStatus={currentProject?.status || 'quote'}
-      />
       
       {/* Warning Banner when no materials found */}
       {displayMaterials.length === 0 && (

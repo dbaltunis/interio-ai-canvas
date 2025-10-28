@@ -189,12 +189,12 @@ export const useUpdateQuote = () => {
       });
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(["quotes"], (old: any) => {
-        if (!old) return [data];
-        return old.map((quote: any) => 
-          quote.id === data.id ? data : quote
-        );
-      });
+      // Invalidate all quote-related queries to ensure UI updates
+      queryClient.invalidateQueries({ queryKey: ["quotes"] });
+      queryClient.invalidateQueries({ queryKey: ["quote-versions"] });
+      if (data.project_id) {
+        queryClient.invalidateQueries({ queryKey: ["quotes", data.project_id] });
+      }
     }
   });
 };
