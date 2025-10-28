@@ -32,6 +32,14 @@ export const SeedJobStatuses = () => {
   const activeStatuses = existingStatuses.filter(s => s.is_active);
   const shouldShowSeed = activeStatuses.length < 10;
 
+  console.log('[SeedJobStatuses] Debug:', {
+    isLoading,
+    totalStatuses: existingStatuses.length,
+    activeStatuses: activeStatuses.length,
+    shouldShowSeed,
+    seeded
+  });
+
   const handleSeed = async () => {
     setIsSeeding(true);
     try {
