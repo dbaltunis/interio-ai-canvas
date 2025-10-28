@@ -37,13 +37,14 @@ export const ProjectOverview = ({
   const { toast } = useToast();
   
   // Check if status allows editing
-  const { canEdit, isLocked, statusInfo } = useStatusPermissions(project?.status);
+  const statusPermissions = useStatusPermissions(project?.status_id);
+  const { canEdit, isLocked, statusInfo } = statusPermissions.data || { canEdit: true, isLocked: false, statusInfo: null };
   
   const handleActionClick = (action: () => void) => {
     if (!canEdit) {
       toast({
         title: "Action Not Allowed",
-        description: `Project is ${statusInfo?.action === 'locked' ? 'locked' : 'read-only'} in ${project?.status} status`,
+        description: `Project is ${statusInfo?.action === 'locked' ? 'locked' : 'read-only'} in ${statusInfo?.name || 'this'} status`,
         variant: "destructive"
       });
       return;

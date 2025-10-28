@@ -1,17 +1,35 @@
 
 import { Badge } from "@/components/ui/badge";
-import { useJobStatuses } from "@/hooks/useJobStatuses";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface JobStatusBadgeProps {
-  status: string;
+  statusId: string | null | undefined;
+  fallbackText?: string;
 }
 
-export const JobStatusBadge = ({ status }: JobStatusBadgeProps) => {
-  const { data: jobStatuses = [] } = useJobStatuses();
+export const JobStatusBadge = ({ statusId, fallbackText = "No Status" }: JobStatusBadgeProps) => {
+  // Fetch status details by ID
+  const { data: statusDetails } = useQuery({
+    queryKey: ["job_status", statusId],
+    queryFn: async () => {
+      if (!statusId) return null;
+      
+      const { data, error } = await supabase
+        .from("job_statuses")
+        .select("*")
+        .eq("id", statusId)
+        .single();
 
-  // Find the status details from the database - exact match first, then case-insensitive
-  const statusDetails = jobStatuses.find(s => s.name === status) || 
-                        jobStatuses.find(s => s.name.toLowerCase() === status.toLowerCase());
+      if (error) {
+        console.error("Error fetching status:", error);
+        return null;
+      }
+      return data;
+    },
+    enabled: !!statusId,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const getStatusColor = (color: string) => {
     const colorMap: Record<string, string> = {
@@ -30,9 +48,7 @@ export const JobStatusBadge = ({ status }: JobStatusBadgeProps) => {
     ? getStatusColor(statusDetails.color)
     : 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700/50 dark:text-gray-200 dark:border-gray-600';
 
-  const displayLabel = statusDetails 
-    ? statusDetails.name
-    : status?.charAt(0).toUpperCase() + status?.slice(1).replace('_', ' ') || "Unknown";
+  const displayLabel = statusDetails ? statusDetails.name : fallbackText;
 
   return (
     <Badge className={`${displayColor} font-medium px-2 py-1 text-xs`}>

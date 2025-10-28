@@ -17,17 +17,12 @@ export const useJobStatuses = () => {
       const { data, error } = await supabase
         .from("job_statuses")
         .select("*")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
+        .eq("user_id", user.id)
+        .order("slot_number", { ascending: true });
 
       if (error) throw error;
       
-      // Filter to show statuses created by the current user
-      const filteredData = (data || []).filter(status => {
-        return status.user_id === user.id;
-      });
-      
-      return filteredData;
+      return data || [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes

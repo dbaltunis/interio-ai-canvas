@@ -509,7 +509,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
         );
       
       case 'status':
-        return <JobStatusBadge status={project.status || 'draft'} />;
+        return <JobStatusBadge statusId={project.status_id || null} fallbackText={project.status || "No Status"} />;
       
       case 'created':
         return (
@@ -703,7 +703,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
                       </TableCell>
                       <TableCell className="py-2">
                         <div className="flex items-center gap-2">
-                          <JobStatusBadge status={quote.status || 'draft'} />
+                          <JobStatusBadge statusId={quote.status_id || null} fallbackText={quote.status || "No Status"} />
                           {quote.status === 'sent' && (
                             <Badge variant="outline" className="text-xs">
                               Sent

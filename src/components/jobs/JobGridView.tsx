@@ -32,7 +32,7 @@ export const JobGridView = ({ jobs, onJobView, onJobEdit, onJobCopy }: JobGridVi
                     {formatJobNumber(job.job_number)}
                   </span>
                 </div>
-                <JobStatusBadge status={job.status} />
+                <JobStatusBadge statusId={job.status_id || null} fallbackText={job.status || "No Status"} />
               </div>
               <div onClick={(e) => e.stopPropagation()}>
                 <JobActionsMenu 

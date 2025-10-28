@@ -4696,6 +4696,7 @@ export type Database = {
           source: string | null
           start_date: string | null
           status: string | null
+          status_id: string | null
           updated_at: string
           user_id: string
         }
@@ -4716,6 +4717,7 @@ export type Database = {
           source?: string | null
           start_date?: string | null
           status?: string | null
+          status_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -4736,6 +4738,7 @@ export type Database = {
           source?: string | null
           start_date?: string | null
           status?: string | null
+          status_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -4767,6 +4770,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "projects_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "job_statuses"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -4977,6 +4987,7 @@ export type Database = {
           project_id: string | null
           quote_number: string | null
           status: string | null
+          status_id: string | null
           subtotal: number | null
           tax_amount: number | null
           tax_rate: number | null
@@ -4995,6 +5006,7 @@ export type Database = {
           project_id?: string | null
           quote_number?: string | null
           status?: string | null
+          status_id?: string | null
           subtotal?: number | null
           tax_amount?: number | null
           tax_rate?: number | null
@@ -5013,6 +5025,7 @@ export type Database = {
           project_id?: string | null
           quote_number?: string | null
           status?: string | null
+          status_id?: string | null
           subtotal?: number | null
           tax_amount?: number | null
           tax_rate?: number | null
@@ -5042,6 +5055,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "job_statuses"
             referencedColumns: ["id"]
           },
         ]

@@ -305,7 +305,7 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
                         <span className="text-xs font-mono text-muted-foreground">
                           {formatJobNumber(project?.job_number || quote.quote_number)}
                         </span>
-                        <JobStatusBadge status={project?.status || quote.status} />
+                        <JobStatusBadge statusId={project?.status_id || null} fallbackText={project?.status || quote.status || "No Status"} />
                       </div>
                       <h4 className="font-semibold text-sm line-clamp-1">
                         {clientName.length > 14 ? clientName.substring(0, 14) + '...' : clientName}
