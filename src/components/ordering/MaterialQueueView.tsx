@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, PackagePlus } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { PackagePlus, Info } from "lucide-react";
 import { useMaterialQueue } from "@/hooks/useMaterialQueue";
 import { MaterialQueueTable } from "./MaterialQueueTable";
 import { CreateBatchDialog } from "./CreateBatchDialog";
@@ -16,8 +17,30 @@ export const MaterialQueueView = () => {
     setShowCreateBatch(true);
   };
 
+  // Group items by project for display
+  const itemsByProject = queueItems?.reduce((acc, item) => {
+    const projectId = item.project_id || 'unassigned';
+    if (!acc[projectId]) {
+      acc[projectId] = [];
+    }
+    acc[projectId].push(item);
+    return acc;
+  }, {} as Record<string, any[]>);
+
   return (
     <>
+      {queueItems && queueItems.length > 0 && (
+        <Alert className="mb-4 border-blue-500/50 bg-blue-50 dark:bg-blue-950/20">
+          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <AlertDescription className="text-blue-900 dark:text-blue-100">
+            <span className="font-medium">{queueItems.length} material{queueItems.length !== 1 ? 's' : ''}</span> waiting to be ordered
+            {itemsByProject && Object.keys(itemsByProject).length > 1 && (
+              <span> from {Object.keys(itemsByProject).length} project{Object.keys(itemsByProject).length !== 1 ? 's' : ''}</span>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">

@@ -2,15 +2,14 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, AlertCircle, Sparkles, FileDown, Wand2 } from "lucide-react";
+import { Package, AlertCircle, ShoppingCart, FileDown, Loader2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useProjectMaterialsUsage } from "@/hooks/useProjectMaterialsUsage";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useConvertQuoteToMaterials } from "@/hooks/useConvertQuoteToMaterials";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useCreateMaterialQueueItem } from "@/hooks/useMaterialQueue";
+import { useMaterialQueue, useBulkAddToQueue } from "@/hooks/useMaterialQueue";
 import { useNavigate } from "react-router-dom";
 import { useQuotes } from "@/hooks/useQuotes";
 
@@ -20,26 +19,30 @@ interface ProjectMaterialsTabProps {
 
 export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
   const navigate = useNavigate();
-  const [showProcessDialog, setShowProcessDialog] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [selectedMaterials, setSelectedMaterials] = useState<Set<string>>(new Set());
   const { data: inventory } = useEnhancedInventory();
   const { data: treatmentMaterials = [], isLoading: materialsLoading } = useProjectMaterialsUsage(projectId);
   const { data: quotes } = useQuotes();
+  const { data: queueItems } = useMaterialQueue({ status: 'pending' });
   const convertMaterials = useConvertQuoteToMaterials();
-  const createQueueItem = useCreateMaterialQueueItem();
+  const bulkAddToQueue = useBulkAddToQueue();
   
   const currentQuote = quotes?.find(q => q.project_id === projectId);
   
+  // Count materials already in queue for this project
+  const materialsInQueue = useMemo(() => {
+    return queueItems?.filter(item => item.project_id === projectId).length || 0;
+  }, [queueItems, projectId]);
+  
   const handleProcessMaterials = async () => {
+    setIsProcessing(true);
     try {
-      console.log('[MATERIALS] Processing materials - checking treatmentMaterials:', treatmentMaterials);
-      
       if (treatmentMaterials.length === 0) {
         toast.error("No materials found to process", {
           description: "Go to 'Rooms & Treatments' tab, select a window, configure the treatment, select a fabric, and click 'Save Configuration' first.",
           duration: 8000
         });
-        setShowProcessDialog(false);
         return;
       }
 
@@ -52,8 +55,6 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
         currentQuantity: m.currentQuantity
       }));
       
-      console.log('[MATERIALS] Processing materials:', materialsToProcess);
-      
       const result = await convertMaterials.mutateAsync({ 
         projectId, 
         materials: materialsToProcess 
@@ -62,49 +63,50 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
       // Add out-of-stock materials to ordering queue
       const outOfStockItems = materialsToProcess.filter(m => m.currentQuantity < m.quantityUsed);
       
-      if (outOfStockItems.length > 0 && currentQuote) {
-        console.log('[MATERIALS] Adding out-of-stock items to ordering queue:', outOfStockItems);
-        
-        for (const item of outOfStockItems) {
+      if (outOfStockItems.length > 0) {
+        const queueItems = outOfStockItems.map(item => {
           const inventoryItem = inventory?.find(inv => inv.id === item.itemId);
           const neededQuantity = item.quantityUsed - (item.currentQuantity || 0);
           
-          await createQueueItem.mutateAsync({
-            quote_id: currentQuote.id,
+          return {
+            quote_id: currentQuote?.id,
             project_id: projectId,
-            client_id: currentQuote.client_id,
+            client_id: currentQuote?.client_id,
             inventory_item_id: item.itemId,
             material_name: item.itemName,
             material_type: inventoryItem?.category || 'material',
             quantity: neededQuantity,
             unit: item.unit,
             supplier_id: inventoryItem?.vendor_id,
-            priority: 'high',
+            priority: 'high' as const,
             unit_cost: inventoryItem?.cost_price || 0,
-            status: 'pending'
-          });
-        }
+            total_cost: (inventoryItem?.cost_price || 0) * neededQuantity,
+            status: 'pending' as const
+          };
+        });
         
-        toast.success("✓ Materials processed successfully!", {
+        await bulkAddToQueue.mutateAsync(queueItems);
+        
+        toast.success("✓ Materials sent to purchasing!", {
           description: `${result.inStockCount || 0} in stock, ${result.outOfStockCount || 0} sent to purchasing queue`,
           action: {
-            label: "Go to Purchasing →",
+            label: "View in Purchasing →",
             onClick: () => navigate('/?tab=ordering-hub')
           },
           duration: 10000
         });
       } else {
-        toast.success("Materials processed successfully!", {
-          description: `Processed ${materialsToProcess.length} material(s)`
+        toast.success("All materials are in stock!", {
+          description: `${result.inStockCount || 0} material(s) available in inventory`
         });
       }
-      
-      setShowProcessDialog(false);
     } catch (error: any) {
       console.error("Failed to process materials:", error);
       toast.error("Failed to process materials", {
         description: error.message || "Please check console for details"
       });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -238,32 +240,50 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
           <div className="flex items-start justify-between">
             <div className="space-y-1">
               <CardTitle className="flex items-center gap-2">
-                <Wand2 className="h-5 w-5 text-primary" />
-                Automatic Material Processing
+                <ShoppingCart className="h-5 w-5 text-primary" />
+                Send to Purchasing
               </CardTitle>
               <CardDescription>
-                Check inventory, allocate stock, and send items to purchasing queue automatically
+                Check inventory levels and send out-of-stock items to purchasing queue
               </CardDescription>
             </div>
-            <Button onClick={() => setShowProcessDialog(true)} size="lg" className="gap-2">
-              <Sparkles className="h-4 w-4" />
-              Process Quote Materials
-            </Button>
+            <div className="flex items-center gap-3">
+              {materialsInQueue > 0 && (
+                <Badge variant="secondary" className="gap-1.5">
+                  <Package className="h-3 w-3" />
+                  {materialsInQueue} in queue
+                </Badge>
+              )}
+              <Button 
+                onClick={handleProcessMaterials} 
+                size="lg" 
+                className="gap-2"
+                disabled={isProcessing || treatmentMaterials.length === 0}
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="h-4 w-4" />
+                    Send to Purchasing
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4 text-sm">
+          <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-green-500" />
-              <span>Items in stock → Allocate from inventory</span>
+              <span>In stock → No action needed</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-orange-500" />
-              <span>Out of stock → Send to purchasing queue</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-blue-500" />
-              <span>Auto-match suppliers & create batches</span>
+              <span>Out of stock → Added to purchasing queue</span>
             </div>
           </div>
         </CardContent>
@@ -274,7 +294,7 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
+              <Package className="h-5 w-5 text-primary" />
               <CardTitle>Materials from Treatments</CardTitle>
             </div>
             <div className="flex items-center gap-2">
@@ -395,54 +415,6 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
           )}
         </CardContent>
       </Card>
-
-      {/* Material Processing Confirmation Dialog */}
-      <Dialog open={showProcessDialog} onOpenChange={setShowProcessDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Automatic Material Processing</DialogTitle>
-            <DialogDescription>
-              This will analyze your quote and automatically:
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid gap-3">
-              <div className="flex items-start gap-3 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
-                <div className="h-2 w-2 rounded-full bg-green-500 mt-2" />
-                <div>
-                  <p className="font-medium text-green-900 dark:text-green-100">Deduct from Inventory</p>
-                  <p className="text-sm text-green-700 dark:text-green-300">Materials in stock will be automatically allocated and deducted from your inventory</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3 p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                <div className="h-2 w-2 rounded-full bg-orange-500 mt-2" />
-                <div>
-                  <p className="font-medium text-orange-900 dark:text-orange-100">Send to Purchasing Queue</p>
-                  <p className="text-sm text-orange-700 dark:text-orange-300">Out-of-stock materials are sent to the Purchasing tab where you can create supplier orders</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <div className="h-2 w-2 rounded-full bg-blue-500 mt-2" />
-                <div>
-                  <p className="font-medium text-blue-900 dark:text-blue-100">Vendor Matching</p>
-                  <p className="text-sm text-blue-700 dark:text-blue-300">System will automatically match materials to your preferred vendors</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setShowProcessDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleProcessMaterials} disabled={convertMaterials.isPending}>
-                {convertMaterials.isPending ? 'Processing...' : 'Process Materials'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

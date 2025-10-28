@@ -2,12 +2,14 @@
 import React, { useState } from 'react';
 import { BrandHeader } from './BrandHeader';
 import { UserProfile } from './UserProfile';
+import { Badge } from '@/components/ui/badge';
 // Removed NotificationDropdown - simplified UI
 import { TeamCollaborationCenter } from '../collaboration/TeamCollaborationCenter';
 import { AINotificationToast } from '../collaboration/AINotificationToast';
 import { Button } from '@/components/ui/button';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
+import { useMaterialQueueCount } from '@/hooks/useMaterialQueueCount';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -34,7 +36,7 @@ const navItems = [
   { id: "quotes", label: "Emails", icon: FileText, tourId: "emails-tab" },
   { id: "calendar", label: "Calendar", icon: Calendar, tourId: "calendar-tab" },
   { id: "inventory", label: "Library", icon: Package, tourId: "library-tab" },
-  { id: "ordering-hub", label: "Purchasing", icon: ShoppingCart, tourId: "ordering-hub-tab" },
+  { id: "ordering-hub", label: "Purchasing", icon: ShoppingCart, tourId: "ordering-hub-tab", badge: true },
 ];
 
 export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderProps) => {
@@ -45,6 +47,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   
   const { activeUsers, currentUser } = useUserPresence();
   const { conversations } = useDirectMessages();
+  const { data: queueCount } = useMaterialQueueCount();
   
   // Check if there are other active users or unread messages
   const otherActiveUsers = activeUsers.filter(user => user.user_id !== currentUser?.user_id && user.status === 'online');
@@ -67,12 +70,14 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
           <nav className="flex items-center space-x-2 lg:space-x-3">
             {navItems.map((item) => {
               const Icon = item.icon;
+              const showBadge = item.badge && queueCount && queueCount > 0;
+              
               return (
                 <button
                   key={item.id}
                   onClick={() => onTabChange(item.id)}
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative",
                     activeTab === item.id 
                       ? "bg-primary text-primary-foreground shadow-sm border border-primary/20" 
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
@@ -84,6 +89,14 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                     activeTab === item.id && "scale-110"
                   )} />
                   <span className={cn(activeTab === item.id && "font-semibold")}>{item.label}</span>
+                  {showBadge && (
+                    <Badge 
+                      variant="destructive" 
+                      className="h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]"
+                    >
+                      {queueCount}
+                    </Badge>
+                  )}
                 </button>
               );
             })}

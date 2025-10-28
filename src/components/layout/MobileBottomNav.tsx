@@ -16,6 +16,7 @@ import { UserProfile } from "./UserProfile";
 import { useUserPresence } from "@/hooks/useUserPresence";
 import { useDirectMessages } from "@/hooks/useDirectMessages";
 import { TeamCollaborationCenter } from "../collaboration/TeamCollaborationCenter";
+import { useMaterialQueueCount } from "@/hooks/useMaterialQueueCount";
 
 interface MobileBottomNavProps {
   activeTab: string;
@@ -25,7 +26,7 @@ interface MobileBottomNavProps {
 const navItems = [
   { id: "projects", label: "Jobs", icon: FolderOpen },
   { id: "clients", label: "Clients", icon: Users },
-  { id: "ordering-hub", label: "Purchasing", icon: ShoppingCart },
+  { id: "ordering-hub", label: "Purchasing", icon: ShoppingCart, badge: true },
   { id: "calendar", label: "Calendar", icon: Calendar },
   { id: "inventory", label: "Library", icon: Package },
 ];
@@ -36,6 +37,7 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
   
   const { activeUsers, currentUser } = useUserPresence();
   const { conversations } = useDirectMessages();
+  const { data: queueCount } = useMaterialQueueCount();
   
   const otherActiveUsers = activeUsers.filter(user => user.user_id !== currentUser?.user_id && user.status === 'online');
   const unreadCount = conversations.reduce((total, conv) => total + conv.unread_count, 0);
@@ -49,6 +51,8 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
           {navItems.slice(0, 3).map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
+            const showBadge = item.badge && queueCount && queueCount > 0;
+            
             return (
               <Button
                 key={item.id}
@@ -61,10 +65,20 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
                 )}
                 onClick={() => onTabChange(item.id)}
               >
-                <Icon className={cn(
-                  "transition-all duration-200",
-                  isActive ? "h-6 w-6" : "h-5 w-5"
-                )} />
+                <div className="relative">
+                  <Icon className={cn(
+                    "transition-all duration-200",
+                    isActive ? "h-6 w-6" : "h-5 w-5"
+                  )} />
+                  {showBadge && (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -top-1 -right-1 h-4 w-4 rounded-full p-0 flex items-center justify-center text-[8px]"
+                    >
+                      {queueCount}
+                    </Badge>
+                  )}
+                </div>
                 <span className={cn(
                   "text-[10px] font-medium transition-all duration-200",
                   isActive ? "opacity-100 font-semibold" : "opacity-70"
