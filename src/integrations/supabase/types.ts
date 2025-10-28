@@ -5798,6 +5798,47 @@ export type Database = {
           },
         ]
       }
+      supplier_performance_metrics: {
+        Row: {
+          average_lead_time_days: number
+          created_at: string | null
+          id: string
+          last_updated: string | null
+          material_type: string | null
+          on_time_percentage: number | null
+          order_count: number
+          supplier_id: string
+        }
+        Insert: {
+          average_lead_time_days?: number
+          created_at?: string | null
+          id?: string
+          last_updated?: string | null
+          material_type?: string | null
+          on_time_percentage?: number | null
+          order_count?: number
+          supplier_id: string
+        }
+        Update: {
+          average_lead_time_days?: number
+          created_at?: string | null
+          id?: string
+          last_updated?: string | null
+          material_type?: string | null
+          on_time_percentage?: number | null
+          order_count?: number
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_performance_metrics_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           active: boolean | null

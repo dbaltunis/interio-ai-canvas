@@ -41,3 +41,6 @@ verify_jwt = true
 
 [functions.shopify-push-products]
 verify_jwt = true
+
+[functions.predict-order-timeline]
+verify_jwt = true
