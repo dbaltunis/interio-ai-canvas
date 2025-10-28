@@ -33,15 +33,11 @@ export const QuoteVersionSelector = ({
     }
   }, [selectedQuoteId, currentQuote, onQuoteChange]);
 
-  // Resolve status name from status_id
-  const getStatusName = (quote: any) => {
-    if (!quote) return 'draft';
-    if (quote.status) return quote.status;
-    if (quote.status_id) {
-      const status = jobStatuses.find(s => s.id === quote.status_id);
-      return status?.name || 'draft';
-    }
-    return 'draft';
+  // Get status ID from quote
+  const getStatusId = (quote: any) => {
+    if (!quote) return null;
+    // Prioritize status_id (UUID) over legacy status (string)
+    return quote.status_id || null;
   };
 
   const handleDuplicateQuote = async () => {
@@ -112,7 +108,7 @@ export const QuoteVersionSelector = ({
       {selectedQuote && (
         <div className="flex items-center gap-3 pl-4 border-l border-border/50">
           <JobStatusDropdown
-            currentStatus={getStatusName(selectedQuote)}
+            currentStatusId={getStatusId(selectedQuote)}
             jobType="quote"
             jobId={selectedQuote.id}
           />

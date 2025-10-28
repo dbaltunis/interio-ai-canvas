@@ -15,7 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useHasPermission } from "@/hooks/usePermissions";
 
 interface JobStatusDropdownProps {
-  currentStatus: string;
+  currentStatus?: string; // Legacy: for backward compatibility
+  currentStatusId?: string | null; // New: UUID of the status
   jobType: "quote" | "project";
   jobId: string;
   onStatusChange?: (newStatus: string) => void;
@@ -23,6 +24,7 @@ interface JobStatusDropdownProps {
 
 export const JobStatusDropdown = ({ 
   currentStatus, 
+  currentStatusId,
   jobType, 
   jobId, 
   onStatusChange 
@@ -48,22 +50,38 @@ export const JobStatusDropdown = ({
     }
   });
 
-  // Get current status details - exact match first, then case-insensitive
-  const currentStatusDetails = jobStatuses.find(status => status.name === currentStatus) || 
-                               jobStatuses.find(status => status.name.toLowerCase() === currentStatus.toLowerCase());
+  // Get current status details - prioritize status_id (UUID) over legacy status name
+  const currentStatusDetails = currentStatusId 
+    ? jobStatuses.find(status => status.id === currentStatusId)
+    : (jobStatuses.find(status => status.name === currentStatus) || 
+       jobStatuses.find(status => status.name.toLowerCase() === currentStatus?.toLowerCase()));
 
   const getStatusColor = (color: string) => {
     const colorMap: Record<string, string> = {
-      'gray': 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800',
-      'blue': 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800', 
-      'green': 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800',
-      'yellow': 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800',
-      'orange': 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800',
-      'red': 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800',
-      'purple': 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800',
+      'gray': 'bg-muted/50 text-muted-foreground border-border',
+      'blue': 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20', 
+      'green': 'bg-green-500/10 text-green-700 dark:text-green-300 border-green-500/20',
+      'yellow': 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-300 border-yellow-500/20',
+      'orange': 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/20',
+      'red': 'bg-red-500/10 text-red-700 dark:text-red-300 border-red-500/20',
+      'purple': 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20',
       'primary': 'bg-primary/10 text-primary border-primary/20',
     };
-    return colorMap[color] || 'bg-gray-100 text-gray-800 border-border';
+    return colorMap[color.toLowerCase()] || 'bg-muted/50 text-muted-foreground border-border';
+  };
+  
+  const getStatusDotColor = (color: string) => {
+    const dotColorMap: Record<string, string> = {
+      'gray': 'bg-muted-foreground',
+      'blue': 'bg-blue-500',
+      'green': 'bg-green-500',
+      'yellow': 'bg-yellow-500',
+      'orange': 'bg-orange-500',
+      'red': 'bg-red-500',
+      'purple': 'bg-purple-500',
+      'primary': 'bg-primary',
+    };
+    return dotColorMap[color.toLowerCase()] || 'bg-muted-foreground';
   };
 
   const handleStatusChange = async (statusId: string, statusName: string) => {
@@ -101,10 +119,10 @@ export const JobStatusDropdown = ({
         className={`${
           currentStatusDetails 
             ? getStatusColor(currentStatusDetails.color)
-            : 'bg-gray-100 text-gray-800'
-        } font-medium`}
+            : 'bg-muted/50 text-muted-foreground border-border'
+        } font-medium border`}
       >
-        {currentStatus?.charAt(0).toUpperCase() + currentStatus?.slice(1).replace('_', ' ')}
+        {currentStatusDetails?.name || currentStatus || 'No Status'}
       </Badge>
     );
   }
@@ -117,10 +135,10 @@ export const JobStatusDropdown = ({
             className={`${
               currentStatusDetails 
                 ? getStatusColor(currentStatusDetails.color)
-                : 'bg-gray-100 text-gray-800'
-            } flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity`}
+                : 'bg-muted/50 text-muted-foreground border-border'
+            } flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity border`}
           >
-            {currentStatus?.charAt(0).toUpperCase() + currentStatus?.slice(1).replace('_', ' ')}
+            {currentStatusDetails?.name || currentStatus || 'No Status'}
             <ChevronDown className="h-3 w-3" />
           </Badge>
         </Button>
@@ -133,7 +151,7 @@ export const JobStatusDropdown = ({
             className="flex items-center justify-between py-3 cursor-pointer hover:bg-muted/50 focus:bg-muted/50"
           >
             <div className="flex items-center space-x-3">
-              <div className={`w-3 h-3 rounded-full bg-${status.color}-500 ring-2 ring-${status.color}-500/20`} />
+              <div className={`w-3 h-3 rounded-full ${getStatusDotColor(status.color)}`} />
               <div>
                 <div className="font-medium text-sm">{status.name}</div>
                 {status.description && (
@@ -141,7 +159,7 @@ export const JobStatusDropdown = ({
                 )}
               </div>
             </div>
-            {(status.name === currentStatus || status.name.toLowerCase() === currentStatus.toLowerCase()) && (
+            {(status.id === currentStatusId || status.name === currentStatus || status.name.toLowerCase() === currentStatus?.toLowerCase()) && (
               <Check className="h-4 w-4 text-primary" />
             )}
           </DropdownMenuItem>

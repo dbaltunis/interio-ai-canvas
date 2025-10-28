@@ -123,7 +123,8 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               />
               
               <JobStatusDropdown
-                currentStatus={project.status_id || project.status}
+                currentStatusId={project.status_id}
+                currentStatus={project.status}
                 jobType="project"
                 jobId={project.id}
                 onStatusChange={(newStatus) => {
