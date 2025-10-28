@@ -60,14 +60,18 @@ export const SeedJobStatuses = () => {
   if (!shouldShowSeed || seeded) return null;
 
   return (
-    <Card className="border-orange-200 dark:border-orange-900 bg-orange-50/50 dark:bg-orange-950/20">
+    <Card className="border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/20">
       <CardHeader>
         <div className="flex items-center gap-2">
-          <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-          <CardTitle className="text-orange-900 dark:text-orange-100">Setup Required</CardTitle>
+          <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <CardTitle className="text-blue-900 dark:text-blue-100">
+            Add Default Statuses ({activeStatuses.length}/10 slots filled)
+          </CardTitle>
         </div>
-        <CardDescription className="text-orange-800 dark:text-orange-300">
-          No job statuses found. Create default statuses to get started.
+        <CardDescription className="text-blue-800 dark:text-blue-300">
+          You have {activeStatuses.length} active status{activeStatuses.length !== 1 ? 'es' : ''}. 
+          Click below to add {10 - activeStatuses.length} comprehensive default status{10 - activeStatuses.length !== 1 ? 'es' : ''} 
+          ({4 - existingStatuses.filter(s => s.category === 'Quote' && s.is_active).length} Quote + {6 - existingStatuses.filter(s => s.category === 'Project' && s.is_active).length} Project).
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -84,12 +88,12 @@ export const SeedJobStatuses = () => {
           ) : (
             <>
               <CheckCircle className="mr-2 h-4 w-4" />
-              Create Default Job Statuses
+              Add {DEFAULT_STATUSES.length} Default Statuses
             </>
           )}
         </Button>
         <p className="text-xs text-muted-foreground mt-3">
-          This will create {DEFAULT_STATUSES.length} default statuses (quotes & projects) that you can customize later.
+          Includes: Draft, Quote Sent, Approved, Rejected (Quotes) + Planning, Order Confirmed, In Production, Review, Completed, Cancelled (Projects)
         </p>
       </CardContent>
     </Card>
