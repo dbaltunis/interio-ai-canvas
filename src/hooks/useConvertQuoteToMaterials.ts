@@ -34,9 +34,11 @@ export const useConvertQuoteToMaterials = () => {
         throw new Error("No materials found for this project. Please ensure treatments with fabrics are added.");
       }
 
-      const createdOrders: MaterialOrder[] = [];
+      // Simply return the materials that need processing
+      // The actual queue insertion happens in ProjectMaterialsTab
+      const inStock: MaterialOrder[] = [];
+      const outOfStock: MaterialOrder[] = [];
 
-      // Process each material
       for (const material of materials) {
         const quantityNeeded = material.quantityUsed;
         const availableQuantity = material.currentQuantity;
@@ -44,58 +46,36 @@ export const useConvertQuoteToMaterials = () => {
         if (quantityNeeded <= 0) continue;
 
         if (availableQuantity >= quantityNeeded) {
-          // Allocate from inventory
-          const { error: allocationError } = await supabase
-            .from('project_material_allocations')
-            .insert({
-              project_id: projectId,
-              inventory_item_id: material.itemId,
-              allocated_quantity: quantityNeeded,
-              used_quantity: 0,
-              status: 'allocated'
-            });
-
-          if (!allocationError) {
-            // Update inventory quantity
-            await supabase
-              .from('enhanced_inventory_items')
-              .update({ quantity: availableQuantity - quantityNeeded })
-              .eq('id', material.itemId);
-
-            createdOrders.push({
-              type: 'allocated',
-              material: material.itemName,
-              quantity: quantityNeeded,
-              status: 'allocated',
-              inventoryId: material.itemId
-            });
-          }
+          inStock.push({
+            type: 'allocated',
+            material: material.itemName,
+            quantity: quantityNeeded,
+            status: 'in_stock',
+            inventoryId: material.itemId
+          });
         } else {
-          // Material needs to be ordered
-          createdOrders.push({
+          outOfStock.push({
             type: 'needed',
             material: material.itemName,
-            quantity: quantityNeeded - availableQuantity,
+            quantity: quantityNeeded - Math.max(0, availableQuantity),
             status: 'needs_purchase',
             inventoryId: material.itemId
           });
         }
       }
 
-      return { createdOrders, totalOrders: createdOrders.length };
+      return { 
+        createdOrders: [...inStock, ...outOfStock], 
+        totalOrders: inStock.length + outOfStock.length,
+        inStockCount: inStock.length,
+        outOfStockCount: outOfStock.length
+      };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["project-materials-usage"] });
-      queryClient.invalidateQueries({ queryKey: ["purchase-orders"] });
-      queryClient.invalidateQueries({ queryKey: ["project-material-allocations"] });
+      queryClient.invalidateQueries({ queryKey: ["material-order-queue"] });
       
-      const allocated = data.createdOrders.filter(o => o.type === 'allocated').length;
-      const needed = data.createdOrders.filter(o => o.type === 'needed').length;
-      
-      toast({
-        title: "Materials Processed",
-        description: `${allocated} items allocated from inventory${needed > 0 ? `, ${needed} items need to be ordered` : ''}`,
-      });
+      // Don't show toast here - let ProjectMaterialsTab handle it after queue insertion
     },
     onError: (error: any) => {
       toast({

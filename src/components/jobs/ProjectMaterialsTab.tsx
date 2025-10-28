@@ -86,7 +86,7 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
         }
         
         toast.success("✓ Materials processed successfully!", {
-          description: `${materialsToProcess.length - outOfStockItems.length} allocated from inventory, ${outOfStockItems.length} sent to purchasing queue`,
+          description: `${result.inStockCount || 0} in stock, ${result.outOfStockCount || 0} sent to purchasing queue`,
           action: {
             label: "Go to Purchasing →",
             onClick: () => navigate('/?tab=ordering-hub')
