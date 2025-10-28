@@ -13,7 +13,6 @@ import { FormFieldGroup } from "@/components/ui/form-field-group";
 import { SimpleLogoUpload } from "./SimpleLogoUpload";
 import { useUploadFile, useGetFileUrl } from "@/hooks/useFileStorage";
 import { useHasPermission } from "@/hooks/usePermissions";
-import { CostVisibilitySettings } from "../CostVisibilitySettings";
 
 export const BusinessSettingsTab = () => {
   const { data: businessSettings, isLoading } = useBusinessSettings();
@@ -428,9 +427,6 @@ export const BusinessSettingsTab = () => {
           </FormFieldGroup>
         </FormSection>
       )}
-
-      {/* Cost Visibility Settings - Admin/Owner Only */}
-      <CostVisibilitySettings />
 
       <SimpleLogoUpload
         open={showSimpleLogoUpload}

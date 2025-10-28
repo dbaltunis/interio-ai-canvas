@@ -9,6 +9,7 @@ import { StatusManagement } from "../user-management/StatusManagement";
 import { RolePermissions } from "../user-management/RolePermissions";
 import { PermissionManager } from "../user-management/PermissionManager";
 import { TeamOverview } from "../user-management/TeamOverview";
+import { CostVisibilitySettings } from "../CostVisibilitySettings";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight } from "lucide-react";
@@ -25,6 +26,9 @@ export const UserManagementTab = () => {
     <div className="space-y-6">
       {/* Team Overview - Clean and informative */}
       <TeamOverview />
+      
+      {/* Cost Visibility Settings - Security & Access Control */}
+      <CostVisibilitySettings />
       
       {/* Core Team Management - Primary actions */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
