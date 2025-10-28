@@ -7,6 +7,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { AIBackground } from "@/components/common/AIBackground";
 import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
+import { OrderingHubPage } from "@/components/ordering/OrderingHubPage";
 
 
 // Lazy load heavy components with proper error handling
@@ -135,6 +136,12 @@ const Index = () => {
               <LibraryPage />
             </ComponentWrapper>
           </Suspense>
+        );
+      case "ordering-hub":
+        return (
+          <ComponentWrapper>
+            <OrderingHubPage />
+          </ComponentWrapper>
         );
       case 'calendar':
         return (

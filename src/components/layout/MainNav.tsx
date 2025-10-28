@@ -12,7 +12,8 @@ import {
   Settings,
   Calculator,
   BookOpen,
-  PlusCircle
+  PlusCircle,
+  ShoppingCart
 } from "lucide-react";
 
 interface MainNavProps {
@@ -27,6 +28,7 @@ const navItems = [
   { id: "quotes", label: "Quote Builder", icon: FileText },
   { id: "workshop", label: "Work Orders", icon: Wrench },
   { id: "inventory", label: "Product Library", icon: Package },
+  { id: "ordering-hub", label: "Ordering Hub", icon: ShoppingCart },
   { id: "calendar", label: "Calendar", icon: Calendar },
   { id: "clients", label: "CRM", icon: Users },
   { id: "calculator", label: "Calculator", icon: Calculator },

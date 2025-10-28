@@ -731,6 +731,154 @@ export type Database = {
         }
         Relationships: []
       }
+      batch_order_items: {
+        Row: {
+          batch_order_id: string
+          client_name: string | null
+          created_at: string | null
+          id: string
+          material_name: string
+          material_queue_id: string
+          notes: string | null
+          project_id: string | null
+          quantity: number
+          quote_id: string | null
+          received_quantity: number | null
+          total_price: number | null
+          unit: string
+          unit_price: number
+        }
+        Insert: {
+          batch_order_id: string
+          client_name?: string | null
+          created_at?: string | null
+          id?: string
+          material_name: string
+          material_queue_id: string
+          notes?: string | null
+          project_id?: string | null
+          quantity: number
+          quote_id?: string | null
+          received_quantity?: number | null
+          total_price?: number | null
+          unit: string
+          unit_price: number
+        }
+        Update: {
+          batch_order_id?: string
+          client_name?: string | null
+          created_at?: string | null
+          id?: string
+          material_name?: string
+          material_queue_id?: string
+          notes?: string | null
+          project_id?: string | null
+          quantity?: number
+          quote_id?: string | null
+          received_quantity?: number | null
+          total_price?: number | null
+          unit?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batch_order_items_batch_order_id_fkey"
+            columns: ["batch_order_id"]
+            isOneToOne: false
+            referencedRelation: "batch_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batch_order_items_material_queue_id_fkey"
+            columns: ["material_queue_id"]
+            isOneToOne: false
+            referencedRelation: "material_order_queue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batch_order_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batch_order_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      batch_orders: {
+        Row: {
+          acknowledged_date: string | null
+          actual_delivery_date: string | null
+          batch_number: string
+          created_at: string | null
+          expected_delivery_date: string | null
+          id: string
+          metadata: Json | null
+          notes: string | null
+          order_schedule_date: string | null
+          sent_date: string | null
+          status: string | null
+          supplier_id: string
+          total_amount: number | null
+          total_items: number | null
+          tracking_number: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          acknowledged_date?: string | null
+          actual_delivery_date?: string | null
+          batch_number: string
+          created_at?: string | null
+          expected_delivery_date?: string | null
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          order_schedule_date?: string | null
+          sent_date?: string | null
+          status?: string | null
+          supplier_id: string
+          total_amount?: number | null
+          total_items?: number | null
+          tracking_number?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          acknowledged_date?: string | null
+          actual_delivery_date?: string | null
+          batch_number?: string
+          created_at?: string | null
+          expected_delivery_date?: string | null
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          order_schedule_date?: string | null
+          sent_date?: string | null
+          status?: string | null
+          supplier_id?: string
+          total_amount?: number | null
+          total_items?: number | null
+          tracking_number?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batch_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_notifications: {
         Row: {
           booking_id: string
@@ -3096,6 +3244,118 @@ export type Database = {
           },
         ]
       }
+      material_order_queue: {
+        Row: {
+          client_id: string | null
+          created_at: string | null
+          id: string
+          inventory_item_id: string | null
+          material_name: string
+          material_type: string
+          metadata: Json | null
+          needed_by_date: string | null
+          notes: string | null
+          priority: string | null
+          project_id: string | null
+          quantity: number
+          quote_id: string | null
+          status: string | null
+          supplier_id: string | null
+          total_cost: number | null
+          unit: string
+          unit_cost: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          inventory_item_id?: string | null
+          material_name: string
+          material_type: string
+          metadata?: Json | null
+          needed_by_date?: string | null
+          notes?: string | null
+          priority?: string | null
+          project_id?: string | null
+          quantity: number
+          quote_id?: string | null
+          status?: string | null
+          supplier_id?: string | null
+          total_cost?: number | null
+          unit: string
+          unit_cost?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          inventory_item_id?: string | null
+          material_name?: string
+          material_type?: string
+          metadata?: Json | null
+          needed_by_date?: string | null
+          notes?: string | null
+          priority?: string | null
+          project_id?: string | null
+          quantity?: number
+          quote_id?: string | null
+          status?: string | null
+          supplier_id?: string | null
+          total_cost?: number | null
+          unit?: string
+          unit_cost?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_order_queue_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_stats_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_order_queue_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_order_queue_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_order_queue_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_order_queue_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_order_queue_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       measurement_fields: {
         Row: {
           created_at: string | null
@@ -3723,6 +3983,80 @@ export type Database = {
             columns: ["option_id"]
             isOneToOne: false
             referencedRelation: "treatment_options"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_schedule_settings: {
+        Row: {
+          auto_assign_suppliers: boolean | null
+          auto_create_batches: boolean | null
+          created_at: string | null
+          id: string
+          lead_time_days: number | null
+          notification_preferences: Json | null
+          schedule_days: string[] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          auto_assign_suppliers?: boolean | null
+          auto_create_batches?: boolean | null
+          created_at?: string | null
+          id?: string
+          lead_time_days?: number | null
+          notification_preferences?: Json | null
+          schedule_days?: string[] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          auto_assign_suppliers?: boolean | null
+          auto_create_batches?: boolean | null
+          created_at?: string | null
+          id?: string
+          lead_time_days?: number | null
+          notification_preferences?: Json | null
+          schedule_days?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      order_tracking_history: {
+        Row: {
+          batch_order_id: string
+          created_at: string | null
+          id: string
+          location: string | null
+          notes: string | null
+          status: string
+          updated_by: string | null
+        }
+        Insert: {
+          batch_order_id: string
+          created_at?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          status: string
+          updated_by?: string | null
+        }
+        Update: {
+          batch_order_id?: string
+          created_at?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          status?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_tracking_history_batch_order_id_fkey"
+            columns: ["batch_order_id"]
+            isOneToOne: false
+            referencedRelation: "batch_orders"
             referencedColumns: ["id"]
           },
         ]
@@ -4623,6 +4957,7 @@ export type Database = {
           client_id: string | null
           created_at: string
           id: string
+          materials_status: string | null
           notes: string | null
           project_id: string | null
           quote_number: string | null
@@ -4640,6 +4975,7 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           id?: string
+          materials_status?: string | null
           notes?: string | null
           project_id?: string | null
           quote_number?: string | null
@@ -4657,6 +4993,7 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           id?: string
+          materials_status?: string | null
           notes?: string | null
           project_id?: string | null
           quote_number?: string | null
@@ -5299,6 +5636,60 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      supplier_lead_times: {
+        Row: {
+          batch_order_id: string | null
+          created_at: string | null
+          delivery_date: string
+          id: string
+          lead_time_days: number | null
+          material_type: string
+          order_complexity: string | null
+          order_date: string
+          supplier_id: string
+          user_id: string
+        }
+        Insert: {
+          batch_order_id?: string | null
+          created_at?: string | null
+          delivery_date: string
+          id?: string
+          lead_time_days?: number | null
+          material_type: string
+          order_complexity?: string | null
+          order_date: string
+          supplier_id: string
+          user_id: string
+        }
+        Update: {
+          batch_order_id?: string | null
+          created_at?: string | null
+          delivery_date?: string
+          id?: string
+          lead_time_days?: number | null
+          material_type?: string
+          order_complexity?: string | null
+          order_date?: string
+          supplier_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_lead_times_batch_order_id_fkey"
+            columns: ["batch_order_id"]
+            isOneToOne: false
+            referencedRelation: "batch_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_lead_times_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       suppliers: {
         Row: {
@@ -6889,6 +7280,7 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: Json
       }
+      generate_batch_number: { Args: { p_user_id: string }; Returns: string }
       get_account_owner: { Args: { user_id_param: string }; Returns: string }
       get_current_usage: {
         Args: { p_user_id: string }
