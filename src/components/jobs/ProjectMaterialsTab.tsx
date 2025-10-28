@@ -13,6 +13,9 @@ import { useMaterialQueue, useBulkAddToQueue } from "@/hooks/useMaterialQueue";
 import { useNavigate } from "react-router-dom";
 import { useQuotes } from "@/hooks/useQuotes";
 import { supabase } from "@/integrations/supabase/client";
+import { MaterialsWorkflowStatus } from "./MaterialsWorkflowStatus";
+import { StatusUpdatePrompt } from "./StatusUpdatePrompt";
+import { useProjects } from "@/hooks/useProjects";
 
 interface ProjectMaterialsTabProps {
   projectId: string;
@@ -22,9 +25,11 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedMaterials, setSelectedMaterials] = useState<Set<string>>(new Set());
+  const [showStatusPrompt, setShowStatusPrompt] = useState(false);
   const { data: inventory } = useEnhancedInventory();
   const { data: treatmentMaterials = [], isLoading: materialsLoading } = useProjectMaterialsUsage(projectId);
   const { data: quotes } = useQuotes();
+  const { data: projects } = useProjects();
   const { data: queueItems } = useMaterialQueue({ status: 'pending' });
   const bulkAddToQueue = useBulkAddToQueue();
   
@@ -36,6 +41,7 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
   });
   
   const currentQuote = quotes?.find(q => q.project_id === projectId);
+  const currentProject = projects?.find(p => p.id === projectId);
   
   // Count materials already in queue for this project
   const materialsInQueue = useMemo(() => {
@@ -119,6 +125,12 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
       
       // Clear selection after successful send
       setSelectedMaterials(new Set());
+      
+      // Prompt to update job status if in quote/draft stage
+      const currentStatus = currentProject?.status?.toLowerCase() || '';
+      if (['quote', 'draft', 'pending', 'sent'].includes(currentStatus)) {
+        setShowStatusPrompt(true);
+      }
     } catch (error: any) {
       console.error("[SEND TO PURCHASING] Failed to send materials:", {
         error,
@@ -139,20 +151,28 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
   const displayMaterials = useMemo(() => {
     console.log('[MATERIALS] Processing materials:', treatmentMaterials.length, 'items');
     
-    return treatmentMaterials.map((material) => ({
-      id: `${material.itemId}-${material.surfaceId}`,
-      name: material.itemName,
-      category: 'material',
-      quantity: material.quantityUsed,
-      unit: material.unit,
-      supplier: inventory?.find(item => item.id === material.itemId)?.supplier,
-      source: 'Treatment Material',
-      treatment_name: material.surfaceName || 'Window',
-      fabric_id: material.itemId,
-      currentQuantity: material.currentQuantity,
-      lowStock: material.lowStock,
-      isTracked: material.isTracked
-    }));
+    return treatmentMaterials.map((material) => {
+      const inventoryItem = inventory?.find(item => item.id === material.itemId);
+      const unitCost = inventoryItem?.cost_price || 0;
+      const totalCost = unitCost * material.quantityUsed;
+      
+      return {
+        id: `${material.itemId}-${material.surfaceId}`,
+        name: material.itemName,
+        category: 'material',
+        quantity: material.quantityUsed,
+        unit: material.unit,
+        unitCost,
+        totalCost,
+        supplier: inventoryItem?.supplier,
+        source: 'Treatment Material',
+        treatment_name: material.surfaceName || 'Window',
+        fabric_id: material.itemId,
+        currentQuantity: material.currentQuantity,
+        lowStock: material.lowStock,
+        isTracked: material.isTracked
+      };
+    });
   }, [treatmentMaterials, inventory]);
 
 
@@ -235,6 +255,17 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* Materials Workflow Status */}
+      <MaterialsWorkflowStatus projectId={projectId} />
+      
+      {/* Status Update Prompt Dialog */}
+      <StatusUpdatePrompt
+        open={showStatusPrompt}
+        onOpenChange={setShowStatusPrompt}
+        projectId={projectId}
+        currentStatus={currentProject?.status || 'quote'}
+      />
+      
       {/* Warning Banner when no materials found */}
       {displayMaterials.length === 0 && (
         <Card className="border-orange-500/50 bg-orange-50/50 dark:bg-orange-950/20">
@@ -377,6 +408,8 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
                     <TableHead>Category</TableHead>
                     <TableHead>Treatment</TableHead>
                     <TableHead className="text-right">Quantity</TableHead>
+                    <TableHead className="text-right">Unit Cost</TableHead>
+                    <TableHead className="text-right">Total Cost</TableHead>
                     <TableHead>Supplier</TableHead>
                     <TableHead>Source</TableHead>
                   </TableRow>
@@ -405,6 +438,12 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
                       </TableCell>
                       <TableCell className="text-right font-medium">
                         {material.quantity > 0 ? `${material.quantity.toFixed(2)} ${material.unit}` : 'N/A'}
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">
+                        {material.unitCost > 0 ? `$${material.unitCost.toFixed(2)}` : '—'}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {material.totalCost > 0 ? `$${material.totalCost.toFixed(2)}` : '—'}
                       </TableCell>
                       <TableCell>
                         {material.supplier ? (

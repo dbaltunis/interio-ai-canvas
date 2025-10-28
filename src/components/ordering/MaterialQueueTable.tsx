@@ -79,11 +79,12 @@ export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectio
             <TableHead>Material</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Action Required</TableHead>
-            <TableHead>Quantity</TableHead>
+            <TableHead className="text-right">Quantity</TableHead>
+            <TableHead className="text-right">Unit Cost</TableHead>
+            <TableHead className="text-right">Total Cost</TableHead>
             <TableHead>Supplier</TableHead>
             <TableHead>Job/Client</TableHead>
             <TableHead>Priority</TableHead>
-            <TableHead>Cost</TableHead>
             <TableHead className="w-12"></TableHead>
           </TableRow>
         </TableHeader>
@@ -107,13 +108,19 @@ export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectio
                   <Badge variant="outline">Process</Badge>
                 )}
               </TableCell>
-              <TableCell>
+              <TableCell className="text-right">
                 {item.quantity} {item.unit}
                 {item.metadata?.current_stock > 0 && (
                   <span className="text-xs text-muted-foreground ml-1">
                     ({item.metadata.current_stock} in stock)
                   </span>
                 )}
+              </TableCell>
+              <TableCell className="text-right text-muted-foreground">
+                ${item.unit_cost?.toFixed(2) || '0.00'}
+              </TableCell>
+              <TableCell className="text-right font-medium">
+                ${item.total_cost?.toFixed(2) || '0.00'}
               </TableCell>
               <TableCell>
                 {item.vendors?.name || <span className="text-muted-foreground">Unassigned</span>}
@@ -131,7 +138,6 @@ export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectio
                   {priorityLabels[item.priority as keyof typeof priorityLabels] || item.priority}
                 </Badge>
               </TableCell>
-              <TableCell>${item.total_cost?.toFixed(2) || '0.00'}</TableCell>
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
