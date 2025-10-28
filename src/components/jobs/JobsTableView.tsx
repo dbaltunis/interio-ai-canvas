@@ -686,8 +686,8 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
                       className="cursor-pointer hover:bg-muted/30 bg-muted/10 h-10"
                       onClick={() => onJobSelect({ id: project.id, projects: project })}
                     >
-                      <TableCell className="pl-6 py-1.5">
-                        <span className="text-sm">{quote.quote_number}</span>
+                      <TableCell className="py-1.5">
+                        <span className="text-sm font-normal">{quote.quote_number}</span>
                       </TableCell>
                       <TableCell className="py-1.5" onClick={(e) => e.stopPropagation()}>
                         <EmailStatusDisplay 
