@@ -60,6 +60,7 @@ const BatchOrderCard = ({ order, onView, onEdit, onSend, onReceive, onDelete }: 
   const { data: items } = useBatchOrderItems(order.id);
   const { data: userRole } = useUserRole();
   const canViewCosts = userRole?.canViewVendorCosts ?? false;
+  const canManageOrders = userRole?.isAdmin || userRole?.isOwner || false;
 
   // Initialize all items as selected when expanded
   const handleExpand = () => {
@@ -176,7 +177,7 @@ const BatchOrderCard = ({ order, onView, onEdit, onSend, onReceive, onDelete }: 
                 <Eye className="h-4 w-4 mr-2" />
                 View Details
               </DropdownMenuItem>
-              {order.status === 'draft' && (
+              {canManageOrders && order.status === 'draft' && (
                 <>
                   <DropdownMenuItem onClick={() => onEdit(order)}>
                     <Package className="h-4 w-4 mr-2" />
@@ -188,13 +189,13 @@ const BatchOrderCard = ({ order, onView, onEdit, onSend, onReceive, onDelete }: 
                   </DropdownMenuItem>
                 </>
               )}
-              {['sent', 'acknowledged', 'in_transit'].includes(order.status) && (
+              {canManageOrders && ['sent', 'acknowledged', 'in_transit'].includes(order.status) && (
                 <DropdownMenuItem onClick={() => onReceive(order)}>
                   <PackageCheck className="h-4 w-4 mr-2" />
                   Receive Order
                 </DropdownMenuItem>
               )}
-              {order.status === 'draft' && (
+              {canManageOrders && order.status === 'draft' && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -371,7 +372,7 @@ const BatchOrderCard = ({ order, onView, onEdit, onSend, onReceive, onDelete }: 
               <Eye className="h-4 w-4 mr-2" />
               View
             </Button>
-            {order.status === 'draft' && (
+            {canManageOrders && order.status === 'draft' && (
               <>
                 <Button variant="outline" size="sm" className="flex-1" onClick={() => onEdit(order)}>
                   <Package className="h-4 w-4 mr-2" />
@@ -383,7 +384,7 @@ const BatchOrderCard = ({ order, onView, onEdit, onSend, onReceive, onDelete }: 
                 </Button>
               </>
             )}
-            {['sent', 'acknowledged', 'in_transit'].includes(order.status) && (
+            {canManageOrders && ['sent', 'acknowledged', 'in_transit'].includes(order.status) && (
               <Button size="sm" variant="outline" className="flex-1" onClick={() => onReceive(order)}>
                 <Truck className="h-4 w-4 mr-2" />
                 Track

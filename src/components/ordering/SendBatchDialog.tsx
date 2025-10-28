@@ -45,7 +45,7 @@ export const SendBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: S
         notes: additionalNotes || 'Order sent to supplier',
       });
 
-      // TODO: Send email to supplier if enabled
+      // TODO: Send email to supplier if enabled (without prices)
       if (sendEmail && batchOrder.vendors?.email) {
         toast.info("Email notification feature coming soon");
       }
@@ -66,8 +66,8 @@ export const SendBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: S
   const handleGeneratePDF = async () => {
     setIsGeneratingPDF(true);
     try {
-      // TODO: Implement PDF generation
-      toast.info("PDF generation feature coming soon");
+      // TODO: Implement PDF generation WITHOUT prices (vendors don't see retailer pricing)
+      toast.info("PDF generation feature coming soon - will include items and quantities only, no pricing");
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate generation
     } finally {
       setIsGeneratingPDF(false);
@@ -87,8 +87,9 @@ export const SendBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: S
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Order Summary */}
+          {/* Order Summary - No Prices for Vendor */}
           <div className="p-4 border rounded-lg bg-muted/50 space-y-2">
+            <div className="text-sm font-medium mb-2">Order Summary</div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Supplier:</span>
               <span className="font-medium">{batchOrder.vendors?.name}</span>
@@ -97,16 +98,15 @@ export const SendBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: S
               <span className="text-muted-foreground">Total Items:</span>
               <span className="font-medium">{batchOrder.total_items || 0}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Total Amount:</span>
-              <span className="font-medium">${Number(batchOrder.total_amount || 0).toFixed(2)}</span>
-            </div>
             {batchOrder.vendors?.email && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Email:</span>
                 <span className="font-medium">{batchOrder.vendors.email}</span>
               </div>
             )}
+            <div className="text-xs text-muted-foreground italic mt-3 pt-2 border-t">
+              Note: Pricing information is kept internal and not shared with suppliers
+            </div>
           </div>
 
           {/* Tracking Number */}
@@ -148,7 +148,7 @@ export const SendBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: S
             </div>
           )}
 
-          {/* Generate PDF */}
+          {/* Generate PDF - No Prices */}
           <Button
             variant="outline"
             onClick={handleGeneratePDF}
@@ -163,7 +163,7 @@ export const SendBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: S
             ) : (
               <>
                 <FileText className="mr-2 h-4 w-4" />
-                Preview & Download PDF
+                Preview & Download PDF (Items & Quantities Only)
               </>
             )}
           </Button>
