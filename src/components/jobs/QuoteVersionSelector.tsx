@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Copy, FileText } from "lucide-react";
 import { useQuoteVersions } from "@/hooks/useQuoteVersions";
 import { JobStatusDropdown } from "./JobStatusDropdown";
+import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useEffect } from "react";
 
 interface QuoteVersionSelectorProps {
@@ -18,6 +19,7 @@ export const QuoteVersionSelector = ({
   onQuoteChange 
 }: QuoteVersionSelectorProps) => {
   const { quoteVersions, duplicateQuote, currentQuote } = useQuoteVersions(projectId);
+  const { data: jobStatuses = [] } = useJobStatuses();
   
   const selectedQuote = selectedQuoteId 
     ? quoteVersions.find(q => q.id === selectedQuoteId) 
@@ -29,6 +31,17 @@ export const QuoteVersionSelector = ({
       onQuoteChange(currentQuote.id);
     }
   }, [selectedQuoteId, currentQuote, onQuoteChange]);
+
+  // Resolve status name from status_id
+  const getStatusName = (quote: any) => {
+    if (!quote) return 'draft';
+    if (quote.status) return quote.status;
+    if (quote.status_id) {
+      const status = jobStatuses.find(s => s.id === quote.status_id);
+      return status?.name || 'draft';
+    }
+    return 'draft';
+  };
 
   const handleDuplicateQuote = async () => {
     if (selectedQuote) {
@@ -78,7 +91,7 @@ export const QuoteVersionSelector = ({
       {selectedQuote && (
         <div className="flex items-center gap-2 pl-2 border-l border-border/50">
           <JobStatusDropdown
-            currentStatus={selectedQuote.status || 'draft'}
+            currentStatus={getStatusName(selectedQuote)}
             jobType="quote"
             jobId={selectedQuote.id}
           />
