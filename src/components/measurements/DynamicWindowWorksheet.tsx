@@ -1281,18 +1281,79 @@ export const DynamicWindowWorksheet = forwardRef<{
 
                 {/* Bottom Section - Configuration & Cost */}
                 <div className="space-y-4">
-                  
+                  {(() => {
+                    // Calculate costs for curtains
+                    if (!selectedTemplate || !fabricCalculation || treatmentCategory === 'wallpaper') {
+                      return (
+                        <CostCalculationSummary
+                          template={selectedTemplate} 
+                          measurements={measurements} 
+                          selectedFabric={selectedItems.fabric} 
+                          selectedLining={selectedLining} 
+                          selectedHeading={selectedHeading} 
+                          inventory={[]} 
+                          fabricCalculation={fabricCalculation}
+                          selectedOptions={selectedOptions}
+                        />
+                      );
+                    }
 
-                  <CostCalculationSummary
-                    template={selectedTemplate} 
-                    measurements={measurements} 
-                    selectedFabric={selectedItems.fabric} 
-                    selectedLining={selectedLining} 
-                    selectedHeading={selectedHeading} 
-                    inventory={[]} 
-                    fabricCalculation={fabricCalculation}
-                    selectedOptions={selectedOptions}
-                  />
+                    // Calculate fabric cost
+                    const fabricCost = fabricCalculation.totalCost || 0;
+
+                    // Calculate lining cost
+                    let liningCost = 0;
+                    if (selectedLining && selectedLining !== 'none') {
+                      const liningPrice = selectedLining === 'standard' ? 10 : selectedLining === 'blackout' ? 15 : selectedLining === 'interlining' ? 20 : 0;
+                      liningCost = (fabricCalculation.linearMeters || 0) * liningPrice;
+                    }
+
+                    // Calculate manufacturing/labor cost
+                    let manufacturingCost = 0;
+                    const pricingMethod = selectedTemplate.makeup_pricing_method || selectedTemplate.pricing_method || 'per_metre';
+                    if (pricingMethod === 'per_panel') {
+                      manufacturingCost = (selectedTemplate.machine_price_per_panel || 0) * (fabricCalculation.curtainCount || 1);
+                    } else if (pricingMethod === 'per_drop') {
+                      manufacturingCost = (selectedTemplate.machine_price_per_metre || 0) * (fabricCalculation.widthsRequired || 1);
+                    } else {
+                      // per_metre
+                      manufacturingCost = (selectedTemplate.machine_price_per_metre || 0) * (fabricCalculation.linearMeters || 0);
+                    }
+
+                    // Calculate heading cost
+                    let headingCost = 0;
+                    if (selectedHeading && selectedHeading !== 'none') {
+                      const heading = headingOptionsFromSettings.find(h => h.id === selectedHeading || h.name === selectedHeading);
+                      if (heading?.price) {
+                        const railWidth = parseFloat(measurements.rail_width || '0');
+                        headingCost = heading.price * (railWidth / 100); // price per meter
+                      }
+                    }
+
+                    // Calculate options cost
+                    const optionsCost = selectedOptions.reduce((sum, opt) => sum + (opt.price || 0), 0);
+
+                    const totalCost = fabricCost + liningCost + manufacturingCost + headingCost + optionsCost;
+
+                    return (
+                      <CostCalculationSummary
+                        template={selectedTemplate} 
+                        measurements={measurements} 
+                        selectedFabric={selectedItems.fabric} 
+                        selectedLining={selectedLining} 
+                        selectedHeading={selectedHeading} 
+                        inventory={[]} 
+                        fabricCalculation={fabricCalculation}
+                        selectedOptions={selectedOptions}
+                        calculatedFabricCost={fabricCost}
+                        calculatedLiningCost={liningCost}
+                        calculatedManufacturingCost={manufacturingCost}
+                        calculatedHeadingCost={headingCost}
+                        calculatedOptionsCost={optionsCost}
+                        calculatedTotalCost={totalCost}
+                      />
+                    );
+                  })()}
                   
                   <Button onClick={async () => {
                   setIsSaving(true);

@@ -90,10 +90,19 @@ export const calculateOrientation = (
     widthsRequired = panelsNeeded;
     dropsPerWidth = 1;
   } else {
-    // In vertical orientation, fit multiple panels across the fabric width
+    // In vertical orientation, check if panel width fits within fabric width
     const panelWidthWithHems = requiredWidth; // already includes side hems and repeat rounding
-    dropsPerWidth = Math.max(1, Math.floor(effectiveFabricWidth / panelWidthWithHems));
-    widthsRequired = Math.ceil(panelsNeeded / dropsPerWidth);
+    
+    if (panelWidthWithHems > effectiveFabricWidth) {
+      // Panel is too wide - need multiple widths seamed together per panel
+      const widthsPerPanel = Math.ceil(panelWidthWithHems / effectiveFabricWidth);
+      widthsRequired = widthsPerPanel * panelsNeeded;
+      dropsPerWidth = 1 / widthsPerPanel; // Fraction of a drop per width
+    } else {
+      // Multiple panels can fit across one fabric width
+      dropsPerWidth = Math.floor(effectiveFabricWidth / panelWidthWithHems);
+      widthsRequired = Math.ceil(panelsNeeded / dropsPerWidth);
+    }
   }
 
   // Calculate seams needed
