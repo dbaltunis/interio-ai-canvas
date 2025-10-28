@@ -8,7 +8,6 @@ import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useProjectMaterialsUsage } from "@/hooks/useProjectMaterialsUsage";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { useConvertQuoteToMaterials } from "@/hooks/useConvertQuoteToMaterials";
 import { useMaterialQueue, useBulkAddToQueue } from "@/hooks/useMaterialQueue";
 import { useNavigate } from "react-router-dom";
 import { useQuotes } from "@/hooks/useQuotes";
@@ -25,7 +24,6 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
   const { data: treatmentMaterials = [], isLoading: materialsLoading } = useProjectMaterialsUsage(projectId);
   const { data: quotes } = useQuotes();
   const { data: queueItems } = useMaterialQueue({ status: 'pending' });
-  const convertMaterials = useConvertQuoteToMaterials();
   const bulkAddToQueue = useBulkAddToQueue();
   
   const currentQuote = quotes?.find(q => q.project_id === projectId);
@@ -46,63 +44,53 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
         return;
       }
 
-      // Transform treatmentMaterials to the format needed by the hook
-      const materialsToProcess = treatmentMaterials.map(m => ({
-        itemId: m.itemId,
-        itemName: m.itemName,
-        quantityUsed: m.quantityUsed,
-        unit: m.unit,
-        currentQuantity: m.currentQuantity
-      }));
-      
-      const result = await convertMaterials.mutateAsync({ 
-        projectId, 
-        materials: materialsToProcess 
+      // Send ALL materials to purchasing queue for management
+      // Each material will be tagged with its source type (order vs stock)
+      const queueItems = treatmentMaterials.map(material => {
+        const inventoryItem = inventory?.find(inv => inv.id === material.itemId);
+        const neededQuantity = material.quantityUsed;
+        const hasStock = (material.currentQuantity || 0) >= neededQuantity;
+        const shortfall = Math.max(0, neededQuantity - (material.currentQuantity || 0));
+        
+        return {
+          quote_id: currentQuote?.id,
+          project_id: projectId,
+          client_id: currentQuote?.client_id,
+          inventory_item_id: material.itemId,
+          material_name: material.itemName,
+          material_type: inventoryItem?.category || 'material',
+          quantity: hasStock ? neededQuantity : shortfall,
+          unit: material.unit,
+          supplier_id: inventoryItem?.vendor_id,
+          priority: hasStock ? 'normal' as const : 'high' as const,
+          unit_cost: inventoryItem?.cost_price || 0,
+          total_cost: (inventoryItem?.cost_price || 0) * (hasStock ? neededQuantity : shortfall),
+          status: 'pending' as const,
+          metadata: {
+            source_type: hasStock ? 'allocate_from_stock' : 'order_from_supplier',
+            current_stock: material.currentQuantity || 0,
+            required_quantity: neededQuantity,
+            treatment_name: material.surfaceName
+          }
+        };
       });
       
-      // Add out-of-stock materials to ordering queue
-      const outOfStockItems = materialsToProcess.filter(m => m.currentQuantity < m.quantityUsed);
+      await bulkAddToQueue.mutateAsync(queueItems);
       
-      if (outOfStockItems.length > 0) {
-        const queueItems = outOfStockItems.map(item => {
-          const inventoryItem = inventory?.find(inv => inv.id === item.itemId);
-          const neededQuantity = item.quantityUsed - (item.currentQuantity || 0);
-          
-          return {
-            quote_id: currentQuote?.id,
-            project_id: projectId,
-            client_id: currentQuote?.client_id,
-            inventory_item_id: item.itemId,
-            material_name: item.itemName,
-            material_type: inventoryItem?.category || 'material',
-            quantity: neededQuantity,
-            unit: item.unit,
-            supplier_id: inventoryItem?.vendor_id,
-            priority: 'high' as const,
-            unit_cost: inventoryItem?.cost_price || 0,
-            total_cost: (inventoryItem?.cost_price || 0) * neededQuantity,
-            status: 'pending' as const
-          };
-        });
-        
-        await bulkAddToQueue.mutateAsync(queueItems);
-        
-        toast.success("✓ Materials sent to purchasing!", {
-          description: `${result.inStockCount || 0} in stock, ${result.outOfStockCount || 0} sent to purchasing queue`,
-          action: {
-            label: "View in Purchasing →",
-            onClick: () => navigate('/?tab=ordering-hub')
-          },
-          duration: 10000
-        });
-      } else {
-        toast.success("All materials are in stock!", {
-          description: `${result.inStockCount || 0} material(s) available in inventory`
-        });
-      }
+      const toOrder = queueItems.filter(q => q.metadata?.source_type === 'order_from_supplier').length;
+      const toAllocate = queueItems.filter(q => q.metadata?.source_type === 'allocate_from_stock').length;
+      
+      toast.success("✓ Materials sent to Purchasing!", {
+        description: `${toOrder} to order from suppliers, ${toAllocate} to allocate from stock`,
+        action: {
+          label: "View in Purchasing →",
+          onClick: () => navigate('/?tab=ordering-hub')
+        },
+        duration: 10000
+      });
     } catch (error: any) {
       console.error("Failed to process materials:", error);
-      toast.error("Failed to process materials", {
+      toast.error("Failed to send materials", {
         description: error.message || "Please check console for details"
       });
     } finally {
@@ -234,7 +222,7 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
         </Card>
       )}
       
-      {/* Automatic Material Processing Card - PROMINENT */}
+      {/* Material Management Card */}
       <Card className="border-primary/50 bg-primary/5">
         <CardHeader>
           <div className="flex items-start justify-between">
@@ -244,7 +232,7 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
                 Send to Purchasing
               </CardTitle>
               <CardDescription>
-                Check inventory levels and send out-of-stock items to purchasing queue
+                Send materials to Purchasing for ordering from suppliers or allocating from stock
               </CardDescription>
             </div>
             <div className="flex items-center gap-3">
@@ -276,15 +264,10 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-green-500" />
-              <span>In stock → No action needed</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-orange-500" />
-              <span>Out of stock → Added to purchasing queue</span>
-            </div>
+          <div className="text-sm text-muted-foreground space-y-1">
+            <p>• Materials will be checked against current inventory</p>
+            <p>• Items with sufficient stock will be marked for allocation</p>
+            <p>• Items requiring purchase will be sent to suppliers</p>
           </div>
         </CardContent>
       </Card>

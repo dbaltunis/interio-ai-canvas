@@ -17,15 +17,18 @@ export const MaterialQueueView = () => {
     setShowCreateBatch(true);
   };
 
-  // Group items by project for display
-  const itemsByProject = queueItems?.reduce((acc, item) => {
-    const projectId = item.project_id || 'unassigned';
-    if (!acc[projectId]) {
-      acc[projectId] = [];
+  // Group items by action type for display
+  const itemsByAction = queueItems?.reduce((acc, item) => {
+    const action = item.metadata?.source_type || 'other';
+    if (!acc[action]) {
+      acc[action] = [];
     }
-    acc[projectId].push(item);
+    acc[action].push(item);
     return acc;
   }, {} as Record<string, any[]>);
+
+  const toOrder = itemsByAction?.order_from_supplier?.length || 0;
+  const toAllocate = itemsByAction?.allocate_from_stock?.length || 0;
 
   return (
     <>
@@ -33,10 +36,11 @@ export const MaterialQueueView = () => {
         <Alert className="mb-4 border-blue-500/50 bg-blue-50 dark:bg-blue-950/20">
           <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           <AlertDescription className="text-blue-900 dark:text-blue-100">
-            <span className="font-medium">{queueItems.length} material{queueItems.length !== 1 ? 's' : ''}</span> waiting to be ordered
-            {itemsByProject && Object.keys(itemsByProject).length > 1 && (
-              <span> from {Object.keys(itemsByProject).length} project{Object.keys(itemsByProject).length !== 1 ? 's' : ''}</span>
-            )}
+            <div className="font-medium mb-1">{queueItems.length} material{queueItems.length !== 1 ? 's' : ''} waiting for action</div>
+            <div className="text-sm space-x-4">
+              {toOrder > 0 && <span>• {toOrder} to order from suppliers</span>}
+              {toAllocate > 0 && <span>• {toAllocate} to allocate from stock</span>}
+            </div>
           </AlertDescription>
         </Alert>
       )}
@@ -47,7 +51,7 @@ export const MaterialQueueView = () => {
             <div>
               <CardTitle>Material Queue</CardTitle>
               <CardDescription>
-                Materials waiting to be ordered from suppliers
+                Manage materials requiring supplier orders or stock allocation
               </CardDescription>
             </div>
             <div className="flex gap-2">

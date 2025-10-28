@@ -78,10 +78,10 @@ export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectio
             </TableHead>
             <TableHead>Material</TableHead>
             <TableHead>Type</TableHead>
+            <TableHead>Action Required</TableHead>
             <TableHead>Quantity</TableHead>
             <TableHead>Supplier</TableHead>
             <TableHead>Job/Client</TableHead>
-            <TableHead>Needed By</TableHead>
             <TableHead>Priority</TableHead>
             <TableHead>Cost</TableHead>
             <TableHead className="w-12"></TableHead>
@@ -99,16 +99,32 @@ export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectio
               <TableCell className="font-medium">{item.material_name}</TableCell>
               <TableCell className="capitalize">{item.material_type?.replace('_', ' ')}</TableCell>
               <TableCell>
+                {item.metadata?.source_type === 'order_from_supplier' ? (
+                  <Badge variant="default" className="bg-orange-500">Order from Supplier</Badge>
+                ) : item.metadata?.source_type === 'allocate_from_stock' ? (
+                  <Badge variant="secondary">Allocate from Stock</Badge>
+                ) : (
+                  <Badge variant="outline">Process</Badge>
+                )}
+              </TableCell>
+              <TableCell>
                 {item.quantity} {item.unit}
+                {item.metadata?.current_stock > 0 && (
+                  <span className="text-xs text-muted-foreground ml-1">
+                    ({item.metadata.current_stock} in stock)
+                  </span>
+                )}
               </TableCell>
               <TableCell>
                 {item.vendors?.name || <span className="text-muted-foreground">Unassigned</span>}
               </TableCell>
               <TableCell>
-                {item.quotes?.project_name || item.clients?.name || '—'}
-              </TableCell>
-              <TableCell>
-                {item.needed_by_date ? format(new Date(item.needed_by_date), 'MMM dd, yyyy') : '—'}
+                <div className="space-y-0.5">
+                  <div className="font-medium text-sm">{item.quotes?.project_name || '—'}</div>
+                  {item.metadata?.treatment_name && (
+                    <div className="text-xs text-muted-foreground">{item.metadata.treatment_name}</div>
+                  )}
+                </div>
               </TableCell>
               <TableCell>
                 <Badge variant={priorityColors[item.priority as keyof typeof priorityColors] || "secondary"}>
