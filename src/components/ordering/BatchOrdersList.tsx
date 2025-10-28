@@ -94,16 +94,16 @@ const BatchOrderCard = ({ order, onView, onEdit, onSend, onReceive, onDelete }: 
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <CardTitle className="text-lg">{order.batch_number}</CardTitle>
-              <Badge variant={statusColors[order.status as keyof typeof statusColors] || "secondary"}>
+              <CardTitle className="text-base">{order.batch_number}</CardTitle>
+              <Badge variant={statusColors[order.status as keyof typeof statusColors] || "secondary"} className="text-xs">
                 {statusLabels[order.status as keyof typeof statusLabels] || order.status}
               </Badge>
             </div>
-            <CardDescription className="mt-1">
+            <CardDescription className="mt-1 text-xs">
               {order.supplier_id ? (order.vendors?.name || 'Unknown Supplier') : (
                 <span className="flex items-center gap-1">
                   <Package className="h-3 w-3" />
@@ -114,13 +114,13 @@ const BatchOrderCard = ({ order, onView, onEdit, onSend, onReceive, onDelete }: 
             
             {/* Jobs and Clients */}
             {(jobsAndClients.jobs.length > 0 || jobsAndClients.clients.length > 0) && (
-              <div className="mt-3 space-y-1.5">
+              <div className="mt-2 space-y-1">
                 {jobsAndClients.jobs.length > 0 && (
-                  <div className="flex items-start gap-2 text-sm">
-                    <span className="text-muted-foreground min-w-[60px]">Jobs:</span>
-                    <div className="flex flex-wrap gap-1.5">
+                  <div className="flex items-start gap-2 text-xs">
+                    <span className="text-muted-foreground min-w-[50px]">Jobs:</span>
+                    <div className="flex flex-wrap gap-1">
                       {jobsAndClients.jobs.map((job: any) => (
-                        <Badge key={job.id} variant="outline" className="font-mono text-xs">
+                        <Badge key={job.id} variant="outline" className="font-mono text-[10px] px-1.5 py-0">
                           {job.job_number}
                         </Badge>
                       ))}
@@ -128,9 +128,9 @@ const BatchOrderCard = ({ order, onView, onEdit, onSend, onReceive, onDelete }: 
                   </div>
                 )}
                 {jobsAndClients.clients.length > 0 && (
-                  <div className="flex items-start gap-2 text-sm">
-                    <span className="text-muted-foreground min-w-[60px]">Clients:</span>
-                    <div className="text-sm font-medium">
+                  <div className="flex items-start gap-2 text-xs">
+                    <span className="text-muted-foreground min-w-[50px]">Clients:</span>
+                    <div className="text-xs">
                       {jobsAndClients.clients.map((c: any) => c.name).join(', ')}
                     </div>
                   </div>
@@ -184,23 +184,23 @@ const BatchOrderCard = ({ order, onView, onEdit, onSend, onReceive, onDelete }: 
           </DropdownMenu>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="grid gap-3">
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="space-y-1">
+      <CardContent className="pt-3">
+        <div className="grid gap-2">
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="space-y-0.5">
               <span className="text-muted-foreground block">Items</span>
-              <span className="font-medium block">{order.total_items}</span>
+              <span className="block">{order.total_items}</span>
             </div>
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               {canViewCosts ? (
                 <>
                   <span className="text-muted-foreground block">Total Amount</span>
-                  <span className="font-medium block">${order.total_amount?.toFixed(2) || '0.00'}</span>
+                  <span className="block">${order.total_amount?.toFixed(2) || '0.00'}</span>
                 </>
               ) : (
                 <>
                   <span className="text-muted-foreground block flex items-center gap-1">
-                    <Lock className="h-3 w-3" />
+                    <Lock className="h-2.5 w-2.5" />
                     Total Amount
                   </span>
                   <span className="text-muted-foreground block">Hidden</span>
@@ -210,11 +210,11 @@ const BatchOrderCard = ({ order, onView, onEdit, onSend, onReceive, onDelete }: 
           </div>
           
           {/* Dates */}
-          <div className="space-y-2 text-sm border-t pt-3">
+          <div className="space-y-1 text-xs border-t pt-2">
             {order.order_schedule_date && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Schedule Date:</span>
-                <span className="font-medium">
+                <span>
                   {format(new Date(order.order_schedule_date), 'MMM dd, yyyy')}
                 </span>
               </div>
@@ -222,7 +222,7 @@ const BatchOrderCard = ({ order, onView, onEdit, onSend, onReceive, onDelete }: 
             {order.sent_date && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Sent:</span>
-                <span className="font-medium">
+                <span>
                   {format(new Date(order.sent_date), 'MMM dd, yyyy')}
                 </span>
               </div>
@@ -230,7 +230,7 @@ const BatchOrderCard = ({ order, onView, onEdit, onSend, onReceive, onDelete }: 
             {order.expected_delivery_date && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Expected Delivery:</span>
-                <span className="font-medium">
+                <span>
                   {format(new Date(order.expected_delivery_date), 'MMM dd, yyyy')}
                 </span>
               </div>
@@ -239,47 +239,47 @@ const BatchOrderCard = ({ order, onView, onEdit, onSend, onReceive, onDelete }: 
           
           {/* Expandable Materials Section */}
           {items && items.length > 0 && (
-            <div className="border-t pt-3">
+            <div className="border-t pt-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="w-full justify-between"
+                className="w-full justify-between text-xs h-8"
               >
-                <span className="flex items-center gap-2">
-                  <Package className="h-4 w-4" />
+                <span className="flex items-center gap-1.5">
+                  <Package className="h-3 w-3" />
                   Materials ({items.length})
                 </span>
-                <span className="text-xs">{isExpanded ? '▼' : '▶'}</span>
+                <span className="text-[10px]">{isExpanded ? '▼' : '▶'}</span>
               </Button>
               
               {isExpanded && (
-                <div className="mt-3 space-y-2 max-h-[300px] overflow-y-auto">
+                <div className="mt-2 space-y-1.5 max-h-[300px] overflow-y-auto">
                   {items.map((item: any) => {
                     const project = item.material_order_queue?.projects;
                     const client = item.material_order_queue?.clients;
                     
                     return (
-                      <div key={item.id} className="text-sm border rounded-md p-2 space-y-1">
+                      <div key={item.id} className="text-xs border rounded p-2 space-y-0.5">
                         <div className="flex justify-between items-start">
-                          <div className="font-medium">{item.material_name}</div>
+                          <div>{item.material_name}</div>
                           <div className="text-right">
                             {canViewCosts ? (
                               <>
-                                <div className="font-medium">${item.total_price?.toFixed(2)}</div>
-                                <div className="text-xs text-muted-foreground">
+                                <div>${item.total_price?.toFixed(2)}</div>
+                                <div className="text-[10px] text-muted-foreground">
                                   {item.quantity} {item.unit}
                                 </div>
                               </>
                             ) : (
-                              <div className="text-xs text-muted-foreground">
+                              <div className="text-[10px] text-muted-foreground">
                                 {item.quantity} {item.unit}
                               </div>
                             )}
                           </div>
                         </div>
                         {(project || client) && (
-                          <div className="text-xs text-muted-foreground space-y-0.5">
+                          <div className="text-[10px] text-muted-foreground space-y-0.5">
                             {project && (
                               <div>Job: {project.job_number} - {project.name}</div>
                             )}
