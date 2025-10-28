@@ -2,7 +2,8 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Send, Truck, MoreHorizontal, PackageCheck, Trash2, Package } from "lucide-react";
+import { Eye, Send, Truck, MoreHorizontal, PackageCheck, Trash2, Package, Lock } from "lucide-react";
+import { useUserRole } from "@/hooks/useUserRole";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,6 +55,8 @@ const statusLabels = {
 const BatchOrderCard = ({ order, onView, onSend, onReceive, onDelete }: any) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const { data: items } = useBatchOrderItems(order.id);
+  const { data: userRole } = useUserRole();
+  const canViewCosts = userRole?.canViewVendorCosts ?? false;
 
   // Get unique jobs and clients from items
   const jobsAndClients = useMemo(() => {
@@ -177,8 +180,20 @@ const BatchOrderCard = ({ order, onView, onSend, onReceive, onDelete }: any) => 
               <span className="font-medium block">{order.total_items}</span>
             </div>
             <div className="space-y-1">
-              <span className="text-muted-foreground block">Total Amount</span>
-              <span className="font-medium block">${order.total_amount?.toFixed(2) || '0.00'}</span>
+              {canViewCosts ? (
+                <>
+                  <span className="text-muted-foreground block">Total Amount</span>
+                  <span className="font-medium block">${order.total_amount?.toFixed(2) || '0.00'}</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-muted-foreground block flex items-center gap-1">
+                    <Lock className="h-3 w-3" />
+                    Total Amount
+                  </span>
+                  <span className="text-muted-foreground block">Hidden</span>
+                </>
+              )}
             </div>
           </div>
           
@@ -237,10 +252,18 @@ const BatchOrderCard = ({ order, onView, onSend, onReceive, onDelete }: any) => 
                         <div className="flex justify-between items-start">
                           <div className="font-medium">{item.material_name}</div>
                           <div className="text-right">
-                            <div className="font-medium">${item.total_price?.toFixed(2)}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {item.quantity} {item.unit}
-                            </div>
+                            {canViewCosts ? (
+                              <>
+                                <div className="font-medium">${item.total_price?.toFixed(2)}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {item.quantity} {item.unit}
+                                </div>
+                              </>
+                            ) : (
+                              <div className="text-xs text-muted-foreground">
+                                {item.quantity} {item.unit}
+                              </div>
+                            )}
                           </div>
                         </div>
                         {(project || client) && (

@@ -1000,6 +1000,8 @@ export type Database = {
           minimum_profit_margin_percentage: number | null
           pricing_settings: Json | null
           show_profit_margins_to_staff: boolean | null
+          show_vendor_costs_to_managers: boolean | null
+          show_vendor_costs_to_staff: boolean | null
           state: string | null
           tax_rate: number | null
           tax_type: string | null
@@ -1027,6 +1029,8 @@ export type Database = {
           minimum_profit_margin_percentage?: number | null
           pricing_settings?: Json | null
           show_profit_margins_to_staff?: boolean | null
+          show_vendor_costs_to_managers?: boolean | null
+          show_vendor_costs_to_staff?: boolean | null
           state?: string | null
           tax_rate?: number | null
           tax_type?: string | null
@@ -1054,6 +1058,8 @@ export type Database = {
           minimum_profit_margin_percentage?: number | null
           pricing_settings?: Json | null
           show_profit_margins_to_staff?: boolean | null
+          show_vendor_costs_to_managers?: boolean | null
+          show_vendor_costs_to_staff?: boolean | null
           state?: string | null
           tax_rate?: number | null
           tax_type?: string | null

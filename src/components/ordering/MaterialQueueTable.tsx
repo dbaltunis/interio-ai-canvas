@@ -2,7 +2,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Trash2, Edit } from "lucide-react";
+import { MoreHorizontal, Trash2, Edit, Lock } from "lucide-react";
+import { useUserRole } from "@/hooks/useUserRole";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,6 +52,8 @@ const statusLabels = {
 
 export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectionChange }: MaterialQueueTableProps) => {
   const deleteMaterial = useDeleteMaterialQueueItem();
+  const { data: userRole } = useUserRole();
+  const canViewCosts = userRole?.canViewVendorCosts ?? false;
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -97,8 +100,8 @@ export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectio
             <TableHead>Client</TableHead>
             <TableHead>Material</TableHead>
             <TableHead className="text-right">Quantity</TableHead>
-            <TableHead className="text-right">Unit Cost</TableHead>
-            <TableHead className="text-right">Total Cost</TableHead>
+            {canViewCosts && <TableHead className="text-right">Unit Cost</TableHead>}
+            {canViewCosts && <TableHead className="text-right">Total Cost</TableHead>}
             <TableHead>Supplier</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Priority</TableHead>
@@ -145,12 +148,16 @@ export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectio
                   </div>
                 )}
               </TableCell>
-              <TableCell className="text-right text-muted-foreground">
-                ${item.unit_cost?.toFixed(2) || '0.00'}
-              </TableCell>
-              <TableCell className="text-right font-medium">
-                ${item.total_cost?.toFixed(2) || '0.00'}
-              </TableCell>
+              {canViewCosts && (
+                <TableCell className="text-right text-muted-foreground">
+                  ${item.unit_cost?.toFixed(2) || '0.00'}
+                </TableCell>
+              )}
+              {canViewCosts && (
+                <TableCell className="text-right font-medium">
+                  ${item.total_cost?.toFixed(2) || '0.00'}
+                </TableCell>
+              )}
               <TableCell>
                 <div className="max-w-[150px] truncate">
                   {item.vendors?.name || <span className="text-muted-foreground">Unassigned</span>}

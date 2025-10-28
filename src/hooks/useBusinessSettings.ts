@@ -41,6 +41,8 @@ export interface BusinessSettings {
   default_profit_margin_percentage?: number;
   minimum_profit_margin_percentage?: number;
   show_profit_margins_to_staff?: boolean;
+  show_vendor_costs_to_managers?: boolean;
+  show_vendor_costs_to_staff?: boolean;
   features_enabled?: FeatureFlags;
   inventory_config?: InventoryConfig;
   created_at: string;
