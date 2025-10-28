@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useMaterialQueue, useBulkAddToQueue } from "@/hooks/useMaterialQueue";
 import { useNavigate } from "react-router-dom";
 import { useQuotes } from "@/hooks/useQuotes";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProjectMaterialsTabProps {
   projectId: string;
@@ -47,6 +48,19 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
 
     setIsProcessing(true);
     try {
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        console.error('[SEND TO PURCHASING] Auth error:', userError);
+        toast.error("Authentication required", {
+          description: "Please log in to send materials to purchasing"
+        });
+        return;
+      }
+      
+      console.log('[SEND TO PURCHASING] User authenticated:', user.id);
+      
       const selectedMaterialsList = displayMaterials.filter(m => selectedMaterials.has(m.id));
       console.log('[SEND TO PURCHASING] Selected materials:', selectedMaterialsList);
       
@@ -57,6 +71,7 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
         const shortfall = Math.max(0, neededQuantity - (material.currentQuantity || 0));
         
         return {
+          user_id: user.id, // CRITICAL: Required for RLS policy
           quote_id: currentQuote?.id,
           project_id: projectId,
           client_id: currentQuote?.client_id,
@@ -78,6 +93,8 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
           }
         };
       });
+      
+      console.log('[SEND TO PURCHASING] Queue items with user_id:', queueItems);
       
       await bulkAddToQueue.mutateAsync(queueItems);
       
