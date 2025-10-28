@@ -2,8 +2,9 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, AlertCircle, ShoppingCart, FileDown, Loader2 } from "lucide-react";
+import { Package, AlertCircle, ShoppingCart, FileDown, Loader2, Info } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useProjectMaterialsUsage } from "@/hooks/useProjectMaterialsUsage";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -33,22 +34,19 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
     return queueItems?.filter(item => item.project_id === projectId).length || 0;
   }, [queueItems, projectId]);
   
-  const handleProcessMaterials = async () => {
+  const handleSendSelectedToPurchasing = async () => {
+    if (selectedMaterials.size === 0) {
+      toast.error("No materials selected");
+      return;
+    }
+
     setIsProcessing(true);
     try {
-      if (treatmentMaterials.length === 0) {
-        toast.error("No materials found to process", {
-          description: "Go to 'Rooms & Treatments' tab, select a window, configure the treatment, select a fabric, and click 'Save Configuration' first.",
-          duration: 8000
-        });
-        return;
-      }
-
-      // Send ALL materials to purchasing queue for management
-      // Each material will be tagged with its source type (order vs stock)
-      const queueItems = treatmentMaterials.map(material => {
-        const inventoryItem = inventory?.find(inv => inv.id === material.itemId);
-        const neededQuantity = material.quantityUsed;
+      const selectedMaterialsList = displayMaterials.filter(m => selectedMaterials.has(m.id));
+      
+      const queueItems = selectedMaterialsList.map(material => {
+        const inventoryItem = inventory?.find(inv => inv.id === material.fabric_id);
+        const neededQuantity = material.quantity;
         const hasStock = (material.currentQuantity || 0) >= neededQuantity;
         const shortfall = Math.max(0, neededQuantity - (material.currentQuantity || 0));
         
@@ -56,9 +54,9 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
           quote_id: currentQuote?.id,
           project_id: projectId,
           client_id: currentQuote?.client_id,
-          inventory_item_id: material.itemId,
-          material_name: material.itemName,
-          material_type: inventoryItem?.category || 'material',
+          inventory_item_id: material.fabric_id,
+          material_name: material.name,
+          material_type: material.category || 'material',
           quantity: hasStock ? neededQuantity : shortfall,
           unit: material.unit,
           supplier_id: inventoryItem?.vendor_id,
@@ -70,7 +68,7 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
             source_type: hasStock ? 'allocate_from_stock' : 'order_from_supplier',
             current_stock: material.currentQuantity || 0,
             required_quantity: neededQuantity,
-            treatment_name: material.surfaceName
+            treatment_name: material.treatment_name
           }
         };
       });
@@ -88,10 +86,13 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
         },
         duration: 10000
       });
+      
+      // Clear selection after successful send
+      setSelectedMaterials(new Set());
     } catch (error: any) {
-      console.error("Failed to process materials:", error);
+      console.error("Failed to send materials:", error);
       toast.error("Failed to send materials", {
-        description: error.message || "Please check console for details"
+        description: error.message || "Please try again"
       });
     } finally {
       setIsProcessing(false);
@@ -222,55 +223,23 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
         </Card>
       )}
       
-      {/* Material Management Card */}
-      <Card className="border-primary/50 bg-primary/5">
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <CardTitle className="flex items-center gap-2">
-                <ShoppingCart className="h-5 w-5 text-primary" />
-                Send to Purchasing
-              </CardTitle>
-              <CardDescription>
-                Send materials to Purchasing for ordering from suppliers or allocating from stock
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-3">
-              {materialsInQueue > 0 && (
-                <Badge variant="secondary" className="gap-1.5">
-                  <Package className="h-3 w-3" />
-                  {materialsInQueue} in queue
-                </Badge>
-              )}
-              <Button 
-                onClick={handleProcessMaterials} 
-                size="lg" 
-                className="gap-2"
-                disabled={isProcessing || treatmentMaterials.length === 0}
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <ShoppingCart className="h-4 w-4" />
-                    Send to Purchasing
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="text-sm text-muted-foreground space-y-1">
-            <p>• Materials will be checked against current inventory</p>
-            <p>• Items with sufficient stock will be marked for allocation</p>
-            <p>• Items requiring purchase will be sent to suppliers</p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Status Alert */}
+      {materialsInQueue > 0 && (
+        <Alert className="border-blue-500/50 bg-blue-50 dark:bg-blue-950/20">
+          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <AlertDescription className="text-blue-900 dark:text-blue-100">
+            <span className="font-medium">{materialsInQueue} material{materialsInQueue !== 1 ? 's' : ''}</span> from this project are in the purchasing queue
+            <Button
+              variant="link"
+              size="sm"
+              onClick={() => navigate('/?tab=ordering-hub')}
+              className="ml-2 p-0 h-auto text-blue-600 dark:text-blue-400"
+            >
+              View in Purchasing →
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
       
       {/* Auto-Extracted Materials from Treatments */}
       <Card>
@@ -318,14 +287,36 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
                     Deselect All
                   </Button>
                 </div>
-                <Button
-                  onClick={exportSelectedMaterials}
-                  disabled={selectedMaterials.size === 0}
-                  size="sm"
-                >
-                  <FileDown className="h-4 w-4 mr-2" />
-                  Export Order List ({selectedMaterials.size})
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleSendSelectedToPurchasing}
+                    disabled={selectedMaterials.size === 0 || isProcessing}
+                    variant="default"
+                    size="sm"
+                    className="gap-2"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingCart className="h-4 w-4" />
+                        Send to Purchasing ({selectedMaterials.size})
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={exportSelectedMaterials}
+                    disabled={selectedMaterials.size === 0}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <FileDown className="h-4 w-4 mr-2" />
+                    Export ({selectedMaterials.size})
+                  </Button>
+                </div>
               </div>
 
               <Table>
