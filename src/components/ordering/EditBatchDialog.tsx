@@ -285,52 +285,54 @@ export const EditBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: E
                   </Button>
                 </div>
 
-                <div className="border rounded-lg divide-y max-h-[250px] overflow-y-auto bg-background">
-                  {availableItems.length === 0 ? (
-                    <div className="p-8 text-center text-muted-foreground">
-                      No materials available to add
-                    </div>
-                  ) : (
-                    availableItems.map((item) => {
-                      const project = item.projects;
-                      const client = item.clients;
-                      
-                      return (
-                        <div
-                          key={item.id}
-                          className="p-3 hover:bg-muted/50 transition-colors cursor-pointer"
-                          onClick={() => toggleNewItemSelection(item.id)}
-                        >
-                          <div className="flex items-start gap-3">
-                            <Checkbox
-                              checked={selectedNewItems.includes(item.id)}
-                              onCheckedChange={() => toggleNewItemSelection(item.id)}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            <div className="flex-1 space-y-1">
-                              <div className="font-medium">{item.material_name}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {item.quantity} {item.unit} @ ${item.unit_cost?.toFixed(2)}
-                              </div>
-                              {(project || client) && (
-                                <div className="text-xs text-muted-foreground">
-                                  {project && <span>Job: {project.job_number}</span>}
-                                  {project && client && <span> • </span>}
-                                  {client && <span>Client: {client.name}</span>}
+                <ScrollArea className="border rounded-lg bg-background h-[250px]">
+                  <div className="divide-y">
+                    {availableItems.length === 0 ? (
+                      <div className="p-8 text-center text-muted-foreground">
+                        No materials available to add
+                      </div>
+                    ) : (
+                      availableItems.map((item) => {
+                        const project = item.projects;
+                        const client = item.clients;
+                        
+                        return (
+                          <div
+                            key={item.id}
+                            className="p-3 hover:bg-muted/50 transition-colors cursor-pointer"
+                            onClick={() => toggleNewItemSelection(item.id)}
+                          >
+                            <div className="flex items-start gap-3">
+                              <Checkbox
+                                checked={selectedNewItems.includes(item.id)}
+                                onCheckedChange={() => toggleNewItemSelection(item.id)}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <div className="flex-1 space-y-1">
+                                <div className="font-medium">{item.material_name}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  {item.quantity} {item.unit} @ ${item.unit_cost?.toFixed(2)}
                                 </div>
-                              )}
-                              {item.supplier_id && (
-                                <Badge variant="outline" className="text-xs mt-1">
-                                  {item.vendors?.name}
-                                </Badge>
-                              )}
+                                {(project || client) && (
+                                  <div className="text-xs text-muted-foreground">
+                                    {project && <span>Job: {project.job_number}</span>}
+                                    {project && client && <span> • </span>}
+                                    {client && <span>Client: {client.name}</span>}
+                                  </div>
+                                )}
+                                {item.supplier_id && (
+                                  <Badge variant="outline" className="text-xs mt-1">
+                                    {item.vendors?.name}
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </ScrollArea>
 
                 {selectedNewItems.length > 0 && (
                   <Button
