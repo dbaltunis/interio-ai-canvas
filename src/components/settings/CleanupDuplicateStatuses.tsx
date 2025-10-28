@@ -11,9 +11,9 @@ export const CleanupDuplicateStatuses = () => {
   const { toast } = useToast();
   const [isCleaningUp, setIsCleaningUp] = useState(false);
 
-  // Find statuses WITHOUT slot_numbers (these are the broken ones from earlier)
+  // Find old statuses with slot_numbers 1-5 that need to be removed before seeding
   const oldStatuses = existingStatuses.filter(s => 
-    s.is_active && (s.slot_number === null || s.slot_number === undefined)
+    s.is_active && s.slot_number !== null && s.slot_number >= 1 && s.slot_number <= 10
   );
 
   const handleCleanup = async () => {
