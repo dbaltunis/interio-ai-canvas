@@ -130,11 +130,9 @@ export const useTreatments = (projectId?: string, quoteId?: string) => {
           .select("*")
           .eq("project_id", projectId);
         
-        // Filter by quote_id if provided, otherwise show treatments without quote_id
+        // Filter by quote_id if provided
         if (quoteId) {
           query = query.eq("quote_id", quoteId);
-        } else {
-          query = query.is("quote_id", null);
         }
         
         const { data, error } = await query.order("created_at", { ascending: false });
@@ -210,13 +208,31 @@ export const useCreateTreatment = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
+      // Ensure quote_id is provided
+      let treatmentWithQuote = { ...treatment };
+      if (!treatment.quote_id && treatment.project_id) {
+        // Get the first/current quote for this project
+        const { data: firstQuote } = await supabase
+          .from("quotes")
+          .select("id")
+          .eq("project_id", treatment.project_id)
+          .order("version", { ascending: true, nullsFirst: false })
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        
+        if (firstQuote) {
+          treatmentWithQuote = { ...treatmentWithQuote, quote_id: firstQuote.id };
+        }
+      }
+
       // Process JSON fields with enhanced safety
       const processedTreatment = {
-        ...treatment,
-        measurements: safeStringifyJSON(treatment.measurements, 'measurements'),
-        fabric_details: safeStringifyJSON(treatment.fabric_details, 'fabric_details'),
-        treatment_details: safeStringifyJSON(treatment.treatment_details, 'treatment_details'),
-        calculation_details: safeStringifyJSON(treatment.calculation_details, 'calculation_details'),
+        ...treatmentWithQuote,
+        measurements: safeStringifyJSON(treatmentWithQuote.measurements, 'measurements'),
+        fabric_details: safeStringifyJSON(treatmentWithQuote.fabric_details, 'fabric_details'),
+        treatment_details: safeStringifyJSON(treatmentWithQuote.treatment_details, 'treatment_details'),
+        calculation_details: safeStringifyJSON(treatmentWithQuote.calculation_details, 'calculation_details'),
         user_id: user.id
       };
 

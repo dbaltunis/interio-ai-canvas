@@ -22,11 +22,9 @@ export const useRooms = (projectId?: string, quoteId?: string) => {
         .select("*")
         .eq("project_id", projectId);
       
-      // Filter by quote_id if provided, otherwise show rooms without quote_id
+      // Filter by quote_id if provided
       if (quoteId) {
         query = query.eq("quote_id", quoteId);
-      } else {
-        query = query.is("quote_id", null);
       }
       
       const { data, error } = await query.order("created_at");
@@ -57,9 +55,27 @@ export const useCreateRoom = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
+      // Ensure quote_id is provided
+      let roomWithQuote = { ...room };
+      if (!room.quote_id && room.project_id) {
+        // Get the first/current quote for this project
+        const { data: firstQuote } = await supabase
+          .from("quotes")
+          .select("id")
+          .eq("project_id", room.project_id)
+          .order("version", { ascending: true, nullsFirst: false })
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        
+        if (firstQuote) {
+          roomWithQuote = { ...roomWithQuote, quote_id: firstQuote.id };
+        }
+      }
+
       const { data, error } = await supabase
         .from("rooms")
-        .insert({ ...room, user_id: user.id })
+        .insert({ ...roomWithQuote, user_id: user.id })
         .select()
         .single();
 

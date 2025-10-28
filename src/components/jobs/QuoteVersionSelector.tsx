@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Copy, FileText } from "lucide-react";
 import { useQuoteVersions } from "@/hooks/useQuoteVersions";
 import { JobStatusDropdown } from "./JobStatusDropdown";
+import { useEffect } from "react";
 
 interface QuoteVersionSelectorProps {
   projectId: string;
@@ -21,6 +22,13 @@ export const QuoteVersionSelector = ({
   const selectedQuote = selectedQuoteId 
     ? quoteVersions.find(q => q.id === selectedQuoteId) 
     : currentQuote;
+
+  // Auto-select first quote if none selected
+  useEffect(() => {
+    if (!selectedQuoteId && currentQuote) {
+      onQuoteChange(currentQuote.id);
+    }
+  }, [selectedQuoteId, currentQuote, onQuoteChange]);
 
   const handleDuplicateQuote = async () => {
     if (selectedQuote) {

@@ -25,6 +25,9 @@ export const useQuoteVersions = (projectId: string) => {
   // Create a new quote version (duplicate current quote with rooms and treatments)
   const duplicateQuote = useMutation({
     mutationFn: async (currentQuote: any) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
       // Get the highest version number
       const maxVersion = quoteVersions?.reduce((max, quote) => 
         Math.max(max, (quote as any).version || 1), 0) || 0;
@@ -34,18 +37,30 @@ export const useQuoteVersions = (projectId: string) => {
       // Generate new quote number with version
       const baseQuoteNumber = currentQuote.quote_number.split('-v')[0];
       const newQuoteNumber = `${baseQuoteNumber}-v${newVersion}`;
+
+      // Get first "Quote" category status as default
+      const { data: firstQuoteStatus } = await supabase
+        .from("job_statuses")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("category", "Quote")
+        .eq("is_active", true)
+        .order("slot_number", { ascending: true })
+        .limit(1)
+        .maybeSingle();
       
       // Create new quote version
       const { data: newQuote, error: quoteError } = await supabase
         .from("quotes")
         .insert({
-          ...currentQuote,
-          id: undefined,
+          project_id: currentQuote.project_id,
+          client_id: currentQuote.client_id,
           quote_number: newQuoteNumber,
           version: newVersion,
-          status_id: null, // Reset to default status
-          created_at: undefined,
-          updated_at: undefined,
+          status: 'draft',
+          status_id: firstQuoteStatus?.id || null,
+          total_amount: currentQuote.total_amount,
+          user_id: user.id,
           notes: `${currentQuote.notes || ''}\n\nDuplicated from version ${(currentQuote as any).version || 1}`.trim()
         })
         .select()
@@ -53,7 +68,7 @@ export const useQuoteVersions = (projectId: string) => {
 
       if (quoteError) throw quoteError;
       
-      // Duplicate rooms linked to the current quote
+      // Duplicate rooms linked to the current quote (by quote_id)
       const { data: rooms } = await supabase
         .from("rooms")
         .select("*")
@@ -82,7 +97,7 @@ export const useQuoteVersions = (projectId: string) => {
             roomIdMap.set(oldRoom.id, newRooms[index]?.id);
           });
           
-          // Duplicate treatments
+          // Duplicate treatments (by quote_id)
           const { data: treatments } = await supabase
             .from("treatments")
             .select("*")

@@ -684,7 +684,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
                     <TableRow 
                       key={`${project.id}-quote-${index}`}
                       className="cursor-pointer hover:bg-muted/20 border-l-2 border-primary/20 bg-muted/5 h-12"
-                      onClick={() => onJobSelect(quote)}
+                      onClick={() => onJobSelect({ id: project.id, projects: project })}
                       style={{ marginLeft: '10px' }}
                     >
                       <TableCell className="pl-6 py-2">
@@ -751,7 +751,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48 bg-popover text-popover-foreground border shadow-lg z-50">
-                              <DropdownMenuItem onClick={() => onJobSelect(quote)}>
+                              <DropdownMenuItem onClick={() => onJobSelect({ id: project.id, projects: project })}>
                                 <Eye className="mr-2 h-4 w-4" />
                                 View Quote
                               </DropdownMenuItem>
