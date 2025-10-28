@@ -815,13 +815,20 @@ export type Database = {
         Row: {
           acknowledged_date: string | null
           actual_delivery_date: string | null
+          ai_confidence: string | null
+          ai_predicted_days: number | null
           batch_number: string
           created_at: string | null
+          estimated_completion_date: string | null
+          expected_completion_days: number | null
           expected_delivery_date: string | null
           id: string
+          locked_at: string | null
           metadata: Json | null
           notes: string | null
           order_schedule_date: string | null
+          progress_start_date: string | null
+          project_id: string | null
           sent_date: string | null
           status: string | null
           supplier_id: string
@@ -834,13 +841,20 @@ export type Database = {
         Insert: {
           acknowledged_date?: string | null
           actual_delivery_date?: string | null
+          ai_confidence?: string | null
+          ai_predicted_days?: number | null
           batch_number: string
           created_at?: string | null
+          estimated_completion_date?: string | null
+          expected_completion_days?: number | null
           expected_delivery_date?: string | null
           id?: string
+          locked_at?: string | null
           metadata?: Json | null
           notes?: string | null
           order_schedule_date?: string | null
+          progress_start_date?: string | null
+          project_id?: string | null
           sent_date?: string | null
           status?: string | null
           supplier_id: string
@@ -853,13 +867,20 @@ export type Database = {
         Update: {
           acknowledged_date?: string | null
           actual_delivery_date?: string | null
+          ai_confidence?: string | null
+          ai_predicted_days?: number | null
           batch_number?: string
           created_at?: string | null
+          estimated_completion_date?: string | null
+          expected_completion_days?: number | null
           expected_delivery_date?: string | null
           id?: string
+          locked_at?: string | null
           metadata?: Json | null
           notes?: string | null
           order_schedule_date?: string | null
+          progress_start_date?: string | null
+          project_id?: string | null
           sent_date?: string | null
           status?: string | null
           supplier_id?: string
@@ -870,6 +891,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "batch_orders_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "batch_orders_vendor_id_fkey"
             columns: ["supplier_id"]
