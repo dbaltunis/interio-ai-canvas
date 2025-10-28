@@ -34,7 +34,7 @@ const navItems = [
   { id: "quotes", label: "Emails", icon: FileText, tourId: "emails-tab" },
   { id: "calendar", label: "Calendar", icon: Calendar, tourId: "calendar-tab" },
   { id: "inventory", label: "Library", icon: Package, tourId: "library-tab" },
-  { id: "ordering-hub", label: "Orders", icon: ShoppingCart, tourId: "ordering-hub-tab" },
+  { id: "ordering-hub", label: "Purchasing", icon: ShoppingCart, tourId: "ordering-hub-tab" },
 ];
 
 export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderProps) => {

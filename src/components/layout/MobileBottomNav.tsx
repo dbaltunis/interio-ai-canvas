@@ -25,7 +25,7 @@ interface MobileBottomNavProps {
 const navItems = [
   { id: "projects", label: "Jobs", icon: FolderOpen },
   { id: "clients", label: "Clients", icon: Users },
-  { id: "ordering-hub", label: "Orders", icon: ShoppingCart },
+  { id: "ordering-hub", label: "Purchasing", icon: ShoppingCart },
   { id: "calendar", label: "Calendar", icon: Calendar },
   { id: "inventory", label: "Library", icon: Package },
 ];

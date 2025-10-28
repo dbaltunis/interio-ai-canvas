@@ -22,9 +22,9 @@ export const OrderingHubPage = () => {
     <div className="space-y-6 pb-16">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Ordering Hub</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Material Purchasing</h1>
         <p className="text-muted-foreground">
-          Manage materials, create batch orders, and track deliveries
+          Manage material orders, create supplier batches, and track deliveries
         </p>
       </div>
 

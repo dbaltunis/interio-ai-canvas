@@ -85,13 +85,13 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
           });
         }
         
-        toast.success("Materials processed and added to ordering queue!", {
-          description: `Processed ${materialsToProcess.length} material(s), ${outOfStockItems.length} added to ordering queue`,
+        toast.success("✓ Materials processed successfully!", {
+          description: `${materialsToProcess.length - outOfStockItems.length} allocated from inventory, ${outOfStockItems.length} sent to purchasing queue`,
           action: {
-            label: "View Queue",
+            label: "Go to Purchasing →",
             onClick: () => navigate('/?tab=ordering-hub')
           },
-          duration: 8000
+          duration: 10000
         });
       } else {
         toast.success("Materials processed successfully!", {
@@ -242,7 +242,7 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
                 Automatic Material Processing
               </CardTitle>
               <CardDescription>
-                Extract all materials from your quote and automatically check inventory
+                Check inventory, allocate stock, and send items to purchasing queue automatically
               </CardDescription>
             </div>
             <Button onClick={() => setShowProcessDialog(true)} size="lg" className="gap-2">
@@ -255,15 +255,15 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
           <div className="grid grid-cols-3 gap-4 text-sm">
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-green-500" />
-              <span>Items in stock → Deduct from inventory</span>
+              <span>Items in stock → Allocate from inventory</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-orange-500" />
-              <span>Items not in stock → Create purchase list</span>
+              <span>Out of stock → Send to purchasing queue</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-blue-500" />
-              <span>Automatic vendor matching</span>
+              <span>Auto-match suppliers & create batches</span>
             </div>
           </div>
         </CardContent>
@@ -418,8 +418,8 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
               <div className="flex items-start gap-3 p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
                 <div className="h-2 w-2 rounded-full bg-orange-500 mt-2" />
                 <div>
-                  <p className="font-medium text-orange-900 dark:text-orange-100">Create Purchase Requirements</p>
-                  <p className="text-sm text-orange-700 dark:text-orange-300">Materials not in stock will be added to your purchase list with supplier information</p>
+                  <p className="font-medium text-orange-900 dark:text-orange-100">Send to Purchasing Queue</p>
+                  <p className="text-sm text-orange-700 dark:text-orange-300">Out-of-stock materials are sent to the Purchasing tab where you can create supplier orders</p>
                 </div>
               </div>
               
