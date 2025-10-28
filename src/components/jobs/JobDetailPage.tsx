@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { formatJobNumber } from "@/lib/format-job-number";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
@@ -17,6 +17,8 @@ import { CalendarTab } from "./tabs/CalendarTab";
 import { JobStatusDropdown } from "./JobStatusDropdown";
 import { JobSkeleton } from "./JobSkeleton";
 import { JobNotFound } from "./JobNotFound";
+import { useProjectMaterialsUsage } from "@/hooks/useProjectMaterialsUsage";
+import { useTreatmentMaterialsStatus } from "@/hooks/useProjectMaterialsStatus";
 
 interface JobDetailPageProps {
   jobId: string;
@@ -28,10 +30,23 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const { data: projects } = useProjects();
   const { data: clients } = useClients();
   const updateProject = useUpdateProject();
+  
+  // Fetch materials data for badge indicators
+  const { data: treatmentMaterials = [] } = useProjectMaterialsUsage(jobId);
+  const { data: materialStatusMap = {} } = useTreatmentMaterialsStatus(jobId);
 
   // Use defensive loading and state management
   const project = projects?.find(p => p.id === jobId);
   const client = project?.client_id ? clients?.find(c => c.id === project.client_id) : null;
+  
+  // Calculate unprocessed materials count
+  const unprocessedMaterialsCount = useMemo(() => {
+    return treatmentMaterials.filter(material => {
+      const materialId = `${material.itemId}-${material.surfaceId}`;
+      const status = materialStatusMap[materialId];
+      return !status || status === 'not_processed';
+    }).length;
+  }, [treatmentMaterials, materialStatusMap]);
   
   // Show loading skeleton while data is being fetched
   if (!projects || projects.length === 0) {
@@ -144,6 +159,14 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                       <Icon className="h-4 w-4" />
                       <span className="hidden sm:inline">{tab.label}</span>
                       <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
+                      {tab.id === "materials" && unprocessedMaterialsCount > 0 && (
+                        <Badge 
+                          variant="secondary" 
+                          className="ml-1 h-5 min-w-5 px-1.5 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 text-xs font-semibold"
+                        >
+                          {unprocessedMaterialsCount}
+                        </Badge>
+                      )}
                     </Button>
                   );
                 })}
