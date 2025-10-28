@@ -24,7 +24,9 @@ export const useUserRole = () => {
         .from("business_settings")
         .select("show_vendor_costs_to_managers, show_vendor_costs_to_staff")
         .eq("user_id", profile?.parent_account_id || user.id)
-        .single();
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       // Determine if user can view vendor costs
       const isOwner = profile?.role === 'Owner';
