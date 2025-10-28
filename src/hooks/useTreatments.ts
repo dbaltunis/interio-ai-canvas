@@ -86,12 +86,12 @@ const processTreatmentData = (treatment: any): Treatment => {
   }
 };
 
-export const useTreatments = (projectId?: string) => {
+export const useTreatments = (projectId?: string, quoteId?: string) => {
   return useQuery({
-    queryKey: ["treatments", projectId],
+    queryKey: ["treatments", projectId, quoteId],
     queryFn: async () => {
       console.log("=== FETCHING TREATMENTS ===");
-      console.log("Project ID:", projectId);
+      console.log("Project ID:", projectId, "Quote ID:", quoteId);
       
       try {
         if (!projectId) {
@@ -125,11 +125,19 @@ export const useTreatments = (projectId?: string) => {
         }
         
         console.log("Fetching treatments for project:", projectId);
-        const { data, error } = await supabase
+        let query = supabase
           .from("treatments")
           .select("*")
-          .eq("project_id", projectId)
-          .order("created_at", { ascending: false });
+          .eq("project_id", projectId);
+        
+        // Filter by quote_id if provided, otherwise show treatments without quote_id
+        if (quoteId) {
+          query = query.eq("quote_id", quoteId);
+        } else {
+          query = query.is("quote_id", null);
+        }
+        
+        const { data, error } = await query.order("created_at", { ascending: false });
         
         if (error) {
           console.error("Error fetching project treatments:", error);

@@ -5260,6 +5260,7 @@ export type Database = {
           name: string
           notes: string | null
           project_id: string
+          quote_id: string | null
           room_type: string | null
           updated_at: string
           user_id: string
@@ -5271,6 +5272,7 @@ export type Database = {
           name: string
           notes?: string | null
           project_id: string
+          quote_id?: string | null
           room_type?: string | null
           updated_at?: string
           user_id: string
@@ -5282,11 +5284,20 @@ export type Database = {
           name?: string
           notes?: string | null
           project_id?: string
+          quote_id?: string | null
           room_type?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rooms_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sales_forecasts: {
         Row: {
@@ -6298,6 +6309,7 @@ export type Database = {
           product_name: string | null
           project_id: string
           quantity: number | null
+          quote_id: string | null
           room_id: string | null
           status: string | null
           total_price: number | null
@@ -6325,6 +6337,7 @@ export type Database = {
           product_name?: string | null
           project_id: string
           quantity?: number | null
+          quote_id?: string | null
           room_id?: string | null
           status?: string | null
           total_price?: number | null
@@ -6352,6 +6365,7 @@ export type Database = {
           product_name?: string | null
           project_id?: string
           quantity?: number | null
+          quote_id?: string | null
           room_id?: string | null
           status?: string | null
           total_price?: number | null
@@ -6362,7 +6376,15 @@ export type Database = {
           user_id?: string
           window_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "treatments_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_invitations: {
         Row: {

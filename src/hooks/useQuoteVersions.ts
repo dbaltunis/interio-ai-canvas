@@ -22,7 +22,7 @@ export const useQuoteVersions = (projectId: string) => {
     enabled: !!projectId,
   });
 
-  // Create a new quote version (duplicate current quote)
+  // Create a new quote version (duplicate current quote with rooms and treatments)
   const duplicateQuote = useMutation({
     mutationFn: async (currentQuote: any) => {
       // Get the highest version number
@@ -32,18 +32,18 @@ export const useQuoteVersions = (projectId: string) => {
       const newVersion = maxVersion + 1;
       
       // Generate new quote number with version
-      const baseQuoteNumber = currentQuote.quote_number.split('-v')[0]; // Remove existing version suffix
+      const baseQuoteNumber = currentQuote.quote_number.split('-v')[0];
       const newQuoteNumber = `${baseQuoteNumber}-v${newVersion}`;
       
       // Create new quote version
-      const { data, error } = await supabase
+      const { data: newQuote, error: quoteError } = await supabase
         .from("quotes")
         .insert({
           ...currentQuote,
-          id: undefined, // Let database generate new ID
+          id: undefined,
           quote_number: newQuoteNumber,
           version: newVersion,
-          status: 'draft',
+          status_id: null, // Reset to default status
           created_at: undefined,
           updated_at: undefined,
           notes: `${currentQuote.notes || ''}\n\nDuplicated from version ${(currentQuote as any).version || 1}`.trim()
@@ -51,8 +51,63 @@ export const useQuoteVersions = (projectId: string) => {
         .select()
         .single();
 
-      if (error) throw error;
-      return data;
+      if (quoteError) throw quoteError;
+      
+      // Duplicate rooms linked to the current quote
+      const { data: rooms } = await supabase
+        .from("rooms")
+        .select("*")
+        .eq("quote_id", currentQuote.id);
+      
+      if (rooms && rooms.length > 0) {
+        const roomsToInsert = rooms.map(room => ({
+          ...room,
+          id: undefined,
+          quote_id: newQuote.id,
+          created_at: undefined,
+          updated_at: undefined,
+        }));
+        
+        const { data: newRooms, error: roomsError } = await supabase
+          .from("rooms")
+          .insert(roomsToInsert)
+          .select();
+        
+        if (roomsError) console.error("Error duplicating rooms:", roomsError);
+        
+        // Create room ID mapping for treatments
+        if (newRooms) {
+          const roomIdMap = new Map();
+          rooms.forEach((oldRoom, index) => {
+            roomIdMap.set(oldRoom.id, newRooms[index]?.id);
+          });
+          
+          // Duplicate treatments
+          const { data: treatments } = await supabase
+            .from("treatments")
+            .select("*")
+            .eq("quote_id", currentQuote.id);
+          
+          if (treatments && treatments.length > 0) {
+            const treatmentsToInsert = treatments.map(treatment => ({
+              ...treatment,
+              id: undefined,
+              quote_id: newQuote.id,
+              room_id: roomIdMap.get(treatment.room_id) || treatment.room_id,
+              created_at: undefined,
+              updated_at: undefined,
+            }));
+            
+            const { error: treatmentsError } = await supabase
+              .from("treatments")
+              .insert(treatmentsToInsert);
+            
+            if (treatmentsError) console.error("Error duplicating treatments:", treatmentsError);
+          }
+        }
+      }
+
+      return newQuote;
     },
     onSuccess: (newQuote) => {
       queryClient.invalidateQueries({ queryKey: ["quote-versions", projectId] });

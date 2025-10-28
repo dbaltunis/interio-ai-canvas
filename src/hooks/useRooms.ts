@@ -7,37 +7,44 @@ import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 type Room = Tables<"rooms">;
 type RoomInsert = TablesInsert<"rooms">;
 
-export const useRooms = (projectId?: string) => {
+export const useRooms = (projectId?: string, quoteId?: string) => {
   return useQuery({
-    queryKey: ["rooms", projectId],
+    queryKey: ["rooms", projectId, quoteId],
     queryFn: async () => {
       if (!projectId) {
         console.log("useRooms: No projectId provided, returning empty array");
         return [];
       }
       
-      console.log("Fetching rooms for project:", projectId);
-      const { data, error } = await supabase
+      console.log("Fetching rooms for project:", projectId, "quote:", quoteId);
+      let query = supabase
         .from("rooms")
         .select("*")
-        .eq("project_id", projectId)
-        .order("created_at");
+        .eq("project_id", projectId);
+      
+      // Filter by quote_id if provided, otherwise show rooms without quote_id
+      if (quoteId) {
+        query = query.eq("quote_id", quoteId);
+      } else {
+        query = query.is("quote_id", null);
+      }
+      
+      const { data, error } = await query.order("created_at");
       
       if (error) {
         console.error("Error fetching rooms:", error);
         throw error;
       }
       
-      console.log("Rooms fetched successfully:", data?.length, "rooms for project", projectId);
-      console.log("Room details:", data);
+      console.log("Rooms fetched successfully:", data?.length, "rooms");
       return data || [];
     },
     enabled: !!projectId,
-    staleTime: 10 * 1000, // 10 seconds - shorter cache for testing
-    gcTime: 2 * 60 * 1000, // 2 minutes cache time
-    refetchOnWindowFocus: true, // Refetch when window gets focus
-    refetchOnMount: true, // Always refetch on mount
-    refetchOnReconnect: true, // Refetch when connection is restored
+    staleTime: 10 * 1000,
+    gcTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
   });
 };
 
