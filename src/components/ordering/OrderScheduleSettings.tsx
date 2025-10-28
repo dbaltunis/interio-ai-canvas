@@ -42,6 +42,7 @@ export const OrderScheduleSettings = () => {
   const [autoCreateBatches, setAutoCreateBatches] = useState(false);
   const [leadTimeDays, setLeadTimeDays] = useState(7);
   const [autoAssignSuppliers, setAutoAssignSuppliers] = useState(true);
+  const [showPricesToSuppliers, setShowPricesToSuppliers] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [inAppNotifications, setInAppNotifications] = useState(true);
 
@@ -51,6 +52,7 @@ export const OrderScheduleSettings = () => {
       setAutoCreateBatches(settings.auto_create_batches);
       setLeadTimeDays(settings.lead_time_days);
       setAutoAssignSuppliers(settings.auto_assign_suppliers);
+      setShowPricesToSuppliers(settings.show_prices_to_suppliers ?? false);
       setEmailNotifications(settings.notification_preferences?.email ?? true);
       setInAppNotifications(settings.notification_preferences?.in_app ?? true);
     }
@@ -70,6 +72,7 @@ export const OrderScheduleSettings = () => {
       auto_create_batches: autoCreateBatches,
       lead_time_days: leadTimeDays,
       auto_assign_suppliers: autoAssignSuppliers,
+      show_prices_to_suppliers: showPricesToSuppliers,
       notification_preferences: {
         email: emailNotifications,
         in_app: inAppNotifications,
@@ -150,6 +153,38 @@ export const OrderScheduleSettings = () => {
               <Switch
                 checked={autoAssignSuppliers}
                 onCheckedChange={setAutoAssignSuppliers}
+              />
+            </div>
+          </div>
+
+          {/* Supplier Communication Settings */}
+          <div className="space-y-4 pt-4 border-t">
+            <div className="space-y-2">
+              <Label className="text-base">Supplier Communication</Label>
+              <p className="text-sm text-muted-foreground">
+                Control what information is shared with suppliers
+              </p>
+            </div>
+            
+            <div className="flex items-start justify-between p-4 rounded-lg border-2 border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20">
+              <div className="space-y-1 flex-1">
+                <div className="flex items-center gap-2">
+                  <Label>Show Prices to Suppliers</Label>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-amber-600 text-white font-medium">
+                    Not Recommended
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground pr-4">
+                  <strong>⚠️ Security Note:</strong> Standard retail practice is to NOT share internal pricing with suppliers. 
+                  Only enable this if you have specific agreements with trusted suppliers who need to see your pricing.
+                </p>
+                <p className="text-xs text-muted-foreground italic mt-2">
+                  When disabled (default), suppliers only receive material names and quantities.
+                </p>
+              </div>
+              <Switch
+                checked={showPricesToSuppliers}
+                onCheckedChange={setShowPricesToSuppliers}
               />
             </div>
           </div>

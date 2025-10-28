@@ -4002,6 +4002,7 @@ export type Database = {
           lead_time_days: number | null
           notification_preferences: Json | null
           schedule_days: string[] | null
+          show_prices_to_suppliers: boolean | null
           updated_at: string | null
           user_id: string
         }
@@ -4013,6 +4014,7 @@ export type Database = {
           lead_time_days?: number | null
           notification_preferences?: Json | null
           schedule_days?: string[] | null
+          show_prices_to_suppliers?: boolean | null
           updated_at?: string | null
           user_id: string
         }
@@ -4024,6 +4026,7 @@ export type Database = {
           lead_time_days?: number | null
           notification_preferences?: Json | null
           schedule_days?: string[] | null
+          show_prices_to_suppliers?: boolean | null
           updated_at?: string | null
           user_id?: string
         }

@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useUpdateBatchOrder } from "@/hooks/useBatchOrders";
 import { useAddTrackingUpdate } from "@/hooks/useOrderTracking";
+import { useOrderScheduleSettings } from "@/hooks/useOrderSchedule";
 import { toast } from "sonner";
 import { Mail, FileText, Loader2 } from "lucide-react";
 
@@ -25,6 +26,10 @@ export const SendBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: S
 
   const updateBatch = useUpdateBatchOrder();
   const addTracking = useAddTrackingUpdate();
+  const { data: scheduleSettings } = useOrderScheduleSettings();
+  
+  // Check global setting - default to false (don't show prices) for security
+  const showPricesToSuppliers = scheduleSettings?.show_prices_to_suppliers ?? false;
 
   const handleSend = async () => {
     try {
@@ -66,8 +71,10 @@ export const SendBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: S
   const handleGeneratePDF = async () => {
     setIsGeneratingPDF(true);
     try {
-      // TODO: Implement PDF generation WITHOUT prices (vendors don't see retailer pricing)
-      toast.info("PDF generation feature coming soon - will include items and quantities only, no pricing");
+      // TODO: Implement PDF generation
+      // If showPricesToSuppliers is true, include pricing, otherwise exclude it
+      const includesPricing = showPricesToSuppliers ? "with pricing" : "items & quantities only";
+      toast.info(`PDF generation feature coming soon (${includesPricing})`);
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate generation
     } finally {
       setIsGeneratingPDF(false);
@@ -87,7 +94,7 @@ export const SendBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: S
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Order Summary - No Prices for Vendor */}
+          {/* Order Summary */}
           <div className="p-4 border rounded-lg bg-muted/50 space-y-2">
             <div className="text-sm font-medium mb-2">Order Summary</div>
             <div className="flex justify-between text-sm">
@@ -104,8 +111,14 @@ export const SendBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: S
                 <span className="font-medium">{batchOrder.vendors.email}</span>
               </div>
             )}
-            <div className="text-xs text-muted-foreground italic mt-3 pt-2 border-t">
-              Note: Pricing information is kept internal and not shared with suppliers
+            <div className={`text-xs italic mt-3 pt-2 border-t ${
+              showPricesToSuppliers 
+                ? 'text-amber-600 dark:text-amber-400' 
+                : 'text-muted-foreground'
+            }`}>
+              {showPricesToSuppliers 
+                ? '⚠️ Pricing information WILL BE included (configured in Setup)' 
+                : '✓ Pricing information is kept internal (configured in Setup)'}
             </div>
           </div>
 
@@ -148,7 +161,7 @@ export const SendBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: S
             </div>
           )}
 
-          {/* Generate PDF - No Prices */}
+          {/* Generate PDF */}
           <Button
             variant="outline"
             onClick={handleGeneratePDF}
@@ -163,7 +176,9 @@ export const SendBatchDialog = ({ open, onOpenChange, batchOrder, onSuccess }: S
             ) : (
               <>
                 <FileText className="mr-2 h-4 w-4" />
-                Preview & Download PDF (Items & Quantities Only)
+                {showPricesToSuppliers 
+                  ? 'Preview & Download PDF (With Prices)' 
+                  : 'Preview & Download PDF (Items & Quantities Only)'}
               </>
             )}
           </Button>

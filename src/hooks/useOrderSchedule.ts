@@ -9,6 +9,7 @@ export interface OrderScheduleSettings {
   auto_create_batches: boolean;
   lead_time_days: number;
   auto_assign_suppliers: boolean;
+  show_prices_to_suppliers: boolean;
   notification_preferences: {
     email: boolean;
     in_app: boolean;
