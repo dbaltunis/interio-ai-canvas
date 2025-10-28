@@ -6,7 +6,10 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useOrderScheduleSettings, useUpdateScheduleSettings } from "@/hooks/useOrderSchedule";
-import { Save } from "lucide-react";
+import { Save, Settings as SettingsIcon } from "lucide-react";
+import { SupplierPerformanceCard } from "./SupplierPerformanceCard";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const DAYS_OF_WEEK = [
   { id: 'monday', label: 'Monday' },
@@ -21,6 +24,19 @@ const DAYS_OF_WEEK = [
 export const OrderScheduleSettings = () => {
   const { data: settings } = useOrderScheduleSettings();
   const updateSettings = useUpdateScheduleSettings();
+
+  const { data: suppliers } = useQuery({
+    queryKey: ['suppliers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('suppliers')
+        .select('*')
+        .eq('active', true)
+        .order('name');
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const [scheduleDays, setScheduleDays] = useState<string[]>([]);
   const [autoCreateBatches, setAutoCreateBatches] = useState(false);
@@ -175,6 +191,32 @@ export const OrderScheduleSettings = () => {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Supplier Performance */}
+      {suppliers && suppliers.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <SettingsIcon className="h-5 w-5" />
+              Supplier Performance
+            </CardTitle>
+            <CardDescription>
+              Historical performance metrics for your suppliers
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2">
+              {suppliers.slice(0, 4).map((supplier) => (
+                <SupplierPerformanceCard
+                  key={supplier.id}
+                  supplierId={supplier.id}
+                  supplierName={supplier.name}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
