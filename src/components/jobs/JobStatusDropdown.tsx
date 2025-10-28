@@ -90,8 +90,13 @@ export const JobStatusDropdown = ({
     }
   };
 
-  // If user doesn't have permission to edit jobs, show status as read-only
-  if (!canEditJobs) {
+  // Check if current status is locked or view-only
+  const isLocked = currentStatusDetails?.action === 'locked' || currentStatusDetails?.action === 'completed';
+  const isViewOnly = currentStatusDetails?.action === 'view_only';
+  const isReadOnly = !canEditJobs || isLocked || isViewOnly;
+
+  // If user doesn't have permission to edit or status is locked/view-only, show as read-only
+  if (isReadOnly) {
     return (
       <Badge 
         className={`${

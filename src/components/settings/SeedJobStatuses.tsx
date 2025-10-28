@@ -28,7 +28,9 @@ export const SeedJobStatuses = () => {
   const [isSeeding, setIsSeeding] = useState(false);
   const [seeded, setSeeded] = useState(false);
 
-  const hasStatuses = existingStatuses.length > 0;
+  // Only show if there are fewer than 5 active statuses
+  const activeStatuses = existingStatuses.filter(s => s.is_active);
+  const shouldShowSeed = activeStatuses.length < 5;
 
   const handleSeed = async () => {
     setIsSeeding(true);
@@ -55,7 +57,7 @@ export const SeedJobStatuses = () => {
   };
 
   if (isLoading) return null;
-  if (hasStatuses || seeded) return null;
+  if (!shouldShowSeed || seeded) return null;
 
   return (
     <Card className="border-orange-200 dark:border-orange-900 bg-orange-50/50 dark:bg-orange-950/20">

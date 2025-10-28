@@ -36,8 +36,10 @@ export const StatusOverviewWidget = () => {
 
   const totalProjects = projects?.length || 0;
 
-  // Show all statuses from database
-  const displayStatuses = jobStatuses;
+  // Show only Project category statuses
+  const displayStatuses = jobStatuses.filter(status => 
+    status.category.toLowerCase() === 'project' && status.is_active
+  );
 
   if (isLoading) {
     return (

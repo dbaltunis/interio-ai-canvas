@@ -53,7 +53,7 @@ export const ProjectStatusManager = ({ project, onUpdate }: ProjectStatusManager
 
       // Auto-set completion date when marking as completed
       const statusDetails = projectStatuses.find(s => s.name.toLowerCase() === newStatus.toLowerCase());
-      if (statusDetails?.action === 'complete' && !project.completion_date) {
+      if (statusDetails?.action === 'completed' && !project.completion_date) {
         updateData.completion_date = new Date().toISOString().split('T')[0];
       }
 
@@ -65,6 +65,11 @@ export const ProjectStatusManager = ({ project, onUpdate }: ProjectStatusManager
       setIsUpdating(false);
     }
   };
+
+  // Check if current status allows editing
+  const isLocked = currentStatusDetails?.action === 'locked' || currentStatusDetails?.action === 'completed';
+  const isViewOnly = currentStatusDetails?.action === 'view_only';
+  const canChangeStatus = !isLocked && !isViewOnly;
 
   // Default icon if no status found
   const StatusIcon = CheckCircle;
@@ -98,7 +103,7 @@ export const ProjectStatusManager = ({ project, onUpdate }: ProjectStatusManager
           <Select 
             value={project.status} 
             onValueChange={handleStatusUpdate}
-            disabled={isUpdating}
+            disabled={isUpdating || !canChangeStatus}
           >
             <SelectTrigger>
               <SelectValue />
@@ -106,55 +111,49 @@ export const ProjectStatusManager = ({ project, onUpdate }: ProjectStatusManager
             <SelectContent>
               {projectStatuses.map((status) => (
                 <SelectItem key={status.id} value={status.name.toLowerCase()}>
-                  {status.name}
+                  <div className="flex items-center justify-between w-full">
+                    <span>{status.name}</span>
+                    {(status.action === 'locked' || status.action === 'view_only') && (
+                      <Badge variant="outline" className="text-xs ml-2">
+                        {status.action === 'locked' ? 'Locked' : 'View Only'}
+                      </Badge>
+                    )}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          {!canChangeStatus && (
+            <p className="text-xs text-muted-foreground">
+              Status is {isLocked ? 'locked' : 'view-only'} and cannot be changed
+            </p>
+          )}
         </div>
 
         {/* Quick Status Actions - Now using dynamic statuses */}
-        <div className="grid grid-cols-2 gap-2">
-          {projectStatuses
-            .filter(status => 
-              status.action === 'complete' && 
-              project.status !== status.name.toLowerCase()
-            )
-            .map((status) => (
-              <Button
-                key={status.id}
-                variant="outline"
-                size="sm"
-                onClick={() => handleStatusUpdate(status.name)}
-                disabled={isUpdating}
-                className="text-green-600 hover:text-green-700"
-              >
-                <CheckCircle className="h-4 w-4 mr-1" />
-                {status.name}
-              </Button>
-            ))
-          }
-          
-          {projectStatuses
-            .filter(status => 
-              status.action === 'approve' && 
-              project.status !== status.name.toLowerCase()
-            )
-            .map((status) => (
-              <Button
-                key={status.id}
-                variant="outline"
-                size="sm"
-                onClick={() => handleStatusUpdate(status.name)}
-                disabled={isUpdating}
-                className="text-primary hover:text-primary/80"
-              >
-                <CheckCircle className="h-4 w-4 mr-1" />
-                {status.name}
-              </Button>
-            ))
-          }
-        </div>
+        {canChangeStatus && (
+          <div className="grid grid-cols-2 gap-2">
+            {projectStatuses
+              .filter(status => 
+                status.action === 'completed' && 
+                project.status !== status.name.toLowerCase()
+              )
+              .map((status) => (
+                <Button
+                  key={status.id}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleStatusUpdate(status.name)}
+                  disabled={isUpdating}
+                  className="text-green-600 hover:text-green-700"
+                >
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  {status.name}
+                </Button>
+              ))
+            }
+          </div>
+        )}
 
         {/* Progress Indicator - Now using dynamic logic */}
         <div className="space-y-2">
@@ -168,10 +167,11 @@ export const ProjectStatusManager = ({ project, onUpdate }: ProjectStatusManager
               }`}
               style={{
                 width: `${
-                  currentStatusDetails?.action === 'complete' ? 100 :
-                  currentStatusDetails?.action === 'approve' ? 80 :
-                  currentStatusDetails?.action === 'start' ? 60 :
-                  30
+                  currentStatusDetails?.action === 'completed' ? 100 :
+                  currentStatusDetails?.action === 'progress_only' ? 70 :
+                  currentStatusDetails?.action === 'view_only' ? 50 :
+                  currentStatusDetails?.action === 'editable' ? 30 :
+                  20
                 }%`
               }}
             />
