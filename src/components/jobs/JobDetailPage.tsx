@@ -19,6 +19,7 @@ import { JobSkeleton } from "./JobSkeleton";
 import { JobNotFound } from "./JobNotFound";
 import { useProjectMaterialsUsage } from "@/hooks/useProjectMaterialsUsage";
 import { useTreatmentMaterialsStatus } from "@/hooks/useProjectMaterialsStatus";
+import { QuoteVersionSelector } from "./QuoteVersionSelector";
 
 interface JobDetailPageProps {
   jobId: string;
@@ -27,6 +28,7 @@ interface JobDetailPageProps {
 
 export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const [activeTab, setActiveTab] = useState("details");
+  const [selectedQuoteId, setSelectedQuoteId] = useState<string | undefined>();
   const { data: projects } = useProjects();
   const { data: clients } = useClients();
   const updateProject = useUpdateProject();
@@ -112,14 +114,13 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               </div>
             </div>
 
-            {/* Right Side: Status + Dates */}
-            <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground hidden md:flex">
-                <Clock className="h-3.5 w-3.5" />
-                <span className="font-medium">
-                  {project.due_date ? new Date(project.due_date).toLocaleDateString() : 'No due date'}
-                </span>
-              </div>
+            {/* Right Side: Quote Selector + Status */}
+            <div className="flex items-center gap-3 sm:gap-4 shrink-0 flex-wrap">
+              <QuoteVersionSelector
+                projectId={project.id}
+                selectedQuoteId={selectedQuoteId}
+                onQuoteChange={setSelectedQuoteId}
+              />
               
               <JobStatusDropdown
                 currentStatus={project.status_id || project.status}
@@ -185,13 +186,13 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
 
               <TabsContent value="rooms" className="mt-0">
                 <div className="modern-card p-6">
-                  <RoomsTab projectId={jobId} />
+                  <RoomsTab projectId={jobId} quoteId={selectedQuoteId} />
                 </div>
               </TabsContent>
 
               <TabsContent value="quotation" className="mt-0">
                 <div className="modern-card p-2 sm:p-4 lg:p-6">
-                  <QuotationTab projectId={jobId} />
+                  <QuotationTab projectId={jobId} quoteId={selectedQuoteId} />
                 </div>
               </TabsContent>
 

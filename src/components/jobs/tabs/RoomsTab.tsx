@@ -12,12 +12,13 @@ import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 interface RoomsTabProps {
   projectId: string;
+  quoteId?: string;
 }
 
-export const RoomsTab = ({ projectId }: RoomsTabProps) => {
+export const RoomsTab = ({ projectId, quoteId }: RoomsTabProps) => {
   const { data: projects } = useProjects();
-  const { data: treatments } = useTreatments(projectId);
-  const { data: rooms } = useRooms(projectId);
+  const { data: treatments } = useTreatments(projectId, quoteId);
+  const { data: rooms } = useRooms(projectId, quoteId);
   const { data: surfaces } = useSurfaces(projectId);
 const { data: projectSummaries } = useProjectWindowSummaries(projectId);
   const { data: businessSettings } = useBusinessSettings();

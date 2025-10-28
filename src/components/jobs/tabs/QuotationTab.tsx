@@ -38,6 +38,7 @@ import { WorkOrderView } from "@/components/quotation/WorkOrderView";
 
 interface QuotationTabProps {
   projectId: string;
+  quoteId?: string;
 }
 
 // Helper: keep only the first 'products' block to avoid duplicates in preview
@@ -54,12 +55,12 @@ const removeDuplicateProductsBlocks = (blocks: any[] = []) => {
 };
 
 
-export const QuotationTab = ({ projectId }: QuotationTabProps) => {
+export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   const { toast } = useToast();
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const { data: projects } = useProjects();
-  const { data: treatments } = useTreatments(projectId);
-  const { data: rooms } = useRooms(projectId);
+  const { data: treatments } = useTreatments(projectId, quoteId);
+  const { data: rooms } = useRooms(projectId, quoteId);
   const { data: surfaces } = useSurfaces(projectId);
   const { data: projectSummaries } = useProjectWindowSummaries(projectId);
   const { data: businessSettings } = useBusinessSettings();
