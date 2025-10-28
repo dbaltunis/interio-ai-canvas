@@ -4027,6 +4027,50 @@ export type Database = {
           },
         ]
       }
+      order_milestones: {
+        Row: {
+          batch_order_id: string
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          milestone_name: string
+          notes: string | null
+          sort_order: number
+          target_date: string
+          updated_at: string | null
+        }
+        Insert: {
+          batch_order_id: string
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          milestone_name: string
+          notes?: string | null
+          sort_order: number
+          target_date: string
+          updated_at?: string | null
+        }
+        Update: {
+          batch_order_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          milestone_name?: string
+          notes?: string | null
+          sort_order?: number
+          target_date?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_milestones_batch_order_id_fkey"
+            columns: ["batch_order_id"]
+            isOneToOne: false
+            referencedRelation: "batch_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_schedule_settings: {
         Row: {
           auto_assign_suppliers: boolean | null
