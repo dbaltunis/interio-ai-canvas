@@ -18,8 +18,11 @@ export const OrderingHubPage = () => {
 
   const pendingOrdersCount = batchOrders?.filter(b => b.status === 'draft').length || 0;
 
+  const pendingInQueue = queueStats?.byStatus?.pending || 0;
+  const inBatchCount = queueStats?.byStatus?.in_batch || 0;
+
   return (
-    <div className="space-y-4 sm:space-y-6 pb-16">
+    <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8 py-6 pb-16">
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Material Purchasing</h1>
@@ -29,29 +32,29 @@ export const OrderingHubPage = () => {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Materials in Queue</CardTitle>
+            <CardTitle className="text-sm font-medium">Awaiting Batch</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{queueStats?.totalItems || 0}</div>
+            <div className="text-2xl font-bold">{pendingInQueue}</div>
             <p className="text-xs text-muted-foreground">
-              Total value: ${queueStats?.totalValue.toFixed(2) || '0.00'}
+              Ready to add to orders
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
+            <CardTitle className="text-sm font-medium">In Batches (Draft)</CardTitle>
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pendingOrdersCount}</div>
+            <div className="text-2xl font-bold">{inBatchCount}</div>
             <p className="text-xs text-muted-foreground">
-              Ready to send to suppliers
+              {pendingOrdersCount} {pendingOrdersCount === 1 ? 'order' : 'orders'} ready to send
             </p>
           </CardContent>
         </Card>
@@ -71,7 +74,7 @@ export const OrderingHubPage = () => {
       </div>
 
       {/* Main Tabs */}
-      <Tabs defaultValue="queue" className="space-y-4 sm:space-y-6">
+      <Tabs defaultValue="queue" className="space-y-6 sm:space-y-8">
         <TabsList className="grid w-full grid-cols-4 h-auto">
           <TabsTrigger value="queue" className="flex items-center gap-2 py-2">
             <Package className="h-4 w-4" />
