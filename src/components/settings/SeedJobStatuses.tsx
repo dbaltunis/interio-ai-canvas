@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import { useJobStatuses, useCreateJobStatus } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const DEFAULT_STATUSES = [
   // Quote Statuses (4 statuses)
@@ -43,9 +44,28 @@ export const SeedJobStatuses = () => {
   const handleSeed = async () => {
     setIsSeeding(true);
     try {
+      // First, deactivate any existing statuses with slot_numbers 1-10
+      const statusesToDeactivate = existingStatuses.filter(s => 
+        s.is_active && s.slot_number !== null && s.slot_number >= 1 && s.slot_number <= 10
+      );
+      
+      // Delete old statuses in those slots
+      for (const oldStatus of statusesToDeactivate) {
+        const { error } = await supabase
+          .from("job_statuses")
+          .update({ is_active: false })
+          .eq("id", oldStatus.id);
+        
+        if (error) {
+          console.error("Error deactivating old status:", error);
+        }
+      }
+      
+      // Now create the new statuses
       for (const status of DEFAULT_STATUSES) {
         await createStatus.mutateAsync(status);
       }
+      
       setSeeded(true);
       toast({
         title: "Success!",
