@@ -216,20 +216,6 @@ export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectio
                               <span>{item.vendors?.name || 'Unassigned'}</span>
                             </div>
                           </div>
-
-                          <div className="flex flex-wrap gap-2">
-                            <Badge variant={statusColors[item.status as keyof typeof statusColors] || "secondary"}>
-                              {statusLabels[item.status as keyof typeof statusLabels] || item.status}
-                            </Badge>
-                            <Badge variant={priorityColors[item.priority as keyof typeof priorityColors] || "secondary"}>
-                              {priorityLabels[item.priority as keyof typeof priorityLabels] || item.priority}
-                            </Badge>
-                            {item.metadata?.current_stock > 0 && (
-                              <Badge variant="outline" className="text-xs">
-                                {item.metadata.current_stock} in stock
-                              </Badge>
-                            )}
-                          </div>
                         </div>
 
                         {/* Actions */}
