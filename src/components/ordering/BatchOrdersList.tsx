@@ -22,6 +22,7 @@ import { format } from "date-fns";
 import { SendBatchDialog } from "./SendBatchDialog";
 import { ReceiveBatchDialog } from "./ReceiveBatchDialog";
 import { BatchOrderDetails } from "./BatchOrderDetails";
+import { EditBatchDialog } from "./EditBatchDialog";
 import { useDeleteBatchOrder, useBatchOrderItems } from "@/hooks/useBatchOrders";
 
 interface BatchOrdersListProps {
@@ -52,7 +53,7 @@ const statusLabels = {
 };
 
 // Component to display expanded batch details
-const BatchOrderCard = ({ order, onView, onSend, onReceive, onDelete }: any) => {
+const BatchOrderCard = ({ order, onView, onEdit, onSend, onReceive, onDelete }: any) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const { data: items } = useBatchOrderItems(order.id);
   const { data: userRole } = useUserRole();
@@ -103,7 +104,12 @@ const BatchOrderCard = ({ order, onView, onSend, onReceive, onDelete }: any) => 
               </Badge>
             </div>
             <CardDescription className="mt-1">
-              {order.vendors?.name || 'Unknown Supplier'}
+              {order.supplier_id ? (order.vendors?.name || 'Unknown Supplier') : (
+                <span className="flex items-center gap-1">
+                  <Package className="h-3 w-3" />
+                  Stock / No Supplier
+                </span>
+              )}
             </CardDescription>
             
             {/* Jobs and Clients */}
@@ -145,10 +151,16 @@ const BatchOrderCard = ({ order, onView, onSend, onReceive, onDelete }: any) => 
                 View Details
               </DropdownMenuItem>
               {order.status === 'draft' && (
-                <DropdownMenuItem onClick={() => onSend(order)}>
-                  <Send className="h-4 w-4 mr-2" />
-                  Send to Supplier
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem onClick={() => onEdit(order)}>
+                    <Package className="h-4 w-4 mr-2" />
+                    Edit / Add Materials
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onSend(order)}>
+                    <Send className="h-4 w-4 mr-2" />
+                    Send to Supplier
+                  </DropdownMenuItem>
+                </>
               )}
               {['sent', 'acknowledged', 'in_transit'].includes(order.status) && (
                 <DropdownMenuItem onClick={() => onReceive(order)}>
@@ -288,13 +300,19 @@ const BatchOrderCard = ({ order, onView, onSend, onReceive, onDelete }: any) => 
           <div className="flex gap-2 mt-2">
             <Button variant="outline" size="sm" className="flex-1" onClick={() => onView(order)}>
               <Eye className="h-4 w-4 mr-2" />
-              View Details
+              View
             </Button>
             {order.status === 'draft' && (
-              <Button size="sm" className="flex-1" onClick={() => onSend(order)}>
-                <Send className="h-4 w-4 mr-2" />
-                Send Order
-              </Button>
+              <>
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => onEdit(order)}>
+                  <Package className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+                <Button size="sm" className="flex-1" onClick={() => onSend(order)}>
+                  <Send className="h-4 w-4 mr-2" />
+                  Send
+                </Button>
+              </>
             )}
             {['sent', 'acknowledged', 'in_transit'].includes(order.status) && (
               <Button size="sm" variant="outline" className="flex-1" onClick={() => onReceive(order)}>
@@ -311,6 +329,7 @@ const BatchOrderCard = ({ order, onView, onSend, onReceive, onDelete }: any) => 
 
 export const BatchOrdersList = ({ orders, isLoading }: BatchOrdersListProps) => {
   const [viewOrder, setViewOrder] = useState<any>(null);
+  const [editOrder, setEditOrder] = useState<any>(null);
   const [sendOrder, setSendOrder] = useState<any>(null);
   const [receiveOrder, setReceiveOrder] = useState<any>(null);
   
@@ -337,6 +356,7 @@ export const BatchOrdersList = ({ orders, isLoading }: BatchOrdersListProps) => 
             key={order.id}
             order={order}
             onView={setViewOrder}
+            onEdit={setEditOrder}
             onSend={setSendOrder}
             onReceive={setReceiveOrder}
             onDelete={(id: string) => deleteBatch.mutate(id)}
@@ -356,6 +376,16 @@ export const BatchOrdersList = ({ orders, isLoading }: BatchOrdersListProps) => 
           {viewOrder && <BatchOrderDetails batchOrder={viewOrder} />}
         </DialogContent>
       </Dialog>
+
+      {/* Edit Dialog */}
+      {editOrder && (
+        <EditBatchDialog
+          open={!!editOrder}
+          onOpenChange={(open) => !open && setEditOrder(null)}
+          batchOrder={editOrder}
+          onSuccess={() => setEditOrder(null)}
+        />
+      )}
 
       {/* Send Dialog */}
       {sendOrder && (

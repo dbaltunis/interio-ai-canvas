@@ -58,15 +58,11 @@ export const CreateBatchDialog = ({ open, onOpenChange, selectedItemIds = [], on
   const totalAmount = selectedMaterials.reduce((sum, item) => sum + Number(item.total_cost || 0), 0);
 
   const handleCreate = async () => {
-    if (!supplierId) {
-      return;
-    }
-
     try {
       // Create batch order
       const batch = await createBatch.mutateAsync({
         user_id: (await supabase.auth.getUser()).data.user?.id,
-        supplier_id: supplierId,
+        supplier_id: supplierId === 'none' || !supplierId ? null : supplierId,
         status: 'draft',
         order_schedule_date: orderDate?.toISOString().split('T')[0],
         notes,
@@ -116,12 +112,13 @@ export const CreateBatchDialog = ({ open, onOpenChange, selectedItemIds = [], on
         <div className="space-y-6">
           {/* Supplier Selection */}
           <div className="space-y-2">
-            <Label>Supplier *</Label>
+            <Label>Supplier</Label>
             <Select value={supplierId} onValueChange={setSupplierId}>
               <SelectTrigger>
-                <SelectValue placeholder="Select supplier" />
+                <SelectValue placeholder="Select supplier (optional for stock items)" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="none">No Supplier (Stock/Internal)</SelectItem>
                 {suppliers?.map((supplier) => (
                   <SelectItem key={supplier.id} value={supplier.id}>
                     {supplier.name}
@@ -129,6 +126,9 @@ export const CreateBatchDialog = ({ open, onOpenChange, selectedItemIds = [], on
                 ))}
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              Leave empty or select "No Supplier" for stock items that don't need ordering
+            </p>
           </div>
 
           {/* Order Date */}
@@ -202,7 +202,7 @@ export const CreateBatchDialog = ({ open, onOpenChange, selectedItemIds = [], on
             </Button>
             <Button
               onClick={handleCreate}
-              disabled={!supplierId || createBatch.isPending || addItems.isPending}
+              disabled={createBatch.isPending || addItems.isPending}
             >
               {createBatch.isPending || addItems.isPending ? 'Creating...' : 'Create Batch Order'}
             </Button>
