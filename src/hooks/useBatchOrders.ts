@@ -75,17 +75,22 @@ export const useBatchOrderItems = (batchId: string) => {
         .select(`
           *,
           material_order_queue(
+            id,
             material_type, 
             metadata,
-            projects!material_order_queue_project_id_fkey(id, job_number, name, client_id),
+            project_id,
+            client_id,
+            projects(id, job_number, name, client_id),
             clients(id, name)
-          ),
-          quotes(project_name)
+          )
         `)
         .eq('batch_order_id', batchId)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching batch order items:', error);
+        throw error;
+      }
       return data as any[];
     },
     enabled: !!batchId,
