@@ -42,7 +42,7 @@ export const useMaterialQueue = (filters?: MaterialQueueFilters) => {
         .select(`
           *,
           vendors:supplier_id(id, name),
-          quotes(id, quote_number, project_name, client_id),
+          quotes(id, quote_number, client_id),
           projects!material_order_queue_project_id_fkey(id, job_number, name, client_id),
           clients(id, name)
         `)
@@ -184,6 +184,47 @@ export const useBulkAddToQueue = () => {
     mutationFn: async (items: Partial<MaterialQueueItem>[]) => {
       console.log('[useBulkAddToQueue] Inserting items:', items);
       
+      // Check for duplicates before inserting
+      const treatmentMaterialIds = items
+        .map(item => item.metadata?.treatment_material_id)
+        .filter(Boolean) as string[];
+      
+      if (treatmentMaterialIds.length > 0) {
+        // Check if any of these materials are already in the queue
+        const { data: existingItems } = await supabase
+          .from('material_order_queue')
+          .select('id, metadata')
+          .not('status', 'in', '(received,cancelled)')
+          .or(`metadata->treatment_material_id.in.(${treatmentMaterialIds.map(id => `"${id}"`).join(',')})`);
+        
+        if (existingItems && existingItems.length > 0) {
+          const existingIds = new Set(
+            existingItems
+              .map(item => {
+                const metadata = item.metadata as any;
+                return metadata?.treatment_material_id;
+              })
+              .filter(Boolean)
+          );
+          
+          // Filter out items that are already in queue
+          const newItems = items.filter(
+            item => !existingIds.has(item.metadata?.treatment_material_id)
+          );
+          
+          if (newItems.length === 0) {
+            throw new Error('All selected materials are already in the purchasing queue');
+          }
+          
+          if (newItems.length < items.length) {
+            const skippedCount = items.length - newItems.length;
+            toast.info(`${skippedCount} material${skippedCount > 1 ? 's' : ''} already in queue (skipped)`);
+          }
+          
+          items = newItems;
+        }
+      }
+      
       const { data, error } = await supabase
         .from('material_order_queue')
         .insert(items as any)
@@ -206,11 +247,10 @@ export const useBulkAddToQueue = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['material-queue'] });
       queryClient.invalidateQueries({ queryKey: ['material-queue-stats'] });
-      // Don't show toast here - let the component show a more detailed success message
+      queryClient.invalidateQueries({ queryKey: ['treatment-materials-status'] });
     },
     onError: (error: any) => {
       console.error('[useBulkAddToQueue] Mutation error:', error);
-      // Don't show toast here - let the component handle the error display
     },
   });
 };

@@ -128,7 +128,7 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
         duration: 10000
       });
       
-      // Clear selection after successful send
+      // Clear selection and invalidate queries to refresh the display
       setSelectedMaterials(new Set());
       
       // Prompt to update job status if in quote/draft stage
@@ -364,13 +364,14 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
                 <div className="flex gap-2">
                   <Button
                     onClick={(e) => {
+                      e.stopPropagation();
                       console.log('[BUTTON CLICK] Send to Purchasing button clicked', e);
                       handleSendSelectedToPurchasing();
                     }}
                     disabled={selectedMaterials.size === 0 || isProcessing}
                     variant="default"
                     size="sm"
-                    className="gap-2"
+                    className="gap-2 shadow-sm"
                   >
                     {isProcessing ? (
                       <>
@@ -380,7 +381,11 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
                     ) : (
                       <>
                         <ShoppingCart className="h-4 w-4" />
-                        Send to Purchasing ({selectedMaterials.size})
+                        <span className="hidden sm:inline">Send to Purchasing</span>
+                        <span className="sm:hidden">Send</span>
+                        <Badge variant="secondary" className="ml-1">
+                          {selectedMaterials.size}
+                        </Badge>
                       </>
                     )}
                   </Button>
