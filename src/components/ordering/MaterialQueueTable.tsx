@@ -158,11 +158,11 @@ export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectio
                       <Briefcase className="h-3.5 w-3.5 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono text-sm text-primary">#{getLastFourDigits(jobNumber)}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm text-primary whitespace-nowrap">#{getLastFourDigits(jobNumber)}</span>
                         <span className="text-sm truncate">{jobName}</span>
                       </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">{clientName}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5 truncate">{clientName}</div>
                     </div>
                   </div>
                 </div>
@@ -207,16 +207,16 @@ export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectio
                         <div className="flex-1 min-w-0 space-y-2">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                              <h4 className="text-sm text-foreground mb-0.5">{item.material_name}</h4>
+                              <h4 className="text-sm text-foreground mb-0.5 truncate">{item.material_name}</h4>
                               {item.inventory_items?.description && (
-                                <p className="text-xs text-muted-foreground line-clamp-1 mb-0.5">
+                                <p className="text-xs text-muted-foreground line-clamp-1 mb-0.5 break-words">
                                   {item.inventory_items.description}
                                 </p>
                               )}
                               {item.inventory_items?.sku && (
-                                <div className="inline-flex items-center gap-1 mt-0.5">
-                                  <span className="text-[10px] text-muted-foreground">SKU:</span>
-                                  <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded">
+                                <div className="inline-flex items-center gap-1 mt-0.5 max-w-full">
+                                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">SKU:</span>
+                                  <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded truncate">
                                     {item.inventory_items.sku}
                                   </span>
                                 </div>
@@ -238,38 +238,38 @@ export const MaterialQueueTable = ({ items, isLoading, selectedItems, onSelectio
                           </div>
 
                           {item.metadata?.treatment_name && (
-                            <div className="inline-flex items-center gap-1 text-xs bg-accent/50 px-2 py-0.5 rounded-md">
-                              <span className="text-muted-foreground">For:</span>
-                              <span>{item.metadata.treatment_name}</span>
+                            <div className="inline-flex items-center gap-1 text-xs bg-accent/50 px-2 py-0.5 rounded-md max-w-full">
+                              <span className="text-muted-foreground whitespace-nowrap">For:</span>
+                              <span className="truncate">{item.metadata.treatment_name}</span>
                             </div>
                           )}
 
                           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
-                            <div className="flex items-baseline gap-1">
+                            <div className="flex items-baseline gap-1 whitespace-nowrap">
                               <span className="text-muted-foreground">Quantity:</span>
                               <span className="text-foreground">{item.quantity} {item.unit}</span>
                             </div>
                             
                             {canViewCosts && (
                               <>
-                                <div className="flex items-baseline gap-1">
+                                <div className="flex items-baseline gap-1 whitespace-nowrap">
                                   <span className="text-muted-foreground">Unit:</span>
                                   <span className="text-foreground">${item.unit_cost?.toFixed(2) || '0.00'}</span>
                                 </div>
-                                <div className="flex items-baseline gap-1">
+                                <div className="flex items-baseline gap-1 whitespace-nowrap">
                                   <span className="text-muted-foreground">Total:</span>
                                   <span className="text-foreground">${item.total_cost?.toFixed(2) || '0.00'}</span>
                                 </div>
                               </>
                             )}
                             
-                            <div className="flex items-baseline gap-1">
-                              <span className="text-muted-foreground">Supplier:</span>
-                              <span className="text-foreground">{item.vendors?.name || 'Unassigned'}</span>
+                            <div className="flex items-baseline gap-1 min-w-0">
+                              <span className="text-muted-foreground whitespace-nowrap">Supplier:</span>
+                              <span className="text-foreground truncate">{item.vendors?.name || 'Unassigned'}</span>
                             </div>
                             
                             {item.metadata?.current_stock > 0 && (
-                              <div className="flex items-center gap-1 bg-green-50 dark:bg-green-950 px-2 py-0.5 rounded">
+                              <div className="flex items-center gap-1 bg-green-50 dark:bg-green-950 px-2 py-0.5 rounded whitespace-nowrap">
                                 <span className="text-xs text-green-700 dark:text-green-400">
                                   ✓ {item.metadata.current_stock} in stock
                                 </span>
