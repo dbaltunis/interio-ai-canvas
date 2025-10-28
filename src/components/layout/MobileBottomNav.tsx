@@ -26,7 +26,6 @@ interface MobileBottomNavProps {
 const navItems = [
   { id: "projects", label: "Jobs", icon: FolderOpen },
   { id: "clients", label: "Clients", icon: Users },
-  { id: "ordering-hub", label: "Purchasing", icon: ShoppingCart, badge: true },
   { id: "calendar", label: "Calendar", icon: Calendar },
   { id: "inventory", label: "Library", icon: Package },
 ];
@@ -46,12 +45,11 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
   return (
     <>
       <nav className="fixed bottom-0 left-0 right-0 lg:hidden z-50 bg-background/95 backdrop-blur-md border-t border-border shadow-lg pb-safe">
-        <div className="relative grid grid-cols-6 h-16">
-          {/* First three items */}
-          {navItems.slice(0, 3).map((item) => {
+        <div className="relative grid grid-cols-5 h-16">
+          {/* First two items */}
+          {navItems.slice(0, 2).map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
-            const showBadge = item.badge && queueCount && queueCount > 0;
             
             return (
               <Button
@@ -65,20 +63,10 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
                 )}
                 onClick={() => onTabChange(item.id)}
               >
-                <div className="relative">
-                  <Icon className={cn(
-                    "transition-all duration-200",
-                    isActive ? "h-6 w-6" : "h-5 w-5"
-                  )} />
-                  {showBadge && (
-                    <Badge 
-                      variant="destructive" 
-                      className="absolute -top-1 -right-1 h-4 w-4 rounded-full p-0 flex items-center justify-center text-[8px]"
-                    >
-                      {queueCount}
-                    </Badge>
-                  )}
-                </div>
+                <Icon className={cn(
+                  "transition-all duration-200",
+                  isActive ? "h-6 w-6" : "h-5 w-5"
+                )} />
                 <span className={cn(
                   "text-[10px] font-medium transition-all duration-200",
                   isActive ? "opacity-100 font-semibold" : "opacity-70"
@@ -103,7 +91,7 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
           </div>
           
           {/* Last two items */}
-          {navItems.slice(3).map((item) => {
+          {navItems.slice(2).map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             
@@ -142,6 +130,7 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
         open={showCreateDialog} 
         onOpenChange={setShowCreateDialog}
         onTabChange={onTabChange}
+        queueCount={queueCount}
         onOpenSettings={() => {
           // Navigate to settings - could open a settings route
           window.location.href = '/settings';

@@ -1,12 +1,14 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Users, FolderOpen, Calendar, Plus, Settings, MessageCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Users, FolderOpen, Calendar, Plus, Settings, MessageCircle, ShoppingCart } from "lucide-react";
 
 interface CreateActionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onTabChange: (tab: string) => void;
+  queueCount?: number;
   onOpenSettings?: () => void;
   onOpenTeamHub?: () => void;
 }
@@ -15,6 +17,7 @@ export const CreateActionDialog = ({
   open, 
   onOpenChange, 
   onTabChange,
+  queueCount,
   onOpenSettings,
   onOpenTeamHub 
 }: CreateActionDialogProps) => {
@@ -40,6 +43,8 @@ export const CreateActionDialog = ({
         const createButton = document.querySelector('[data-create-event]') as HTMLElement;
         createButton?.click();
       }, 150);
+    } else if (action === "purchasing") {
+      onTabChange("ordering-hub");
     } else if (action === "settings") {
       onOpenSettings?.();
     } else if (action === "team") {
@@ -97,6 +102,30 @@ export const CreateActionDialog = ({
             <div>
               <div className="font-semibold">New Event</div>
               <div className="text-sm text-muted-foreground">Schedule a calendar event</div>
+            </div>
+          </Button>
+          
+          <Separator className="my-2" />
+          
+          <Button
+            onClick={() => handleAction("purchasing")}
+            variant="outline"
+            className="h-16 justify-start gap-4 text-left"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 relative">
+              <ShoppingCart className="h-5 w-5 text-primary" />
+              {queueCount && queueCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[9px]"
+                >
+                  {queueCount}
+                </Badge>
+              )}
+            </div>
+            <div>
+              <div className="font-semibold">Material Purchasing</div>
+              <div className="text-sm text-muted-foreground">Manage orders & suppliers</div>
             </div>
           </Button>
           
