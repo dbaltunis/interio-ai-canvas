@@ -66,20 +66,20 @@ export const JobStatusDropdown = ({
     return colorMap[color] || 'bg-gray-100 text-gray-800 border-border';
   };
 
-  const handleStatusChange = async (newStatus: string) => {
+  const handleStatusChange = async (statusId: string, statusName: string) => {
     try {
       if (jobType === "quote") {
-        await updateQuote.mutateAsync({ id: jobId, status: newStatus });
+        await updateQuote.mutateAsync({ id: jobId, status_id: statusId });
       } else {
-        await updateProject.mutateAsync({ id: jobId, status: newStatus });
+        await updateProject.mutateAsync({ id: jobId, status_id: statusId });
       }
       
-      onStatusChange?.(newStatus);
+      onStatusChange?.(statusName);
       setIsOpen(false);
       
       toast({
         title: "Success",
-        description: `${jobType === "quote" ? "Quote" : "Project"} status updated to ${newStatus}`,
+        description: `${jobType === "quote" ? "Quote" : "Project"} status updated to ${statusName}`,
       });
     } catch (error) {
       console.error("Error updating status:", error);
@@ -91,12 +91,10 @@ export const JobStatusDropdown = ({
     }
   };
 
-  // Check if current status is locked or view-only
-  const isLocked = currentStatusDetails?.action === 'locked' || currentStatusDetails?.action === 'completed';
-  const isViewOnly = currentStatusDetails?.action === 'view_only';
-  const isReadOnly = !canEditJobs || isLocked || isViewOnly;
+  // Check if user has permission to edit
+  const isReadOnly = !canEditJobs;
 
-  // If user doesn't have permission to edit or status is locked/view-only, show as read-only
+  // If user doesn't have permission to edit, show as read-only badge
   if (isReadOnly) {
     return (
       <Badge 
@@ -104,7 +102,7 @@ export const JobStatusDropdown = ({
           currentStatusDetails 
             ? getStatusColor(currentStatusDetails.color)
             : 'bg-gray-100 text-gray-800'
-        }`}
+        } font-medium`}
       >
         {currentStatus?.charAt(0).toUpperCase() + currentStatus?.slice(1).replace('_', ' ')}
       </Badge>
@@ -127,24 +125,24 @@ export const JobStatusDropdown = ({
           </Badge>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-56">
+      <DropdownMenuContent align="start" className="w-64 bg-background z-[100]">
         {availableStatuses.map((status) => (
           <DropdownMenuItem
             key={status.id}
-            onClick={() => handleStatusChange(status.name)}
-            className="flex items-center justify-between"
+            onClick={() => handleStatusChange(status.id, status.name)}
+            className="flex items-center justify-between py-3 cursor-pointer hover:bg-muted/50 focus:bg-muted/50"
           >
-            <div className="flex items-center space-x-2">
-              <div className={`w-3 h-3 rounded-full bg-${status.color}-500`} />
+            <div className="flex items-center space-x-3">
+              <div className={`w-3 h-3 rounded-full bg-${status.color}-500 ring-2 ring-${status.color}-500/20`} />
               <div>
-                <div className="font-medium">{status.name}</div>
+                <div className="font-medium text-sm">{status.name}</div>
                 {status.description && (
-                  <div className="text-xs text-muted-foreground">{status.description}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{status.description}</div>
                 )}
               </div>
             </div>
             {(status.name === currentStatus || status.name.toLowerCase() === currentStatus.toLowerCase()) && (
-              <Check className="h-4 w-4" />
+              <Check className="h-4 w-4 text-primary" />
             )}
           </DropdownMenuItem>
         ))}

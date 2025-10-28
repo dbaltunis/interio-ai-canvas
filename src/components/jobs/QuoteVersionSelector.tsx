@@ -42,26 +42,30 @@ export const QuoteVersionSelector = ({
   }
 
   return (
-    <div className="flex items-center gap-3 flex-wrap">
+    <div className="flex items-center gap-2 flex-wrap bg-muted/30 rounded-lg px-4 py-2 border border-border/50">
       <div className="flex items-center gap-2">
-        <FileText className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium text-muted-foreground">Quote:</span>
+        <FileText className="h-4 w-4 text-primary" />
+        <span className="text-sm font-semibold text-foreground">Quote:</span>
       </div>
       
       <Select 
         value={selectedQuote?.id || ''} 
         onValueChange={onQuoteChange}
       >
-        <SelectTrigger className="w-[200px]">
-          <SelectValue placeholder="Select quote version" />
+        <SelectTrigger className="w-[180px] h-9 bg-background border-border hover:bg-muted/50 transition-colors">
+          <SelectValue placeholder="Select version" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="bg-background z-[100]">
           {quoteVersions.map((quote) => (
-            <SelectItem key={quote.id} value={quote.id}>
+            <SelectItem 
+              key={quote.id} 
+              value={quote.id}
+              className="cursor-pointer hover:bg-muted/50"
+            >
               <div className="flex items-center gap-2">
-                <span>{quote.quote_number}</span>
+                <span className="font-mono text-sm">{quote.quote_number}</span>
                 {quote.version && (
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="secondary" className="text-xs font-semibold px-1.5 py-0">
                     v{quote.version}
                   </Badge>
                 )}
@@ -72,11 +76,13 @@ export const QuoteVersionSelector = ({
       </Select>
 
       {selectedQuote && (
-        <JobStatusDropdown
-          currentStatus={selectedQuote.status || 'draft'}
-          jobType="quote"
-          jobId={selectedQuote.id}
-        />
+        <div className="flex items-center gap-2 pl-2 border-l border-border/50">
+          <JobStatusDropdown
+            currentStatus={selectedQuote.status || 'draft'}
+            jobType="quote"
+            jobId={selectedQuote.id}
+          />
+        </div>
       )}
 
       <Button
@@ -84,6 +90,7 @@ export const QuoteVersionSelector = ({
         size="sm"
         onClick={handleDuplicateQuote}
         disabled={duplicateQuote.isPending || !selectedQuote}
+        className="ml-2 h-9 bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary hover:text-primary font-medium transition-all"
       >
         <Copy className="h-4 w-4 mr-2" />
         New Version
