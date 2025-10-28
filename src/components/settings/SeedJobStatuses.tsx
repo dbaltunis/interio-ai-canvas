@@ -6,19 +6,19 @@ import { useJobStatuses, useCreateJobStatus } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
 
 const DEFAULT_STATUSES = [
-  // Quote Statuses
-  { name: "Draft", color: "gray", category: "Quote", action: "editable", description: "Quote is being prepared", sort_order: 1 },
-  { name: "Sent", color: "blue", category: "Quote", action: "view_only", description: "Quote sent to client", sort_order: 2 },
+  // Quote Statuses (4 statuses)
+  { name: "Draft", color: "gray", category: "Quote", action: "editable", description: "Initial quote creation, fully editable", sort_order: 1 },
+  { name: "Quote Sent", color: "blue", category: "Quote", action: "view_only", description: "Quote has been sent to client", sort_order: 2 },
   { name: "Approved", color: "green", category: "Quote", action: "locked", description: "Quote approved by client", sort_order: 3 },
-  { name: "Rejected", color: "red", category: "Quote", action: "locked", description: "Quote rejected", sort_order: 4 },
+  { name: "Rejected", color: "red", category: "Quote", action: "locked", description: "Quote rejected by client", sort_order: 4 },
   
-  // Project Statuses
-  { name: "Planning", color: "gray", category: "Project", action: "editable", description: "Project is in planning phase", sort_order: 5 },
-  { name: "In Progress", color: "blue", category: "Project", action: "progress_only", description: "Project work in progress", sort_order: 6 },
-  { name: "On Hold", color: "yellow", category: "Project", action: "requires_reason", description: "Project temporarily paused", sort_order: 7 },
-  { name: "Review", color: "orange", category: "Project", action: "view_only", description: "Project under review", sort_order: 8 },
-  { name: "Completed", color: "green", category: "Project", action: "completed", description: "Project completed", sort_order: 9 },
-  { name: "Installed", color: "primary", category: "Project", action: "completed", description: "Project installed", sort_order: 10 },
+  // Project Statuses (6 statuses)
+  { name: "Planning", color: "blue", category: "Project", action: "editable", description: "Project in planning phase, editable", sort_order: 5 },
+  { name: "Order Confirmed", color: "orange", category: "Project", action: "progress_only", description: "Client confirmed order, locked for production", sort_order: 6 },
+  { name: "In Production", color: "purple", category: "Project", action: "progress_only", description: "Project in production phase", sort_order: 7 },
+  { name: "Review", color: "yellow", category: "Project", action: "view_only", description: "Project under review before completion", sort_order: 8 },
+  { name: "Completed", color: "green", category: "Project", action: "completed", description: "Project completed successfully", sort_order: 9 },
+  { name: "Cancelled", color: "red", category: "Project", action: "locked", description: "Project cancelled", sort_order: 10 },
 ];
 
 export const SeedJobStatuses = () => {
@@ -28,9 +28,9 @@ export const SeedJobStatuses = () => {
   const [isSeeding, setIsSeeding] = useState(false);
   const [seeded, setSeeded] = useState(false);
 
-  // Only show if there are fewer than 5 active statuses
+  // Only show if there are fewer than 10 active statuses
   const activeStatuses = existingStatuses.filter(s => s.is_active);
-  const shouldShowSeed = activeStatuses.length < 5;
+  const shouldShowSeed = activeStatuses.length < 10;
 
   const handleSeed = async () => {
     setIsSeeding(true);

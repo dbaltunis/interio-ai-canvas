@@ -39,6 +39,7 @@ export const JobStatusBadge = ({ statusId, fallbackText = "No Status" }: JobStat
       'yellow': 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-600/30 dark:text-yellow-200 dark:border-yellow-500/50',
       'orange': 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-600/30 dark:text-orange-200 dark:border-orange-500/50',
       'red': 'bg-red-100 text-red-800 border-red-200 dark:bg-red-600/30 dark:text-red-200 dark:border-red-500/50',
+      'purple': 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-600/30 dark:text-purple-200 dark:border-purple-500/50',
       'primary': 'bg-primary/10 text-primary border-primary/20 dark:bg-primary/30 dark:text-primary dark:border-primary/50',
     };
     return colorMap[color] || 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700/50 dark:text-gray-200 dark:border-gray-600';

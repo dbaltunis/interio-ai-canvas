@@ -12,7 +12,6 @@ export const StatusOverviewWidget = () => {
 
   const isLoading = projectsLoading || statusesLoading;
 
-  // Map status colors from job_statuses table
   const getStatusColor = (color: string) => {
     const colorMap: Record<string, { bg: string; text: string }> = {
       gray: { bg: "bg-gray-500", text: "text-gray-700" },
@@ -23,6 +22,7 @@ export const StatusOverviewWidget = () => {
       red: { bg: "bg-red-500", text: "text-red-700" },
       purple: { bg: "bg-purple-500", text: "text-purple-700" },
       pink: { bg: "bg-pink-500", text: "text-pink-700" },
+      primary: { bg: "bg-primary", text: "text-primary" },
     };
     return colorMap[color?.toLowerCase()] || { bg: "bg-gray-500", text: "text-gray-700" };
   };
