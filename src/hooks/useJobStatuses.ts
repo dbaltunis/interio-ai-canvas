@@ -22,7 +22,13 @@ export const useJobStatuses = () => {
 
       if (error) throw error;
       
-      return data || [];
+      // Filter out old statuses with slot_numbers to avoid duplicates
+      // Keep only statuses without slot_number (new comprehensive set)
+      const filteredData = (data || []).filter(status => 
+        status.slot_number === null || status.slot_number === undefined
+      );
+      
+      return filteredData;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
