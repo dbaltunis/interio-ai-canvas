@@ -1,5 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Package, ShoppingCart, TruckIcon, Settings } from "lucide-react";
 import { MaterialQueueView } from "./MaterialQueueView";
 import { BatchOrdersView } from "./BatchOrdersView";
@@ -78,23 +79,34 @@ export const OrderingHubPage = () => {
         <TabsList className="grid w-full grid-cols-4 h-auto">
           <TabsTrigger value="queue" className="flex items-center gap-2 py-2">
             <Package className="h-4 w-4" />
-            <span className="hidden sm:inline">Material Queue</span>
-            <span className="sm:hidden text-xs">Queue</span>
+            <span>Queue</span>
+            {pendingInQueue > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 min-w-5 px-1 text-xs">
+                {pendingInQueue > 99 ? '+99' : pendingInQueue}
+              </Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="batches" className="flex items-center gap-2 py-2">
             <ShoppingCart className="h-4 w-4" />
-            <span className="hidden sm:inline">Batch Orders</span>
-            <span className="sm:hidden text-xs">Orders</span>
+            <span>Orders</span>
+            {pendingOrdersCount > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 min-w-5 px-1 text-xs">
+                {pendingOrdersCount > 99 ? '+99' : pendingOrdersCount}
+              </Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="tracking" className="flex items-center gap-2 py-2">
             <TruckIcon className="h-4 w-4" />
-            <span className="hidden sm:inline">Tracking</span>
-            <span className="sm:hidden text-xs">Track</span>
+            <span>Tracking</span>
+            {inTransitCount > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 min-w-5 px-1 text-xs">
+                {inTransitCount > 99 ? '+99' : inTransitCount}
+              </Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2 py-2">
             <Settings className="h-4 w-4" />
-            <span className="hidden sm:inline">Schedule</span>
-            <span className="sm:hidden text-xs">Setup</span>
+            <span>Setup</span>
           </TabsTrigger>
         </TabsList>
 
