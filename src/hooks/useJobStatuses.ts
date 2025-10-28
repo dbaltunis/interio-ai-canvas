@@ -19,7 +19,7 @@ export const useJobStatuses = () => {
         .select("*")
         .eq("user_id", user.id)
         .eq("is_active", true)
-        .order("sort_order", { ascending: true });
+        .order("slot_number", { ascending: true });
 
       if (error) throw error;
       
