@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, Send, Truck, MoreHorizontal, PackageCheck, Trash2, Package, Lock } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import {
@@ -55,9 +56,34 @@ const statusLabels = {
 // Component to display expanded batch details
 const BatchOrderCard = ({ order, onView, onEdit, onSend, onReceive, onDelete }: any) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const { data: items } = useBatchOrderItems(order.id);
   const { data: userRole } = useUserRole();
   const canViewCosts = userRole?.canViewVendorCosts ?? false;
+
+  // Initialize all items as selected when expanded
+  const handleExpand = () => {
+    if (!isExpanded && items) {
+      setSelectedItems(items.map((item: any) => item.id));
+    }
+    setIsExpanded(!isExpanded);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked && items) {
+      setSelectedItems(items.map((item: any) => item.id));
+    } else {
+      setSelectedItems([]);
+    }
+  };
+
+  const handleSelectItem = (itemId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedItems([...selectedItems, itemId]);
+    } else {
+      setSelectedItems(selectedItems.filter(id => id !== itemId));
+    }
+  };
 
   // Get unique jobs and clients from items
   const jobsAndClients = useMemo(() => {
@@ -243,54 +269,97 @@ const BatchOrderCard = ({ order, onView, onEdit, onSend, onReceive, onDelete }: 
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsExpanded(!isExpanded)}
+                onClick={handleExpand}
                 className="w-full justify-between text-xs h-8"
               >
                 <span className="flex items-center gap-1.5">
                   <Package className="h-3 w-3" />
                   Materials ({items.length})
+                  {order.status === 'draft' && selectedItems.length > 0 && selectedItems.length < items.length && (
+                    <Badge variant="secondary" className="ml-1 text-[10px] px-1">
+                      {selectedItems.length} selected
+                    </Badge>
+                  )}
                 </span>
                 <span className="text-[10px]">{isExpanded ? '▼' : '▶'}</span>
               </Button>
               
               {isExpanded && (
-                <div className="mt-2 space-y-1.5 max-h-[300px] overflow-y-auto">
-                  {items.map((item: any) => {
-                    const project = item.material_order_queue?.projects;
-                    const client = item.material_order_queue?.clients;
-                    
-                    return (
-                      <div key={item.id} className="text-xs border rounded p-2 space-y-0.5">
-                        <div className="flex justify-between items-start">
-                          <div>{item.material_name}</div>
-                          <div className="text-right">
-                            {canViewCosts ? (
-                              <>
-                                <div>${item.total_price?.toFixed(2)}</div>
-                                <div className="text-[10px] text-muted-foreground">
-                                  {item.quantity} {item.unit}
-                                </div>
-                              </>
-                            ) : (
-                              <div className="text-[10px] text-muted-foreground">
-                                {item.quantity} {item.unit}
-                              </div>
+                <div className="mt-2 space-y-2">
+                  {order.status === 'draft' && (
+                    <div className="flex items-center gap-2 px-2 py-1 bg-accent/30 rounded text-xs">
+                      <Checkbox
+                        checked={selectedItems.length === items.length}
+                        onCheckedChange={handleSelectAll}
+                        className="h-3.5 w-3.5"
+                      />
+                      <span className="text-muted-foreground">
+                        {selectedItems.length === items.length ? 'Deselect all' : 'Select all items'}
+                      </span>
+                    </div>
+                  )}
+                  
+                  <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
+                    {items.map((item: any) => {
+                      const project = item.material_order_queue?.projects;
+                      const client = item.material_order_queue?.clients;
+                      const isSelected = selectedItems.includes(item.id);
+                      
+                      return (
+                        <div 
+                          key={item.id} 
+                          className={`text-xs border rounded p-2 space-y-0.5 transition-colors ${
+                            order.status === 'draft' && !isSelected ? 'opacity-50 bg-muted/30' : ''
+                          }`}
+                        >
+                          <div className="flex items-start gap-2">
+                            {order.status === 'draft' && (
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={(checked) => handleSelectItem(item.id, !!checked)}
+                                className="h-3.5 w-3.5 mt-0.5"
+                              />
                             )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex justify-between items-start gap-2">
+                                <div className="truncate">{item.material_name}</div>
+                                <div className="text-right whitespace-nowrap flex-shrink-0">
+                                  {canViewCosts ? (
+                                    <>
+                                      <div>${item.total_price?.toFixed(2)}</div>
+                                      <div className="text-[10px] text-muted-foreground">
+                                        {item.quantity} {item.unit}
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <div className="text-[10px] text-muted-foreground">
+                                      {item.quantity} {item.unit}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              {(project || client) && (
+                                <div className="text-[10px] text-muted-foreground space-y-0.5 mt-1">
+                                  {project && (
+                                    <div className="truncate">Job: {project.job_number} - {project.name}</div>
+                                  )}
+                                  {client && (
+                                    <div className="truncate">Client: {client.name}</div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        {(project || client) && (
-                          <div className="text-[10px] text-muted-foreground space-y-0.5">
-                            {project && (
-                              <div>Job: {project.job_number} - {project.name}</div>
-                            )}
-                            {client && (
-                              <div>Client: {client.name}</div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
+                  
+                  {order.status === 'draft' && selectedItems.length !== items.length && (
+                    <div className="text-[10px] text-muted-foreground px-2 py-1 bg-amber-50 dark:bg-amber-950/20 rounded border border-amber-200 dark:border-amber-800">
+                      ⚠️ Only {selectedItems.length} of {items.length} items will be sent
+                    </div>
+                  )}
                 </div>
               )}
             </div>
