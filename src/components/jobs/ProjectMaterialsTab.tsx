@@ -35,6 +35,11 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
   }, [queueItems, projectId]);
   
   const handleSendSelectedToPurchasing = async () => {
+    console.log('[SEND TO PURCHASING] Button clicked', {
+      selectedCount: selectedMaterials.size,
+      displayMaterialsCount: displayMaterials.length
+    });
+
     if (selectedMaterials.size === 0) {
       toast.error("No materials selected");
       return;
@@ -43,6 +48,7 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
     setIsProcessing(true);
     try {
       const selectedMaterialsList = displayMaterials.filter(m => selectedMaterials.has(m.id));
+      console.log('[SEND TO PURCHASING] Selected materials:', selectedMaterialsList);
       
       const queueItems = selectedMaterialsList.map(material => {
         const inventoryItem = inventory?.find(inv => inv.id === material.fabric_id);
