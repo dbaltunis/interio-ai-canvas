@@ -16,6 +16,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { MaterialsWorkflowStatus } from "./MaterialsWorkflowStatus";
 import { StatusUpdatePrompt } from "./StatusUpdatePrompt";
 import { useProjects } from "@/hooks/useProjects";
+import { formatCurrency } from "@/utils/currency";
+import { useTreatmentMaterialsStatus } from "@/hooks/useProjectMaterialsStatus";
+import { MaterialsStatusBadge } from "./MaterialsStatusBadge";
 
 interface ProjectMaterialsTabProps {
   projectId: string;
@@ -32,6 +35,7 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
   const { data: projects } = useProjects();
   const { data: queueItems } = useMaterialQueue({ status: 'pending' });
   const bulkAddToQueue = useBulkAddToQueue();
+  const { data: materialStatusMap = {} } = useTreatmentMaterialsStatus(projectId);
   
   console.log('[COMPONENT MOUNT] ProjectMaterialsTab rendered', {
     projectId,
@@ -102,7 +106,8 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
             source_type: hasStock ? 'allocate_from_stock' : 'order_from_supplier',
             current_stock: material.currentQuantity || 0,
             required_quantity: neededQuantity,
-            treatment_name: material.treatment_name
+            treatment_name: material.treatment_name,
+            treatment_material_id: material.id // Add this for status tracking
           }
         };
       });
@@ -155,9 +160,10 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
       const inventoryItem = inventory?.find(item => item.id === material.itemId);
       const unitCost = inventoryItem?.cost_price || 0;
       const totalCost = unitCost * material.quantityUsed;
+      const materialId = `${material.itemId}-${material.surfaceId}`;
       
       return {
-        id: `${material.itemId}-${material.surfaceId}`,
+        id: materialId,
         name: material.itemName,
         category: 'material',
         quantity: material.quantityUsed,
@@ -170,10 +176,11 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
         fabric_id: material.itemId,
         currentQuantity: material.currentQuantity,
         lowStock: material.lowStock,
-        isTracked: material.isTracked
+        isTracked: material.isTracked,
+        status: materialStatusMap[materialId] || 'not_processed'
       };
     });
-  }, [treatmentMaterials, inventory]);
+  }, [treatmentMaterials, inventory, materialStatusMap]);
 
 
   // Toggle material selection
@@ -407,6 +414,7 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
                     <TableHead>Material</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Treatment</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead className="text-right">Quantity</TableHead>
                     <TableHead className="text-right">Unit Cost</TableHead>
                     <TableHead className="text-right">Total Cost</TableHead>
@@ -436,14 +444,17 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
                       <TableCell className="text-sm text-muted-foreground">
                         {material.treatment_name}
                       </TableCell>
+                      <TableCell>
+                        <MaterialsStatusBadge status={material.status} />
+                      </TableCell>
                       <TableCell className="text-right font-medium">
                         {material.quantity > 0 ? `${material.quantity.toFixed(2)} ${material.unit}` : 'N/A'}
                       </TableCell>
                       <TableCell className="text-right text-muted-foreground">
-                        {material.unitCost > 0 ? `$${material.unitCost.toFixed(2)}` : '—'}
+                        {formatCurrency(material.unitCost)}
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        {material.totalCost > 0 ? `$${material.totalCost.toFixed(2)}` : '—'}
+                        {formatCurrency(material.totalCost)}
                       </TableCell>
                       <TableCell>
                         {material.supplier ? (

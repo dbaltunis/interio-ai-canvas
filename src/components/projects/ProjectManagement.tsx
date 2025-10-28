@@ -11,6 +11,7 @@ import { useHasPermission } from "@/hooks/usePermissions";
 import { PermissionGuard } from "@/components/common/PermissionGuard";
 import { formatJobNumber } from "@/lib/format-job-number";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ProjectMaterialsStatusIndicator } from "@/components/projects/ProjectMaterialsStatusIndicator";
 
 interface ProjectManagementProps {
   onViewProject?: (project: any) => void;
@@ -204,6 +205,7 @@ export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocume
                   <TableHead>Project Name</TableHead>
                   <TableHead>Client</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Materials</TableHead>
                   <TableHead>Priority</TableHead>
                   <TableHead>Due Date</TableHead>
                   <TableHead>Value</TableHead>
@@ -228,6 +230,9 @@ export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocume
                         {jobStatuses.find(s => s.name.toLowerCase() === project.status.toLowerCase())?.name || 
                          project.status.charAt(0).toUpperCase() + project.status.slice(1).replace('_', ' ')}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <ProjectMaterialsStatusIndicator projectId={project.id} variant="compact" />
                     </TableCell>
                     <TableCell>
                       <Badge className={getPriorityColor(project.priority)}>
