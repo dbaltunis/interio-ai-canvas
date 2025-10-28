@@ -18,17 +18,11 @@ export const useJobStatuses = () => {
         .from("job_statuses")
         .select("*")
         .eq("user_id", user.id)
-        .order("slot_number", { ascending: true });
+        .order("sort_order", { ascending: true });
 
       if (error) throw error;
       
-      // Filter out old statuses with slot_numbers to avoid duplicates
-      // Keep only statuses without slot_number (new comprehensive set)
-      const filteredData = (data || []).filter(status => 
-        status.slot_number === null || status.slot_number === undefined
-      );
-      
-      return filteredData;
+      return data || [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
