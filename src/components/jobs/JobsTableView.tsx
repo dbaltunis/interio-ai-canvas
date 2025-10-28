@@ -688,9 +688,15 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
                       style={{ marginLeft: '10px' }}
                     >
                       <TableCell className="pl-6 py-2">
-                        <span className="font-mono text-sm text-muted-foreground">
-                          ├─ Q-{(index + 1).toString().padStart(2, '0')}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-sm text-muted-foreground">├─</span>
+                          <span className="font-mono text-sm font-medium">{quote.quote_number}</span>
+                          {quote.version && quote.version > 1 && (
+                            <Badge variant="outline" className="text-xs h-5">
+                              v{quote.version}
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="py-2" onClick={(e) => e.stopPropagation()}>
                         <EmailStatusDisplay 
@@ -698,8 +704,8 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
                           clientEmail={getClientForQuote(quote)?.email}
                         />
                       </TableCell>
-                      <TableCell className="text-muted-foreground text-sm py-2">
-                        Quote #{index + 1}
+                      <TableCell className="text-sm py-2">
+                        <span className="text-muted-foreground">{formatCurrency(quote.total_amount || 0, userCurrency)}</span>
                       </TableCell>
                       <TableCell className="py-2">
                         <div className="flex items-center gap-2">
@@ -710,9 +716,6 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
                             </Badge>
                           )}
                         </div>
-                      </TableCell>
-                      <TableCell className="py-2">
-                        {formatCurrency(quote.total_amount || 0, userCurrency)}
                       </TableCell>
                       <TableCell className="py-2">
                         <div className="flex items-center space-x-2">

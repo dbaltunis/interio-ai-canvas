@@ -55,59 +55,79 @@ export const QuoteVersionSelector = ({
   }
 
   return (
-    <div className="flex items-center gap-2 flex-wrap bg-muted/30 rounded-lg px-4 py-2 border border-border/50">
-      <div className="flex items-center gap-2">
-        <FileText className="h-4 w-4 text-primary" />
-        <span className="text-sm font-semibold text-foreground">Quote:</span>
-      </div>
-      
-      <Select 
-        value={selectedQuote?.id || ''} 
-        onValueChange={onQuoteChange}
-      >
-        <SelectTrigger className="w-[180px] h-9 bg-background border-border hover:bg-muted/50 transition-colors">
-          <SelectValue placeholder="Select version" />
-        </SelectTrigger>
-        <SelectContent className="bg-background z-[100]">
-          {quoteVersions.map((quote) => (
-            <SelectItem 
-              key={quote.id} 
-              value={quote.id}
-              className="cursor-pointer hover:bg-muted/50"
-            >
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-sm">{quote.quote_number}</span>
-                {quote.version && (
-                  <Badge variant="secondary" className="text-xs font-semibold px-1.5 py-0">
-                    v{quote.version}
-                  </Badge>
+    <div className="flex items-center justify-between p-4 bg-gradient-to-r from-card to-muted/20 rounded-lg border shadow-sm">
+      <div className="flex items-center gap-4 flex-1">
+        <div className="p-2 bg-primary/10 rounded-md">
+          <FileText className="h-5 w-5 text-primary" />
+        </div>
+        
+        <div className="flex flex-col gap-1">
+          <Select 
+            value={selectedQuote?.id || ''} 
+            onValueChange={onQuoteChange}
+          >
+            <SelectTrigger className="w-[280px] bg-background border-border/60 hover:border-border transition-colors">
+              <SelectValue placeholder="Select a quote version">
+                {selectedQuote && (
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-semibold text-sm">{selectedQuote.quote_number}</span>
+                    {selectedQuote.version && selectedQuote.version > 1 && (
+                      <Badge variant="secondary" className="h-5 text-xs font-medium">
+                        Version {selectedQuote.version}
+                      </Badge>
+                    )}
+                  </div>
                 )}
-              </div>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="bg-popover border-border">
+              {quoteVersions.map((quote: any) => (
+                <SelectItem 
+                  key={quote.id} 
+                  value={quote.id}
+                  className="cursor-pointer"
+                >
+                  <div className="flex items-center gap-2 py-1">
+                    <span className="font-mono text-sm">{quote.quote_number}</span>
+                    {quote.version && quote.version > 1 && (
+                      <Badge variant="outline" className="h-5 text-xs">
+                        v{quote.version}
+                      </Badge>
+                    )}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          {quoteVersions.length > 1 && (
+            <p className="text-xs text-muted-foreground">
+              {quoteVersions.length} version{quoteVersions.length !== 1 ? 's' : ''} available
+            </p>
+          )}
+        </div>
+      </div>
 
       {selectedQuote && (
-        <div className="flex items-center gap-2 pl-2 border-l border-border/50">
+        <div className="flex items-center gap-3 pl-4 border-l border-border/50">
           <JobStatusDropdown
             currentStatus={getStatusName(selectedQuote)}
             jobType="quote"
             jobId={selectedQuote.id}
           />
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDuplicateQuote}
+            disabled={duplicateQuote.isPending || !selectedQuote}
+            className="shadow-sm hover:shadow-md transition-shadow"
+          >
+            <Copy className="h-4 w-4 mr-2" />
+            {duplicateQuote.isPending ? "Creating..." : "New Version"}
+          </Button>
         </div>
       )}
-
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleDuplicateQuote}
-        disabled={duplicateQuote.isPending || !selectedQuote}
-        className="ml-2 h-9 bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary hover:text-primary font-medium transition-all"
-      >
-        <Copy className="h-4 w-4 mr-2" />
-        New Version
-      </Button>
     </div>
   );
 };

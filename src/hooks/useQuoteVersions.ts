@@ -35,19 +35,34 @@ export const useQuoteVersions = (projectId: string) => {
       const newVersion = maxVersion + 1;
       
       // Generate new quote number with version
-      const baseQuoteNumber = currentQuote.quote_number.split('-v')[0];
-      const newQuoteNumber = `${baseQuoteNumber}-v${newVersion}`;
+      // Always use the first quote's base number to ensure consistency
+      const firstQuote = quoteVersions?.[0];
+      const baseQuoteNumber = firstQuote?.quote_number?.split('-v')[0] || currentQuote.quote_number.split('-v')[0];
+      const newQuoteNumber = newVersion === 1 ? baseQuoteNumber : `${baseQuoteNumber}-v${newVersion}`;
 
-      // Get first "Quote" category status as default
-      const { data: firstQuoteStatus } = await supabase
+      // Get first "Quote" category status as default (Draft status)
+      let firstQuoteStatus = await supabase
         .from("job_statuses")
         .select("id")
         .eq("user_id", user.id)
         .eq("category", "Quote")
+        .ilike("name", "Draft")
         .eq("is_active", true)
-        .order("slot_number", { ascending: true })
         .limit(1)
         .maybeSingle();
+      
+      // Fallback: try finding any Quote category status if Draft not found
+      if (!firstQuoteStatus.data) {
+        firstQuoteStatus = await supabase
+          .from("job_statuses")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("category", "Quote")
+          .eq("is_active", true)
+          .order("slot_number", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+      }
       
       // Create new quote version
       const { data: newQuote, error: quoteError } = await supabase
@@ -58,7 +73,7 @@ export const useQuoteVersions = (projectId: string) => {
           quote_number: newQuoteNumber,
           version: newVersion,
           status: 'draft',
-          status_id: firstQuoteStatus?.id || null,
+          status_id: firstQuoteStatus?.data?.id || null,
           total_amount: currentQuote.total_amount,
           user_id: user.id,
           notes: `${currentQuote.notes || ''}\n\nDuplicated from version ${(currentQuote as any).version || 1}`.trim()
