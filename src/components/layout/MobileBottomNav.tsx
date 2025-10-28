@@ -8,6 +8,7 @@ import {
   Calendar,
   Plus,
   UserCircle,
+  ShoppingCart
 } from "lucide-react";
 import { useState } from "react";
 import { CreateActionDialog } from "./CreateActionDialog";
@@ -24,6 +25,7 @@ interface MobileBottomNavProps {
 const navItems = [
   { id: "projects", label: "Jobs", icon: FolderOpen },
   { id: "clients", label: "Clients", icon: Users },
+  { id: "ordering-hub", label: "Orders", icon: ShoppingCart },
   { id: "calendar", label: "Calendar", icon: Calendar },
   { id: "inventory", label: "Library", icon: Package },
 ];
@@ -42,9 +44,9 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
   return (
     <>
       <nav className="fixed bottom-0 left-0 right-0 lg:hidden z-50 bg-background/95 backdrop-blur-md border-t border-border shadow-lg pb-safe">
-        <div className="relative grid grid-cols-5 h-16">
-          {/* First two items */}
-          {navItems.slice(0, 2).map((item) => {
+        <div className="relative grid grid-cols-6 h-16">
+          {/* First three items */}
+          {navItems.slice(0, 3).map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             return (
@@ -87,7 +89,7 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
           </div>
           
           {/* Last two items */}
-          {navItems.slice(2).map((item) => {
+          {navItems.slice(3).map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             
