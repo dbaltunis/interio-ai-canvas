@@ -44,24 +44,23 @@ export const SeedJobStatuses = () => {
   const handleSeed = async () => {
     setIsSeeding(true);
     try {
-      // First, deactivate any existing statuses with slot_numbers 1-10
-      const statusesToDeactivate = existingStatuses.filter(s => 
-        s.is_active && s.slot_number !== null && s.slot_number >= 1 && s.slot_number <= 10
-      );
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      // First, HARD DELETE any existing statuses with slot_numbers 1-10 to free up the slots
+      const { error: deleteError } = await supabase
+        .from("job_statuses")
+        .delete()
+        .eq("user_id", user.id)
+        .gte("slot_number", 1)
+        .lte("slot_number", 10);
       
-      // Delete old statuses in those slots
-      for (const oldStatus of statusesToDeactivate) {
-        const { error } = await supabase
-          .from("job_statuses")
-          .update({ is_active: false })
-          .eq("id", oldStatus.id);
-        
-        if (error) {
-          console.error("Error deactivating old status:", error);
-        }
+      if (deleteError) {
+        console.error("Error deleting old statuses:", deleteError);
+        throw deleteError;
       }
       
-      // Now create the new statuses
+      // Now create the new statuses one by one
       for (const status of DEFAULT_STATUSES) {
         await createStatus.mutateAsync(status);
       }
