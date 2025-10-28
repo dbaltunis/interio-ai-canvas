@@ -1,15 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Copy, PackageOpen } from "lucide-react";
+import { Copy, PackageOpen, Plus } from "lucide-react";
 
 interface EmptyQuoteVersionStateProps {
   currentVersion: number;
   onCopyFromVersion?: () => void;
+  onAddRoom?: () => void;
 }
 
 export const EmptyQuoteVersionState = ({ 
   currentVersion, 
-  onCopyFromVersion 
+  onCopyFromVersion,
+  onAddRoom
 }: EmptyQuoteVersionStateProps) => {
   return (
     <Card className="border-dashed border-2">
@@ -19,19 +21,27 @@ export const EmptyQuoteVersionState = ({
         </div>
         
         <h3 className="text-lg font-semibold mb-2">
-          Version {currentVersion} is Empty
+          Quote Version {currentVersion} is Empty
         </h3>
         
         <p className="text-sm text-muted-foreground mb-6 max-w-md">
-          This quote version doesn't have any rooms or treatments yet. You can copy content from another version or start adding rooms.
+          This quote version doesn't have any rooms or treatments yet. Start by adding a room or copy from another version.
         </p>
         
-        {onCopyFromVersion && (
-          <Button onClick={onCopyFromVersion} variant="outline" size="sm">
-            <Copy className="h-4 w-4 mr-2" />
-            Copy from Another Version
-          </Button>
-        )}
+        <div className="flex items-center gap-3">
+          {onAddRoom && (
+            <Button onClick={onAddRoom} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Room
+            </Button>
+          )}
+          {onCopyFromVersion && (
+            <Button onClick={onCopyFromVersion} variant="outline" size="sm">
+              <Copy className="h-4 w-4 mr-2" />
+              Copy from Another Version
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

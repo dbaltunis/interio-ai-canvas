@@ -2,7 +2,7 @@
 import { EnhancedRoomView } from "@/components/room-management/EnhancedRoomView";
 import { useProjects } from "@/hooks/useProjects";
 import { useTreatments } from "@/hooks/useTreatments";
-import { useRooms } from "@/hooks/useRooms";
+import { useRooms, useCreateRoom } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { formatCurrency } from "@/utils/currency";
 import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
@@ -25,6 +25,7 @@ export const RoomsTab = ({ projectId, quoteId }: RoomsTabProps) => {
   const { data: projectSummaries } = useProjectWindowSummaries(projectId);
   const { data: businessSettings } = useBusinessSettings();
   const { quoteVersions } = useQuoteVersions(projectId);
+  const createRoom = useCreateRoom();
   const project = projects?.find(p => p.id === projectId);
   
   // Find current quote version number
@@ -86,6 +87,16 @@ export const RoomsTab = ({ projectId, quoteId }: RoomsTabProps) => {
   // Check if this is an empty quote version
   const isEmptyVersion = roomCount === 0 && quoteId;
 
+  const handleAddRoom = async () => {
+    const roomNumber = (rooms?.length || 0) + 1;
+    await createRoom.mutateAsync({
+      project_id: projectId,
+      quote_id: quoteId,
+      name: `Room ${roomNumber}`,
+      room_type: "living_room"
+    });
+  };
+
   return (
     <div className="space-y-4">
       {/* Compact Header - Reduced spacing and size */}
@@ -94,7 +105,7 @@ export const RoomsTab = ({ projectId, quoteId }: RoomsTabProps) => {
           <h2 className="text-lg font-semibold">Rooms & Worksheets</h2>
           <p className="text-sm text-muted-foreground">
             {roomCount} room{roomCount !== 1 ? 's' : ''}, {treatmentCount} treatment{treatmentCount !== 1 ? 's' : ''}
-            {quoteId && ` • Version ${currentVersion}`}
+            {quoteId && ` • Quote Version ${currentVersion}`}
           </p>
         </div>
         <div className="text-right">
@@ -117,6 +128,7 @@ export const RoomsTab = ({ projectId, quoteId }: RoomsTabProps) => {
       {isEmptyVersion ? (
         <EmptyQuoteVersionState 
           currentVersion={currentVersion}
+          onAddRoom={handleAddRoom}
         />
       ) : (
         /* Enhanced Room Management - This handles all room display and management */

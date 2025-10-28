@@ -621,6 +621,13 @@ const projectData = {
       {isEmptyVersion ? (
         <EmptyQuoteVersionState 
           currentVersion={currentVersion}
+          onAddRoom={() => {
+            // Switch to Rooms tab when user wants to add a room
+            const roomsTab = document.querySelector('[data-state="inactive"]') as HTMLElement;
+            if (roomsTab) {
+              roomsTab.click();
+            }
+          }}
         />
       ) : selectedTemplate ? (
         <section className="mt-2 sm:mt-4" key={`preview-${projectSummaries?.projectTotal}-${quotationData.total}-${selectedTemplateId}`}>

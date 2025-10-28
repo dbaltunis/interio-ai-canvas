@@ -6,6 +6,7 @@ import { useQuoteVersions } from "@/hooks/useQuoteVersions";
 import { JobStatusDropdown } from "./JobStatusDropdown";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useEffect } from "react";
+import { formatJobNumber } from "@/lib/format-job-number";
 
 interface QuoteVersionSelectorProps {
   projectId: string;
@@ -66,14 +67,14 @@ export const QuoteVersionSelector = ({
             value={selectedQuote?.id || ''} 
             onValueChange={onQuoteChange}
           >
-            <SelectTrigger className="w-[280px] bg-background border-border/60 hover:border-border transition-colors">
-              <SelectValue placeholder="Select a quote version">
+            <SelectTrigger className="w-[200px] bg-background border-border/60 hover:border-border transition-colors">
+              <SelectValue placeholder="Select a quote">
                 {selectedQuote && (
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-semibold text-sm">{selectedQuote.quote_number}</span>
+                    <span className="font-mono text-sm">QT-{formatJobNumber(selectedQuote.quote_number)}</span>
                     {selectedQuote.version && selectedQuote.version > 1 && (
                       <Badge variant="secondary" className="h-5 text-xs font-medium">
-                        Version {selectedQuote.version}
+                        v{selectedQuote.version}
                       </Badge>
                     )}
                   </div>
@@ -88,7 +89,7 @@ export const QuoteVersionSelector = ({
                   className="cursor-pointer"
                 >
                   <div className="flex items-center gap-2 py-1">
-                    <span className="font-mono text-sm">{quote.quote_number}</span>
+                    <span className="font-mono text-sm">QT-{formatJobNumber(quote.quote_number)}</span>
                     {quote.version && quote.version > 1 && (
                       <Badge variant="outline" className="h-5 text-xs">
                         v{quote.version}
@@ -124,7 +125,7 @@ export const QuoteVersionSelector = ({
             className="shadow-sm hover:shadow-md transition-shadow"
           >
             <Copy className="h-4 w-4 mr-2" />
-            {duplicateQuote.isPending ? "Creating..." : "New Version"}
+            {duplicateQuote.isPending ? "Creating..." : "New Quote Version"}
           </Button>
         </div>
       )}
