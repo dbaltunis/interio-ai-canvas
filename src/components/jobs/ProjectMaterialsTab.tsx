@@ -10,17 +10,25 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useConvertQuoteToMaterials } from "@/hooks/useConvertQuoteToMaterials";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useCreateMaterialQueueItem } from "@/hooks/useMaterialQueue";
+import { useNavigate } from "react-router-dom";
+import { useQuotes } from "@/hooks/useQuotes";
 
 interface ProjectMaterialsTabProps {
   projectId: string;
 }
 
 export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
+  const navigate = useNavigate();
   const [showProcessDialog, setShowProcessDialog] = useState(false);
   const [selectedMaterials, setSelectedMaterials] = useState<Set<string>>(new Set());
   const { data: inventory } = useEnhancedInventory();
   const { data: treatmentMaterials = [], isLoading: materialsLoading } = useProjectMaterialsUsage(projectId);
+  const { data: quotes } = useQuotes();
   const convertMaterials = useConvertQuoteToMaterials();
+  const createQueueItem = useCreateMaterialQueueItem();
+  
+  const currentQuote = quotes?.find(q => q.project_id === projectId);
   
   const handleProcessMaterials = async () => {
     try {
@@ -46,14 +54,50 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
       
       console.log('[MATERIALS] Processing materials:', materialsToProcess);
       
-      await convertMaterials.mutateAsync({ 
+      const result = await convertMaterials.mutateAsync({ 
         projectId, 
         materials: materialsToProcess 
       });
       
-      toast.success("Materials processed successfully!", {
-        description: `Processed ${materialsToProcess.length} material(s)`
-      });
+      // Add out-of-stock materials to ordering queue
+      const outOfStockItems = materialsToProcess.filter(m => m.currentQuantity < m.quantityUsed);
+      
+      if (outOfStockItems.length > 0 && currentQuote) {
+        console.log('[MATERIALS] Adding out-of-stock items to ordering queue:', outOfStockItems);
+        
+        for (const item of outOfStockItems) {
+          const inventoryItem = inventory?.find(inv => inv.id === item.itemId);
+          const neededQuantity = item.quantityUsed - (item.currentQuantity || 0);
+          
+          await createQueueItem.mutateAsync({
+            quote_id: currentQuote.id,
+            project_id: projectId,
+            client_id: currentQuote.client_id,
+            inventory_item_id: item.itemId,
+            material_name: item.itemName,
+            material_type: inventoryItem?.category || 'material',
+            quantity: neededQuantity,
+            unit: item.unit,
+            supplier_id: inventoryItem?.vendor_id,
+            priority: 'high',
+            unit_cost: inventoryItem?.cost_price || 0,
+            status: 'pending'
+          });
+        }
+        
+        toast.success("Materials processed and added to ordering queue!", {
+          description: `Processed ${materialsToProcess.length} material(s), ${outOfStockItems.length} added to ordering queue`,
+          action: {
+            label: "View Queue",
+            onClick: () => navigate('/?tab=ordering-hub')
+          },
+          duration: 8000
+        });
+      } else {
+        toast.success("Materials processed successfully!", {
+          description: `Processed ${materialsToProcess.length} material(s)`
+        });
+      }
       
       setShowProcessDialog(false);
     } catch (error: any) {

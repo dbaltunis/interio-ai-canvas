@@ -7,6 +7,8 @@ import { useClients } from "@/hooks/useClients";
 import { FileText } from "lucide-react";
 import { JobActionsMenu } from "./JobActionsMenu";
 import { formatJobNumber } from "@/lib/format-job-number";
+import { MaterialsStatusBadge } from "./MaterialsStatusBadge";
+import { useNavigate } from "react-router-dom";
 
 interface JobsTableProps {
   searchClient: string;
@@ -27,6 +29,7 @@ export const JobsTable = ({
   filterMaker,
   onJobSelect
 }: JobsTableProps) => {
+  const navigate = useNavigate();
   const { data: quotes } = useQuotes();
   const { data: projects } = useProjects();
   const { data: clients } = useClients();
@@ -84,7 +87,7 @@ export const JobsTable = ({
   return (
     <div className="bg-white rounded-lg border">
       {/* Table Header */}
-      <div className="grid grid-cols-8 gap-4 p-4 border-b bg-gray-50 text-sm font-medium text-gray-700">
+      <div className="grid grid-cols-9 gap-4 p-4 border-b bg-gray-50 text-sm font-medium text-gray-700">
         <div>Job No.</div>
         <div>Quote Total</div>
         <div>Payment</div>
@@ -92,6 +95,7 @@ export const JobsTable = ({
         <div>Mobile</div>
         <div>Calendar</div>
         <div>Status</div>
+        <div>Materials</div>
         <div>Actions</div>
       </div>
 
@@ -105,7 +109,7 @@ export const JobsTable = ({
           return (
             <div 
               key={quote.id} 
-              className="grid grid-cols-8 gap-4 p-4 items-center hover:bg-gray-50 cursor-pointer"
+              className="grid grid-cols-9 gap-4 p-4 items-center hover:bg-gray-50 cursor-pointer"
               onClick={() => onJobSelect?.(quote.id)}
             >
               <div>
@@ -128,6 +132,24 @@ export const JobsTable = ({
                 <Badge className={`${getStatusColor(quote.status)} border-0`} variant="secondary">
                   {getStatusLabel(quote.status)}
                 </Badge>
+              </div>
+              <div>
+                <div className="flex flex-col gap-1">
+                  <MaterialsStatusBadge status={quote.materials_status} />
+                  {quote.materials_status === 'not_processed' && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="text-xs h-7"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/?tab=ordering-hub`);
+                      }}
+                    >
+                      Process
+                    </Button>
+                  )}
+                </div>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center text-sm text-gray-700">
