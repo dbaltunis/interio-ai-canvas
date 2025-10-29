@@ -494,7 +494,10 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
         );
       
       case 'total':
-        const totalAmount = quotes.reduce((sum, quote) => sum + (quote.total_amount || 0), 0);
+        // Show the converted quote's total, or first quote if all are draft
+        const convertedQuote = quotes.find(q => q.status && q.status.toLowerCase() !== 'draft');
+        const displayQuote = convertedQuote || quotes[0];
+        const totalAmount = displayQuote?.total_amount || 0;
         return (
           <div className="flex items-center space-x-2">
             <span className="font-medium">
