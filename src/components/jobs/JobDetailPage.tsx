@@ -4,7 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Package, FileText, Wrench, Mail, Calendar, Clock } from "lucide-react";
+import { ArrowLeft, User, Package, FileText, Wrench, Mail, Calendar, Clock, MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useProjects, useUpdateProject } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
 import { ProjectDetailsTab } from "./tabs/ProjectDetailsTab";
@@ -63,12 +69,15 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
     await updateProject.mutateAsync(projectData);
   };
 
-  const tabs = [
+  const visibleTabs = [
     { id: "details", label: "Client", icon: User },
     { id: "rooms", label: "Rooms & Treatments", icon: Package },
-    { id: "quotation", label: "Quotation", icon: FileText },
-    { id: "materials", label: "Materials", icon: Package },
+    { id: "quotation", label: "Quote", icon: FileText },
     { id: "workroom", label: "Workroom", icon: Wrench },
+  ];
+
+  const dropdownTabs = [
+    { id: "materials", label: "Materials", icon: Package },
     { id: "emails", label: "Emails", icon: Mail },
     { id: "calendar", label: "Calendar", icon: Calendar },
   ];
@@ -137,7 +146,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
           <div className="sticky top-0 z-20 bg-background border-b border-border/50 shadow-sm">
             <div className="px-1 sm:px-4">
               <div className="flex w-full justify-start gap-0">
-                {tabs.map((tab) => {
+                {visibleTabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
                   return (
@@ -154,7 +163,24 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                       <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       <span className="hidden md:inline">{tab.label}</span>
                       <span className="md:hidden truncate">{tab.label.split(' ')[0]}</span>
-                      {tab.id === "materials" && unprocessedMaterialsCount > 0 && (
+                    </Button>
+                  );
+                })}
+                
+                {/* More dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className={`flex items-center gap-0.5 sm:gap-2 px-1.5 sm:px-4 py-1.5 sm:py-3 transition-all duration-200 text-[10px] sm:text-sm font-medium border-b-2 rounded-none whitespace-nowrap flex-1 sm:flex-none ${
+                        dropdownTabs.some(t => t.id === activeTab)
+                          ? "border-primary text-foreground bg-primary/5 font-semibold"
+                          : "border-transparent text-muted-foreground hover:text-foreground hover:border-border/50"
+                      }`}
+                    >
+                      <MoreHorizontal className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <span className="hidden md:inline">More</span>
+                      {unprocessedMaterialsCount > 0 && (
                         <Badge 
                           variant="secondary" 
                           className="ml-0.5 sm:ml-1 h-4 sm:h-5 min-w-4 sm:min-w-5 px-1 sm:px-1.5 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 text-[9px] sm:text-xs font-semibold"
@@ -163,8 +189,34 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                         </Badge>
                       )}
                     </Button>
-                  );
-                })}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    {dropdownTabs.map((tab) => {
+                      const Icon = tab.icon;
+                      const isActive = activeTab === tab.id;
+                      return (
+                        <DropdownMenuItem
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          className={`flex items-center gap-2 cursor-pointer ${
+                            isActive ? "bg-primary/10 text-foreground font-semibold" : ""
+                          }`}
+                        >
+                          <Icon className="h-4 w-4" />
+                          <span>{tab.label}</span>
+                          {tab.id === "materials" && unprocessedMaterialsCount > 0 && (
+                            <Badge 
+                              variant="secondary" 
+                              className="ml-auto h-5 min-w-5 px-1.5 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 text-xs font-semibold"
+                            >
+                              {unprocessedMaterialsCount}
+                            </Badge>
+                          )}
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>
