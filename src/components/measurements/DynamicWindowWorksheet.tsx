@@ -84,6 +84,13 @@ export const DynamicWindowWorksheet = forwardRef<{
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastSaveTime, setLastSaveTime] = useState<number | null>(null);
   const lastSavedState = useRef<any>(null);
+  
+  // PHASE 1: Prevent continuous state resets from polling
+  const hasLoadedInitialData = useRef(false);
+  const latestSummaryRef = useRef<any>(null);
+  
+  // PHASE 4: Track user editing to prevent data reload during typing
+  const isUserEditing = useRef(false);
 
   // Hooks
   const {
@@ -140,8 +147,19 @@ export const DynamicWindowWorksheet = forwardRef<{
     enabled: !!surfaceId
   });
 
-  // Load existing data and sync with Enhanced mode
+  // Keep latestSummaryRef updated but don't trigger state resets
   useEffect(() => {
+    latestSummaryRef.current = existingWindowSummary;
+  }, [existingWindowSummary]);
+
+  // Load existing data and sync with Enhanced mode - ONLY RUN ONCE ON MOUNT
+  useEffect(() => {
+    // CRITICAL: Only load data once on mount, never again (prevents polling resets)
+    if (hasLoadedInitialData.current || isUserEditing.current) {
+      console.log('⏭️ Skipping data load - already loaded or user is editing');
+      return;
+    }
+    
     // Async function to handle data loading
     const loadData = async () => {
       // Priority 1: Load from windows_summary table if available
@@ -267,40 +285,50 @@ export const DynamicWindowWorksheet = forwardRef<{
           setSelectedLining(existingWindowSummary.selected_lining_type);
         }
         
-        // STEP 4: Restore Measurements - Convert from stored cm to display units
+          // STEP 4: Restore Measurements - Convert from stored cm to display units
         if (measurementsDetails) {
           const restoredMeasurements = { ...measurementsDetails };
           
-          // Convert rail_width and drop from cm (stored) to current display units
+          // PHASE 2: Better zero/null handling - show empty strings instead of "0"
           // Try measurements_details first, then fall back to top-level columns
           const storedRailWidth = measurementsDetails.rail_width || existingWindowSummary.rail_width;
           const storedDrop = measurementsDetails.drop || existingWindowSummary.drop;
           
-          if (storedRailWidth) {
+          // Only convert and display if value exists and is > 0
+          if (storedRailWidth && storedRailWidth > 0) {
             restoredMeasurements.rail_width = convertLength(
               storedRailWidth, 
               'cm', 
               units.length
             ).toString();
+          } else {
+            restoredMeasurements.rail_width = ""; // Empty string for null/zero
           }
-          if (storedDrop) {
+          
+          if (storedDrop && storedDrop > 0) {
             restoredMeasurements.drop = convertLength(
               storedDrop, 
               'cm', 
               units.length
             ).toString();
+          } else {
+            restoredMeasurements.drop = ""; // Empty string for null/zero
           }
           
           console.log('✅ DynamicWorksheet: Converted measurements from cm to', units.length, {
             stored_rail_width_cm: storedRailWidth,
-            displayed_rail_width: restoredMeasurements.rail_width,
+            displayed_rail_width: restoredMeasurements.rail_width || '(empty)',
             stored_drop_cm: storedDrop,
-            displayed_drop: restoredMeasurements.drop,
+            displayed_drop: restoredMeasurements.drop || '(empty)',
             source: measurementsDetails.rail_width ? 'measurements_details' : 'top-level columns'
           });
           
           setMeasurements(restoredMeasurements);
         }
+        
+        // PHASE 1: Mark as loaded to prevent future reloads
+        hasLoadedInitialData.current = true;
+        console.log('✅ Initial data load complete - will not reload again');
         
         // Set fabric calculation if available
         if (existingWindowSummary.linear_meters && existingWindowSummary.fabric_cost) {
@@ -317,8 +345,12 @@ export const DynamicWindowWorksheet = forwardRef<{
 
     // Call the async function
     loadData();
+  }, []); // CRITICAL: Empty dependency array - only run on mount
 
-    // Priority 2: Load from existingMeasurement (legacy support)
+  // Priority 2: Load from existingMeasurement (legacy support) - separate effect
+  useEffect(() => {
+    if (hasLoadedInitialData.current || !existingMeasurement) return;
+    
     if (existingMeasurement) {
       setMeasurements(existingMeasurement.measurements || {});
 
@@ -355,9 +387,15 @@ export const DynamicWindowWorksheet = forwardRef<{
         setLayeredTreatments(existingMeasurement.layered_treatments);
         setIsLayeredMode(existingMeasurement.layered_treatments.length > 0);
       }
+      
+      hasLoadedInitialData.current = true;
     }
+  }, [existingMeasurement]);
 
-    // Priority 3: Load from existing treatments for cross-mode compatibility
+  // Priority 3: Load from existing treatments for cross-mode compatibility - separate effect
+  useEffect(() => {
+    if (hasLoadedInitialData.current || !existingTreatments || existingTreatments.length === 0) return;
+    
     if (existingTreatments && existingTreatments.length > 0) {
       const treatment = existingTreatments[0];
 
@@ -372,8 +410,10 @@ export const DynamicWindowWorksheet = forwardRef<{
       } catch (e) {
         console.warn("Failed to parse treatment details:", e);
       }
+      
+      hasLoadedInitialData.current = true;
     }
-  }, [existingMeasurement, existingTreatments, existingWindowSummary]);
+  }, [existingTreatments]);
 
   // Detect treatment type when template changes
   useEffect(() => {
@@ -762,9 +802,13 @@ export const DynamicWindowWorksheet = forwardRef<{
             heading_cost: finalHeadingCost || 0,
             selected_options: selectedOptions || [],
             
-            // Add dimensions for easy querying - STORE IN CM for consistency
-            rail_width: measurements.rail_width ? convertLength(parseFloat(measurements.rail_width), units.length, 'cm') : null,
-            drop: measurements.drop ? convertLength(parseFloat(measurements.drop), units.length, 'cm') : null,
+            // PHASE 2: Add dimensions - STORE IN CM, save null instead of 0 for empty values
+            rail_width: measurements.rail_width && parseFloat(measurements.rail_width) > 0 
+              ? convertLength(parseFloat(measurements.rail_width), units.length, 'cm') 
+              : null,
+            drop: measurements.drop && parseFloat(measurements.drop) > 0 
+              ? convertLength(parseFloat(measurements.drop), units.length, 'cm') 
+              : null,
             
             total_cost: finalTotalCost,
             template_id: selectedTemplate?.id,
@@ -837,10 +881,13 @@ export const DynamicWindowWorksheet = forwardRef<{
               ...measurements,
               // CRITICAL: Store selected options for blinds/shutters inside measurements_details
               selected_options: selectedOptions,
-              // CRITICAL: Store in keys that pricing calculation expects (rail_width, drop)
-              // Convert to cm for consistency but use standard key names
-              rail_width: measurements.rail_width ? convertLength(parseFloat(measurements.rail_width), units.length, 'cm') : 0,
-              drop: measurements.drop ? convertLength(parseFloat(measurements.drop), units.length, 'cm') : 0,
+              // PHASE 2: Convert to cm but save null instead of 0 for empty values
+              rail_width: measurements.rail_width && parseFloat(measurements.rail_width) > 0 
+                ? convertLength(parseFloat(measurements.rail_width), units.length, 'cm') 
+                : null,
+              drop: measurements.drop && parseFloat(measurements.drop) > 0 
+                ? convertLength(parseFloat(measurements.drop), units.length, 'cm') 
+                : null,
               wall_width_cm: measurements.wall_width ? parseFloat(measurements.wall_width) : 0,
               wall_height_cm: measurements.wall_height ? parseFloat(measurements.wall_height) : 0,
               // Store original values with unit for reference (different key names to avoid duplicates)
@@ -1064,10 +1111,18 @@ export const DynamicWindowWorksheet = forwardRef<{
     }
   }));
   const handleMeasurementChange = (field: string, value: string) => {
+    // PHASE 4: Mark that user is actively editing to prevent data reloads
+    isUserEditing.current = true;
+    
     setMeasurements(prev => ({
       ...prev,
       [field]: value
     }));
+    
+    // Reset the editing flag after a short delay (user stopped typing)
+    setTimeout(() => {
+      isUserEditing.current = false;
+    }, 1000);
   };
   const handleItemSelect = (category: string, item: any) => {
     // For fabric, ensure BOTH id and fabric_id are set for persistence

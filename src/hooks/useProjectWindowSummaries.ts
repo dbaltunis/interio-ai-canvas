@@ -61,8 +61,9 @@ export const useProjectWindowSummaries = (projectId?: string) => {
       return { windows, totalsByRoom, projectTotal };
     },
     enabled: !!projectId,
-    // Critical: Refresh every 500ms for near-instant updates
-    refetchInterval: 500,
+    // PHASE 3: Disabled aggressive polling to prevent state resets
+    // Rely on manual query invalidation after saves instead
+    refetchInterval: false,
     // Ensure it refetches when user focuses the tab
     refetchOnWindowFocus: true,
     // Keep previous data while refetching to prevent flashing
