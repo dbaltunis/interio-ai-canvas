@@ -573,10 +573,14 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       console.log("📊 ✅ LOADING SAVED DATA INTO FORM");
       
       // CRITICAL FIX: Check top-level columns FIRST, then fall back to measurements_details
-      const railWidth = savedSummary.rail_width ?? savedSummary.measurements_details.rail_width ?? "";
-      const drop = savedSummary.drop ?? savedSummary.measurements_details.drop ?? "";
+      // Convert undefined, null, or string "undefined" to empty string
+      const railWidth = savedSummary.rail_width ?? savedSummary.measurements_details.rail_width;
+      const drop = savedSummary.drop ?? savedSummary.measurements_details.drop;
       
-      console.log("📊 USEEFFECT LOAD - Rail Width:", railWidth, "Drop:", drop);
+      const railWidthStr = (railWidth === null || railWidth === undefined || railWidth === "undefined" || railWidth === "" || isNaN(Number(railWidth))) ? "" : String(railWidth);
+      const dropStr = (drop === null || drop === undefined || drop === "undefined" || drop === "" || isNaN(Number(drop))) ? "" : String(drop);
+      
+      console.log("📊 USEEFFECT LOAD - Rail Width:", railWidth, "→", railWidthStr, "Drop:", drop, "→", dropStr);
       console.log("📊 Top-level rail_width:", savedSummary.rail_width);
       console.log("📊 Top-level drop:", savedSummary.drop);
       console.log("📊 JSONB rail_width:", savedSummary.measurements_details.rail_width);
@@ -586,8 +590,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       setMeasurements((prevMeasurements: any) => {
         const newMeasurements = {
           ...savedSummary.measurements_details,
-          rail_width: String(railWidth), // Convert to string for form inputs
-          drop: String(drop),
+          rail_width: railWidthStr, // Clean string for form inputs
+          drop: dropStr,
           window_width: savedSummary.measurements_details.window_width || "",
           window_height: savedSummary.measurements_details.window_height || "",
           surface_id: surfaceId,
@@ -1021,9 +1025,19 @@ export const EnhancedMeasurementWorksheet = forwardRef<
           // CRITICAL: Save options cost from calculateTreatmentPricing
           options_cost: optionsCost,
           selected_options: selectedOptions,
-          // CRITICAL FIX: Properly convert string values to numbers for database storage
-          rail_width: parseFloat((measurements as any).rail_width) || 0,
-          drop: parseFloat((measurements as any).drop) || 0,
+          // CRITICAL FIX: Properly convert string values to numbers, handling empty/undefined
+          rail_width: (() => {
+            const val = (measurements as any).rail_width;
+            if (val === null || val === undefined || val === "" || val === "undefined") return null;
+            const num = parseFloat(String(val));
+            return isNaN(num) ? null : num;
+          })(),
+          drop: (() => {
+            const val = (measurements as any).drop;
+            if (val === null || val === undefined || val === "" || val === "undefined") return null;
+            const num = parseFloat(String(val));
+            return isNaN(num) ? null : num;
+          })(),
           fabric_details: {
             id: fabricItem.id, 
             name: fabricItem.name, 
@@ -1042,9 +1056,19 @@ export const EnhancedMeasurementWorksheet = forwardRef<
           cost_breakdown: calculation_details.breakdown,
           measurements_details: {
             ...measurements,
-            // CRITICAL FIX: Also save rail_width and drop in JSONB for backup
-            rail_width: parseFloat((measurements as any).rail_width) || 0,
-            drop: parseFloat((measurements as any).drop) || 0,
+            // CRITICAL FIX: Also save rail_width and drop in JSONB, properly handling empty values
+            rail_width: (() => {
+              const val = (measurements as any).rail_width;
+              if (val === null || val === undefined || val === "" || val === "undefined") return null;
+              const num = parseFloat(String(val));
+              return isNaN(num) ? null : num;
+            })(),
+            drop: (() => {
+              const val = (measurements as any).drop;
+              if (val === null || val === undefined || val === "" || val === "undefined") return null;
+              const num = parseFloat(String(val));
+              return isNaN(num) ? null : num;
+            })(),
             selected_options: selectedOptions  // Use the tracked state with actual prices from database
           }
         } as any);
