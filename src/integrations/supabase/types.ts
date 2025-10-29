@@ -1768,6 +1768,51 @@ export type Database = {
           },
         ]
       }
+      default_inventory_templates: {
+        Row: {
+          active: boolean | null
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_popular: boolean | null
+          metadata: Json | null
+          name: string
+          pricing: Json | null
+          sort_order: number | null
+          specifications: Json | null
+          subcategory: string
+        }
+        Insert: {
+          active?: boolean | null
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_popular?: boolean | null
+          metadata?: Json | null
+          name: string
+          pricing?: Json | null
+          sort_order?: number | null
+          specifications?: Json | null
+          subcategory: string
+        }
+        Update: {
+          active?: boolean | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_popular?: boolean | null
+          metadata?: Json | null
+          name?: string
+          pricing?: Json | null
+          sort_order?: number | null
+          specifications?: Json | null
+          subcategory?: string
+        }
+        Relationships: []
+      }
       direct_messages: {
         Row: {
           content: string
@@ -2166,6 +2211,7 @@ export type Database = {
           roll_width_cm: number | null
           selling_price: number
           service_rate: number | null
+          show_in_quote: boolean | null
           sku: string | null
           sold_by_unit: string | null
           subcategory: string | null
@@ -2237,6 +2283,7 @@ export type Database = {
           roll_width_cm?: number | null
           selling_price?: number
           service_rate?: number | null
+          show_in_quote?: boolean | null
           sku?: string | null
           sold_by_unit?: string | null
           subcategory?: string | null
@@ -2308,6 +2355,7 @@ export type Database = {
           roll_width_cm?: number | null
           selling_price?: number
           service_rate?: number | null
+          show_in_quote?: boolean | null
           sku?: string | null
           sold_by_unit?: string | null
           subcategory?: string | null
@@ -2338,6 +2386,71 @@ export type Database = {
           },
           {
             foreignKeyName: "fk_enhanced_inventory_vendor"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      eyelet_rings: {
+        Row: {
+          active: boolean | null
+          color: string
+          cost_price: number | null
+          created_at: string | null
+          diameter: number
+          finish: string
+          id: string
+          image_url: string | null
+          is_default: boolean | null
+          material: string
+          name: string
+          selling_price: number | null
+          supplier: string | null
+          updated_at: string | null
+          user_id: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          color: string
+          cost_price?: number | null
+          created_at?: string | null
+          diameter: number
+          finish: string
+          id?: string
+          image_url?: string | null
+          is_default?: boolean | null
+          material: string
+          name: string
+          selling_price?: number | null
+          supplier?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          color?: string
+          cost_price?: number | null
+          created_at?: string | null
+          diameter?: number
+          finish?: string
+          id?: string
+          image_url?: string | null
+          is_default?: boolean | null
+          material?: string
+          name?: string
+          selling_price?: number | null
+          supplier?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eyelet_rings_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendors"
@@ -4601,6 +4714,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      product_variants: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          hex_color: string | null
+          id: string
+          image_url: string | null
+          is_default: boolean | null
+          name: string
+          sort_order: number | null
+          updated_at: string | null
+          user_id: string | null
+          value: string
+          variant_type: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          hex_color?: string | null
+          id?: string
+          image_url?: string | null
+          is_default?: boolean | null
+          name: string
+          sort_order?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          value: string
+          variant_type: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          hex_color?: string | null
+          id?: string
+          image_url?: string | null
+          is_default?: boolean | null
+          name?: string
+          sort_order?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          value?: string
+          variant_type?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
