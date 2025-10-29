@@ -1381,21 +1381,25 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                     const { toast } = await import("@/hooks/use-toast");
                     setIsSaving(true);
                     try {
-                      console.log("🚀 SAVE BUTTON CLICKED - Starting save process...");
+                      console.log("🚀🚀🚀 SAVE BUTTON CLICKED 🚀🚀🚀");
+                      console.log("📊 Current measurements state:", measurements);
+                      console.log("📊 Rail Width:", measurements.rail_width, "type:", typeof measurements.rail_width);
+                      console.log("📊 Drop:", measurements.drop, "type:", typeof measurements.drop);
                       console.log("  selectedCovering:", selectedCovering?.name);
                       console.log("  projectId:", projectId);
                       console.log("  surfaceId:", surfaceId);
                       console.log("  selectedFabric:", selectedFabric);
                       
                       // Save measurements first
+                      console.log("🔄 Calling handleSaveMeasurements...");
                       await handleSaveMeasurements();
-                      console.log("✅ Measurements saved successfully");
+                      console.log("✅ handleSaveMeasurements completed");
                       
                       // Save treatment if window covering is selected
                       if (selectedCovering && projectId && surfaceId) {
-                        console.log("🔄 Saving treatment configuration...");
+                        console.log("🔄 Calling handleSaveTreatmentConfig...");
                         await handleSaveTreatmentConfig();
-                        console.log("✅ Treatment saved successfully");
+                        console.log("✅ handleSaveTreatmentConfig completed");
                         
                         toast({
                           title: "✅ Configuration Saved",
@@ -1415,20 +1419,21 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                       }
                       
                       // Force refresh to show saved data
-                      setTimeout(async () => {
-                        try {
-                          await queryClient.invalidateQueries({ queryKey: ["treatments"] });
-                          await queryClient.invalidateQueries({ queryKey: ["window-summary"] });
-                          await queryClient.invalidateQueries({ queryKey: ["client-measurements"] });
-                          await queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
-                          console.log("✅ All data refreshed after save");
-                        } catch (refreshError) {
-                          console.warn("Failed to refresh after save:", refreshError);
-                        }
-                      }, 500);
+                      console.log("🔄 Invalidating queries to refresh data...");
+                      await queryClient.invalidateQueries({ queryKey: ["treatments"] });
+                      await queryClient.invalidateQueries({ queryKey: ["window-summary"] });
+                      await queryClient.invalidateQueries({ queryKey: ["client-measurements"] });
+                      await queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
+                      
+                      // Wait a moment for queries to refetch
+                      await new Promise(resolve => setTimeout(resolve, 500));
+                      
+                      console.log("✅✅✅ SAVE COMPLETE - All data refreshed ✅✅✅");
                       
                     } catch (error: any) {
-                      console.error("❌ Save failed:", error);
+                      console.error("❌❌❌ SAVE FAILED ❌❌❌");
+                      console.error("Error details:", error);
+                      console.error("Error stack:", error?.stack);
                       toast({
                         title: "Error",
                         description: error.message || "Failed to save configuration",
@@ -1442,7 +1447,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                   className="w-full"
                 >
                   <Save className="h-4 w-4" />
-                  {(createMeasurement.isPending || updateMeasurement.isPending || createTreatment.isPending || updateTreatment.isPending) ? "Saving..." : "Save"}
+                  {isSaving ? "Saving..." : "Save"}
                 </Button>
               </div>
             </div>
