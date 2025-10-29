@@ -265,17 +265,12 @@ export const WindowManagementDialog = ({
     }
   };
 
-  // Auto-save function when dialog closes
+  // Dialog close handler - NO AUTO-SAVE (user must click Save button)
   const handleDialogClose = async (open: boolean) => {
     if (!open) {
-      if (worksheetRef.current && typeof worksheetRef.current.autoSave === 'function') {
-        try {
-          await worksheetRef.current.autoSave();
-          console.log("Auto-saved measurements on dialog close");
-        } catch (error) {
-          console.error("Auto-save failed:", error);
-        }
-      }
+      // Removed auto-save - user must explicitly click Save button
+      // This prevents accidentally overwriting measurements with zeros when closing
+      console.log("Dialog closing - no auto-save, user must click Save button");
       onClose();
     }
   };
