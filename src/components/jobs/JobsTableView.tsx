@@ -704,7 +704,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
                             case 'job_no':
                               return (
                                 <TableCell key={column.id} className="py-1.5">
-                                  <span className="text-sm font-normal text-muted-foreground">{quote.quote_number}</span>
+                                  <span className="text-sm font-normal text-muted-foreground">{formatJobNumber(quote.quote_number)}</span>
                                 </TableCell>
                               );
                             case 'client':
