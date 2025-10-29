@@ -9,28 +9,20 @@ import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
 import { useWorkroomSync } from "@/hooks/useWorkroomSync";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
-import { EmptyQuoteVersionState } from "@/components/jobs/EmptyQuoteVersionState";
-import { useQuoteVersions } from "@/hooks/useQuoteVersions";
 
 interface RoomsTabProps {
   projectId: string;
-  quoteId?: string;
 }
 
-export const RoomsTab = ({ projectId, quoteId }: RoomsTabProps) => {
+export const RoomsTab = ({ projectId }: RoomsTabProps) => {
   const { data: projects } = useProjects();
-  const { data: treatments } = useTreatments(projectId, quoteId);
-  const { data: rooms } = useRooms(projectId, quoteId);
+  const { data: treatments } = useTreatments(projectId);
+  const { data: rooms } = useRooms(projectId);
   const { data: surfaces } = useSurfaces(projectId);
   const { data: projectSummaries } = useProjectWindowSummaries(projectId);
   const { data: businessSettings } = useBusinessSettings();
-  const { quoteVersions } = useQuoteVersions(projectId);
   const createRoom = useCreateRoom();
   const project = projects?.find(p => p.id === projectId);
-  
-  // Find current quote version number
-  const currentQuote = quoteVersions?.find(q => q.id === quoteId);
-  const currentVersion = currentQuote?.version || 1;
 
   // Auto-sync room and treatment data to quotations and workroom
   const quotationSync = useQuotationSync({
@@ -84,19 +76,6 @@ export const RoomsTab = ({ projectId, quoteId }: RoomsTabProps) => {
   console.log('RoomsTab: Display total (no markup/tax):', displayTotal);
   console.log('RoomsTab: Price source:', summariesTotal > 0 ? 'windows_summary table' : 'treatments table');
 
-  // Check if this is an empty quote version
-  const isEmptyVersion = roomCount === 0 && quoteId;
-
-  const handleAddRoom = async () => {
-    const roomNumber = (rooms?.length || 0) + 1;
-    await createRoom.mutateAsync({
-      project_id: projectId,
-      quote_id: quoteId,
-      name: `Room ${roomNumber}`,
-      room_type: "living_room"
-    });
-  };
-
   return (
     <div className="space-y-4">
       {/* Compact Header - Reduced spacing and size */}
@@ -105,7 +84,6 @@ export const RoomsTab = ({ projectId, quoteId }: RoomsTabProps) => {
           <h2 className="text-lg font-semibold">Rooms & Worksheets</h2>
           <p className="text-sm text-muted-foreground">
             {roomCount} room{roomCount !== 1 ? 's' : ''}, {treatmentCount} treatment{treatmentCount !== 1 ? 's' : ''}
-            {quoteId && ` • Quote Version ${currentVersion}`}
           </p>
         </div>
         <div className="text-right">
@@ -124,16 +102,8 @@ export const RoomsTab = ({ projectId, quoteId }: RoomsTabProps) => {
         </div>
       </div>
 
-      {/* Show empty state for empty quote versions */}
-      {isEmptyVersion ? (
-        <EmptyQuoteVersionState 
-          currentVersion={currentVersion}
-          onAddRoom={handleAddRoom}
-        />
-      ) : (
-        /* Enhanced Room Management - This handles all room display and management */
-        <EnhancedRoomView project={project} clientId={project.client_id} />
-      )}
+      {/* Enhanced Room Management - This handles all room display and management */}
+      <EnhancedRoomView project={project} clientId={project.client_id} />
     </div>
   );
 };

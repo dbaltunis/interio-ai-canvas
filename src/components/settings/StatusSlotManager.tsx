@@ -213,7 +213,6 @@ export const StatusSlotManager = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Quote">Quote</SelectItem>
                           <SelectItem value="Project">Project</SelectItem>
                         </SelectContent>
                       </Select>

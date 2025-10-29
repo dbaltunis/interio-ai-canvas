@@ -19,7 +19,6 @@ import { JobSkeleton } from "./JobSkeleton";
 import { JobNotFound } from "./JobNotFound";
 import { useProjectMaterialsUsage } from "@/hooks/useProjectMaterialsUsage";
 import { useTreatmentMaterialsStatus } from "@/hooks/useProjectMaterialsStatus";
-import { QuoteVersionSelector } from "./QuoteVersionSelector";
 
 interface JobDetailPageProps {
   jobId: string;
@@ -28,9 +27,6 @@ interface JobDetailPageProps {
 
 export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const [activeTab, setActiveTab] = useState("details");
-  const [selectedQuoteId, setSelectedQuoteId] = useState<string | undefined>();
-  
-  console.log('🔍 JobDetailPage: selectedQuoteId =', selectedQuoteId, 'jobId =', jobId);
   
   const { data: projects } = useProjects();
   const { data: clients } = useClients();
@@ -117,14 +113,8 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               </div>
             </div>
 
-            {/* Right Side: Quote Selector + Status */}
+            {/* Right Side: Status */}
             <div className="flex items-center gap-3 sm:gap-4 shrink-0 flex-wrap">
-              <QuoteVersionSelector
-                projectId={project.id}
-                selectedQuoteId={selectedQuoteId}
-                onQuoteChange={setSelectedQuoteId}
-              />
-              
               <JobStatusDropdown
                 currentStatusId={project.status_id}
                 currentStatus={project.status}
@@ -190,13 +180,13 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
 
               <TabsContent value="rooms" className="mt-0">
                 <div className="modern-card p-6">
-                  <RoomsTab projectId={jobId} quoteId={selectedQuoteId} />
+                  <RoomsTab projectId={jobId} />
                 </div>
               </TabsContent>
 
               <TabsContent value="quotation" className="mt-0">
                 <div className="modern-card p-2 sm:p-4 lg:p-6">
-                  <QuotationTab projectId={jobId} quoteId={selectedQuoteId} />
+                  <QuotationTab projectId={jobId} />
                 </div>
               </TabsContent>
 

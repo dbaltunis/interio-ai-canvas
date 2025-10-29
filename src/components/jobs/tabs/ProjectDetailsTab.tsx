@@ -19,7 +19,6 @@ import { ClientSearchStep } from "@/components/job-creation/steps/ClientSearchSt
 import { ProductsToOrderSection } from "@/components/jobs/ProductsToOrderSection";
 import { ProjectNotesCard } from "../ProjectNotesCard";
 import { CompactQuotesSection } from "../quotation/CompactQuotesSection";
-import { NewQuoteButton } from "../NewQuoteButton";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
@@ -539,14 +538,6 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">
               {getCurrentQuoteDisplay()}
             </p>
-            {quotes.length > 0 && (
-              <p className="text-xs text-muted-foreground mt-1">
-                {quotes.length} {quotes.length === 1 ? 'quote' : 'quotes'} created
-              </p>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <NewQuoteButton projectId={project.id} />
           </div>
         </CardContent>
       </Card>

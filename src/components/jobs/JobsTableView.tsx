@@ -77,7 +77,6 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
   const [notesDialogOpen, setNotesDialogOpen] = useState(false);
   const [selectedQuoteForNotes, setSelectedQuoteForNotes] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
   const [projectNotes, setProjectNotes] = useState<Record<string, number>>({});
   const [projectAppointments, setProjectAppointments] = useState<Record<string, any[]>>({});
 
@@ -91,16 +90,6 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
   if (isMobile) {
     return <MobileJobsView onJobSelect={onJobSelect} searchTerm={searchTerm} statusFilter={statusFilter} />;
   }
-
-  const toggleJobExpansion = (jobId: string) => {
-    const newExpanded = new Set(expandedJobs);
-    if (newExpanded.has(jobId)) {
-      newExpanded.delete(jobId);
-    } else {
-      newExpanded.add(jobId);
-    }
-    setExpandedJobs(newExpanded);
-  };
 
   // Reset page when search or filter changes
   useEffect(() => {
@@ -460,11 +449,6 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
             >
               {formatJobNumber(project.job_number)}
             </span>
-            {quotes.length > 1 && (
-              <span className="text-xs text-muted-foreground mt-0.5">
-                {quotes.length} quotes
-              </span>
-            )}
           </div>
         );
       
@@ -494,29 +478,14 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
         );
       
       case 'total':
-        // Show the converted quote's total, or first quote if all are draft
+        // Show the project's quote total
         const convertedQuote = quotes.find(q => q.status && q.status.toLowerCase() !== 'draft');
         const displayQuote = convertedQuote || quotes[0];
         const totalAmount = displayQuote?.total_amount || 0;
         return (
-          <div className="flex items-center space-x-2">
-            <span className="font-medium">
-              {formatCurrency(totalAmount, userCurrency)}
-            </span>
-            {quotes.length > 1 && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-6 text-xs px-2"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleJobExpansion(project.id);
-                }}
-              >
-                {expandedJobs.has(project.id) ? '−' : '+'} {quotes.length} quotes
-              </Button>
-            )}
-          </div>
+          <span className="font-medium">
+            {formatCurrency(totalAmount, userCurrency)}
+          </span>
         );
       
       case 'status':
@@ -631,10 +600,6 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
                     </Badge>
                   )}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onJobSelect({ id: project.id, projects: project })}>
-                  <Copy className="mr-2 h-4 w-4" />
-                  New Quote
-                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => {
                   setQuoteToDelete({ id: project.id, projects: project });
@@ -677,144 +642,17 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
               const client = clients.find(c => c.id === project.client_id);
               
               return (
-                <React.Fragment key={project.id}>
-                    {/* Main Job Row */}
-                    <TableRow 
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => onJobSelect({ id: project.id, projects: project })}
-                    >
-                      {displayColumns.map((column) => (
-                        <TableCell key={column.id}>
-                          {renderCellContent(column.id, project, quotes, clientName, client)}
-                        </TableCell>
-                      ))}
-                  </TableRow>
-                  
-                  {/* Quote Rows - only show if expanded */}
-                  {expandedJobs.has(project.id) && quotes.map((quote, index) => {
-                    const quoteClient = getClientForQuote(quote);
-                    return (
-                      <TableRow 
-                        key={`${project.id}-quote-${index}`}
-                        className="cursor-pointer hover:bg-muted/30 bg-muted/10 h-10"
-                        onClick={() => onJobSelect({ id: project.id, projects: project })}
-                      >
-                        {displayColumns.map((column) => {
-                          switch (column.id) {
-                            case 'job_no':
-                              return (
-                                <TableCell key={column.id} className="py-1.5">
-                                  <span className="text-sm font-normal text-muted-foreground">{formatJobNumber(quote.quote_number)}</span>
-                                </TableCell>
-                              );
-                            case 'client':
-                              return (
-                                <TableCell key={column.id} className="py-1.5">
-                                  <span className="text-sm text-muted-foreground">—</span>
-                                </TableCell>
-                              );
-                            case 'total':
-                              return (
-                                <TableCell key={column.id} className="text-sm py-1.5">
-                                  <span className="text-muted-foreground">
-                                    {quote.total_amount && quote.total_amount > 0 
-                                      ? formatCurrency(quote.total_amount, userCurrency)
-                                      : "—"
-                                    }
-                                  </span>
-                                </TableCell>
-                              );
-                            case 'status':
-                              return (
-                                <TableCell key={column.id} className="py-1.5">
-                                  <div className="flex items-center gap-2">
-                                    <JobStatusBadge statusId={quote.status_id || null} fallbackText={quote.status || "No Status"} />
-                                  </div>
-                                </TableCell>
-                              );
-                            case 'created':
-                              return (
-                                <TableCell key={column.id} className="text-muted-foreground text-sm py-1.5">
-                                  {new Date(quote.created_at).toLocaleDateString()}
-                                </TableCell>
-                              );
-                            case 'emails':
-                              return (
-                                <TableCell key={column.id} className="py-1.5" onClick={(e) => e.stopPropagation()}>
-                                  <EmailStatusDisplay 
-                                    jobId={quote.id}
-                                    clientEmail={quoteClient?.email}
-                                  />
-                                </TableCell>
-                              );
-                            case 'team':
-                              return (
-                                <TableCell key={column.id} className="py-1.5">
-                                  <div className="flex items-center space-x-2">
-                                    <Avatar className="h-6 w-6">
-                                      {(() => {
-                                        const owner = users.find(user => user.id === quote.user_id);
-                                        const ownerInfo = getOwnerInfo(quote);
-                                        const avatarUrl = owner?.avatar_url;
-                                        return avatarUrl ? (
-                                          <img 
-                                            src={avatarUrl} 
-                                            alt={ownerInfo.firstName}
-                                            className="h-6 w-6 rounded-full object-cover"
-                                          />
-                                        ) : (
-                                          <AvatarFallback className={`${ownerInfo.color} text-white text-xs font-medium`}>
-                                            {ownerInfo.initials}
-                                          </AvatarFallback>
-                                        );
-                                      })()}
-                                    </Avatar>
-                                    <span className="text-sm text-muted-foreground truncate">
-                                      {getOwnerInfo(quote).firstName}
-                                    </span>
-                                  </div>
-                                </TableCell>
-                              );
-                            case 'actions':
-                              return (
-                                <TableCell key={column.id} className="py-1.5">
-                                  <div onClick={(e) => e.stopPropagation()}>
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                          <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end" className="w-48 bg-popover text-popover-foreground border shadow-lg z-50">
-                                        <DropdownMenuItem onClick={() => onJobSelect({ id: project.id, projects: project })}>
-                                          <Eye className="mr-2 h-4 w-4" />
-                                          View Quote
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleNotesClick(quote)}>
-                                          <StickyNote className="mr-2 h-4 w-4" />
-                                          Add Note
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={() => {
-                                          setQuoteToDelete(quote);
-                                          setDeleteDialogOpen(true);
-                                        }}>
-                                          <Trash2 className="mr-2 h-4 w-4" />
-                                          Delete Quote
-                                        </DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                  </div>
-                                </TableCell>
-                              );
-                            default:
-                              return <TableCell key={column.id} className="py-1.5">—</TableCell>;
-                          }
-                        })}
-                      </TableRow>
-                    );
-                  })}
-                </React.Fragment>
+                <TableRow 
+                  key={project.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => onJobSelect({ id: project.id, projects: project })}
+                >
+                  {displayColumns.map((column) => (
+                    <TableCell key={column.id}>
+                      {renderCellContent(column.id, project, quotes, clientName, client)}
+                    </TableCell>
+                  ))}
+                </TableRow>
               );
             })}
           </TableBody>

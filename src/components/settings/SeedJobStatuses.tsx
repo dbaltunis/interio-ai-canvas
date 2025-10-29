@@ -7,19 +7,16 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 const DEFAULT_STATUSES = [
-  // Quote Statuses (4 statuses)
-  { name: "Draft", color: "gray", category: "Quote", action: "editable", description: "Initial quote creation, fully editable", sort_order: 1, slot_number: 1 },
-  { name: "Quote Sent", color: "blue", category: "Quote", action: "view_only", description: "Quote has been sent to client", sort_order: 2, slot_number: 2 },
-  { name: "Approved", color: "green", category: "Quote", action: "locked", description: "Quote approved by client", sort_order: 3, slot_number: 3 },
-  { name: "Rejected", color: "red", category: "Quote", action: "locked", description: "Quote rejected by client", sort_order: 4, slot_number: 4 },
-  
-  // Project Statuses (6 statuses)
-  { name: "Planning", color: "blue", category: "Project", action: "editable", description: "Project in planning phase, editable", sort_order: 5, slot_number: 5 },
-  { name: "Order Confirmed", color: "orange", category: "Project", action: "progress_only", description: "Client confirmed order, locked for production", sort_order: 6, slot_number: 6 },
-  { name: "In Production", color: "purple", category: "Project", action: "progress_only", description: "Project in production phase", sort_order: 7, slot_number: 7 },
-  { name: "Review", color: "yellow", category: "Project", action: "view_only", description: "Project under review before completion", sort_order: 8, slot_number: 8 },
-  { name: "Completed", color: "green", category: "Project", action: "completed", description: "Project completed successfully", sort_order: 9, slot_number: 9 },
-  { name: "Cancelled", color: "red", category: "Project", action: "locked", description: "Project cancelled", sort_order: 10, slot_number: 10 },
+  { name: "Lead", color: "gray", category: "Project", action: "editable", description: "Initial contact", sort_order: 1, slot_number: 1 },
+  { name: "Quote Draft", color: "gray", category: "Project", action: "editable", description: "Preparing quote", sort_order: 2, slot_number: 2 },
+  { name: "Quote Sent", color: "blue", category: "Project", action: "view_only", description: "Quote sent to client", sort_order: 3, slot_number: 3 },
+  { name: "Approved", color: "green", category: "Project", action: "locked", description: "Quote approved, ready to start", sort_order: 4, slot_number: 4 },
+  { name: "Planning", color: "gray", category: "Project", action: "editable", description: "Project planning phase", sort_order: 5, slot_number: 5 },
+  { name: "In Progress", color: "blue", category: "Project", action: "progress_only", description: "Active work", sort_order: 6, slot_number: 6 },
+  { name: "Materials Ordered", color: "orange", category: "Project", action: "progress_only", description: "Materials ordered", sort_order: 7, slot_number: 7 },
+  { name: "Manufacturing", color: "yellow", category: "Project", action: "progress_only", description: "In manufacturing", sort_order: 8, slot_number: 8 },
+  { name: "Quality Check", color: "primary", category: "Project", action: "view_only", description: "Quality inspection", sort_order: 9, slot_number: 9 },
+  { name: "Completed", color: "green", category: "Project", action: "completed", description: "Project completed", sort_order: 10, slot_number: 10 },
 ];
 
 export const SeedJobStatuses = () => {
@@ -97,8 +94,7 @@ export const SeedJobStatuses = () => {
         </div>
         <CardDescription className="text-blue-800 dark:text-blue-300">
           You have {activeStatuses.length} active status{activeStatuses.length !== 1 ? 'es' : ''}. 
-          Click below to add {10 - activeStatuses.length} comprehensive default status{10 - activeStatuses.length !== 1 ? 'es' : ''} 
-          ({4 - existingStatuses.filter(s => s.category === 'Quote' && s.is_active).length} Quote + {6 - existingStatuses.filter(s => s.category === 'Project' && s.is_active).length} Project).
+          Click below to add {10 - activeStatuses.length} comprehensive default project status{10 - activeStatuses.length !== 1 ? 'es' : ''}.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -120,7 +116,7 @@ export const SeedJobStatuses = () => {
           )}
         </Button>
         <p className="text-xs text-muted-foreground mt-3">
-          Includes: Draft, Quote Sent, Approved, Rejected (Quotes) + Planning, Order Confirmed, In Production, Review, Completed, Cancelled (Projects)
+          Includes: Lead, Quote Draft, Quote Sent, Approved, Planning, In Progress, Materials Ordered, Manufacturing, Quality Check, Completed
         </p>
       </CardContent>
     </Card>
