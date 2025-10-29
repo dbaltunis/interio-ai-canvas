@@ -44,21 +44,35 @@ export const QuoteVersionSelector = ({
 
   const handleDuplicateQuote = async () => {
     if (selectedQuote) {
+      console.log('🔄 Duplicating quote:', selectedQuote.id);
       const newQuote = await duplicateQuote.mutateAsync({ 
         currentQuote: selectedQuote, 
         duplicateContent: true 
       });
-      onQuoteChange(newQuote.id);
+      console.log('✅ Quote duplicated, switching to:', newQuote.id);
+      // Close dialog first
+      setShowNewVersionDialog(false);
+      // Then change quote after a brief delay to ensure queries are invalidated
+      setTimeout(() => {
+        onQuoteChange(newQuote.id);
+      }, 100);
     }
   };
 
   const handleStartFresh = async () => {
     if (selectedQuote) {
+      console.log('🆕 Creating fresh quote from:', selectedQuote.id);
       const newQuote = await duplicateQuote.mutateAsync({ 
         currentQuote: selectedQuote, 
         duplicateContent: false 
       });
-      onQuoteChange(newQuote.id);
+      console.log('✅ Fresh quote created, switching to:', newQuote.id);
+      // Close dialog first
+      setShowNewVersionDialog(false);
+      // Then change quote after a brief delay to ensure queries are invalidated
+      setTimeout(() => {
+        onQuoteChange(newQuote.id);
+      }, 100);
     }
   };
 

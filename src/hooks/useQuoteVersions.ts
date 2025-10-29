@@ -209,8 +209,14 @@ export const useQuoteVersions = (projectId: string) => {
       return newQuote;
     },
     onSuccess: (newQuote, variables) => {
+      // Invalidate quote queries
       queryClient.invalidateQueries({ queryKey: ["quote-versions", projectId] });
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
+      
+      // CRITICAL: Invalidate rooms and treatments to prevent showing stale data
+      queryClient.invalidateQueries({ queryKey: ["rooms", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["treatments", projectId] });
+      
       const action = variables.duplicateContent ? "Duplicated" : "Created";
       toast({
         title: `Quote ${action}`,

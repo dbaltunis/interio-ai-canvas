@@ -29,6 +29,9 @@ interface JobDetailPageProps {
 export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const [activeTab, setActiveTab] = useState("details");
   const [selectedQuoteId, setSelectedQuoteId] = useState<string | undefined>();
+  
+  console.log('🔍 JobDetailPage: selectedQuoteId =', selectedQuoteId, 'jobId =', jobId);
+  
   const { data: projects } = useProjects();
   const { data: clients } = useClients();
   const updateProject = useUpdateProject();
