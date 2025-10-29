@@ -82,7 +82,7 @@ export const QuoteVersionSelector = ({
               <SelectValue placeholder="Select a quote">
                 {selectedQuote && (
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm">QT-{formatJobNumber(selectedQuote.quote_number)}</span>
+                    <span className="font-mono text-sm">{formatJobNumber(selectedQuote.quote_number)}</span>
                     {selectedQuote.version && selectedQuote.version > 1 && (
                       <Badge variant="secondary" className="h-5 text-xs font-medium">
                         v{selectedQuote.version}
@@ -100,7 +100,7 @@ export const QuoteVersionSelector = ({
                   className="cursor-pointer"
                 >
                   <div className="flex items-center gap-2 py-1">
-                    <span className="font-mono text-sm">QT-{formatJobNumber(quote.quote_number)}</span>
+                    <span className="font-mono text-sm">{formatJobNumber(quote.quote_number)}</span>
                     {quote.version && quote.version > 1 && (
                       <Badge variant="outline" className="h-5 text-xs">
                         v{quote.version}
