@@ -203,7 +203,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               </TabsContent>
 
               <TabsContent value="emails" className="mt-0">
-                <div className="modern-card p-6">
+                <div className="modern-card p-3 sm:p-6">
                   <EmailsTab projectId={jobId} />
                 </div>
               </TabsContent>
