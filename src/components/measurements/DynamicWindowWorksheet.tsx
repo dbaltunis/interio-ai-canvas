@@ -272,26 +272,31 @@ export const DynamicWindowWorksheet = forwardRef<{
           const restoredMeasurements = { ...measurementsDetails };
           
           // Convert rail_width and drop from cm (stored) to current display units
-          if (measurementsDetails.rail_width) {
+          // Try measurements_details first, then fall back to top-level columns
+          const storedRailWidth = measurementsDetails.rail_width || existingWindowSummary.rail_width;
+          const storedDrop = measurementsDetails.drop || existingWindowSummary.drop;
+          
+          if (storedRailWidth) {
             restoredMeasurements.rail_width = convertLength(
-              measurementsDetails.rail_width, 
+              storedRailWidth, 
               'cm', 
               units.length
             ).toString();
           }
-          if (measurementsDetails.drop) {
+          if (storedDrop) {
             restoredMeasurements.drop = convertLength(
-              measurementsDetails.drop, 
+              storedDrop, 
               'cm', 
               units.length
             ).toString();
           }
           
           console.log('✅ DynamicWorksheet: Converted measurements from cm to', units.length, {
-            stored_rail_width_cm: measurementsDetails.rail_width,
+            stored_rail_width_cm: storedRailWidth,
             displayed_rail_width: restoredMeasurements.rail_width,
-            stored_drop_cm: measurementsDetails.drop,
-            displayed_drop: restoredMeasurements.drop
+            stored_drop_cm: storedDrop,
+            displayed_drop: restoredMeasurements.drop,
+            source: measurementsDetails.rail_width ? 'measurements_details' : 'top-level columns'
           });
           
           setMeasurements(restoredMeasurements);
@@ -757,9 +762,9 @@ export const DynamicWindowWorksheet = forwardRef<{
             heading_cost: finalHeadingCost || 0,
             selected_options: selectedOptions || [],
             
-            // Add dimensions for easy querying
-            rail_width: measurements.rail_width ? parseFloat(measurements.rail_width) : null,
-            drop: measurements.drop ? parseFloat(measurements.drop) : null,
+            // Add dimensions for easy querying - STORE IN CM for consistency
+            rail_width: measurements.rail_width ? convertLength(parseFloat(measurements.rail_width), units.length, 'cm') : null,
+            drop: measurements.drop ? convertLength(parseFloat(measurements.drop), units.length, 'cm') : null,
             
             total_cost: finalTotalCost,
             template_id: selectedTemplate?.id,
