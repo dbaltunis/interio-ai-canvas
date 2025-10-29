@@ -135,8 +135,8 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Standardized Tab Navigation - STICKY */}
           <div className="sticky top-0 z-20 bg-background border-b border-border/50 shadow-sm">
-            <div className="px-2 sm:px-4">
-              <div className="flex w-full justify-start gap-0 overflow-x-auto scrollbar-hide">
+            <div className="px-1 sm:px-4">
+              <div className="flex w-full justify-start gap-0">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -145,19 +145,19 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                       key={tab.id}
                       variant="ghost"
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-3 transition-all duration-200 text-xs sm:text-sm font-medium border-b-2 rounded-none whitespace-nowrap flex-shrink-0 ${
+                      className={`flex items-center gap-0.5 sm:gap-2 px-1.5 sm:px-4 py-1.5 sm:py-3 transition-all duration-200 text-[10px] sm:text-sm font-medium border-b-2 rounded-none whitespace-nowrap flex-1 sm:flex-none ${
                         isActive
                           ? "border-primary text-foreground bg-primary/5 font-semibold"
                           : "border-transparent text-muted-foreground hover:text-foreground hover:border-border/50"
                       }`}
                     >
-                      <Icon className="h-4 w-4" />
-                      <span className="hidden sm:inline">{tab.label}</span>
-                      <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
+                      <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <span className="hidden md:inline">{tab.label}</span>
+                      <span className="md:hidden truncate">{tab.label.split(' ')[0]}</span>
                       {tab.id === "materials" && unprocessedMaterialsCount > 0 && (
                         <Badge 
                           variant="secondary" 
-                          className="ml-1 h-5 min-w-5 px-1.5 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 text-xs font-semibold"
+                          className="ml-0.5 sm:ml-1 h-4 sm:h-5 min-w-4 sm:min-w-5 px-1 sm:px-1.5 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 text-[9px] sm:text-xs font-semibold"
                         >
                           {unprocessedMaterialsCount}
                         </Badge>

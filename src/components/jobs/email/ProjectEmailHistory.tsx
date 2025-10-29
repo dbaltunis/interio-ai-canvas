@@ -110,29 +110,29 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
   }, {} as Record<string, typeof projectEmails>);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Search and Filters */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
+        <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 pt-3 sm:pt-6">
+          <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+            <Mail className="h-4 w-4 sm:h-5 sm:w-5" />
             Email History
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-4">
+        <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6 pb-3 sm:pb-6">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-2.5 sm:top-3 h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400" />
               <Input
-                placeholder="Search emails by subject or recipient..."
+                placeholder="Search emails..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
+                className="pl-8 sm:pl-9 text-xs sm:text-sm h-9 sm:h-10"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <Filter className="h-4 w-4 mr-2" />
+              <SelectTrigger className="w-full sm:w-48 text-xs sm:text-sm h-9 sm:h-10">
+                <Filter className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -169,14 +169,16 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
 
       {/* Email Tabs */}
       <Tabs defaultValue="timeline" className="w-full">
-        <TabsList>
-          <TabsTrigger value="timeline" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Timeline View
+        <TabsList className="w-full grid grid-cols-2">
+          <TabsTrigger value="timeline" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Timeline View</span>
+            <span className="sm:hidden">Timeline</span>
           </TabsTrigger>
-          <TabsTrigger value="table" className="flex items-center gap-2">
-            <Mail className="h-4 w-4" />
-            Table View
+          <TabsTrigger value="table" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Table View</span>
+            <span className="sm:hidden">Table</span>
           </TabsTrigger>
         </TabsList>
 
@@ -193,71 +195,73 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
             Object.entries(groupedEmails)
               .sort(([a], [b]) => b.localeCompare(a))
               .map(([date, emails]) => (
-                <Card key={date}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">
+                 <Card key={date}>
+                  <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 pt-3 sm:pt-6">
+                    <CardTitle className="text-sm sm:text-lg">
                       {format(new Date(date), "EEEE, MMMM d, yyyy")}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="space-y-2 sm:space-y-3 px-3 sm:px-6 pb-3 sm:pb-6">
                     {emails.map((email) => (
                       <div
                         key={email.id}
-                        className="flex items-start gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                        className="flex items-start gap-2 sm:gap-4 p-2 sm:p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
                       >
                         <input
                           type="checkbox"
                           checked={selectedEmails.includes(email.id)}
                           onChange={() => handleSelectEmail(email.id)}
-                          className="mt-1"
+                          className="mt-1 flex-shrink-0"
                         />
                         
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <h4 className="font-medium">{email.subject}</h4>
-                              <p className="text-sm text-gray-600 flex items-center gap-2">
-                                <User className="h-4 w-4" />
-                                To: {email.recipient_email}
+                        <div className="flex-1 space-y-2 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-2">
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-medium text-sm sm:text-base truncate">{email.subject}</h4>
+                              <p className="text-xs sm:text-sm text-gray-600 flex items-center gap-1 sm:gap-2 truncate">
+                                <User className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                                <span className="truncate">To: {email.recipient_email}</span>
                               </p>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Badge className={getStatusColor(email.status)} variant="outline">
+                            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                              <Badge className={`${getStatusColor(email.status)} text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5`} variant="outline">
                                 {getStatusIcon(email.status)}
-                                {email.status}
+                                <span className="ml-0.5 sm:ml-1">{email.status}</span>
                               </Badge>
-                              <span className="text-sm text-gray-500">
+                              <span className="text-[10px] sm:text-sm text-gray-500 whitespace-nowrap">
                                 {format(new Date(email.created_at), "h:mm a")}
                               </span>
                             </div>
                           </div>
                           
-                          <div className="flex items-center gap-4 text-sm text-gray-500">
-                            {email.open_count > 0 && (
-                              <span className="flex items-center gap-1">
-                                <Eye className="h-4 w-4" />
-                                Opened {email.open_count} time(s)
-                              </span>
-                            )}
-                            {email.click_count > 0 && (
-                              <span className="flex items-center gap-1">
-                                Clicked {email.click_count} time(s)
-                              </span>
-                            )}
-                          </div>
+                          {(email.open_count > 0 || email.click_count > 0) && (
+                            <div className="flex items-center gap-2 sm:gap-4 text-[10px] sm:text-sm text-gray-500">
+                              {email.open_count > 0 && (
+                                <span className="flex items-center gap-0.5 sm:gap-1">
+                                  <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
+                                  <span className="hidden sm:inline">Opened</span> {email.open_count}
+                                </span>
+                              )}
+                              {email.click_count > 0 && (
+                                <span className="flex items-center gap-0.5 sm:gap-1">
+                                  <span className="hidden sm:inline">Clicked</span> {email.click_count}
+                                </span>
+                              )}
+                            </div>
+                          )}
                           
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="outline">
-                              <Eye className="h-4 w-4 mr-1" />
-                              View
+                          <div className="flex gap-1 sm:gap-2">
+                            <Button size="sm" variant="outline" className="h-7 sm:h-8 px-2 sm:px-3 text-xs">
+                              <Eye className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                              <span className="hidden sm:inline">View</span>
                             </Button>
-                            <Button size="sm" variant="outline">
-                              <Reply className="h-4 w-4 mr-1" />
-                              Reply
+                            <Button size="sm" variant="outline" className="h-7 sm:h-8 px-2 sm:px-3 text-xs">
+                              <Reply className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                              <span className="hidden sm:inline">Reply</span>
                             </Button>
-                            <Button size="sm" variant="outline">
-                              <Forward className="h-4 w-4 mr-1" />
-                              Forward
+                            <Button size="sm" variant="outline" className="h-7 sm:h-8 px-2 sm:px-3 text-xs hidden sm:flex">
+                              <Forward className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                              <span className="hidden sm:inline">Forward</span>
                             </Button>
                           </div>
                         </div>

@@ -69,54 +69,54 @@ export const EmailsTab = ({ projectId }: EmailsTabProps) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-brand-primary/10 to-brand-secondary/10 rounded-xl p-6 shadow-sm border-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-brand-primary rounded-lg flex items-center justify-center">
-              <MessageCircle className="h-6 w-6 text-white" />
+      <div className="bg-gradient-to-r from-brand-primary/10 to-brand-secondary/10 rounded-lg sm:rounded-xl p-3 sm:p-6 shadow-sm border-0">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
+            <div className="w-8 h-8 sm:w-12 sm:h-12 bg-brand-primary rounded-lg flex items-center justify-center flex-shrink-0">
+              <MessageCircle className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Messages</h2>
-              <p className="text-gray-600">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base sm:text-2xl font-bold text-gray-900">Messages</h2>
+              <p className="text-xs sm:text-base text-gray-600 truncate">
                 for <span className="font-medium text-brand-primary">{project.name}</span>
               </p>
             </div>
           </div>
           <Button 
             onClick={() => setShowComposer(true)}
-            className="bg-brand-secondary hover:bg-brand-secondary/90 text-white px-4 py-2 rounded-lg shadow-md"
+            className="bg-brand-secondary hover:bg-brand-secondary/90 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg shadow-md flex-shrink-0 text-xs sm:text-sm"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            New Message
+            <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 sm:mr-2" />
+            <span className="hidden sm:inline">New Message</span>
           </Button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-xl shadow-sm border-0 overflow-hidden">
+      <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border-0 overflow-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="bg-gray-50 px-6 py-4">
-            <TabsList className="bg-white rounded-lg p-1 shadow-sm">
+          <div className="bg-gray-50 px-2 sm:px-6 py-2 sm:py-4">
+            <TabsList className="bg-white rounded-lg p-1 shadow-sm w-full">
               <TabsTrigger 
                 value="history" 
-                className="flex items-center gap-2 px-4 py-2 rounded-md data-[state=active]:bg-brand-primary data-[state=active]:text-white data-[state=active]:shadow-sm"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-md data-[state=active]:bg-brand-primary data-[state=active]:text-white data-[state=active]:shadow-sm flex-1 text-xs sm:text-sm"
               >
-                <Clock className="h-4 w-4" />
-                <span className="hidden sm:inline">Recent</span>
+                <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span>Recent</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="templates" 
-                className="flex items-center gap-2 px-4 py-2 rounded-md data-[state=active]:bg-brand-accent data-[state=active]:text-white data-[state=active]:shadow-sm"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-md data-[state=active]:bg-brand-accent data-[state=active]:text-white data-[state=active]:shadow-sm flex-1 text-xs sm:text-sm"
               >
-                <FileText className="h-4 w-4" />
-                <span className="hidden sm:inline">Templates</span>
+                <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span>Templates</span>
               </TabsTrigger>
             </TabsList>
           </div>
 
-          <div className="p-6">
+          <div className="p-2 sm:p-6">
             <TabsContent value="history" className="mt-0">
               <ProjectEmailHistory projectId={projectId} />
             </TabsContent>
