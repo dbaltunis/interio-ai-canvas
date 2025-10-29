@@ -24,7 +24,7 @@ export const useQuoteVersions = (projectId: string) => {
 
   // Create a new quote version (duplicate current quote with rooms and treatments)
   const duplicateQuote = useMutation({
-    mutationFn: async (currentQuote: any) => {
+    mutationFn: async ({ currentQuote, duplicateContent = true }: { currentQuote: any; duplicateContent?: boolean }) => {
       console.log('🔄 Starting quote duplication...', { quoteId: currentQuote.id, version: currentQuote.version });
       
       const { data: { user } } = await supabase.auth.getUser();
@@ -92,6 +92,12 @@ export const useQuoteVersions = (projectId: string) => {
       }
       
       console.log('✅ Quote created:', newQuote.id);
+      
+      // If duplicateContent is false, skip room and treatment duplication
+      if (!duplicateContent) {
+        console.log('ℹ️ Skipping content duplication (fresh start)');
+        return newQuote;
+      }
       
       // Duplicate rooms linked to the current quote (by quote_id)
       console.log('🏠 Fetching rooms for quote:', currentQuote.id);
@@ -202,12 +208,13 @@ export const useQuoteVersions = (projectId: string) => {
       console.log('🎉 Quote duplication completed successfully');
       return newQuote;
     },
-    onSuccess: (newQuote) => {
+    onSuccess: (newQuote, variables) => {
       queryClient.invalidateQueries({ queryKey: ["quote-versions", projectId] });
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
+      const action = variables.duplicateContent ? "Duplicated" : "Created";
       toast({
-        title: "Quote Duplicated",
-        description: `Created version ${(newQuote as any).version} of this quote.`,
+        title: `Quote ${action}`,
+        description: `${action} version ${(newQuote as any).version} of this quote.`,
       });
     },
     onError: (error: any) => {

@@ -1,23 +1,27 @@
 /**
  * Format job number to show only last 4 digits
- * Example: "JOB-17604720407774" -> "JOB-0774"
+ * Example: "JOB-17604720407774" -> "0774"
+ * Example: "QT-17604720407774" -> "0774"
  * Example: "17604720407774" -> "0774"
- * Example: "J-1234567890" -> "J-7890"
+ * Example: "QT-0001-v2" -> "0001"
  */
 export const formatJobNumber = (jobNumber: string | null | undefined): string => {
   if (!jobNumber) return 'N/A';
   
-  // If job number contains a hyphen, preserve the prefix
-  if (jobNumber.includes('-')) {
-    const parts = jobNumber.split('-');
-    const prefix = parts[0];
-    const number = parts[parts.length - 1];
-    const last4 = number.slice(-4);
-    return `${prefix}-${last4}`;
+  // Remove common prefixes (JOB-, QT-, J-, etc.) and version suffixes (-v2, -v3, etc.)
+  let cleanedNumber = jobNumber
+    .replace(/^(JOB-|QT-|J-)/i, '') // Remove prefix
+    .replace(/-v\d+$/i, ''); // Remove version suffix like -v2, -v3
+  
+  // Extract just the numeric part if there are multiple segments
+  if (cleanedNumber.includes('-')) {
+    const parts = cleanedNumber.split('-');
+    // Get the first numeric segment (the actual quote/job number)
+    cleanedNumber = parts.find(p => /\d/.test(p)) || cleanedNumber;
   }
   
-  // Otherwise just return last 4 digits
-  return jobNumber.slice(-4);
+  // Return last 4 digits
+  return cleanedNumber.slice(-4).padStart(4, '0');
 };
 
 /**

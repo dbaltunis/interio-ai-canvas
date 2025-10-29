@@ -5,8 +5,9 @@ import { Copy, FileText } from "lucide-react";
 import { useQuoteVersions } from "@/hooks/useQuoteVersions";
 import { JobStatusDropdown } from "./JobStatusDropdown";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { formatJobNumber } from "@/lib/format-job-number";
+import { NewQuoteVersionDialog } from "./NewQuoteVersionDialog";
 
 interface QuoteVersionSelectorProps {
   projectId: string;
@@ -21,6 +22,7 @@ export const QuoteVersionSelector = ({
 }: QuoteVersionSelectorProps) => {
   const { quoteVersions, duplicateQuote, currentQuote } = useQuoteVersions(projectId);
   const { data: jobStatuses = [] } = useJobStatuses();
+  const [showNewVersionDialog, setShowNewVersionDialog] = useState(false);
   
   const selectedQuote = selectedQuoteId 
     ? quoteVersions.find(q => q.id === selectedQuoteId) 
@@ -42,7 +44,20 @@ export const QuoteVersionSelector = ({
 
   const handleDuplicateQuote = async () => {
     if (selectedQuote) {
-      const newQuote = await duplicateQuote.mutateAsync(selectedQuote);
+      const newQuote = await duplicateQuote.mutateAsync({ 
+        currentQuote: selectedQuote, 
+        duplicateContent: true 
+      });
+      onQuoteChange(newQuote.id);
+    }
+  };
+
+  const handleStartFresh = async () => {
+    if (selectedQuote) {
+      const newQuote = await duplicateQuote.mutateAsync({ 
+        currentQuote: selectedQuote, 
+        duplicateContent: false 
+      });
       onQuoteChange(newQuote.id);
     }
   };
@@ -116,13 +131,21 @@ export const QuoteVersionSelector = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={handleDuplicateQuote}
+            onClick={() => setShowNewVersionDialog(true)}
             disabled={duplicateQuote.isPending || !selectedQuote}
             className="shadow-sm hover:shadow-md transition-shadow"
           >
             <Copy className="h-4 w-4 mr-2" />
             {duplicateQuote.isPending ? "Creating..." : "New Quote Version"}
           </Button>
+          
+          <NewQuoteVersionDialog
+            open={showNewVersionDialog}
+            onOpenChange={setShowNewVersionDialog}
+            onDuplicate={handleDuplicateQuote}
+            onStartFresh={handleStartFresh}
+            isLoading={duplicateQuote.isPending}
+          />
         </div>
       )}
     </div>
