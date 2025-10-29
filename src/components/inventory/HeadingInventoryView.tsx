@@ -2,12 +2,13 @@ import { useEnhancedInventoryByCategory } from "@/hooks/useEnhancedInventory";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Ruler } from "lucide-react";
+import { Edit, Trash2, Ruler, EyeOff } from "lucide-react";
 import { AddInventoryDialog } from "./AddInventoryDialog";
 import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useDeleteEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { useState } from "react";
+import { EyeletRing } from "./EyeletRingSelector";
 
 interface HeadingInventoryViewProps {
   searchQuery: string;
@@ -24,12 +25,6 @@ export const HeadingInventoryView = ({ searchQuery, viewMode }: HeadingInventory
     heading.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     heading.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
-  
-  // Helper to safely access metadata
-  const getMetadata = (heading: any) => {
-    if (!heading.metadata) return null;
-    return typeof heading.metadata === 'string' ? JSON.parse(heading.metadata) : heading.metadata;
-  };
 
   const handleDelete = async (id: string, name: string) => {
     if (confirm(`Delete ${name}?`)) {
@@ -76,73 +71,76 @@ export const HeadingInventoryView = ({ searchQuery, viewMode }: HeadingInventory
         </div>
 
         <div className={viewMode === "grid" ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3" : "space-y-3"}>
-          {filteredHeadings.map((heading) => {
-            const metadata = getMetadata(heading);
-            
-            return (
-            <Card key={heading.id} className="hover:shadow-md transition-shadow">
+          {filteredHeadings.map((item) => (
+            <Card key={item.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <CardTitle className="text-base">{heading.name}</CardTitle>
-                    {heading.treatment_type && (
-                      <Badge variant="secondary" className="mt-1 text-xs capitalize">
-                        {heading.treatment_type}
-                      </Badge>
-                    )}
+                    <CardTitle className="text-base">{item.name}</CardTitle>
+                    <CardDescription className="text-xs mt-1">{item.description}</CardDescription>
                   </div>
                   <div className="flex gap-1">
                     <Button 
                       variant="ghost" 
                       size="sm"
-                      onClick={() => setEditingItem(heading)}
+                      onClick={() => setEditingItem(item)}
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleDelete(heading.id, heading.name)}
+                      onClick={() => handleDelete(item.id, item.name)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Price per meter:</span>
-                  <span className="font-semibold">${heading.price_per_meter?.toFixed(2) || '0.00'}</span>
-                </div>
-                {heading.fullness_ratio && (
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Fullness ratio:</span>
-                    <Badge variant="outline">{heading.fullness_ratio}x</Badge>
-                  </div>
-                )}
-                {heading.quantity && (
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">In stock:</span>
-                    <Badge variant={heading.quantity > 0 ? "default" : "destructive"}>
-                      {heading.quantity}m
+              <CardContent className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline" className="text-xs">{item.subcategory?.replace('_', ' ')}</Badge>
+                  
+                  {item.fullness_ratio && (
+                    <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs">
+                      {item.fullness_ratio}x Fullness
                     </Badge>
+                  )}
+
+                  {(item as any).show_in_quote === false && (
+                    <Badge variant="outline" className="border-orange-500 text-orange-600 dark:text-orange-400 text-xs">
+                      <EyeOff className="h-3 w-3 mr-1" />
+                      Hidden
+                    </Badge>
+                  )}
+                </div>
+
+                {(item.cost_price || item.selling_price) && (
+                  <div className="flex gap-2 text-sm">
+                    {item.cost_price && (
+                      <Badge variant="secondary" className="text-xs">
+                        Cost: ${item.cost_price.toFixed(2)}/m
+                      </Badge>
+                    )}
+                    {item.selling_price && (
+                      <Badge variant="default" className="text-xs">
+                        Price: ${item.selling_price.toFixed(2)}/m
+                      </Badge>
+                    )}
                   </div>
                 )}
-                {metadata?.eyelet_rings && metadata.eyelet_rings.length > 0 && (
-                  <div className="flex flex-col gap-1 text-sm">
-                    <span className="text-muted-foreground">Available rings:</span>
-                    <div className="flex flex-wrap gap-1">
-                      {metadata.eyelet_rings.map((ring: any) => (
-                        <Badge key={ring.id} variant="secondary" className="text-xs">
-                          {ring.name}
-                        </Badge>
-                      ))}
-                    </div>
+
+                {(item as any).eyelet_ring_ids && (item as any).eyelet_ring_ids.length > 0 && (
+                  <div className="p-2 bg-muted/30 rounded-lg">
+                    <p className="text-xs font-medium mb-1.5">Eyelet Rings Selected:</p>
+                    <Badge variant="secondary" className="text-xs">
+                      {(item as any).eyelet_ring_ids.length} rings
+                    </Badge>
                   </div>
                 )}
               </CardContent>
             </Card>
-          )})}
+          ))}
         </div>
       </div>
       

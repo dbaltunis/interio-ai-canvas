@@ -228,6 +228,11 @@ export const UnifiedInventoryDialog = ({
         treatment_type: item.treatment_type || "",
         heading_installation_notes: item.heading_installation_notes || "",
       });
+      
+      // Load eyelet rings if present
+      if (item.eyelet_ring_ids && Array.isArray(item.eyelet_ring_ids)) {
+        setEyeletRings(item.eyelet_ring_ids);
+      }
       setTrackInventory(item.quantity > 0);
       
       // Load pricing data for tracks/rods and eyelet rings for headings
@@ -375,7 +380,9 @@ export const UnifiedInventoryDialog = ({
         cost_price: formData.cost_price || 0,
         selling_price: formData.selling_price || 0,
         quantity: trackInventory ? formData.quantity : 0,
-        reorder_point: trackInventory ? formData.reorder_point : 0
+        reorder_point: trackInventory ? formData.reorder_point : 0,
+        show_in_quote: mode === "edit" ? (item as any)?.show_in_quote !== false : true,
+        eyelet_ring_ids: eyeletRings.map(r => r.id)
       };
       
       // Add pricing metadata for tracks/rods
@@ -604,13 +611,74 @@ export const UnifiedInventoryDialog = ({
                             <SelectItem value="wave_tape">Wave Tape</SelectItem>
                             <SelectItem value="tab_top">Tab Top</SelectItem>
                             <SelectItem value="rod_pocket">Rod Pocket</SelectItem>
-                            <SelectItem value="grommet">Grommet/Eyelet</SelectItem>
+                          <SelectItem value="grommet">Grommet/Eyelet</SelectItem>
                             <SelectItem value="custom_heading">Custom Heading</SelectItem>
                           </>
                         )}
                       </SelectContent>
                     </Select>
                   </div>
+                )}
+
+                {/* Heading-Specific Fields */}
+                {formData.category === "heading" && (
+                  <Card className="mt-4 bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
+                    <CardHeader>
+                      <CardTitle className="text-base">Heading Specifications</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                          <Label htmlFor="fullness_ratio">Fullness Ratio</Label>
+                          <Input
+                            id="fullness_ratio"
+                            type="number"
+                            step="0.1"
+                            value={formData.fullness_ratio || ""}
+                            onChange={(e) => setFormData({ ...formData, fullness_ratio: parseFloat(e.target.value) || 0 })}
+                            placeholder="e.g., 2.0, 2.5, 3.0"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            The multiplier for fabric width (e.g., 2.5x = window width × 2.5)
+                          </p>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="treatment_type">Compatible Treatments</Label>
+                          <Input
+                            id="treatment_type"
+                            value={formData.treatment_type}
+                            onChange={(e) => setFormData({ ...formData, treatment_type: e.target.value })}
+                            placeholder="e.g., Curtains, Drapes, Valances"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            What types of treatments can use this heading
+                          </p>
+                        </div>
+                      </div>
+
+                      {(formData.subcategory === "eyelet_pleat" || formData.subcategory === "grommet") && (
+                        <div>
+                          <Label>Eyelet Rings</Label>
+                          <EyeletRingSelector
+                            selectedRings={eyeletRings}
+                            onRingsChange={setEyeletRings}
+                          />
+                        </div>
+                      )}
+
+                      <div>
+                        <Label htmlFor="heading_installation_notes">Installation Notes</Label>
+                        <Textarea
+                          id="heading_installation_notes"
+                          value={formData.heading_installation_notes}
+                          onChange={(e) => setFormData({ ...formData, heading_installation_notes: e.target.value })}
+                          placeholder="Special installation instructions or requirements..."
+                          rows={3}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
               </CardContent>
             </Card>
@@ -1375,11 +1443,34 @@ export const UnifiedInventoryDialog = ({
                               placeholder="40.00"
                               required
                             />
-                            <p className="text-xs text-muted-foreground mt-1">What customer pays</p>
+                              <p className="text-xs text-muted-foreground mt-1">What customer pays</p>
+                            </div>
                           </div>
-                        </div>
 
-                        {/* Profit Analysis - Admin Only */}
+                          {/* Display in Client Quotes Toggle */}
+                          <Card className="bg-muted/30">
+                            <CardContent className="pt-6">
+                              <div className="flex items-center justify-between">
+                                <div className="space-y-0.5">
+                                  <Label className="text-base">Display Pricing in Client Quotes</Label>
+                                  <p className="text-sm text-muted-foreground">
+                                    When enabled, this item's pricing will be visible to clients in quotes
+                                  </p>
+                                </div>
+                                <Switch
+                                  checked={(item as any)?.show_in_quote !== false}
+                                  onCheckedChange={(checked) => {
+                                    // Store in item if editing
+                                    if (mode === "edit" && item) {
+                                      (item as any).show_in_quote = checked;
+                                    }
+                                  }}
+                                />
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          {/* Profit Analysis - Admin Only */}
                         {canViewMarkup && formData.cost_price > 0 && formData.selling_price > 0 && (
                           <Card className="bg-muted/50">
                             <CardHeader>
