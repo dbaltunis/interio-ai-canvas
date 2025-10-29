@@ -267,9 +267,34 @@ export const DynamicWindowWorksheet = forwardRef<{
           setSelectedLining(existingWindowSummary.selected_lining_type);
         }
         
-        // STEP 4: Restore Measurements
+        // STEP 4: Restore Measurements - Convert from stored cm to display units
         if (measurementsDetails) {
-          setMeasurements(measurementsDetails);
+          const restoredMeasurements = { ...measurementsDetails };
+          
+          // Convert rail_width and drop from cm (stored) to current display units
+          if (measurementsDetails.rail_width) {
+            restoredMeasurements.rail_width = convertLength(
+              measurementsDetails.rail_width, 
+              'cm', 
+              units.length
+            ).toString();
+          }
+          if (measurementsDetails.drop) {
+            restoredMeasurements.drop = convertLength(
+              measurementsDetails.drop, 
+              'cm', 
+              units.length
+            ).toString();
+          }
+          
+          console.log('✅ DynamicWorksheet: Converted measurements from cm to', units.length, {
+            stored_rail_width_cm: measurementsDetails.rail_width,
+            displayed_rail_width: restoredMeasurements.rail_width,
+            stored_drop_cm: measurementsDetails.drop,
+            displayed_drop: restoredMeasurements.drop
+          });
+          
+          setMeasurements(restoredMeasurements);
         }
         
         // Set fabric calculation if available
