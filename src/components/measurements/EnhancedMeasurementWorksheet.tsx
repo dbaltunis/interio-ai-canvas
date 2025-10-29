@@ -95,7 +95,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     projectId,
     existingMeasurement: safeExistingMeasurement,
     existingTreatments: safeExistingTreatments,
-    surfaceData: safeSurfaceData
+    surfaceData: safeSurfaceData,
+    savedSummaryData: savedSummary
   });
   
   console.log("🚀 WORKSHEET OPENING: Component mounted successfully");
@@ -113,7 +114,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   });
   
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<any>(null);
-  const [measurements, setMeasurements] = useState(() => {
+  const [measurements, setMeasurements] = useState<any>(() => {
     let initialMeasurements: any = {};
     
     console.log("🔍 INITIAL SETUP: Loading measurements with priority system");
@@ -537,6 +538,34 @@ export const EnhancedMeasurementWorksheet = forwardRef<
 
   // Get selected curtain template details
   const selectedCovering = curtainTemplates.find(c => c.id === selectedWindowCovering);
+
+  // CRITICAL: Update measurements when savedSummary is loaded
+  useEffect(() => {
+    if (savedSummary?.measurements_details && surfaceId) {
+      console.log("📊 LOADING savedSummary into form:", savedSummary.measurements_details);
+      setMeasurements({
+        ...savedSummary.measurements_details,
+        rail_width: savedSummary.rail_width || savedSummary.measurements_details.rail_width || "",
+        drop: savedSummary.drop || savedSummary.measurements_details.drop || "",
+        window_width: savedSummary.measurements_details.window_width || "",
+        window_height: savedSummary.measurements_details.window_height || "",
+        surface_id: surfaceId,
+        surface_name: surfaceData?.name
+      });
+      
+      // Also update selected fabric, heading, lining if available from measurements_details
+      const details = savedSummary.measurements_details as any;
+      if (details.selected_fabric) {
+        setSelectedFabric(details.selected_fabric);
+      }
+      if (details.selected_heading) {
+        setSelectedHeading(details.selected_heading);
+      }
+      if (details.selected_lining) {
+        setSelectedLining(details.selected_lining);
+      }
+    }
+  }, [savedSummary, surfaceId, surfaceData?.name]);
 
   // Debug: Log button state and component mount
   useEffect(() => {
