@@ -807,14 +807,13 @@ export const DynamicWindowWorksheet = forwardRef<{
               ...measurements,
               // CRITICAL: Store selected options for blinds/shutters inside measurements_details
               selected_options: selectedOptions,
-              // Convert user input to centimeters for storage (always store in cm)
-              rail_width_cm: measurements.rail_width ? convertLength(parseFloat(measurements.rail_width), units.length, 'cm') : 0,
-              drop_cm: measurements.drop ? convertLength(parseFloat(measurements.drop), units.length, 'cm') : 0,
+              // CRITICAL: Store in keys that pricing calculation expects (rail_width, drop)
+              // Convert to cm for consistency but use standard key names
+              rail_width: measurements.rail_width ? convertLength(parseFloat(measurements.rail_width), units.length, 'cm') : 0,
+              drop: measurements.drop ? convertLength(parseFloat(measurements.drop), units.length, 'cm') : 0,
               wall_width_cm: measurements.wall_width ? parseFloat(measurements.wall_width) : 0,
               wall_height_cm: measurements.wall_height ? parseFloat(measurements.wall_height) : 0,
-              // Store original values with unit for reference
-              rail_width: measurements.rail_width,
-              drop: measurements.drop,
+              // Store original values with unit for reference (different key names to avoid duplicates)
               wall_width: measurements.wall_width,
               wall_height: measurements.wall_height,
               unit: units.length,

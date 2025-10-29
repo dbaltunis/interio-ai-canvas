@@ -305,8 +305,8 @@ export const MeasurementWorksheet = ({
             extras_details: [],
             cost_breakdown: costBreakdown,
             measurements_details: {
-              rail_width_cm: railWidthCm,
-              drop_cm: dropCm,
+              rail_width: railWidthCm, // Use standard keys expected by pricing
+              drop: dropCm,
               fullness_ratio: fullnessRatio,
               return_left: returnLeft,
               return_right: returnRight,
@@ -345,8 +345,8 @@ export const MeasurementWorksheet = ({
               labor_cost: Number(manufacturingCost.toFixed(2)),
               total_price: Number(totalCost.toFixed(2)),
               measurements: {
-                rail_width_cm: railWidthCm,
-                drop_cm: dropCm,
+                rail_width: railWidthCm, // Use standard keys expected by pricing
+                drop: dropCm,
                 fullness_ratio: fullnessRatio,
                 linear_meters: Number(linearMeters.toFixed(2)),
                 widths_required: widthsRequired,

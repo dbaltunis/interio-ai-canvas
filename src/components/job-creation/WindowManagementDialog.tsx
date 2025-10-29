@@ -153,6 +153,7 @@ export const WindowManagementDialog = ({
           // Measurements - PRESERVE dimensions
           linear_meters: costSummary.linear_meters || treatmentData.measurements?.fabric_usage || 0,
           widths_required: costSummary.widths_required || 0,
+          // CRITICAL: Save rail_width and drop as top-level columns for pricing calculations
           rail_width: treatmentData.measurements?.rail_width || treatmentData.measurements?.width || 0,
           drop: treatmentData.measurements?.drop || treatmentData.measurements?.height || 0,
           

@@ -127,8 +127,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     if (shouldUseSavedData && savedSummary?.measurements_details) {
       console.log("📊 PRIORITY 1: Loading from saved summary");
       initialMeasurements = {
-        rail_width: savedSummary.measurements_details.rail_width_cm || savedSummary.measurements_details.rail_width || "",
-        drop: savedSummary.measurements_details.drop_cm || savedSummary.measurements_details.drop || "",
+        rail_width: savedSummary.measurements_details.rail_width || "",
+        drop: savedSummary.measurements_details.drop || "",
         window_width: savedSummary.measurements_details.window_width || "",
         window_height: savedSummary.measurements_details.window_height || "",
         pooling_amount: savedSummary.measurements_details.pooling_amount_cm || "",
@@ -347,8 +347,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       console.log("✅ PRIORITY 1: Loading from saved summary (no treatment found)");
       measurements = {
         ...savedSummary.measurements_details,
-        rail_width: savedSummary.measurements_details.rail_width_cm || savedSummary.measurements_details.rail_width || 0,
-        drop: savedSummary.measurements_details.drop_cm || savedSummary.measurements_details.drop || 0,
+        rail_width: savedSummary.measurements_details.rail_width || 0,
+        drop: savedSummary.measurements_details.drop || 0,
         surface_id: surfaceId,
         surface_name: surfaceData?.name
       };
@@ -369,8 +369,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       // Use measurements from summary but preserve treatment fabric/lining selections
       measurements = {
         ...savedSummary.measurements_details,
-        rail_width: savedSummary.measurements_details.rail_width_cm || savedSummary.measurements_details.rail_width || 0,
-        drop: savedSummary.measurements_details.drop_cm || savedSummary.measurements_details.drop || 0,
+        rail_width: savedSummary.measurements_details.rail_width || 0,
+        drop: savedSummary.measurements_details.drop || 0,
         surface_id: surfaceId,
         surface_name: surfaceData?.name
       };
@@ -934,7 +934,10 @@ export const EnhancedMeasurementWorksheet = forwardRef<
           // CRITICAL: Save options cost from calculateTreatmentPricing
           options_cost: optionsCost,
           selected_options: selectedOptions,
-          fabric_details: { 
+          // CRITICAL: Extract and save rail_width and drop from measurements for pricing calculations
+          rail_width: (measurements as any).rail_width || 0,
+          drop: (measurements as any).drop || 0,
+          fabric_details: {
             id: fabricItem.id, 
             name: fabricItem.name, 
             price_per_meter: pricePerMeter,
@@ -1151,8 +1154,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
             measurements={{
               ...measurements,
               // FORCE the correct values if they exist in savedSummary
-              rail_width: measurements.rail_width || (shouldUseSavedData && savedSummary?.measurements_details?.rail_width_cm) || (shouldUseSavedData && savedSummary?.measurements_details?.rail_width) || measurements.rail_width || "",
-              drop: measurements.drop || (shouldUseSavedData && savedSummary?.measurements_details?.drop_cm) || (shouldUseSavedData && savedSummary?.measurements_details?.drop) || measurements.drop || ""
+              rail_width: measurements.rail_width || (shouldUseSavedData && savedSummary?.measurements_details?.rail_width) || measurements.rail_width || "",
+              drop: measurements.drop || (shouldUseSavedData && savedSummary?.measurements_details?.drop) || measurements.drop || ""
             }}
             onMeasurementChange={handleMeasurementChange}
             readOnly={readOnly}
