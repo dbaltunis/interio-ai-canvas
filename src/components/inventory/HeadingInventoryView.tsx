@@ -2,11 +2,12 @@ import { useEnhancedInventoryByCategory } from "@/hooks/useEnhancedInventory";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Ruler, EyeOff } from "lucide-react";
+import { Edit, Trash2, Ruler, EyeOff, Download } from "lucide-react";
 import { AddInventoryDialog } from "./AddInventoryDialog";
 import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useDeleteEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
+import { useLoadDefaultHeadings } from "@/hooks/useDefaultInventory";
 import { useState } from "react";
 import { EyeletRing } from "./EyeletRingSelector";
 
@@ -18,6 +19,7 @@ interface HeadingInventoryViewProps {
 export const HeadingInventoryView = ({ searchQuery, viewMode }: HeadingInventoryViewProps) => {
   const { data: headings = [], refetch } = useEnhancedInventoryByCategory('heading');
   const deleteItem = useDeleteEnhancedInventoryItem();
+  const loadDefaults = useLoadDefaultHeadings();
   const { toast } = useToast();
   const [editingItem, setEditingItem] = useState<any>(null);
 
@@ -49,11 +51,21 @@ export const HeadingInventoryView = ({ searchQuery, viewMode }: HeadingInventory
           <p className="text-muted-foreground mb-4">
             {searchQuery ? "No headings match your search." : "Add pleating tapes, wave tapes, eyelet tapes, and rings to your inventory."}
           </p>
-          <AddInventoryDialog
-            trigger={<Button>Add Heading Tape</Button>}
-            onSuccess={refetch}
-            initialCategory="heading"
-          />
+          <div className="flex gap-2 justify-center">
+            <Button
+              variant="outline"
+              onClick={() => loadDefaults.mutate()}
+              disabled={loadDefaults.isPending}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {loadDefaults.isPending ? "Loading..." : "Load Popular Headings"}
+            </Button>
+            <AddInventoryDialog
+              trigger={<Button>Add Custom Heading</Button>}
+              onSuccess={refetch}
+              initialCategory="heading"
+            />
+          </div>
         </CardContent>
       </Card>
     );
@@ -66,11 +78,22 @@ export const HeadingInventoryView = ({ searchQuery, viewMode }: HeadingInventory
           <p className="text-sm text-muted-foreground">
             {filteredHeadings.length} heading{filteredHeadings.length !== 1 ? 's' : ''} found
           </p>
-          <AddInventoryDialog
-            trigger={<Button>Add Heading</Button>}
-            onSuccess={refetch}
-            initialCategory="heading"
-          />
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => loadDefaults.mutate()}
+              disabled={loadDefaults.isPending}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {loadDefaults.isPending ? "Loading..." : "Load Defaults"}
+            </Button>
+            <AddInventoryDialog
+              trigger={<Button size="sm">Add Heading</Button>}
+              onSuccess={refetch}
+              initialCategory="heading"
+            />
+          </div>
         </div>
 
         <div className={viewMode === "grid" ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3" : "space-y-3"}>
