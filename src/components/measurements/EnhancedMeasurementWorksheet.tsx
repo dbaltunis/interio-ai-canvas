@@ -126,9 +126,16 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     // Priority 1: Use saved summary measurement details if available
     if (shouldUseSavedData && savedSummary?.measurements_details) {
       console.log("📊 PRIORITY 1: Loading from saved summary");
+      
+      // CRITICAL FIX: Check top-level columns FIRST, then fall back to measurements_details
+      const railWidth = savedSummary.rail_width ?? savedSummary.measurements_details.rail_width ?? "";
+      const drop = savedSummary.drop ?? savedSummary.measurements_details.drop ?? "";
+      
+      console.log("📊 INITIAL LOAD - Rail Width:", railWidth, "Drop:", drop);
+      
       initialMeasurements = {
-        rail_width: savedSummary.measurements_details.rail_width || "",
-        drop: savedSummary.measurements_details.drop || "",
+        rail_width: String(railWidth), // Convert to string for form inputs
+        drop: String(drop),
         window_width: savedSummary.measurements_details.window_width || "",
         window_height: savedSummary.measurements_details.window_height || "",
         pooling_amount: savedSummary.measurements_details.pooling_amount_cm || "",
@@ -544,16 +551,23 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   useEffect(() => {
     if (savedSummary?.measurements_details && surfaceId) {
       console.log("📊 ✅ LOADING SAVED DATA INTO FORM");
-      console.log("📊 Rail Width:", savedSummary.rail_width || savedSummary.measurements_details.rail_width);
-      console.log("📊 Drop:", savedSummary.drop || savedSummary.measurements_details.drop);
-      console.log("📊 Full details:", savedSummary.measurements_details);
+      
+      // CRITICAL FIX: Check top-level columns FIRST, then fall back to measurements_details
+      const railWidth = savedSummary.rail_width ?? savedSummary.measurements_details.rail_width ?? "";
+      const drop = savedSummary.drop ?? savedSummary.measurements_details.drop ?? "";
+      
+      console.log("📊 USEEFFECT LOAD - Rail Width:", railWidth, "Drop:", drop);
+      console.log("📊 Top-level rail_width:", savedSummary.rail_width);
+      console.log("📊 Top-level drop:", savedSummary.drop);
+      console.log("📊 JSONB rail_width:", savedSummary.measurements_details.rail_width);
+      console.log("📊 JSONB drop:", savedSummary.measurements_details.drop);
       
       // Update measurements state with saved data
       setMeasurements((prevMeasurements: any) => {
         const newMeasurements = {
           ...savedSummary.measurements_details,
-          rail_width: savedSummary.rail_width || savedSummary.measurements_details.rail_width || "",
-          drop: savedSummary.drop || savedSummary.measurements_details.drop || "",
+          rail_width: String(railWidth), // Convert to string for form inputs
+          drop: String(drop),
           window_width: savedSummary.measurements_details.window_width || "",
           window_height: savedSummary.measurements_details.window_height || "",
           surface_id: surfaceId,
@@ -630,7 +644,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const handleMeasurementChange = (field: string, value: string | number) => {
     if (readOnly) return;
     
-    console.log(`📏 Measurement change: ${field} = ${value}`);
+    console.log(`📏 INPUT CHANGE: ${field} = "${value}" (type: ${typeof value})`);
     
     setMeasurements(prev => {
       const newMeasurements = { ...prev };
@@ -647,7 +661,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
         }
       }
       
-      console.log("Updated measurements:", newMeasurements);
+      console.log(`📏 STORED IN STATE: ${field} = "${newMeasurements[field]}"`);
       return newMeasurements;
     });
     
@@ -980,9 +994,9 @@ export const EnhancedMeasurementWorksheet = forwardRef<
           // CRITICAL: Save options cost from calculateTreatmentPricing
           options_cost: optionsCost,
           selected_options: selectedOptions,
-          // CRITICAL: Extract and save rail_width and drop from measurements for pricing calculations
-          rail_width: (measurements as any).rail_width || 0,
-          drop: (measurements as any).drop || 0,
+          // CRITICAL FIX: Properly convert string values to numbers for database storage
+          rail_width: parseFloat((measurements as any).rail_width) || 0,
+          drop: parseFloat((measurements as any).drop) || 0,
           fabric_details: {
             id: fabricItem.id, 
             name: fabricItem.name, 
@@ -1001,9 +1015,19 @@ export const EnhancedMeasurementWorksheet = forwardRef<
           cost_breakdown: calculation_details.breakdown,
           measurements_details: {
             ...measurements,
+            // CRITICAL FIX: Also save rail_width and drop in JSONB for backup
+            rail_width: parseFloat((measurements as any).rail_width) || 0,
+            drop: parseFloat((measurements as any).drop) || 0,
             selected_options: selectedOptions  // Use the tracked state with actual prices from database
           }
         } as any);
+        
+        console.log('💾 ✅ SAVE COMPLETE - Saved values:', {
+          rail_width_toplevel: parseFloat((measurements as any).rail_width) || 0,
+          drop_toplevel: parseFloat((measurements as any).drop) || 0,
+          rail_width_jsonb: measurements.rail_width,
+          drop_jsonb: measurements.drop
+        });
         
         console.log('💾 Saved window summary with options cost:', {
           options_cost: selectedOptions.reduce((sum, opt) => sum + (opt.price || 0), 0),
