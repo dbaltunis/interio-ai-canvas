@@ -112,6 +112,36 @@ export const useProjectMaterialsUsage = (projectId: string | undefined) => {
             });
           }
         }
+        
+        // Extract heading tape data from treatment configuration
+        const treatmentConfig = (treatment as any).treatment_configuration || {};
+        if (treatmentConfig.heading_id) {
+          const { data: headingItem } = await supabase
+            .from('enhanced_inventory_items')
+            .select('*')
+            .eq('id', treatmentConfig.heading_id)
+            .single();
+
+          if (headingItem) {
+            const windowWidth = calcDetails.dimensions?.width || 0;
+            const fullnessRatio = headingItem.fullness_ratio || 2;
+            const headingLength = (windowWidth * fullnessRatio) + 0.2;
+
+            materials.push({
+              itemId: headingItem.id,
+              itemTable: 'enhanced_inventory_items',
+              itemName: `${headingItem.name} (Heading)`,
+              quantityUsed: headingLength,
+              unit: 'm',
+              currentQuantity: headingItem.quantity || 0,
+              costImpact: headingLength * (headingItem.cost_price || 0),
+              surfaceId: treatment.window_id || treatment.id,
+              surfaceName: surfaceMap.get(treatment.window_id) || treatment.product_name || 'Treatment',
+              lowStock: (headingItem.quantity || 0) < headingLength,
+              isTracked: (headingItem.quantity || 0) > 0
+            });
+          }
+        }
       }
 
       return materials;

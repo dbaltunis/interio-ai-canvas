@@ -23,6 +23,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Check } from "lucide-react";
 import { InventoryMultiSelect } from "./InventoryMultiSelect";
+import { EyeletRingSelector, type EyeletRing } from "./EyeletRingSelector";
 
 const STORAGE_KEY = "inventory_draft_data";
 
@@ -151,8 +152,14 @@ export const UnifiedInventoryDialog = ({
     wallpaper_match_type: "straight",
     wallpaper_horizontal_repeat: 0,
     wallpaper_waste_factor: 10,
-    wallpaper_pattern_offset: 0
+    wallpaper_pattern_offset: 0,
+    // Heading-specific fields
+    fullness_ratio: 0,
+    treatment_type: "",
+    heading_installation_notes: "",
   });
+  
+  const [eyeletRings, setEyeletRings] = useState<EyeletRing[]>([]);
 
   // Load draft data on mount for create mode
   useEffect(() => {
@@ -216,11 +223,14 @@ export const UnifiedInventoryDialog = ({
         wallpaper_match_type: item.wallpaper_match_type || "straight",
         wallpaper_horizontal_repeat: item.wallpaper_horizontal_repeat || 0,
         wallpaper_waste_factor: item.wallpaper_waste_factor || 10,
-        wallpaper_pattern_offset: item.wallpaper_pattern_offset || 0
+        wallpaper_pattern_offset: item.wallpaper_pattern_offset || 0,
+        fullness_ratio: item.fullness_ratio || 0,
+        treatment_type: item.treatment_type || "",
+        heading_installation_notes: item.heading_installation_notes || "",
       });
       setTrackInventory(item.quantity > 0);
       
-      // Load pricing data for tracks/rods
+      // Load pricing data for tracks/rods and eyelet rings for headings
       if (item.metadata) {
         const metadata = typeof item.metadata === 'string' ? JSON.parse(item.metadata) : item.metadata;
         if (metadata.pricingMode) {
@@ -234,6 +244,9 @@ export const UnifiedInventoryDialog = ({
         }
         if (metadata.lengthPricingGrid) {
           setPricingGridRows(metadata.lengthPricingGrid);
+        }
+        if (metadata.eyelet_rings) {
+          setEyeletRings(metadata.eyelet_rings);
         }
       }
     }
@@ -381,6 +394,14 @@ export const UnifiedInventoryDialog = ({
         cleanData.metadata = pricingMetadata;
       }
       
+      // Add eyelet rings metadata for heading items
+      if (formData.category === 'heading' && eyeletRings.length > 0) {
+        cleanData.metadata = {
+          ...(cleanData.metadata || {}),
+          eyelet_rings: eyeletRings
+        };
+      }
+      
       // Remove empty fields
       Object.keys(cleanData).forEach(key => {
         if (cleanData[key] === "" || cleanData[key] === undefined || cleanData[key] === null) {
@@ -433,7 +454,10 @@ export const UnifiedInventoryDialog = ({
           wallpaper_match_type: "straight",
           wallpaper_horizontal_repeat: 0,
           wallpaper_waste_factor: 10,
-          wallpaper_pattern_offset: 0
+          wallpaper_pattern_offset: 0,
+          fullness_ratio: 0,
+          treatment_type: "",
+          heading_installation_notes: "",
         });
         setTrackInventory(false);
       }
@@ -465,6 +489,8 @@ export const UnifiedInventoryDialog = ({
   const isFabric = formData.category === "fabric";
   const isHardware = formData.category === "hardware";
   const isWallcovering = formData.category === "wallcovering";
+  const isHeading = formData.category === "heading";
+  const isEyeletHeading = formData.category === "heading" && (formData.subcategory === "eyelet_pleat" || formData.subcategory === "grommet");
 
   const profitPerUnit = formData.selling_price - formData.cost_price;
   const markupPercentage = formData.cost_price > 0 
@@ -529,6 +555,7 @@ export const UnifiedInventoryDialog = ({
                       <SelectItem value="fabric">Fabrics</SelectItem>
                       <SelectItem value="hardware">Hardware</SelectItem>
                       <SelectItem value="wallcovering">Wallcoverings</SelectItem>
+                      <SelectItem value="heading">Heading Tapes & Pleats</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -567,6 +594,18 @@ export const UnifiedInventoryDialog = ({
                             <SelectItem value="plain_wallpaper">Plain Wallpaper</SelectItem>
                             <SelectItem value="patterned_wallpaper">Patterned Wallpaper</SelectItem>
                             <SelectItem value="wall_panels_murals">Wall Panels / Murals</SelectItem>
+                          </>
+                        )}
+                        {formData.category === "heading" && (
+                          <>
+                            <SelectItem value="pencil_pleat">Pencil Pleat Tape</SelectItem>
+                            <SelectItem value="eyelet_pleat">Eyelet Pleat Tape</SelectItem>
+                            <SelectItem value="pinch_pleat">Pinch Pleat Tape</SelectItem>
+                            <SelectItem value="wave_tape">Wave Tape</SelectItem>
+                            <SelectItem value="tab_top">Tab Top</SelectItem>
+                            <SelectItem value="rod_pocket">Rod Pocket</SelectItem>
+                            <SelectItem value="grommet">Grommet/Eyelet</SelectItem>
+                            <SelectItem value="custom_heading">Custom Heading</SelectItem>
                           </>
                         )}
                       </SelectContent>
@@ -1195,6 +1234,71 @@ export const UnifiedInventoryDialog = ({
                           placeholder="2.5"
                         />
                       </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Heading Tape/Pleat Specifications */}
+                {isHeading && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Ruler className="h-5 w-5" />
+                        Heading Specifications
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <Label htmlFor="fullness_ratio">Fullness Ratio</Label>
+                        <Input
+                          id="fullness_ratio"
+                          type="number"
+                          step="0.1"
+                          value={formData.fullness_ratio || ""}
+                          onChange={(e) => setFormData({ ...formData, fullness_ratio: parseFloat(e.target.value) || 0 })}
+                          placeholder="2.5"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          How much fabric fullness (e.g., 2.5x means 2.5m fabric for 1m window)
+                        </p>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="treatment_type">Recommended For</Label>
+                        <Input
+                          id="treatment_type"
+                          value={formData.treatment_type}
+                          onChange={(e) => setFormData({ ...formData, treatment_type: e.target.value })}
+                          placeholder="e.g., Curtains, Drapes"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          What treatments this heading works with
+                        </p>
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <Label htmlFor="heading_installation_notes">Installation Notes</Label>
+                        <Textarea
+                          id="heading_installation_notes"
+                          value={formData.heading_installation_notes}
+                          onChange={(e) => setFormData({ ...formData, heading_installation_notes: e.target.value })}
+                          placeholder="Installation instructions, recommended spacing, etc."
+                          rows={3}
+                        />
+                      </div>
+
+                      {/* Eyelet Ring Selection */}
+                      {isEyeletHeading && (
+                        <div className="md:col-span-2">
+                          <EyeletRingSelector
+                            selectedRings={eyeletRings}
+                            onChange={setEyeletRings}
+                          />
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Select the eyelet ring options available for this heading
+                          </p>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )}

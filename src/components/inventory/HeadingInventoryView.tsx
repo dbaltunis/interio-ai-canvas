@@ -24,6 +24,12 @@ export const HeadingInventoryView = ({ searchQuery, viewMode }: HeadingInventory
     heading.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     heading.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  
+  // Helper to safely access metadata
+  const getMetadata = (heading: any) => {
+    if (!heading.metadata) return null;
+    return typeof heading.metadata === 'string' ? JSON.parse(heading.metadata) : heading.metadata;
+  };
 
   const handleDelete = async (id: string, name: string) => {
     if (confirm(`Delete ${name}?`)) {
@@ -70,7 +76,10 @@ export const HeadingInventoryView = ({ searchQuery, viewMode }: HeadingInventory
         </div>
 
         <div className={viewMode === "grid" ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3" : "space-y-3"}>
-          {filteredHeadings.map((heading) => (
+          {filteredHeadings.map((heading) => {
+            const metadata = getMetadata(heading);
+            
+            return (
             <Card key={heading.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -119,9 +128,21 @@ export const HeadingInventoryView = ({ searchQuery, viewMode }: HeadingInventory
                     </Badge>
                   </div>
                 )}
+                {metadata?.eyelet_rings && metadata.eyelet_rings.length > 0 && (
+                  <div className="flex flex-col gap-1 text-sm">
+                    <span className="text-muted-foreground">Available rings:</span>
+                    <div className="flex flex-wrap gap-1">
+                      {metadata.eyelet_rings.map((ring: any) => (
+                        <Badge key={ring.id} variant="secondary" className="text-xs">
+                          {ring.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
-          ))}
+          )})}
         </div>
       </div>
       
