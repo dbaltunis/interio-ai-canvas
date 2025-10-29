@@ -546,9 +546,29 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   // Get selected curtain template details
   const selectedCovering = curtainTemplates.find(c => c.id === selectedWindowCovering);
 
+  // Log whenever savedSummary changes
+  useEffect(() => {
+    console.log("🔄 SAVED SUMMARY CHANGED:", {
+      hasSavedSummary: !!savedSummary,
+      surfaceId,
+      rail_width_toplevel: savedSummary?.rail_width,
+      drop_toplevel: savedSummary?.drop,
+      rail_width_jsonb: savedSummary?.measurements_details?.rail_width,
+      drop_jsonb: savedSummary?.measurements_details?.drop,
+      fullSummary: savedSummary
+    });
+  }, [savedSummary, surfaceId]);
+
   // CRITICAL: Update measurements when savedSummary is loaded
   // This ensures form inputs show saved data when dialog reopens
   useEffect(() => {
+    console.log("🔍 USEEFFECT TRIGGERED:", {
+      hasSavedSummary: !!savedSummary,
+      hasMeasurementDetails: !!savedSummary?.measurements_details,
+      surfaceId,
+      condition: !!(savedSummary?.measurements_details && surfaceId)
+    });
+    
     if (savedSummary?.measurements_details && surfaceId) {
       console.log("📊 ✅ LOADING SAVED DATA INTO FORM");
       
@@ -642,11 +662,17 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const stringFields = ['curtain_type', 'curtain_side', 'hardware_type', 'pooling_option', 'heading_type', 'mounting_type'];
 
   const handleMeasurementChange = (field: string, value: string | number) => {
-    if (readOnly) return;
+    console.log(`🔥🔥🔥 INPUT CHANGE TRIGGERED: ${field} = "${value}" (type: ${typeof value}), readOnly: ${readOnly}`);
     
-    console.log(`📏 INPUT CHANGE: ${field} = "${value}" (type: ${typeof value})`);
+    if (readOnly) {
+      console.log(`⛔ BLOCKED: readOnly is true, input change ignored`);
+      return;
+    }
+    
+    console.log(`📏 Processing input change for: ${field}`);
     
     setMeasurements(prev => {
+      console.log(`📏 Previous measurements:`, prev);
       const newMeasurements = { ...prev };
       
       if (stringFields.includes(field)) {
@@ -661,7 +687,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
         }
       }
       
-      console.log(`📏 STORED IN STATE: ${field} = "${newMeasurements[field]}"`);
+      console.log(`✅ STORED IN STATE: ${field} = "${newMeasurements[field]}"`);
+      console.log(`✅ New measurements:`, newMeasurements);
       return newMeasurements;
     });
     
