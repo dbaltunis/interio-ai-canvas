@@ -24,6 +24,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Check } from "lucide-react";
 import { InventoryMultiSelect } from "./InventoryMultiSelect";
 import { EyeletRingSelector, type EyeletRing } from "./EyeletRingSelector";
+import { useEyeletRings } from "@/hooks/useEyeletRings";
 
 const STORAGE_KEY = "inventory_draft_data";
 
@@ -59,6 +60,7 @@ export const UnifiedInventoryDialog = ({
   const { data: businessSettings } = useBusinessSettings();
   const { data: userPreferences } = useUserPreferences();
   const { data: allInventory = [] } = useEnhancedInventory();
+  const { data: allEyeletRings = [] } = useEyeletRings();
 
   // Get user's measurement units and currency
   const measurementUnits = businessSettings?.measurement_units 
@@ -229,9 +231,14 @@ export const UnifiedInventoryDialog = ({
         heading_installation_notes: item.heading_installation_notes || "",
       });
       
-      // Load eyelet rings if present
-      if (item.eyelet_ring_ids && Array.isArray(item.eyelet_ring_ids)) {
-        setEyeletRings(item.eyelet_ring_ids);
+      // Load eyelet rings if present - convert IDs to full objects
+      if (item.eyelet_ring_ids && Array.isArray(item.eyelet_ring_ids) && item.eyelet_ring_ids.length > 0) {
+        const ringObjects = allEyeletRings.filter(ring => 
+          item.eyelet_ring_ids.includes(ring.id)
+        );
+        if (ringObjects.length > 0) {
+          setEyeletRings(ringObjects);
+        }
       }
       setTrackInventory(item.quantity > 0);
       
@@ -255,7 +262,7 @@ export const UnifiedInventoryDialog = ({
         }
       }
     }
-  }, [mode, item, open, toast]);
+  }, [mode, item, open, toast, allEyeletRings]);
 
   // Save draft when form data changes (only for create mode)
   const saveDraft = useCallback(() => {
