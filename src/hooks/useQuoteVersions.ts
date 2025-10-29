@@ -272,7 +272,7 @@ export const useQuoteVersions = (projectId: string) => {
     },
   });
 
-  const currentQuote = quoteVersions?.[quoteVersions.length - 1]; // Latest version
+  const currentQuote = quoteVersions?.[0]; // First version (original)
   const hasMultipleVersions = (quoteVersions?.length || 0) > 1;
 
   return {
