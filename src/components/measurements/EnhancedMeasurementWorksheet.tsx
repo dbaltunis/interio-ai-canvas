@@ -76,17 +76,16 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const stateKey = surfaceId || 'default';
   
   // Load exact saved treatment data if editing an existing treatment
-  const { data: savedSummary } = useWindowSummary(
-    existingMeasurement?.use_saved_summary ? surfaceId : undefined
-  );
+  // CRITICAL: Always fetch savedSummary if we have a surfaceId to load saved measurements
+  const { data: savedSummary } = useWindowSummary(surfaceId);
   
   // Add defensive programming to prevent null reference errors
   const safeExistingMeasurement = existingMeasurement || {};
   const safeExistingTreatments = existingTreatments || [];
   const safeSurfaceData = surfaceData || {};
   
-  // Determine if we should use saved summary data
-  const shouldUseSavedData = safeExistingMeasurement?.use_saved_summary && savedSummary;
+  // Determine if we should use saved summary data - always use it if available
+  const shouldUseSavedData = !!savedSummary;
   
   console.log(`🔍 EnhancedMeasurementWorksheet for ${surfaceId}:`, {
     shouldUseSavedData,
