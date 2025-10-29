@@ -69,18 +69,18 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
     await updateProject.mutateAsync(projectData);
   };
 
-  const mainTabs = [
+  const allTabs = [
     { id: "details", label: "Client", mobileLabel: "Client", icon: User },
     { id: "rooms", label: "Rooms & Treatments", mobileLabel: "Rooms", icon: Package },
     { id: "quotation", label: "Quote", mobileLabel: "Quote", icon: FileText },
     { id: "workroom", label: "Workroom", mobileLabel: "Work", icon: Wrench },
-  ];
-
-  const moreTabs = [
     { id: "materials", label: "Materials", mobileLabel: "Materials", icon: Package },
     { id: "emails", label: "Emails", mobileLabel: "Emails", icon: Mail },
     { id: "calendar", label: "Calendar", mobileLabel: "Calendar", icon: Calendar },
   ];
+
+  const mainTabs = allTabs.slice(0, 4);
+  const moreTabs = allTabs.slice(4);
 
   return (
     <div className="h-screen bg-background w-full flex flex-col overflow-hidden">
@@ -92,15 +92,14 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
             {/* Left Side: Navigation + Job Info */}
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={onBack}
-                className="flex items-center gap-2 hover:bg-muted/80 text-muted-foreground 
-                  shrink-0 px-3 py-2 rounded-lg transition-all duration-200
-                  hover:text-foreground hover:shadow-sm"
+                className="flex items-center gap-2 shrink-0 px-3 py-2 font-medium
+                  hover:bg-accent transition-all duration-200"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span className="hidden lg:inline font-medium">Back</span>
+                <span>Jobs</span>
               </Button>
               
               <Separator orientation="vertical" className="h-6 bg-border/60 hidden sm:block" />
@@ -122,8 +121,9 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               </div>
             </div>
 
-            {/* Right Side: Status */}
-            <div className="flex items-center gap-3 sm:gap-4 shrink-0 flex-wrap">
+            {/* Right Side: Status - More Prominent */}
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-xs text-muted-foreground hidden sm:inline">Status:</span>
               <JobStatusDropdown
                 currentStatusId={project.status_id}
                 currentStatus={project.status}
@@ -146,7 +146,38 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
           <div className="sticky top-0 z-20 bg-background border-b border-border/50 shadow-sm">
             <div className="px-2 sm:px-4 lg:px-6">
               <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
-                {/* Main tabs with better responsive sizing */}
+                {/* Desktop: Show all tabs */}
+                {allTabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  const isMaterialsTab = tab.id === "materials";
+                  
+                  return (
+                    <Button
+                      key={tab.id}
+                      variant="ghost"
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`hidden lg:flex items-center gap-1.5 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 rounded-none whitespace-nowrap shrink-0 ${
+                        isActive
+                          ? "border-primary text-foreground bg-primary/5 font-semibold"
+                          : "border-transparent text-muted-foreground hover:text-foreground hover:border-border/50"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{tab.label}</span>
+                      {isMaterialsTab && unprocessedMaterialsCount > 0 && (
+                        <Badge 
+                          variant="secondary" 
+                          className="ml-1 h-5 min-w-5 px-1.5 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 text-xs font-semibold"
+                        >
+                          {unprocessedMaterialsCount}
+                        </Badge>
+                      )}
+                    </Button>
+                  );
+                })}
+                
+                {/* Tablet/Mobile: Main tabs + More dropdown */}
                 {mainTabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -155,7 +186,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                       key={tab.id}
                       variant="ghost"
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-1.5 px-3 sm:px-4 lg:px-5 py-2.5 sm:py-3 transition-all duration-200 text-xs sm:text-sm font-medium border-b-2 rounded-none whitespace-nowrap shrink-0 ${
+                      className={`flex lg:hidden items-center gap-1.5 px-3 sm:px-4 py-2.5 sm:py-3 transition-all duration-200 text-xs sm:text-sm font-medium border-b-2 rounded-none whitespace-nowrap shrink-0 ${
                         isActive
                           ? "border-primary text-foreground bg-primary/5 font-semibold"
                           : "border-transparent text-muted-foreground hover:text-foreground hover:border-border/50"
@@ -168,12 +199,12 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                   );
                 })}
                 
-                {/* More dropdown with improved styling */}
+                {/* More dropdown - only on tablet/mobile */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      className={`flex items-center gap-1.5 px-3 sm:px-4 lg:px-5 py-2.5 sm:py-3 transition-all duration-200 text-xs sm:text-sm font-medium border-b-2 rounded-none whitespace-nowrap shrink-0 ${
+                      className={`flex lg:hidden items-center gap-1.5 px-3 sm:px-4 py-2.5 sm:py-3 transition-all duration-200 text-xs sm:text-sm font-medium border-b-2 rounded-none whitespace-nowrap shrink-0 ${
                         moreTabs.some(t => t.id === activeTab)
                           ? "border-primary text-foreground bg-primary/5 font-semibold"
                           : "border-transparent text-muted-foreground hover:text-foreground hover:border-border/50"

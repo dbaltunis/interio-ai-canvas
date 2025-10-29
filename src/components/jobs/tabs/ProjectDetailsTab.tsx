@@ -313,11 +313,6 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   
   return (
     <div className="space-y-6">
-      {/* Page Title */}
-      <div className="mb-4">
-        <h2 className="text-2xl font-bold text-foreground">Client & Project Overview</h2>
-        <p className="text-sm text-muted-foreground">Manage client assignment and project essentials</p>
-      </div>
 
       {/* Compact Summary Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
@@ -524,33 +519,8 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
         </CardContent>
       </Card>
 
-      {/* Simplified Quotes Section */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Project Quotation
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div>
-            <p className="text-sm text-muted-foreground">Current Quote Value</p>
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-              {getCurrentQuoteDisplay()}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Project Notes */}
       <ProjectNotesCard projectId={project.id} />
-
-      {/* Products to Order Section */}
-      <ProductsToOrderSection 
-        projectId={project.id}
-        jobNumber={project.job_number}
-        clientName={getClientDisplayName(selectedClient)}
-      />
 
       {/* Client Search Modal */}
       {showClientSearch && (
