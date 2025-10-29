@@ -69,78 +69,56 @@ export const EmailsTab = ({ projectId }: EmailsTabProps) => {
   }
 
   return (
-    <div className="space-y-3 sm:space-y-6">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-brand-primary/10 to-brand-secondary/10 rounded-lg sm:rounded-xl p-3 sm:p-6 shadow-sm border-0">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
-            <div className="w-8 h-8 sm:w-12 sm:h-12 bg-brand-primary rounded-lg flex items-center justify-center flex-shrink-0">
-              <MessageCircle className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+    <div className="space-y-4">
+      {/* Compact Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Mail className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-lg font-semibold">Email Communications</h2>
+        </div>
+        <Button 
+          onClick={() => setShowComposer(true)}
+          size="sm"
+          className="gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          New Message
+        </Button>
+      </div>
+
+      {/* Clean Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 h-9">
+          <TabsTrigger value="history" className="text-sm">
+            Recent Emails
+          </TabsTrigger>
+          <TabsTrigger value="templates" className="text-sm">
+            Templates
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="history" className="mt-4">
+          <ProjectEmailHistory projectId={projectId} />
+        </TabsContent>
+
+        <TabsContent value="templates" className="mt-4">
+          <div className="text-center py-12 space-y-4">
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto">
+              <FileText className="h-8 w-8 text-muted-foreground" />
             </div>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-base sm:text-2xl font-bold text-gray-900">Messages</h2>
-              <p className="text-xs sm:text-base text-gray-600 truncate">
-                for <span className="font-medium text-brand-primary">{project.name}</span>
+            <div className="space-y-2">
+              <h3 className="text-lg font-medium">Message Templates</h3>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                Save time with reusable message templates for common communications.
               </p>
             </div>
+            <Button size="sm" className="gap-2">
+              <Plus className="h-4 w-4" />
+              Create Template
+            </Button>
           </div>
-          <Button 
-            onClick={() => setShowComposer(true)}
-            className="bg-brand-secondary hover:bg-brand-secondary/90 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg shadow-md flex-shrink-0 text-xs sm:text-sm"
-          >
-            <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 sm:mr-2" />
-            <span className="hidden sm:inline">New Message</span>
-          </Button>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border-0 overflow-hidden">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="bg-gray-50 px-2 sm:px-6 py-2 sm:py-4">
-            <TabsList className="bg-white rounded-lg p-1 shadow-sm w-full">
-              <TabsTrigger 
-                value="history" 
-                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-md data-[state=active]:bg-brand-primary data-[state=active]:text-white data-[state=active]:shadow-sm flex-1 text-xs sm:text-sm"
-              >
-                <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                <span>Recent</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="templates" 
-                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-md data-[state=active]:bg-brand-accent data-[state=active]:text-white data-[state=active]:shadow-sm flex-1 text-xs sm:text-sm"
-              >
-                <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                <span>Templates</span>
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <div className="p-2 sm:p-6">
-            <TabsContent value="history" className="mt-0">
-              <ProjectEmailHistory projectId={projectId} />
-            </TabsContent>
-
-            <TabsContent value="templates" className="mt-0">
-              <div className="text-center py-16 space-y-6">
-                <div className="w-20 h-20 bg-brand-accent/20 rounded-full flex items-center justify-center mx-auto">
-                  <Sparkles className="h-10 w-10 text-brand-accent" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-semibold text-gray-900">Message Templates</h3>
-                  <p className="text-gray-500 max-w-md mx-auto">
-                    Save time with reusable message templates for common communications.
-                  </p>
-                </div>
-                <Button className="bg-brand-accent hover:bg-brand-accent/90 text-white px-6 py-2 rounded-lg shadow-md">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Template
-                </Button>
-              </div>
-            </TabsContent>
-          </div>
-        </Tabs>
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
