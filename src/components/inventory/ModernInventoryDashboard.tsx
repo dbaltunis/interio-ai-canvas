@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Filter, Grid, List, Package, Home, Minus, Palette, ArrowRightLeft, Wallpaper } from "lucide-react";
+import { Search, Plus, Filter, Grid, List, Package, Home, Minus, Palette, Wallpaper } from "lucide-react";
 import { InventoryStats } from "./InventoryStats";
 import { FabricInventoryView } from "./FabricInventoryView";
 import { HardwareInventoryView } from "./HardwareInventoryView";
@@ -19,7 +19,7 @@ import { InventoryDemoData } from "./InventoryDemoData";
 import { ReorderNotificationSystem } from "./ReorderNotificationSystem";
 import { InventoryImportExport } from "./InventoryImportExport";
 import { VendorDashboard } from "../vendors/VendorDashboard";
-import { MaterialOrderingWorkflow } from "./MaterialOrderingWorkflow";
+
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useVendors } from "@/hooks/useVendors";
 import { HelpDrawer } from "@/components/ui/help-drawer";
@@ -125,7 +125,7 @@ export const ModernInventoryDashboard = () => {
                 variant="outline"
                 onClick={() => setActiveTab("analytics")}
               >
-                <ArrowRightLeft className="h-4 w-4 mr-2" />
+                <Plus className="h-4 w-4 mr-2" />
                 Import/Export
               </Button>
             </>
@@ -194,13 +194,6 @@ export const ModernInventoryDashboard = () => {
           )}>
             <Package className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
             <span>Vendors</span>
-          </TabsTrigger>
-          <TabsTrigger value="ordering" className={cn(
-            "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
-            isMobile ? "px-3 py-2 text-xs" : "px-4 py-3 text-sm"
-          )}>
-            <ArrowRightLeft className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
-            <span>Ordering</span>
           </TabsTrigger>
           {!isMobile && (
             <>
@@ -403,10 +396,6 @@ export const ModernInventoryDashboard = () => {
 
         <TabsContent value="vendors" className="space-y-6">
           <VendorDashboard />
-        </TabsContent>
-
-        <TabsContent value="ordering" className="space-y-6">
-          <MaterialOrderingWorkflow />
         </TabsContent>
 
         <TabsContent value="assemblies" className="space-y-6">
