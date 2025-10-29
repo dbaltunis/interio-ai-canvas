@@ -716,7 +716,12 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
                             case 'total':
                               return (
                                 <TableCell key={column.id} className="text-sm py-1.5">
-                                  <span className="text-muted-foreground">{formatCurrency(quote.total_amount || 0, userCurrency)}</span>
+                                  <span className="text-muted-foreground">
+                                    {quote.total_amount && quote.total_amount > 0 
+                                      ? formatCurrency(quote.total_amount, userCurrency)
+                                      : "—"
+                                    }
+                                  </span>
                                 </TableCell>
                               );
                             case 'status':
