@@ -540,32 +540,50 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const selectedCovering = curtainTemplates.find(c => c.id === selectedWindowCovering);
 
   // CRITICAL: Update measurements when savedSummary is loaded
+  // This ensures form inputs show saved data when dialog reopens
   useEffect(() => {
     if (savedSummary?.measurements_details && surfaceId) {
-      console.log("📊 LOADING savedSummary into form:", savedSummary.measurements_details);
-      setMeasurements({
-        ...savedSummary.measurements_details,
-        rail_width: savedSummary.rail_width || savedSummary.measurements_details.rail_width || "",
-        drop: savedSummary.drop || savedSummary.measurements_details.drop || "",
-        window_width: savedSummary.measurements_details.window_width || "",
-        window_height: savedSummary.measurements_details.window_height || "",
-        surface_id: surfaceId,
-        surface_name: surfaceData?.name
+      console.log("📊 ✅ LOADING SAVED DATA INTO FORM");
+      console.log("📊 Rail Width:", savedSummary.rail_width || savedSummary.measurements_details.rail_width);
+      console.log("📊 Drop:", savedSummary.drop || savedSummary.measurements_details.drop);
+      console.log("📊 Full details:", savedSummary.measurements_details);
+      
+      // Update measurements state with saved data
+      setMeasurements((prevMeasurements: any) => {
+        const newMeasurements = {
+          ...savedSummary.measurements_details,
+          rail_width: savedSummary.rail_width || savedSummary.measurements_details.rail_width || "",
+          drop: savedSummary.drop || savedSummary.measurements_details.drop || "",
+          window_width: savedSummary.measurements_details.window_width || "",
+          window_height: savedSummary.measurements_details.window_height || "",
+          surface_id: surfaceId,
+          surface_name: surfaceData?.name
+        };
+        console.log("📊 ✅ UPDATED measurements state:", newMeasurements);
+        return newMeasurements;
       });
       
       // Also update selected fabric, heading, lining if available from measurements_details
       const details = savedSummary.measurements_details as any;
       if (details.selected_fabric) {
+        console.log("📊 ✅ Updating selected_fabric:", details.selected_fabric);
         setSelectedFabric(details.selected_fabric);
       }
       if (details.selected_heading) {
+        console.log("📊 ✅ Updating selected_heading:", details.selected_heading);
         setSelectedHeading(details.selected_heading);
       }
       if (details.selected_lining) {
+        console.log("📊 ✅ Updating selected_lining:", details.selected_lining);
         setSelectedLining(details.selected_lining);
       }
+      
+      console.log("📊 ✅ FORM DATA LOAD COMPLETE");
+    } else if (surfaceId) {
+      console.log("📊 ⚠️ NO SAVED DATA FOUND for surface:", surfaceId);
+      console.log("📊 savedSummary:", savedSummary);
     }
-  }, [savedSummary, surfaceId, surfaceData?.name]);
+  }, [savedSummary, surfaceId, surfaceData?.name, setMeasurements, setSelectedFabric, setSelectedHeading, setSelectedLining]);
 
   // Debug: Log button state and component mount
   useEffect(() => {
