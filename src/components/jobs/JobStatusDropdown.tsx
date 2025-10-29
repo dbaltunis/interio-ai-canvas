@@ -154,7 +154,7 @@ export const JobStatusDropdown = ({
                 )}
               </div>
             </div>
-            {(status.id === currentStatusId || status.name === currentStatus || status.name.toLowerCase() === currentStatus?.toLowerCase()) && (
+            {(currentStatusId ? status.id === currentStatusId : (status.name === currentStatus || status.name.toLowerCase() === currentStatus?.toLowerCase())) && (
               <Check className="h-4 w-4 text-primary" />
             )}
           </DropdownMenuItem>
