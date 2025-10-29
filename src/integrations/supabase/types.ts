@@ -2170,6 +2170,7 @@ export type Database = {
           created_at: string
           depth: number | null
           description: string | null
+          eyelet_ring_ids: string[] | null
           fabric_care_instructions: string | null
           fabric_collection: string | null
           fabric_composition: string | null
@@ -2196,6 +2197,7 @@ export type Database = {
           margin_percentage: number | null
           markup_percentage: number | null
           markup_percentage_calculated: number | null
+          metadata: Json | null
           name: string
           pattern_repeat_cm: number | null
           pattern_repeat_horizontal: number | null
@@ -2214,6 +2216,7 @@ export type Database = {
           show_in_quote: boolean | null
           sku: string | null
           sold_by_unit: string | null
+          specifications: Json | null
           subcategory: string | null
           supplier: string | null
           treatment_type: string | null
@@ -2242,6 +2245,7 @@ export type Database = {
           created_at?: string
           depth?: number | null
           description?: string | null
+          eyelet_ring_ids?: string[] | null
           fabric_care_instructions?: string | null
           fabric_collection?: string | null
           fabric_composition?: string | null
@@ -2268,6 +2272,7 @@ export type Database = {
           margin_percentage?: number | null
           markup_percentage?: number | null
           markup_percentage_calculated?: number | null
+          metadata?: Json | null
           name: string
           pattern_repeat_cm?: number | null
           pattern_repeat_horizontal?: number | null
@@ -2286,6 +2291,7 @@ export type Database = {
           show_in_quote?: boolean | null
           sku?: string | null
           sold_by_unit?: string | null
+          specifications?: Json | null
           subcategory?: string | null
           supplier?: string | null
           treatment_type?: string | null
@@ -2314,6 +2320,7 @@ export type Database = {
           created_at?: string
           depth?: number | null
           description?: string | null
+          eyelet_ring_ids?: string[] | null
           fabric_care_instructions?: string | null
           fabric_collection?: string | null
           fabric_composition?: string | null
@@ -2340,6 +2347,7 @@ export type Database = {
           margin_percentage?: number | null
           markup_percentage?: number | null
           markup_percentage_calculated?: number | null
+          metadata?: Json | null
           name?: string
           pattern_repeat_cm?: number | null
           pattern_repeat_horizontal?: number | null
@@ -2358,6 +2366,7 @@ export type Database = {
           show_in_quote?: boolean | null
           sku?: string | null
           sold_by_unit?: string | null
+          specifications?: Json | null
           subcategory?: string | null
           supplier?: string | null
           treatment_type?: string | null
