@@ -113,15 +113,20 @@ export const useSchedulerSlots = (weekStartDate?: Date, refetchInterval?: number
               const hasConflictWithRegularAppointment = regularAppointments?.some(appointment => {
                 const appointmentStart = new Date(appointment.start_time);
                 const appointmentEnd = new Date(appointment.end_time);
-                const slotStart = new Date(`${slotDate}T${slotStartTime}`);
-                const slotEnd = new Date(`${slotDate}T${slotEndTime}`);
                 
-                // Add buffer time to both ends
-                const bufferedSlotStart = addMinutes(slotStart, -bufferTime);
-                const bufferedSlotEnd = addMinutes(slotEnd, bufferTime);
+                // Parse slot times with proper timezone handling
+                const slotStartDateTime = parse(`${slotDate} ${slotStartTime}`, 'yyyy-MM-dd HH:mm', new Date());
+                const slotEndDateTime = addMinutes(slotStartDateTime, duration);
                 
-                // Check for overlap
-                return isAfter(bufferedSlotEnd, appointmentStart) && isBefore(bufferedSlotStart, appointmentEnd);
+                // Add buffer time to slot boundaries
+                const bufferedSlotStart = addMinutes(slotStartDateTime, -bufferTime);
+                const bufferedSlotEnd = addMinutes(slotEndDateTime, bufferTime);
+                
+                // Check for ANY overlap between buffered slot and appointment
+                // Two intervals overlap if: start1 < end2 AND start2 < end1
+                const overlaps = bufferedSlotStart < appointmentEnd && appointmentStart < bufferedSlotEnd;
+                
+                return overlaps;
               });
 
               // Add ALL slots (both available and booked) for calendar display
