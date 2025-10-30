@@ -319,15 +319,9 @@ export function WindowSummaryCard({
                 </CardTitle>
               </div>
             )}
-            {!isMainWindow && (
-              <div className="flex items-center gap-2 mt-1">
-                {treatmentType && (
-                  <TreatmentTypeIndicator treatmentType={treatmentType} size="sm" />
-                )}
-                <Badge variant="outline" className="text-xs py-0 px-2">
-                  Additional Treatment
-                </Badge>
-              </div>
+            {/* REMOVED: Additional Treatment badge - only ONE treatment per window */}
+            {!isMainWindow && treatmentType && (
+              <TreatmentTypeIndicator treatmentType={treatmentType} size="sm" />
             )}
           </div>
           <div className="flex gap-2 flex-shrink-0">

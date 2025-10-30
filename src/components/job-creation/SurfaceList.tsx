@@ -182,7 +182,7 @@ export const SurfaceList = ({
             <div className="space-y-2 pl-2 p-[7px]">
               {Object.values(room.windows).map((window: WindowGroup) => (
                 <div key={window.windowId} className="space-y-2">
-                  {/* Main window surface */}
+                  {/* ONLY show main window surface - NO additional treatments allowed */}
                    <WindowSummaryCard 
                      surface={window.mainSurface} 
                      onEditSurface={() => handleViewWindow(window.mainSurface)}
@@ -192,22 +192,8 @@ export const SurfaceList = ({
                      isMainWindow={true}
                      treatmentType={window.mainSurface.treatment_type}
                    />
-                  
-                  {/* Additional treatments for the same window */}
-                  {window.treatments.map((treatment, index) => (
-                    <div key={treatment.id} className="border-l-2 border-primary/20 ml-6 pl-4">
-                      <WindowSummaryCard 
-                        surface={treatment}
-                        onEditSurface={() => handleViewWindow(treatment)}
-                     onDeleteSurface={onDeleteSurface}
-                     onViewDetails={() => handleViewWindow(treatment)}
-                     onRenameSurface={handleRenameSurface}
-                     isMainWindow={false}
-                        treatmentLabel={`${window.baseWindowName} - Treatment ${index + 2}`}
-                        treatmentType={treatment.treatment_type || "curtains"}
-                      />
-                    </div>
-                  ))}
+                   
+                   {/* REMOVED: Additional treatments - only ONE treatment per window allowed */}
                 </div>
               ))}
             </div>
