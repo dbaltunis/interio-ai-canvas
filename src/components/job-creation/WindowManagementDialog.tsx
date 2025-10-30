@@ -222,6 +222,11 @@ export const WindowManagementDialog = ({
         onSaveTreatment(enrichedTreatmentData);
       }
 
+      // Invalidate queries to refetch the updated treatment data
+      queryClient.invalidateQueries({ queryKey: ['window-summary', surface.id] });
+      queryClient.invalidateQueries({ queryKey: ['window-summary-treatment', surface.id] });
+      queryClient.invalidateQueries({ queryKey: ['treatments'] });
+      
       setShowTreatmentForm(false);
       setSelectedInventoryItem(null);
       onClose();
@@ -337,6 +342,7 @@ export const WindowManagementDialog = ({
   });
   
   useEffect(() => {
+    console.log('🔄 Treatment data changed:', { currentTreatment, windowSummary });
     if (currentTreatment) {
       // Priority: treatment_name > product_name > template name
       const name = currentTreatment.treatment_name || 
@@ -344,8 +350,11 @@ export const WindowManagementDialog = ({
                    currentTreatment.treatment_type || 
                    '';
       setTreatmentName(name);
+      setEditProductValue(name);
       // Only use actual description field, not fallbacks
-      setTreatmentDescription(currentTreatment.description || '');
+      const desc = currentTreatment.description || '';
+      setTreatmentDescription(desc);
+      setEditDescriptionValue(desc);
     } else if (windowSummary) {
       // Fallback to windows_summary data
       const name = windowSummary.template_name || 
@@ -354,13 +363,17 @@ export const WindowManagementDialog = ({
       // Only use description_text field, empty if not set
       const desc = windowSummary.description_text || '';
       setTreatmentName(name);
+      setEditProductValue(name);
       setTreatmentDescription(desc);
+      setEditDescriptionValue(desc);
     } else {
       // Clear fields if no treatment
       setTreatmentName('');
+      setEditProductValue('');
       setTreatmentDescription('');
+      setEditDescriptionValue('');
     }
-  }, [currentTreatment, windowSummary]);
+  }, [currentTreatment, windowSummary, surface?.id]);
 
   const handleTreatmentNameUpdate = async (newName: string) => {
     if (!newName.trim() || !surface?.id) return;
@@ -432,16 +445,16 @@ export const WindowManagementDialog = ({
           <DialogHeader className="flex-shrink-0 pb-1 sm:pb-2 border-b border-border">
             <div className="flex items-center justify-between">
               <DialogTitle className="flex items-center flex-wrap gap-2 text-sm font-semibold text-foreground w-full">
-                <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md flex-1 min-w-[140px] max-w-[180px]">
-                  <Ruler className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-xs font-medium text-muted-foreground">Design:</span>
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md min-w-[200px] max-w-[200px]">
+                  <Ruler className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span className="text-xs font-medium text-muted-foreground shrink-0">Design:</span>
                   <WindowRenameButton windowName={surface?.name || 'Untitled'} onRename={handleRename} />
                 </div>
                 
                 {(currentTreatment || windowSummary) && (
                   <>
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md flex-1 min-w-[140px] max-w-[180px]">
-                      <span className="text-xs font-medium text-muted-foreground shrink-0">Product</span>
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md min-w-[200px] max-w-[200px]">
+                      <span className="text-xs font-medium text-muted-foreground shrink-0">Product:</span>
                       {isEditingProduct ? (
                         <>
                           <Input
@@ -503,8 +516,8 @@ export const WindowManagementDialog = ({
                       )}
                     </div>
                     
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md flex-1 min-w-[140px] max-w-[180px]">
-                      <span className="text-xs font-medium text-muted-foreground shrink-0">Description</span>
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md min-w-[200px] max-w-[200px]">
+                      <span className="text-xs font-medium text-muted-foreground shrink-0">Description:</span>
                       {isEditingDescription ? (
                         <>
                           <Input
