@@ -213,14 +213,14 @@ const LivePreviewBlock = ({
       const headerLayout = content.layout || 'centered';
       return (
         <div 
-          className="mb-12" 
+          className="mb-8" 
           style={{ 
             backgroundColor: '#ffffff',
             color: '#000000',
-            padding: '40px 32px',
+            padding: '24px 20px',
             borderRadius: '0px',
             borderBottom: 'none',
-            margin: '0 0 40px 0'
+            margin: '0 0 24px 0'
           }}
         >
           {headerLayout === 'centered' && (
@@ -265,67 +265,67 @@ const LivePreviewBlock = ({
               )}
 
               {/* Metadata Row */}
-              <div className="flex items-start justify-between pt-8 mt-8" style={{ borderTop: '2px solid #e0e0e0' }}>
+              <div className="flex items-start justify-between pt-4 mt-4" style={{ borderTop: '2px solid #e0e0e0' }}>
                 {/* Client Info - Left */}
                 <div className="text-left">
-                  <div className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">
+                  <div className="text-xs font-bold text-gray-900 mb-2 uppercase tracking-wider">
                     {content.clientLabel || "Sold to"}
                   </div>
-                  <div className="text-base space-y-2">
+                  <div className="text-sm space-y-1">
                     {/* Name - Always visible */}
-                    <div className="font-bold text-gray-900 text-base">{renderTokenValue('client_name') || 'Client Name'}</div>
+                    <div className="font-bold text-gray-900 text-sm">{renderTokenValue('client_name') || 'Client Name'}</div>
                     
                     {/* Company */}
                     {content.showClientCompany !== false && renderTokenValue('client_company') && (
-                      <div className="text-gray-900 font-medium">{renderTokenValue('client_company')}</div>
+                      <div className="text-gray-900 font-medium text-sm">{renderTokenValue('client_company')}</div>
                     )}
                     
                     {/* ABN */}
                     {content.showClientABN !== false && renderTokenValue('client_abn') && (
-                      <div className="text-gray-700 font-medium">ABN: {renderTokenValue('client_abn')}</div>
+                      <div className="text-gray-700 font-medium text-sm">ABN: {renderTokenValue('client_abn')}</div>
                     )}
                     
                     {/* Business Email */}
                     {content.showClientBusinessEmail !== false && renderTokenValue('client_business_email') && (
-                      <div className="text-gray-700 font-medium">{renderTokenValue('client_business_email')}</div>
+                      <div className="text-gray-700 font-medium text-sm">{renderTokenValue('client_business_email')}</div>
                     )}
                     
                     {/* Business Phone */}
                     {content.showClientBusinessPhone !== false && renderTokenValue('client_business_phone') && (
-                      <div className="text-gray-700 font-medium">{renderTokenValue('client_business_phone')}</div>
+                      <div className="text-gray-700 font-medium text-sm">{renderTokenValue('client_business_phone')}</div>
                     )}
                     
                     {/* Contact Email */}
                     {content.showClientEmail !== false && renderTokenValue('client_email') && (
-                      <div className="text-gray-700 font-medium">{renderTokenValue('client_email')}</div>
+                      <div className="text-gray-700 font-medium text-sm">{renderTokenValue('client_email')}</div>
                     )}
                     
                     {/* Contact Phone */}
                     {content.showClientPhone !== false && renderTokenValue('client_phone') && (
-                      <div className="text-gray-700 font-medium">{renderTokenValue('client_phone')}</div>
+                      <div className="text-gray-700 font-medium text-sm">{renderTokenValue('client_phone')}</div>
                     )}
                     
                     {/* Address */}
                     {content.showClientAddress !== false && renderTokenValue('client_address') && (
-                      <div className="text-gray-700 font-medium">{renderTokenValue('client_address')}</div>
+                      <div className="text-gray-700 font-medium text-sm">{renderTokenValue('client_address')}</div>
                     )}
                   </div>
                 </div>
 
                 {/* Quote Details - Right */}
                 <div className="text-right">
-                  <div className="text-base space-y-2">
+                  <div className="text-sm space-y-1">
                     <div>
-                      <span className="text-gray-700 font-semibold">{content.quoteNumberLabel || "Order number:"} </span>
-                      <span className="font-bold text-gray-900">{renderTokenValue('job_number')}</span>
+                      <span className="text-gray-700 font-semibold text-sm">{content.quoteNumberLabel || "Order number:"} </span>
+                      <span className="font-bold text-gray-900 text-sm">{renderTokenValue('job_number')}</span>
                     </div>
                     <div>
-                      <span className="text-gray-700 font-semibold">Start Date: </span>
-                      <span className="text-gray-900 font-bold">{renderTokenValue('start_date') || (content.customDate ? format(new Date(content.customDate), 'M/d/yyyy') : renderTokenValue('date'))}</span>
+                      <span className="text-gray-700 font-semibold text-sm">Start Date: </span>
+                      <span className="text-gray-900 font-bold text-sm">{renderTokenValue('start_date') || (content.customDate ? format(new Date(content.customDate), 'M/d/yyyy') : renderTokenValue('date'))}</span>
                     </div>
                     <div>
-                      <span className="text-gray-700 font-semibold">Due Date: </span>
-                      <span className="text-gray-900 font-bold">{renderTokenValue('due_date') || (content.customValidUntil ? format(new Date(content.customValidUntil), 'M/d/yyyy') : renderTokenValue('valid_until'))}</span>
+                      <span className="text-gray-700 font-semibold text-sm">Due Date: </span>
+                      <span className="text-gray-900 font-bold text-sm">{renderTokenValue('due_date') || (content.customValidUntil ? format(new Date(content.customValidUntil), 'M/d/yyyy') : renderTokenValue('valid_until'))}</span>
                     </div>
                   </div>
                 </div>
@@ -743,9 +743,9 @@ const LivePreviewBlock = ({
         { 'All Items': projectItems };
 
       return (
-        <div className="mb-12">
-          <div className="flex justify-between items-center mb-8">
-            <h3 className="text-2xl font-bold text-gray-900">
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold text-gray-900">
               {content.title || 'Quote Items'}
             </h3>
             {!isPrintMode && (
@@ -813,13 +813,13 @@ const LivePreviewBlock = ({
           <div style={{ overflow: 'visible', width: '100%' }}>
             <table className="w-full" style={{ borderCollapse: 'separate', borderSpacing: 0, tableLayout: 'auto' }}>
               <thead>
-                <tr style={{ borderBottom: '3px solid #000000' }}>
-                  <th style={{ textAlign: 'left', padding: '16px 12px', fontSize: '13px', fontWeight: '700', color: '#000000', width: '50px' }}>#</th>
-                  <th style={{ textAlign: 'left', padding: '16px 12px', fontSize: '13px', fontWeight: '700', color: '#000000' }}>Product/Service</th>
-                  <th style={{ textAlign: 'left', padding: '16px 12px', fontSize: '13px', fontWeight: '700', color: '#000000' }}>Description</th>
-                  <th style={{ textAlign: 'center', padding: '16px 12px', fontSize: '13px', fontWeight: '700', color: '#000000', width: '70px' }}>Qty</th>
-                  <th style={{ textAlign: 'right', padding: '16px 12px', fontSize: '13px', fontWeight: '700', color: '#000000', width: '110px' }}>Rate</th>
-                  <th style={{ textAlign: 'right', padding: '16px 12px', fontSize: '13px', fontWeight: '700', color: '#000000', width: '120px' }}>Total</th>
+                <tr style={{ borderBottom: '2px solid #000000' }}>
+                  <th style={{ textAlign: 'left', padding: '12px 10px', fontSize: '12px', fontWeight: '700', color: '#000000', width: '40px' }}>#</th>
+                  <th style={{ textAlign: 'left', padding: '12px 10px', fontSize: '12px', fontWeight: '700', color: '#000000' }}>Product/Service</th>
+                  <th style={{ textAlign: 'left', padding: '12px 10px', fontSize: '12px', fontWeight: '700', color: '#000000' }}>Description</th>
+                  <th style={{ textAlign: 'center', padding: '12px 10px', fontSize: '12px', fontWeight: '700', color: '#000000', width: '60px' }}>Qty</th>
+                  <th style={{ textAlign: 'right', padding: '12px 10px', fontSize: '12px', fontWeight: '700', color: '#000000', width: '100px' }}>Rate</th>
+                  <th style={{ textAlign: 'right', padding: '12px 10px', fontSize: '12px', fontWeight: '700', color: '#000000', width: '110px' }}>Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -827,7 +827,7 @@ const LivePreviewBlock = ({
                   <React.Fragment key={roomName}>
                     {groupByRoom && hasRealData && (
                       <tr>
-                        <td colSpan={6} style={{ padding: '20px 12px 12px 12px', fontSize: '13px', fontWeight: '700', color: '#000000', borderTop: '2px solid #000000' }}>
+                        <td colSpan={6} style={{ padding: '12px 10px 8px 10px', fontSize: '12px', fontWeight: '700', color: '#000000', borderTop: '2px solid #000000' }}>
                           {roomName}
                         </td>
                       </tr>
@@ -839,72 +839,72 @@ const LivePreviewBlock = ({
                       
                       return (
                         <React.Fragment key={`item-${roomName}-${itemIndex}`}>
-                          {/* Main product row - Ultra clean, high contrast */}
+                          {/* Main product row - Compact and visible */}
                           <tr style={{ borderBottom: '1px solid #e0e0e0', backgroundColor: '#ffffff' }}>
-                            <td style={{ padding: '20px 12px', fontSize: '13px', fontWeight: '600', color: '#666666', verticalAlign: 'top' }}>{itemNumber}</td>
-                            <td style={{ padding: '20px 12px', fontSize: '13px', fontWeight: '700', color: '#000000', verticalAlign: 'top' }}>
-                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                            <td style={{ padding: '14px 10px', fontSize: '12px', fontWeight: '600', color: '#666666', verticalAlign: 'top' }}>{itemNumber}</td>
+                            <td style={{ padding: '14px 10px', fontSize: '12px', fontWeight: '700', color: '#000000', verticalAlign: 'top' }}>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
                                 {showImages && item.image_url && (
                                   <div style={{ flexShrink: 0 }}>
-                                    <QuoteItemImage src={item.image_url} alt={item.name} size={48} className="rounded" />
+                                    <QuoteItemImage src={item.image_url} alt={item.name} size={40} className="rounded" />
                                   </div>
                                 )}
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontWeight: '700', fontSize: '13px', wordWrap: 'break-word', color: '#000000' }}>{item.name || 'Window Treatment'}</div>
+                                  <div style={{ fontWeight: '700', fontSize: '12px', wordWrap: 'break-word', color: '#000000' }}>{item.name || 'Window Treatment'}</div>
                                   {item.surface_name && (
-                                    <div style={{ fontSize: '11px', color: '#666666', marginTop: '4px', wordWrap: 'break-word', fontWeight: '500' }}>{item.surface_name}</div>
+                                    <div style={{ fontSize: '10px', color: '#666666', marginTop: '3px', wordWrap: 'break-word', fontWeight: '500' }}>{item.surface_name}</div>
                                   )}
                                 </div>
                               </div>
                             </td>
-                            <td style={{ padding: '20px 12px', fontSize: '12px', color: '#666666', verticalAlign: 'top', wordWrap: 'break-word', fontWeight: '500' }}>
+                            <td style={{ padding: '14px 10px', fontSize: '11px', color: '#666666', verticalAlign: 'top', wordWrap: 'break-word', fontWeight: '500' }}>
                               {item.description || item.treatment_type || ''}
                             </td>
-                            <td style={{ padding: '20px 12px', fontSize: '13px', fontWeight: '600', color: '#000000', textAlign: 'center', verticalAlign: 'top' }}>{item.quantity || 1}</td>
-                            <td style={{ padding: '20px 12px', fontSize: '13px', color: '#000000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap', fontWeight: '600' }}>
+                            <td style={{ padding: '14px 10px', fontSize: '12px', fontWeight: '600', color: '#000000', textAlign: 'center', verticalAlign: 'top' }}>{item.quantity || 1}</td>
+                            <td style={{ padding: '14px 10px', fontSize: '12px', color: '#000000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap', fontWeight: '600' }}>
                               {renderTokenValue('currency_symbol')}{(item.unit_price || 0).toFixed(2)}
                             </td>
-                            <td style={{ padding: '20px 12px', fontSize: '14px', fontWeight: '700', color: '#000000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                            <td style={{ padding: '14px 10px', fontSize: '13px', fontWeight: '700', color: '#000000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                               {renderTokenValue('currency_symbol')}{(item.total || 0).toFixed(2)}
                             </td>
                           </tr>
                           
-                          {/* Detailed breakdown - Clean, no borders */}
+                          {/* Detailed breakdown - Compact, clear pricing */}
                           {breakdown.length > 0 && showDetailedProducts && (
                             <tr>
-                              <td colSpan={6} style={{ padding: '8px 12px 20px 72px', backgroundColor: '#ffffff' }}>
-                                <div style={{ paddingLeft: '24px' }}>
+                              <td colSpan={6} style={{ padding: '6px 10px 12px 60px', backgroundColor: '#ffffff' }}>
+                                <div style={{ paddingLeft: '16px' }}>
                                   {breakdown.map((breakdownItem: any, bidx: number) => (
                                     <div key={bidx} style={{ 
                                       display: 'flex', 
                                       alignItems: 'center', 
-                                      gap: '16px',
-                                      padding: '12px 0',
+                                      gap: '12px',
+                                      padding: '8px 0',
                                       borderBottom: 'none'
                                     }}>
                                       {showImages && breakdownItem.image_url && (
                                         <div style={{ flexShrink: 0 }}>
-                                          <QuoteItemImage src={breakdownItem.image_url} alt={breakdownItem.name} size={36} className="rounded" />
+                                          <QuoteItemImage src={breakdownItem.image_url} alt={breakdownItem.name} size={32} className="rounded" />
                                         </div>
                                       )}
                                       <div style={{ flex: 1, minWidth: 0 }}>
                                         <div style={{ fontSize: '11px', color: '#000000', fontWeight: '600' }}>
                                           {breakdownItem.name || breakdownItem.category}
                                         </div>
-                                        {breakdownItem.description && breakdownItem.description !== '-' && (
-                                          <div style={{ fontSize: '10px', color: '#666666', marginTop: '3px', fontWeight: '500' }}>
+                                        {breakdownItem.description && breakdownItem.description !== '-' && breakdownItem.description !== breakdownItem.name && (
+                                          <div style={{ fontSize: '9px', color: '#666666', marginTop: '2px', fontWeight: '500' }}>
                                             {breakdownItem.description}
                                           </div>
                                         )}
                                       </div>
                                       {(breakdownItem.quantity || breakdownItem.unit_price) && (
-                                        <div style={{ fontSize: '10px', color: '#666666', whiteSpace: 'nowrap', marginRight: '20px', fontWeight: '500' }}>
+                                        <div style={{ fontSize: '9px', color: '#666666', whiteSpace: 'nowrap', marginRight: '16px', fontWeight: '500' }}>
                                           {breakdownItem.quantity && typeof breakdownItem.quantity === 'number' ? breakdownItem.quantity.toFixed(2) : breakdownItem.quantity}
                                           {breakdownItem.unit ? ` ${breakdownItem.unit}` : ''}
                                           {breakdownItem.unit_price && breakdownItem.unit_price > 0 ? ` @ ${renderTokenValue('currency_symbol')}${breakdownItem.unit_price.toFixed(2)}` : ''}
                                         </div>
                                       )}
-                                      <div style={{ fontSize: '12px', fontWeight: '700', color: '#000000', whiteSpace: 'nowrap', minWidth: '90px', textAlign: 'right' }}>
+                                      <div style={{ fontSize: '11px', fontWeight: '700', color: '#000000', whiteSpace: 'nowrap', minWidth: '80px', textAlign: 'right' }}>
                                         {renderTokenValue('currency_symbol')}{((breakdownItem.total_cost !== undefined ? breakdownItem.total_cost : (breakdownItem.total || 0))).toFixed(2)}
                                       </div>
                                     </div>
@@ -926,35 +926,35 @@ const LivePreviewBlock = ({
 
     case 'totals':
       return (
-        <div className="mb-12">
+        <div className="mb-8">
           <div className="flex justify-end">
             <div 
-              className="space-y-4 px-10 py-6"
+              className="space-y-2 px-8 py-4"
               style={{ 
                 backgroundColor: '#ffffff',
                 border: 'none',
-                minWidth: '400px'
+                minWidth: '340px'
               }}
             >
               {content.showSubtotal !== false && (
-                <div className="flex justify-between py-3">
-                  <span className="text-base font-semibold text-gray-900">Subtotal</span>
-                  <span className="text-base font-bold text-gray-900">{renderTokenValue('subtotal')}</span>
+                <div className="flex justify-between py-2">
+                  <span className="text-sm font-semibold text-gray-900">Subtotal</span>
+                  <span className="text-sm font-bold text-gray-900">{renderTokenValue('subtotal')}</span>
                 </div>
               )}
               {content.showTax && (
-                <div className="flex justify-between py-3">
-                  <span className="text-base font-semibold text-gray-900">
+                <div className="flex justify-between py-2">
+                  <span className="text-sm font-semibold text-gray-900">
                     {userBusinessSettings?.tax_type && userBusinessSettings.tax_type !== 'none' 
                       ? userBusinessSettings.tax_type.toUpperCase() 
                       : 'Tax'} ({renderTokenValue('tax_rate')})
                   </span>
-                  <span className="text-base font-bold text-gray-900">{renderTokenValue('tax_amount')}</span>
+                  <span className="text-sm font-bold text-gray-900">{renderTokenValue('tax_amount')}</span>
                 </div>
               )}
-              <div className="flex justify-between py-4 border-t-3" style={{ borderTop: '3px solid #000000' }}>
-                <span className="text-xl font-bold text-gray-900">Total</span>
-                <span className="text-2xl font-bold text-gray-900">{renderTokenValue('total')}</span>
+              <div className="flex justify-between py-3 border-t-2" style={{ borderTop: '2px solid #000000' }}>
+                <span className="text-lg font-bold text-gray-900">Total</span>
+                <span className="text-xl font-bold text-gray-900">{renderTokenValue('total')}</span>
               </div>
             </div>
           </div>

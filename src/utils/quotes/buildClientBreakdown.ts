@@ -90,12 +90,17 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
   // Selected Options (from measurements.selected_options)
   if (summary.selected_options && Array.isArray(summary.selected_options)) {
     summary.selected_options.forEach((option: any, index: number) => {
+      // Try multiple possible price fields
+      const price = Number(option.price || option.cost || option.total_cost || option.unit_price || 0);
+      
       // Always add options regardless of price - even zero-price options should be visible
       items.push({
         id: option.id || `option-${index}`,
-        name: option.name || 'Option',
-        description: option.description,
-        total_cost: Number(option.price) || 0,
+        name: option.name || option.label || 'Option',
+        description: option.description || option.name,
+        total_cost: price,
+        unit_price: price,
+        quantity: 1,
         image_url: option.image_url,
         category: 'option',
         details: option,
