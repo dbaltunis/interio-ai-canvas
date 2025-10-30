@@ -17,15 +17,14 @@ export const PrintableQuote = React.forwardRef<HTMLDivElement, PrintableQuotePro
         className="bg-white text-black"
         style={{
           fontFamily: 'Arial, Helvetica, sans-serif',
-          fontSize: '12px',
+          fontSize: '11pt',
           lineHeight: '1.4',
           color: '#000000',
           backgroundColor: '#ffffff',
-          width: '100%',
-          maxWidth: '210mm',
+          width: '210mm',
           minHeight: '297mm',
-          padding: '15mm 10mm',
-          margin: '0 auto',
+          padding: '10mm',
+          margin: '0',
           boxSizing: 'border-box',
           overflow: 'visible',
           position: 'relative'

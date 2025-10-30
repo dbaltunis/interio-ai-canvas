@@ -186,21 +186,35 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   }, [selectedTemplate]);
 
   // Project data for LivePreview - MUST be before early returns
-  const projectData = useMemo(() => ({
-    project: { ...project, client },
-    client,
-    businessSettings,
-    treatments: sourceTreatments,
-    workshopItems: workshopItems || [],
-    rooms: rooms || [],
-    surfaces: surfaces || [],
-    subtotal,
-    taxRate,
-    taxAmount,
-    total,
-    markupPercentage,
-    validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-  }), [project, client, businessSettings, sourceTreatments, workshopItems, rooms, surfaces, subtotal, taxRate, taxAmount, total, markupPercentage]);
+  const projectData = useMemo(() => {
+    // Get currency from business settings
+    let currency = 'GBP';
+    try {
+      const measurementUnits = businessSettings?.measurement_units 
+        ? JSON.parse(businessSettings.measurement_units) 
+        : null;
+      currency = measurementUnits?.currency || 'GBP';
+    } catch {
+      currency = 'GBP';
+    }
+    
+    return {
+      project: { ...project, client },
+      client,
+      businessSettings,
+      treatments: sourceTreatments,
+      workshopItems: workshopItems || [],
+      rooms: rooms || [],
+      surfaces: surfaces || [],
+      subtotal,
+      taxRate,
+      taxAmount,
+      total,
+      currency,
+      markupPercentage,
+      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    };
+  }, [project, client, businessSettings, sourceTreatments, workshopItems, rooms, surfaces, subtotal, taxRate, taxAmount, total, markupPercentage]);
 
   // Download PDF
   const handleDownloadPDF = async () => {
@@ -491,7 +505,7 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
       ) : (
         <section className="mt-2 sm:mt-4" key={`preview-${projectSummaries?.projectTotal}-${quotationData.total}`}>
           <div className="w-full flex justify-center">
-            <div className="transform scale-[0.38] sm:scale-[0.55] md:scale-[0.65] lg:scale-75 xl:scale-90 origin-top">
+            <div className="transform scale-[0.42] sm:scale-[0.58] md:scale-[0.68] lg:scale-[0.78] xl:scale-[0.88] origin-top">
               <div
                 id="quote-live-preview"
                 style={{
@@ -500,7 +514,8 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
                   fontFamily: 'Arial, Helvetica, sans-serif',
                   fontSize: '11pt',
                   color: '#000000',
-                  backgroundColor: '#ffffff'
+                  backgroundColor: '#ffffff',
+                  padding: '10mm'
                 }}
               >
                 <LivePreview

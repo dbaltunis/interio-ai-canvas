@@ -140,11 +140,58 @@ const LivePreviewBlock = ({
       
       // Financial information with currency support
       currency: projectData?.currency || 'GBP',
-      currency_symbol: projectData?.currency === 'GBP' ? '£' : projectData?.currency === 'EUR' ? '€' : projectData?.currency === 'AUD' ? 'A$' : projectData?.currency === 'NZD' ? 'NZ$' : projectData?.currency === 'USD' ? '$' : '£',
-      subtotal: projectData?.subtotal ? `${projectData.currency === 'AUD' ? 'A$' : projectData.currency === 'NZD' ? 'NZ$' : '$'}${projectData.subtotal.toFixed(2)}` : '$0.00',
-      tax_amount: projectData?.taxAmount ? `${projectData.currency === 'AUD' ? 'A$' : projectData.currency === 'NZD' ? 'NZ$' : '$'}${projectData.taxAmount.toFixed(2)}` : '$0.00',
-      tax_rate: projectData?.taxRate ? `${(projectData.taxRate * 100).toFixed(1)}%` : '8.5%',
-      total: projectData?.total ? `${projectData.currency === 'AUD' ? 'A$' : projectData.currency === 'NZD' ? 'NZ$' : '$'}${projectData.total.toFixed(2)}` : '$0.00',
+      currency_symbol: (() => {
+        const curr = projectData?.currency || 'GBP';
+        const symbols: Record<string, string> = {
+          'GBP': '£',
+          'EUR': '€',
+          'AUD': 'A$',
+          'NZD': 'NZ$',
+          'USD': '$',
+          'ZAR': 'R'
+        };
+        return symbols[curr] || '£';
+      })(),
+      subtotal: (() => {
+        if (!projectData?.subtotal) return '£0.00';
+        const curr = projectData?.currency || 'GBP';
+        const symbols: Record<string, string> = {
+          'GBP': '£',
+          'EUR': '€',
+          'AUD': 'A$',
+          'NZD': 'NZ$',
+          'USD': '$',
+          'ZAR': 'R'
+        };
+        return `${symbols[curr] || '£'}${projectData.subtotal.toFixed(2)}`;
+      })(),
+      tax_amount: (() => {
+        if (!projectData?.taxAmount) return '£0.00';
+        const curr = projectData?.currency || 'GBP';
+        const symbols: Record<string, string> = {
+          'GBP': '£',
+          'EUR': '€',
+          'AUD': 'A$',
+          'NZD': 'NZ$',
+          'USD': '$',
+          'ZAR': 'R'
+        };
+        return `${symbols[curr] || '£'}${projectData.taxAmount.toFixed(2)}`;
+      })(),
+      tax_rate: projectData?.taxRate ? `${(projectData.taxRate * 100).toFixed(1)}%` : '0%',
+      total: (() => {
+        if (!projectData?.total) return '£0.00';
+        const curr = projectData?.currency || 'GBP';
+        const symbols: Record<string, string> = {
+          'GBP': '£',
+          'EUR': '€',
+          'AUD': 'A$',
+          'NZD': 'NZ$',
+          'USD': '$',
+          'ZAR': 'R'
+        };
+        return `${symbols[curr] || '£'}${projectData.total.toFixed(2)}`;
+      })(),
       
       // Additional project details
       terms: projectData?.terms || 'Payment due within 30 days of invoice date.',
@@ -766,16 +813,16 @@ const LivePreviewBlock = ({
             </div>
           )}
 
-          <div className="border-2 border-gray-200 rounded-xl overflow-hidden w-full shadow-sm" style={{ maxWidth: '100%', overflowX: 'auto' }}>
-            <table className="w-full border-collapse" style={{ tableLayout: 'fixed', width: '100%', minWidth: '700px' }}>
+          <div className="border-2 border-gray-200 rounded-lg overflow-visible w-full">
+            <table className="w-full border-collapse" style={{ tableLayout: 'auto', width: '100%' }}>
               <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b-2 border-blue-200">
                 <tr>
-                  <th className="text-left px-2 py-3 text-sm font-bold text-gray-800" style={{ width: '5%' }}>#</th>
-                  <th className="text-left px-2 py-3 text-sm font-bold text-gray-800" style={{ width: '25%' }}>Product/Service</th>
-                  <th className="text-left px-2 py-3 text-sm font-bold text-gray-800" style={{ width: '25%' }}>Description</th>
-                  <th className="text-center px-2 py-3 text-sm font-bold text-gray-800" style={{ width: '12%' }}>Qty</th>
-                  <th className="text-right px-2 py-3 text-sm font-bold text-gray-800" style={{ width: '15%' }}>Rate</th>
-                  <th className="text-right px-2 py-3 text-sm font-bold text-gray-800" style={{ width: '18%' }}>Total</th>
+                  <th className="text-left px-3 py-2 text-xs font-bold text-gray-800">#</th>
+                  <th className="text-left px-3 py-2 text-xs font-bold text-gray-800">Product/Service</th>
+                  <th className="text-left px-3 py-2 text-xs font-bold text-gray-800">Description</th>
+                  <th className="text-center px-3 py-2 text-xs font-bold text-gray-800">Qty</th>
+                  <th className="text-right px-3 py-2 text-xs font-bold text-gray-800">Rate</th>
+                  <th className="text-right px-3 py-2 text-xs font-bold text-gray-800">Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -796,30 +843,30 @@ const LivePreviewBlock = ({
                         <React.Fragment key={`item-${roomName}-${itemIndex}`}>
                           {/* Main product row */}
                           <tr className="border-t border-gray-200 hover:bg-blue-50/30 transition-colors">
-                            <td className="px-2 py-3 text-sm font-bold text-blue-600 align-top">{itemNumber}</td>
-                            <td className="px-2 py-3 text-sm font-bold text-gray-900 align-top" style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>
+                            <td className="px-3 py-2 text-xs font-bold text-blue-600 align-top">{itemNumber}</td>
+                            <td className="px-3 py-2 text-xs font-bold text-gray-900 align-top">
                               <div className="flex items-start gap-2">
                                 {showImages && item.image_url && (
                                   <div className="flex-shrink-0">
-                                    <QuoteItemImage src={item.image_url} alt={item.name} size={48} className="rounded-lg shadow-sm border-2 border-gray-200" />
+                                    <QuoteItemImage src={item.image_url} alt={item.name} size={40} className="rounded shadow-sm border border-gray-200" />
                                   </div>
                                 )}
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-bold text-gray-900 text-xs">{item.name || 'Window Treatment'}</div>
+                                <div className="flex-1" style={{ minWidth: '0' }}>
+                                  <div className="font-bold text-gray-900 text-xs break-words">{item.name || 'Window Treatment'}</div>
                                   {item.surface_name && (
-                                    <div className="text-xs text-gray-500 mt-0.5">{item.surface_name}</div>
+                                    <div className="text-[10px] text-gray-500 mt-0.5 break-words">{item.surface_name}</div>
                                   )}
                                 </div>
                               </div>
                             </td>
-                            <td className="px-2 py-3 text-xs text-gray-700 align-top" style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>
+                            <td className="px-3 py-2 text-[10px] text-gray-700 align-top break-words">
                               {item.description || item.treatment_type || ''}
                             </td>
-                            <td className="px-2 py-3 text-center text-sm font-medium text-gray-800 align-top">{item.quantity || 1}</td>
-                            <td className="px-2 py-3 text-right text-sm text-gray-800 align-top">
+                            <td className="px-3 py-2 text-center text-xs font-medium text-gray-800 align-top">{item.quantity || 1}</td>
+                            <td className="px-3 py-2 text-right text-xs text-gray-800 align-top whitespace-nowrap">
                               {renderTokenValue('currency_symbol')}{(item.unit_price || 0).toFixed(2)}
                             </td>
-                            <td className="px-2 py-3 text-right font-bold text-sm text-blue-600 align-top">
+                            <td className="px-3 py-2 text-right font-bold text-xs text-blue-600 align-top whitespace-nowrap">
                               {renderTokenValue('currency_symbol')}{(item.total || 0).toFixed(2)}
                             </td>
                           </tr>
