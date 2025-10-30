@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Share, Plus, Minus, Palette, Users, Video, UserPlus, Bell, User, AlertCircle } from "lucide-react";
 import { useCreateAppointment, useUpdateAppointment, useDeleteAppointment } from "@/hooks/useAppointments";
@@ -472,19 +473,38 @@ export const UnifiedAppointmentDialog = ({
                   <Palette className="w-3 h-3" />
                   Color
                 </Label>
-                <div className="flex gap-2 pt-2">
-                  {defaultColors.map((color) => (
-                    <button
-                      key={color}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
                       type="button"
-                      className={`w-8 h-8 min-w-8 min-h-8 rounded-full border-2 border-border/50 hover:scale-110 transition-transform cursor-pointer ${
-                        event.color === color ? 'ring-2 ring-offset-2 ring-primary scale-110' : ''
-                      }`}
-                      style={{ backgroundColor: color }}
-                      onClick={() => setEvent({ ...event, color })}
-                    />
-                  ))}
-                </div>
+                      variant="outline"
+                      className="w-full justify-start gap-2 mt-2"
+                    >
+                      <div
+                        className="w-5 h-5 rounded-full border-2 border-border"
+                        style={{ backgroundColor: event.color || defaultColors[0] }}
+                      />
+                      <span className="flex-1 text-left">
+                        {event.color ? 'Selected Color' : 'Choose a color'}
+                      </span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-3 bg-background border shadow-md z-50" align="start">
+                    <div className="grid grid-cols-4 gap-2">
+                      {defaultColors.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          className={`w-10 h-10 rounded-full border-2 border-border/50 hover:scale-110 transition-transform cursor-pointer ${
+                            event.color === color ? 'ring-2 ring-offset-2 ring-primary scale-110' : ''
+                          }`}
+                          style={{ backgroundColor: color }}
+                          onClick={() => setEvent({ ...event, color })}
+                        />
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
           </div>
