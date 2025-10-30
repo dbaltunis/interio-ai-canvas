@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { useProjects } from "@/hooks/useProjects";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
@@ -16,7 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useQuotes, useCreateQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
 import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
-import { Percent, FileText, Mail, Settings, Plus, StickyNote, List, Download, MoreVertical, DollarSign, Wrench } from "lucide-react";
+import { Percent, FileText, Mail, Settings, Plus, StickyNote, List, Download, MoreVertical, DollarSign, Wrench, Eye, Image as ImageIcon } from "lucide-react";
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
 import { QuoteViewer } from "../QuoteViewer";
 import { TreatmentLineItems } from "@/components/jobs/quotation/TreatmentLineItems";
@@ -26,8 +28,6 @@ import { JobNotesDialog } from "../JobNotesDialog";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
 import { QuotationItemsModal } from "../quotation/QuotationItemsModal";
 import { DetailedQuotationTable } from "../quotation/DetailedQuotationTable";
-import { useReactToPrint } from "react-to-print";
-import { PrintableQuote } from "@/components/jobs/quotation/PrintableQuote";
 import { EmailQuoteModal } from "@/components/jobs/quotation/EmailQuoteModal";
 import { useQuoteTemplates } from "@/hooks/useQuoteTemplates";
 import { useClients } from "@/hooks/useClients";
@@ -36,6 +36,9 @@ import { QuotePreview } from "@/components/quotation/QuotePreview";
 import { WorkOrderView } from "@/components/quotation/WorkOrderView";
 import { EmptyQuoteVersionState } from "@/components/jobs/EmptyQuoteVersionState";
 import { useQuoteVersions } from "@/hooks/useQuoteVersions";
+import { PDFPreview } from "@/components/jobs/quotation/PDFPreview";
+import { pdf } from '@react-pdf/renderer';
+import { QuotePDFDocument } from '../quotation/pdf/QuotePDFDocument';
 interface QuotationTabProps {
   projectId: string;
   quoteId?: string;
@@ -164,7 +167,9 @@ export const QuotationTab = ({
   const [selectedQuote, setSelectedQuote] = useState<any | null>(null);
   const [showQuotationItems, setShowQuotationItems] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
-  const printRef = useRef<HTMLDivElement>(null);
+  const [showDetailedBreakdown, setShowDetailedBreakdown] = useState(false);
+  const [showImages, setShowImages] = useState(true);
+  const [viewMode, setViewMode] = useState<'preview' | 'pdf'>('preview');
   const {
     data: clients
   } = useClients();
@@ -257,73 +262,98 @@ export const QuotationTab = ({
     total,
     sourceTreatments: sourceTreatments.slice(0, 2) // Log first 2 for debugging
   });
-  const handlePrint = useReactToPrint({
-    contentRef: printRef,
-    documentTitle: `quote-${project?.job_number || 'QT-' + Math.floor(Math.random() * 10000)}`,
-    pageStyle: `
-      @page {
-        size: A4 portrait;
-        margin: 15mm 10mm;
-      }
-      @media print {
-        html, body {
-          height: 100%;
-          width: 100%;
-          margin: 0;
-          padding: 0;
-          overflow: visible;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-          color-adjust: exact;
-        }
-        
-        body * {
-          visibility: visible;
-        }
-        
-        /* Force colors to print */
-        * {
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-          color-adjust: exact !important;
-        }
-        
-        /* Ensure backgrounds print */
-        .bg-gradient-to-r,
-        .bg-blue-50,
-        .bg-purple-50,
-        .bg-indigo-50 {
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-        }
-        
-        /* Page breaks */
-        .break-before {
-          page-break-before: always;
-        }
-        
-        .break-after {
-          page-break-after: always;
-        }
-        
-        .avoid-break {
-          page-break-inside: avoid;
-        }
-        
-        /* Hide non-printable elements */
-        button,
-        .no-print,
-        [data-no-print] {
-          display: none !important;
-        }
-        
-        /* Ensure table borders print */
-        table, th, td {
-          border-color: #000 !important;
-        }
-      }
-    `
-  });
+  const handlePrint = async () => {
+    try {
+      toast({
+        title: "Generating PDF...",
+        description: "Please wait while we prepare your quote"
+      });
+
+      // Prepare data for PDF
+      const pdfProjectData = {
+        ...projectData,
+        items: quotationData.items,
+        windowSummaries: projectSummaries
+      };
+
+      // Generate PDF blob
+      const pdfBlob = await pdf(
+        <QuotePDFDocument
+          blocks={templateBlocks}
+          projectData={pdfProjectData}
+          showDetailedBreakdown={showDetailedBreakdown}
+          showImages={showImages}
+        />
+      ).toBlob();
+
+      // Create object URL and open in new tab
+      const url = URL.createObjectURL(pdfBlob);
+      window.open(url, '_blank');
+
+      // Clean up after a delay
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+
+      toast({
+        title: "PDF Opened",
+        description: "Your quote has been opened in a new tab"
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    try {
+      toast({
+        title: "Downloading PDF...",
+        description: "Please wait..."
+      });
+
+      // Prepare data for PDF
+      const pdfProjectData = {
+        ...projectData,
+        items: quotationData.items,
+        windowSummaries: projectSummaries
+      };
+
+      // Generate PDF blob
+      const pdfBlob = await pdf(
+        <QuotePDFDocument
+          blocks={templateBlocks}
+          projectData={pdfProjectData}
+          showDetailedBreakdown={showDetailedBreakdown}
+          showImages={showImages}
+        />
+      ).toBlob();
+
+      // Create download link
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `quote-${project?.job_number || 'QT-' + Math.floor(Math.random() * 10000)}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "PDF Downloaded",
+        description: "Your quote has been downloaded successfully"
+      });
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to download PDF. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
   const handleSendEmail = async (emailData: {
     to: string;
     subject: string;
@@ -352,7 +382,7 @@ export const QuotationTab = ({
       };
 
       // Generate PDF from React component (server-side rendering)
-      const pdfBlob = await pdf(<QuotePDFDocument blocks={templateBlocks} projectData={pdfProjectData} showDetailedBreakdown={true} showImages={true} />).toBlob();
+      const pdfBlob = await pdf(<QuotePDFDocument blocks={templateBlocks} projectData={pdfProjectData} showDetailedBreakdown={showDetailedBreakdown} showImages={showImages} />).toBlob();
       console.log('✅ Professional PDF generated:', pdfBlob.size, 'bytes');
 
       // Generate unique filename with timestamp to avoid conflicts
@@ -564,6 +594,43 @@ export const QuotationTab = ({
       {/* Detailed Options Section */}
       <div className="flex items-center justify-between overflow-x-auto pb-2">
         <div className="flex items-center space-x-2 sm:space-x-4 min-w-max">
+          {/* View Mode Toggle */}
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant={viewMode === 'preview' ? 'default' : 'outline'} 
+              size="sm" 
+              onClick={() => setViewMode('preview')}
+              className="h-8"
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              Preview
+            </Button>
+            <Button 
+              variant={viewMode === 'pdf' ? 'default' : 'outline'} 
+              size="sm" 
+              onClick={() => setViewMode('pdf')}
+              className="h-8"
+            >
+              <FileText className="h-4 w-4 mr-1" />
+              PDF
+            </Button>
+          </div>
+
+          {/* Show Images Toggle */}
+          <div className="flex items-center space-x-2">
+            <Switch id="show-images" checked={showImages} onCheckedChange={setShowImages} />
+            <Label htmlFor="show-images" className="text-xs cursor-pointer">
+              <ImageIcon className="h-3 w-3 inline mr-1" />
+              Images
+            </Label>
+          </div>
+
+          {/* Detailed Breakdown Toggle */}
+          <div className="flex items-center space-x-2">
+            <Switch id="show-detailed" checked={showDetailedBreakdown} onCheckedChange={setShowDetailedBreakdown} />
+            <Label htmlFor="show-detailed" className="text-xs cursor-pointer">Detailed</Label>
+          </div>
+
           {/* Template Selector */}
           <div className="flex items-center space-x-2">
             <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Template:</span>
@@ -620,6 +687,16 @@ export const QuotationTab = ({
             setEditedTemplateBlocks(updatedBlocks);
           }} />
             </div>
+
+            {/* PDF Preview Mode */}
+            {viewMode === 'pdf' && (
+              <PDFPreview
+                blocks={templateBlocks}
+                projectData={projectData}
+                showDetailedBreakdown={showDetailedBreakdown}
+                showImages={showImages}
+              />
+            )}
           </div>
         </section> : null}
       <JobNotesDialog open={notesOpen} onOpenChange={open => {
@@ -628,11 +705,22 @@ export const QuotationTab = ({
     }} quote={selectedQuote} project={project} />
 
       {/* Email Modal */}
-      <EmailQuoteModal isOpen={isEmailModalOpen} onClose={() => setIsEmailModalOpen(false)} project={project} client={clientData} onSend={handleSendEmail} isSending={isSendingEmail} quotePreview={templateBlocks && templateBlocks.length > 0 ? <PrintableQuote blocks={templateBlocks} projectData={projectData} isPrintMode={false} /> : undefined} />
-
-      {/* Hidden printable component for PDF generation */}
-      <div className="hidden print:block">
-        {templateBlocks && templateBlocks.length > 0 && <PrintableQuote ref={printRef} blocks={templateBlocks} projectData={projectData} isPrintMode={true} showDetailedBreakdown={true} showImages={true} />}
-      </div>
+      <EmailQuoteModal 
+        isOpen={isEmailModalOpen} 
+        onClose={() => setIsEmailModalOpen(false)} 
+        project={project} 
+        client={clientData} 
+        onSend={handleSendEmail} 
+        isSending={isSendingEmail} 
+        quotePreview={
+          templateBlocks && templateBlocks.length > 0 ? (
+            <LivePreview 
+              blocks={templateBlocks} 
+              projectData={projectData} 
+              isEditable={false} 
+            />
+          ) : undefined
+        } 
+      />
     </div>;
 };

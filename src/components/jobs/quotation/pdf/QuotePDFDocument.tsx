@@ -1,7 +1,8 @@
 import React from 'react';
-import { Document, Page, Text, View, Image, StyleSheet, Font } from '@react-pdf/renderer';
+import { Document, Page, Text, View, Image, StyleSheet, Font, Link } from '@react-pdf/renderer';
 import { buildClientBreakdown } from '@/utils/quotes/buildClientBreakdown';
 import { formatJobNumber } from '@/lib/format-job-number';
+import { pdfStyles, colors, typography, spacing } from '@/styles/quoteStyles';
 
 // Register fonts (optional - using default Helvetica for now)
 const styles = StyleSheet.create({
@@ -330,7 +331,7 @@ export const QuotePDFDocument: React.FC<QuotePDFDocumentProps> = ({
                 const itemTotal = item.total || item.total_price || item.unit_price || 0;
                 
                 return (
-                  <View key={index} style={{ marginBottom: 12, borderBottom: '1px solid #e2e8f0', paddingBottom: 12 }}>
+                  <View key={index} style={{ marginBottom: 12, borderBottom: '1px solid #e2e8f0', paddingBottom: 12 }} wrap={false}>
                     {/* Main Item Row */}
                     <View style={[styles.tableRow, { borderBottom: 'none', paddingBottom: 4, flexDirection: 'row', alignItems: 'flex-start' }]}>
                       <Text style={styles.tableCol1}>{index + 1}</Text>
@@ -450,15 +451,142 @@ export const QuotePDFDocument: React.FC<QuotePDFDocumentProps> = ({
         );
 
       case 'text':
+      case 'intro-text':
         return (
-          <View style={{ marginVertical: 10 }} key={block.id}>
-            <Text style={{ fontSize: content.fontSize || 10 }}>
+          <View style={{ marginVertical: 10 }} key={block.id} wrap={false}>
+            <Text style={{ fontSize: content.fontSize || 10, lineHeight: 1.5 }}>
+              {replaceTokens(content.text || '')}
+            </Text>
+          </View>
+        );
+
+      case 'client-info':
+        return (
+          <View style={{ marginVertical: 15, padding: 12, backgroundColor: '#f8fafc', borderRadius: 4 }} key={block.id} wrap={false}>
+            <Text style={styles.sectionLabel}>
+              {content.label || 'CLIENT INFORMATION'}
+            </Text>
+            <View style={{ marginTop: 8, gap: 4 }}>
+              <Text style={styles.textBold}>{renderTokenValue('client_name')}</Text>
+              {content.showCompany !== false && renderTokenValue('client_company') && (
+                <Text style={styles.textMuted}>{renderTokenValue('client_company')}</Text>
+              )}
+              {content.showEmail !== false && renderTokenValue('client_email') && (
+                <Text style={styles.textMuted}>{renderTokenValue('client_email')}</Text>
+              )}
+              {content.showPhone !== false && renderTokenValue('client_phone') && (
+                <Text style={styles.textMuted}>{renderTokenValue('client_phone')}</Text>
+              )}
+              {content.showAddress !== false && renderTokenValue('client_address') && (
+                <Text style={styles.textMuted}>{renderTokenValue('client_address')}</Text>
+              )}
+            </View>
+          </View>
+        );
+
+      case 'image':
+        if (!content.imageUrl && !content.url) return null;
+        return (
+          <View style={{ marginVertical: 15, alignItems: content.alignment || 'center' }} key={block.id}>
+            <Image 
+              src={content.imageUrl || content.url} 
+              style={{ 
+                maxWidth: content.width || '100%',
+                maxHeight: content.height || 300,
+                objectFit: 'contain'
+              }}
+            />
+            {content.caption && (
+              <Text style={{ fontSize: 8, color: '#666', marginTop: 4, textAlign: 'center' }}>
+                {content.caption}
+              </Text>
+            )}
+          </View>
+        );
+
+      case 'spacer':
+        return (
+          <View 
+            key={block.id} 
+            style={{ height: content.height || spacing.md }} 
+          />
+        );
+
+      case 'divider':
+        return (
+          <View 
+            key={block.id}
+            style={{
+              borderBottom: `${content.thickness || 1}px solid ${content.color || colors.border}`,
+              marginVertical: spacing.md,
+            }}
+          />
+        );
+
+      case 'payment':
+        return (
+          <View style={{ marginVertical: 15, padding: 12, backgroundColor: '#f0fdf4', borderRadius: 4, borderLeft: '3px solid #10b981' }} key={block.id} wrap={false}>
+            <Text style={[styles.sectionTitle, { borderBottom: 'none' }]}>
+              {content.title || 'Payment Information'}
+            </Text>
+            <View style={{ marginTop: 8, gap: 6 }}>
+              {content.bankName && (
+                <View style={{ flexDirection: 'row' }}>
+                  <Text style={{ fontSize: 9, fontWeight: 'bold', width: 100 }}>Bank:</Text>
+                  <Text style={{ fontSize: 9 }}>{content.bankName}</Text>
+                </View>
+              )}
+              {content.accountName && (
+                <View style={{ flexDirection: 'row' }}>
+                  <Text style={{ fontSize: 9, fontWeight: 'bold', width: 100 }}>Account Name:</Text>
+                  <Text style={{ fontSize: 9 }}>{content.accountName}</Text>
+                </View>
+              )}
+              {content.accountNumber && (
+                <View style={{ flexDirection: 'row' }}>
+                  <Text style={{ fontSize: 9, fontWeight: 'bold', width: 100 }}>Account:</Text>
+                  <Text style={{ fontSize: 9 }}>{content.accountNumber}</Text>
+                </View>
+              )}
+              {content.bsb && (
+                <View style={{ flexDirection: 'row' }}>
+                  <Text style={{ fontSize: 9, fontWeight: 'bold', width: 100 }}>BSB:</Text>
+                  <Text style={{ fontSize: 9 }}>{content.bsb}</Text>
+                </View>
+              )}
+              {content.paymentTerms && (
+                <Text style={{ fontSize: 8, color: '#666', marginTop: 4 }}>
+                  {content.paymentTerms}
+                </Text>
+              )}
+            </View>
+          </View>
+        );
+
+      case 'terms':
+        return (
+          <View style={{ marginVertical: 15 }} key={block.id}>
+            <Text style={styles.sectionTitle}>
+              {content.title || 'Terms & Conditions'}
+            </Text>
+            <Text style={{ fontSize: 9, lineHeight: 1.4, marginTop: 8 }}>
+              {replaceTokens(content.text || content.termsText || '')}
+            </Text>
+          </View>
+        );
+
+      case 'footer':
+        // This is for footer content blocks (not the page footer)
+        return (
+          <View style={{ marginTop: 30, paddingTop: 15, borderTop: `1px solid ${colors.border}`, textAlign: 'center' }} key={block.id}>
+            <Text style={{ fontSize: 8, color: colors.textMuted }}>
               {replaceTokens(content.text || '')}
             </Text>
           </View>
         );
 
       default:
+        console.warn('Unknown block type in PDF:', blockType);
         return null;
     }
   };
