@@ -1253,13 +1253,40 @@ export const DynamicWindowWorksheet = forwardRef<{
             <CardContent className="pt-4 sm:pt-6 min-h-[350px] sm:min-h-[500px] flex flex-col">
               <ImprovedTreatmentSelector 
                 selectedCoveringId={selectedTemplate?.id || ""} 
-                onCoveringSelect={template => {
+                onCoveringSelect={async template => {
                   setSelectedTemplate(template);
                   if (template) {
                     // Detect and set the correct treatment category
                     const detectedCategory = detectTreatmentType(template);
                     setTreatmentCategory(detectedCategory);
                     setSelectedTreatmentType(detectedCategory);
+                    
+                    // CRITICAL: Immediately save template name to windows_summary
+                    if (surfaceId) {
+                      try {
+                        const { error } = await supabase
+                          .from('windows_summary')
+                          .upsert({
+                            window_id: surfaceId,
+                            user_id: (await supabase.auth.getUser()).data.user?.id,
+                            template_id: template.id,
+                            template_name: template.name,
+                            treatment_type: detectedCategory,
+                            description_text: '', // Clear description when changing template
+                          }, { onConflict: 'window_id' });
+                          
+                        if (!error) {
+                          console.log('✅ Template name saved to windows_summary:', template.name);
+                          // Invalidate queries to update the header inputs
+                          queryClient.invalidateQueries({ queryKey: ['window-summary-treatment', surfaceId] });
+                          queryClient.invalidateQueries({ queryKey: ['window-summary', surfaceId] });
+                        } else {
+                          console.error('❌ Failed to save template name:', error);
+                        }
+                      } catch (error) {
+                        console.error('❌ Error saving template name:', error);
+                      }
+                    }
                   }
                 }} 
                 disabled={readOnly}
