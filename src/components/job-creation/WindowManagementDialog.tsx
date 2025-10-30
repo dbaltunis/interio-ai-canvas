@@ -311,9 +311,24 @@ export const WindowManagementDialog = ({
   };
   const hasMeasurements = existingMeasurement && Object.keys(existingMeasurement.measurements || {}).length > 0;
   
-  // Get treatment name from existingTreatments
+  // Get treatment name from existingTreatments OR windows_summary
   const [treatmentName, setTreatmentName] = useState('');
   const currentTreatment = existingTreatments?.[0];
+  
+  // Fetch treatment data from windows_summary if existingTreatments is empty
+  const { data: windowSummary } = useQuery({
+    queryKey: ['window-summary-treatment', surface?.id],
+    queryFn: async () => {
+      if (!surface?.id) return null;
+      const { data } = await supabase
+        .from('windows_summary')
+        .select('*')
+        .eq('window_id', surface.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!surface?.id && !currentTreatment
+  });
   
   useEffect(() => {
     if (currentTreatment) {
@@ -323,19 +338,37 @@ export const WindowManagementDialog = ({
                    currentTreatment.treatment_type || 
                    'Treatment';
       setTreatmentName(name);
+    } else if (windowSummary) {
+      // Fallback to windows_summary data
+      const name = windowSummary.template_name || 
+                   windowSummary.treatment_type || 
+                   'Treatment';
+      setTreatmentName(name);
     }
-  }, [currentTreatment]);
+  }, [currentTreatment, windowSummary]);
 
   const handleTreatmentNameUpdate = async (newName: string) => {
-    if (!currentTreatment?.id || !newName.trim()) return;
+    if (!newName.trim() || !surface?.id) return;
     
     try {
+      // Update both treatments table (if exists) and windows_summary
+      if (currentTreatment?.id) {
+        await supabase
+          .from('treatments')
+          .update({ treatment_name: newName.trim() })
+          .eq('id', currentTreatment.id);
+      }
+      
+      // Always update windows_summary
       await supabase
-        .from('treatments')
-        .update({ treatment_name: newName.trim() })
-        .eq('id', currentTreatment.id);
+        .from('windows_summary')
+        .update({ template_name: newName.trim() })
+        .eq('window_id', surface.id);
       
       setTreatmentName(newName.trim());
+      queryClient.invalidateQueries({ queryKey: ['window-summary', surface.id] });
+      queryClient.invalidateQueries({ queryKey: ['window-summary-treatment', surface.id] });
+      
       toast({
         title: 'Success',
         description: 'Treatment name updated',
@@ -363,7 +396,7 @@ export const WindowManagementDialog = ({
                     <span className="sm:hidden">Area:</span>
                     <WindowRenameButton windowName={surface?.name || 'Untitled'} onRename={handleRename} />
                   </div>
-                  {currentTreatment && (
+                  {(currentTreatment || windowSummary) && treatmentName && (
                     <>
                       <span className="hidden sm:inline text-muted-foreground">|</span>
                       <div className="flex items-center gap-1.5">
