@@ -67,7 +67,7 @@ export const ColumnCustomizationModal = ({
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[400px] pr-4">
+        <ScrollArea className="h-[400px] pr-4">
           <div className="space-y-2">
             {columns.map((column, index) => (
               <div
