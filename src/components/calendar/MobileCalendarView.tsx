@@ -73,7 +73,7 @@ export const MobileCalendarView = () => {
   };
 
   return (
-    <div className={cn("space-y-4 animate-fade-in", isMobile ? "p-4 pb-20" : "p-6")}>
+    <div className={cn("flex flex-col animate-fade-in", isMobile ? "h-[calc(100vh-8rem)] p-4" : "h-[calc(100vh-10rem)] p-6")}>
       {/* Hidden button for programmatic trigger from CreateActionDialog */}
       <button 
         data-create-event
@@ -83,7 +83,7 @@ export const MobileCalendarView = () => {
       />
       
       {/* Header with Actions */}
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 mb-4 shrink-0">
         <div className="flex-1 min-w-0">
           <h2 className={cn("font-bold truncate", isMobile ? "text-lg" : "text-xl")}>
             {format(selectedDate, 'MMMM yyyy')}
@@ -159,11 +159,13 @@ export const MobileCalendarView = () => {
       
       {/* Filters */}
       {showFilters && (
-        <CalendarFilters onFiltersChange={handleFiltersChange} />
+        <div className="mb-4 shrink-0">
+          <CalendarFilters onFiltersChange={handleFiltersChange} />
+        </div>
       )}
 
       {/* Week Navigation */}
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden mb-4 shrink-0">
         <CardContent className={cn(isMobile ? "p-2" : "p-3")}>
           <div className="flex items-center gap-1">
             <Button
@@ -230,35 +232,36 @@ export const MobileCalendarView = () => {
         </CardContent>
       </Card>
 
-      {/* Daily Events List */}
-      <div className="space-y-3">
+      {/* Daily Events List - Scrollable */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         <h3 className={cn(
-          "font-semibold text-muted-foreground",
+          "font-semibold text-muted-foreground mb-3 shrink-0",
           isMobile ? "text-xs" : "text-sm"
         )}>
           {format(selectedDate, 'EEEE, MMMM d')}
         </h3>
         
-        {dayAppointments.length === 0 ? (
-          <Card>
-            <CardContent className={cn(
-              "text-center",
-              isMobile ? "p-8" : "p-12"
-            )}>
-              <CalendarIcon className={cn(
-                "mx-auto mb-3 text-muted-foreground",
-                isMobile ? "h-12 w-12" : "h-16 w-16"
-              )} />
-              <p className={cn(
-                "text-muted-foreground",
-                isMobile ? "text-sm" : "text-base"
+        <div className="flex-1 overflow-y-auto">
+          {dayAppointments.length === 0 ? (
+            <Card>
+              <CardContent className={cn(
+                "text-center",
+                isMobile ? "p-8" : "p-12"
               )}>
-                No events scheduled
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-2">
+                <CalendarIcon className={cn(
+                  "mx-auto mb-3 text-muted-foreground",
+                  isMobile ? "h-12 w-12" : "h-16 w-16"
+                )} />
+                <p className={cn(
+                  "text-muted-foreground",
+                  isMobile ? "text-sm" : "text-base"
+                )}>
+                  No events scheduled
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-2 pb-4">
             {dayAppointments.map((apt) => (
               <Card 
                 key={apt.id} 
@@ -329,8 +332,9 @@ export const MobileCalendarView = () => {
                 />
               </Card>
             ))}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
       
       {/* Create/Edit Event Dialog */}
