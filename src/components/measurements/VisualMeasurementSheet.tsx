@@ -320,19 +320,19 @@ export const VisualMeasurementSheet = ({
     const symbol = currencySymbols[units.currency] || units.currency;
     return `${symbol}${price.toFixed(2)}`;
   };
-  return <div key={`${windowType}-${curtainType}-${hardwareType}-${poolingOption}`} className="w-full container-level-1 rounded-lg overflow-hidden">
+  return <div key={`${windowType}-${curtainType}-${hardwareType}-${poolingOption}`} className="w-full container-level-1 rounded-none md:rounded-lg overflow-hidden">
       {/* Header */}
-      <div className="container-level-2 border-b-2 border-border px-6 py-4">
-        <h2 className="text-2xl font-bold text-card-foreground text-center">Window Measurement Worksheet</h2>
+      <div className="container-level-2 border-b-2 border-border px-3 py-2 md:px-6 md:py-4">
+        <h2 className="text-lg md:text-2xl font-bold text-card-foreground text-center">Window Measurement Worksheet</h2>
       </div>
-      <div className="p-6 space-y-6">
+      <div className="p-3 md:p-6 space-y-3 md:space-y-6">
         {/* Visual Diagram Section */}
         <div className="w-full">
           {/* Wallpaper uses its own full-width layout */}
           {treatmentCategory === 'wallpaper' ? <WallpaperVisual measurements={measurements} selectedWallpaper={selectedFabric ? inventory.find(item => item.id === selectedFabric) : undefined} onMeasurementChange={handleInputChange} readOnly={readOnly} /> : (/* Other treatments use the standard 2/5 + 3/5 layout */
-        <div className="flex flex-col lg:flex-row gap-6">
+        <div className="flex flex-col lg:flex-row gap-3 md:gap-6">
               {/* Visual Diagram */}
-              <div className="lg:w-2/5 flex-shrink-0 space-y-4">
+              <div className="w-full lg:w-2/5 flex-shrink-0 space-y-3 md:space-y-4">
                 {/* Original Visual Diagram first */}
                 {/* Specialized visualizers for panel glide, shutters, and awnings */}
                 {(treatmentCategory === 'panel_glide' || treatmentCategory === 'plantation_shutters' || treatmentCategory === 'shutters' || treatmentCategory === 'awning') ? (
