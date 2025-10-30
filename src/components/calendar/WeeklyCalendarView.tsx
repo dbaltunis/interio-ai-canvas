@@ -12,6 +12,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Calendar, Clock, User, CalendarCheck, UserCheck, Share2, Bell } from "lucide-react";
 import { useUpdateAppointment } from "@/hooks/useAppointments";
 import { AvailableSlotDialog } from "./AvailableSlotDialog";
+import { BookingInterfaceDialog } from "./BookingInterfaceDialog";
 
 interface WeeklyCalendarViewProps {
   currentDate: Date;
@@ -54,6 +55,15 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     duration: number;
   } | null>(null);
   const [showSlotDialog, setShowSlotDialog] = useState(false);
+
+  // Booking interface dialog state
+  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
+  const [bookingDialogData, setBookingDialogData] = useState<{
+    schedulerId: string;
+    schedulerName: string;
+    date: Date;
+    availableSlots: Array<{ id: string; startTime: string; endTime: string; duration: number }>;
+  } | null>(null);
   
   // Get current user ID
   useEffect(() => {
@@ -214,12 +224,50 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     return availableSlots;
   };
 
-  // Combine regular events, booked appointments, and available slots
+  // Combine regular events and booked appointments ONLY (no available slots)
   const getAllEventsForDate = (date: Date) => {
     const regularEvents = getEventsForDate(date);
     const bookedEvents = getBookedEventsForDate(date);
-    const availableSlots = getAvailableSlotsForDate(date);
-    return [...regularEvents, ...bookedEvents, ...availableSlots];
+    // REMOVED: available slots from event rendering
+    return [...regularEvents, ...bookedEvents];
+  };
+
+  // Get available slots for a specific date and time to show as background indicator
+  const getAvailableSlotsForTime = (date: Date, timeString: string): Array<{schedulerId: string; schedulerName: string}> => {
+    if (!schedulerSlots) return [];
+    
+    return schedulerSlots
+      .filter(slot => {
+        if (!isSameDay(slot.date, date)) return false;
+        if (slot.isBooked) return false;
+        return slot.startTime === timeString;
+      })
+      .map(slot => ({
+        schedulerId: slot.schedulerId,
+        schedulerName: slot.schedulerName
+      }));
+  };
+
+  // Handle click on available slot indicator to open booking dialog
+  const handleAvailableSlotClick = (date: Date, schedulerId: string, schedulerName: string) => {
+    const daySlots = schedulerSlots?.filter(slot => 
+      isSameDay(slot.date, date) && 
+      slot.schedulerId === schedulerId &&
+      !slot.isBooked
+    ) || [];
+
+    setBookingDialogData({
+      schedulerId,
+      schedulerName,
+      date,
+      availableSlots: daySlots.map(slot => ({
+        id: slot.id,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        duration: slot.duration
+      }))
+    });
+    setBookingDialogOpen(true);
   };
 
   const getSchedulerSlotsForDate = (date: Date) => {
@@ -475,9 +523,11 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                     <div key={day.toString()} className={`border-r relative bg-card ${
                       isCurrentDay ? 'ring-2 ring-primary/20 ring-inset' : ''
                     }`} style={{ height: `${timeSlots.length * 32}px` }}>
-                      {/* Empty time slots - clickable areas */}
+                      {/* Empty time slots - clickable areas with availability indicators */}
                       {timeSlots.map((time, index) => {
                         const isOccupied = isTimeSlotOccupied(day, time);
+                        const availableSlots = getAvailableSlotsForTime(day, time);
+                        const hasAvailability = availableSlots.length > 0;
                         
                         const DroppableTimeSlot = () => {
                           const { setNodeRef, isOver } = useDroppable({
@@ -488,23 +538,37 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           return (
                             <div 
                               ref={setNodeRef}
-                              className={`h-[32px] transition-colors relative ${
+                              className={`h-[32px] transition-colors relative group ${
                                  index % 2 === 0 ? 'border-b border-muted/30' : 'border-b border-muted'
-                               } ${isOver ? 'bg-primary/30 border-primary border-2' : ''} ${
+                              } ${isOver ? 'bg-primary/30 border-primary border-2' : ''} ${
                                 isOccupied 
                                   ? 'bg-destructive/10 hover:bg-destructive/20 cursor-help border-destructive/30' 
+                                  : hasAvailability
+                                  ? 'bg-emerald-500/5 hover:bg-emerald-500/10 cursor-pointer'
                                   : 'hover:bg-accent/50 cursor-pointer'
                               }`}
-                              onMouseDown={(e) => !isOccupied && handleMouseDown && handleMouseDown(day, index, e)}
-                              onMouseMove={() => !isOccupied && handleMouseMove && handleMouseMove(day, index)}
-                              onClick={() => !isCreatingEvent && onTimeSlotClick?.(day, time)}
+                              onMouseDown={(e) => !isOccupied && !hasAvailability && handleMouseDown && handleMouseDown(day, index, e)}
+                              onMouseMove={() => !isOccupied && !hasAvailability && handleMouseMove && handleMouseMove(day, index)}
+                              onClick={() => {
+                                if (hasAvailability) {
+                                  // Open booking dialog for first available scheduler
+                                  handleAvailableSlotClick(day, availableSlots[0].schedulerId, availableSlots[0].schedulerName);
+                                } else if (!isCreatingEvent) {
+                                  onTimeSlotClick?.(day, time);
+                                }
+                              }}
                               title={
-                                isOccupied 
+                                hasAvailability
+                                  ? `Available: ${availableSlots.map(s => s.schedulerName).join(', ')} - Click to book`
+                                  : isOccupied 
                                   ? `${format(day, 'MMM d')} at ${time} - Time occupied by appointment`
                                   : `${format(day, 'MMM d')} at ${time} - Click to create personal event`
                               }
                              >
-                               {/* Remove the occupied slot indicator dots */}
+                               {/* Subtle availability indicator */}
+                               {hasAvailability && (
+                                 <div className="absolute right-1 top-1 w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-40 group-hover:opacity-100 transition-opacity" />
+                               )}
                              </div>
                           );
                         };
@@ -600,17 +664,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         
                         // Clear visual distinction with MORE VISIBLE colors
                         const getEventStyling = (event: any) => {
-                          if (event.isAvailableSlot) {
-                            // Available appointment slots: subtle background indicator
-                            return {
-                              background: 'hsl(142 76% 36% / 0.08)',
-                              border: 'hsl(142 76% 36% / 0.3)',
-                              textClass: 'text-muted-foreground text-[10px]',
-                              isDashed: false,
-                              isCompact: true,
-                              minHeight: 20,
-                            } as const;
-                          } else if (event.isBooking) {
+                          if (event.isBooking) {
                             // Booked appointments: green transparent color
                             return {
                               background: 'hsl(142 76% 36% / 0.15)',
@@ -640,7 +694,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         const DraggableEvent = () => {
                           const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
                             id: event.id,
-                            disabled: event.isBooking || event.isAvailableSlot, // Disable dragging for booked appointments and available slots
+                            disabled: event.isBooking, // Disable dragging for booked appointments
                           });
 
                          // Apply minimum height for all events to ensure visibility
@@ -861,6 +915,18 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         }}
         slot={selectedSlot}
       />
+
+      {/* Booking Interface Dialog */}
+      {bookingDialogData && (
+        <BookingInterfaceDialog
+          open={bookingDialogOpen}
+          onOpenChange={setBookingDialogOpen}
+          schedulerId={bookingDialogData.schedulerId}
+          schedulerName={bookingDialogData.schedulerName}
+          date={bookingDialogData.date}
+          availableSlots={bookingDialogData.availableSlots}
+        />
+      )}
     </DndContext>
   );
 };

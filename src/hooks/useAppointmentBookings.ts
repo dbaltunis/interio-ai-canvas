@@ -63,12 +63,14 @@ export const useCreateBooking = () => {
       return data.booking;
     },
     onSuccess: () => {
+      // Invalidate all relevant queries to refresh calendar and data
       queryClient.invalidateQueries({ queryKey: ["appointment-bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["booked-appointments"] });
       queryClient.invalidateQueries({ queryKey: ["scheduler-slots"] });
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       toast({
-        title: "Success",
-        description: "Booking created successfully",
+        title: "Booking Confirmed",
+        description: "Appointment booked successfully and confirmation email sent.",
       });
     },
     onError: (error: Error) => {
