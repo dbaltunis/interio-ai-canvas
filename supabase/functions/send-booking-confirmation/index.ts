@@ -14,6 +14,8 @@ interface BookingConfirmationRequest {
   appointment_date: string;
   appointment_time: string;
   scheduler_id: string;
+  video_call_link?: string;
+  duration?: number;
 }
 
 serve(async (req) => {
@@ -33,7 +35,9 @@ serve(async (req) => {
       customer_email,
       appointment_date,
       appointment_time,
-      scheduler_id
+      scheduler_id,
+      video_call_link,
+      duration
     }: BookingConfirmationRequest = await req.json();
 
     console.log('Sending booking confirmation:', {
@@ -67,6 +71,8 @@ serve(async (req) => {
       .eq('active', true)
       .single();
 
+    const appointmentDuration = duration || scheduler.duration || 60;
+    
     let subject = `Booking Confirmed: ${scheduler.name}`;
     let content = `
       <h2>Your appointment has been confirmed!</h2>
@@ -76,8 +82,10 @@ serve(async (req) => {
         <li><strong>Service:</strong> ${scheduler.name}</li>
         <li><strong>Date:</strong> ${appointment_date}</li>
         <li><strong>Time:</strong> ${appointment_time}</li>
-        <li><strong>Duration:</strong> ${scheduler.duration || 60} minutes</li>
+        <li><strong>Duration:</strong> ${appointmentDuration} minutes</li>
+        ${video_call_link ? `<li><strong>Video Call Link:</strong> <a href="${video_call_link}">${video_call_link}</a></li>` : ''}
       </ul>
+      ${video_call_link ? '<p><a href="' + video_call_link + '" style="display: inline-block; padding: 12px 24px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 16px 0;">Join Video Call</a></p>' : ''}
       <p>If you need to make any changes, please contact us.</p>
       <p>We look forward to meeting with you!</p>
     `;

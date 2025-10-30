@@ -91,25 +91,67 @@ serve(async (req) => {
 
     console.log('Booking created successfully:', booking.id);
 
-    // Generate or get video call link if needed
-    let videoCallLink = scheduler.google_meet_link || scheduler.zoom_link;
+    // Create Google Calendar event with real Meet link
+    let videoCallLink = null;
+    let calendarEventId = null;
     
-    // If no video call link exists, generate a placeholder
-    if (!videoCallLink && location_type === 'video_call') {
-      // Generate a Google Meet-style link as placeholder
+    try {
+      // Parse appointment time and date to create ISO datetime
+      const appointmentDateTime = new Date(`${appointment_date}T${appointment_time}`);
+      const duration = scheduler.duration || 60;
+      const endDateTime = new Date(appointmentDateTime.getTime() + duration * 60000);
+      
+      const { data: calendarResponse, error: calendarError } = await supabase.functions.invoke('create-calendar-event', {
+        body: {
+          summary: `${scheduler.name} - ${customer_name}`,
+          description: notes || `Appointment booked via ${scheduler.name}`,
+          start_time: appointmentDateTime.toISOString(),
+          end_time: endDateTime.toISOString(),
+          attendee_email: customer_email,
+          attendee_name: customer_name,
+          scheduler_email: scheduler.user_email,
+          timezone: 'UTC'
+        }
+      });
+
+      if (calendarResponse?.success && calendarResponse.meetLink) {
+        videoCallLink = calendarResponse.meetLink;
+        calendarEventId = calendarResponse.eventId;
+        
+        // Update booking with real Google Meet link
+        await supabase
+          .from('appointments_booked')
+          .update({ 
+            video_call_link: videoCallLink,
+            booking_message: `Calendar event created: ${calendarResponse.htmlLink}`
+          })
+          .eq('id', booking.id);
+        
+        console.log('Created Google Calendar event with Meet link:', videoCallLink);
+      } else {
+        console.log('Calendar event creation skipped or failed, using placeholder');
+        // Fallback to placeholder if calendar creation fails
+        const meetingId = booking.id.substring(0, 10);
+        videoCallLink = `https://meet.google.com/${meetingId}`;
+        
+        await supabase
+          .from('appointments_booked')
+          .update({ video_call_link: videoCallLink })
+          .eq('id', booking.id);
+      }
+    } catch (calendarError) {
+      console.error('Error creating calendar event:', calendarError);
+      // Use placeholder on error
       const meetingId = booking.id.substring(0, 10);
       videoCallLink = `https://meet.google.com/${meetingId}`;
       
-      // Update the booking with the video call link
       await supabase
         .from('appointments_booked')
         .update({ video_call_link: videoCallLink })
         .eq('id', booking.id);
-      
-      console.log('Generated placeholder video call link:', videoCallLink);
     }
 
-    // Send confirmation email to customer
+    // Send confirmation email to customer with video call link
     try {
       await supabase.functions.invoke('send-booking-confirmation', {
         body: {
@@ -120,7 +162,9 @@ serve(async (req) => {
           scheduler_name: scheduler.name,
           appointment_date,
           appointment_time,
-          location_type: location_type || 'video_call'
+          location_type: location_type || 'video_call',
+          video_call_link: videoCallLink,
+          duration: scheduler.duration || 60
         }
       });
       console.log('Email confirmation sent successfully');
