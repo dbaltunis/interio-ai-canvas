@@ -1773,11 +1773,12 @@ export const EditableLivePreview = ({
   return (
     <div className="relative">
       {/* Floating Add Block Button */}
-      <div className="fixed bottom-4 right-4 z-50">
+      <div className="fixed bottom-6 right-6 z-[9999] pointer-events-auto">
         <Button
           onClick={() => setShowComponentLibrary(true)}
-          className="rounded-full w-14 h-14 shadow-lg"
+          className="rounded-full w-14 h-14 shadow-2xl bg-primary hover:bg-primary/90 hover:scale-110 transition-all"
           size="lg"
+          title="Add Block"
         >
           <Plus className="h-6 w-6" />
         </Button>
@@ -1785,7 +1786,7 @@ export const EditableLivePreview = ({
 
       {/* Component Library Modal */}
       {showComponentLibrary && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9998]">
           <div className="bg-white rounded-lg shadow-xl w-96 max-h-[80vh] overflow-auto">
             <div className="p-4 border-b">
               <div className="flex items-center justify-between">
@@ -1912,7 +1913,7 @@ export const EditableLivePreview = ({
           {blocks.map((block, index) => (
             <div key={block.id || index} className="relative group">
               {/* Block Controls */}
-              <div className="absolute -top-3 -right-3 opacity-0 group-hover:opacity-100 transition-opacity z-30 flex gap-1">
+              <div className="absolute -top-3 -right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-[100] flex gap-1 pointer-events-auto">
                 {/* Move Up Button */}
                 {index > 0 && (
                   <Button
