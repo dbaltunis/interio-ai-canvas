@@ -165,9 +165,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
           end_time: endTime.toISOString(),
           location: 'Booked Appointment',
           appointment_type: 'consultation',
-          color: 'hsl(var(--accent))',
+          color: 'hsl(217 91% 60%)',
           user_id: currentUserId,
-          isBooked: true,
+          isBooking: true,
           bookingData: booking,
           scheduler_id: booking.scheduler_id,
           scheduler_name: schedulerName,
@@ -399,8 +399,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
             <span>Available Slots (click to share)</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded bg-green-600/80 border-l-4 border-green-600"></div>
-            <span>Customer Bookings</span>
+            <div className="w-3 h-3 rounded border-l-4 border-blue-500" style={{ backgroundColor: 'hsl(217 91% 60% / 0.8)' }}></div>
+            <span>Customer Bookings (click for details)</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded bg-primary/80 border-l-4 border-primary"></div>
@@ -501,16 +501,16 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                  index % 2 === 0 ? 'border-b border-muted/30' : 'border-b border-muted'
                               } ${isOver ? 'bg-primary/30 border-primary border-2' : ''} ${
                                 isOccupied 
-                                  ? 'bg-destructive/10 hover:bg-destructive/20 cursor-help border-destructive/30' 
+                                  ? 'bg-muted/30 cursor-default' 
                                   : 'hover:bg-accent/50 cursor-pointer'
                               }`}
                               onMouseDown={(e) => !isOccupied && handleMouseDown && handleMouseDown(day, index, e)}
                               onMouseMove={() => !isOccupied && handleMouseMove && handleMouseMove(day, index)}
-                              onClick={() => !isCreatingEvent && onTimeSlotClick?.(day, time)}
+                              onClick={() => !isCreatingEvent && !isOccupied && onTimeSlotClick?.(day, time)}
                               title={
                                 isOccupied 
-                                  ? `${format(day, 'MMM d')} at ${time} - Time occupied by appointment`
-                                  : `${format(day, 'MMM d')} at ${time} - Click to create personal event`
+                                  ? `${format(day, 'MMM d')} at ${time} - Time occupied`
+                                  : `${format(day, 'MMM d')} at ${time} - Click to create event`
                               }
                              >
                              </div>
@@ -609,10 +609,10 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         // Clear visual distinction with MORE VISIBLE colors
                         const getEventStyling = (event: any) => {
                           if (event.isBooking) {
-                            // Booked appointments: green transparent color
+                            // Booked appointments: blue/purple color
                             return {
-                              background: 'hsl(142 76% 36% / 0.15)',
-                              border: 'hsl(142 76% 36%)',
+                              background: 'hsl(217 91% 60% / 0.2)',
+                              border: 'hsl(217 91% 60%)',
                               textClass: 'text-foreground',
                               isDashed: false,
                               isCompact: false,
@@ -665,7 +665,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                             boxShadow: event.isAvailableSlot
                               ? 'inset 0 0 0 1px hsl(142 76% 50% / 0.2)'
                               : event.isBooking
-                              ? '0 2px 8px -2px hsl(142 76% 36% / 0.25), 0 1px 4px -1px hsl(142 76% 36% / 0.2)'
+                              ? '0 2px 8px -2px hsl(217 91% 60% / 0.25), 0 1px 4px -1px hsl(217 91% 60% / 0.2)'
                               : '0 8px 16px -4px hsl(var(--background) / 0.25), 0 4px 8px -2px hsl(var(--background) / 0.2)',
                             transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
                             opacity: isDragging ? 0.85 : 1,

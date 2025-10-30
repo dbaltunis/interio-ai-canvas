@@ -97,12 +97,15 @@ serve(async (req) => {
         body: {
           booking_id: booking.id,
           customer_email,
+          customer_name,
+          scheduler_id,
           scheduler_name: scheduler.name,
           appointment_date,
           appointment_time,
           location_type: location_type || 'video_call'
         }
       });
+      console.log('Email confirmation sent successfully');
     } catch (emailError) {
       console.error('Failed to send confirmation email:', emailError);
       // Don't fail the booking if email fails
