@@ -1,4 +1,4 @@
-import React, { useState, useMemo, lazy, Suspense, useEffect } from "react";
+import React, { useState, useMemo, lazy, Suspense } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,55 +64,10 @@ export function WindowSummaryCard({
   const windowId = surface.id;
   const { data: summary, isLoading, error } = useWindowSummary(windowId);
   const [showBreakdown, setShowBreakdown] = useState(false);
-  const [isEditingTreatmentName, setIsEditingTreatmentName] = useState(false);
-  const [editTreatmentName, setEditTreatmentName] = useState('');
   const { compact } = useCompactMode();
   const userCurrency = useUserCurrency();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  // Get treatment name with fallback hierarchy
-  const treatmentNameDisplay = summary?.treatment_name || 
-                                summary?.product_name ||
-                                summary?.template_name ||
-                                summary?.fabric_details?.name ||
-                                summary?.material_details?.name ||
-                                'Treatment';
-  
-  useEffect(() => {
-    setEditTreatmentName(treatmentNameDisplay);
-  }, [treatmentNameDisplay]);
-
-  const handleUpdateTreatmentName = async () => {
-    if (!editTreatmentName.trim() || editTreatmentName === treatmentNameDisplay) {
-      setIsEditingTreatmentName(false);
-      return;
-    }
-
-    try {
-      // Update windows_summary table
-      await supabase
-        .from('windows_summary')
-        .update({ treatment_name: editTreatmentName.trim() })
-        .eq('window_id', windowId);
-
-      queryClient.invalidateQueries({ queryKey: ['window-summary', windowId] });
-      
-      toast({
-        title: 'Success',
-        description: 'Treatment name updated',
-      });
-    } catch (error) {
-      console.error('Failed to update treatment name:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update treatment name',
-        variant: 'destructive',
-      });
-      setEditTreatmentName(treatmentNameDisplay);
-    }
-    setIsEditingTreatmentName(false);
-  };
 
   // Detect treatment type from multiple sources - prioritize fabric category detection
   const detectTreatmentTypeFromFabric = () => {
@@ -459,32 +414,12 @@ export function WindowSummaryCard({
                   {/* Compact Header */}
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex-1 min-w-0">
-                      {isEditingTreatmentName ? (
-                        <Input
-                          value={editTreatmentName}
-                          onChange={(e) => setEditTreatmentName(e.target.value)}
-                          onBlur={handleUpdateTreatmentName}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleUpdateTreatmentName();
-                            if (e.key === 'Escape') {
-                              setEditTreatmentName(treatmentNameDisplay);
-                              setIsEditingTreatmentName(false);
-                            }
-                          }}
-                          className="h-8 text-base font-semibold"
-                          autoFocus
-                        />
-                      ) : (
-                        <h4 
-                          className="font-semibold text-base mb-0.5 truncate cursor-pointer hover:text-primary transition-colors"
-                          onClick={() => setIsEditingTreatmentName(true)}
-                        >
-                          {treatmentNameDisplay}
-                        </h4>
-                      )}
+                      <h4 className="font-semibold text-base mb-0.5 truncate">
+                        {summary.template_name || (summary.fabric_details as any)?.name || (summary.material_details as any)?.name || 'Treatment'}
+                      </h4>
                       {treatmentType === 'curtains' && summary.fabric_details?.name && (
                         <p className="text-xs text-muted-foreground truncate">
-                          {summary.heading_details?.heading_name || 'Standard'} • {summary.lining_details?.type || 'Unlined'}
+                          {(summary.heading_details as any)?.heading_name || 'Standard'} • {(summary.lining_details as any)?.type || 'Unlined'}
                         </p>
                       )}
                     </div>
