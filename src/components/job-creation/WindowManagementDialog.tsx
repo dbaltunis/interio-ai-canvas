@@ -337,20 +337,23 @@ export const WindowManagementDialog = ({
       const name = currentTreatment.treatment_name || 
                    currentTreatment.product_name || 
                    currentTreatment.treatment_type || 
-                   'Treatment';
+                   '';
       setTreatmentName(name);
+      // Only use actual description field, not fallbacks
       setTreatmentDescription(currentTreatment.description || '');
     } else if (windowSummary) {
       // Fallback to windows_summary data
       const name = windowSummary.template_name || 
                    windowSummary.treatment_type || 
-                   'Treatment';
-      const desc = windowSummary.description_text ||
-                   (windowSummary.material_details as any)?.name ||
-                   (windowSummary.fabric_details as any)?.name ||
                    '';
+      // Only use description_text field, empty if not set
+      const desc = windowSummary.description_text || '';
       setTreatmentName(name);
       setTreatmentDescription(desc);
+    } else {
+      // Clear fields if no treatment
+      setTreatmentName('');
+      setTreatmentDescription('');
     }
   }, [currentTreatment, windowSummary]);
 
@@ -423,51 +426,45 @@ export const WindowManagementDialog = ({
         <DialogContent className="max-w-[95vw] sm:max-w-7xl max-h-[95vh] flex flex-col bg-background border-2 p-2 sm:p-4">
           <DialogHeader className="flex-shrink-0 pb-1 sm:pb-2 border-b border-border">
             <div className="flex items-center justify-between">
-              <DialogTitle className="flex items-center flex-wrap gap-2 text-sm sm:text-base font-semibold text-foreground w-full">
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-primary/5 border border-primary/20 rounded-md">
-                    <Ruler className="h-3.5 w-3.5 text-primary" />
-                    <span className="text-xs font-medium text-muted-foreground">Design:</span>
-                    <WindowRenameButton windowName={surface?.name || 'Untitled'} onRename={handleRename} />
-                  </div>
+              <DialogTitle className="flex items-center flex-wrap gap-2 text-sm font-semibold text-foreground w-full">
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-background border border-border rounded-md">
+                  <Ruler className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-xs font-medium text-muted-foreground">Design:</span>
+                  <WindowRenameButton windowName={surface?.name || 'Untitled'} onRename={handleRename} />
                 </div>
                 
-                {(currentTreatment || windowSummary) && treatmentName && (
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-accent/30 border border-accent/40 rounded-md flex-1 min-w-[160px] max-w-[220px]">
-                      <div className="flex items-center gap-1 flex-1 min-w-0">
-                        <span className="text-[10px] font-semibold text-accent-foreground/70 uppercase tracking-wide shrink-0">Product</span>
-                        <Input
-                          value={treatmentName}
-                          onChange={(e) => setTreatmentName(e.target.value)}
-                          onBlur={() => handleTreatmentNameUpdate(treatmentName)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleTreatmentNameUpdate(treatmentName);
-                          }}
-                          title="Product name that will appear on the quote"
-                          className="h-5 text-xs font-semibold border-0 bg-transparent px-0 focus-visible:ring-0 placeholder:text-muted-foreground/40"
-                          placeholder="e.g., Premium Curtains"
-                        />
-                      </div>
+                {(currentTreatment || windowSummary) && (
+                  <>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-background border border-border rounded-md flex-1 min-w-[160px] max-w-[220px]">
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide shrink-0">Product</span>
+                      <Input
+                        value={treatmentName}
+                        onChange={(e) => setTreatmentName(e.target.value)}
+                        onBlur={() => handleTreatmentNameUpdate(treatmentName)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleTreatmentNameUpdate(treatmentName);
+                        }}
+                        title="Product name that will appear on the quote"
+                        className="h-5 text-xs font-semibold border-0 bg-transparent px-0 focus-visible:ring-0 placeholder:text-muted-foreground/40"
+                        placeholder="e.g., Premium Curtains"
+                      />
                     </div>
                     
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-muted/50 border border-border/50 rounded-md flex-1 min-w-[160px] max-w-[220px]">
-                      <div className="flex items-center gap-1 flex-1 min-w-0">
-                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide shrink-0">Notes</span>
-                        <Input
-                          value={treatmentDescription}
-                          onChange={(e) => setTreatmentDescription(e.target.value)}
-                          onBlur={() => handleDescriptionUpdate(treatmentDescription)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleDescriptionUpdate(treatmentDescription);
-                          }}
-                          title="Additional description for internal reference"
-                          className="h-5 text-[10px] text-muted-foreground border-0 bg-transparent px-0 focus-visible:ring-0 placeholder:text-muted-foreground/30"
-                          placeholder="Add notes..."
-                        />
-                      </div>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-background border border-border rounded-md flex-1 min-w-[160px] max-w-[220px]">
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide shrink-0">Description</span>
+                      <Input
+                        value={treatmentDescription}
+                        onChange={(e) => setTreatmentDescription(e.target.value)}
+                        onBlur={() => handleDescriptionUpdate(treatmentDescription)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleDescriptionUpdate(treatmentDescription);
+                        }}
+                        title="Additional description for the quote"
+                        className="h-5 text-xs border-0 bg-transparent px-0 focus-visible:ring-0 placeholder:text-muted-foreground/40"
+                        placeholder="Optional details..."
+                      />
                     </div>
-                  </div>
+                  </>
                 )}
               </DialogTitle>
             </div>
