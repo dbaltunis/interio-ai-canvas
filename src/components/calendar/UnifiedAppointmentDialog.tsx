@@ -478,24 +478,24 @@ export const UnifiedAppointmentDialog = ({
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full justify-start gap-2 mt-2"
+                      className="w-full justify-start gap-2 mt-2 cursor-pointer"
                     >
                       <div
-                        className="w-5 h-5 rounded-full border-2 border-border"
+                        className="w-6 h-6 min-w-6 min-h-6 rounded-full border-2 border-border shrink-0"
                         style={{ backgroundColor: event.color || defaultColors[0] }}
                       />
-                      <span className="flex-1 text-left">
-                        {event.color ? 'Selected Color' : 'Choose a color'}
+                      <span className="flex-1 text-left text-sm">
+                        Color
                       </span>
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-3 bg-background border shadow-md z-50" align="start">
+                  <PopoverContent className="w-auto p-3 bg-popover border shadow-lg z-50" align="start">
                     <div className="grid grid-cols-4 gap-2">
                       {defaultColors.map((color) => (
                         <button
                           key={color}
                           type="button"
-                          className={`w-10 h-10 rounded-full border-2 border-border/50 hover:scale-110 transition-transform cursor-pointer ${
+                          className={`w-10 h-10 min-w-10 min-h-10 rounded-full border-2 border-border/50 hover:scale-110 transition-transform cursor-pointer ${
                             event.color === color ? 'ring-2 ring-offset-2 ring-primary scale-110' : ''
                           }`}
                           style={{ backgroundColor: color }}
