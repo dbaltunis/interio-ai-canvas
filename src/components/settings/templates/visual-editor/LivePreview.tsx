@@ -662,26 +662,11 @@ const LivePreviewBlock = ({
       const rooms = projectData?.rooms || [];
       const windowSummaries = projectData?.windowSummaries?.windows || [];
       
-      // Use projectData.items as PRIMARY source (this is the data from treatments)
+      // Use projectData.items as PRIMARY source
       let projectItems = [];
-      
-      console.log('[PRODUCTS BLOCK] Data sources:', {
-        hasItems: !!(projectData?.items && projectData.items.length > 0),
-        itemsCount: projectData?.items?.length || 0,
-        items: projectData?.items,
-        hasTreatments: !!(projectData?.treatments && projectData.treatments.length > 0),
-        treatmentsCount: projectData?.treatments?.length || 0,
-        workshopItemsCount: workshopItems.length,
-        surfacesCount: surfaces.length
-      });
       
       if (projectData?.items && projectData.items.length > 0) {
         projectItems = projectData.items.filter((item: any) => !item.isHeader && item.type !== 'room_header');
-        console.log('[PRODUCTS BLOCK] Using projectData.items:', projectItems);
-      } else if (projectData?.treatments && projectData.treatments.length > 0) {
-        // Fallback to treatments if items not present
-        projectItems = projectData.treatments.filter((item: any) => !item.isHeader && item.type !== 'room_header');
-        console.log('[PRODUCTS BLOCK] Using projectData.treatments:', projectItems);
       } else if (workshopItems.length > 0 || surfaces.length > 0) {
         const surfaceMap = new Map(surfaces.map((s: any) => [s.id, s]));
         projectItems = [...workshopItems];
@@ -696,15 +681,12 @@ const LivePreviewBlock = ({
               room_name: 'Pending Configuration',
               description: 'No treatment configured yet',
               total_cost: 0,
-              unit_price: 0,
-              total: 0,
               quantity: 1,
               notes: `Window: ${surface.width || 0}cm x ${surface.height || 0}cm`,
               _isPending: true
             });
           }
         });
-        console.log('[PRODUCTS BLOCK] Using workshop/surfaces fallback:', projectItems);
       }
       
       const hasRealData = projectItems.length > 0 && !projectItems.every((item: any) => item._isPending);
@@ -831,16 +813,16 @@ const LivePreviewBlock = ({
             </div>
           )}
 
-          <div className="border border-gray-300 overflow-visible w-full">
-            <table className="w-full" style={{ borderCollapse: 'collapse', tableLayout: 'auto' }}>
-              <thead style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #cbd5e1' }}>
+          <div className="border-2 border-gray-200 rounded-lg overflow-visible w-full">
+            <table className="w-full border-collapse" style={{ tableLayout: 'auto', width: '100%' }}>
+              <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b-2 border-blue-200">
                 <tr>
-                  <th style={{ textAlign: 'left', padding: '8px 6px', fontSize: '10px', fontWeight: 'bold', color: '#1f2937', width: '30px' }}>#</th>
-                  <th style={{ textAlign: 'left', padding: '8px 6px', fontSize: '10px', fontWeight: 'bold', color: '#1f2937' }}>Product/Service</th>
-                  <th style={{ textAlign: 'left', padding: '8px 6px', fontSize: '10px', fontWeight: 'bold', color: '#1f2937' }}>Description</th>
-                  <th style={{ textAlign: 'center', padding: '8px 6px', fontSize: '10px', fontWeight: 'bold', color: '#1f2937', width: '50px' }}>Qty</th>
-                  <th style={{ textAlign: 'right', padding: '8px 6px', fontSize: '10px', fontWeight: 'bold', color: '#1f2937', width: '80px' }}>Rate</th>
-                  <th style={{ textAlign: 'right', padding: '8px 6px', fontSize: '10px', fontWeight: 'bold', color: '#1f2937', width: '80px' }}>Total</th>
+                  <th className="text-left px-3 py-2 text-xs font-bold text-gray-800">#</th>
+                  <th className="text-left px-3 py-2 text-xs font-bold text-gray-800">Product/Service</th>
+                  <th className="text-left px-3 py-2 text-xs font-bold text-gray-800">Description</th>
+                  <th className="text-center px-3 py-2 text-xs font-bold text-gray-800">Qty</th>
+                  <th className="text-right px-3 py-2 text-xs font-bold text-gray-800">Rate</th>
+                  <th className="text-right px-3 py-2 text-xs font-bold text-gray-800">Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -860,31 +842,31 @@ const LivePreviewBlock = ({
                       return (
                         <React.Fragment key={`item-${roomName}-${itemIndex}`}>
                           {/* Main product row */}
-                          <tr style={{ borderTop: '1px solid #e5e7eb' }}>
-                            <td style={{ padding: '8px 6px', fontSize: '10px', fontWeight: 'bold', color: '#2563eb', verticalAlign: 'top' }}>{itemNumber}</td>
-                            <td style={{ padding: '8px 6px', fontSize: '10px', fontWeight: 'bold', color: '#111827', verticalAlign: 'top' }}>
-                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+                          <tr className="border-t border-gray-200 hover:bg-blue-50/30 transition-colors">
+                            <td className="px-3 py-2 text-xs font-bold text-blue-600 align-top">{itemNumber}</td>
+                            <td className="px-3 py-2 text-xs font-bold text-gray-900 align-top">
+                              <div className="flex items-start gap-2">
                                 {showImages && item.image_url && (
-                                  <div style={{ flexShrink: 0 }}>
-                                    <QuoteItemImage src={item.image_url} alt={item.name} size={32} className="rounded border border-gray-200" />
+                                  <div className="flex-shrink-0">
+                                    <QuoteItemImage src={item.image_url} alt={item.name} size={40} className="rounded shadow-sm border border-gray-200" />
                                   </div>
                                 )}
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontWeight: 'bold', fontSize: '10px', wordWrap: 'break-word' }}>{item.name || 'Window Treatment'}</div>
+                                <div className="flex-1" style={{ minWidth: '0' }}>
+                                  <div className="font-bold text-gray-900 text-xs break-words">{item.name || 'Window Treatment'}</div>
                                   {item.surface_name && (
-                                    <div style={{ fontSize: '9px', color: '#6b7280', marginTop: '2px', wordWrap: 'break-word' }}>{item.surface_name}</div>
+                                    <div className="text-[10px] text-gray-500 mt-0.5 break-words">{item.surface_name}</div>
                                   )}
                                 </div>
                               </div>
                             </td>
-                            <td style={{ padding: '8px 6px', fontSize: '9px', color: '#374151', verticalAlign: 'top', wordWrap: 'break-word' }}>
+                            <td className="px-3 py-2 text-[10px] text-gray-700 align-top break-words">
                               {item.description || item.treatment_type || ''}
                             </td>
-                            <td style={{ padding: '8px 6px', fontSize: '10px', fontWeight: '500', color: '#111827', textAlign: 'center', verticalAlign: 'top' }}>{item.quantity || 1}</td>
-                            <td style={{ padding: '8px 6px', fontSize: '10px', color: '#111827', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                            <td className="px-3 py-2 text-center text-xs font-medium text-gray-800 align-top">{item.quantity || 1}</td>
+                            <td className="px-3 py-2 text-right text-xs text-gray-800 align-top whitespace-nowrap">
                               {renderTokenValue('currency_symbol')}{(item.unit_price || 0).toFixed(2)}
                             </td>
-                            <td style={{ padding: '8px 6px', fontSize: '10px', fontWeight: 'bold', color: '#2563eb', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                            <td className="px-3 py-2 text-right font-bold text-xs text-blue-600 align-top whitespace-nowrap">
                               {renderTokenValue('currency_symbol')}{(item.total || 0).toFixed(2)}
                             </td>
                           </tr>
