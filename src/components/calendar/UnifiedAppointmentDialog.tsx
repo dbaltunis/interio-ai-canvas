@@ -268,174 +268,123 @@ export const UnifiedAppointmentDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <CalendarDays className="w-5 h-5" />
-              {isEditing ? 'Edit Appointment' : 'Create New Event'}
-            </div>
-            {appointment?.project_id && (
-              <div className="text-sm font-normal text-muted-foreground flex items-center gap-2">
-                <Badge variant="outline" className="font-normal">
-                  Job #{appointment.project_id.slice(0, 8)}
-                </Badge>
-                {appointment.notification_enabled && (
-                  <Badge variant="secondary" className="font-normal flex items-center gap-1">
-                    <Bell className="h-3 w-3" />
-                    Notification {appointment.notification_minutes}min before
-                  </Badge>
-                )}
-              </div>
-            )}
+          <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+            <CalendarDays className="w-5 h-5" />
+            {isEditing ? 'Edit Event' : 'New Event'}
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-6">
-          {/* Basic Information */}
-          <div className="space-y-4">
+        <div className="space-y-5">
+          {/* Title */}
+          <div className="space-y-2">
+            <Label htmlFor="title" className="text-sm font-medium">Event Title *</Label>
+            <Input
+              id="title"
+              placeholder="What's this event about?"
+              value={event.title}
+              onChange={useCallback((e) => setEvent(prev => ({ ...prev, title: e.target.value })), [])}
+              className="h-10"
+            />
+          </div>
+
+          {/* Date and Time Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="title">Event Title *</Label>
+              <Label htmlFor="date" className="text-sm font-medium flex items-center gap-1.5 mb-2">
+                <CalendarDays className="w-3.5 h-3.5" />
+                Date *
+              </Label>
               <Input
-                id="title"
-                placeholder="What's this event about?"
-                value={event.title}
-                onChange={useCallback((e) => setEvent(prev => ({ ...prev, title: e.target.value })), [])}
-                className="text-base"
+                id="date"
+                type="date"
+                value={event.date}
+                onChange={useCallback((e) => setEvent(prev => ({ ...prev, date: e.target.value })), [])}
+                className="h-10"
               />
             </div>
-
-            {/* Date and Time Section */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-1">
-                <Label htmlFor="date">Date *</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={event.date}
-                    onChange={useCallback((e) => setEvent(prev => ({ ...prev, date: e.target.value })), [])}
-                    className="w-full"
-                  />
-              </div>
-              <div>
-                <Label htmlFor="startTime" className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  Start Time *
-                </Label>
-                <div className="flex items-center gap-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-9 w-9 shrink-0"
-                    onClick={() => adjustTime('startTime', -15)}
-                  >
-                    <Minus className="w-3 h-3" />
-                  </Button>
-                  <Input
-                    id="startTime"
-                    type="time"
-                    value={event.startTime}
-                    onChange={useCallback((e) => setEvent(prev => ({ ...prev, startTime: e.target.value })), [])}
-                    className="text-center"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-9 w-9 shrink-0"
-                    onClick={() => adjustTime('startTime', 15)}
-                  >
-                    <Plus className="w-3 h-3" />
-                  </Button>
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="endTime">End Time *</Label>
-                <div className="flex items-center gap-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-9 w-9 shrink-0"
-                    onClick={() => adjustTime('endTime', -15)}
-                  >
-                    <Minus className="w-3 h-3" />
-                  </Button>
-                  <Input
-                    id="endTime"
-                    type="time"
-                    min={event.startTime} // Prevent selecting time before start
-                    value={event.endTime}
-                    onChange={useCallback((e) => setEvent(prev => ({ ...prev, endTime: e.target.value })), [])}
-                    className="text-center"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-9 w-9 shrink-0"
-                    onClick={() => adjustTime('endTime', 15)}
-                  >
-                    <Plus className="w-3 h-3" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Date validation error */}
-            {!isValidDateRange && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  End time must be after start time
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {/* Notifications Section */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="enableNotifications" className="flex items-center gap-2">
-                  <Bell className="w-4 h-4" />
-                  Enable notifications for this event
-                </Label>
-                <Switch
-                  id="enableNotifications"
-                  checked={event.notification_enabled || false}
-                  onCheckedChange={(checked) => setEvent({ ...event, notification_enabled: checked })}
+            <div>
+              <Label htmlFor="startTime" className="text-sm font-medium flex items-center gap-1.5 mb-2">
+                <Clock className="w-3.5 h-3.5" />
+                Start Time *
+              </Label>
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10"
+                  onClick={() => adjustTime('startTime', -15)}
+                >
+                  <Minus className="w-4 h-4" />
+                </Button>
+                <Input
+                  id="startTime"
+                  type="time"
+                  value={event.startTime}
+                  onChange={useCallback((e) => setEvent(prev => ({ ...prev, startTime: e.target.value })), [])}
+                  className="h-10 text-center"
                 />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10"
+                  onClick={() => adjustTime('startTime', 15)}
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
               </div>
-              {event.notification_enabled && (
-                <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-                  <div>
-                    <Label htmlFor="notificationTiming" className="text-sm font-medium">Notify before event</Label>
-                    <Select 
-                      value={event.notification_minutes?.toString() || '15'}
-                      onValueChange={(value) => setEvent({ ...event, notification_minutes: parseInt(value) })}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="0">At event time</SelectItem>
-                        <SelectItem value="5">5 minutes before</SelectItem>
-                        <SelectItem value="15">15 minutes before</SelectItem>
-                        <SelectItem value="30">30 minutes before</SelectItem>
-                        <SelectItem value="60">1 hour before</SelectItem>
-                        <SelectItem value="120">2 hours before</SelectItem>
-                        <SelectItem value="1440">1 day before</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                </div>
-              )}
             </div>
+            <div>
+              <Label htmlFor="endTime" className="text-sm font-medium flex items-center gap-1.5 mb-2">
+                <Clock className="w-3.5 h-3.5" />
+                End Time *
+              </Label>
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10"
+                  onClick={() => adjustTime('endTime', -15)}
+                >
+                  <Minus className="w-4 h-4" />
+                </Button>
+                <Input
+                  id="endTime"
+                  type="time"
+                  min={event.startTime}
+                  value={event.endTime}
+                  onChange={useCallback((e) => setEvent(prev => ({ ...prev, endTime: e.target.value })), [])}
+                  className="h-10 text-center"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10"
+                  onClick={() => adjustTime('endTime', 15)}
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
 
-            {/* Quick Duration Buttons */}
+          {/* Date validation error */}
+          {!isValidDateRange && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>End time must be after start time</AlertDescription>
+            </Alert>
+          )}
+
+          {/* Quick Duration */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Quick Duration</Label>
             <div className="flex flex-wrap gap-2">
-              <Label className="text-sm font-medium w-full">Quick Duration:</Label>
               {[15, 30, 60, 90, 120].map((minutes) => (
                 <Button
                   key={minutes}
@@ -443,158 +392,206 @@ export const UnifiedAppointmentDialog = ({
                   variant="outline"
                   size="sm"
                   onClick={() => setQuickDuration(minutes)}
+                  className="h-8"
                 >
                   {minutes}m
                 </Button>
               ))}
             </div>
+          </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="type">Event Type</Label>
-                <Select value={event.appointment_type} onValueChange={(value) => setEvent({ ...event, appointment_type: value as any })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="meeting">Meeting</SelectItem>
-                    <SelectItem value="consultation">Consultation</SelectItem>
-                    <SelectItem value="measurement">Measurement</SelectItem>
-                    <SelectItem value="installation">Installation</SelectItem>
-                    <SelectItem value="follow_up">Follow-up</SelectItem>
-                    <SelectItem value="reminder">Reminder</SelectItem>
-                    <SelectItem value="call">Call</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label className="flex items-center gap-1">
-                  <Palette className="w-3 h-3" />
-                  Color
-                </Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full justify-start gap-2 mt-2 cursor-pointer"
-                    >
-                      <div
-                        className="w-6 h-6 min-w-6 min-h-6 rounded-full border-2 border-border shrink-0"
-                        style={{ backgroundColor: event.color || defaultColors[0] }}
+          {/* Type and Color */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="type" className="text-sm font-medium">Event Type</Label>
+              <Select value={event.appointment_type} onValueChange={(value) => setEvent({ ...event, appointment_type: value as any })}>
+                <SelectTrigger className="h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="meeting">Meeting</SelectItem>
+                  <SelectItem value="consultation">Consultation</SelectItem>
+                  <SelectItem value="measurement">Measurement</SelectItem>
+                  <SelectItem value="installation">Installation</SelectItem>
+                  <SelectItem value="follow_up">Follow-up</SelectItem>
+                  <SelectItem value="reminder">Reminder</SelectItem>
+                  <SelectItem value="call">Call</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-1.5">
+                <Palette className="w-3.5 h-3.5" />
+                Color
+              </Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-10 justify-start gap-2"
+                  >
+                    <div
+                      className="w-5 h-5 rounded-full border-2 border-border"
+                      style={{ backgroundColor: event.color || defaultColors[0] }}
+                    />
+                    <span>Color</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-3" align="start">
+                  <div className="grid grid-cols-4 gap-2">
+                    {defaultColors.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        className={`w-10 h-10 rounded-full border-2 hover:scale-110 transition-transform ${
+                          event.color === color ? 'ring-2 ring-offset-2 ring-primary' : 'border-border'
+                        }`}
+                        style={{ backgroundColor: color }}
+                        onClick={() => setEvent({ ...event, color })}
                       />
-                      <span className="flex-1 text-left text-sm">
-                        Color
-                      </span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-3 bg-popover border shadow-lg z-50" align="start">
-                    <div className="grid grid-cols-4 gap-2">
-                      {defaultColors.map((color) => (
-                        <button
-                          key={color}
-                          type="button"
-                          className={`w-10 h-10 min-w-10 min-h-10 rounded-full border-2 border-border/50 hover:scale-110 transition-transform cursor-pointer ${
-                            event.color === color ? 'ring-2 ring-offset-2 ring-primary scale-110' : ''
-                          }`}
-                          style={{ backgroundColor: color }}
-                          onClick={() => setEvent({ ...event, color })}
-                        />
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
-          {/* Location & Video Meeting */}
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="location" className="flex items-center gap-1">
-                <MapPin className="w-3 h-3" />
+          {/* Location and Video */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="location" className="text-sm font-medium flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5" />
                 Location
               </Label>
               <Input
                 id="location"
-                placeholder="Where is this happening?"
+                placeholder="Where?"
                 value={event.location}
                 onChange={useCallback((e) => setEvent(prev => ({ ...prev, location: e.target.value })), [])}
+                className="h-10"
               />
             </div>
-
-            <div>
-              <Label htmlFor="videoLink" className="flex items-center gap-1">
-                <Video className="w-3 h-3" />
-                Video Meeting Link
+            <div className="space-y-2">
+              <Label htmlFor="videoLink" className="text-sm font-medium flex items-center gap-1.5">
+                <Video className="w-3.5 h-3.5" />
+                Video Link
               </Label>
               <Input
                 id="videoLink"
-                placeholder="https://meet.google.com/xxx-xxxx-xxx"
+                placeholder="https://meet.google.com/..."
                 value={event.video_meeting_link}
                 onChange={useCallback((e) => setEvent(prev => ({ ...prev, video_meeting_link: e.target.value })), [])}
+                className="h-10"
               />
             </div>
           </div>
 
-          {/* Team Members */}
+          {/* Team Members with Avatars */}
           {teamMembers && teamMembers.length > 0 && (
             <div className="space-y-3">
-              <Label className="flex items-center gap-1">
-                <Users className="w-3 h-3" />
+              <Label className="text-sm font-medium flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5" />
                 Team Members
               </Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {teamMembers.map((member) => (
-                  <div key={member.id} className="flex items-start space-x-2">
-                    <Checkbox
-                      id={`member-${member.id}`}
-                      checked={event.selectedTeamMembers.includes(member.id)}
-                      onCheckedChange={(checked) => 
-                        handleTeamMemberToggle(member.id, checked as boolean)
-                      }
-                      className="mt-1"
-                    />
-                    <Label 
-                      htmlFor={`member-${member.id}`} 
-                      className="text-sm break-words flex-1 leading-tight cursor-pointer"
+              <div className="flex flex-wrap gap-3">
+                {teamMembers.map((member) => {
+                  const isSelected = event.selectedTeamMembers.includes(member.id);
+                  const initials = member.name
+                    .split(' ')
+                    .map(n => n[0])
+                    .join('')
+                    .toUpperCase()
+                    .substring(0, 2);
+                  
+                  return (
+                    <button
+                      key={member.id}
+                      type="button"
+                      onClick={() => handleTeamMemberToggle(member.id, !isSelected)}
+                      className="flex flex-col items-center gap-1.5 group"
                     >
-                      {member.name}
-                    </Label>
-                  </div>
-                ))}
+                      <div
+                        className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
+                          isSelected
+                            ? 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2'
+                            : 'bg-muted text-muted-foreground group-hover:bg-muted/80'
+                        }`}
+                      >
+                        {initials}
+                      </div>
+                      <span className="text-xs max-w-[60px] truncate">{member.name.split(' ')[0]}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
 
           {/* Client Invitations */}
-          <div>
-            <Label htmlFor="clientEmails" className="flex items-center gap-1">
-              <UserPlus className="w-3 h-3" />
-              Invite Clients (emails)
+          <div className="space-y-2">
+            <Label htmlFor="clientEmails" className="text-sm font-medium flex items-center gap-1.5">
+              <UserPlus className="w-3.5 h-3.5" />
+              Invite Clients
             </Label>
-              <Input
+            <Input
               id="clientEmails"
-              placeholder="client1@email.com, client2@email.com"
+              placeholder="client@email.com, another@email.com"
               value={event.inviteClientEmail}
               onChange={useCallback((e) => setEvent(prev => ({ ...prev, inviteClientEmail: e.target.value })), [])}
+              className="h-10"
             />
           </div>
 
           {/* Description */}
-          <div>
-            <Label htmlFor="description" className="flex items-center gap-1">
-              <FileText className="w-3 h-3" />
+          <div className="space-y-2">
+            <Label htmlFor="description" className="text-sm font-medium flex items-center gap-1.5">
+              <FileText className="w-3.5 h-3.5" />
               Description
             </Label>
             <Textarea
               id="description"
-              placeholder="Add more details about this event..."
+              placeholder="Add details..."
               value={event.description}
               onChange={useCallback((e) => setEvent(prev => ({ ...prev, description: e.target.value })), [])}
               rows={3}
+              className="resize-none"
             />
+          </div>
+
+          {/* Notifications */}
+          <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="notifications" className="text-sm font-medium flex items-center gap-1.5">
+                <Bell className="w-3.5 h-3.5" />
+                Notifications
+              </Label>
+              <Switch
+                id="notifications"
+                checked={event.notification_enabled || false}
+                onCheckedChange={(checked) => setEvent({ ...event, notification_enabled: checked })}
+              />
+            </div>
+            {event.notification_enabled && (
+              <Select 
+                value={event.notification_minutes?.toString() || '15'}
+                onValueChange={(value) => setEvent({ ...event, notification_minutes: parseInt(value) })}
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">At event time</SelectItem>
+                  <SelectItem value="5">5 minutes before</SelectItem>
+                  <SelectItem value="15">15 minutes before</SelectItem>
+                  <SelectItem value="30">30 minutes before</SelectItem>
+                  <SelectItem value="60">1 hour before</SelectItem>
+                  <SelectItem value="120">2 hours before</SelectItem>
+                  <SelectItem value="1440">1 day before</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* Google Calendar Badge */}
@@ -605,98 +602,14 @@ export const UnifiedAppointmentDialog = ({
             </Badge>
           )}
 
-          {/* Appointment Metadata - only show when editing */}
-          {isEditing && appointment && (
-            <>
-              <Separator />
-              <div className="text-sm text-muted-foreground space-y-1">
-                {/* Event Owner Information */}
-                <div className="flex justify-between">
-                  <span className="flex items-center gap-1">
-                    <User className="w-3 h-3" />
-                    Event Owner:
-                  </span>
-                  <span className="text-foreground font-medium">
-                    {eventOwnerProfile?.display_name || appointment?.user_email || 'Unknown User'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Created:</span>
-                  <span>{format(new Date(appointment.created_at), 'MMM d, yyyy h:mm a')}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Updated:</span>
-                  <span>{format(new Date(appointment.updated_at), 'MMM d, yyyy h:mm a')}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Status:</span>
-                  <Badge variant="outline" className="text-xs">
-                    {appointment.status}
-                  </Badge>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Calendar Sync Options removed - using Google Calendar OAuth only */}
-          {false && (
-            <>
-              <Separator />
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="sync-calendars"
-                    checked={syncToCalendars}
-                    onCheckedChange={(checked) => setSyncToCalendars(checked === true)}
-                  />
-                  <Label htmlFor="sync-calendars" className="text-sm font-medium">
-                    {isEditing ? 'Update in connected calendars' : 'Sync to connected calendars'}
-                  </Label>
-                </div>
-                
-                {syncToCalendars && (
-                  <div className="space-y-3 ml-2 pl-4 border-l-2 border-muted">
-                    {[].map((calendar: any) => (
-                      <div key={calendar.id} className="flex items-start space-x-2">
-                        <Checkbox
-                          id={`calendar-${calendar.id}`}
-                          checked={selectedCalendars.includes(calendar.id)}
-                          onCheckedChange={(checked) => 
-                            handleCalendarToggle(calendar.id, checked as boolean)
-                          }
-                          className="mt-1"
-                        />
-                        <Label 
-                          htmlFor={`calendar-${calendar.id}`} 
-                          className="text-xs flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 flex-1 cursor-pointer leading-tight"
-                        >
-                          <span className="flex items-center gap-2">
-                            {calendar.color && (
-                              <div
-                                className="w-3 h-3 rounded-full border shrink-0"
-                                style={{ backgroundColor: calendar.color }}
-                              />
-                            )}
-                            <span className="break-words">{calendar.display_name}</span>
-                          </span>
-                          <Badge variant="outline" className="text-xs w-fit">
-                            {calendar.account_name}
-                          </Badge>
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
+          <Separator />
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-2 pt-4">
+          <div className="flex gap-3">
             <Button
               onClick={handleSubmit}
               disabled={!event.title || !event.date || !event.startTime || !event.endTime || !isValidDateRange || isLoading}
-              className="flex-1 order-1 sm:order-1"
+              className="flex-1 h-10"
             >
               {isLoading ? (
                 <>
@@ -708,29 +621,21 @@ export const UnifiedAppointmentDialog = ({
               )}
             </Button>
 
-            <Button 
-              variant="outline" 
-              onClick={() => onOpenChange(false)}
-              className="order-3 sm:order-3"
-            >
-              Cancel
-            </Button>
-
             {isEditing && (
-              <div className="flex gap-2 order-2 sm:order-2">
+              <>
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() => setShowSharingDialog(true)}
                   disabled={isLoading}
-                  className="flex-1 sm:flex-none"
+                  className="h-10 w-10"
                 >
                   <Share className="w-4 h-4" />
                 </Button>
                 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="icon" disabled={isLoading} className="flex-1 sm:flex-none">
+                    <Button variant="outline" size="icon" disabled={isLoading} className="h-10 w-10">
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </AlertDialogTrigger>
@@ -752,8 +657,16 @@ export const UnifiedAppointmentDialog = ({
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-              </div>
+              </>
             )}
+            
+            <Button 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              className="h-10"
+            >
+              Cancel
+            </Button>
           </div>
         </div>
 
