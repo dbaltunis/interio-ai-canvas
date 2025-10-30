@@ -392,6 +392,22 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="flex flex-col h-full pt-3" onMouseUp={handleMouseUp}>
+        {/* Calendar Legend */}
+        <div className="flex items-center gap-4 px-4 pb-2 text-xs text-muted-foreground border-b mb-2">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded border border-dashed border-green-500 bg-green-500/40"></div>
+            <span>Available Slots (click to share)</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded bg-green-600/80 border-l-4 border-green-600"></div>
+            <span>Customer Bookings</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded bg-primary/80 border-l-4 border-primary"></div>
+            <span>Your Events</span>
+          </div>
+        </div>
+
         {/* Week header with dates - Sticky header that stays fixed on scroll */}
         <div className="flex border-b bg-background flex-shrink-0 sticky top-0 z-10">
           <div className="w-16 border-r flex-shrink-0"></div>
@@ -625,23 +641,29 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                             disabled: event.isBooking, // Disable dragging for booked appointments
                           });
 
-                         // Apply minimum height for all events to ensure visibility
-                          const finalHeight = Math.max(style.height, eventStyling.minHeight);
+                          // Special styling for available slots - make them small indicators
+                          const finalHeight = event.isAvailableSlot 
+                            ? 10  // Small 10px indicator for available slots
+                            : Math.max(style.height, eventStyling.minHeight);
 
                           const eventStyle: React.CSSProperties = {
-                            top: `${style.top}px`,
+                            top: event.isAvailableSlot ? `${style.top}px` : `${style.top}px`,
                             height: `${finalHeight}px`,
-                            width: event.isAvailableSlot ? '98%' : eventWidth,
-                            left: event.isAvailableSlot ? '1%' : eventLeft,
+                            width: event.isAvailableSlot ? '96%' : eventWidth,
+                            left: event.isAvailableSlot ? '2%' : eventLeft,
                             zIndex: event.isAvailableSlot ? 1 : event.isBooking ? 8 + eventIndex : 10 + eventIndex,
-                            background: eventStyling.background,
-                            borderLeftColor: eventStyling.border,
-                            borderColor: event.isAvailableSlot ? 'transparent' : 'hsl(var(--border))',
-                            borderRadius: event.isAvailableSlot ? '4px' : '8px',
-                            borderStyle: 'solid',
-                            borderWidth: event.isAvailableSlot ? '1px' : '1px 1px 1px 4px',
+                            background: event.isAvailableSlot 
+                              ? 'linear-gradient(135deg, hsl(142 76% 80% / 0.4), hsl(142 76% 70% / 0.5))'
+                              : eventStyling.background,
+                            borderLeftColor: event.isAvailableSlot ? 'hsl(142 76% 50%)' : eventStyling.border,
+                            borderColor: event.isAvailableSlot 
+                              ? 'hsl(142 76% 50% / 0.5)' 
+                              : 'hsl(var(--border))',
+                            borderRadius: event.isAvailableSlot ? '3px' : '8px',
+                            borderStyle: event.isAvailableSlot ? 'dashed' : 'solid',
+                            borderWidth: event.isAvailableSlot ? '1.5px' : '1px 1px 1px 4px',
                             boxShadow: event.isAvailableSlot
-                              ? 'none'
+                              ? 'inset 0 0 0 1px hsl(142 76% 50% / 0.2)'
                               : event.isBooking
                               ? '0 2px 8px -2px hsl(142 76% 36% / 0.25), 0 1px 4px -1px hsl(142 76% 36% / 0.2)'
                               : '0 8px 16px -4px hsl(var(--background) / 0.25), 0 4px 8px -2px hsl(var(--background) / 0.2)',
@@ -698,93 +720,95 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                  )}
 
                                   <div className="flex flex-col h-full pr-1 pb-1 overflow-hidden">
-                                   {/* Event content - responsive to screen size and event width */}
-                                   <div className="flex items-start justify-between gap-1 mb-0.5">
-                                     {/* Title and time - adaptive based on screen size */}
-                                     <div className="flex-1 min-w-0">
-                                       {/* Event title - non-bold, smaller font on all screens */}
-                                       <div 
-                                         className={`${isNarrowEvent ? 'font-normal text-[10px]' : 'font-normal text-[11px]'} leading-tight text-foreground dark:text-white break-words overflow-hidden`}
-                                         style={{ 
-                                           display: '-webkit-box',
-                                           WebkitLineClamp: finalHeight > 100 ? 4 : finalHeight > 70 ? 3 : finalHeight > 45 ? 2 : 1,
-                                           WebkitBoxOrient: 'vertical',
-                                           lineHeight: '1.3'
-                                         }}>
-                                        {event.isAvailableSlot 
-                                          ? event.schedulerName 
-                                          : event.isBooking 
-                                          ? event.customer_name 
-                                          : event.title
-                                        }
-                                       </div>
-                                       
-                                        {/* Time display - compact */}
-                                        <div className={`flex items-center gap-0.5 ${isNarrowEvent ? 'text-[8px]' : 'text-[9px] md:text-[10px]'} leading-tight font-normal text-foreground/70 dark:text-white/70 mt-0.5`}>
-                                          <span>{format(startTime, 'HH:mm')}</span>
-                                          {!isNarrowEvent && (
-                                            <>
-                                              <span>-</span>
-                                              <span>{format(endTime, 'HH:mm')}</span>
-                                            </>
-                                          )}
-                                          {!event.isAvailableSlot && event.notification_enabled && !isNarrowEvent && finalHeight > 40 && (
-                                            <Bell className="w-2.5 h-2.5 text-yellow-400 ml-0.5 hidden md:block" />
-                                          )}
-                                          {event.isBooking && event.video_meeting_link && !isNarrowEvent && (
-                                            <Video className="w-2.5 h-2.5 text-blue-400 ml-0.5" />
-                                          )}
-                                        </div>
-                                     </div>
-                                     
-                                     {/* User avatar - hide on tablet and narrow events, only show on desktop */}
-                                     {!event.isAvailableSlot && !isNarrowEvent && finalHeight > 35 && (
-                                       <div className="hidden lg:flex flex-shrink-0 mr-5">
-                                         <Avatar className="h-5 w-5">
-                                           <AvatarImage src="" alt="" />
-                                           <AvatarFallback className="text-[8px] bg-background/50 text-foreground font-medium">
-                                             {event.isBooking 
-                                               ? event.customer_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'C'
-                                               : currentUserProfile?.display_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'ME'
-                                             }
-                                           </AvatarFallback>
-                                         </Avatar>
-                                       </div>
-                                     )}
-                                   </div>
-                                  
-                                  {/* Additional info - only for taller and wider events */}
-                                  {finalHeight > 50 && !isNarrowEvent && (
-                                    <div className="mt-1 space-y-1 flex-1 overflow-hidden">
-                                      {/* Secondary info line */}
-                                      <div className="text-[10px] leading-tight text-foreground/70 dark:text-white/70 truncate">
-                                        {event.isBooking 
-                                          ? event.scheduler_name 
-                                          : event.isAvailableSlot
-                                          ? `${event.duration} min slot`
-                                          : event.location
-                                        }
-                                      </div>
-                                      
-                                      {/* Description for even taller events - multiline */}
-                                      {finalHeight > 80 && (event.description || event.customer_phone) && (
-                                        <div className="text-[9px] leading-relaxed text-foreground/60 dark:text-white/60 break-words overflow-hidden"
+                                   {/* Event content - only show for non-available-slot events */}
+                                   {!event.isAvailableSlot && (
+                                     <>
+                                       <div className="flex items-start justify-between gap-1 mb-0.5">
+                                         {/* Title and time - adaptive based on screen size */}
+                                         <div className="flex-1 min-w-0">
+                                           {/* Event title - non-bold, smaller font on all screens */}
+                                           <div 
+                                             className={`${isNarrowEvent ? 'font-normal text-[10px]' : 'font-normal text-[11px]'} leading-tight text-foreground dark:text-white break-words overflow-hidden`}
                                              style={{ 
                                                display: '-webkit-box',
-                                               WebkitLineClamp: finalHeight > 120 ? 4 : 2,
+                                               WebkitLineClamp: finalHeight > 100 ? 4 : finalHeight > 70 ? 3 : finalHeight > 45 ? 2 : 1,
                                                WebkitBoxOrient: 'vertical',
-                                               lineHeight: '1.4'
+                                               lineHeight: '1.3'
                                              }}>
-                                          {event.isBooking 
-                                            ? event.customer_phone 
-                                            : event.description
-                                          }
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                            </div>
+                                            {event.isBooking 
+                                              ? event.customer_name 
+                                              : event.title
+                                            }
+                                           </div>
+                                           
+                                            {/* Time display - compact */}
+                                            <div className={`flex items-center gap-0.5 ${isNarrowEvent ? 'text-[8px]' : 'text-[9px] md:text-[10px]'} leading-tight font-normal text-foreground/70 dark:text-white/70 mt-0.5`}>
+                                              <span>{format(startTime, 'HH:mm')}</span>
+                                              {!isNarrowEvent && (
+                                                <>
+                                                  <span>-</span>
+                                                  <span>{format(endTime, 'HH:mm')}</span>
+                                                </>
+                                              )}
+                                              {!event.isAvailableSlot && event.notification_enabled && !isNarrowEvent && finalHeight > 40 && (
+                                                <Bell className="w-2.5 h-2.5 text-yellow-400 ml-0.5 hidden md:block" />
+                                              )}
+                                              {event.isBooking && event.video_meeting_link && !isNarrowEvent && (
+                                                <Video className="w-2.5 h-2.5 text-blue-400 ml-0.5" />
+                                              )}
+                                            </div>
+                                         </div>
+                                         
+                                         {/* User avatar - hide on tablet and narrow events, only show on desktop */}
+                                         {!event.isAvailableSlot && !isNarrowEvent && finalHeight > 35 && (
+                                           <div className="hidden lg:flex flex-shrink-0 mr-5">
+                                             <Avatar className="h-5 w-5">
+                                               <AvatarImage src="" alt="" />
+                                               <AvatarFallback className="text-[8px] bg-background/50 text-foreground font-medium">
+                                                 {event.isBooking 
+                                                   ? event.customer_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'C'
+                                                   : currentUserProfile?.display_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'ME'
+                                                 }
+                                               </AvatarFallback>
+                                             </Avatar>
+                                           </div>
+                                         )}
+                                       </div>
+                                       
+                                       {/* Additional info - only for taller and wider events */}
+                                       {finalHeight > 50 && !isNarrowEvent && (
+                                         <div className="mt-1 space-y-1 flex-1 overflow-hidden">
+                                           {/* Secondary info line */}
+                                           <div className="text-[10px] leading-tight text-foreground/70 dark:text-white/70 truncate">
+                                             {event.isBooking 
+                                               ? event.scheduler_name 
+                                               : event.isAvailableSlot
+                                               ? `${event.duration} min slot`
+                                               : event.location
+                                             }
+                                           </div>
+                                           
+                                           {/* Description for even taller events - multiline */}
+                                           {finalHeight > 80 && (event.description || event.customer_phone) && (
+                                             <div className="text-[9px] leading-relaxed text-foreground/60 dark:text-white/60 break-words overflow-hidden"
+                                                  style={{ 
+                                                    display: '-webkit-box',
+                                                    WebkitLineClamp: finalHeight > 120 ? 4 : 2,
+                                                    WebkitBoxOrient: 'vertical',
+                                                    lineHeight: '1.4'
+                                                  }}>
+                                               {event.isBooking 
+                                                 ? event.customer_phone 
+                                                 : event.description
+                                               }
+                                             </div>
+                                           )}
+                                         </div>
+                                       )}
+                                     </>
+                                   )}
+                                 </div>
+                             </div>
                           );
                         };
                         
