@@ -456,135 +456,131 @@ export const WindowManagementDialog = ({
                   <WindowRenameButton windowName={surface?.name || 'Untitled'} onRename={handleRename} />
                 </div>
                 
-                {(currentTreatment || windowSummary) && (
-                  <>
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md w-[200px] h-[32px]">
-                      <span className="text-xs font-medium text-muted-foreground shrink-0">Product:</span>
-                      {isEditingProduct ? (
-                        <>
-                          <Input
-                            value={editProductValue}
-                            onChange={(e) => setEditProductValue(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                handleTreatmentNameUpdate(editProductValue);
-                                setIsEditingProduct(false);
-                              }
-                              if (e.key === 'Escape') {
-                                setEditProductValue(treatmentName);
-                                setIsEditingProduct(false);
-                              }
-                            }}
-                            className="h-4 text-xs font-semibold border-0 bg-transparent px-0 focus-visible:ring-0"
-                            autoFocus
-                          />
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              handleTreatmentNameUpdate(editProductValue);
-                              setIsEditingProduct(false);
-                            }}
-                            className="h-4 w-4 p-0 hover:bg-transparent text-green-600 hover:text-green-700"
-                          >
-                            <Check className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              setEditProductValue(treatmentName);
-                              setIsEditingProduct(false);
-                            }}
-                            className="h-4 w-4 p-0 hover:bg-transparent text-muted-foreground hover:text-foreground"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-xs font-semibold truncate flex-1">{treatmentName || 'Untitled'}</span>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => {
-                              setEditProductValue(treatmentName);
-                              setIsEditingProduct(true);
-                            }}
-                            className="h-4 w-4 p-0 hover:bg-transparent opacity-60 hover:opacity-100"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md w-[200px] h-[32px]">
-                      <span className="text-xs font-medium text-muted-foreground shrink-0">Description:</span>
-                      {isEditingDescription ? (
-                        <>
-                          <Input
-                            value={editDescriptionValue}
-                            onChange={(e) => setEditDescriptionValue(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                handleDescriptionUpdate(editDescriptionValue);
-                                setIsEditingDescription(false);
-                              }
-                              if (e.key === 'Escape') {
-                                setEditDescriptionValue(treatmentDescription);
-                                setIsEditingDescription(false);
-                              }
-                            }}
-                            className="h-4 text-xs border-0 bg-transparent px-0 focus-visible:ring-0"
-                            autoFocus
-                          />
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              handleDescriptionUpdate(editDescriptionValue);
-                              setIsEditingDescription(false);
-                            }}
-                            className="h-4 w-4 p-0 hover:bg-transparent text-green-600 hover:text-green-700"
-                          >
-                            <Check className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              setEditDescriptionValue(treatmentDescription);
-                              setIsEditingDescription(false);
-                            }}
-                            className="h-4 w-4 p-0 hover:bg-transparent text-muted-foreground hover:text-foreground"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-xs truncate flex-1">{treatmentDescription || 'Optional...'}</span>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => {
-                              setEditDescriptionValue(treatmentDescription);
-                              setIsEditingDescription(true);
-                            }}
-                            className="h-4 w-4 p-0 hover:bg-transparent opacity-60 hover:opacity-100"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </>
-                )}
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md w-[200px] h-[32px]">
+                  <span className="text-xs font-medium text-muted-foreground shrink-0">Product:</span>
+                  {isEditingProduct ? (
+                    <>
+                      <Input
+                        value={editProductValue}
+                        onChange={(e) => setEditProductValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleTreatmentNameUpdate(editProductValue);
+                            setIsEditingProduct(false);
+                          }
+                          if (e.key === 'Escape') {
+                            setEditProductValue(treatmentName);
+                            setIsEditingProduct(false);
+                          }
+                        }}
+                        className="h-4 text-xs font-semibold border-0 bg-transparent px-0 focus-visible:ring-0"
+                        autoFocus
+                      />
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleTreatmentNameUpdate(editProductValue);
+                          setIsEditingProduct(false);
+                        }}
+                        className="h-4 w-4 p-0 hover:bg-transparent text-green-600 hover:text-green-700"
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setEditProductValue(treatmentName);
+                          setIsEditingProduct(false);
+                        }}
+                        className="h-4 w-4 p-0 hover:bg-transparent text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-xs font-semibold truncate flex-1">{treatmentName || 'Untitled'}</span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => {
+                          setEditProductValue(treatmentName);
+                          setIsEditingProduct(true);
+                        }}
+                        className="h-4 w-4 p-0 hover:bg-transparent opacity-60 hover:opacity-100"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md w-[200px] h-[32px]">
+                  <span className="text-xs font-medium text-muted-foreground shrink-0">Description:</span>
+                  {isEditingDescription ? (
+                    <>
+                      <Input
+                        value={editDescriptionValue}
+                        onChange={(e) => setEditDescriptionValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleDescriptionUpdate(editDescriptionValue);
+                            setIsEditingDescription(false);
+                          }
+                          if (e.key === 'Escape') {
+                            setEditDescriptionValue(treatmentDescription);
+                            setIsEditingDescription(false);
+                          }
+                        }}
+                        className="h-4 text-xs border-0 bg-transparent px-0 focus-visible:ring-0"
+                        autoFocus
+                      />
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleDescriptionUpdate(editDescriptionValue);
+                          setIsEditingDescription(false);
+                        }}
+                        className="h-4 w-4 p-0 hover:bg-transparent text-green-600 hover:text-green-700"
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setEditDescriptionValue(treatmentDescription);
+                          setIsEditingDescription(false);
+                        }}
+                        className="h-4 w-4 p-0 hover:bg-transparent text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-xs truncate flex-1">{treatmentDescription || 'Optional...'}</span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => {
+                          setEditDescriptionValue(treatmentDescription);
+                          setIsEditingDescription(true);
+                        }}
+                        className="h-4 w-4 p-0 hover:bg-transparent opacity-60 hover:opacity-100"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
+                  )}
+                </div>
               </DialogTitle>
             </div>
           </DialogHeader>
