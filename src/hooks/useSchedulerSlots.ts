@@ -16,27 +16,31 @@ interface SchedulerSlot {
   bufferTime?: number;
 }
 
-export const useSchedulerSlots = (date?: Date) => {
+export const useSchedulerSlots = (weekStartDate?: Date) => {
   const { data: schedulers } = useAppointmentSchedulers();
 
   return useQuery({
-    queryKey: ["scheduler-slots", date ? format(date, 'yyyy-MM-dd') : 'all'],
+    queryKey: ["scheduler-slots", weekStartDate ? format(weekStartDate, 'yyyy-MM-dd') : 'all'],
     queryFn: async () => {
       if (!schedulers?.length) return [];
 
-      // Fetch booked appointments
+      // Calculate date range for the entire week
+      const startDate = weekStartDate || new Date();
+      const endDate = weekStartDate ? addDays(weekStartDate, 6) : addDays(new Date(), 30);
+
+      // Fetch booked appointments for the date range
       const { data: bookedAppointments } = await supabase
         .from("appointments_booked")
         .select("*")
-        .gte("appointment_date", date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'))
-        .lte("appointment_date", date ? format(date, 'yyyy-MM-dd') : format(addDays(new Date(), 30), 'yyyy-MM-dd'));
+        .gte("appointment_date", format(startDate, 'yyyy-MM-dd'))
+        .lte("appointment_date", format(endDate, 'yyyy-MM-dd'));
 
       // Fetch regular appointments to check for conflicts
       const { data: regularAppointments } = await supabase
         .from("appointments")
         .select("*")
-        .gte("start_time", date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'))
-        .lte("start_time", date ? format(addDays(date || new Date(), 1), 'yyyy-MM-dd') : format(addDays(new Date(), 30), 'yyyy-MM-dd'));
+        .gte("start_time", format(startDate, 'yyyy-MM-dd'))
+        .lte("start_time", format(addDays(endDate, 1), 'yyyy-MM-dd'));
 
       const slots: SchedulerSlot[] = [];
 
@@ -56,8 +60,6 @@ export const useSchedulerSlots = (date?: Date) => {
           continue;
         }
 
-        const startDate = date || new Date();
-        const endDate = date ? new Date(date) : addDays(new Date(), scheduler.max_advance_booking || 30);
         const duration = scheduler.duration || 60;
         const bufferTime = scheduler.buffer_time || 0;
         const minAdvanceNotice = scheduler.min_advance_notice || 0;
