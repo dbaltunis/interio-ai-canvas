@@ -23,7 +23,8 @@ export const TreatmentSummaryCard = ({
   onView,
   onDelete
 }: TreatmentSummaryCardProps) => {
-  const treatmentName = treatment.name || `${windowName} - Treatment ${treatmentNumber}`;
+  // Priority: treatment_name > name > fallback
+  const treatmentName = treatment.treatment_name || treatment.name || `${windowName} - Treatment ${treatmentNumber}`;
   // CRITICAL: Use specific treatment_type first (e.g., 'venetian_blinds'), fall back to general type or category
   const treatmentType = treatment.treatment_type || treatment.type || treatment.treatment_category || "curtains";
   const totalCost = treatment.total_cost || treatment.calculated_cost || 0;

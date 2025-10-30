@@ -314,13 +314,14 @@ export const WindowManagementDialog = ({
         <DialogContent className="max-w-[95vw] sm:max-w-7xl max-h-[95vh] flex flex-col bg-background border-2 p-3 sm:p-6">
           <DialogHeader className="flex-shrink-0 pb-2 sm:pb-4 border-b border-border">
             <div className="flex items-center justify-between">
-              <DialogTitle className="flex items-center gap-1.5 sm:gap-2 text-base sm:text-xl font-bold text-foreground">
-                <Ruler className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                <span className="hidden sm:inline">Design area:</span>
-                <span className="sm:hidden">Area:</span>
-                <WindowRenameButton windowName={surface?.name || 'Untitled'} onRename={handleRename} />
+              <DialogTitle className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 text-base sm:text-xl font-bold text-foreground">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Ruler className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                  <span className="hidden sm:inline">Design area:</span>
+                  <span className="sm:hidden">Area:</span>
+                  <WindowRenameButton windowName={surface?.name || 'Untitled'} onRename={handleRename} />
+                </div>
               </DialogTitle>
-              
             </div>
           </DialogHeader>
 

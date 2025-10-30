@@ -30,7 +30,9 @@ interface SimplifiedTreatmentCardProps {
 
 export const SimplifiedTreatmentCard = ({ treatment, projectId }: SimplifiedTreatmentCardProps) => {
   const [isEditingWindow, setIsEditingWindow] = useState(false);
+  const [isEditingTreatment, setIsEditingTreatment] = useState(false);
   const [windowName, setWindowName] = useState("");
+  const [treatmentName, setTreatmentName] = useState("");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const { toast } = useToast();
   const { data: surfaces } = useSurfaces(projectId);
@@ -38,11 +40,15 @@ export const SimplifiedTreatmentCard = ({ treatment, projectId }: SimplifiedTrea
   // Get the surface/window name
   const surface = surfaces?.find(s => s.id === treatment.window_id);
   const currentWindowName = surface?.name || "Window #1";
+  
+  // Get treatment name - priority: treatment_name > product_name > treatment_type
+  const currentTreatmentName = treatment.treatment_name || treatment.product_name || treatment.treatment_type || "Treatment";
 
-  // Initialize window name
+  // Initialize names
   useEffect(() => {
     setWindowName(currentWindowName);
-  }, [currentWindowName]);
+    setTreatmentName(currentTreatmentName);
+  }, [currentWindowName, currentTreatmentName]);
 
   const handleUpdateWindowName = async () => {
     if (!windowName.trim() || windowName === currentWindowName) {
@@ -70,6 +76,34 @@ export const SimplifiedTreatmentCard = ({ treatment, projectId }: SimplifiedTrea
       setWindowName(currentWindowName);
     }
     setIsEditingWindow(false);
+  };
+
+  const handleUpdateTreatmentName = async () => {
+    if (!treatmentName.trim() || treatmentName === currentTreatmentName) {
+      setIsEditingTreatment(false);
+      return;
+    }
+
+    try {
+      await supabase
+        .from('treatments')
+        .update({ treatment_name: treatmentName.trim() })
+        .eq('id', treatment.id);
+
+      toast({
+        title: "Treatment Updated",
+        description: "Treatment name updated successfully",
+      });
+    } catch (error) {
+      console.error("Failed to update treatment name:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update treatment name",
+        variant: "destructive",
+      });
+      setTreatmentName(currentTreatmentName);
+    }
+    setIsEditingTreatment(false);
   };
 
   const handleCopyTreatment = async () => {
@@ -172,31 +206,61 @@ export const SimplifiedTreatmentCard = ({ treatment, projectId }: SimplifiedTrea
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <Square className="h-4 w-4 text-muted-foreground" />
-              {isEditingWindow ? (
-                <Input
-                  value={windowName}
-                  onChange={(e) => setWindowName(e.target.value)}
-                  onBlur={handleUpdateWindowName}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleUpdateWindowName();
-                    if (e.key === 'Escape') {
-                      setWindowName(currentWindowName);
-                      setIsEditingWindow(false);
-                    }
-                  }}
-                  className="h-6 text-sm font-medium"
-                  autoFocus
-                />
-              ) : (
-                <span 
-                  className="text-sm font-medium cursor-pointer hover:text-primary"
-                  onClick={() => setIsEditingWindow(true)}
-                >
-                  {currentWindowName}
-                </span>
-              )}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2">
+              <div className="flex items-center gap-2">
+                <Square className="h-4 w-4 text-muted-foreground" />
+                {isEditingWindow ? (
+                  <Input
+                    value={windowName}
+                    onChange={(e) => setWindowName(e.target.value)}
+                    onBlur={handleUpdateWindowName}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleUpdateWindowName();
+                      if (e.key === 'Escape') {
+                        setWindowName(currentWindowName);
+                        setIsEditingWindow(false);
+                      }
+                    }}
+                    className="h-6 text-sm font-medium"
+                    autoFocus
+                  />
+                ) : (
+                  <span 
+                    className="text-sm font-medium cursor-pointer hover:text-primary"
+                    onClick={() => setIsEditingWindow(true)}
+                  >
+                    {currentWindowName}
+                  </span>
+                )}
+              </div>
+              
+              <span className="hidden sm:inline text-muted-foreground">|</span>
+              
+              <div className="flex items-center gap-2">
+                {isEditingTreatment ? (
+                  <Input
+                    value={treatmentName}
+                    onChange={(e) => setTreatmentName(e.target.value)}
+                    onBlur={handleUpdateTreatmentName}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleUpdateTreatmentName();
+                      if (e.key === 'Escape') {
+                        setTreatmentName(currentTreatmentName);
+                        setIsEditingTreatment(false);
+                      }
+                    }}
+                    className="h-6 text-sm font-semibold"
+                    autoFocus
+                  />
+                ) : (
+                  <span 
+                    className="text-sm font-semibold cursor-pointer hover:text-primary"
+                    onClick={() => setIsEditingTreatment(true)}
+                  >
+                    {currentTreatmentName}
+                  </span>
+                )}
+              </div>
             </div>
             
             <div className="space-y-2">

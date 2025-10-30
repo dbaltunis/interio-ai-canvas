@@ -1456,6 +1456,7 @@ export type Database = {
           created_at: string
           curtain_type: string
           description: string | null
+          display_image_url: string | null
           drop_height_ranges: Json | null
           extra_fabric_fixed: number | null
           extra_fabric_percentage: number | null
@@ -1528,6 +1529,7 @@ export type Database = {
           created_at?: string
           curtain_type?: string
           description?: string | null
+          display_image_url?: string | null
           drop_height_ranges?: Json | null
           extra_fabric_fixed?: number | null
           extra_fabric_percentage?: number | null
@@ -1600,6 +1602,7 @@ export type Database = {
           created_at?: string
           curtain_type?: string
           description?: string | null
+          display_image_url?: string | null
           drop_height_ranges?: Json | null
           extra_fabric_fixed?: number | null
           extra_fabric_percentage?: number | null
@@ -6490,6 +6493,7 @@ export type Database = {
           status: string | null
           total_price: number | null
           treatment_details: Json | null
+          treatment_name: string | null
           treatment_type: string
           unit_price: number | null
           updated_at: string
@@ -6518,6 +6522,7 @@ export type Database = {
           status?: string | null
           total_price?: number | null
           treatment_details?: Json | null
+          treatment_name?: string | null
           treatment_type?: string
           unit_price?: number | null
           updated_at?: string
@@ -6546,6 +6551,7 @@ export type Database = {
           status?: string | null
           total_price?: number | null
           treatment_details?: Json | null
+          treatment_name?: string | null
           treatment_type?: string
           unit_price?: number | null
           updated_at?: string

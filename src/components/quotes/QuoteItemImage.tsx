@@ -5,18 +5,29 @@ interface QuoteItemImageProps {
   alt?: string;
   size?: number;
   className?: string;
+  fabricImageUrl?: string;
+  treatmentImageUrl?: string;
+  imagePreference?: 'fabric' | 'treatment';
 }
 
 export const QuoteItemImage: React.FC<QuoteItemImageProps> = ({ 
   src, 
   alt = 'Product image',
   size = 40,
-  className = ''
+  className = '',
+  fabricImageUrl,
+  treatmentImageUrl,
+  imagePreference = 'fabric'
 }) => {
   const [imageError, setImageError] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
 
-  if (!src || imageError) {
+  // Determine which image to display based on preference
+  const displayImage = imagePreference === 'treatment' && treatmentImageUrl 
+    ? treatmentImageUrl 
+    : (fabricImageUrl || src);
+
+  if (!displayImage || imageError) {
     return (
       <div 
         className={`flex items-center justify-center bg-muted rounded border border-border ${className}`}
@@ -35,7 +46,7 @@ export const QuoteItemImage: React.FC<QuoteItemImageProps> = ({
         </div>
       )}
       <img
-        src={src}
+        src={displayImage}
         alt={alt}
         loading="lazy"
         className="w-full h-full object-cover"
