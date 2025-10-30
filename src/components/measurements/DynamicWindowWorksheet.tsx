@@ -822,7 +822,8 @@ export const DynamicWindowWorksheet = forwardRef<{
             window_type_id: selectedWindowType?.id,
             
             // STEP 2: Treatment/Template Selection - SIMPLIFIED
-            template_name: selectedTemplate?.name,
+            // CRITICAL: Preserve custom template_name if it exists, don't overwrite with template name
+            template_name: latestSummaryRef.current?.template_name || selectedTemplate?.name,
             template_details: {
               id: selectedTemplate?.id,
               name: selectedTemplate?.name,
