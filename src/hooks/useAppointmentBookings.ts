@@ -42,19 +42,25 @@ export const useCreateBooking = () => {
 
   return useMutation({
     mutationFn: async (booking: Omit<AppointmentBooking, "id" | "created_at" | "updated_at">) => {
-      const bookingData = {
-        ...booking,
-        status: booking.status || 'confirmed'
-      };
-      
-      const { data, error } = await supabase
-        .from("appointments_booked")
-        .insert([bookingData])
-        .select()
-        .single();
+      // Use edge function for booking creation to handle validation and conflicts
+      const { data, error } = await supabase.functions.invoke('create-booking', {
+        body: {
+          scheduler_id: booking.scheduler_id,
+          customer_name: booking.customer_name,
+          customer_email: booking.customer_email,
+          customer_phone: booking.customer_phone,
+          appointment_date: booking.appointment_date,
+          appointment_time: booking.appointment_time,
+          location_type: booking.location_type,
+          notes: booking.notes,
+          status: booking.status || 'confirmed'
+        }
+      });
 
       if (error) throw error;
-      return data;
+      if (!data.success) throw new Error(data.error || 'Failed to create booking');
+      
+      return data.booking;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointment-bookings"] });
@@ -65,11 +71,11 @@ export const useCreateBooking = () => {
         description: "Booking created successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error("Error creating booking:", error);
       toast({
-        title: "Error",
-        description: "Failed to create booking",
+        title: "Booking Failed",
+        description: error.message || "Failed to create booking. Please try again.",
         variant: "destructive",
       });
     },

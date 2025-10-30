@@ -80,7 +80,6 @@ export const SchedulerManagement = () => {
       name: scheduler.name,
       description: scheduler.description || '',
       duration: scheduler.duration,
-      google_meet_link: scheduler.google_meet_link || '',
       availability: scheduler.availability || [],
     });
   };
@@ -207,45 +206,19 @@ export const SchedulerManagement = () => {
                 )}
               </div>
 
-              {editingId === scheduler.id ? (
-                <>
-                  <div className="mb-4">
-                    <label className="text-sm font-medium">Google Meet Link (optional):</label>
-                    <Input
-                      value={editData.google_meet_link || ''}
-                      onChange={(e) => setEditData({...editData, google_meet_link: e.target.value})}
-                      placeholder="https://meet.google.com/..."
-                      className="mt-1"
+              {editingId === scheduler.id && (
+                <div className="mb-4">
+                  <label className="text-sm font-medium mb-2 block">
+                    <Settings className="h-4 w-4 inline mr-1" />
+                    Available Time Slots:
+                  </label>
+                  <div className="border rounded-lg p-4 bg-muted/20">
+                    <AvailabilityEditor
+                      availability={editData.availability || {}}
+                      onChange={(availability) => setEditData({...editData, availability})}
                     />
                   </div>
-                  
-                  <div className="mb-4">
-                    <label className="text-sm font-medium mb-2 block">
-                      <Settings className="h-4 w-4 inline mr-1" />
-                      Available Time Slots:
-                    </label>
-                    <div className="border rounded-lg p-4 bg-muted/20">
-                      <AvailabilityEditor
-                        availability={editData.availability || {}}
-                        onChange={(availability) => setEditData({...editData, availability})}
-                      />
-                    </div>
-                  </div>
-                </>
-              ) : (
-                scheduler.google_meet_link && (
-                  <div className="mb-4 p-2 bg-blue-50 rounded border">
-                    <span className="text-sm font-medium">Google Meet: </span>
-                    <a 
-                      href={scheduler.google_meet_link} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-sm text-blue-600 hover:underline"
-                    >
-                      {scheduler.google_meet_link}
-                    </a>
-                  </div>
-                )
+                </div>
               )}
 
               <div className="flex gap-2 flex-wrap">

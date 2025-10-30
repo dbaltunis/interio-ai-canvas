@@ -35,7 +35,6 @@ interface SchedulerForm {
   maxAdvanceBooking: number;
   minAdvanceNotice: number;
   image_url?: string;
-  google_meet_link?: string;
   user_email?: string;
   availability: Record<string, DayAvailability>;
   locations: {
@@ -69,7 +68,6 @@ export const AppointmentSchedulerSlider = ({ isOpen, onClose }: AppointmentSched
     maxAdvanceBooking: 30,
     minAdvanceNotice: 24,
     image_url: "",
-    google_meet_link: "",
     user_email: "",
     availability: WEEKDAYS.reduce((acc, day) => ({
       ...acc,
@@ -143,7 +141,6 @@ export const AppointmentSchedulerSlider = ({ isOpen, onClose }: AppointmentSched
         max_advance_booking: form.maxAdvanceBooking,
         min_advance_notice: form.minAdvanceNotice,
         image_url: form.image_url,
-        google_meet_link: form.google_meet_link,
         user_email: form.user_email,
         availability: availabilityArray,
         locations: form.locations,
@@ -388,16 +385,6 @@ export const AppointmentSchedulerSlider = ({ isOpen, onClose }: AppointmentSched
                         value={form.image_url}
                         onChange={(e) => setForm(prev => ({ ...prev, image_url: e.target.value }))}
                         placeholder="https://example.com/image.jpg"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="google_meet_link">Google Meet Link (Optional)</Label>
-                      <Input
-                        id="google_meet_link"
-                        type="url"
-                        value={form.google_meet_link}
-                        onChange={(e) => setForm(prev => ({ ...prev, google_meet_link: e.target.value }))}
-                        placeholder="https://meet.google.com/xxx-xxxx-xxx"
                       />
                     </div>
                   </CardContent>
