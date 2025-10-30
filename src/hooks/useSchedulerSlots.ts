@@ -16,11 +16,12 @@ interface SchedulerSlot {
   bufferTime?: number;
 }
 
-export const useSchedulerSlots = (weekStartDate?: Date) => {
+export const useSchedulerSlots = (weekStartDate?: Date, refetchInterval?: number) => {
   const { data: schedulers } = useAppointmentSchedulers();
 
   return useQuery({
     queryKey: ["scheduler-slots", weekStartDate ? format(weekStartDate, 'yyyy-MM-dd') : 'all'],
+    refetchInterval, // Add refetch interval for real-time updates
     queryFn: async () => {
       if (!schedulers?.length) return [];
 

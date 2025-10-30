@@ -91,6 +91,24 @@ serve(async (req) => {
 
     console.log('Booking created successfully:', booking.id);
 
+    // Generate or get video call link if needed
+    let videoCallLink = scheduler.google_meet_link || scheduler.zoom_link;
+    
+    // If no video call link exists, generate a placeholder
+    if (!videoCallLink && location_type === 'video_call') {
+      // Generate a Google Meet-style link as placeholder
+      const meetingId = booking.id.substring(0, 10);
+      videoCallLink = `https://meet.google.com/${meetingId}`;
+      
+      // Update the booking with the video call link
+      await supabase
+        .from('appointments_booked')
+        .update({ video_call_link: videoCallLink })
+        .eq('id', booking.id);
+      
+      console.log('Generated placeholder video call link:', videoCallLink);
+    }
+
     // Send confirmation email to customer
     try {
       await supabase.functions.invoke('send-booking-confirmation', {

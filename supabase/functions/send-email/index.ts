@@ -450,17 +450,21 @@ const handler = async (req: Request): Promise<Response> => {
     }));
 
     // Build SendGrid payload with proper email authentication for deliverability
+    const personalization: any = {
+      to: [{ email: to }],
+      subject: subject
+    };
+    
+    // Only include custom_args if we have emailData to avoid SendGrid errors
+    if (emailData) {
+      personalization.custom_args = {
+        email_id: emailData.id,
+        user_id: user_id || 'unknown'
+      };
+    }
+    
     const sendGridPayload = {
-      personalizations: [
-        {
-          to: [{ email: to }],
-          subject: subject,
-          custom_args: emailData ? {
-            email_id: emailData.id,
-            user_id: user_id || 'unknown'
-          } : {}
-        },
-      ],
+      personalizations: [personalization],
       from: {
         email: fromEmail,
         name: fromName,

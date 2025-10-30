@@ -126,8 +126,12 @@ export const useAppointmentBooking = (slug: string) => {
         day.day.toLowerCase() === dayName
       );
       
+      // Only include dates that have enabled availability AND have actual available slots
       if (dayAvailability?.enabled && dayAvailability?.timeSlots?.length) {
-        dates.push(date);
+        const availableSlots = generateAvailableSlots(date);
+        if (availableSlots.some(slot => slot.available)) {
+          dates.push(date);
+        }
       }
     }
     

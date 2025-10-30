@@ -44,10 +44,10 @@ serve(async (req) => {
       scheduler_id
     });
 
-    // Get scheduler information
+    // Get scheduler information including user_id for email settings
     const { data: scheduler, error: schedulerError } = await supabase
       .from('appointment_schedulers')
-      .select('*, user_email')
+      .select('*, user_email, user_id')
       .eq('id', scheduler_id)
       .single();
 
@@ -55,6 +55,8 @@ serve(async (req) => {
       console.error('Error fetching scheduler:', schedulerError);
       throw new Error('Scheduler not found');
     }
+
+    console.log('Scheduler user_id for email settings:', scheduler.user_id);
 
     // Get email template for booking confirmation if exists
     const { data: template } = await supabase
@@ -96,13 +98,14 @@ serve(async (req) => {
         .replace(/{{company_name}}/g, scheduler.name);
     }
 
-    // Send email using existing send-email function
+    // Send email using existing send-email function with user_id for proper email settings
     const { error: emailError } = await supabase.functions.invoke('send-email', {
       body: {
         to: customer_email,
         subject: subject,
         html: content,
-        bookingId: booking_id
+        bookingId: booking_id,
+        user_id: scheduler.user_id // Pass scheduler owner's user_id for email settings
       }
     });
 
@@ -131,7 +134,8 @@ serve(async (req) => {
         body: {
           to: scheduler.user_email,
           subject: ownerSubject,
-          html: ownerContent
+          html: ownerContent,
+          user_id: scheduler.user_id // Pass scheduler owner's user_id for email settings
         }
       });
     }

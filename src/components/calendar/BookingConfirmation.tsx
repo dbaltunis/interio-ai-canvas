@@ -25,7 +25,8 @@ interface ClientInfo {
 
 export const BookingConfirmation = ({ slug }: BookingConfirmationProps) => {
   const { data: scheduler, isLoading: schedulerLoading } = usePublicScheduler(slug);
-  const { data: allSlots } = useSchedulerSlots();
+  // Refetch slots every 30 seconds to show real-time availability
+  const { data: allSlots, refetch: refetchSlots } = useSchedulerSlots(undefined, 30000);
   const createBooking = useCreateBooking();
   const { toast } = useToast();
 
@@ -77,6 +78,8 @@ export const BookingConfirmation = ({ slug }: BookingConfirmationProps) => {
       });
 
       setStep(2);
+      // Refetch slots immediately after successful booking
+      refetchSlots();
       toast({
         title: "Booking Confirmed! 🎉",
         description: "You will receive a confirmation email shortly.",
