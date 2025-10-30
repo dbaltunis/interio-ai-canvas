@@ -41,7 +41,10 @@ export const ProfessionalQuoteDisplay = React.forwardRef<HTMLDivElement, Profess
     
     const currencySymbol = '£';
     
-    const formatCurrency = (amount: number) => {
+    const formatCurrency = (amount?: number | null) => {
+      if (amount === undefined || amount === null || isNaN(amount)) {
+        return `${currencySymbol}0.00`;
+      }
       return `${currencySymbol}${amount.toFixed(2)}`;
     };
 
@@ -239,7 +242,7 @@ export const ProfessionalQuoteDisplay = React.forwardRef<HTMLDivElement, Profess
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '6px' }}>
                         <div>
                           <div style={{ fontWeight: '600', fontSize: '13px', marginBottom: '4px' }}>
-                            {item.name}
+                            {item.name || 'Unnamed Item'}
                           </div>
                           {item.description && (
                             <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>
@@ -254,10 +257,10 @@ export const ProfessionalQuoteDisplay = React.forwardRef<HTMLDivElement, Profess
                         </div>
                         <div style={{ textAlign: 'right', minWidth: '100px' }}>
                           <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
-                            {formatCurrency(item.total)}
+                            {formatCurrency(item.total || 0)}
                           </div>
                           <div style={{ fontSize: '10px', color: '#6b7280' }}>
-                            {item.quantity} × {formatCurrency(item.unit_price)}
+                            {item.quantity || 1} × {formatCurrency(item.unit_price || 0)}
                           </div>
                         </div>
                       </div>
@@ -270,20 +273,23 @@ export const ProfessionalQuoteDisplay = React.forwardRef<HTMLDivElement, Profess
                           borderLeft: '2px solid #e5e7eb',
                           fontSize: '11px'
                         }}>
-                          {item.children.map((child, childIndex) => (
-                            <div 
-                              key={childIndex}
-                              style={{ 
-                                display: 'flex', 
-                                justifyContent: 'space-between',
-                                marginBottom: '4px',
-                                color: '#6b7280'
-                              }}
-                            >
-                              <span>• {child.name}</span>
-                              <span>{formatCurrency(child.price)}</span>
-                            </div>
-                          ))}
+                          {item.children.map((child, childIndex) => {
+                            if (!child || !child.name) return null;
+                            return (
+                              <div 
+                                key={childIndex}
+                                style={{ 
+                                  display: 'flex', 
+                                  justifyContent: 'space-between',
+                                  marginBottom: '4px',
+                                  color: '#6b7280'
+                                }}
+                              >
+                                <span>• {child.name}</span>
+                                <span>{formatCurrency(child.price)}</span>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -303,11 +309,11 @@ export const ProfessionalQuoteDisplay = React.forwardRef<HTMLDivElement, Profess
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', width: '250px', fontSize: '13px' }}>
               <span style={{ color: '#6b7280' }}>Subtotal:</span>
-              <span style={{ fontWeight: '600' }}>{formatCurrency(subtotal)}</span>
+              <span style={{ fontWeight: '600' }}>{formatCurrency(subtotal || 0)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', width: '250px', fontSize: '13px' }}>
-              <span style={{ color: '#6b7280' }}>VAT ({(taxRate * 100).toFixed(1)}%):</span>
-              <span style={{ fontWeight: '600' }}>{formatCurrency(taxAmount)}</span>
+              <span style={{ color: '#6b7280' }}>VAT ({((taxRate || 0) * 100).toFixed(1)}%):</span>
+              <span style={{ fontWeight: '600' }}>{formatCurrency(taxAmount || 0)}</span>
             </div>
             <div style={{ 
               display: 'flex', 
@@ -319,7 +325,7 @@ export const ProfessionalQuoteDisplay = React.forwardRef<HTMLDivElement, Profess
               borderTop: '1px solid #e5e7eb'
             }}>
               <span>TOTAL:</span>
-              <span>{formatCurrency(total)}</span>
+              <span>{formatCurrency(total || 0)}</span>
             </div>
           </div>
         </div>
