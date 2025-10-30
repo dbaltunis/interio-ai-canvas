@@ -86,11 +86,6 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
     ? visibleColumns.filter(col => tabletImportantColumns.includes(col.id))
     : visibleColumns;
 
-  // Return mobile view for mobile devices (AFTER all hooks are called)
-  if (isMobile) {
-    return <MobileJobsView onJobSelect={onJobSelect} searchTerm={searchTerm} statusFilter={statusFilter} />;
-  }
-
   // Reset page when search or filter changes
   useEffect(() => {
     setCurrentPage(1);
@@ -444,6 +439,11 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
 
   if (isLoading) {
     return <JobsTableSkeleton />;
+  }
+
+  // Return mobile view for mobile devices (AFTER all hooks are called)
+  if (isMobile) {
+    return <MobileJobsView onJobSelect={onJobSelect} searchTerm={searchTerm} statusFilter={statusFilter} />;
   }
 
   if (groupedData.length === 0) {
