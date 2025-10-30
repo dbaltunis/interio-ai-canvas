@@ -16,7 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useQuotes, useCreateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
 import { Download, Mail, MoreVertical, Percent, FileText, DollarSign, ImageIcon as ImageIconLucide, Printer } from "lucide-react";
-import { ProfessionalQuoteDisplay } from "@/components/jobs/quotation/ProfessionalQuoteDisplay";
+import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
 import { QuotationItemsModal } from "../quotation/QuotationItemsModal";
 import { EmailQuoteModal } from "@/components/jobs/quotation/EmailQuoteModal";
@@ -503,11 +503,13 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
                   backgroundColor: '#ffffff'
                 }}
               >
-                <ProfessionalQuoteDisplay
+                <LivePreview
+                  blocks={templateBlocks}
                   projectData={projectData}
-                  showImages={templateSettings.showImages}
+                  isEditable={false}
+                  isPrintMode={true}
                   showDetailedBreakdown={templateSettings.showDetailedBreakdown}
-                  groupByRoom={templateSettings.groupByRoom}
+                  showImages={templateSettings.showImages}
                 />
               </div>
             </div>
@@ -524,11 +526,13 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
         onSend={handleSendEmail}
         isSending={isSendingEmail}
         quotePreview={
-          <ProfessionalQuoteDisplay
+          <LivePreview
+            blocks={templateBlocks}
             projectData={projectData}
-            showImages={templateSettings.showImages}
+            isEditable={false}
+            isPrintMode={true}
             showDetailedBreakdown={templateSettings.showDetailedBreakdown}
-            groupByRoom={templateSettings.groupByRoom}
+            showImages={templateSettings.showImages}
           />
         }
       />

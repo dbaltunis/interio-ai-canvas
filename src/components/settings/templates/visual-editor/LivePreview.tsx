@@ -767,15 +767,15 @@ const LivePreviewBlock = ({
           )}
 
           <div className="border-2 border-gray-200 rounded-xl overflow-hidden w-full shadow-sm" style={{ maxWidth: '100%' }}>
-            <table className="w-full border-collapse" style={{ tableLayout: 'fixed', maxWidth: '100%' }}>
+            <table className="w-full border-collapse" style={{ tableLayout: 'auto', width: '100%' }}>
               <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b-2 border-blue-200">
                 <tr>
-                  <th className="text-left px-4 py-3 text-sm font-bold text-gray-800" style={{ width: '6%' }}>#</th>
-                  <th className="text-left px-4 py-3 text-sm font-bold text-gray-800" style={{ width: '24%' }}>Product/Service</th>
-                  <th className="text-left px-4 py-3 text-sm font-bold text-gray-800" style={{ width: '28%' }}>Description</th>
-                  <th className="text-center px-4 py-3 text-sm font-bold text-gray-800" style={{ width: '10%' }}>Quantity</th>
-                  <th className="text-right px-4 py-3 text-sm font-bold text-gray-800" style={{ width: '15%' }}>Price rate</th>
-                  <th className="text-right px-4 py-3 text-sm font-bold text-gray-800" style={{ width: '17%' }}>
+                  <th className="text-left px-4 py-3 text-sm font-bold text-gray-800">#</th>
+                  <th className="text-left px-4 py-3 text-sm font-bold text-gray-800">Product/Service</th>
+                  <th className="text-left px-4 py-3 text-sm font-bold text-gray-800">Description</th>
+                  <th className="text-center px-4 py-3 text-sm font-bold text-gray-800">Quantity</th>
+                  <th className="text-right px-4 py-3 text-sm font-bold text-gray-800">Price rate</th>
+                  <th className="text-right px-4 py-3 text-sm font-bold text-gray-800">
                     Total {(userBusinessSettings?.pricing_settings as any)?.tax_inclusive ? `(incl. ${renderTokenValue('tax_label')})` : `without ${renderTokenValue('tax_label')}`}
                   </th>
                 </tr>
@@ -799,14 +799,14 @@ const LivePreviewBlock = ({
                           {/* Main product row */}
                           <tr className="border-t border-gray-200 hover:bg-blue-50/30 transition-colors">
                             <td className="px-4 py-4 text-sm font-bold text-blue-600 align-top">{itemNumber}</td>
-                            <td className="px-4 py-4 text-sm font-bold text-gray-900 align-top">
+                            <td className="px-4 py-4 text-sm font-bold text-gray-900 align-top" style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>
                               <div className="flex items-start gap-3">
                                 {showImages && item.image_url && (
                                   <div className="flex-shrink-0">
                                     <QuoteItemImage src={item.image_url} alt={item.name} size={64} className="rounded-lg shadow-sm border-2 border-gray-200" />
                                   </div>
                                 )}
-                                <div className="flex-1">
+                                <div className="flex-1 min-w-0">
                                   <div className="font-bold text-gray-900">{item.name || 'Window Treatment'}</div>
                                   {item.surface_name && (
                                     <div className="text-xs text-gray-500 mt-1">{item.surface_name}</div>
@@ -814,7 +814,7 @@ const LivePreviewBlock = ({
                                 </div>
                               </div>
                             </td>
-                            <td className="px-4 py-4 text-sm text-gray-700 align-top">
+                            <td className="px-4 py-4 text-sm text-gray-700 align-top" style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>
                               {item.description || item.treatment_type || ''}
                             </td>
                             <td className="px-4 py-4 text-center text-sm font-medium text-gray-800 align-top">{item.quantity || 1}</td>
@@ -1338,6 +1338,36 @@ export const LivePreview = ({
     );
   }
 
+  // Print Mode: Clean rendering without wrappers, borders, or UI elements
+  if (isPrintMode) {
+    return (
+      <div
+        className="w-full bg-white"
+        style={{
+          backgroundColor: '#ffffff',
+          padding: 0,
+          margin: 0
+        }}
+      >
+        {blocks.map((block, index) => (
+          <LivePreviewBlock
+            key={block.id || index}
+            block={block}
+            projectData={projectData}
+            isEditable={false}
+            isPrintMode={true}
+            userBusinessSettings={businessSettings}
+            showDetailedBreakdown={showDetailedBreakdown}
+            showImages={showImages}
+            groupByRoom={groupByRoom}
+            onSettingsChange={onSettingsChange}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  // Editor Mode: Full UI with borders, scrolling, and indicators
   return (
     <ScrollArea className="h-full w-full bg-muted/20">
       <div className="flex justify-center py-8 px-4">
@@ -1393,7 +1423,7 @@ export const LivePreview = ({
                 block={block} 
                 projectData={projectData}
                 isEditable={isEditable}
-                isPrintMode={isPrintMode}
+                isPrintMode={false}
                 userBusinessSettings={businessSettings}
                 showDetailedBreakdown={showDetailedBreakdown}
                 showImages={showImages}
