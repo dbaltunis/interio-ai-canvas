@@ -423,18 +423,20 @@ export const WindowManagementDialog = ({
         <DialogContent className="max-w-[95vw] sm:max-w-7xl max-h-[95vh] flex flex-col bg-background border-2 p-2 sm:p-4">
           <DialogHeader className="flex-shrink-0 pb-1 sm:pb-2 border-b border-border">
             <div className="flex items-center justify-between">
-              <DialogTitle className="flex items-center gap-2 text-sm sm:text-base font-bold text-foreground">
-                <div className="flex items-center flex-wrap gap-1 sm:gap-2 w-full">
-                  <div className="flex items-center gap-1">
-                    <Ruler className="h-4 w-4 text-primary" />
-                    <span className="text-xs sm:text-sm">Design:</span>
+              <DialogTitle className="flex items-center flex-wrap gap-2 text-sm sm:text-base font-semibold text-foreground w-full">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-primary/5 border border-primary/20 rounded-md">
+                    <Ruler className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-xs font-medium text-muted-foreground">Design:</span>
                     <WindowRenameButton windowName={surface?.name || 'Untitled'} onRename={handleRename} />
                   </div>
-                  {(currentTreatment || windowSummary) && treatmentName && (
-                    <>
-                      <span className="text-muted-foreground text-xs">|</span>
-                      <div className="flex items-center gap-0.5 flex-1 min-w-[140px] max-w-[200px]">
-                        <span className="text-[9px] text-muted-foreground font-semibold shrink-0 uppercase">Name:</span>
+                </div>
+                
+                {(currentTreatment || windowSummary) && treatmentName && (
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-accent/30 border border-accent/40 rounded-md flex-1 min-w-[160px] max-w-[220px]">
+                      <div className="flex items-center gap-1 flex-1 min-w-0">
+                        <span className="text-[10px] font-semibold text-accent-foreground/70 uppercase tracking-wide shrink-0">Product</span>
                         <Input
                           value={treatmentName}
                           onChange={(e) => setTreatmentName(e.target.value)}
@@ -442,13 +444,16 @@ export const WindowManagementDialog = ({
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') handleTreatmentNameUpdate(treatmentName);
                           }}
-                          title="Product name shown in quote"
-                          className="h-6 text-xs font-semibold border-transparent bg-muted/20 px-1.5 focus-visible:ring-1"
-                          placeholder="e.g., Curtains"
+                          title="Product name that will appear on the quote"
+                          className="h-5 text-xs font-semibold border-0 bg-transparent px-0 focus-visible:ring-0 placeholder:text-muted-foreground/40"
+                          placeholder="e.g., Premium Curtains"
                         />
                       </div>
-                      <div className="flex items-center gap-0.5 flex-1 min-w-[140px] max-w-[200px]">
-                        <span className="text-[9px] text-muted-foreground font-semibold shrink-0 uppercase">Note:</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-muted/50 border border-border/50 rounded-md flex-1 min-w-[160px] max-w-[220px]">
+                      <div className="flex items-center gap-1 flex-1 min-w-0">
+                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide shrink-0">Notes</span>
                         <Input
                           value={treatmentDescription}
                           onChange={(e) => setTreatmentDescription(e.target.value)}
@@ -456,14 +461,14 @@ export const WindowManagementDialog = ({
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') handleDescriptionUpdate(treatmentDescription);
                           }}
-                          title="Description shown in quote"
-                          className="h-5 text-[10px] text-muted-foreground border-transparent bg-muted/20 px-1.5 focus-visible:ring-1"
-                          placeholder="Optional description"
+                          title="Additional description for internal reference"
+                          className="h-5 text-[10px] text-muted-foreground border-0 bg-transparent px-0 focus-visible:ring-0 placeholder:text-muted-foreground/30"
+                          placeholder="Add notes..."
                         />
                       </div>
-                    </>
-                  )}
-                </div>
+                    </div>
+                  </div>
+                )}
               </DialogTitle>
             </div>
           </DialogHeader>
