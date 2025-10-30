@@ -697,7 +697,23 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                     setBookedAppointmentDialog({ open: true, appointment: event });
                                   } else if (event.isAvailableSlot) {
                                     // Open scheduler slot dialog to share booking link
-                                    setSchedulerSlotDialog({ open: true, slot: event });
+                                    // Transform event to match SchedulerSlot interface
+                                    const startTime = new Date(event.start_time);
+                                    const endTime = new Date(event.end_time);
+                                    setSchedulerSlotDialog({ 
+                                      open: true, 
+                                      slot: {
+                                        id: event.id,
+                                        schedulerId: event.schedulerId,
+                                        schedulerName: event.schedulerName || event.title,
+                                        date: startTime,
+                                        startTime: format(startTime, 'HH:mm'),
+                                        endTime: format(endTime, 'HH:mm'),
+                                        duration: event.duration || 60,
+                                        isBooked: false,
+                                        slug: event.slug
+                                      }
+                                    });
                                   } else {
                                     // Handle personal event click - open edit dialog
                                     onEventClick?.(event.id);
