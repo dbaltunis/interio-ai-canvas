@@ -113,17 +113,17 @@ export const RecentAppointmentsWidget = () => {
                       </span>
                     </div>
                     
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-xs sm:text-sm text-foreground break-words line-clamp-1">
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      <h4 className="font-semibold text-xs sm:text-sm text-foreground truncate">
                         {booking.customer_name}
                       </h4>
-                      <div className="flex items-center gap-1.5 mt-0.5 text-[10px] sm:text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1.5 mt-0.5 text-[10px] sm:text-xs text-muted-foreground overflow-hidden">
                         <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 shrink-0" />
-                        <span className="whitespace-nowrap">{booking.appointment_time}</span>
+                        <span className="shrink-0">{booking.appointment_time}</span>
                         {booking.scheduler?.name && (
                           <>
-                            <span className="text-muted-foreground/50">•</span>
-                            <span className="truncate">{booking.scheduler.name}</span>
+                            <span className="shrink-0 text-muted-foreground/50">•</span>
+                            <span className="truncate min-w-0">{booking.scheduler.name}</span>
                           </>
                         )}
                       </div>
@@ -131,7 +131,7 @@ export const RecentAppointmentsWidget = () => {
                     
                     <Badge 
                       variant="secondary"
-                      className="text-[10px] sm:text-xs shrink-0 h-5 sm:h-6 px-1.5 sm:px-2.5 flex items-center justify-center font-medium capitalize"
+                      className="text-[10px] sm:text-xs shrink-0 h-5 sm:h-6 px-2 sm:px-3 flex items-center justify-center font-medium capitalize whitespace-nowrap"
                       style={{
                         backgroundColor: statusColor.bg,
                         color: statusColor.text,
