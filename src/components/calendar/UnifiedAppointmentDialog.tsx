@@ -477,8 +477,8 @@ export const UnifiedAppointmentDialog = ({
                     <button
                       key={color}
                       type="button"
-                      className={`w-6 h-6 rounded-full border-2 ${
-                        event.color === color ? 'ring-2 ring-offset-2 ring-primary' : ''
+                      className={`w-8 h-8 min-w-8 min-h-8 rounded-full border-2 border-border/50 hover:scale-110 transition-transform cursor-pointer ${
+                        event.color === color ? 'ring-2 ring-offset-2 ring-primary scale-110' : ''
                       }`}
                       style={{ backgroundColor: color }}
                       onClick={() => setEvent({ ...event, color })}
