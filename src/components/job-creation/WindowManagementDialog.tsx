@@ -420,49 +420,46 @@ export const WindowManagementDialog = ({
   
   return <>
       <Dialog open={isOpen} onOpenChange={handleDialogClose}>
-        <DialogContent className="max-w-[95vw] sm:max-w-7xl max-h-[95vh] flex flex-col bg-background border-2 p-3 sm:p-6">
-          <DialogHeader className="flex-shrink-0 pb-2 sm:pb-4 border-b border-border">
+        <DialogContent className="max-w-[95vw] sm:max-w-7xl max-h-[95vh] flex flex-col bg-background border-2 p-2 sm:p-4">
+          <DialogHeader className="flex-shrink-0 pb-1 sm:pb-2 border-b border-border">
             <div className="flex items-center justify-between">
-              <DialogTitle className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 text-base sm:text-xl font-bold text-foreground">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 w-full">
-                  <div className="flex items-center gap-1.5 sm:gap-2">
-                    <Ruler className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                    <span className="hidden sm:inline">Design area:</span>
-                    <span className="sm:hidden">Area:</span>
+              <DialogTitle className="flex items-center gap-2 text-sm sm:text-base font-bold text-foreground">
+                <div className="flex items-center flex-wrap gap-1 sm:gap-2 w-full">
+                  <div className="flex items-center gap-1">
+                    <Ruler className="h-4 w-4 text-primary" />
+                    <span className="text-xs sm:text-sm">Design:</span>
                     <WindowRenameButton windowName={surface?.name || 'Untitled'} onRename={handleRename} />
                   </div>
                   {(currentTreatment || windowSummary) && treatmentName && (
                     <>
-                      <span className="hidden sm:inline text-muted-foreground">|</span>
-                      <div className="flex items-center gap-1.5 w-full">
-                        <div className="flex items-center gap-1 flex-1 min-w-0">
-                          <span className="text-[10px] text-muted-foreground font-medium shrink-0 uppercase tracking-wide">Name:</span>
-                          <Input
-                            value={treatmentName}
-                            onChange={(e) => setTreatmentName(e.target.value)}
-                            onBlur={() => handleTreatmentNameUpdate(treatmentName)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleTreatmentNameUpdate(treatmentName);
-                            }}
-                            className="h-7 text-sm font-semibold border-transparent bg-muted/20 px-2 focus-visible:ring-1"
-                            placeholder="e.g., Curtains"
-                          />
-                        </div>
+                      <span className="text-muted-foreground text-xs">|</span>
+                      <div className="flex items-center gap-0.5 flex-1 min-w-[140px] max-w-[200px]">
+                        <span className="text-[9px] text-muted-foreground font-semibold shrink-0 uppercase">Name:</span>
+                        <Input
+                          value={treatmentName}
+                          onChange={(e) => setTreatmentName(e.target.value)}
+                          onBlur={() => handleTreatmentNameUpdate(treatmentName)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleTreatmentNameUpdate(treatmentName);
+                          }}
+                          title="Product name shown in quote"
+                          className="h-6 text-xs font-semibold border-transparent bg-muted/20 px-1.5 focus-visible:ring-1"
+                          placeholder="e.g., Curtains"
+                        />
                       </div>
-                      <div className="flex items-center gap-1.5 w-full">
-                        <div className="flex items-center gap-1 flex-1 min-w-0">
-                          <span className="text-[10px] text-muted-foreground font-medium shrink-0 uppercase tracking-wide">Note:</span>
-                          <Input
-                            value={treatmentDescription}
-                            onChange={(e) => setTreatmentDescription(e.target.value)}
-                            onBlur={() => handleDescriptionUpdate(treatmentDescription)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleDescriptionUpdate(treatmentDescription);
-                            }}
-                            className="h-6 text-xs border-transparent bg-muted/20 px-2 focus-visible:ring-1"
-                            placeholder="Optional notes"
-                          />
-                        </div>
+                      <div className="flex items-center gap-0.5 flex-1 min-w-[140px] max-w-[200px]">
+                        <span className="text-[9px] text-muted-foreground font-semibold shrink-0 uppercase">Note:</span>
+                        <Input
+                          value={treatmentDescription}
+                          onChange={(e) => setTreatmentDescription(e.target.value)}
+                          onBlur={() => handleDescriptionUpdate(treatmentDescription)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleDescriptionUpdate(treatmentDescription);
+                          }}
+                          title="Description shown in quote"
+                          className="h-5 text-[10px] text-muted-foreground border-transparent bg-muted/20 px-1.5 focus-visible:ring-1"
+                          placeholder="Optional description"
+                        />
                       </div>
                     </>
                   )}
@@ -471,7 +468,7 @@ export const WindowManagementDialog = ({
             </div>
           </DialogHeader>
 
-          <div className="flex-1 min-h-0 overflow-y-auto bg-background/50 rounded-md p-2 sm:p-4">
+          <div className="flex-1 min-h-0 overflow-y-auto bg-background/50 rounded-md p-1 sm:p-2">
             <MeasurementBridge key={surface?.id} // Stable key for consistent state
           ref={worksheetRef} mode="dynamic" // Always use dynamic mode
           clientId={clientId || ""} projectId={projectId} surfaceId={surface?.id} surfaceData={surface} currentRoomId={surface?.room_id} visualKey={windowTypeData?.visual_key} existingMeasurement={existingMeasurement} existingTreatments={existingTreatments} onSave={handleSaveData} onSaveTreatment={handleTreatmentSave} onClose={() => handleDialogClose(false)} // Ensure dialog closes after save

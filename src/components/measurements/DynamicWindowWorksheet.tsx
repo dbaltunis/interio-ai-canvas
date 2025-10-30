@@ -1169,19 +1169,11 @@ export const DynamicWindowWorksheet = forwardRef<{
   };
   const canProceedToMeasurements = selectedWindowType && (selectedTemplate || selectedTreatmentType);
   const canShowPreview = canProceedToMeasurements && Object.keys(measurements).length > 0;
-  return <div className="space-y-3 sm:space-y-6">
-      {/* Save Status Indicator */}
-      <div className="flex justify-end">
-        <SaveStatusIndicator 
-          hasUnsavedChanges={hasUnsavedChanges}
-          lastSaveTime={lastSaveTime}
-        />
-      </div>
-
-      {/* Enhanced Progress indicator with clickable navigation - Hide on mobile */}
-      <div className="hidden sm:flex items-center space-x-4">
+  return <div className="space-y-2">
+      {/* Enhanced Progress indicator with clickable navigation - Compact */}
+      <div className="hidden sm:flex items-center justify-center space-x-2 py-1">
         {["window-type", "treatment", "inventory", "measurements"].map((step, index) => {
-        const stepNames = ["Window Type", "Treatment", "Inventory", "Measurements"];
+        const stepNames = ["Select Type", "Treatment", "Inventory", "Measurements"];
         const isCompleted = (() => {
           switch (step) {
             case "window-type":
@@ -1197,39 +1189,39 @@ export const DynamicWindowWorksheet = forwardRef<{
           }
         })();
         return <div key={step} className="flex items-center">
-              <button onClick={() => setActiveTab(step)} disabled={readOnly} className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-300 ${activeTab === step ? 'bg-primary text-primary-foreground' : isCompleted ? 'bg-green-100 text-green-700 hover:bg-green-200 animate-scale-in' : 'bg-muted text-muted-foreground hover:bg-muted/80'} ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`} title={`${stepNames[index]} ${isCompleted ? '(Completed)' : ''}`}>
-                {isCompleted ? <span className="animate-fade-in">✓</span> : index + 1}
+              <button onClick={() => setActiveTab(step)} disabled={readOnly} className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold transition-all ${activeTab === step ? 'bg-primary text-primary-foreground ring-2 ring-primary/20' : isCompleted ? 'bg-green-500/10 text-green-700 hover:bg-green-500/20' : 'bg-muted text-muted-foreground hover:bg-muted/80'} ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`} title={stepNames[index]}>
+                {isCompleted ? <span>✓</span> : index + 1}
               </button>
-              {index < 3 && <div className="w-8 h-px bg-border mx-2" />}
+              {index < 3 && <div className="w-4 h-[1px] bg-border" />}
             </div>;
       })}
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4 h-auto sm:h-10">
-          <TabsTrigger value="window-type" className="text-xs sm:text-sm px-1 sm:px-3">
-            <Ruler className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+        <TabsList className="grid w-full grid-cols-4 h-9">
+          <TabsTrigger value="window-type" className="text-[10px] sm:text-xs px-1 py-1 gap-1">
+            <Ruler className="h-3 w-3" />
             <span className="hidden sm:inline">Select Type</span>
             <span className="inline sm:hidden">Type</span>
-            {selectedWindowType && <span className="ml-1 text-xs">✓</span>}
+            {selectedWindowType && <span className="text-[10px]">✓</span>}
           </TabsTrigger>
-          <TabsTrigger value="treatment" className="text-xs sm:text-sm px-1 sm:px-3">
-            <Package className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
-            <span className="hidden md:inline">Treatment</span>
-            <span className="inline md:hidden">Style</span>
-            {(selectedTemplate || isLayeredMode && layeredTreatments.length > 0) && <span className="ml-1 text-xs">✓</span>}
+          <TabsTrigger value="treatment" className="text-[10px] sm:text-xs px-1 py-1 gap-1">
+            <Package className="h-3 w-3" />
+            <span className="hidden sm:inline">Treatment</span>
+            <span className="inline sm:hidden">Style</span>
+            {(selectedTemplate || isLayeredMode && layeredTreatments.length > 0) && <span className="text-[10px]">✓</span>}
           </TabsTrigger>
-          <TabsTrigger value="inventory" className="text-xs sm:text-sm px-1 sm:px-3">
-            <Package className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
-            <span className="hidden md:inline">Inventory</span>
-            <span className="inline md:hidden">Items</span>
-            {Object.values(selectedItems).some(item => item) && <span className="ml-1 text-xs">✓</span>}
+          <TabsTrigger value="inventory" className="text-[10px] sm:text-xs px-1 py-1 gap-1">
+            <Package className="h-3 w-3" />
+            <span className="hidden sm:inline">Inventory</span>
+            <span className="inline sm:hidden">Items</span>
+            {Object.values(selectedItems).some(item => item) && <span className="text-[10px]">✓</span>}
           </TabsTrigger>
-          <TabsTrigger value="measurements" className="text-xs sm:text-sm px-1 sm:px-3">
-            <Ruler className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
-            <span className="hidden md:inline">Measurements</span>
-            <span className="inline md:hidden">Size</span>
-            {measurements.rail_width && measurements.drop && <span className="ml-1 text-xs">✓</span>}
+          <TabsTrigger value="measurements" className="text-[10px] sm:text-xs px-1 py-1 gap-1">
+            <Ruler className="h-3 w-3" />
+            <span className="hidden sm:inline">Measurements</span>
+            <span className="inline sm:hidden">Size</span>
+            {measurements.rail_width && measurements.drop && <span className="text-[10px]">✓</span>}
           </TabsTrigger>
         </TabsList>
 
