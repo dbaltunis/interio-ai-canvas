@@ -801,7 +801,7 @@ const LivePreviewBlock = ({
                       className="px-4 py-1.5 text-sm font-medium border rounded-md hover:bg-gray-50 active:bg-gray-100 transition-colors"
                       title={showDetailedProducts ? "Switch to simple view" : "Switch to detailed view with itemized breakdown"}
                     >
-                      {showDetailedProducts ? '📋 Simple View' : '🔍 Detailed View'}
+                      {showDetailedProducts ? 'Simple View' : 'Detailed View'}
                     </button>
                     <button
                     onClick={() => {
@@ -815,7 +815,7 @@ const LivePreviewBlock = ({
                     className="px-4 py-1.5 text-sm font-medium border rounded-md hover:bg-gray-50 active:bg-gray-100 transition-colors"
                     title={showImages ? "Hide product images" : "Show product images"}
                   >
-                    {showImages ? '🖼️ Hide Images' : '🖼️ Show Images'}
+                    {showImages ? 'Hide Images' : 'Show Images'}
                   </button>
                 </>
               )}
@@ -833,23 +833,23 @@ const LivePreviewBlock = ({
 
           <div className="border border-gray-300 overflow-visible w-full">
             <table className="w-full" style={{ borderCollapse: 'collapse', tableLayout: 'auto' }}>
-              <thead style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #cbd5e1' }}>
+              <thead style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #d1d5db' }}>
                 <tr>
-                  <th style={{ textAlign: 'left', padding: '8px 6px', fontSize: '10px', fontWeight: 'bold', color: '#1f2937', width: '30px' }}>#</th>
-                  <th style={{ textAlign: 'left', padding: '8px 6px', fontSize: '10px', fontWeight: 'bold', color: '#1f2937' }}>Product/Service</th>
-                  <th style={{ textAlign: 'left', padding: '8px 6px', fontSize: '10px', fontWeight: 'bold', color: '#1f2937' }}>Description</th>
-                  <th style={{ textAlign: 'center', padding: '8px 6px', fontSize: '10px', fontWeight: 'bold', color: '#1f2937', width: '50px' }}>Qty</th>
-                  <th style={{ textAlign: 'right', padding: '8px 6px', fontSize: '10px', fontWeight: 'bold', color: '#1f2937', width: '80px' }}>Rate</th>
-                  <th style={{ textAlign: 'right', padding: '8px 6px', fontSize: '10px', fontWeight: 'bold', color: '#1f2937', width: '80px' }}>Total</th>
+                  <th style={{ textAlign: 'left', padding: '8px 6px', fontSize: '10px', fontWeight: '600', color: '#6b7280', width: '30px' }}>#</th>
+                  <th style={{ textAlign: 'left', padding: '8px 6px', fontSize: '10px', fontWeight: '600', color: '#6b7280' }}>Product/Service</th>
+                  <th style={{ textAlign: 'left', padding: '8px 6px', fontSize: '10px', fontWeight: '600', color: '#6b7280' }}>Description</th>
+                  <th style={{ textAlign: 'center', padding: '8px 6px', fontSize: '10px', fontWeight: '600', color: '#6b7280', width: '50px' }}>Qty</th>
+                  <th style={{ textAlign: 'right', padding: '8px 6px', fontSize: '10px', fontWeight: '600', color: '#6b7280', width: '80px' }}>Rate</th>
+                  <th style={{ textAlign: 'right', padding: '8px 6px', fontSize: '10px', fontWeight: '600', color: '#6b7280', width: '80px' }}>Total</th>
                 </tr>
               </thead>
               <tbody>
                 {Object.entries(groupedItems).map(([roomName, items]: [string, any]) => (
                   <React.Fragment key={roomName}>
                     {groupByRoom && hasRealData && (
-                      <tr className="bg-gradient-to-r from-purple-50 to-blue-50 border-t-2 border-blue-300">
-                        <td colSpan={6} className="px-4 py-3 font-bold text-sm uppercase tracking-wider text-blue-900 flex items-center gap-2" style={{ wordWrap: 'break-word' }}>
-                          <span className="text-blue-600">📍</span> {roomName}
+                      <tr style={{ backgroundColor: '#f9fafb', borderTop: '2px solid #d1d5db' }}>
+                        <td colSpan={6} style={{ padding: '6px 8px', fontSize: '10px', fontWeight: '600', color: '#374151' }}>
+                          {roomName}
                         </td>
                       </tr>
                     )}
@@ -889,35 +889,44 @@ const LivePreviewBlock = ({
                             </td>
                           </tr>
                           
-                          {/* Detailed breakdown rows - ALWAYS SHOW IF CHILDREN EXIST */}
-                          {breakdown.length > 0 && (
-                            <tr className="bg-gradient-to-r from-blue-50/30 to-purple-50/30">
-                              <td colSpan={6} className="px-4 py-3">
-                                <div className="ml-12 pl-6 border-l-4 border-blue-300 space-y-3">
-                                  <div className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-2">
-                                    {showDetailedProducts ? '📋 Itemized Breakdown:' : ''}
-                                  </div>
+                          {/* Detailed breakdown rows - Clean, professional styling */}
+                          {breakdown.length > 0 && showDetailedProducts && (
+                            <tr style={{ backgroundColor: '#fafafa', borderTop: '1px solid #e5e7eb' }}>
+                              <td colSpan={6} style={{ padding: '4px 6px 4px 40px' }}>
+                                <div style={{ paddingLeft: '12px' }}>
                                   {breakdown.map((breakdownItem: any, bidx: number) => (
-                                    <div key={bidx} className="flex items-start gap-3 py-2 px-3 bg-white/60 rounded-lg border border-blue-100">
+                                    <div key={bidx} style={{ 
+                                      display: 'flex', 
+                                      alignItems: 'flex-start', 
+                                      gap: '8px',
+                                      padding: '3px 0',
+                                      borderBottom: bidx < breakdown.length - 1 ? '1px solid #f0f0f0' : 'none'
+                                    }}>
                                       {showImages && breakdownItem.image_url && (
-                                        <div className="flex-shrink-0">
-                                          <QuoteItemImage src={breakdownItem.image_url} alt={breakdownItem.name} size={48} className="rounded-md shadow-sm border border-gray-200" />
+                                        <div style={{ flexShrink: 0 }}>
+                                          <QuoteItemImage src={breakdownItem.image_url} alt={breakdownItem.name} size={28} className="rounded" />
                                         </div>
                                       )}
-                                      <div className="flex-1 min-w-0">
-                                        <div className="font-semibold text-gray-800 text-sm">{breakdownItem.name}</div>
-                                        {breakdownItem.description && breakdownItem.description !== '-' && (
-                                          <div className="text-gray-600 text-xs mt-0.5">{breakdownItem.description}</div>
-                                        )}
-                                        <div className="flex items-center justify-between mt-1.5">
-                                          {breakdownItem.quantity && breakdownItem.unit && (
-                                            <div className="text-gray-500 text-xs font-medium">
-                                              {typeof breakdownItem.quantity === 'number' ? breakdownItem.quantity.toFixed(2) : breakdownItem.quantity} {breakdownItem.unit} × {renderTokenValue('currency_symbol')}{(breakdownItem.unit_price || 0).toFixed(2)}
+                                      <div style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ flex: 1 }}>
+                                          <div style={{ fontSize: '9px', color: '#374151', fontWeight: '500' }}>
+                                            {breakdownItem.name}
+                                            {breakdownItem.description && breakdownItem.description !== '-' && (
+                                              <span style={{ color: '#6b7280', fontWeight: 'normal', marginLeft: '4px' }}>
+                                                — {breakdownItem.description}
+                                              </span>
+                                            )}
+                                          </div>
+                                          {(breakdownItem.quantity || breakdownItem.unit_price) && (
+                                            <div style={{ fontSize: '8px', color: '#9ca3af', marginTop: '1px' }}>
+                                              {breakdownItem.quantity && typeof breakdownItem.quantity === 'number' ? breakdownItem.quantity.toFixed(2) : breakdownItem.quantity}
+                                              {breakdownItem.unit ? ` ${breakdownItem.unit}` : ''}
+                                              {breakdownItem.unit_price ? ` @ ${renderTokenValue('currency_symbol')}${breakdownItem.unit_price.toFixed(2)}` : ''}
                                             </div>
                                           )}
-                                          <div className="text-blue-600 font-bold text-sm">
-                                            {renderTokenValue('currency_symbol')}{(breakdownItem.total || breakdownItem.total_cost || 0).toFixed(2)}
-                                          </div>
+                                        </div>
+                                        <div style={{ fontSize: '9px', fontWeight: '600', color: '#111827', whiteSpace: 'nowrap', marginLeft: '12px' }}>
+                                          {renderTokenValue('currency_symbol')}{((breakdownItem.total_cost || breakdownItem.total || 0)).toFixed(2)}
                                         </div>
                                       </div>
                                     </div>
