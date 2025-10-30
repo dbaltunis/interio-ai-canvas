@@ -332,7 +332,8 @@ export const WindowManagementDialog = ({
         .maybeSingle();
       return data;
     },
-    enabled: !!surface?.id && !currentTreatment
+    enabled: !!surface?.id && !currentTreatment,
+    refetchOnMount: 'always'
   });
   
   useEffect(() => {
@@ -440,7 +441,7 @@ export const WindowManagementDialog = ({
                 {(currentTreatment || windowSummary) && (
                   <>
                     <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md flex-1 min-w-[140px] max-w-[180px]">
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide shrink-0">PRODUCT</span>
+                      <span className="text-xs font-medium text-muted-foreground shrink-0">Product</span>
                       {isEditingProduct ? (
                         <>
                           <Input
@@ -469,7 +470,7 @@ export const WindowManagementDialog = ({
                             }}
                             className="h-4 w-4 p-0 hover:bg-transparent text-green-600 hover:text-green-700"
                           >
-                            <Check className="h-3 w-3" />
+                            <Check className="h-3.5 w-3.5" />
                           </Button>
                           <Button 
                             variant="ghost" 
@@ -481,7 +482,7 @@ export const WindowManagementDialog = ({
                             }}
                             className="h-4 w-4 p-0 hover:bg-transparent text-muted-foreground hover:text-foreground"
                           >
-                            <X className="h-3 w-3" />
+                            <X className="h-3.5 w-3.5" />
                           </Button>
                         </>
                       ) : (
@@ -496,14 +497,14 @@ export const WindowManagementDialog = ({
                             }}
                             className="h-4 w-4 p-0 hover:bg-transparent opacity-60 hover:opacity-100"
                           >
-                            <Pencil className="h-3 w-3" />
+                            <Pencil className="h-3.5 w-3.5" />
                           </Button>
                         </>
                       )}
                     </div>
                     
                     <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md flex-1 min-w-[140px] max-w-[180px]">
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide shrink-0">DESCRIPTION</span>
+                      <span className="text-xs font-medium text-muted-foreground shrink-0">Description</span>
                       {isEditingDescription ? (
                         <>
                           <Input
@@ -532,7 +533,7 @@ export const WindowManagementDialog = ({
                             }}
                             className="h-4 w-4 p-0 hover:bg-transparent text-green-600 hover:text-green-700"
                           >
-                            <Check className="h-3 w-3" />
+                            <Check className="h-3.5 w-3.5" />
                           </Button>
                           <Button 
                             variant="ghost" 
@@ -544,12 +545,12 @@ export const WindowManagementDialog = ({
                             }}
                             className="h-4 w-4 p-0 hover:bg-transparent text-muted-foreground hover:text-foreground"
                           >
-                            <X className="h-3 w-3" />
+                            <X className="h-3.5 w-3.5" />
                           </Button>
                         </>
                       ) : (
                         <>
-                          <span className="text-xs truncate flex-1">{treatmentDescription || 'No description'}</span>
+                          <span className="text-xs truncate flex-1">{treatmentDescription || 'Optional...'}</span>
                           <Button 
                             variant="ghost" 
                             size="sm" 
@@ -559,7 +560,7 @@ export const WindowManagementDialog = ({
                             }}
                             className="h-4 w-4 p-0 hover:bg-transparent opacity-60 hover:opacity-100"
                           >
-                            <Pencil className="h-3 w-3" />
+                            <Pencil className="h-3.5 w-3.5" />
                           </Button>
                         </>
                       )}
