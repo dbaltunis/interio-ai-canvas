@@ -91,8 +91,22 @@ serve(async (req) => {
 
     console.log('Booking created successfully:', booking.id);
 
-    // TODO: Send confirmation email to customer
-    // TODO: Send notification to scheduler owner
+    // Send confirmation email to customer
+    try {
+      await supabase.functions.invoke('send-booking-confirmation', {
+        body: {
+          booking_id: booking.id,
+          customer_email,
+          scheduler_name: scheduler.name,
+          appointment_date,
+          appointment_time,
+          location_type: location_type || 'video_call'
+        }
+      });
+    } catch (emailError) {
+      console.error('Failed to send confirmation email:', emailError);
+      // Don't fail the booking if email fails
+    }
 
     return new Response(
       JSON.stringify({

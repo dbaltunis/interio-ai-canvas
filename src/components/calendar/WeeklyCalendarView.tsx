@@ -601,21 +601,21 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         // Clear visual distinction with MORE VISIBLE colors
                         const getEventStyling = (event: any) => {
                           if (event.isAvailableSlot) {
-                            // Available appointment slots: more visible accent color
+                            // Available appointment slots: subtle background indicator
                             return {
-                              background: 'hsl(var(--accent) / 0.3)',
-                              border: 'hsl(var(--accent))',
-                              textClass: 'text-foreground',
-                              isDashed: true,
+                              background: 'hsl(142 76% 36% / 0.08)',
+                              border: 'hsl(142 76% 36% / 0.3)',
+                              textClass: 'text-muted-foreground text-[10px]',
+                              isDashed: false,
                               isCompact: true,
-                              minHeight: 24,
+                              minHeight: 20,
                             } as const;
                           } else if (event.isBooking) {
-                            // Booked appointments: stronger primary color
+                            // Booked appointments: green transparent color
                             return {
-                              background: 'hsl(var(--primary) / 0.4)',
-                              border: 'hsl(var(--primary))',
-                              textClass: 'text-foreground dark:text-white',
+                              background: 'hsl(142 76% 36% / 0.15)',
+                              border: 'hsl(142 76% 36%)',
+                              textClass: 'text-foreground',
                               isDashed: false,
                               isCompact: false,
                               minHeight: 32,
@@ -649,33 +649,33 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           const eventStyle: React.CSSProperties = {
                             top: `${style.top}px`,
                             height: `${finalHeight}px`,
-                            width: eventWidth,
-                            left: eventLeft,
-                            zIndex: event.isAvailableSlot ? 5 + eventIndex : 10 + eventIndex,
+                            width: event.isAvailableSlot ? '98%' : eventWidth,
+                            left: event.isAvailableSlot ? '1%' : eventLeft,
+                            zIndex: event.isAvailableSlot ? 1 : event.isBooking ? 8 + eventIndex : 10 + eventIndex,
                             background: eventStyling.background,
                             borderLeftColor: eventStyling.border,
-                            borderColor: event.isAvailableSlot ? 'hsl(var(--accent) / 0.4)' : 'hsl(var(--border))',
-                            borderRadius: '8px',
-                            borderStyle: eventStyling.isDashed ? 'dashed' : 'solid',
-                            borderWidth: eventStyling.isDashed ? '1px' : '1px 1px 1px 4px',
+                            borderColor: event.isAvailableSlot ? 'transparent' : 'hsl(var(--border))',
+                            borderRadius: event.isAvailableSlot ? '4px' : '8px',
+                            borderStyle: 'solid',
+                            borderWidth: event.isAvailableSlot ? '1px' : '1px 1px 1px 4px',
                             boxShadow: event.isAvailableSlot
-                              ? '0 1px 2px hsl(var(--accent) / 0.15)'
+                              ? 'none'
                               : event.isBooking
-                              ? '0 4px 12px -2px hsl(var(--primary) / 0.3), 0 2px 6px -1px hsl(var(--primary) / 0.25)'
+                              ? '0 2px 8px -2px hsl(142 76% 36% / 0.25), 0 1px 4px -1px hsl(142 76% 36% / 0.2)'
                               : '0 8px 16px -4px hsl(var(--background) / 0.25), 0 4px 8px -2px hsl(var(--background) / 0.2)',
                             transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-                            opacity: isDragging ? 0.85 : (event.isAvailableSlot ? 0.95 : 1),
+                            opacity: isDragging ? 0.85 : 1,
                             cursor: (event.isBooking || event.isAvailableSlot) ? 'pointer' : 'grab',
+                            pointerEvents: event.isAvailableSlot ? 'auto' : 'auto',
                           };
 
                            return (
                               <div
                                 ref={setNodeRef}
-                                className={`absolute ${event.isAvailableSlot ? 'p-1' : 'p-2'} text-xs overflow-hidden group
-                                  transition-all duration-200 z-10 border
-                                  ${event.isAvailableSlot ? '' : ''}
-                                  ${event.isBooking || event.isAvailableSlot ? '' : 'hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5'}
-                                  ${event.isAvailableSlot ? 'hover:bg-accent/20' : ''}
+                                className={`absolute ${event.isAvailableSlot ? 'p-0.5' : 'p-2'} text-xs overflow-hidden group
+                                  transition-all duration-150 border
+                                  ${event.isAvailableSlot ? 'hover:bg-green-500/15 hover:border-green-600/40' : ''}
+                                  ${event.isBooking ? '' : !event.isAvailableSlot ? 'hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5' : ''}
                                   ${!event.isBooking && !event.isAvailableSlot ? 'hover:ring-2 hover:ring-primary/40' : ''}
                                   ${eventStyling.textClass}`}
                                  style={eventStyle}

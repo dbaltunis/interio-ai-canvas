@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAppointmentSchedulers } from "./useAppointmentSchedulers";
 import { supabase } from "@/integrations/supabase/client";
-import { format, addDays, isSameDay } from "date-fns";
+import { format, addDays, isSameDay, addMinutes, parse } from "date-fns";
 
 interface SchedulerSlot {
   id: string;
@@ -27,7 +27,7 @@ export const useSchedulerSlots = (date?: Date) => {
         .from("appointments_booked")
         .select("*")
         .gte("appointment_date", date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'))
-        .lte("appointment_date", date ? format(date, 'yyyy-MM-dd') : format(addDays(new Date(), 7), 'yyyy-MM-dd'));
+        .lte("appointment_date", date ? format(date, 'yyyy-MM-dd') : format(addDays(new Date(), 30), 'yyyy-MM-dd'));
 
       const slots: SchedulerSlot[] = [];
 
@@ -49,6 +49,7 @@ export const useSchedulerSlots = (date?: Date) => {
 
         const startDate = date || new Date();
         const endDate = date ? new Date(date) : addDays(new Date(), scheduler.max_advance_booking || 30);
+        const duration = scheduler.duration || 60;
         
         for (let d = new Date(startDate); d <= endDate; d = addDays(d, 1)) {
           const dayName = format(d, 'EEEE').toLowerCase();
@@ -63,31 +64,50 @@ export const useSchedulerSlots = (date?: Date) => {
             if (!timeSlot.start || !timeSlot.end) continue;
             
             const slotDate = format(d, 'yyyy-MM-dd');
-            const slotDateTime = new Date(`${slotDate}T${timeSlot.start}:00`);
+            const startDateTime = parse(timeSlot.start, 'HH:mm', new Date(slotDate));
+            const endDateTime = parse(timeSlot.end, 'HH:mm', new Date(slotDate));
             
-            if (isSameDay(d, new Date()) && slotDateTime <= new Date()) continue;
-            
-            const isBooked = bookedAppointments?.some(booking => 
-              booking.scheduler_id === scheduler.id &&
-              booking.appointment_date === slotDate &&
-              booking.appointment_time === timeSlot.start
-            );
+            // Generate individual slots based on duration
+            let currentSlotStart = startDateTime;
+            while (currentSlotStart < endDateTime) {
+              const currentSlotEnd = addMinutes(currentSlotStart, duration);
+              
+              // Don't create slot if it would exceed the time range
+              if (currentSlotEnd > endDateTime) break;
+              
+              const slotStartTime = format(currentSlotStart, 'HH:mm');
+              const slotEndTime = format(currentSlotEnd, 'HH:mm');
+              
+              // Skip past slots for today
+              if (isSameDay(d, new Date()) && currentSlotStart <= new Date()) {
+                currentSlotStart = addMinutes(currentSlotStart, duration);
+                continue;
+              }
+              
+              const isBooked = bookedAppointments?.some(booking => 
+                booking.scheduler_id === scheduler.id &&
+                booking.appointment_date === slotDate &&
+                booking.appointment_time === slotStartTime
+              );
 
-            slots.push({
-              id: `${scheduler.id}-${slotDate}-${timeSlot.start}`,
-              schedulerId: scheduler.id,
-              schedulerName: scheduler.name,
-              date: new Date(d),
-              startTime: timeSlot.start,
-              endTime: timeSlot.end,
-              duration: scheduler.duration,
-              isBooked: !!isBooked,
-              bookingId: isBooked ? bookedAppointments?.find(b => 
-                b.scheduler_id === scheduler.id &&
-                b.appointment_date === slotDate &&
-                b.appointment_time === timeSlot.start
-              )?.id : undefined
-            });
+              slots.push({
+                id: `${scheduler.id}-${slotDate}-${slotStartTime}`,
+                schedulerId: scheduler.id,
+                schedulerName: scheduler.name,
+                date: new Date(d),
+                startTime: slotStartTime,
+                endTime: slotEndTime,
+                duration: duration,
+                isBooked: !!isBooked,
+                bookingId: isBooked ? bookedAppointments?.find(b => 
+                  b.scheduler_id === scheduler.id &&
+                  b.appointment_date === slotDate &&
+                  b.appointment_time === slotStartTime
+                )?.id : undefined
+              });
+              
+              currentSlotStart = addMinutes(currentSlotStart, duration);
+            }
           }
         }
       }
