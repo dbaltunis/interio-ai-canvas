@@ -40,11 +40,20 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     size: "small",
   },
   {
+    id: "recent-appointments",
+    name: "Recent Appointments",
+    description: "Latest booked appointments",
+    enabled: true,
+    order: 4,
+    category: "communication",
+    size: "small",
+  },
+  {
     id: "emails",
     name: "Recent Emails",
     description: "Email campaigns and metrics",
     enabled: true,
-    order: 4,
+    order: 5,
     category: "communication",
     size: "small",
   },
@@ -53,7 +62,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     name: "Project Status",
     description: "Overview of project statuses",
     enabled: true,
-    order: 5,
+    order: 6,
     category: "analytics",
     size: "small",
   },
@@ -62,7 +71,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     name: "Revenue Chart",
     description: "Revenue breakdown by project",
     enabled: true,
-    order: 6,
+    order: 7,
     category: "finance",
     size: "medium",
   },
@@ -71,7 +80,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     name: "Calendar Connection",
     description: "Google Calendar integration",
     enabled: true,
-    order: 7,
+    order: 8,
     category: "integrations",
     size: "small",
   },
@@ -80,7 +89,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     name: "Recently Created Jobs",
     description: "Latest projects and jobs",
     enabled: true,
-    order: 8,
+    order: 9,
     category: "analytics",
     size: "medium",
   },
@@ -116,6 +125,7 @@ export const useDashboardWidgets = () => {
       if (saved) {
         try {
           const savedWidgets = JSON.parse(saved) as DashboardWidget[];
+          // Merge saved widgets with defaults, adding any new widgets that were added to defaults
           const mergedWidgets = DEFAULT_WIDGETS.map(defaultWidget => {
             const savedWidget = savedWidgets.find(w => w.id === defaultWidget.id);
             return savedWidget || defaultWidget;
@@ -123,10 +133,14 @@ export const useDashboardWidgets = () => {
           setWidgets(mergedWidgets);
         } catch (e) {
           console.error("Error parsing saved widgets:", e);
+          setWidgets(DEFAULT_WIDGETS);
         }
+      } else {
+        setWidgets(DEFAULT_WIDGETS);
       }
     } catch (error) {
       console.error("Error loading widgets:", error);
+      setWidgets(DEFAULT_WIDGETS);
     } finally {
       setIsLoading(false);
     }

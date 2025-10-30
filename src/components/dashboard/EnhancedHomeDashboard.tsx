@@ -14,6 +14,7 @@ import { ShopifyAnalyticsCard } from "./ShopifyAnalyticsCard";
 import { DraggableKPISection } from "./DraggableKPISection";
 import { TeamMembersWidget } from "./TeamMembersWidget";
 import { RecentlyCreatedJobsWidget } from "./RecentlyCreatedJobsWidget";
+import { RecentAppointmentsWidget } from "./RecentAppointmentsWidget";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
@@ -184,6 +185,9 @@ export const EnhancedHomeDashboard = () => {
             
             case "events":
               return <div key={widget.id} className={sizeClasses[widget.size]}><UpcomingEventsWidget /></div>;
+            
+            case "recent-appointments":
+              return <div key={widget.id} className={sizeClasses[widget.size]}><RecentAppointmentsWidget /></div>;
             
             case "emails":
               return <div key={widget.id} className={sizeClasses[widget.size]}><RecentEmailsWidget /></div>;
