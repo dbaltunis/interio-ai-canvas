@@ -73,7 +73,7 @@ export const MobileCalendarView = () => {
   };
 
   return (
-    <div className={cn("flex flex-col animate-fade-in", isMobile ? "h-[calc(100vh-8rem)] p-4" : "h-[calc(100vh-10rem)] p-6")}>
+    <div className={cn("flex flex-col animate-fade-in h-full", isMobile ? "p-4" : "p-6")}>
       {/* Hidden button for programmatic trigger from CreateActionDialog */}
       <button 
         data-create-event
