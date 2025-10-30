@@ -427,7 +427,7 @@ export const WindowManagementDialog = ({
           <DialogHeader className="flex-shrink-0 pb-1 sm:pb-2 border-b border-border">
             <div className="flex items-center justify-between">
               <DialogTitle className="flex items-center flex-wrap gap-2 text-sm font-semibold text-foreground w-full">
-                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-background border border-border rounded-md">
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-background border border-border rounded-md min-w-[180px]">
                   <Ruler className="h-3.5 w-3.5 text-primary" />
                   <span className="text-xs font-medium text-muted-foreground">Design:</span>
                   <WindowRenameButton windowName={surface?.name || 'Untitled'} onRename={handleRename} />
@@ -435,8 +435,8 @@ export const WindowManagementDialog = ({
                 
                 {(currentTreatment || windowSummary) && (
                   <>
-                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-background border border-border rounded-md flex-1 min-w-[160px] max-w-[220px]">
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide shrink-0">Product</span>
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md flex-1 min-w-[140px] max-w-[180px]">
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide shrink-0">PRODUCT</span>
                       <Input
                         value={treatmentName}
                         onChange={(e) => setTreatmentName(e.target.value)}
@@ -445,13 +445,17 @@ export const WindowManagementDialog = ({
                           if (e.key === 'Enter') handleTreatmentNameUpdate(treatmentName);
                         }}
                         title="Product name that will appear on the quote"
-                        className="h-5 text-xs font-semibold border-0 bg-transparent px-0 focus-visible:ring-0 placeholder:text-muted-foreground/40"
-                        placeholder="e.g., Premium Curtains"
+                        className="h-4 text-xs font-semibold border-0 bg-transparent px-0 focus-visible:ring-0 placeholder:text-muted-foreground/40"
+                        placeholder="e.g., Curtains"
                       />
+                      <Button variant="ghost" size="sm" className="h-4 w-4 p-0 hover:bg-transparent opacity-60 hover:opacity-100">
+                        <span className="sr-only">Edit product name</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                      </Button>
                     </div>
                     
-                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-background border border-border rounded-md flex-1 min-w-[160px] max-w-[220px]">
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide shrink-0">Description</span>
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md flex-1 min-w-[140px] max-w-[180px]">
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide shrink-0">DESCRIPTION</span>
                       <Input
                         value={treatmentDescription}
                         onChange={(e) => setTreatmentDescription(e.target.value)}
@@ -460,9 +464,13 @@ export const WindowManagementDialog = ({
                           if (e.key === 'Enter') handleDescriptionUpdate(treatmentDescription);
                         }}
                         title="Additional description for the quote"
-                        className="h-5 text-xs border-0 bg-transparent px-0 focus-visible:ring-0 placeholder:text-muted-foreground/40"
-                        placeholder="Optional details..."
+                        className="h-4 text-xs border-0 bg-transparent px-0 focus-visible:ring-0 placeholder:text-muted-foreground/40"
+                        placeholder="Optional..."
                       />
+                      <Button variant="ghost" size="sm" className="h-4 w-4 p-0 hover:bg-transparent opacity-60 hover:opacity-100">
+                        <span className="sr-only">Edit description</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                      </Button>
                     </div>
                   </>
                 )}
