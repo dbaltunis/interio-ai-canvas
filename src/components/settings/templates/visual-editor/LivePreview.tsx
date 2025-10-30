@@ -689,7 +689,7 @@ const LivePreviewBlock = ({
       
       const hasRealData = projectItems.length > 0 && !projectItems.every((item: any) => item._isPending);
 
-      // Get comprehensive breakdown - prioritize item.children, then buildClientBreakdown
+      // Get comprehensive breakdown - prioritize item.children, then build from item details
       const getItemizedBreakdown = (item: any) => {
         // First, check if item has children array (from saved quote items)
         if (item.children && Array.isArray(item.children) && item.children.length > 0) {
@@ -700,27 +700,42 @@ const LivePreviewBlock = ({
           return item.children;
         }
         
-        // Fallback to building from window summary
-        const windowSummary = windowSummaries.find((ws: any) => ws.window_id === item.id);
+        // Build breakdown from workshop item details
+        const breakdown = [];
         
-        console.log('[DETAILED VIEW] Getting breakdown for item:', {
-          itemId: item.id,
-          itemName: item.name,
-          foundSummary: !!windowSummary,
-          hasSummary: !!windowSummary?.summary
-        });
-        
-        if (windowSummary?.summary) {
-          const breakdown = buildClientBreakdown(windowSummary.summary);
-          console.log('[DETAILED VIEW] Built breakdown:', {
-            itemName: item.name,
-            breakdownCount: breakdown.length,
-            breakdown
+        if (item.fabric_details) {
+          breakdown.push({
+            id: `${item.id}-fabric`,
+            name: item.fabric_details.name || 'Fabric',
+            category: 'Material',
+            quantity: item.linear_meters || 0,
+            unit: 'm',
+            unit_price: item.fabric_details.selling_price || 0,
+            total_cost: (item.linear_meters || 0) * (item.fabric_details.selling_price || 0),
+            image_url: item.fabric_details.image_url
           });
-          return breakdown;
         }
         
-        return [];
+        if (item.manufacturing_details) {
+          breakdown.push({
+            id: `${item.id}-manufacturing`,
+            name: `Manufacturing (${item.manufacturing_details.heading_type || 'Standard'})`,
+            category: 'Labor',
+            description: `${item.manufacturing_details.type || 'machine'} made${item.manufacturing_details.hand_finished ? ', hand finished' : ''}`,
+            quantity: 1,
+            unit: 'unit',
+            unit_price: item.manufacturing_details.cost || 0,
+            total_cost: item.manufacturing_details.cost || 0
+          });
+        }
+        
+        console.log('[DETAILED VIEW] Built breakdown from item details:', {
+          itemName: item.surface_name,
+          breakdownCount: breakdown.length,
+          breakdown
+        });
+        
+        return breakdown;
       };
       
       console.log('[PRODUCTS BLOCK] Rendering products:', {
@@ -844,28 +859,28 @@ const LivePreviewBlock = ({
                             <td style={{ padding: '14px 10px', fontSize: '12px', fontWeight: '600', color: '#666666', verticalAlign: 'top' }}>{itemNumber}</td>
                             <td style={{ padding: '14px 10px', fontSize: '12px', fontWeight: '700', color: '#000000', verticalAlign: 'top' }}>
                               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                                {showImages && item.image_url && (
+                                {showImages && (item.image_url || item.fabric_details?.image_url) && (
                                   <div style={{ flexShrink: 0 }}>
-                                    <QuoteItemImage src={item.image_url} alt={item.name} size={40} className="rounded" />
+                                    <QuoteItemImage src={item.image_url || item.fabric_details?.image_url} alt={item.name || item.surface_name} size={40} className="rounded" />
                                   </div>
                                 )}
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontWeight: '700', fontSize: '12px', wordWrap: 'break-word', color: '#000000' }}>{item.name || 'Window Treatment'}</div>
-                                  {item.surface_name && (
-                                    <div style={{ fontSize: '10px', color: '#666666', marginTop: '3px', wordWrap: 'break-word', fontWeight: '500' }}>{item.surface_name}</div>
+                                  <div style={{ fontWeight: '700', fontSize: '12px', wordWrap: 'break-word', color: '#000000' }}>{item.name || item.surface_name || 'Window Treatment'}</div>
+                                  {item.room_name && (
+                                    <div style={{ fontSize: '10px', color: '#666666', marginTop: '3px', wordWrap: 'break-word', fontWeight: '500' }}>{item.room_name}</div>
                                   )}
                                 </div>
                               </div>
                             </td>
                             <td style={{ padding: '14px 10px', fontSize: '11px', color: '#666666', verticalAlign: 'top', wordWrap: 'break-word', fontWeight: '500' }}>
-                              {item.description || item.treatment_type || ''}
+                              {item.description || item.treatment_type || item.notes || ''}
                             </td>
                             <td style={{ padding: '14px 10px', fontSize: '12px', fontWeight: '600', color: '#000000', textAlign: 'center', verticalAlign: 'top' }}>{item.quantity || 1}</td>
                             <td style={{ padding: '14px 10px', fontSize: '12px', color: '#000000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap', fontWeight: '600' }}>
-                              {renderTokenValue('currency_symbol')}{(item.unit_price || 0).toFixed(2)}
+                              {renderTokenValue('currency_symbol')}{((item.unit_price || item.total_cost || item.total || 0)).toFixed(2)}
                             </td>
                             <td style={{ padding: '14px 10px', fontSize: '13px', fontWeight: '700', color: '#000000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                              {renderTokenValue('currency_symbol')}{(item.total || 0).toFixed(2)}
+                              {renderTokenValue('currency_symbol')}{((item.total || item.total_cost || 0)).toFixed(2)}
                             </td>
                           </tr>
                           

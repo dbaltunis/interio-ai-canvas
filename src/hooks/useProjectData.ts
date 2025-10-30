@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface ProjectData {
   project: any;
   treatments: any[];
+  items?: any[]; // Added for quote display
   windowSummaries: any[];
   rooms: any[];
   surfaces: any[];
@@ -73,15 +74,23 @@ export const useProjectData = (projectId?: string) => {
           console.warn('Workshop items fetch error:', workshopError);
         }
         
-        // Skip window summaries for now to avoid type issues
-        const windowSummaries: any[] = [];
-
-        // Calculate totals from real data
-        const treatments = workshopItems || [];
-        const windowSummaryData = windowSummaries || [];
+        // Transform workshop items to include proper pricing fields
+        const treatments = (workshopItems || []).map((item: any) => ({
+          ...item,
+          // Ensure pricing fields are available for quote display
+          unit_price: item.total_cost || 0,
+          total: item.total_cost || 0,
+          quantity: 1,
+          // Build breakdown from detailed cost components
+          cost_breakdown: {
+            fabric_cost: item.fabric_details?.selling_price ? 
+              (item.linear_meters || 0) * (item.fabric_details.selling_price || 0) : 0,
+            manufacturing_cost: item.manufacturing_details?.cost || 0,
+            total: item.total_cost || 0
+          }
+        }));
         
-        // Use window summaries for more accurate pricing if available
-        const itemsWithPricing = windowSummaryData.length > 0 ? windowSummaryData : treatments;
+        const itemsWithPricing = treatments;
         
         let subtotal = 0;
         if (itemsWithPricing && Array.isArray(itemsWithPricing)) {
@@ -127,7 +136,8 @@ export const useProjectData = (projectId?: string) => {
         return {
           project,
           treatments,
-          windowSummaries: windowSummaryData || [],
+          items: treatments, // Add items field for quote display
+          windowSummaries: [],
           rooms: [],
           surfaces: [],
           subtotal: finalSubtotal,
