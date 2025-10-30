@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Ruler, Save } from "lucide-react";
+import { Ruler, Save, Pencil, Check, X } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { MeasurementBridge } from "../measurements/MeasurementBridge";
@@ -314,6 +314,10 @@ export const WindowManagementDialog = ({
   // Get treatment name and description from existingTreatments OR windows_summary
   const [treatmentName, setTreatmentName] = useState('');
   const [treatmentDescription, setTreatmentDescription] = useState('');
+  const [isEditingProduct, setIsEditingProduct] = useState(false);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [editProductValue, setEditProductValue] = useState('');
+  const [editDescriptionValue, setEditDescriptionValue] = useState('');
   const currentTreatment = existingTreatments?.[0];
   
   // Fetch treatment data from windows_summary if existingTreatments is empty
@@ -437,40 +441,128 @@ export const WindowManagementDialog = ({
                   <>
                     <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md flex-1 min-w-[140px] max-w-[180px]">
                       <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide shrink-0">PRODUCT</span>
-                      <Input
-                        value={treatmentName}
-                        onChange={(e) => setTreatmentName(e.target.value)}
-                        onBlur={() => handleTreatmentNameUpdate(treatmentName)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleTreatmentNameUpdate(treatmentName);
-                        }}
-                        title="Product name that will appear on the quote"
-                        className="h-4 text-xs font-semibold border-0 bg-transparent px-0 focus-visible:ring-0 placeholder:text-muted-foreground/40"
-                        placeholder="e.g., Curtains"
-                      />
-                      <Button variant="ghost" size="sm" className="h-4 w-4 p-0 hover:bg-transparent opacity-60 hover:opacity-100">
-                        <span className="sr-only">Edit product name</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                      </Button>
+                      {isEditingProduct ? (
+                        <>
+                          <Input
+                            value={editProductValue}
+                            onChange={(e) => setEditProductValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleTreatmentNameUpdate(editProductValue);
+                                setIsEditingProduct(false);
+                              }
+                              if (e.key === 'Escape') {
+                                setEditProductValue(treatmentName);
+                                setIsEditingProduct(false);
+                              }
+                            }}
+                            className="h-4 text-xs font-semibold border-0 bg-transparent px-0 focus-visible:ring-0"
+                            autoFocus
+                          />
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              handleTreatmentNameUpdate(editProductValue);
+                              setIsEditingProduct(false);
+                            }}
+                            className="h-4 w-4 p-0 hover:bg-transparent text-green-600 hover:text-green-700"
+                          >
+                            <Check className="h-3 w-3" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setEditProductValue(treatmentName);
+                              setIsEditingProduct(false);
+                            }}
+                            className="h-4 w-4 p-0 hover:bg-transparent text-muted-foreground hover:text-foreground"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-xs font-semibold truncate flex-1">{treatmentName || 'Untitled'}</span>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => {
+                              setEditProductValue(treatmentName);
+                              setIsEditingProduct(true);
+                            }}
+                            className="h-4 w-4 p-0 hover:bg-transparent opacity-60 hover:opacity-100"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                     
                     <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md flex-1 min-w-[140px] max-w-[180px]">
                       <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide shrink-0">DESCRIPTION</span>
-                      <Input
-                        value={treatmentDescription}
-                        onChange={(e) => setTreatmentDescription(e.target.value)}
-                        onBlur={() => handleDescriptionUpdate(treatmentDescription)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleDescriptionUpdate(treatmentDescription);
-                        }}
-                        title="Additional description for the quote"
-                        className="h-4 text-xs border-0 bg-transparent px-0 focus-visible:ring-0 placeholder:text-muted-foreground/40"
-                        placeholder="Optional..."
-                      />
-                      <Button variant="ghost" size="sm" className="h-4 w-4 p-0 hover:bg-transparent opacity-60 hover:opacity-100">
-                        <span className="sr-only">Edit description</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                      </Button>
+                      {isEditingDescription ? (
+                        <>
+                          <Input
+                            value={editDescriptionValue}
+                            onChange={(e) => setEditDescriptionValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleDescriptionUpdate(editDescriptionValue);
+                                setIsEditingDescription(false);
+                              }
+                              if (e.key === 'Escape') {
+                                setEditDescriptionValue(treatmentDescription);
+                                setIsEditingDescription(false);
+                              }
+                            }}
+                            className="h-4 text-xs border-0 bg-transparent px-0 focus-visible:ring-0"
+                            autoFocus
+                          />
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              handleDescriptionUpdate(editDescriptionValue);
+                              setIsEditingDescription(false);
+                            }}
+                            className="h-4 w-4 p-0 hover:bg-transparent text-green-600 hover:text-green-700"
+                          >
+                            <Check className="h-3 w-3" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setEditDescriptionValue(treatmentDescription);
+                              setIsEditingDescription(false);
+                            }}
+                            className="h-4 w-4 p-0 hover:bg-transparent text-muted-foreground hover:text-foreground"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-xs truncate flex-1">{treatmentDescription || 'No description'}</span>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => {
+                              setEditDescriptionValue(treatmentDescription);
+                              setIsEditingDescription(true);
+                            }}
+                            className="h-4 w-4 p-0 hover:bg-transparent opacity-60 hover:opacity-100"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </>
                 )}
