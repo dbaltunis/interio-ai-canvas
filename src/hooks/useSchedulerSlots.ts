@@ -36,12 +36,19 @@ export const useSchedulerSlots = (weekStartDate?: Date, refetchInterval?: number
         .gte("appointment_date", format(startDate, 'yyyy-MM-dd'))
         .lte("appointment_date", format(endDate, 'yyyy-MM-dd'));
 
-      // Fetch regular appointments to check for conflicts
-      const { data: regularAppointments } = await supabase
-        .from("appointments")
-        .select("*")
-        .gte("start_time", format(startDate, 'yyyy-MM-dd'))
-        .lte("start_time", format(addDays(endDate, 1), 'yyyy-MM-dd'));
+      // Fetch regular appointments for the scheduler owner to check for conflicts
+      const schedulerUserIds = schedulers
+        .filter(s => s.active && s.user_id)
+        .map(s => s.user_id);
+      
+      const { data: regularAppointments } = schedulerUserIds.length > 0 
+        ? await supabase
+            .from("appointments")
+            .select("*")
+            .in("user_id", schedulerUserIds)
+            .gte("start_time", format(startDate, 'yyyy-MM-dd'))
+            .lte("start_time", format(addDays(endDate, 1), 'yyyy-MM-dd'))
+        : { data: [] };
 
       const slots: SchedulerSlot[] = [];
 
@@ -110,7 +117,9 @@ export const useSchedulerSlots = (weekStartDate?: Date, refetchInterval?: number
               });
 
               // Check if slot conflicts with regular appointments (including buffer time)
+              // Only check appointments for this scheduler's owner
               const hasConflictWithRegularAppointment = regularAppointments?.some(appointment => {
+                if (appointment.user_id !== scheduler.user_id) return false;
                 const appointmentStart = new Date(appointment.start_time);
                 const appointmentEnd = new Date(appointment.end_time);
                 
