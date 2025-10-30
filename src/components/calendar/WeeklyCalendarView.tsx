@@ -9,6 +9,7 @@ import { DndContext, DragEndEvent, useDraggable, useDroppable, DragOverlay } fro
 import { useQueryClient } from "@tanstack/react-query";
 import { Calendar, Clock, User, CalendarCheck, UserCheck, Bell } from "lucide-react";
 import { useUpdateAppointment } from "@/hooks/useAppointments";
+import { BookedAppointmentDialog } from "./BookedAppointmentDialog";
 
 interface WeeklyCalendarViewProps {
   currentDate: Date;
@@ -36,6 +37,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
+  
+  const [bookedAppointmentDialog, setBookedAppointmentDialog] = useState<{ open: boolean; appointment: any }>({ open: false, appointment: null });
   
   // REMOVED: Available slot dialog state - not needed in internal calendar
   // REMOVED: Booking interface dialog state - not needed in internal calendar
@@ -132,35 +135,41 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         return isSameDay(bookingDate, date);
       })
       .map(booking => {
-        // Duration default to 60 minutes
-        const duration = 60;
+        // Get scheduler info from the booking
+        const schedulerInfo = booking.scheduler;
+        const duration = schedulerInfo?.duration || 60;
+        const schedulerName = schedulerInfo?.name || 'Customer Appointment';
         
-        // Convert booking to event format with distinct styling
-        const appointmentDateTime = new Date(`${booking.appointment_date}T${booking.appointment_time}:00`);
+        // Convert booking to event format with distinct styling and scheduler context
+        const [hours, minutes] = booking.appointment_time.split(':');
+        const startTime = new Date(booking.appointment_date);
+        startTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
         
-        // Validate the appointment date
-        if (isNaN(appointmentDateTime.getTime())) {
-          console.warn('Invalid booking date detected:', booking);
-          return null; // Skip invalid bookings
+        const endTime = new Date(startTime);
+        endTime.setMinutes(endTime.getMinutes() + duration);
+        
+        // Validate times
+        if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+          console.warn('Invalid booking times:', booking);
+          return null;
         }
         
-        const endDateTime = new Date(appointmentDateTime.getTime() + (duration * 60 * 1000));
-        
         return {
-          id: `booking-${booking.id}`,
-          title: `${booking.customer_name}`, // Clear customer name only
-          description: 'Customer Appointment',
-          start_time: appointmentDateTime.toISOString(),
-          end_time: endDateTime.toISOString(),
-          appointment_type: 'booked_appointment',
-          status: booking.status,
-          location: booking.location_type || 'TBD',
-          color: '#059669', // Emerald-600 for confirmed bookings
-          user_id: null, // System booking
-          isBooking: true,
+          id: booking.id,
+          title: `🗓️ ${booking.customer_name}`,
+          description: `${schedulerName}\n${booking.customer_email}${booking.customer_phone ? '\n' + booking.customer_phone : ''}`,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          location: 'Booked Appointment',
+          appointment_type: 'consultation',
+          color: 'hsl(var(--accent))',
+          user_id: currentUserId,
+          isBooked: true,
           bookingData: booking,
-          customer_name: booking.customer_name,
-          scheduler_name: 'Appointment'
+          scheduler_id: booking.scheduler_id,
+          scheduler_name: schedulerName,
+          scheduler_slug: schedulerInfo?.slug || '',
+          video_meeting_link: schedulerInfo?.google_meet_link || ''
         };
       })
       .filter(Boolean); // Remove null values from invalid bookings

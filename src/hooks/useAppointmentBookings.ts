@@ -19,6 +19,13 @@ interface AppointmentBooking {
   status?: string;
   created_at: string;
   updated_at: string;
+  scheduler?: {
+    id: string;
+    name: string;
+    slug: string;
+    duration: number;
+    google_meet_link?: string;
+  };
 }
 
 export const useAppointmentBookings = () => {
@@ -27,11 +34,20 @@ export const useAppointmentBookings = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments_booked")
-        .select("*")
+        .select(`
+          *,
+          scheduler:appointment_schedulers(
+            id,
+            name,
+            slug,
+            duration,
+            google_meet_link
+          )
+        `)
         .order("appointment_date", { ascending: true });
 
       if (error) throw error;
-      return data as AppointmentBooking[];
+      return data;
     },
   });
 };
