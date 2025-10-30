@@ -47,7 +47,7 @@ export const generateQuotePDF = async (
       mode: ['avoid-all', 'css', 'legacy'],
       before: '.page-break-before',
       after: '.page-break-after',
-      avoid: ['.avoid-page-break', 'tr', 'table']
+      avoid: ['.avoid-page-break', 'tr', 'table', '.products-table']
     },
   };
 

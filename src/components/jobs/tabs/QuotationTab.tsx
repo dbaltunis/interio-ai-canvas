@@ -1,12 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect, useMemo } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useProjects } from "@/hooks/useProjects";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
@@ -15,35 +13,23 @@ import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { useQuotes, useCreateQuote, useUpdateQuote } from "@/hooks/useQuotes";
+import { useQuotes, useCreateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
-import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
-import { Percent, FileText, Mail, Settings, Plus, StickyNote, List, Download, MoreVertical, DollarSign, Wrench, Eye, Image as ImageIcon } from "lucide-react";
+import { Download, Mail, MoreVertical, Percent, FileText, DollarSign, ImageIcon as ImageIconLucide, Printer } from "lucide-react";
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
-import { QuoteViewer } from "../QuoteViewer";
-import { TreatmentLineItems } from "@/components/jobs/quotation/TreatmentLineItems";
-import { formatCurrency } from "@/utils/currency";
-import { ProjectNotesCard } from "../ProjectNotesCard";
-import { JobNotesDialog } from "../JobNotesDialog";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
 import { QuotationItemsModal } from "../quotation/QuotationItemsModal";
-import { DetailedQuotationTable } from "../quotation/DetailedQuotationTable";
 import { EmailQuoteModal } from "@/components/jobs/quotation/EmailQuoteModal";
-import { useQuoteTemplates } from "@/hooks/useQuoteTemplates";
-import { useClients } from "@/hooks/useClients";
 import { QuotationSkeleton } from "@/components/jobs/quotation/QuotationSkeleton";
-import { QuotePreview } from "@/components/quotation/QuotePreview";
-import { WorkOrderView } from "@/components/quotation/WorkOrderView";
 import { EmptyQuoteVersionState } from "@/components/jobs/EmptyQuoteVersionState";
 import { useQuoteVersions } from "@/hooks/useQuoteVersions";
-import { SimpleQuoteTemplate } from '@/components/jobs/quotation/SimpleQuoteTemplate';
 import { generateQuotePDF, generateQuotePDFBlob } from '@/utils/generateQuotePDF';
+
 interface QuotationTabProps {
   projectId: string;
   quoteId?: string;
 }
 
-// Helper: keep only the first 'products' block to avoid duplicates in preview
 const removeDuplicateProductsBlocks = (blocks: any[] = []) => {
   let seen = false;
   return (blocks || []).filter(b => {
@@ -55,56 +41,43 @@ const removeDuplicateProductsBlocks = (blocks: any[] = []) => {
     return false;
   });
 };
-export const QuotationTab = ({
-  projectId,
-  quoteId
-}: QuotationTabProps) => {
-  const {
-    toast
-  } = useToast();
-  const [isSendingEmail, setIsSendingEmail] = useState(false);
-  const {
-    data: projects
-  } = useProjects();
-  const {
-    data: treatments
-  } = useTreatments(projectId, quoteId);
-  const {
-    data: rooms
-  } = useRooms(projectId, quoteId);
-  const {
-    data: surfaces
-  } = useSurfaces(projectId);
-  const {
-    data: projectSummaries
-  } = useProjectWindowSummaries(projectId);
-  const {
-    data: businessSettings
-  } = useBusinessSettings();
-  const {
-    quoteVersions
-  } = useQuoteVersions(projectId);
 
-  // Find current quote version number
+export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
+  const { toast } = useToast();
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [showQuotationItems, setShowQuotationItems] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+
+  const { data: projects } = useProjects();
+  const { data: treatments } = useTreatments(projectId, quoteId);
+  const { data: rooms } = useRooms(projectId, quoteId);
+  const { data: surfaces } = useSurfaces(projectId);
+  const { data: projectSummaries } = useProjectWindowSummaries(projectId);
+  const { data: businessSettings } = useBusinessSettings();
+  const { quoteVersions } = useQuoteVersions(projectId);
+  const { data: quotes = [], isLoading: quotesLoading } = useQuotes(projectId);
+  const createQuote = useCreateQuote();
+
   const currentQuote = quoteVersions?.find(q => q.id === quoteId);
   const currentVersion = currentQuote?.version || 1;
-
-  // Check if this is an empty quote version
   const isEmptyVersion = (rooms?.length || 0) === 0 && quoteId;
 
-  // Fetch client data for the project
-  const {
-    data: client
-  } = useQuery({
+  const project = projects?.find(p => p.id === projectId);
+
+  // Fetch client data
+  const { data: client } = useQuery({
     queryKey: ["project-client", projectId],
     queryFn: async () => {
       if (!projectId) return null;
       const project = projects?.find(p => p.id === projectId);
       if (!project?.client_id) return null;
-      const {
-        data,
-        error
-      } = await supabase.from("clients").select("*").eq("id", project.client_id).maybeSingle();
+      const { data, error } = await supabase
+        .from("clients")
+        .select("*")
+        .eq("id", project.client_id)
+        .maybeSingle();
       if (error) {
         console.error('Error fetching client:', error);
         return null;
@@ -114,129 +87,79 @@ export const QuotationTab = ({
     enabled: !!projectId && !!projects
   });
 
-  // Fetch workshop items - with caching and disabled by default
-  const {
-    data: workshopItems
-  } = useQuery({
+  // Fetch workshop items
+  const { data: workshopItems } = useQuery({
     queryKey: ["workshop-items", projectId],
     queryFn: async () => {
       if (!projectId) return [];
-      const {
-        data,
-        error
-      } = await supabase.from("workshop_items").select("*").eq("project_id", projectId);
+      const { data, error } = await supabase
+        .from("workshop_items")
+        .select("*")
+        .eq("project_id", projectId);
       if (error) return [];
       return data || [];
     },
     enabled: !!projectId,
-    staleTime: 5 * 60 * 1000 // 5 minutes
+    staleTime: 5 * 60 * 1000
   });
-  // Fetch quote templates from database - with caching
-  const {
-    data: activeTemplates,
-    isLoading: templatesLoading,
-    refetch: refetchTemplates
-  } = useQuery({
+
+  // Fetch active quote templates
+  const { data: activeTemplates, isLoading: templatesLoading } = useQuery({
     queryKey: ["quote-templates"],
     queryFn: async () => {
-      const {
-        data,
-        error
-      } = await supabase.from("quote_templates").select("*").eq("active", true).order("updated_at", {
-        ascending: false
-      });
+      const { data, error } = await supabase
+        .from("quote_templates")
+        .select("*")
+        .eq("active", true)
+        .order("updated_at", { ascending: false });
       if (error) throw error;
       return data || [];
     },
-    staleTime: 5 * 60 * 1000,
-    // 5 minutes - reduce refetching
-    gcTime: 10 * 60 * 1000 // 10 minutes cache
-  });
-  const {
-    data: quotes = [],
-    isLoading: quotesLoading
-  } = useQuotes(projectId);
-  const createQuote = useCreateQuote();
-  const updateQuote = useUpdateQuote();
-  const [showItemsEditor, setShowItemsEditor] = useState(false);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
-  const [editedTemplateBlocks, setEditedTemplateBlocks] = useState<any[] | null>(null);
-  const project = projects?.find(p => p.id === projectId);
-  const [notesOpen, setNotesOpen] = useState(false);
-  const [selectedQuote, setSelectedQuote] = useState<any | null>(null);
-  const [showQuotationItems, setShowQuotationItems] = useState(false);
-  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
-  const [showDetailedBreakdown, setShowDetailedBreakdown] = useState(false);
-  const [showImages, setShowImages] = useState(true);
-  const quoteRef = React.useRef<HTMLDivElement>(null);
-  const {
-    data: clients
-  } = useClients();
-  const {
-    data: templates
-  } = useQuoteTemplates();
-  const {
-    buildQuotationItems
-  } = useQuotationSync({
-    projectId: projectId,
-    clientId: project?.client_id || "",
-    autoCreateQuote: false
+    staleTime: 5 * 60 * 1000
   });
 
-  // ALWAYS recalculate quotation data when source data changes
-  const quotationData = useMemo(() => {
-    const data = buildQuotationItems();
-    console.log('[QUOTATION TAB] ===== LIVE QUOTE RECALCULATED =====');
-    console.log('[QUOTATION TAB] Window Summaries:', {
-      windowCount: projectSummaries?.windows?.length || 0,
-      projectTotal: projectSummaries?.projectTotal,
-      windows: projectSummaries?.windows?.map(w => ({
-        id: w.window_id,
-        name: w.surface_name,
-        cost: w.summary?.total_cost
-      }))
-    });
-    console.log('[QUOTATION TAB] Quote Result:', {
-      baseSubtotal: data.baseSubtotal,
-      subtotal: data.subtotal,
-      total: data.total,
-      itemCount: data.items.length,
-      items: data.items.map((item: any) => ({
-        name: item.name,
-        total: item.total
-      }))
-    });
-    return data;
-  }, [buildQuotationItems, projectSummaries?.windows, projectSummaries?.projectTotal, treatments?.length]);
-
-  // Filter quotes for this specific project (already filtered by hook)
-  const projectQuotes = quotes;
-
-  // Set default template when templates load
+  // Set default template
   useEffect(() => {
     if (activeTemplates && activeTemplates.length > 0 && !selectedTemplateId) {
       setSelectedTemplateId(activeTemplates[0].id.toString());
     }
   }, [activeTemplates, selectedTemplateId]);
 
-  // Get selected template
   const selectedTemplate = activeTemplates?.find(t => t.id.toString() === selectedTemplateId);
 
-  // Use quotation data from sync
-  const hasQuotationItems = (quotationData.items || []).length > 0;
+  // Get settings from template blocks safely
+  const templateSettings = useMemo(() => {
+    const blocks = selectedTemplate?.blocks;
+    if (!blocks || typeof blocks === 'string') return { showImages: true, showDetailedBreakdown: false, groupByRoom: false };
+    const blocksArray = Array.isArray(blocks) ? blocks : [];
+    const productsBlock = blocksArray.find((b: any) => b?.type === 'products') as any;
+    return {
+      showImages: productsBlock?.content?.showImages ?? true,
+      showDetailedBreakdown: productsBlock?.content?.showDetailedBreakdown ?? false,
+      groupByRoom: productsBlock?.content?.groupByRoom ?? false
+    };
+  }, [selectedTemplate]);
 
-  // Use calculated values from quotation sync (NO HARDCODED VALUES!)
-  const baseSubtotal = quotationData.baseSubtotal || 0;
+  const { buildQuotationItems } = useQuotationSync({
+    projectId: projectId,
+    clientId: project?.client_id || "",
+    autoCreateQuote: false
+  });
+
+  // Calculate quotation data
+  const quotationData = useMemo(() => {
+    const data = buildQuotationItems();
+    return data;
+  }, [buildQuotationItems, projectSummaries?.windows, projectSummaries?.projectTotal, treatments?.length]);
+
+  const hasQuotationItems = (quotationData.items || []).length > 0;
   const subtotal = quotationData.subtotal || 0;
   const taxAmount = quotationData.taxAmount || 0;
   const total = quotationData.total || 0;
-
-  // Get tax rate from business settings (convert to decimal for display)
   const taxRate = (businessSettings?.tax_rate || 0) / 100;
   const pricingSettings = businessSettings?.pricing_settings as any;
   const markupPercentage = pricingSettings?.default_markup_percentage || 50;
 
-  // Transform quotation items to match expected format for backward compatibility
   const sourceTreatments = (quotationData.items || []).filter(item => !item.isHeader).map(item => ({
     id: item.id,
     room_id: item.room_id || '',
@@ -252,95 +175,73 @@ export const QuotationTab = ({
     surface_name: item.surface_name,
     description: item.description
   }));
-  console.log('🔍 QuotationTab Debug:', {
-    hasQuotationItems,
-    itemsCount: quotationData.items?.length,
-    baseSubtotal,
-    subtotal,
-    taxAmount,
-    total,
-    sourceTreatments: sourceTreatments.slice(0, 2) // Log first 2 for debugging
-  });
-  const handlePrint = async () => {
-    if (!quoteRef.current) {
+
+  // Download PDF
+  const handleDownloadPDF = async () => {
+    const element = document.getElementById('quote-live-preview');
+    if (!element) {
       toast({
         title: "Error",
-        description: "Quote preview not ready. Please try again.",
+        description: "Quote preview not ready. Please wait a moment.",
         variant: "destructive"
       });
       return;
     }
 
+    setIsGeneratingPDF(true);
     try {
+      const filename = `quote-${project?.job_number || 'QT'}.pdf`;
+      await generateQuotePDF(element, { filename });
       toast({
-        title: "Opening PDF...",
-        description: "Generating your professional quote"
-      });
-
-      // Generate PDF blob from the visible quote template
-      const pdfBlob = await generateQuotePDFBlob(quoteRef.current);
-      
-      // Create object URL and open in new tab
-      const url = URL.createObjectURL(pdfBlob);
-      window.open(url, '_blank');
-
-      // Clean up after a delay
-      setTimeout(() => URL.revokeObjectURL(url), 100);
-
-      toast({
-        title: "PDF Opened",
-        description: "Your quote has been opened in a new tab"
+        title: "Success",
+        description: "PDF downloaded successfully"
       });
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      console.error('PDF generation error:', error);
       toast({
         title: "Error",
         description: "Failed to generate PDF. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsGeneratingPDF(false);
     }
   };
 
-  const handleDownloadPDF = async () => {
-    if (!quoteRef.current) {
+  // Print (open PDF in new tab)
+  const handlePrint = async () => {
+    const element = document.getElementById('quote-live-preview');
+    if (!element) {
       toast({
         title: "Error",
-        description: "Quote preview not ready. Please try again.",
+        description: "Quote preview not ready",
         variant: "destructive"
       });
       return;
     }
 
+    setIsGeneratingPDF(true);
     try {
-      toast({
-        title: "Downloading PDF...",
-        description: "Please wait..."
-      });
-
-      const filename = `quote-${project?.job_number || 'QT-' + Math.floor(Math.random() * 10000)}.pdf`;
-      
-      // Generate and download PDF
-      await generateQuotePDF(quoteRef.current, { filename });
-
-      toast({
-        title: "PDF Downloaded",
-        description: "Your quote has been downloaded successfully"
-      });
+      const blob = await generateQuotePDFBlob(element);
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 100);
     } catch (error) {
-      console.error('Error downloading PDF:', error);
+      console.error('Print error:', error);
       toast({
         title: "Error",
-        description: "Failed to download PDF. Please try again.",
+        description: "Failed to open print preview",
         variant: "destructive"
       });
+    } finally {
+      setIsGeneratingPDF(false);
     }
   };
-  const handleSendEmail = async (emailData: {
-    to: string;
-    subject: string;
-    message: string;
-  }) => {
-    if (!quoteRef.current) {
+
+  // Email quote
+  const handleSendEmail = async (emailData: { to: string; subject: string; message: string }) => {
+    const element = document.getElementById('quote-live-preview');
+    if (!element) {
       toast({
         title: "Error",
         description: "Quote preview not ready. Please try again.",
@@ -356,50 +257,42 @@ export const QuotationTab = ({
         description: "Please wait while we prepare your quote"
       });
 
-      // Generate PDF blob from the visible quote template
-      const pdfBlob = await generateQuotePDFBlob(quoteRef.current);
-      console.log('✅ Professional PDF generated:', pdfBlob.size, 'bytes');
-
-      // Generate unique filename with timestamp to avoid conflicts
+      const pdfBlob = await generateQuotePDFBlob(element);
       const timestamp = Date.now();
       const fileName = `quote-${project?.job_number || 'QT'}-${timestamp}.pdf`;
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       const filePath = `${user.id}/quotes/${fileName}`;
+
       toast({
         title: "Uploading PDF...",
         description: "Preparing attachment"
       });
-      const {
-        error: uploadError
-      } = await supabase.storage.from('email-attachments').upload(filePath, pdfBlob, {
-        contentType: 'application/pdf',
-        upsert: true,
-        // Allow overwriting if needed
-        metadata: {
-          user_id: user.id,
-          client_id: project?.client_id || '',
-          project_id: projectId
-        }
-      });
+
+      const { error: uploadError } = await supabase.storage
+        .from('email-attachments')
+        .upload(filePath, pdfBlob, {
+          contentType: 'application/pdf',
+          upsert: true,
+          metadata: {
+            user_id: user.id,
+            client_id: project?.client_id || '',
+            project_id: projectId
+          }
+        });
+
       if (uploadError) {
         console.error('Upload error:', uploadError);
         throw new Error(`Failed to upload PDF: ${uploadError.message}`);
       }
-      console.log('PDF uploaded to:', filePath);
+
       toast({
         title: "Sending Email...",
         description: "Delivering quote to recipient"
       });
-      const {
-        error: emailError
-      } = await supabase.functions.invoke('send-email', {
+
+      const { error: emailError } = await supabase.functions.invoke('send-email', {
         body: {
           to: emailData.to,
           subject: emailData.subject,
@@ -409,10 +302,12 @@ export const QuotationTab = ({
           attachmentPaths: [filePath]
         }
       });
+
       if (emailError) {
         console.error('Email error:', emailError);
         throw new Error(`Failed to send email: ${emailError.message}`);
       }
+
       toast({
         title: "Email Sent Successfully",
         description: `Quote sent to ${emailData.to}`
@@ -429,81 +324,51 @@ export const QuotationTab = ({
       setIsSendingEmail(false);
     }
   };
+
   const handleAddDiscount = () => {
-    toast({
-      title: "Add Discount",
-      description: "Discount functionality would be implemented here"
-    });
+    toast({ title: "Add Discount", description: "Discount functionality would be implemented here" });
   };
+
   const handleAddTerms = () => {
-    toast({
-      title: "Add Terms & Conditions",
-      description: "Terms & Conditions functionality would be implemented here"
-    });
+    toast({ title: "Add Terms & Conditions", description: "Terms & Conditions functionality would be implemented here" });
   };
+
   const handleAddDeposit = () => {
-    toast({
-      title: "Add Deposit",
-      description: "Deposit functionality would be implemented here"
-    });
+    toast({ title: "Add Deposit", description: "Deposit functionality would be implemented here" });
   };
-  const handleCreateNewQuote = async () => {
-    if (!selectedTemplate) {
-      toast({
-        title: "No Template Selected",
-        description: "Please select a template before creating a quote.",
-        variant: "destructive"
-      });
-      return;
-    }
 
-    // Generate quote number
-    const quoteNumber = `Q-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
-
-    // Calculate valid until date (30 days from now)
-    const validUntil = new Date();
-    validUntil.setDate(validUntil.getDate() + 30);
-    await createQuote.mutateAsync({
-      project_id: projectId,
-      client_id: project?.client_id,
-      quote_number: quoteNumber,
-      status: 'draft',
-      subtotal,
-      tax_rate: taxRate,
-      tax_amount: taxAmount,
-      total_amount: total,
-      valid_until: validUntil.toISOString().split('T')[0],
-      notes: `Generated from template: ${selectedTemplate.name}`
-    });
-  };
   if (!project) {
     return <div className="flex items-center justify-center py-12">
-        <div className="text-muted-foreground">Loading project...</div>
-      </div>;
+      <div className="text-muted-foreground">Loading project...</div>
+    </div>;
   }
+
   if (templatesLoading || quotesLoading) {
     return <QuotationSkeleton />;
   }
+
   if (!activeTemplates || activeTemplates.length === 0) {
     return <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="text-muted-foreground mb-4">No active quote templates found</div>
-          <p className="text-sm text-muted-foreground">
-            Please create and activate quote templates in Settings → Document Templates
-          </p>
-        </div>
-      </div>;
+      <div className="text-center">
+        <div className="text-muted-foreground mb-4">No active quote templates found</div>
+        <p className="text-sm text-muted-foreground">
+          Please create and activate quote templates in Settings → Document Templates
+        </p>
+      </div>
+    </div>;
   }
 
-  // Use template blocks as-is to mirror Settings preview precisely, but guard against duplicate products blocks
-  // Use edited blocks if available, otherwise use template blocks
-  const baseBlocks = editedTemplateBlocks || (selectedTemplate?.blocks && Array.isArray(selectedTemplate.blocks) ? selectedTemplate.blocks : []);
-  const templateBlocks = removeDuplicateProductsBlocks(baseBlocks);
-  const selectedQuoteTemplate = templates?.find(t => t.id === selectedTemplateId);
-  const clientData = clients?.find(c => c.id === project?.client_id);
+  const templateBlocks = useMemo(() => {
+    const blocks = selectedTemplate?.blocks;
+    if (!blocks) return [];
+    if (typeof blocks === 'string') return [];
+    const blocksArray = Array.isArray(blocks) ? blocks : [];
+    return removeDuplicateProductsBlocks(blocksArray);
+  }, [selectedTemplate]);
+
   const projectData = {
-    project,
-    client: clientData,
+    project: { ...project, client },
+    client,
     businessSettings,
     treatments: sourceTreatments,
     workshopItems: workshopItems || [],
@@ -516,36 +381,48 @@ export const QuotationTab = ({
     markupPercentage,
     validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
   };
-  return <div className="space-y-2 sm:space-y-3 pb-4 overflow-x-hidden">
-      {/* Modern Compact Header */}
+
+  return (
+    <div className="space-y-2 sm:space-y-3 pb-4 overflow-x-hidden">
+      {/* Header with Actions */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3">
         <div>
           <h2 className="text-base sm:text-lg font-semibold">Quotation</h2>
-          
         </div>
-        
-        {/* Compact Action Bar - Icon only on mobile */}
+
+        {/* Action Buttons */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          {/* Save PDF Button */}
-          <Button variant="default" size="sm" onClick={handlePrint} className="h-8 px-2 sm:px-3 relative z-10 pointer-events-auto">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleDownloadPDF}
+            disabled={isGeneratingPDF || !selectedTemplate}
+            className="h-8 px-2 sm:px-3"
+          >
             <Download className="h-4 w-4" />
-            <span className="hidden sm:inline sm:ml-2">PDF</span>
+            <span className="hidden sm:inline sm:ml-2">
+              {isGeneratingPDF ? 'Generating...' : 'PDF'}
+            </span>
           </Button>
 
-          {/* Email Button - Hidden on mobile, shown in dropdown */}
-          <Button variant="outline" size="sm" onClick={() => setIsEmailModalOpen(true)} className="hidden sm:flex h-8 relative z-10 pointer-events-auto">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsEmailModalOpen(true)}
+            disabled={isGeneratingPDF || !selectedTemplate}
+            className="hidden sm:flex h-8"
+          >
             <Mail className="h-4 w-4 mr-2" />
             Email
           </Button>
 
-          {/* More Dropdown Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 px-2 relative z-10 pointer-events-auto">
+              <Button variant="outline" size="sm" className="h-8 px-2">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="z-50 bg-background border shadow-md">
+            <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => setIsEmailModalOpen(true)} className="sm:hidden">
                 <Mail className="mr-2 h-4 w-4" />
                 Email Quote
@@ -565,86 +442,100 @@ export const QuotationTab = ({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+      </div>
 
-      {/* Detailed Options Section */}
+      {/* Quote Display Options - using template settings */}
       <div className="flex items-center justify-between overflow-x-auto pb-2">
         <div className="flex items-center space-x-2 sm:space-x-4 min-w-max">
-          {/* Show Images Toggle */}
           <div className="flex items-center space-x-2">
-            <Switch id="show-images" checked={showImages} onCheckedChange={setShowImages} />
-            <Label htmlFor="show-images" className="text-xs cursor-pointer">
-              <ImageIcon className="h-3 w-3 inline mr-1" />
-              Images
-            </Label>
+            <span className="text-xs text-muted-foreground">
+              <ImageIconLucide className="h-3 w-3 inline mr-1" />
+              Images: {templateSettings.showImages ? 'On' : 'Off'}
+            </span>
           </div>
-
-          {/* Detailed Breakdown Toggle */}
           <div className="flex items-center space-x-2">
-            <Switch id="show-detailed" checked={showDetailedBreakdown} onCheckedChange={setShowDetailedBreakdown} />
-            <Label htmlFor="show-detailed" className="text-xs cursor-pointer">Detailed</Label>
+            <span className="text-xs text-muted-foreground">
+              Detailed: {templateSettings.showDetailedBreakdown ? 'On' : 'Off'}
+            </span>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            (Configure in Settings → Document Templates)
           </div>
         </div>
       </div>
-      </div>
 
+      {/* Quotation Items Modal */}
+      <QuotationItemsModal
+        key={`quote-modal-${projectSummaries?.projectTotal}-${quotationData.items?.length}`}
+        isOpen={showQuotationItems}
+        onClose={() => setShowQuotationItems(false)}
+        quotationData={quotationData}
+        currency="GBP"
+        treatments={sourceTreatments}
+        rooms={rooms || []}
+        surfaces={surfaces || []}
+        markupPercentage={markupPercentage}
+      />
 
-      {/* Quotation Items Modal - Force refresh when data changes */}
-      <QuotationItemsModal key={`quote-modal-${projectSummaries?.projectTotal}-${quotationData.items?.length}-${Date.now()}`} isOpen={showQuotationItems} onClose={() => setShowQuotationItems(false)} quotationData={quotationData} currency="GBP" treatments={sourceTreatments} rooms={rooms || []} surfaces={surfaces || []} markupPercentage={markupPercentage} />
-
-      {/* Quote Document Preview - Centered and properly scaled */}
-      {isEmptyVersion ? <EmptyQuoteVersionState currentVersion={currentVersion} onAddRoom={() => {
-      // Switch to Rooms tab when user wants to add a room
-      const roomsTab = document.querySelector('[data-state="inactive"]') as HTMLElement;
-      if (roomsTab) {
-        roomsTab.click();
-      }
-    }} /> : <section className="mt-2 sm:mt-4" key={`preview-${projectSummaries?.projectTotal}-${quotationData.total}`}>
+      {/* Quote Preview */}
+      {isEmptyVersion ? (
+        <EmptyQuoteVersionState
+          currentVersion={currentVersion}
+          onAddRoom={() => {
+            const roomsTab = document.querySelector('[data-state="inactive"]') as HTMLElement;
+            if (roomsTab) roomsTab.click();
+          }}
+        />
+      ) : (
+        <section className="mt-2 sm:mt-4" key={`preview-${projectSummaries?.projectTotal}-${quotationData.total}`}>
           <div className="w-full flex justify-center">
             <div className="transform scale-[0.38] sm:scale-[0.55] md:scale-[0.65] lg:scale-75 xl:scale-90 origin-top">
-              <SimpleQuoteTemplate
-                ref={quoteRef}
-                projectData={{
-                  project: {
-                    ...project,
-                    client: client
-                  },
-                  client: client,
-                  businessSettings: businessSettings || {},
-                  items: quotationData.items || [],
-                  subtotal: quotationData.subtotal || 0,
-                  taxRate: businessSettings?.tax_rate ? businessSettings.tax_rate / 100 : 0,
-                  taxAmount: quotationData.taxAmount || 0,
-                  total: quotationData.total || 0,
-                  currency: (businessSettings?.measurement_units ? (typeof businessSettings.measurement_units === 'string' ? JSON.parse(businessSettings.measurement_units) : businessSettings.measurement_units).currency : null) || 'GBP',
+              <div
+                id="quote-live-preview"
+                className="bg-white"
+                style={{
+                  width: '210mm',
+                  minHeight: '297mm',
+                  padding: '15mm 10mm',
+                  fontFamily: 'Arial, Helvetica, sans-serif',
+                  fontSize: '11pt',
+                  color: '#000000',
+                  backgroundColor: '#ffffff'
                 }}
-                showDetailedBreakdown={showDetailedBreakdown}
-                showImages={showImages}
-              />
+              >
+                <LivePreview
+                  blocks={templateBlocks}
+                  projectData={projectData}
+                  isEditable={false}
+                  isPrintMode={true}
+                  showDetailedBreakdown={templateSettings.showDetailedBreakdown}
+                  showImages={templateSettings.showImages}
+                  groupByRoom={templateSettings.groupByRoom}
+                />
+              </div>
             </div>
           </div>
-        </section>}
-      <JobNotesDialog open={notesOpen} onOpenChange={open => {
-      setNotesOpen(open);
-      if (!open) setSelectedQuote(null);
-    }} quote={selectedQuote} project={project} />
+        </section>
+      )}
 
       {/* Email Modal */}
-      <EmailQuoteModal 
-        isOpen={isEmailModalOpen} 
-        onClose={() => setIsEmailModalOpen(false)} 
-        project={project} 
-        client={clientData} 
-        onSend={handleSendEmail} 
-        isSending={isSendingEmail} 
+      <EmailQuoteModal
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        project={project}
+        client={client}
+        onSend={handleSendEmail}
+        isSending={isSendingEmail}
         quotePreview={
           templateBlocks && templateBlocks.length > 0 ? (
-            <LivePreview 
-              blocks={templateBlocks} 
-              projectData={projectData} 
-              isEditable={false} 
+            <LivePreview
+              blocks={templateBlocks}
+              projectData={projectData}
+              isEditable={false}
             />
           ) : undefined
-        } 
+        }
       />
-    </div>;
+    </div>
+  );
 };

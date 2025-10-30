@@ -1,13 +1,13 @@
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Download, Eye, FileText, Image as ImageIcon } from "lucide-react";
+import { Download, Image as ImageIcon } from "lucide-react";
 import { formatCurrency } from "@/utils/currency";
 import { useToast } from "@/hooks/use-toast";
 import { generateQuotePDFBlob } from "@/utils/generateQuotePDF";
-import { SimpleQuoteTemplate } from "@/components/jobs/quotation/SimpleQuoteTemplate";
-import React from "react";
+import { PrintableQuote } from "@/components/jobs/quotation/PrintableQuote";
 
 interface QuoteItem {
   id: string;
@@ -117,7 +117,6 @@ export const QuotePreview = ({
           <div className="flex items-start justify-between">
             <div className="space-y-2">
               <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
                 {quote.quote_number || `Quote #${quote.id.slice(0, 8)}`}
               </CardTitle>
               {quote.notes && (
@@ -283,9 +282,11 @@ export const QuotePreview = ({
 
       {/* Hidden quote template for PDF generation */}
       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-        <SimpleQuoteTemplate
+        <PrintableQuote
           ref={quoteRef}
+          blocks={projectData?.blocks || []}
           projectData={{ ...projectData, items }}
+          isPrintMode={true}
           showDetailedBreakdown={true}
           showImages={showImages}
         />
