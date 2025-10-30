@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarCheck, Clock, User, MapPin } from "lucide-react";
+import { Bell, Clock, User, MapPin } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -54,7 +54,7 @@ export const RecentAppointmentsWidget = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <CalendarCheck className="h-4 w-4 sm:h-5 sm:w-5" />
+            <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
             Recent Appointments
           </CardTitle>
         </CardHeader>
@@ -72,7 +72,7 @@ export const RecentAppointmentsWidget = () => {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2 text-base font-semibold">
-            <CalendarCheck className="h-4 w-4" />
+            <Bell className="h-4 w-4 text-primary" />
             Recent Appointments
           </CardTitle>
           <Badge variant="outline" className="text-xs h-5">
@@ -83,7 +83,7 @@ export const RecentAppointmentsWidget = () => {
       <CardContent className="pt-0">
         {!bookings || bookings.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
-            <CalendarCheck className="h-10 w-10 mx-auto mb-2 opacity-20" />
+            <Bell className="h-10 w-10 mx-auto mb-2 opacity-20" />
             <p className="text-xs">No appointments booked yet</p>
           </div>
         ) : (
@@ -101,37 +101,37 @@ export const RecentAppointmentsWidget = () => {
                 return (
                   <div
                     key={booking.id}
-                    className="flex items-center gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-lg bg-background border border-border hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
+                    className="flex items-center gap-3 p-2.5 rounded-lg bg-background border border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
                     onClick={() => navigate(`/?tab=calendar`)}
                   >
-                    <div className="flex flex-col items-center justify-center min-w-[40px] sm:min-w-[50px] h-[40px] sm:h-[50px] rounded-lg bg-background border border-border shadow-sm">
-                      <span className="text-[9px] sm:text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                    <div className="flex flex-col items-center justify-center min-w-[50px] h-[50px] rounded-lg bg-primary/5 border border-primary/20 shadow-sm">
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
                         {format(appointmentDate, "MMM")}
                       </span>
-                      <span className="text-xl sm:text-2xl font-bold text-foreground leading-none">
+                      <span className="text-2xl font-bold text-foreground leading-none">
                         {format(appointmentDate, "d")}
                       </span>
                     </div>
                     
                     <div className="flex-1 min-w-0 overflow-hidden">
-                      <h4 className="font-semibold text-xs sm:text-sm text-foreground truncate">
-                        {booking.customer_name}
-                      </h4>
-                      <div className="flex items-center gap-1.5 mt-0.5 text-[10px] sm:text-xs text-muted-foreground overflow-hidden">
-                        <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 shrink-0" />
-                        <span className="shrink-0">{booking.appointment_time}</span>
-                        {booking.scheduler?.name && (
-                          <>
-                            <span className="shrink-0 text-muted-foreground/50">•</span>
-                            <span className="truncate min-w-0">{booking.scheduler.name}</span>
-                          </>
-                        )}
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Bell className="h-3 w-3 text-primary shrink-0" />
+                        <h4 className="font-semibold text-sm text-foreground truncate">
+                          {booking.customer_name}
+                        </h4>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3 shrink-0" />
+                        <span className="truncate">
+                          {booking.appointment_time}
+                          {booking.scheduler?.name && ` • ${booking.scheduler.name}`}
+                        </span>
                       </div>
                     </div>
                     
                     <Badge 
                       variant="secondary"
-                      className="text-[10px] sm:text-xs shrink-0 h-5 sm:h-6 px-2 sm:px-3 flex items-center justify-center font-medium capitalize whitespace-nowrap"
+                      className="text-xs shrink-0 h-6 px-3 flex items-center justify-center font-medium capitalize whitespace-nowrap"
                       style={{
                         backgroundColor: statusColor.bg,
                         color: statusColor.text,
