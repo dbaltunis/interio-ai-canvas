@@ -1,7 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Ruler, Save } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -309,17 +310,76 @@ export const WindowManagementDialog = ({
     }
   };
   const hasMeasurements = existingMeasurement && Object.keys(existingMeasurement.measurements || {}).length > 0;
+  
+  // Get treatment name from existingTreatments
+  const [treatmentName, setTreatmentName] = useState('');
+  const currentTreatment = existingTreatments?.[0];
+  
+  useEffect(() => {
+    if (currentTreatment) {
+      // Priority: treatment_name > product_name > template name
+      const name = currentTreatment.treatment_name || 
+                   currentTreatment.product_name || 
+                   currentTreatment.treatment_type || 
+                   'Treatment';
+      setTreatmentName(name);
+    }
+  }, [currentTreatment]);
+
+  const handleTreatmentNameUpdate = async (newName: string) => {
+    if (!currentTreatment?.id || !newName.trim()) return;
+    
+    try {
+      await supabase
+        .from('treatments')
+        .update({ treatment_name: newName.trim() })
+        .eq('id', currentTreatment.id);
+      
+      setTreatmentName(newName.trim());
+      toast({
+        title: 'Success',
+        description: 'Treatment name updated',
+      });
+    } catch (error) {
+      console.error('Failed to update treatment name:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update treatment name',
+        variant: 'destructive',
+      });
+    }
+  };
+  
   return <>
       <Dialog open={isOpen} onOpenChange={handleDialogClose}>
         <DialogContent className="max-w-[95vw] sm:max-w-7xl max-h-[95vh] flex flex-col bg-background border-2 p-3 sm:p-6">
           <DialogHeader className="flex-shrink-0 pb-2 sm:pb-4 border-b border-border">
             <div className="flex items-center justify-between">
               <DialogTitle className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 text-base sm:text-xl font-bold text-foreground">
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <Ruler className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                  <span className="hidden sm:inline">Design area:</span>
-                  <span className="sm:hidden">Area:</span>
-                  <WindowRenameButton windowName={surface?.name || 'Untitled'} onRename={handleRename} />
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 w-full">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <Ruler className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                    <span className="hidden sm:inline">Design area:</span>
+                    <span className="sm:hidden">Area:</span>
+                    <WindowRenameButton windowName={surface?.name || 'Untitled'} onRename={handleRename} />
+                  </div>
+                  {currentTreatment && (
+                    <>
+                      <span className="hidden sm:inline text-muted-foreground">|</span>
+                      <div className="flex items-center gap-1.5">
+                        <Input
+                          value={treatmentName}
+                          onChange={(e) => setTreatmentName(e.target.value)}
+                          onBlur={() => handleTreatmentNameUpdate(treatmentName)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleTreatmentNameUpdate(treatmentName);
+                          }}
+                          className="h-7 text-sm font-semibold max-w-[200px]"
+                          placeholder="Treatment name"
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               </DialogTitle>
             </div>
