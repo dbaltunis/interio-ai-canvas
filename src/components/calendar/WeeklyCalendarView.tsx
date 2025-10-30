@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { DndContext, DragEndEvent, useDraggable, useDroppable, DragOverlay } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { Calendar, Clock, User, CalendarCheck, UserCheck, Bell } from "lucide-react";
+import { Calendar, Clock, User, CalendarCheck, UserCheck, Bell, Video } from "lucide-react";
 import { useUpdateAppointment } from "@/hooks/useAppointments";
 import { BookedAppointmentDialog } from "./BookedAppointmentDialog";
 
@@ -156,8 +156,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         
         return {
           id: booking.id,
-          title: `🗓️ ${booking.customer_name}`,
-          description: `${schedulerName}\n${booking.customer_email}${booking.customer_phone ? '\n' + booking.customer_phone : ''}`,
+          title: `📅 ${booking.customer_name} • ${schedulerName}`,
+          description: `${booking.customer_email}${booking.customer_phone ? '\n' + booking.customer_phone : ''}`,
           start_time: startTime.toISOString(),
           end_time: endTime.toISOString(),
           location: 'Booked Appointment',
@@ -623,11 +623,10 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                   style={eventStyle}
                                  onClick={() => {
                                   if (event.isBooking) {
-                                    // Handle customer booking click - show booking details (read-only)
-                                    console.log('Customer booking clicked:', event);
+                                    // Open booked appointment dialog with full details
+                                    setBookedAppointmentDialog({ open: true, appointment: event });
                                   } else {
                                     // Handle personal event click - open edit dialog
-                                    console.log('Personal event clicked:', event.id);
                                     onEventClick?.(event.id);
                                   }
                                 }}
@@ -677,19 +676,22 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                         }
                                        </div>
                                        
-                                       {/* Time display - compact */}
-                                       <div className={`flex items-center gap-0.5 ${isNarrowEvent ? 'text-[8px]' : 'text-[9px] md:text-[10px]'} leading-tight font-normal text-foreground/70 dark:text-white/70 mt-0.5`}>
-                                         <span>{format(startTime, 'HH:mm')}</span>
-                                         {!isNarrowEvent && (
-                                           <>
-                                             <span>-</span>
-                                             <span>{format(endTime, 'HH:mm')}</span>
-                                           </>
-                                         )}
-                                         {!event.isAvailableSlot && event.notification_enabled && !isNarrowEvent && finalHeight > 40 && (
-                                           <Bell className="w-2.5 h-2.5 text-yellow-400 ml-0.5 hidden md:block" />
-                                         )}
-                                       </div>
+                                        {/* Time display - compact */}
+                                        <div className={`flex items-center gap-0.5 ${isNarrowEvent ? 'text-[8px]' : 'text-[9px] md:text-[10px]'} leading-tight font-normal text-foreground/70 dark:text-white/70 mt-0.5`}>
+                                          <span>{format(startTime, 'HH:mm')}</span>
+                                          {!isNarrowEvent && (
+                                            <>
+                                              <span>-</span>
+                                              <span>{format(endTime, 'HH:mm')}</span>
+                                            </>
+                                          )}
+                                          {!event.isAvailableSlot && event.notification_enabled && !isNarrowEvent && finalHeight > 40 && (
+                                            <Bell className="w-2.5 h-2.5 text-yellow-400 ml-0.5 hidden md:block" />
+                                          )}
+                                          {event.isBooking && event.video_meeting_link && !isNarrowEvent && (
+                                            <Video className="w-2.5 h-2.5 text-blue-400 ml-0.5" />
+                                          )}
+                                        </div>
                                      </div>
                                      
                                      {/* User avatar - hide on tablet and narrow events, only show on desktop */}
@@ -781,6 +783,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
           </div>
         )}
       </DragOverlay>
+      
+      <BookedAppointmentDialog
+        open={bookedAppointmentDialog.open}
+        onOpenChange={(open) => setBookedAppointmentDialog({ ...bookedAppointmentDialog, open })}
+        appointment={bookedAppointmentDialog.appointment}
+      />
     </DndContext>
   );
 };
