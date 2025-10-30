@@ -178,6 +178,34 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
     };
   }, []);
 
+  // Helper function to get client name
+  const getClientName = (quote: any) => {
+    try {
+      if (quote?.clients?.name) {
+        return quote.clients.name;
+      }
+      
+      if (quote?.client_id && clients.length > 0) {
+        const client = clients.find(c => c?.id === quote.client_id);
+        if (client?.name) {
+          return client.name;
+        }
+      }
+      
+      if (quote?.projects?.client_id && clients.length > 0) {
+        const client = clients.find(c => c?.id === quote.projects.client_id);
+        if (client?.name) {
+          return client.name;
+        }
+      }
+      
+      return 'No Client';
+    } catch (error) {
+      console.error('Error getting client name:', error);
+      return 'No Client';
+    }
+  };
+
   // Group quotes by project and filter with error handling
   const groupedData = projects.map(project => {
     try {
@@ -252,32 +280,6 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
     }
   };
 
-  const getClientName = (quote: any) => {
-    try {
-      if (quote?.clients?.name) {
-        return quote.clients.name;
-      }
-      
-      if (quote?.client_id && clients.length > 0) {
-        const client = clients.find(c => c?.id === quote.client_id);
-        if (client?.name) {
-          return client.name;
-        }
-      }
-      
-      if (quote?.projects?.client_id && clients.length > 0) {
-        const client = clients.find(c => c?.id === quote.projects.client_id);
-        if (client?.name) {
-          return client.name;
-        }
-      }
-      
-      return 'No Client';
-    } catch (error) {
-      console.error('Error getting client name:', error);
-      return 'No Client';
-    }
-  };
 
   const getClientForQuote = (quote: any) => {
     if (quote.clients) {
