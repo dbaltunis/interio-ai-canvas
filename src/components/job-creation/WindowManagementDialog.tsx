@@ -341,8 +341,13 @@ export const WindowManagementDialog = ({
     refetchOnMount: 'always'
   });
   
+  // Track the template ID to detect when it changes
+  const currentTemplateId = currentTreatment?.id || windowSummary?.template_id;
+  
   useEffect(() => {
-    console.log('🔄 Treatment data changed:', { currentTreatment, windowSummary });
+    console.log('🔄 Treatment data changed:', { currentTreatment, windowSummary, templateId: currentTemplateId });
+    
+    // ALWAYS overwrite fields when template changes - this is the key fix
     if (currentTreatment) {
       // Priority: treatment_name > product_name > template name
       const name = currentTreatment.treatment_name || 
@@ -373,7 +378,7 @@ export const WindowManagementDialog = ({
       setTreatmentDescription('');
       setEditDescriptionValue('');
     }
-  }, [currentTreatment, windowSummary, surface?.id]);
+  }, [currentTemplateId, currentTreatment?.treatment_name, windowSummary?.template_name, windowSummary?.description_text]);
 
   const handleTreatmentNameUpdate = async (newName: string) => {
     if (!newName.trim() || !surface?.id) return;
