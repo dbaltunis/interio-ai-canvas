@@ -1,18 +1,14 @@
 import { format, addDays, startOfWeek, isToday, isSameDay } from "date-fns";
 import { useAppointments } from "@/hooks/useAppointments";
-import { useSchedulerSlots } from "@/hooks/useSchedulerSlots";
 import { useAppointmentBookings } from "@/hooks/useAppointmentBookings";
-import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { DndContext, DragEndEvent, useDraggable, useDroppable, DragOverlay } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { Calendar, Clock, User, CalendarCheck, UserCheck, Share2, Bell } from "lucide-react";
+import { Calendar, Clock, User, CalendarCheck, UserCheck, Bell } from "lucide-react";
 import { useUpdateAppointment } from "@/hooks/useAppointments";
-import { AvailableSlotDialog } from "./AvailableSlotDialog";
-import { BookingInterfaceDialog } from "./BookingInterfaceDialog";
 
 interface WeeklyCalendarViewProps {
   currentDate: Date;
@@ -24,46 +20,25 @@ interface WeeklyCalendarViewProps {
 export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, filteredAppointments }: WeeklyCalendarViewProps) => {
   const { data: appointments } = useAppointments();
   const displayAppointments = filteredAppointments || appointments;
-  const { data: schedulerSlots, isLoading: slotsLoading } = useSchedulerSlots(); 
+  // REMOVED: schedulerSlots - not needed in internal calendar view
   const { data: bookedAppointments, isLoading: bookingsLoading } = useAppointmentBookings(); 
-  const { data: schedulers, isLoading: schedulersLoading } = useAppointmentSchedulers();
+  // REMOVED: schedulers - not needed in internal calendar view
   const updateAppointment = useUpdateAppointment();
   
   // Debug logging for data fetching
   console.log('Calendar data status:', { 
     appointments: displayAppointments?.length, 
-    schedulerSlots: schedulerSlots?.length, 
     bookedAppointments: bookedAppointments?.length,
-    schedulers: schedulers?.length,
-    loading: { slotsLoading, bookingsLoading, schedulersLoading }
+    loading: { bookingsLoading }
   });
   
-  // Removed excessive debug logging to prevent infinite re-renders
   const { data: currentUserProfile } = useCurrentUserProfile();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   
-  // Available slot dialog state
-  const [selectedSlot, setSelectedSlot] = useState<{
-    id: string;
-    schedulerName: string;
-    schedulerSlug?: string;
-    date: string;
-    startTime: string;
-    endTime: string;
-    duration: number;
-  } | null>(null);
-  const [showSlotDialog, setShowSlotDialog] = useState(false);
-
-  // Booking interface dialog state
-  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
-  const [bookingDialogData, setBookingDialogData] = useState<{
-    schedulerId: string;
-    schedulerName: string;
-    date: Date;
-    availableSlots: Array<{ id: string; startTime: string; endTime: string; duration: number }>;
-  } | null>(null);
+  // REMOVED: Available slot dialog state - not needed in internal calendar
+  // REMOVED: Booking interface dialog state - not needed in internal calendar
   
   // Get current user ID
   useEffect(() => {
@@ -157,9 +132,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         return isSameDay(bookingDate, date);
       })
       .map(booking => {
-        // Find the scheduler to get duration
-        const scheduler = schedulers?.find(s => s.id === booking.scheduler_id);
-        const duration = scheduler?.duration || 60; // Default to 60 minutes if not found
+        // Duration default to 60 minutes
+        const duration = 60;
         
         // Convert booking to event format with distinct styling
         const appointmentDateTime = new Date(`${booking.appointment_date}T${booking.appointment_time}:00`);
@@ -175,7 +149,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         return {
           id: `booking-${booking.id}`,
           title: `${booking.customer_name}`, // Clear customer name only
-          description: scheduler?.name || 'Appointment', // Scheduler name as description
+          description: 'Customer Appointment',
           start_time: appointmentDateTime.toISOString(),
           end_time: endDateTime.toISOString(),
           appointment_type: 'booked_appointment',
@@ -186,95 +160,17 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
           isBooking: true,
           bookingData: booking,
           customer_name: booking.customer_name,
-          scheduler_name: scheduler?.name || 'Unknown'
+          scheduler_name: 'Appointment'
         };
       })
       .filter(Boolean); // Remove null values from invalid bookings
   };
 
-  // Get available appointment slots for a specific date
-  const getAvailableSlotsForDate = (date: Date) => {
-    if (!schedulerSlots?.length) {
-      console.log('No scheduler slots available for date:', format(date, 'yyyy-MM-dd'));
-      return [];
-    }
-    
-    const availableSlots = schedulerSlots
-      .filter(slot => isSameDay(slot.date, date) && !slot.isBooked)
-      .map(slot => {
-        // Calculate accurate end time based on duration
-        const startDateTime = new Date(`${format(date, 'yyyy-MM-dd')}T${slot.startTime}:00`);
-        const endDateTime = new Date(startDateTime.getTime() + (slot.duration * 60 * 1000));
-        
-        return {
-          id: slot.id,
-          title: `Available: ${slot.schedulerName}`,
-          start_time: startDateTime.toISOString(),
-          end_time: endDateTime.toISOString(),
-          date: format(date, 'yyyy-MM-dd'),
-          isAvailableSlot: true,
-          schedulerName: slot.schedulerName,
-          schedulerSlug: schedulers?.find(s => s.id === slot.schedulerId)?.slug,
-          duration: slot.duration,
-          color: '#6B7280', // Gray-500
-          user_id: null
-        };
-      });
-    
-    return availableSlots;
-  };
-
-  // Combine regular events and booked appointments ONLY (no available slots)
+  // Combine regular events and booked appointments ONLY (internal calendar view)
   const getAllEventsForDate = (date: Date) => {
     const regularEvents = getEventsForDate(date);
     const bookedEvents = getBookedEventsForDate(date);
-    // REMOVED: available slots from event rendering
     return [...regularEvents, ...bookedEvents];
-  };
-
-  // Get available slots for a specific date and time to show as background indicator
-  const getAvailableSlotsForTime = (date: Date, timeString: string): Array<{schedulerId: string; schedulerName: string}> => {
-    if (!schedulerSlots) return [];
-    
-    return schedulerSlots
-      .filter(slot => {
-        if (!isSameDay(slot.date, date)) return false;
-        if (slot.isBooked) return false;
-        return slot.startTime === timeString;
-      })
-      .map(slot => ({
-        schedulerId: slot.schedulerId,
-        schedulerName: slot.schedulerName
-      }));
-  };
-
-  // Handle click on available slot indicator to open booking dialog
-  const handleAvailableSlotClick = (date: Date, schedulerId: string, schedulerName: string) => {
-    const daySlots = schedulerSlots?.filter(slot => 
-      isSameDay(slot.date, date) && 
-      slot.schedulerId === schedulerId &&
-      !slot.isBooked
-    ) || [];
-
-    setBookingDialogData({
-      schedulerId,
-      schedulerName,
-      date,
-      availableSlots: daySlots.map(slot => ({
-        id: slot.id,
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        duration: slot.duration
-      }))
-    });
-    setBookingDialogOpen(true);
-  };
-
-  const getSchedulerSlotsForDate = (date: Date) => {
-    if (!schedulerSlots) return [];
-    return schedulerSlots.filter(slot => 
-      isSameDay(slot.date, date)
-    );
   };
 
   // Check if a time slot is occupied by booked appointments or events
@@ -523,11 +419,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                     <div key={day.toString()} className={`border-r relative bg-card ${
                       isCurrentDay ? 'ring-2 ring-primary/20 ring-inset' : ''
                     }`} style={{ height: `${timeSlots.length * 32}px` }}>
-                      {/* Empty time slots - clickable areas with availability indicators */}
+                      {/* Empty time slots - clickable areas (NO availability indicators in internal calendar) */}
                       {timeSlots.map((time, index) => {
                         const isOccupied = isTimeSlotOccupied(day, time);
-                        const availableSlots = getAvailableSlotsForTime(day, time);
-                        const hasAvailability = availableSlots.length > 0;
                         
                         const DroppableTimeSlot = () => {
                           const { setNodeRef, isOver } = useDroppable({
@@ -538,37 +432,22 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                           return (
                             <div 
                               ref={setNodeRef}
-                              className={`h-[32px] transition-colors relative group ${
+                              className={`h-[32px] transition-colors relative ${
                                  index % 2 === 0 ? 'border-b border-muted/30' : 'border-b border-muted'
                               } ${isOver ? 'bg-primary/30 border-primary border-2' : ''} ${
                                 isOccupied 
                                   ? 'bg-destructive/10 hover:bg-destructive/20 cursor-help border-destructive/30' 
-                                  : hasAvailability
-                                  ? 'bg-emerald-500/5 hover:bg-emerald-500/10 cursor-pointer'
                                   : 'hover:bg-accent/50 cursor-pointer'
                               }`}
-                              onMouseDown={(e) => !isOccupied && !hasAvailability && handleMouseDown && handleMouseDown(day, index, e)}
-                              onMouseMove={() => !isOccupied && !hasAvailability && handleMouseMove && handleMouseMove(day, index)}
-                              onClick={() => {
-                                if (hasAvailability) {
-                                  // Open booking dialog for first available scheduler
-                                  handleAvailableSlotClick(day, availableSlots[0].schedulerId, availableSlots[0].schedulerName);
-                                } else if (!isCreatingEvent) {
-                                  onTimeSlotClick?.(day, time);
-                                }
-                              }}
+                              onMouseDown={(e) => !isOccupied && handleMouseDown && handleMouseDown(day, index, e)}
+                              onMouseMove={() => !isOccupied && handleMouseMove && handleMouseMove(day, index)}
+                              onClick={() => !isCreatingEvent && onTimeSlotClick?.(day, time)}
                               title={
-                                hasAvailability
-                                  ? `Available: ${availableSlots.map(s => s.schedulerName).join(', ')} - Click to book`
-                                  : isOccupied 
+                                isOccupied 
                                   ? `${format(day, 'MMM d')} at ${time} - Time occupied by appointment`
                                   : `${format(day, 'MMM d')} at ${time} - Click to create personal event`
                               }
                              >
-                               {/* Subtle availability indicator */}
-                               {hasAvailability && (
-                                 <div className="absolute right-1 top-1 w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-40 group-hover:opacity-100 transition-opacity" />
-                               )}
                              </div>
                           );
                         };
@@ -732,29 +611,17 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                   ${event.isBooking ? '' : !event.isAvailableSlot ? 'hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5' : ''}
                                   ${!event.isBooking && !event.isAvailableSlot ? 'hover:ring-2 hover:ring-primary/40' : ''}
                                   ${eventStyling.textClass}`}
-                                 style={eventStyle}
-                                onClick={() => {
-                                 if (event.isAvailableSlot) {
-                                   // Handle available slot click - open booking dialog
-                                   setSelectedSlot({
-                                     id: event.id,
-                                     schedulerName: event.schedulerName,
-                                     schedulerSlug: event.schedulerSlug,
-                                     date: format(day, 'yyyy-MM-dd'),
-                                     startTime: format(startTime, 'HH:mm'),
-                                     endTime: format(endTime, 'HH:mm'),
-                                     duration: event.duration
-                                   });
-                                   setShowSlotDialog(true);
-                                 } else if (event.isBooking) {
-                                   // Handle customer booking click - show booking details (read-only)
-                                   console.log('Customer booking clicked:', event);
-                                 } else {
-                                   // Handle personal event click - open edit dialog
-                                   console.log('Personal event clicked:', event.id);
-                                   onEventClick?.(event.id);
-                                 }
-                               }}
+                                  style={eventStyle}
+                                 onClick={() => {
+                                  if (event.isBooking) {
+                                    // Handle customer booking click - show booking details (read-only)
+                                    console.log('Customer booking clicked:', event);
+                                  } else {
+                                    // Handle personal event click - open edit dialog
+                                    console.log('Personal event clicked:', event.id);
+                                    onEventClick?.(event.id);
+                                  }
+                                }}
                                 title={
                                    event.isAvailableSlot
                                      ? `📅 SHAREABLE APPOINTMENT SLOT\n${event.schedulerName}\n🕐 ${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')} (${event.duration} min)\n📤 Click to get booking link and share with clients`
@@ -893,40 +760,18 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
               zIndex: 1000
             }}
           >
-              <div className="font-semibold text-foreground text-sm mb-1">
+            <div className="font-semibold text-foreground text-sm mb-1">
               {activeEvent.title}
             </div>
-              <div className="text-foreground/90 text-xs">
+            <div className="text-foreground/90 text-xs">
               {format(new Date(activeEvent.start_time), 'HH:mm')}
             </div>
-              <div className="text-foreground/70 text-xs mt-1">
+            <div className="text-foreground/70 text-xs mt-1">
               Drop to reschedule
             </div>
           </div>
         )}
       </DragOverlay>
-      
-      {/* Available Slot Sharing Dialog */}
-      <AvailableSlotDialog
-        isOpen={showSlotDialog}
-        onClose={() => {
-          setShowSlotDialog(false);
-          setSelectedSlot(null);
-        }}
-        slot={selectedSlot}
-      />
-
-      {/* Booking Interface Dialog */}
-      {bookingDialogData && (
-        <BookingInterfaceDialog
-          open={bookingDialogOpen}
-          onOpenChange={setBookingDialogOpen}
-          schedulerId={bookingDialogData.schedulerId}
-          schedulerName={bookingDialogData.schedulerName}
-          date={bookingDialogData.date}
-          availableSlots={bookingDialogData.availableSlots}
-        />
-      )}
     </DndContext>
   );
 };
