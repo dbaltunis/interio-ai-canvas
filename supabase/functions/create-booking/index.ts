@@ -110,6 +110,7 @@ serve(async (req) => {
           attendee_email: customer_email,
           attendee_name: customer_name,
           scheduler_email: scheduler.user_email,
+          scheduler_user_id: scheduler.user_id, // Pass scheduler owner's user_id for OAuth
           timezone: 'UTC'
         }
       });

@@ -14,6 +14,7 @@ interface CalendarEventRequest {
   attendee_email: string;
   attendee_name: string;
   scheduler_email: string;
+  scheduler_user_id: string; // Add this to identify which user's calendar to use
   timezone?: string;
 }
 
@@ -36,6 +37,7 @@ serve(async (req) => {
       attendee_email,
       attendee_name,
       scheduler_email,
+      scheduler_user_id,
       timezone = 'UTC'
     }: CalendarEventRequest = await req.json();
 
@@ -44,29 +46,44 @@ serve(async (req) => {
       start_time,
       end_time,
       attendee_email,
-      scheduler_email
+      scheduler_email,
+      scheduler_user_id
     });
 
-    // Get Google Calendar service account credentials from secrets
-    const googleCredentials = Deno.env.get('GOOGLE_CALENDAR_CREDENTIALS');
+    // Get the user's Google Calendar OAuth tokens from integration_settings
+    const { data: integration, error: integrationError } = await supabase
+      .from('integration_settings')
+      .select('api_credentials, active')
+      .eq('user_id', scheduler_user_id)
+      .eq('integration_type', 'google_calendar')
+      .single();
     
-    if (!googleCredentials) {
-      console.log('Google Calendar credentials not configured, skipping calendar creation');
+    if (integrationError || !integration || !integration.active) {
+      console.log('User has not connected Google Calendar:', integrationError);
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Google Calendar not configured',
+          error: 'Google Calendar not connected for this user',
           meetLink: null
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Parse the service account credentials
-    const credentials = JSON.parse(googleCredentials);
+    const credentials = integration.api_credentials as any;
+    const accessToken = credentials.access_token;
     
-    // Get access token using JWT
-    const accessToken = await getAccessToken(credentials);
+    if (!accessToken) {
+      console.log('No access token found for user');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Google Calendar access token not found',
+          meetLink: null
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     // Create calendar event with Google Meet
     const event = {
@@ -153,93 +170,3 @@ serve(async (req) => {
   }
 });
 
-// Helper function to get Google OAuth access token using service account
-async function getAccessToken(credentials: any): Promise<string> {
-  const header = {
-    alg: 'RS256',
-    typ: 'JWT',
-  };
-
-  const now = Math.floor(Date.now() / 1000);
-  const claim = {
-    iss: credentials.client_email,
-    scope: 'https://www.googleapis.com/auth/calendar',
-    aud: 'https://oauth2.googleapis.com/token',
-    exp: now + 3600,
-    iat: now,
-  };
-
-  // Import the private key
-  const privateKey = await crypto.subtle.importKey(
-    'pkcs8',
-    pemToArrayBuffer(credentials.private_key),
-    {
-      name: 'RSASSA-PKCS1-v1_5',
-      hash: 'SHA-256',
-    },
-    false,
-    ['sign']
-  );
-
-  // Create JWT
-  const encodedHeader = base64UrlEncode(JSON.stringify(header));
-  const encodedClaim = base64UrlEncode(JSON.stringify(claim));
-  const signatureInput = `${encodedHeader}.${encodedClaim}`;
-  
-  const signature = await crypto.subtle.sign(
-    'RSASSA-PKCS1-v1_5',
-    privateKey,
-    new TextEncoder().encode(signatureInput)
-  );
-
-  const jwt = `${signatureInput}.${base64UrlEncode(signature)}`;
-
-  // Exchange JWT for access token
-  const response = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion: jwt,
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to get access token: ${error}`);
-  }
-
-  const data = await response.json();
-  return data.access_token;
-}
-
-function pemToArrayBuffer(pem: string): ArrayBuffer {
-  const b64 = pem
-    .replace(/-----BEGIN PRIVATE KEY-----/, '')
-    .replace(/-----END PRIVATE KEY-----/, '')
-    .replace(/\s/g, '');
-  
-  const binary = atob(b64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes.buffer;
-}
-
-function base64UrlEncode(data: string | ArrayBuffer): string {
-  let str: string;
-  if (typeof data === 'string') {
-    str = btoa(data);
-  } else {
-    const bytes = new Uint8Array(data);
-    let binary = '';
-    for (let i = 0; i < bytes.length; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    str = btoa(binary);
-  }
-  return str.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
