@@ -101,37 +101,31 @@ export const RecentAppointmentsWidget = () => {
                 return (
                   <div
                     key={booking.id}
-                    className="flex items-center gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-lg bg-background border border-border hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
+                    className="flex items-center gap-2 p-2 rounded-lg bg-background border border-border hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
                     onClick={() => navigate(`/?tab=calendar`)}
                   >
-                    <div className="flex flex-col items-center justify-center min-w-[40px] sm:min-w-[50px] h-[40px] sm:h-[50px] rounded-lg bg-background border border-border shadow-sm">
-                      <span className="text-[9px] sm:text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                    <div className="flex flex-col items-center justify-center w-[40px] h-[40px] shrink-0 rounded-lg bg-background border border-border shadow-sm">
+                      <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide">
                         {format(appointmentDate, "MMM")}
                       </span>
-                      <span className="text-xl sm:text-2xl font-bold text-foreground leading-none">
+                      <span className="text-xl font-bold text-foreground leading-none">
                         {format(appointmentDate, "d")}
                       </span>
                     </div>
                     
                     <div className="flex-1 min-w-0 overflow-hidden">
-                      <h4 className="font-semibold text-xs sm:text-sm text-foreground truncate">
+                      <h4 className="font-semibold text-xs text-foreground truncate break-all">
                         {booking.customer_name}
                       </h4>
-                      <div className="flex items-center gap-1.5 mt-0.5 text-[10px] sm:text-xs text-muted-foreground overflow-hidden">
-                        <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 shrink-0" />
-                        <span className="shrink-0">{booking.appointment_time}</span>
-                        {booking.scheduler?.name && (
-                          <>
-                            <span className="shrink-0 text-muted-foreground/50">•</span>
-                            <span className="truncate min-w-0">{booking.scheduler.name}</span>
-                          </>
-                        )}
+                      <div className="flex items-center gap-1 mt-0.5 text-[10px] text-muted-foreground">
+                        <Clock className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{booking.appointment_time} • {booking.scheduler?.name}</span>
                       </div>
                     </div>
                     
                     <Badge 
                       variant="secondary"
-                      className="text-[10px] sm:text-xs shrink-0 h-5 sm:h-6 px-2 sm:px-3 flex items-center justify-center font-medium capitalize whitespace-nowrap"
+                      className="text-[10px] shrink-0 h-5 px-2 font-medium capitalize"
                       style={{
                         backgroundColor: statusColor.bg,
                         color: statusColor.text,
