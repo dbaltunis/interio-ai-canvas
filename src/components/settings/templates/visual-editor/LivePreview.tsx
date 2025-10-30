@@ -826,15 +826,15 @@ const LivePreviewBlock = ({
           )}
 
           <div style={{ overflow: 'visible', width: '100%' }}>
-            <table className="w-full" style={{ borderCollapse: 'separate', borderSpacing: 0, tableLayout: 'auto' }}>
+            <table className="w-full" style={{ borderCollapse: 'collapse', tableLayout: 'auto' }}>
               <thead>
-                <tr style={{ borderBottom: '2px solid #000000' }}>
-                  <th style={{ textAlign: 'left', padding: '12px 10px', fontSize: '12px', fontWeight: '700', color: '#000000', width: '40px' }}>#</th>
-                  <th style={{ textAlign: 'left', padding: '12px 10px', fontSize: '12px', fontWeight: '700', color: '#000000' }}>Product/Service</th>
-                  <th style={{ textAlign: 'left', padding: '12px 10px', fontSize: '12px', fontWeight: '700', color: '#000000' }}>Description</th>
-                  <th style={{ textAlign: 'center', padding: '12px 10px', fontSize: '12px', fontWeight: '700', color: '#000000', width: '60px' }}>Qty</th>
-                  <th style={{ textAlign: 'right', padding: '12px 10px', fontSize: '12px', fontWeight: '700', color: '#000000', width: '100px' }}>Rate</th>
-                  <th style={{ textAlign: 'right', padding: '12px 10px', fontSize: '12px', fontWeight: '700', color: '#000000', width: '110px' }}>Total</th>
+                <tr style={{ borderBottom: '1px solid #333' }}>
+                  <th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '11px', fontWeight: '600', color: '#333', width: '30px' }}>#</th>
+                  <th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '11px', fontWeight: '600', color: '#333' }}>Product/Service</th>
+                  <th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '11px', fontWeight: '600', color: '#333' }}>Description</th>
+                  <th style={{ textAlign: 'center', padding: '10px 8px', fontSize: '11px', fontWeight: '600', color: '#333', width: '70px' }}>Quantity</th>
+                  <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '11px', fontWeight: '600', color: '#333', width: '100px' }}>Price rate</th>
+                  <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '11px', fontWeight: '600', color: '#333', width: '120px' }}>Total without GST</th>
                 </tr>
               </thead>
               <tbody>
@@ -842,7 +842,7 @@ const LivePreviewBlock = ({
                   <React.Fragment key={roomName}>
                     {groupByRoom && hasRealData && (
                       <tr>
-                        <td colSpan={6} style={{ padding: '12px 10px 8px 10px', fontSize: '12px', fontWeight: '700', color: '#000000', borderTop: '2px solid #000000' }}>
+                        <td colSpan={6} style={{ padding: '12px 8px 6px 8px', fontSize: '11px', fontWeight: '600', color: '#333', borderTop: '1px solid #ddd', backgroundColor: '#f9f9f9' }}>
                           {roomName}
                         </td>
                       </tr>
@@ -854,80 +854,51 @@ const LivePreviewBlock = ({
                       
                       return (
                         <React.Fragment key={`item-${roomName}-${itemIndex}`}>
-                          {/* Main product row - Compact and visible */}
-                          <tr style={{ borderBottom: '1px solid #e0e0e0', backgroundColor: '#ffffff' }}>
-                            <td style={{ padding: '14px 10px', fontSize: '12px', fontWeight: '600', color: '#666666', verticalAlign: 'top' }}>{itemNumber}</td>
-                            <td style={{ padding: '14px 10px', fontSize: '12px', fontWeight: '700', color: '#000000', verticalAlign: 'top' }}>
-                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                                {showImages && (item.image_url || item.fabric_details?.image_url) && (
-                                  <div style={{ flexShrink: 0 }}>
-                                    <QuoteItemImage src={item.image_url || item.fabric_details?.image_url} alt={item.name || item.surface_name} size={40} className="rounded" />
-                                  </div>
-                                )}
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontWeight: '700', fontSize: '12px', wordWrap: 'break-word', color: '#000000' }}>{item.name || item.surface_name || 'Window Treatment'}</div>
-                                  {item.room_name && (
-                                    <div style={{ fontSize: '10px', color: '#666666', marginTop: '3px', wordWrap: 'break-word', fontWeight: '500' }}>{item.room_name}</div>
-                                  )}
-                                </div>
-                              </div>
+                          {/* Main product row */}
+                          <tr style={{ borderBottom: breakdown.length > 0 && showDetailedProducts ? 'none' : '1px solid #e5e5e5' }}>
+                            <td style={{ padding: '10px 8px', fontSize: '11px', fontWeight: '500', color: '#666', verticalAlign: 'top' }}>{itemNumber}</td>
+                            <td style={{ padding: '10px 8px', fontSize: '11px', fontWeight: '600', color: '#000', verticalAlign: 'top' }}>
+                              {item.name || item.surface_name || item.treatment_type || 'Window Treatment'}
                             </td>
-                            <td style={{ padding: '14px 10px', fontSize: '11px', color: '#666666', verticalAlign: 'top', wordWrap: 'break-word', fontWeight: '500' }}>
-                              {item.description || item.treatment_type || item.notes || ''}
+                            <td style={{ padding: '10px 8px', fontSize: '11px', color: '#666', verticalAlign: 'top' }}>
+                              {item.description || item.treatment_type || ''}
                             </td>
-                            <td style={{ padding: '14px 10px', fontSize: '12px', fontWeight: '600', color: '#000000', textAlign: 'center', verticalAlign: 'top' }}>{item.quantity || 1}</td>
-                            <td style={{ padding: '14px 10px', fontSize: '12px', color: '#000000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap', fontWeight: '600' }}>
-                              {renderTokenValue('currency_symbol')}{((item.unit_price || item.total_cost || item.total || 0)).toFixed(2)}
+                            <td style={{ padding: '10px 8px', fontSize: '11px', fontWeight: '500', color: '#000', textAlign: 'center', verticalAlign: 'top' }}>
+                              {item.quantity || 1}
                             </td>
-                            <td style={{ padding: '14px 10px', fontSize: '13px', fontWeight: '700', color: '#000000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                              {renderTokenValue('currency_symbol')}{((item.total || item.total_cost || 0)).toFixed(2)}
+                            <td style={{ padding: '10px 8px', fontSize: '11px', color: '#000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                              {breakdown.length > 0 && showDetailedProducts ? '' : `${renderTokenValue('currency_symbol')}${((item.unit_price || item.total_cost || item.total || 0)).toFixed(2)}`}
+                            </td>
+                            <td style={{ padding: '10px 8px', fontSize: '11px', fontWeight: '600', color: '#000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                              {breakdown.length > 0 && showDetailedProducts ? '' : `${renderTokenValue('currency_symbol')}${((item.total || item.total_cost || 0)).toFixed(2)}`}
                             </td>
                           </tr>
                           
-                          {/* Detailed breakdown - Compact, clear pricing */}
-                          {breakdown.length > 0 && showDetailedProducts && (
-                            <tr>
-                              <td colSpan={6} style={{ padding: '6px 10px 12px 60px', backgroundColor: '#ffffff' }}>
-                                <div style={{ paddingLeft: '16px' }}>
-                                  {breakdown.map((breakdownItem: any, bidx: number) => (
-                                    <div key={bidx} style={{ 
-                                      display: 'flex', 
-                                      alignItems: 'center', 
-                                      gap: '12px',
-                                      padding: '8px 0',
-                                      borderBottom: 'none'
-                                    }}>
-                                      {showImages && breakdownItem.image_url && (
-                                        <div style={{ flexShrink: 0 }}>
-                                          <QuoteItemImage src={breakdownItem.image_url} alt={breakdownItem.name} size={32} className="rounded" />
-                                        </div>
-                                      )}
-                                      <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontSize: '11px', color: '#000000', fontWeight: '600' }}>
-                                          {breakdownItem.name || breakdownItem.category}
-                                        </div>
-                                        {breakdownItem.description && breakdownItem.description !== '-' && breakdownItem.description !== breakdownItem.name && (
-                                          <div style={{ fontSize: '9px', color: '#666666', marginTop: '2px', fontWeight: '500' }}>
-                                            {breakdownItem.description}
-                                          </div>
-                                        )}
-                                      </div>
-                                      {(breakdownItem.quantity || breakdownItem.unit_price) && (
-                                        <div style={{ fontSize: '9px', color: '#666666', whiteSpace: 'nowrap', marginRight: '16px', fontWeight: '500' }}>
-                                          {breakdownItem.quantity && typeof breakdownItem.quantity === 'number' && breakdownItem.quantity > 0 ? `${breakdownItem.quantity.toFixed(2)}` : ''}
-                                          {breakdownItem.unit ? ` ${breakdownItem.unit}` : ''}
-                                          {breakdownItem.unit_price && breakdownItem.unit_price > 0 ? ` @ ${renderTokenValue('currency_symbol')}${breakdownItem.unit_price.toFixed(2)}` : ''}
-                                        </div>
-                                      )}
-                                      <div style={{ fontSize: '11px', fontWeight: '700', color: '#000000', whiteSpace: 'nowrap', minWidth: '80px', textAlign: 'right' }}>
-                                        {renderTokenValue('currency_symbol')}{((breakdownItem.total_cost !== undefined ? breakdownItem.total_cost : (breakdownItem.total || 0))).toFixed(2)}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
+                          {/* Detailed breakdown rows - indented */}
+                          {breakdown.length > 0 && showDetailedProducts && breakdown.map((breakdownItem: any, bidx: number) => (
+                            <tr key={bidx} style={{ backgroundColor: bidx === breakdown.length - 1 ? '#fff' : '#fafafa', borderBottom: bidx === breakdown.length - 1 ? '1px solid #e5e5e5' : 'none' }}>
+                              <td style={{ padding: '8px 8px 8px 8px' }}></td>
+                              <td style={{ padding: '8px 8px', fontSize: '10px', color: '#666', paddingLeft: '24px' }}>
+                                {breakdownItem.name || breakdownItem.category}
+                              </td>
+                              <td style={{ padding: '8px 8px', fontSize: '10px', color: '#999' }}>
+                                {breakdownItem.description && breakdownItem.description !== '-' && breakdownItem.description !== breakdownItem.name ? breakdownItem.description : '-'}
+                              </td>
+                              <td style={{ padding: '8px 8px', fontSize: '10px', color: '#666', textAlign: 'center' }}>
+                                {breakdownItem.quantity && typeof breakdownItem.quantity === 'number' && breakdownItem.quantity > 0 
+                                  ? `${breakdownItem.quantity.toFixed(1)} ${breakdownItem.unit || ''}`.trim() 
+                                  : '-'}
+                              </td>
+                              <td style={{ padding: '8px 8px', fontSize: '10px', color: '#666', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                {breakdownItem.unit_price && breakdownItem.unit_price > 0 
+                                  ? `${renderTokenValue('currency_symbol')}${breakdownItem.unit_price.toFixed(2)}` 
+                                  : '-'}
+                              </td>
+                              <td style={{ padding: '8px 8px', fontSize: '10px', fontWeight: '500', color: '#000', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                {renderTokenValue('currency_symbol')}{((breakdownItem.total_cost !== undefined ? breakdownItem.total_cost : (breakdownItem.total || 0))).toFixed(2)}
                               </td>
                             </tr>
-                          )}
+                          ))}
                         </React.Fragment>
                       );
                     })}
