@@ -434,27 +434,35 @@ export const WindowManagementDialog = ({
                   {(currentTreatment || windowSummary) && treatmentName && (
                     <>
                       <span className="hidden sm:inline text-muted-foreground">|</span>
-                      <div className="flex flex-col gap-1">
-                        <Input
-                          value={treatmentName}
-                          onChange={(e) => setTreatmentName(e.target.value)}
-                          onBlur={() => handleTreatmentNameUpdate(treatmentName)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleTreatmentNameUpdate(treatmentName);
-                          }}
-                          className="h-7 text-sm font-semibold max-w-[250px]"
-                          placeholder="Product name"
-                        />
-                        <Input
-                          value={treatmentDescription}
-                          onChange={(e) => setTreatmentDescription(e.target.value)}
-                          onBlur={() => handleDescriptionUpdate(treatmentDescription)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleDescriptionUpdate(treatmentDescription);
-                          }}
-                          className="h-6 text-xs max-w-[250px]"
-                          placeholder="Description (optional)"
-                        />
+                      <div className="flex items-center gap-1.5 w-full">
+                        <div className="flex items-center gap-1 flex-1 min-w-0">
+                          <span className="text-[10px] text-muted-foreground font-medium shrink-0 uppercase tracking-wide">Name:</span>
+                          <Input
+                            value={treatmentName}
+                            onChange={(e) => setTreatmentName(e.target.value)}
+                            onBlur={() => handleTreatmentNameUpdate(treatmentName)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleTreatmentNameUpdate(treatmentName);
+                            }}
+                            className="h-7 text-sm font-semibold border-transparent bg-muted/20 px-2 focus-visible:ring-1"
+                            placeholder="e.g., Curtains"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 w-full">
+                        <div className="flex items-center gap-1 flex-1 min-w-0">
+                          <span className="text-[10px] text-muted-foreground font-medium shrink-0 uppercase tracking-wide">Note:</span>
+                          <Input
+                            value={treatmentDescription}
+                            onChange={(e) => setTreatmentDescription(e.target.value)}
+                            onBlur={() => handleDescriptionUpdate(treatmentDescription)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleDescriptionUpdate(treatmentDescription);
+                            }}
+                            className="h-6 text-xs border-transparent bg-muted/20 px-2 focus-visible:ring-1"
+                            placeholder="Optional notes"
+                          />
+                        </div>
                       </div>
                     </>
                   )}
