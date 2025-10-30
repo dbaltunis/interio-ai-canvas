@@ -80,7 +80,7 @@ export const DynamicWindowWorksheet = forwardRef<{
     opacity: number;
     name: string;
   }>>([]);
-  const [isLayeredMode, setIsLayeredMode] = useState(false);
+  const [isLayeredMode, setIsLayeredMode] = useState(false); // DISABLED: No multiple treatments per window
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastSaveTime, setLastSaveTime] = useState<number | null>(null);
   const lastSavedState = useRef<any>(null);
@@ -382,11 +382,12 @@ export const DynamicWindowWorksheet = forwardRef<{
         setSelectedLining(existingMeasurement.selected_lining);
       }
 
+      // DISABLED: No layered treatments allowed - only ONE treatment per window
       // Load layered treatments if they exist
-      if (existingMeasurement.layered_treatments) {
-        setLayeredTreatments(existingMeasurement.layered_treatments);
-        setIsLayeredMode(existingMeasurement.layered_treatments.length > 0);
-      }
+      // if (existingMeasurement.layered_treatments) {
+      //   setLayeredTreatments(existingMeasurement.layered_treatments);
+      //   setIsLayeredMode(existingMeasurement.layered_treatments.length > 0);
+      // }
       
       hasLoadedInitialData.current = true;
     }
@@ -1179,7 +1180,7 @@ export const DynamicWindowWorksheet = forwardRef<{
             case "window-type":
               return selectedWindowType;
             case "treatment":
-              return selectedTemplate || isLayeredMode && layeredTreatments.length > 0;
+              return selectedTemplate; // DISABLED layered mode: || isLayeredMode && layeredTreatments.length > 0;
             case "inventory":
               return Object.values(selectedItems).some(item => item);
             case "measurements":
@@ -1209,7 +1210,7 @@ export const DynamicWindowWorksheet = forwardRef<{
             <Package className="h-3 w-3" />
             <span className="hidden sm:inline">Treatment</span>
             <span className="inline sm:hidden">Style</span>
-            {(selectedTemplate || isLayeredMode && layeredTreatments.length > 0) && <span className="text-[10px]">✓</span>}
+            {selectedTemplate && <span className="text-[10px]">✓</span>} {/* DISABLED: || isLayeredMode && layeredTreatments.length > 0 */}
           </TabsTrigger>
           <TabsTrigger value="inventory" className="text-[10px] sm:text-xs px-1 py-1 gap-1">
             <Package className="h-3 w-3" />
