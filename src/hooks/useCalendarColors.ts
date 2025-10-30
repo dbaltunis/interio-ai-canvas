@@ -8,18 +8,25 @@ export interface CalendarSource {
   visible: boolean;
 }
 
-const DEFAULT_COLORS = [
-  '#415e6b', // Company Primary
-  '#9bb6bc', // Company Secondary
-  '#3B82F6', // Blue
-  '#EF4444', // Red
-  '#10B981', // Green
-  '#F59E0B', // Amber
-  '#06B6D4', // Cyan
-  '#84CC16', // Lime
-  '#F97316', // Orange
-  '#6366F1', // Indigo
+export interface ColorOption {
+  name: string;
+  value: string;
+}
+
+const COLOR_OPTIONS: ColorOption[] = [
+  { name: 'Slate', value: '#415e6b' },
+  { name: 'Gray', value: '#9bb6bc' },
+  { name: 'Blue', value: '#3B82F6' },
+  { name: 'Red', value: '#EF4444' },
+  { name: 'Green', value: '#10B981' },
+  { name: 'Amber', value: '#F59E0B' },
+  { name: 'Cyan', value: '#06B6D4' },
+  { name: 'Lime', value: '#84CC16' },
+  { name: 'Orange', value: '#F97316' },
+  { name: 'Purple', value: '#6366F1' },
 ];
+
+const DEFAULT_COLORS = COLOR_OPTIONS.map(c => c.value);
 
 const STORAGE_KEY = 'calendar-colors';
 
@@ -114,5 +121,6 @@ export const useCalendarColors = () => {
     getVisibilityForSource,
     toggleSourceVisibility,
     defaultColors: DEFAULT_COLORS,
+    colorOptions: COLOR_OPTIONS,
   };
 };

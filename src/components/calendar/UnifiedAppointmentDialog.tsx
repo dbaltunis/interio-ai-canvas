@@ -65,7 +65,7 @@ export const UnifiedAppointmentDialog = ({
   const { isOnline, queueOfflineOperation } = useOfflineSupport();
   const { data: teamMembers } = useTeamMembers();
   const { data: clients } = useClients();
-  const { defaultColors } = useCalendarColors();
+  const { defaultColors, colorOptions } = useCalendarColors();
   
   // Fetch event owner profile if editing an appointment
   const { data: eventOwnerProfile } = useUserProfile(appointment?.user_id);
@@ -425,21 +425,35 @@ export const UnifiedAppointmentDialog = ({
                 <Palette className="w-3.5 h-3.5" />
                 Color
               </Label>
-              <div className="p-3 border rounded-lg bg-muted/30">
-                <div className="grid grid-cols-4 gap-2">
-                  {defaultColors.map((color) => (
-                    <button
-                      key={color}
-                      type="button"
-                      className={`w-12 h-12 rounded-full border-2 hover:scale-110 transition-transform ${
-                        event.color === color ? 'ring-2 ring-offset-2 ring-primary' : 'border-border'
-                      }`}
-                      style={{ backgroundColor: color }}
-                      onClick={() => setEvent({ ...event, color })}
-                    />
+              <Select 
+                value={event.color || defaultColors[0]} 
+                onValueChange={(value) => setEvent({ ...event, color: value })}
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-5 h-5 rounded-full border-2 border-border"
+                        style={{ backgroundColor: event.color || defaultColors[0] }}
+                      />
+                      <span>{colorOptions.find(c => c.value === event.color)?.name || 'Select'}</span>
+                    </div>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {colorOptions.map((color) => (
+                    <SelectItem key={color.value} value={color.value}>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-5 h-5 rounded-full border-2 border-border"
+                          style={{ backgroundColor: color.value }}
+                        />
+                        <span>{color.name}</span>
+                      </div>
+                    </SelectItem>
                   ))}
-                </div>
-              </div>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
