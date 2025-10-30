@@ -132,7 +132,7 @@ export const WindowTypeSelector = ({
   };
   if (loading) {
     return (
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-1">
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="h-24 bg-muted/30 rounded-lg animate-pulse" />
         ))}
@@ -145,7 +145,7 @@ export const WindowTypeSelector = ({
     wt.key.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  return <div className="space-y-3">
+  return <div className="space-y-1.5">
       <div className="flex items-center justify-between">
         <h3 className="text-base font-medium">Select Window Type</h3>
         <Button 
@@ -169,10 +169,10 @@ export const WindowTypeSelector = ({
         />
       </div>}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+      <div className="grid grid-cols-1 gap-1">
         {filteredWindowTypes.map(windowType => <Card key={windowType.id} className={`cursor-pointer transition-all duration-200 hover:shadow-sm ${selectedWindowType?.id === windowType.id ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/30'} ${readOnly ? 'opacity-60 cursor-not-allowed' : ''}`} onClick={() => !readOnly && onWindowTypeChange(windowType)}>
-            <CardContent className="p-4">
-              <div className="flex flex-col items-center space-y-3">
+            <CardContent className="p-2">
+              <div className="flex flex-col items-center space-y-1.5">
                 {/* Enhanced visual preview with larger size and visible graphics */}
                 <div className="h-20 w-full flex items-center justify-center bg-gray-50 border-2 border-gray-200 rounded-md overflow-hidden">
                   {windowType.visual_key === 'standard' ?
@@ -255,7 +255,7 @@ export const WindowTypeSelector = ({
                 </div>
                 
                 <div className="text-center w-full">
-                  <div className="flex items-center justify-center gap-2 mb-2">
+                  <div className="flex items-center justify-center gap-2 mb-1">
                     <h4 className="text-sm font-semibold truncate">{windowType.name}</h4>
                     {selectedWindowType?.id === windowType.id && <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />}
                   </div>
