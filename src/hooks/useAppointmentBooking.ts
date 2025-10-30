@@ -1,9 +1,28 @@
-
 import { usePublicScheduler } from "./useAppointmentSchedulers";
-import { format, addDays, isSameDay, setHours, setMinutes, addMinutes } from "date-fns";
+import { format, addDays, isSameDay, setHours, setMinutes, addMinutes, parse } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useAppointmentBooking = (slug: string) => {
   const { data: scheduler, isLoading, error } = usePublicScheduler(slug);
+
+  // Fetch booked appointments for this scheduler
+  const { data: bookedAppointments = [] } = useQuery({
+    queryKey: ["booked-appointments-public", scheduler?.id],
+    queryFn: async () => {
+      if (!scheduler?.id) return [];
+      
+      const { data, error } = await supabase
+        .from("appointments_booked")
+        .select("appointment_date, appointment_time")
+        .eq("scheduler_id", scheduler.id)
+        .in("status", ["confirmed", "pending"]);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!scheduler?.id,
+  });
 
   const generateAvailableSlots = (date: Date) => {
     if (!scheduler?.availability) return [];
@@ -62,9 +81,17 @@ export const useAppointmentBooking = (slug: string) => {
         const isInFuture = !isToday || currentSlotStart > minAdvanceTime;
         
         if (isInFuture) {
+          const slotTime = format(currentSlotStart, 'HH:mm');
+          const slotDate = format(date, 'yyyy-MM-dd');
+          
+          // Check if this slot is already booked
+          const isBooked = bookedAppointments.some(
+            apt => apt.appointment_date === slotDate && apt.appointment_time === slotTime
+          );
+          
           slots.push({
-            time: format(currentSlotStart, 'HH:mm'),
-            available: true
+            time: slotTime,
+            available: !isBooked
           });
         }
         
