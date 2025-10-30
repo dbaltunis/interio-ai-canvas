@@ -1,6 +1,6 @@
 
 import { usePublicScheduler } from "./useAppointmentSchedulers";
-import { format, addDays, isSameDay, setHours, setMinutes } from "date-fns";
+import { format, addDays, isSameDay, setHours, setMinutes, addMinutes } from "date-fns";
 
 export const useAppointmentBooking = (slug: string) => {
   const { data: scheduler, isLoading, error } = usePublicScheduler(slug);
@@ -28,25 +28,48 @@ export const useAppointmentBooking = (slug: string) => {
     }
     
     const slots: Array<{time: string, available: boolean}> = [];
+    const duration = scheduler.duration || 60;
+    const bufferTime = scheduler.buffer_time || 0;
+    const minAdvanceNotice = scheduler.min_advance_notice || 0;
+    const now = new Date();
+    const isToday = format(date, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
     
     dayAvailability.timeSlots.forEach((timeSlot: any) => {
-      // Handle both 'start' and 'startTime' formats
-      const timeString = timeSlot.start || timeSlot.startTime;
-      if (!timeString) return;
+      const startTimeStr = timeSlot.start || timeSlot.startTime;
+      const endTimeStr = timeSlot.end || timeSlot.endTime;
       
-      const [startHour, startMin] = timeString.split(':').map(Number);
-      const slotDateTime = new Date(date);
-      slotDateTime.setHours(startHour, startMin, 0, 0);
+      if (!startTimeStr || !endTimeStr) return;
       
-      const now = new Date();
-      const isToday = date.toDateString() === now.toDateString();
-      const isInFuture = !isToday || slotDateTime > now;
+      // Parse start and end times
+      const [startHour, startMin] = startTimeStr.split(':').map(Number);
+      const [endHour, endMin] = endTimeStr.split(':').map(Number);
       
-      if (isInFuture) {
-        slots.push({
-          time: timeString,
-          available: true // Simplified for now, in real implementation check against booked slots
-        });
+      const startTime = setMinutes(setHours(date, startHour), startMin);
+      const endTime = setMinutes(setHours(date, endHour), endMin);
+      
+      // Generate slots every (duration + buffer) minutes
+      let currentSlotStart = startTime;
+      
+      while (currentSlotStart < endTime) {
+        // Calculate slot end time
+        const slotEndTime = addMinutes(currentSlotStart, duration);
+        
+        // Don't create slot if it exceeds the time range
+        if (slotEndTime > endTime) break;
+        
+        // Check if slot is in the future (for today) + min advance notice
+        const minAdvanceTime = addMinutes(now, minAdvanceNotice * 60); // min_advance_notice is in hours
+        const isInFuture = !isToday || currentSlotStart > minAdvanceTime;
+        
+        if (isInFuture) {
+          slots.push({
+            time: format(currentSlotStart, 'HH:mm'),
+            available: true
+          });
+        }
+        
+        // Move to next slot (duration + buffer time)
+        currentSlotStart = addMinutes(currentSlotStart, duration + bufferTime);
       }
     });
     

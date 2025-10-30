@@ -121,20 +121,23 @@ export const useSchedulerSlots = (date?: Date) => {
                 return isAfter(bufferedSlotEnd, appointmentStart) && isBefore(bufferedSlotStart, appointmentEnd);
               });
 
-              // Only add slot if not booked and no conflicts
-              if (!isBooked && !hasConflictWithRegularAppointment) {
-                slots.push({
-                  id: `${scheduler.id}-${slotDate}-${slotStartTime}`,
-                  schedulerId: scheduler.id,
-                  schedulerName: scheduler.name,
-                  date: new Date(d),
-                  startTime: slotStartTime,
-                  endTime: slotEndTime,
-                  duration: duration,
-                  isBooked: false,
-                  bufferTime: bufferTime
-                });
-              }
+              // Add ALL slots (both available and booked) for calendar display
+              slots.push({
+                id: `${scheduler.id}-${slotDate}-${slotStartTime}`,
+                schedulerId: scheduler.id,
+                schedulerName: scheduler.name,
+                date: new Date(d),
+                startTime: slotStartTime,
+                endTime: slotEndTime,
+                duration: duration,
+                isBooked: isBooked || hasConflictWithRegularAppointment,
+                bookingId: isBooked ? bookedAppointments?.find(b => 
+                  b.scheduler_id === scheduler.id && 
+                  b.appointment_date === slotDate && 
+                  b.appointment_time.substring(0, 5) === slotStartTime
+                )?.id : undefined,
+                bufferTime: bufferTime
+              });
               
               // Move to next slot with buffer time applied
               currentSlotStart = addMinutes(currentSlotStart, duration + bufferTime);

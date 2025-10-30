@@ -10,6 +10,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Calendar, Clock, User, CalendarCheck, UserCheck, Bell, Video } from "lucide-react";
 import { useUpdateAppointment } from "@/hooks/useAppointments";
 import { BookedAppointmentDialog } from "./BookedAppointmentDialog";
+import { SchedulerSlotDialog } from "./SchedulerSlotDialog";
+import { useSchedulerSlots } from "@/hooks/useSchedulerSlots";
+import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
 
 interface WeeklyCalendarViewProps {
   currentDate: Date;
@@ -21,15 +24,16 @@ interface WeeklyCalendarViewProps {
 export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick, filteredAppointments }: WeeklyCalendarViewProps) => {
   const { data: appointments } = useAppointments();
   const displayAppointments = filteredAppointments || appointments;
-  // REMOVED: schedulerSlots - not needed in internal calendar view
+  const { data: schedulerSlots } = useSchedulerSlots(currentDate);
   const { data: bookedAppointments, isLoading: bookingsLoading } = useAppointmentBookings(); 
-  // REMOVED: schedulers - not needed in internal calendar view
+  const { data: schedulers } = useAppointmentSchedulers();
   const updateAppointment = useUpdateAppointment();
   
   // Debug logging for data fetching
   console.log('Calendar data status:', { 
     appointments: displayAppointments?.length, 
     bookedAppointments: bookedAppointments?.length,
+    schedulerSlots: schedulerSlots?.length,
     loading: { bookingsLoading }
   });
   
@@ -39,9 +43,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const queryClient = useQueryClient();
   
   const [bookedAppointmentDialog, setBookedAppointmentDialog] = useState<{ open: boolean; appointment: any }>({ open: false, appointment: null });
-  
-  // REMOVED: Available slot dialog state - not needed in internal calendar
-  // REMOVED: Booking interface dialog state - not needed in internal calendar
+  const [schedulerSlotDialog, setSchedulerSlotDialog] = useState<{ open: boolean; slot: any }>({ open: false, slot: null });
   
   // Get current user ID
   useEffect(() => {
@@ -175,11 +177,48 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       .filter(Boolean); // Remove null values from invalid bookings
   };
 
-  // Combine regular events and booked appointments ONLY (internal calendar view)
+  // Get available scheduler slots for a specific date
+  const getSchedulerSlotsForDate = (date: Date) => {
+    if (!schedulerSlots || !schedulers) return [];
+    
+    return schedulerSlots
+      .filter(slot => {
+        if (!slot.date) return false;
+        const slotDate = new Date(slot.date);
+        return isSameDay(slotDate, date) && !slot.isBooked; // Only show available slots
+      })
+      .map(slot => {
+        // Find the scheduler to get the slug
+        const scheduler = schedulers.find(s => s.id === slot.schedulerId);
+        
+        const [hours, minutes] = slot.startTime.split(':').map(Number);
+        const startTime = new Date(date);
+        startTime.setHours(hours, minutes, 0, 0);
+        
+        const [endHours, endMinutes] = slot.endTime.split(':').map(Number);
+        const endTime = new Date(date);
+        endTime.setHours(endHours, endMinutes, 0, 0);
+        
+        return {
+          id: slot.id,
+          title: slot.schedulerName,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          duration: slot.duration,
+          isAvailableSlot: true,
+          schedulerName: slot.schedulerName,
+          schedulerId: slot.schedulerId,
+          slug: scheduler?.slug || ''
+        };
+      });
+  };
+
+  // Combine regular events, booked appointments, and available scheduler slots
   const getAllEventsForDate = (date: Date) => {
     const regularEvents = getEventsForDate(date);
     const bookedEvents = getBookedEventsForDate(date);
-    return [...regularEvents, ...bookedEvents];
+    const availableSlots = getSchedulerSlotsForDate(date);
+    return [...regularEvents, ...bookedEvents, ...availableSlots];
   };
 
   // Check if a time slot is occupied by booked appointments or events
@@ -625,6 +664,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                   if (event.isBooking) {
                                     // Open booked appointment dialog with full details
                                     setBookedAppointmentDialog({ open: true, appointment: event });
+                                  } else if (event.isAvailableSlot) {
+                                    // Open scheduler slot dialog to share booking link
+                                    setSchedulerSlotDialog({ open: true, slot: event });
                                   } else {
                                     // Handle personal event click - open edit dialog
                                     onEventClick?.(event.id);
@@ -788,6 +830,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         open={bookedAppointmentDialog.open}
         onOpenChange={(open) => setBookedAppointmentDialog({ ...bookedAppointmentDialog, open })}
         appointment={bookedAppointmentDialog.appointment}
+      />
+      
+      <SchedulerSlotDialog
+        open={schedulerSlotDialog.open}
+        onOpenChange={(open) => setSchedulerSlotDialog({ ...schedulerSlotDialog, open })}
+        slot={schedulerSlotDialog.slot}
       />
     </DndContext>
   );
