@@ -641,9 +641,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                             disabled: event.isBooking, // Disable dragging for booked appointments
                           });
 
-                          // Special styling for available slots - make them small indicators
+                          // Special styling for available slots - make them more clickable
                           const finalHeight = event.isAvailableSlot 
-                            ? 10  // Small 10px indicator for available slots
+                            ? 26  // Increased from 10px to 26px for better clickability
                             : Math.max(style.height, eventStyling.minHeight);
 
                           const eventStyle: React.CSSProperties = {
@@ -651,39 +651,41 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                             height: `${finalHeight}px`,
                             width: event.isAvailableSlot ? '96%' : eventWidth,
                             left: event.isAvailableSlot ? '2%' : eventLeft,
-                            zIndex: event.isAvailableSlot ? 1 : event.isBooking ? 8 + eventIndex : 10 + eventIndex,
+                            zIndex: event.isAvailableSlot ? 15 : event.isBooking ? 8 + eventIndex : 10 + eventIndex,
                             background: event.isAvailableSlot 
-                              ? 'linear-gradient(135deg, hsl(142 76% 80% / 0.4), hsl(142 76% 70% / 0.5))'
+                              ? 'linear-gradient(135deg, hsl(142 76% 80% / 0.5), hsl(142 76% 70% / 0.6))'
                               : eventStyling.background,
                             borderLeftColor: event.isAvailableSlot ? 'hsl(142 76% 50%)' : eventStyling.border,
                             borderColor: event.isAvailableSlot 
-                              ? 'hsl(142 76% 50% / 0.5)' 
+                              ? 'hsl(142 76% 50% / 0.6)' 
                               : 'hsl(var(--border))',
-                            borderRadius: event.isAvailableSlot ? '3px' : '8px',
+                            borderRadius: event.isAvailableSlot ? '4px' : '8px',
                             borderStyle: event.isAvailableSlot ? 'dashed' : 'solid',
-                            borderWidth: event.isAvailableSlot ? '1.5px' : '1px 1px 1px 4px',
+                            borderWidth: event.isAvailableSlot ? '2px' : '1px 1px 1px 4px',
                             boxShadow: event.isAvailableSlot
-                              ? 'inset 0 0 0 1px hsl(142 76% 50% / 0.2)'
+                              ? '0 1px 3px hsl(142 76% 50% / 0.3)'
                               : event.isBooking
                               ? '0 2px 8px -2px hsl(217 91% 60% / 0.25), 0 1px 4px -1px hsl(217 91% 60% / 0.2)'
                               : '0 8px 16px -4px hsl(var(--background) / 0.25), 0 4px 8px -2px hsl(var(--background) / 0.2)',
                             transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
                             opacity: isDragging ? 0.85 : 1,
                             cursor: (event.isBooking || event.isAvailableSlot) ? 'pointer' : 'grab',
-                            pointerEvents: event.isAvailableSlot ? 'auto' : 'auto',
+                            pointerEvents: 'auto',
                           };
 
-                           return (
+                            return (
                               <div
                                 ref={setNodeRef}
-                                className={`absolute ${event.isAvailableSlot ? 'p-0.5' : 'p-2'} text-xs overflow-hidden group
+                                className={`absolute ${event.isAvailableSlot ? 'p-1' : 'p-2'} text-xs overflow-hidden group
                                   transition-all duration-150 border
-                                  ${event.isAvailableSlot ? 'hover:bg-green-500/15 hover:border-green-600/40' : ''}
-                                  ${event.isBooking ? '' : !event.isAvailableSlot ? 'hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5' : ''}
+                                  ${event.isAvailableSlot ? 'hover:bg-green-500/30 hover:border-green-600 hover:shadow-md hover:scale-[1.02]' : ''}
+                                  ${event.isBooking ? 'hover:shadow-lg' : !event.isAvailableSlot ? 'hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5' : ''}
                                   ${!event.isBooking && !event.isAvailableSlot ? 'hover:ring-2 hover:ring-primary/40' : ''}
                                   ${eventStyling.textClass}`}
                                   style={eventStyle}
-                                 onClick={() => {
+                                 onClick={(e) => {
+                                  e.stopPropagation();
+                                  console.log('Event clicked:', event.isAvailableSlot ? 'Available Slot' : event.isBooking ? 'Booking' : 'Personal Event', event);
                                   if (event.isBooking) {
                                     // Open booked appointment dialog with full details
                                     setBookedAppointmentDialog({ open: true, appointment: event });
@@ -699,7 +701,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                    event.isAvailableSlot
                                      ? `📅 SHAREABLE APPOINTMENT SLOT\n${event.schedulerName}\n🕐 ${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')} (${event.duration} min)\n📤 Click to get booking link and share with clients`
                                      : event.isBooking 
-                                     ? `👤 CUSTOMER BOOKING\n${event.customer_name}\n📋 ${event.scheduler_name}\n🕐 ${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n📞 Click to view contact details`
+                                     ? `👤 CUSTOMER BOOKING\n${event.bookingData?.customer_name || 'Customer'}\n📋 ${event.scheduler_name}\n🕐 ${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n📞 Click to view contact details and video link`
                                      : `📝 PERSONAL EVENT\n${event.title}\n🕐 ${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}\n✏️ Click to edit or move`
                                 }
                              >
@@ -720,43 +722,60 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                  )}
 
                                   <div className="flex flex-col h-full pr-1 pb-1 overflow-hidden">
+                                   {/* Available slot content - compact display */}
+                                   {event.isAvailableSlot && (
+                                     <div className="flex items-center justify-between gap-1 w-full">
+                                       <span className="text-[9px] font-medium text-green-700 dark:text-green-300 truncate">
+                                         {event.schedulerName}
+                                       </span>
+                                       <span className="text-[8px] text-green-600 dark:text-green-400 whitespace-nowrap">
+                                         {format(startTime, 'HH:mm')}
+                                       </span>
+                                     </div>
+                                   )}
+                                   
                                    {/* Event content - only show for non-available-slot events */}
                                    {!event.isAvailableSlot && (
                                      <>
                                        <div className="flex items-start justify-between gap-1 mb-0.5">
                                          {/* Title and time - adaptive based on screen size */}
                                          <div className="flex-1 min-w-0">
-                                           {/* Event title - non-bold, smaller font on all screens */}
-                                           <div 
-                                             className={`${isNarrowEvent ? 'font-normal text-[10px]' : 'font-normal text-[11px]'} leading-tight text-foreground dark:text-white break-words overflow-hidden`}
-                                             style={{ 
-                                               display: '-webkit-box',
-                                               WebkitLineClamp: finalHeight > 100 ? 4 : finalHeight > 70 ? 3 : finalHeight > 45 ? 2 : 1,
-                                               WebkitBoxOrient: 'vertical',
-                                               lineHeight: '1.3'
-                                             }}>
-                                            {event.isBooking 
-                                              ? event.customer_name 
-                                              : event.title
-                                            }
-                                           </div>
-                                           
-                                            {/* Time display - compact */}
-                                            <div className={`flex items-center gap-0.5 ${isNarrowEvent ? 'text-[8px]' : 'text-[9px] md:text-[10px]'} leading-tight font-normal text-foreground/70 dark:text-white/70 mt-0.5`}>
-                                              <span>{format(startTime, 'HH:mm')}</span>
-                                              {!isNarrowEvent && (
-                                                <>
-                                                  <span>-</span>
-                                                  <span>{format(endTime, 'HH:mm')}</span>
-                                                </>
-                                              )}
-                                              {!event.isAvailableSlot && event.notification_enabled && !isNarrowEvent && finalHeight > 40 && (
-                                                <Bell className="w-2.5 h-2.5 text-yellow-400 ml-0.5 hidden md:block" />
-                                              )}
-                                              {event.isBooking && event.video_meeting_link && !isNarrowEvent && (
-                                                <Video className="w-2.5 h-2.5 text-blue-400 ml-0.5" />
-                                              )}
+                                            {/* Event title - non-bold, smaller font on all screens */}
+                                            <div 
+                                              className={`${isNarrowEvent ? 'font-normal text-[10px]' : 'font-medium text-[11px]'} leading-tight text-foreground dark:text-white break-words overflow-hidden`}
+                                              style={{ 
+                                                display: '-webkit-box',
+                                                WebkitLineClamp: finalHeight > 100 ? 4 : finalHeight > 70 ? 3 : finalHeight > 45 ? 2 : 1,
+                                                WebkitBoxOrient: 'vertical',
+                                                lineHeight: '1.3'
+                                              }}>
+                                             {event.isBooking 
+                                               ? `${event.bookingData?.customer_name || 'Customer'}` 
+                                               : event.title
+                                             }
                                             </div>
+                                            
+                                             {/* Time display - compact with lead time for bookings */}
+                                             <div className={`flex items-center gap-0.5 ${isNarrowEvent ? 'text-[8px]' : 'text-[9px] md:text-[10px]'} leading-tight font-normal text-foreground/70 dark:text-white/70 mt-0.5`}>
+                                               <span>{format(startTime, 'HH:mm')}</span>
+                                               {!isNarrowEvent && (
+                                                 <>
+                                                   <span>-</span>
+                                                   <span>{format(endTime, 'HH:mm')}</span>
+                                                 </>
+                                               )}
+                                               {event.isBooking && event.scheduler_name && !isNarrowEvent && finalHeight > 35 && (
+                                                 <span className="text-[8px] text-muted-foreground ml-1 truncate">
+                                                   • {event.scheduler_name}
+                                                 </span>
+                                               )}
+                                               {!event.isAvailableSlot && event.notification_enabled && !isNarrowEvent && finalHeight > 40 && (
+                                                 <Bell className="w-2.5 h-2.5 text-yellow-400 ml-0.5 hidden md:block" />
+                                               )}
+                                               {event.isBooking && event.video_meeting_link && !isNarrowEvent && (
+                                                 <Video className="w-2.5 h-2.5 text-blue-400 ml-0.5" />
+                                               )}
+                                             </div>
                                          </div>
                                          
                                          {/* User avatar - hide on tablet and narrow events, only show on desktop */}
