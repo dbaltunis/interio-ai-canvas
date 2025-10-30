@@ -7330,6 +7330,7 @@ export type Database = {
         Row: {
           cost_breakdown: Json | null
           currency: string
+          description_text: string | null
           drop: number | null
           extras_details: Json | null
           fabric_cost: number | null
@@ -7374,6 +7375,7 @@ export type Database = {
         Insert: {
           cost_breakdown?: Json | null
           currency?: string
+          description_text?: string | null
           drop?: number | null
           extras_details?: Json | null
           fabric_cost?: number | null
@@ -7418,6 +7420,7 @@ export type Database = {
         Update: {
           cost_breakdown?: Json | null
           currency?: string
+          description_text?: string | null
           drop?: number | null
           extras_details?: Json | null
           fabric_cost?: number | null

@@ -346,8 +346,8 @@ export const WindowManagementDialog = ({
                    windowSummary.treatment_type || 
                    'Treatment';
       const desc = windowSummary.description_text ||
-                   windowSummary.material_details?.name ||
-                   windowSummary.fabric_details?.name ||
+                   (windowSummary.material_details as any)?.name ||
+                   (windowSummary.fabric_details as any)?.name ||
                    '';
       setTreatmentName(name);
       setTreatmentDescription(desc);
