@@ -126,11 +126,12 @@ export const useQuotationSync = ({
             wallpaperDetails: wallpaperDetails
           });
           
-          // PARENT ITEM - Use actual product name from material_details (blinds) or fabric_details (curtains)
-          const productName = materialDetails.name || fabricDetails.name || window.surface_name || 'Window Treatment';
+          // PRIMARY NAME - Use template_name (user-editable) first, then fallback to material/fabric name
+          const productName = summary.template_name || materialDetails.name || fabricDetails.name || window.surface_name || 'Window Treatment';
           
-          // Build description based on treatment type
-          let description = productName;
+          // Build description - use description_text first (user-editable), then build from material name
+          const materialName = materialDetails.name || fabricDetails.name || productName;
+          let description = summary.description_text || materialName;
           if (treatmentCategory === 'wallpaper' && wallpaperDetails.total_rolls) {
             description = `${wallpaperDetails.strips_needed || 0} strips × ${wallpaperDetails.strip_length_cm || 0}cm = ${wallpaperDetails.total_length_m || 0}m (${wallpaperDetails.total_rolls} rolls)`;
           }

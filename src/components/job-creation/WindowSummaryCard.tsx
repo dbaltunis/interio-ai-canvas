@@ -415,7 +415,7 @@ export function WindowSummaryCard({
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex-1 min-w-0">
                       <h4 className="font-semibold text-base mb-0.5 truncate">
-                        {summary.template_name || (summary.fabric_details as any)?.name || (summary.material_details as any)?.name || 'Treatment'}
+                        {summary.template_name || (summary.material_details as any)?.name || (summary.fabric_details as any)?.name || 'Treatment'}
                       </h4>
                       {treatmentType === 'curtains' && summary.fabric_details?.name && (
                         <p className="text-xs text-muted-foreground truncate">
@@ -616,10 +616,10 @@ export function WindowSummaryCard({
                         return (
                           <div key={item.id} className={`rounded-lg bg-card border border-border p-3 ${isOption ? 'bg-muted/50' : ''}`}>
                             <div className="flex items-start justify-between gap-3">
-                              <div className="flex-1 min-w-0">
-                                <div className="text-sm font-semibold text-foreground">{item.name}</div>
+                              <div className="flex-1 min-w-0 overflow-hidden">
+                                <div className="text-sm font-semibold text-foreground break-words">{item.name}</div>
                                 {item.description && (
-                                  <div className="text-xs text-muted-foreground mt-1">{item.description}</div>
+                                  <div className="text-xs text-muted-foreground mt-1 break-words">{item.description}</div>
                                 )}
                                 {hasQuantityPricing && (
                                   <div className="text-xs font-medium text-foreground/80 mt-1.5 space-y-0.5">

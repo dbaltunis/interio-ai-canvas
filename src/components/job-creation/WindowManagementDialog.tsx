@@ -311,8 +311,9 @@ export const WindowManagementDialog = ({
   };
   const hasMeasurements = existingMeasurement && Object.keys(existingMeasurement.measurements || {}).length > 0;
   
-  // Get treatment name from existingTreatments OR windows_summary
+  // Get treatment name and description from existingTreatments OR windows_summary
   const [treatmentName, setTreatmentName] = useState('');
+  const [treatmentDescription, setTreatmentDescription] = useState('');
   const currentTreatment = existingTreatments?.[0];
   
   // Fetch treatment data from windows_summary if existingTreatments is empty
@@ -338,12 +339,18 @@ export const WindowManagementDialog = ({
                    currentTreatment.treatment_type || 
                    'Treatment';
       setTreatmentName(name);
+      setTreatmentDescription(currentTreatment.description || '');
     } else if (windowSummary) {
       // Fallback to windows_summary data
       const name = windowSummary.template_name || 
                    windowSummary.treatment_type || 
                    'Treatment';
+      const desc = windowSummary.description_text ||
+                   windowSummary.material_details?.name ||
+                   windowSummary.fabric_details?.name ||
+                   '';
       setTreatmentName(name);
+      setTreatmentDescription(desc);
     }
   }, [currentTreatment, windowSummary]);
 
@@ -382,6 +389,34 @@ export const WindowManagementDialog = ({
       });
     }
   };
+
+  const handleDescriptionUpdate = async (newDescription: string) => {
+    if (!surface?.id) return;
+    
+    try {
+      // Update windows_summary
+      await supabase
+        .from('windows_summary')
+        .update({ description_text: newDescription.trim() })
+        .eq('window_id', surface.id);
+      
+      setTreatmentDescription(newDescription.trim());
+      queryClient.invalidateQueries({ queryKey: ['window-summary', surface.id] });
+      queryClient.invalidateQueries({ queryKey: ['window-summary-treatment', surface.id] });
+      
+      toast({
+        title: 'Success',
+        description: 'Description updated',
+      });
+    } catch (error) {
+      console.error('Failed to update description:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update description',
+        variant: 'destructive',
+      });
+    }
+  };
   
   return <>
       <Dialog open={isOpen} onOpenChange={handleDialogClose}>
@@ -399,7 +434,7 @@ export const WindowManagementDialog = ({
                   {(currentTreatment || windowSummary) && treatmentName && (
                     <>
                       <span className="hidden sm:inline text-muted-foreground">|</span>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex flex-col gap-1">
                         <Input
                           value={treatmentName}
                           onChange={(e) => setTreatmentName(e.target.value)}
@@ -407,8 +442,18 @@ export const WindowManagementDialog = ({
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') handleTreatmentNameUpdate(treatmentName);
                           }}
-                          className="h-7 text-sm font-semibold max-w-[200px]"
-                          placeholder="Treatment name"
+                          className="h-7 text-sm font-semibold max-w-[250px]"
+                          placeholder="Product name"
+                        />
+                        <Input
+                          value={treatmentDescription}
+                          onChange={(e) => setTreatmentDescription(e.target.value)}
+                          onBlur={() => handleDescriptionUpdate(treatmentDescription)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleDescriptionUpdate(treatmentDescription);
+                          }}
+                          className="h-6 text-xs max-w-[250px]"
+                          placeholder="Description (optional)"
                         />
                       </div>
                     </>
