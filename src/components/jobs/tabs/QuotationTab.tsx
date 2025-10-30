@@ -60,11 +60,11 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   const { data: quotes = [], isLoading: quotesLoading } = useQuotes(projectId);
   const createQuote = useCreateQuote();
 
+  const project = projects?.find(p => p.id === projectId);
+  
   const currentQuote = quoteVersions?.find(q => q.id === quoteId);
   const currentVersion = currentQuote?.version || 1;
   const isEmptyVersion = (rooms?.length || 0) === 0 && quoteId;
-
-  const project = projects?.find(p => p.id === projectId);
 
   // Fetch client data
   const { data: client } = useQuery({
@@ -127,19 +127,6 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
 
   const selectedTemplate = activeTemplates?.find(t => t.id.toString() === selectedTemplateId);
 
-  // Get settings from template blocks safely
-  const templateSettings = useMemo(() => {
-    const blocks = selectedTemplate?.blocks;
-    if (!blocks || typeof blocks === 'string') return { showImages: true, showDetailedBreakdown: false, groupByRoom: false };
-    const blocksArray = Array.isArray(blocks) ? blocks : [];
-    const productsBlock = blocksArray.find((b: any) => b?.type === 'products') as any;
-    return {
-      showImages: productsBlock?.content?.showImages ?? true,
-      showDetailedBreakdown: productsBlock?.content?.showDetailedBreakdown ?? false,
-      groupByRoom: productsBlock?.content?.groupByRoom ?? false
-    };
-  }, [selectedTemplate]);
-
   const { buildQuotationItems } = useQuotationSync({
     projectId: projectId,
     clientId: project?.client_id || "",
@@ -175,6 +162,45 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
     surface_name: item.surface_name,
     description: item.description
   }));
+
+  // Get settings from template blocks safely - MUST be before early returns
+  const templateSettings = useMemo(() => {
+    const blocks = selectedTemplate?.blocks;
+    if (!blocks || typeof blocks === 'string') return { showImages: true, showDetailedBreakdown: false, groupByRoom: false };
+    const blocksArray = Array.isArray(blocks) ? blocks : [];
+    const productsBlock = blocksArray.find((b: any) => b?.type === 'products') as any;
+    return {
+      showImages: productsBlock?.content?.showImages ?? true,
+      showDetailedBreakdown: productsBlock?.content?.showDetailedBreakdown ?? false,
+      groupByRoom: productsBlock?.content?.groupByRoom ?? false
+    };
+  }, [selectedTemplate]);
+
+  // Get template blocks safely - MUST be before early returns
+  const templateBlocks = useMemo(() => {
+    const blocks = selectedTemplate?.blocks;
+    if (!blocks) return [];
+    if (typeof blocks === 'string') return [];
+    const blocksArray = Array.isArray(blocks) ? blocks : [];
+    return removeDuplicateProductsBlocks(blocksArray);
+  }, [selectedTemplate]);
+
+  // Project data for LivePreview - MUST be before early returns
+  const projectData = useMemo(() => ({
+    project: { ...project, client },
+    client,
+    businessSettings,
+    treatments: sourceTreatments,
+    workshopItems: workshopItems || [],
+    rooms: rooms || [],
+    surfaces: surfaces || [],
+    subtotal,
+    taxRate,
+    taxAmount,
+    total,
+    markupPercentage,
+    validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+  }), [project, client, businessSettings, sourceTreatments, workshopItems, rooms, surfaces, subtotal, taxRate, taxAmount, total, markupPercentage]);
 
   // Download PDF
   const handleDownloadPDF = async () => {
@@ -357,30 +383,6 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
       </div>
     </div>;
   }
-
-  const templateBlocks = useMemo(() => {
-    const blocks = selectedTemplate?.blocks;
-    if (!blocks) return [];
-    if (typeof blocks === 'string') return [];
-    const blocksArray = Array.isArray(blocks) ? blocks : [];
-    return removeDuplicateProductsBlocks(blocksArray);
-  }, [selectedTemplate]);
-
-  const projectData = {
-    project: { ...project, client },
-    client,
-    businessSettings,
-    treatments: sourceTreatments,
-    workshopItems: workshopItems || [],
-    rooms: rooms || [],
-    surfaces: surfaces || [],
-    subtotal,
-    taxRate,
-    taxAmount,
-    total,
-    markupPercentage,
-    validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-  };
 
   return (
     <div className="space-y-2 sm:space-y-3 pb-4 overflow-x-hidden">
