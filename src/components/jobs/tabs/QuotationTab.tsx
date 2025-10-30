@@ -202,7 +202,8 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
       project: { ...project, client },
       client,
       businessSettings,
-      treatments: sourceTreatments,
+      items: sourceTreatments, // Changed from 'treatments' to 'items' to match LivePreview expectation
+      treatments: sourceTreatments, // Keep for backward compatibility
       workshopItems: workshopItems || [],
       rooms: rooms || [],
       surfaces: surfaces || [],
@@ -512,10 +513,12 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
                   width: '210mm',
                   minHeight: '297mm',
                   fontFamily: 'Arial, Helvetica, sans-serif',
-                  fontSize: '11pt',
+                  fontSize: '10pt',
                   color: '#000000',
                   backgroundColor: '#ffffff',
-                  padding: '10mm'
+                  padding: '8mm',
+                  boxSizing: 'border-box',
+                  overflow: 'hidden'
                 }}
               >
                 <LivePreview
