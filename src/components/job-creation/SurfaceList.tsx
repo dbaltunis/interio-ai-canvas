@@ -189,6 +189,7 @@ export const SurfaceList = ({
                      onDeleteSurface={onDeleteSurface}
                      onViewDetails={() => handleViewWindow(window.mainSurface)}
                      onRenameSurface={handleRenameSurface}
+                     onAddTreatment={handleAddTreatment}
                      isMainWindow={true}
                      treatmentType={window.mainSurface.treatment_type}
                    />
