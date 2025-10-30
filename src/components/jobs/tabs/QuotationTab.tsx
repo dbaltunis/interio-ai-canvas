@@ -16,7 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useQuotes, useCreateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
 import { Download, Mail, MoreVertical, Percent, FileText, DollarSign, ImageIcon as ImageIconLucide, Printer } from "lucide-react";
-import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
+import { ProfessionalQuoteDisplay } from "@/components/jobs/quotation/ProfessionalQuoteDisplay";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
 import { QuotationItemsModal } from "../quotation/QuotationItemsModal";
 import { EmailQuoteModal } from "@/components/jobs/quotation/EmailQuoteModal";
@@ -149,18 +149,18 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
 
   const sourceTreatments = (quotationData.items || []).filter(item => !item.isHeader).map(item => ({
     id: item.id,
-    room_id: item.room_id || '',
-    window_id: item.surface_id || '',
-    treatment_type: item.treatment_type || item.name,
-    product_name: item.name,
-    total_price: item.total || 0,
-    currency: item.currency || 'GBP',
-    breakdown: item.breakdown || [],
-    quantity: item.quantity || 1,
-    unit_price: item.unit_price || 0,
+    name: item.name,
+    description: item.description,
+    image_url: item.image_url,
     room_name: item.room_name,
     surface_name: item.surface_name,
-    description: item.description
+    quantity: item.quantity || 1,
+    unit_price: item.unit_price || 0,
+    total: item.total || 0,
+    children: item.breakdown?.map((b: any) => ({
+      name: b.name,
+      price: b.price
+    })) || []
   }));
 
   // Get settings from template blocks safely - MUST be before early returns
@@ -171,7 +171,7 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
     const productsBlock = blocksArray.find((b: any) => b?.type === 'products') as any;
     return {
       showImages: productsBlock?.content?.showImages ?? true,
-      showDetailedBreakdown: productsBlock?.content?.showDetailedBreakdown ?? false,
+      showDetailedBreakdown: productsBlock?.content?.showDetailedBreakdown ?? true,
       groupByRoom: productsBlock?.content?.groupByRoom ?? false
     };
   }, [selectedTemplate]);
@@ -494,24 +494,19 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
             <div className="transform scale-[0.38] sm:scale-[0.55] md:scale-[0.65] lg:scale-75 xl:scale-90 origin-top">
               <div
                 id="quote-live-preview"
-                className="bg-white"
                 style={{
                   width: '210mm',
                   minHeight: '297mm',
-                  padding: '15mm 10mm',
                   fontFamily: 'Arial, Helvetica, sans-serif',
                   fontSize: '11pt',
                   color: '#000000',
                   backgroundColor: '#ffffff'
                 }}
               >
-                <LivePreview
-                  blocks={templateBlocks}
+                <ProfessionalQuoteDisplay
                   projectData={projectData}
-                  isEditable={false}
-                  isPrintMode={true}
-                  showDetailedBreakdown={templateSettings.showDetailedBreakdown}
                   showImages={templateSettings.showImages}
+                  showDetailedBreakdown={templateSettings.showDetailedBreakdown}
                   groupByRoom={templateSettings.groupByRoom}
                 />
               </div>
@@ -529,13 +524,12 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
         onSend={handleSendEmail}
         isSending={isSendingEmail}
         quotePreview={
-          templateBlocks && templateBlocks.length > 0 ? (
-            <LivePreview
-              blocks={templateBlocks}
-              projectData={projectData}
-              isEditable={false}
-            />
-          ) : undefined
+          <ProfessionalQuoteDisplay
+            projectData={projectData}
+            showImages={templateSettings.showImages}
+            showDetailedBreakdown={templateSettings.showDetailedBreakdown}
+            groupByRoom={templateSettings.groupByRoom}
+          />
         }
       />
     </div>

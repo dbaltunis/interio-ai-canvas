@@ -6,12 +6,12 @@
   }
   
   /* Show only the printable quote area */
-  #printable-quote-area,
-  #printable-quote-area * {
+  #quote-live-preview,
+  #quote-live-preview * {
     visibility: visible;
   }
   
-  #printable-quote-area {
+  #quote-live-preview {
     position: absolute;
     left: 0;
     top: 0;
@@ -24,32 +24,34 @@
     size: A4;
   }
 
-  /* Hide UI controls */
+  /* Hide UI controls and grid patterns */
   button,
   input[type="checkbox"],
-  .no-print {
+  .no-print,
+  .bg-grid-pattern {
     display: none !important;
   }
 
-  /* Ensure clean backgrounds */
+  /* Ensure clean backgrounds - NO GRIDS */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     color-adjust: exact !important;
+    background-image: none !important;
   }
 
-  /* Prevent page breaks inside tables */
-  table {
-    page-break-inside: avoid;
-  }
-
+  /* Prevent page breaks inside elements */
+  .avoid-page-break,
+  table,
   tr {
     page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   /* Ensure images are visible */
   img {
     max-width: 100%;
     page-break-inside: avoid;
+    break-inside: avoid;
   }
 }

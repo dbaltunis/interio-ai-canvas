@@ -36,6 +36,8 @@ export const generateQuotePDF = async (
       letterRendering: true,
       allowTaint: false,
       backgroundColor: '#ffffff',
+      windowWidth: 794, // A4 width in pixels at 96 DPI
+      windowHeight: 1123, // A4 height in pixels at 96 DPI
     },
     jsPDF: {
       unit: 'mm',
@@ -47,7 +49,7 @@ export const generateQuotePDF = async (
       mode: ['avoid-all', 'css', 'legacy'],
       before: '.page-break-before',
       after: '.page-break-after',
-      avoid: ['.avoid-page-break', 'tr', 'table', '.products-table']
+      avoid: ['.avoid-page-break', 'tr', 'table', '.products-table', 'img']
     },
   };
 
@@ -85,6 +87,8 @@ export const generateQuotePDFBlob = async (
       letterRendering: true,
       allowTaint: false,
       backgroundColor: '#ffffff',
+      windowWidth: 794,
+      windowHeight: 1123,
     },
     jsPDF: {
       unit: 'mm',
@@ -96,7 +100,7 @@ export const generateQuotePDFBlob = async (
       mode: ['avoid-all', 'css', 'legacy'],
       before: '.page-break-before',
       after: '.page-break-after',
-      avoid: ['.avoid-page-break', 'tr', 'table']
+      avoid: ['.avoid-page-break', 'tr', 'table', 'img']
     },
   };
 
