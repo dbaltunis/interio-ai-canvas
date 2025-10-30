@@ -67,9 +67,9 @@ export const TreatmentControls = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {showTreatmentOptions && (
-        <div className="space-y-2">
+        <div className="space-y-1">
           <Label className="text-sm font-medium">Treatment Template</Label>
           <Select
             value={treatmentData?.template?.id || ""}
@@ -96,7 +96,7 @@ export const TreatmentControls = ({
       )}
 
       {showFabricSelection && (
-        <div className="space-y-2">
+        <div className="space-y-1">
           <Label className="text-sm font-medium">Fabric Selection</Label>
           <Select
             value={treatmentData?.fabric?.id || ""}
@@ -124,9 +124,9 @@ export const TreatmentControls = ({
       )}
 
       {treatmentData?.template && (
-        <div className="p-4 bg-muted rounded-lg space-y-2">
+        <div className="p-2 bg-muted rounded-lg space-y-1">
           <h4 className="font-medium text-sm">Template Details</h4>
-          <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+          <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
             <div>Type: {treatmentData.template.curtain_type}</div>
             <div>Fullness: {treatmentData.template.fullness_ratio}x</div>
             <div>Header: {treatmentData.template.header_allowance}cm</div>
@@ -138,9 +138,9 @@ export const TreatmentControls = ({
       )}
 
       {treatmentData?.fabric && (
-        <div className="p-4 bg-muted rounded-lg space-y-2">
+        <div className="p-2 bg-muted rounded-lg space-y-1">
           <h4 className="font-medium text-sm">Fabric Details</h4>
-          <div className="grid grid-cols-1 gap-2 text-xs text-muted-foreground">
+          <div className="grid grid-cols-1 gap-1 text-xs text-muted-foreground">
             <div>Name: {treatmentData.fabric.name}</div>
             <div>Width: {treatmentData.fabric.fabric_width}cm</div>
             <div>Price: ${treatmentData.fabric.price_per_meter.toFixed(2)}/m</div>

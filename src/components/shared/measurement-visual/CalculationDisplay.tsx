@@ -37,8 +37,8 @@ export const CalculationDisplay = ({ calculation, compact = false }: Calculation
 
   if (compact) {
     return (
-      <div className="p-4 bg-muted rounded-lg">
-        <div className="grid grid-cols-2 gap-4 text-sm">
+      <div className="p-2 bg-muted rounded-lg">
+        <div className="grid grid-cols-2 gap-2 text-sm">
           <div>
             <span className="text-muted-foreground">Fabric Required:</span>
             <div className="font-medium">{formatMeasurement(calculation.linearMeters)}</div>
@@ -53,11 +53,11 @@ export const CalculationDisplay = ({ calculation, compact = false }: Calculation
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Summary */}
-      <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-        <h4 className="font-semibold text-lg mb-3">Fabric Summary</h4>
-        <div className="grid grid-cols-2 gap-4">
+      <div className="p-2 bg-primary/5 rounded-lg border border-primary/20">
+        <h4 className="font-semibold text-lg mb-1.5">Fabric Summary</h4>
+        <div className="grid grid-cols-2 gap-2">
           <div>
             <span className="text-sm text-muted-foreground">Total Fabric Required</span>
             <div className="text-2xl font-bold text-primary">
@@ -74,11 +74,11 @@ export const CalculationDisplay = ({ calculation, compact = false }: Calculation
       </div>
 
       {/* Detailed Breakdown */}
-      <div className="space-y-4">
+      <div className="space-y-2">
         <h4 className="font-semibold">Calculation Breakdown</h4>
         
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div className="space-y-2">
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="space-y-1">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Rail Width:</span>
               <span>{formatMeasurement(calculation.railWidth, 'cm')}</span>
@@ -97,7 +97,7 @@ export const CalculationDisplay = ({ calculation, compact = false }: Calculation
             </div>
           </div>
           
-          <div className="space-y-2">
+          <div className="space-y-1">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Header Hem:</span>
               <span>{formatMeasurement(calculation.headerHem, 'cm')}</span>
@@ -118,9 +118,9 @@ export const CalculationDisplay = ({ calculation, compact = false }: Calculation
         </div>
 
         {/* Manufacturing Details */}
-        <div className="p-3 bg-muted rounded border-l-4 border-l-primary">
-          <h5 className="font-medium text-sm mb-2">Manufacturing Allowances</h5>
-          <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+        <div className="p-1.5 bg-muted rounded border-l-4 border-l-primary">
+          <h5 className="font-medium text-sm mb-1">Manufacturing Allowances</h5>
+          <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
             <div>Side Hems: {formatMeasurement(calculation.sideHems, 'cm')}</div>
             <div>Seam Hems: {formatMeasurement(calculation.seamHems, 'cm')}</div>
             <div>Return Left: {formatMeasurement(calculation.returnLeft, 'cm')}</div>
@@ -131,9 +131,9 @@ export const CalculationDisplay = ({ calculation, compact = false }: Calculation
         </div>
 
         {/* Cost Breakdown */}
-        <div className="p-3 bg-muted rounded">
-          <h5 className="font-medium text-sm mb-2">Cost Breakdown</h5>
-          <div className="space-y-1 text-sm">
+        <div className="p-1.5 bg-muted rounded">
+          <h5 className="font-medium text-sm mb-1">Cost Breakdown</h5>
+          <div className="space-y-0.5 text-sm">
             <div className="flex justify-between">
               <span>Fabric Required:</span>
               <span>{formatMeasurement(calculation.linearMeters)}</span>

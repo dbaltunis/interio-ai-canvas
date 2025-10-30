@@ -325,14 +325,14 @@ export const VisualMeasurementSheet = ({
       <div className="container-level-2 border-b-2 border-border px-2 py-1.5 md:px-6 md:py-4">
         <h2 className="text-base md:text-2xl font-bold text-card-foreground text-center">Window Measurement Worksheet</h2>
       </div>
-      <div className="p-2 md:p-6 space-y-2 md:space-y-6">
+      <div className="p-2 md:p-6 space-y-1 md:space-y-3">
         {/* Visual Diagram Section */}
         <div className="w-full">
           {/* Wallpaper uses its own full-width layout */}
           {treatmentCategory === 'wallpaper' ? <WallpaperVisual measurements={measurements} selectedWallpaper={selectedFabric ? inventory.find(item => item.id === selectedFabric) : undefined} onMeasurementChange={handleInputChange} readOnly={readOnly} /> : (/* Other treatments use the standard 2/5 + 3/5 layout */
-        <div className="flex flex-col lg:flex-row gap-3 md:gap-6">
+        <div className="flex flex-col lg:flex-row gap-1.5 md:gap-3">
               {/* Visual Diagram */}
-              <div className="w-full lg:w-2/5 flex-shrink-0 space-y-3 md:space-y-4">
+              <div className="w-full lg:w-2/5 flex-shrink-0 space-y-1.5 md:space-y-2">
                 {/* Original Visual Diagram first */}
                 {/* Specialized visualizers for panel glide, shutters, and awnings */}
                 {(treatmentCategory === 'panel_glide' || treatmentCategory === 'plantation_shutters' || treatmentCategory === 'shutters' || treatmentCategory === 'awning') ? (

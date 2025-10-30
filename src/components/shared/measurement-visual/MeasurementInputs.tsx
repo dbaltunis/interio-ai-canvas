@@ -37,9 +37,9 @@ export const MeasurementInputs = ({
 
   if (compact) {
     return (
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-2">
         {inputFields.slice(0, 4).map(({ key, label, required }) => (
-          <div key={key} className="space-y-2">
+          <div key={key} className="space-y-1">
             <Label htmlFor={key} className="text-sm font-medium">
               {label} {required && <span className="text-destructive">*</span>}
             </Label>
@@ -64,11 +64,11 @@ export const MeasurementInputs = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Primary Measurements */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {inputFields.map(({ key, label, required }) => (
-          <div key={key} className="space-y-2">
+          <div key={key} className="space-y-1">
             <Label htmlFor={key} className="text-sm font-medium">
               {label} {required && <span className="text-destructive">*</span>}
             </Label>
@@ -91,8 +91,8 @@ export const MeasurementInputs = ({
       </div>
 
       {/* Curtain Configuration */}
-      <div className="space-y-4">
-        <div className="space-y-3">
+      <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label className="text-sm font-medium">Curtain Type</Label>
           <RadioGroup
             value={measurements.curtain_type || "pair"}
@@ -112,7 +112,7 @@ export const MeasurementInputs = ({
         </div>
 
         {measurements.curtain_type === "single" && (
-          <div className="space-y-3">
+          <div className="space-y-1.5">
             <Label className="text-sm font-medium">Curtain Side</Label>
             <RadioGroup
               value={measurements.curtain_side || "left"}
@@ -132,7 +132,7 @@ export const MeasurementInputs = ({
           </div>
         )}
 
-        <div className="space-y-3">
+        <div className="space-y-1.5">
           <Label className="text-sm font-medium">Hardware Type</Label>
           <RadioGroup
             value={measurements.hardware_type || "rod"}
@@ -151,7 +151,7 @@ export const MeasurementInputs = ({
           </RadioGroup>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-1.5">
           <Label className="text-sm font-medium">Pooling Option</Label>
           <RadioGroup
             value={measurements.pooling_option || "above_floor"}

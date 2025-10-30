@@ -75,8 +75,8 @@ export const MeasurementVisual = ({
         </div>
       )}
 
-      <div className="p-6">
-        <div className="flex flex-col lg:flex-row gap-6">
+      <div className="p-3">
+        <div className="flex flex-col lg:flex-row gap-3">
           {/* Visual Diagram */}
           <div className="lg:w-1/2 lg:flex-shrink-0 lg:sticky lg:top-4 lg:h-fit lg:max-h-[calc(100vh-120px)] lg:overflow-visible">
             <MeasurementVisualCore
@@ -87,7 +87,7 @@ export const MeasurementVisual = ({
           </div>
 
           {/* Controls and Information */}
-          <div className="lg:w-1/2 space-y-6">
+          <div className="lg:w-1/2 space-y-3">
             {/* Project Information */}
             {projectData && !hideHeader && (
               <Card>
