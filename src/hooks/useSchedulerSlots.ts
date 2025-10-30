@@ -98,11 +98,13 @@ export const useSchedulerSlots = (date?: Date) => {
               }
               
               // Check if slot conflicts with booked appointments
-              const isBooked = bookedAppointments?.some(booking => 
-                booking.scheduler_id === scheduler.id &&
-                booking.appointment_date === slotDate &&
-                booking.appointment_time === slotStartTime
-              );
+              // Normalize time format: database stores "22:00:00", we use "22:00"
+              const isBooked = bookedAppointments?.some(booking => {
+                const bookingTime = booking.appointment_time.substring(0, 5); // "22:00:00" -> "22:00"
+                return booking.scheduler_id === scheduler.id &&
+                  booking.appointment_date === slotDate &&
+                  bookingTime === slotStartTime;
+              });
 
               // Check if slot conflicts with regular appointments (including buffer time)
               const hasConflictWithRegularAppointment = regularAppointments?.some(appointment => {
