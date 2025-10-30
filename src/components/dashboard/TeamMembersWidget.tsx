@@ -21,6 +21,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { getAvatarColor, getInitials } from "@/lib/avatar-utils";
 
 export const TeamMembersWidget = () => {
   const { user } = useAuth();
@@ -33,37 +34,10 @@ export const TeamMembersWidget = () => {
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>();
   const [recentMessageUsers, setRecentMessageUsers] = useState<Set<string>>(new Set());
 
-  const getAvatarColor = (name: string) => {
-    const colors = [
-      'bg-blue-500',
-      'bg-green-500', 
-      'bg-purple-500',
-      'bg-orange-500',
-      'bg-pink-500',
-      'bg-indigo-500',
-      'bg-teal-500',
-      'bg-rose-500',
-      'bg-cyan-500',
-      'bg-amber-500',
-    ];
-    
-    const charSum = name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-    return colors[charSum % colors.length];
-  };
-
   const handleAddTeamMember = () => {
     console.log('Add team member clicked, navigating to settings...');
     console.log('User role:', userRole);
     navigate('/?tab=settings&section=users');
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .slice(0, 2)
-      .toUpperCase();
   };
 
   const getPresenceStatus = (userId: string) => {
@@ -211,7 +185,7 @@ export const TeamMembersWidget = () => {
                 const conversation = conversations.find(c => c.user_id === member.id);
                 const hasUnread = (conversation?.unread_count || 0) > 0;
                 const unreadCount = conversation?.unread_count || 0;
-                const avatarColor = getAvatarColor(member.name);
+                const avatarColor = getAvatarColor(member.id); // Use ID for consistent colors
                 
                 return (
                   <div

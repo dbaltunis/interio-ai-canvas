@@ -23,6 +23,7 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { AppointmentSharingDialog } from "./sharing/AppointmentSharingDialog";
 import { format } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
+import { getAvatarColor, getInitials } from "@/lib/avatar-utils";
 
 interface UnifiedAppointmentDialogProps {
   open: boolean;
@@ -497,12 +498,8 @@ export const UnifiedAppointmentDialog = ({
               <div className="flex flex-wrap gap-3">
                 {teamMembers.map((member) => {
                   const isSelected = event.selectedTeamMembers.includes(member.id);
-                  const initials = member.name
-                    .split(' ')
-                    .map(n => n[0])
-                    .join('')
-                    .toUpperCase()
-                    .substring(0, 2);
+                  const initials = getInitials(member.name);
+                  const avatarColor = getAvatarColor(member.id);
                   
                   return (
                     <button
@@ -512,10 +509,10 @@ export const UnifiedAppointmentDialog = ({
                       className="flex flex-col items-center gap-1.5 group"
                     >
                       <div
-                        className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
+                        className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold text-white transition-all ${
                           isSelected
-                            ? 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2'
-                            : 'bg-muted text-muted-foreground group-hover:bg-muted/80'
+                            ? `${avatarColor} ring-2 ring-offset-2 ring-primary scale-110`
+                            : `${avatarColor} opacity-60 group-hover:opacity-100 group-hover:scale-105`
                         }`}
                       >
                         {initials}
