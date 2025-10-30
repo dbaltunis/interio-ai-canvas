@@ -28,6 +28,15 @@ export const SchedulerSlotDialog = ({ slot, open, onOpenChange }: SchedulerSlotD
 
   if (!slot) return null;
 
+  // Safely parse the date
+  const slotDate = slot.date instanceof Date ? slot.date : new Date(slot.date);
+  
+  // Validate the date
+  if (isNaN(slotDate.getTime())) {
+    console.error('Invalid date in scheduler slot:', slot);
+    return null;
+  }
+
   const bookingUrl = `${window.location.origin}/book/${slot.slug || 'scheduler'}`;
 
   const copyLink = () => {
@@ -66,7 +75,7 @@ export const SchedulerSlotDialog = ({ slot, open, onOpenChange }: SchedulerSlotD
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span>{format(slot.date, 'EEEE, MMMM d, yyyy')}</span>
+                <span>{format(slotDate, 'EEEE, MMMM d, yyyy')}</span>
               </div>
               
               <div className="flex items-center gap-2">
