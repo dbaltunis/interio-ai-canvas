@@ -118,7 +118,7 @@ serve(async (req) => {
     // Get calendar ID from configuration or use 'primary'
     const calendarId = integration.configuration?.calendar_id || 'primary';
 
-    // Create Google Calendar event
+    // Create Google Calendar event with conference data for Meet link
     const event = {
       summary: appointment.title,
       description: appointment.description || '',
@@ -130,14 +130,20 @@ serve(async (req) => {
       end: {
         dateTime: appointment.end_time,
         timeZone: 'UTC'
+      },
+      conferenceData: {
+        createRequest: {
+          requestId: `appointment-${appointmentId}-${Date.now()}`,
+          conferenceSolutionKey: { type: 'hangoutsMeet' }
+        }
       }
     };
 
     console.log('Creating event in Google Calendar:', event.summary);
 
-    // Call Google Calendar API
+    // Call Google Calendar API with conferenceDataVersion to generate Meet link
     const response = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`,
+      `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?conferenceDataVersion=1`,
       {
         method: 'POST',
         headers: {
@@ -157,10 +163,30 @@ serve(async (req) => {
     const googleEvent = await response.json();
     console.log('Successfully created Google Calendar event:', googleEvent.id);
 
-    // Update appointment with google_event_id
+    // Extract Google Meet link if generated
+    const meetLink = googleEvent.conferenceData?.entryPoints?.find(
+      (ep: any) => ep.entryPointType === 'video'
+    )?.uri;
+
+    console.log('Generated Google Meet link:', meetLink);
+
+    // Update appointment with google_event_id and Meet link
+    const updateData: any = {
+      google_event_id: googleEvent.id
+    };
+
+    if (meetLink) {
+      updateData.video_meeting_link = meetLink;
+      updateData.video_provider = 'google_meet';
+      updateData.video_meeting_data = {
+        conferenceId: googleEvent.conferenceData?.conferenceId,
+        entryPoints: googleEvent.conferenceData?.entryPoints
+      };
+    }
+
     const { error: updateError } = await supabase
       .from('appointments')
-      .update({ google_event_id: googleEvent.id })
+      .update(updateData)
       .eq('id', appointmentId);
 
     if (updateError) {

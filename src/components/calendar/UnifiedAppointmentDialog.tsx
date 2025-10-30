@@ -12,13 +12,14 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Share, Plus, Minus, Palette, Users, Video, UserPlus, Bell, User, AlertCircle } from "lucide-react";
+import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Share, Plus, Minus, Palette, Users, Video, UserPlus, Bell, User, AlertCircle, Copy, Check } from "lucide-react";
 import { useCreateAppointment, useUpdateAppointment, useDeleteAppointment } from "@/hooks/useAppointments";
 // CalDAV sync removed - using Google Calendar OAuth only
 import { useOfflineSupport } from "@/hooks/useOfflineSupport";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useClients } from "@/hooks/useClients";
 import { useCalendarColors } from "@/hooks/useCalendarColors";
+import { useVideoMeetingProviders } from "@/hooks/useVideoMeetingProviders";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { AppointmentSharingDialog } from "./sharing/AppointmentSharingDialog";
 import { format } from "date-fns";
@@ -58,6 +59,10 @@ export const UnifiedAppointmentDialog = ({
   const [selectedCalendars, setSelectedCalendars] = useState<string[]>([]);
   const [syncToCalendars, setSyncToCalendars] = useState(false);
   const [showSharingDialog, setShowSharingDialog] = useState(false);
+  const [addVideoMeeting, setAddVideoMeeting] = useState(false);
+  const [videoProvider, setVideoProvider] = useState<string>('google_meet');
+  const [videoLink, setVideoLink] = useState("");
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const createAppointment = useCreateAppointment();
   const updateAppointment = useUpdateAppointment();
@@ -67,9 +72,19 @@ export const UnifiedAppointmentDialog = ({
   const { data: teamMembers } = useTeamMembers();
   const { data: clients } = useClients();
   const { defaultColors, colorOptions } = useCalendarColors();
+  const { providers, generateMeetingLink, isGenerating } = useVideoMeetingProviders();
   
   // Fetch event owner profile if editing an appointment
   const { data: eventOwnerProfile } = useUserProfile(appointment?.user_id);
+
+  const connectedProviders = providers.filter(p => p.connected);
+  const selectedProvider = providers.find(p => p.provider === videoProvider);
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
 
   useEffect(() => {
     if (appointment) {
@@ -153,7 +168,8 @@ export const UnifiedAppointmentDialog = ({
       location: event.location,
       appointment_type: event.appointment_type,
       color: event.color,
-      video_meeting_link: event.video_meeting_link,
+      video_meeting_link: videoProvider === 'manual' ? videoLink : event.video_meeting_link,
+      video_provider: addVideoMeeting ? videoProvider : null,
       team_member_ids: event.selectedTeamMembers,
       invited_client_emails: event.inviteClientEmail ? event.inviteClientEmail.split(',').map(email => email.trim()) : [],
       notification_enabled: event.notification_enabled,
@@ -171,6 +187,19 @@ export const UnifiedAppointmentDialog = ({
           // CalDAV sync removed
         } else {
           const newAppointment = await createAppointment.mutateAsync(appointmentData as any);
+          
+          // Generate meeting link if auto-generation is enabled
+          if (addVideoMeeting && videoProvider !== 'manual' && newAppointment?.id) {
+            const duration = Math.round((endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60));
+            generateMeetingLink({
+              appointmentId: newAppointment.id,
+              provider: videoProvider as any,
+              title: event.title,
+              startTime: startDateTime.toISOString(),
+              endTime: endDateTime.toISOString(),
+              duration
+            });
+          }
           
           // CalDAV sync removed
         }
@@ -218,6 +247,10 @@ export const UnifiedAppointmentDialog = ({
     });
     setSelectedCalendars([]);
     setSyncToCalendars(false);
+    setAddVideoMeeting(false);
+    setVideoProvider('google_meet');
+    setVideoLink("");
+    setCopiedLink(false);
   };
 
   const handleCalendarToggle = (calendarId: string, checked: boolean) => {
@@ -458,34 +491,110 @@ export const UnifiedAppointmentDialog = ({
             </div>
           </div>
 
-          {/* Location and Video */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="location" className="text-sm font-medium flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5" />
-                Location
-              </Label>
-              <Input
-                id="location"
-                placeholder="Where?"
-                value={event.location}
-                onChange={useCallback((e) => setEvent(prev => ({ ...prev, location: e.target.value })), [])}
-                className="h-10"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="videoLink" className="text-sm font-medium flex items-center gap-1.5">
+          {/* Video Meeting Provider */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium flex items-center gap-1.5">
                 <Video className="w-3.5 h-3.5" />
-                Video Link
+                Video Meeting
               </Label>
-              <Input
-                id="videoLink"
-                placeholder="https://meet.google.com/..."
-                value={event.video_meeting_link}
-                onChange={useCallback((e) => setEvent(prev => ({ ...prev, video_meeting_link: e.target.value })), [])}
-                className="h-10"
+              <Switch
+                checked={addVideoMeeting}
+                onCheckedChange={setAddVideoMeeting}
               />
             </div>
+
+            {addVideoMeeting && (
+              <div className="space-y-3 p-3 rounded-lg bg-muted/50">
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium">Provider</Label>
+                  <Select value={videoProvider} onValueChange={setVideoProvider}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue>
+                        <div className="flex items-center gap-2">
+                          <span>{selectedProvider?.icon}</span>
+                          <span className="text-sm">{selectedProvider?.name}</span>
+                        </div>
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {connectedProviders.map((provider) => (
+                        <SelectItem key={provider.provider} value={provider.provider!}>
+                          <div className="flex items-center gap-2">
+                            <span>{provider.icon}</span>
+                            <span>{provider.name}</span>
+                            {provider.connected && provider.provider !== 'manual' && (
+                              <Badge variant="secondary" className="text-xs">Auto</Badge>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {videoProvider === 'manual' ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="manualVideoLink" className="text-xs font-medium">Meeting Link</Label>
+                    <Input
+                      id="manualVideoLink"
+                      placeholder="https://meet.google.com/..."
+                      value={videoLink}
+                      onChange={(e) => setVideoLink(e.target.value)}
+                      className="h-9"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Check className="w-4 h-4 text-green-500" />
+                    <span>Link will be generated automatically when you save</span>
+                  </div>
+                )}
+
+                {event.video_meeting_link && (
+                  <div className="flex items-center gap-2 p-2 rounded bg-background">
+                    <div className="flex-1 text-sm truncate text-muted-foreground">
+                      {event.video_meeting_link}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(event.video_meeting_link)}
+                      className="h-7 w-7 p-0"
+                    >
+                      {copiedLink ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                    </Button>
+                  </div>
+                )}
+
+                {!connectedProviders.find(p => p.provider === videoProvider)?.connected && videoProvider !== 'manual' && (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-xs">
+                      {videoProvider === 'google_meet' && 'Connect Google Calendar in Settings to enable automatic Meet links'}
+                      {videoProvider === 'zoom' && 'Connect Zoom in Settings to enable automatic meeting links'}
+                      {videoProvider === 'teams' && 'Connect Microsoft Teams in Settings to enable automatic meeting links'}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Location */}
+          <div className="space-y-2">
+            <Label htmlFor="location" className="text-sm font-medium flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5" />
+              Location
+            </Label>
+            <Input
+              id="location"
+              placeholder="Where?"
+              value={event.location}
+              onChange={useCallback((e) => setEvent(prev => ({ ...prev, location: e.target.value })), [])}
+              className="h-10"
+            />
           </div>
 
           {/* Team Members with Avatars */}

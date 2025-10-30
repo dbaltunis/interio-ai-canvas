@@ -378,7 +378,9 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string
+          video_meeting_data: Json | null
           video_meeting_link: string | null
+          video_provider: string | null
         }
         Insert: {
           appointment_type?: string | null
@@ -400,7 +402,9 @@ export type Database = {
           title: string
           updated_at?: string
           user_id: string
+          video_meeting_data?: Json | null
           video_meeting_link?: string | null
+          video_provider?: string | null
         }
         Update: {
           appointment_type?: string | null
@@ -422,7 +426,9 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+          video_meeting_data?: Json | null
           video_meeting_link?: string | null
+          video_provider?: string | null
         }
         Relationships: [
           {
