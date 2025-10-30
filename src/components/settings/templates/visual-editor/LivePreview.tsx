@@ -227,45 +227,45 @@ const LivePreviewBlock = ({
             <div className="text-center space-y-4">
               {/* Logo */}
               {content.showLogo !== false && (
-                <div className="flex justify-center mb-3">
+                <div className="flex justify-center mb-4">
                   {projectData?.businessSettings?.company_logo_url ? (
                     <img 
                       src={projectData.businessSettings.company_logo_url} 
                       alt="Company Logo" 
                       className="object-contain"
                       style={{ 
-                        height: content.logoSize || '60px',
-                        maxWidth: '240px'
+                        height: content.logoSize || '70px',
+                        maxWidth: '280px'
                       }}
                     />
                   ) : (
                     <div 
                       className="bg-gray-600 flex items-center justify-center"
                       style={{ 
-                        height: content.logoSize || '60px',
-                        width: content.logoSize || '60px'
+                        height: content.logoSize || '70px',
+                        width: content.logoSize || '70px'
                       }}
                     >
-                      <Building2 className="h-8 w-8 text-white" />
+                      <Building2 className="h-10 w-10 text-white" />
                     </div>
                   )}
                 </div>
               )}
 
               {/* Document Title */}
-              <h1 className="text-4xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
                 {content.documentTitle || "Quotation"}
               </h1>
 
               {/* Tagline */}
               {content.tagline && (
-                <p className="text-lg text-gray-700 max-w-2xl mx-auto mt-3 font-medium">
+                <p className="text-base text-gray-700 max-w-2xl mx-auto mt-2 font-medium">
                   {content.tagline}
                 </p>
               )}
 
               {/* Metadata Row */}
-              <div className="flex items-start justify-between pt-4 mt-4" style={{ borderTop: '2px solid #e0e0e0' }}>
+              <div className="flex items-start justify-between pt-5 mt-5" style={{ borderTop: '2px solid #d0d0d0' }}>
                 {/* Client Info - Left */}
                 <div className="text-left">
                   <div className="text-xs font-bold text-gray-900 mb-2 uppercase tracking-wider">
@@ -749,10 +749,10 @@ const LivePreviewBlock = ({
               {content.title || 'Quote Items'}
             </h3>
             {!isPrintMode && (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 {hasRealData && (
                   <>
-                    <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                    <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer font-medium">
                       <input
                         type="checkbox"
                         checked={groupByRoom}
@@ -777,7 +777,7 @@ const LivePreviewBlock = ({
                           setInternalShowDetailed(newValue);
                         }
                       }}
-                      className="px-4 py-1.5 text-sm font-medium border rounded-md hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold border-2 border-gray-900 rounded hover:bg-gray-900 hover:text-white active:bg-gray-800 transition-colors"
                       title={showDetailedProducts ? "Switch to simple view" : "Switch to detailed view with itemized breakdown"}
                     >
                       {showDetailedProducts ? 'Simple View' : 'Detailed View'}
@@ -791,7 +791,7 @@ const LivePreviewBlock = ({
                         setInternalShowImages(newValue);
                       }
                     }}
-                    className="px-4 py-1.5 text-sm font-medium border rounded-md hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                    className="px-3 py-1.5 text-xs font-semibold border-2 border-gray-900 rounded hover:bg-gray-900 hover:text-white active:bg-gray-800 transition-colors"
                     title={showImages ? "Hide product images" : "Show product images"}
                   >
                     {showImages ? 'Hide Images' : 'Show Images'}
@@ -803,8 +803,8 @@ const LivePreviewBlock = ({
           </div>
 
           {!hasRealData && (
-            <div className="bg-gray-50 border border-gray-200 p-4 mb-4">
-              <p className="text-gray-700 text-sm">
+            <div className="bg-gray-100 border-l-4 border-gray-400 p-4 mb-4">
+              <p className="text-gray-800 text-sm font-medium">
                 No project data available. Add treatments to your project to see itemized breakdown.
               </p>
             </div>
@@ -899,7 +899,7 @@ const LivePreviewBlock = ({
                                       </div>
                                       {(breakdownItem.quantity || breakdownItem.unit_price) && (
                                         <div style={{ fontSize: '9px', color: '#666666', whiteSpace: 'nowrap', marginRight: '16px', fontWeight: '500' }}>
-                                          {breakdownItem.quantity && typeof breakdownItem.quantity === 'number' ? breakdownItem.quantity.toFixed(2) : breakdownItem.quantity}
+                                          {breakdownItem.quantity && typeof breakdownItem.quantity === 'number' && breakdownItem.quantity > 0 ? `${breakdownItem.quantity.toFixed(2)}` : ''}
                                           {breakdownItem.unit ? ` ${breakdownItem.unit}` : ''}
                                           {breakdownItem.unit_price && breakdownItem.unit_price > 0 ? ` @ ${renderTokenValue('currency_symbol')}${breakdownItem.unit_price.toFixed(2)}` : ''}
                                         </div>
