@@ -445,7 +445,7 @@ export const WindowManagementDialog = ({
           <DialogHeader className="flex-shrink-0 pb-1 sm:pb-2 border-b border-border">
             <div className="flex items-center justify-between">
               <DialogTitle className="flex items-center flex-wrap gap-2 text-sm font-semibold text-foreground w-full">
-                <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md w-[200px]">
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md w-[200px] h-[32px]">
                   <Ruler className="h-3.5 w-3.5 text-primary shrink-0" />
                   <span className="text-xs font-medium text-muted-foreground shrink-0">Design:</span>
                   <WindowRenameButton windowName={surface?.name || 'Untitled'} onRename={handleRename} />
@@ -453,7 +453,7 @@ export const WindowManagementDialog = ({
                 
                 {(currentTreatment || windowSummary) && (
                   <>
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md w-[200px]">
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md w-[200px] h-[32px]">
                       <span className="text-xs font-medium text-muted-foreground shrink-0">Product:</span>
                       {isEditingProduct ? (
                         <>
@@ -516,7 +516,7 @@ export const WindowManagementDialog = ({
                       )}
                     </div>
                     
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md w-[200px]">
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md w-[200px] h-[32px]">
                       <span className="text-xs font-medium text-muted-foreground shrink-0">Description:</span>
                       {isEditingDescription ? (
                         <>
