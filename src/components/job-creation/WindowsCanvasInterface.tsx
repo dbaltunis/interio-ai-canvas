@@ -120,9 +120,9 @@ export const WindowsCanvasInterface = ({
 
       {/* Measurement Dialog */}
       <Dialog open={showMeasurementDialog} onOpenChange={setShowMeasurementDialog}>
-        <DialogContent className="max-w-6xl max-h-[95vh] md:max-h-[90vh] overflow-y-auto p-0 md:p-6 gap-0 md:gap-4 w-full md:w-[calc(100%-2rem)]">
-          <DialogHeader className="px-4 pt-12 pb-3 md:px-0 md:pt-0 md:pb-0">
-            <DialogTitle className="text-base md:text-lg">
+        <DialogContent className="max-w-6xl max-h-[95vh] md:max-h-[90vh] overflow-y-auto p-0 md:p-4 gap-0 md:gap-3 w-full md:w-[calc(100%-2rem)]">
+          <DialogHeader className="px-2 pt-11 pb-2 md:px-0 md:pt-0 md:pb-0">
+            <DialogTitle className="text-sm md:text-lg">
               {selectedSurface?.name} ({selectedRoom?.name})
             </DialogTitle>
           </DialogHeader>

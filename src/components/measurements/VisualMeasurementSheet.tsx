@@ -322,10 +322,10 @@ export const VisualMeasurementSheet = ({
   };
   return <div key={`${windowType}-${curtainType}-${hardwareType}-${poolingOption}`} className="w-full container-level-1 rounded-none md:rounded-lg overflow-hidden">
       {/* Header */}
-      <div className="container-level-2 border-b-2 border-border px-3 py-2 md:px-6 md:py-4">
-        <h2 className="text-lg md:text-2xl font-bold text-card-foreground text-center">Window Measurement Worksheet</h2>
+      <div className="container-level-2 border-b-2 border-border px-2 py-1.5 md:px-6 md:py-4">
+        <h2 className="text-base md:text-2xl font-bold text-card-foreground text-center">Window Measurement Worksheet</h2>
       </div>
-      <div className="p-3 md:p-6 space-y-3 md:space-y-6">
+      <div className="p-2 md:p-6 space-y-2 md:space-y-6">
         {/* Visual Diagram Section */}
         <div className="w-full">
           {/* Wallpaper uses its own full-width layout */}

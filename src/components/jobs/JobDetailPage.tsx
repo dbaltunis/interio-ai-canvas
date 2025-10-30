@@ -79,8 +79,8 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
     { id: "calendar", label: "Calendar", mobileLabel: "Calendar", icon: Calendar },
   ];
 
-  const mainTabs = allTabs.slice(0, 4);
-  const moreTabs = allTabs.slice(4);
+  const mainTabs = allTabs.slice(0, 3);
+  const moreTabs = allTabs.slice(3);
 
   return (
     <div className="h-screen bg-background w-full flex flex-col overflow-hidden">
