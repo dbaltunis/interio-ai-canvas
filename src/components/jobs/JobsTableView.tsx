@@ -178,22 +178,32 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
     };
   }, []);
 
-  // Group quotes by project and filter
+  // Group quotes by project and filter with error handling
   const groupedData = projects.map(project => {
-    const projectQuotes = quotes.filter(quote => quote.project_id === project.id);
-    return {
-      project,
-      quotes: projectQuotes,
-      isMatch: 
-        project.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.job_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        getClientName({ projects: project, client_id: project.client_id }).toLowerCase().includes(searchTerm.toLowerCase())
-    };
+    try {
+      if (!project?.id) return null;
+      
+      const projectQuotes = quotes.filter(quote => quote?.project_id === project.id);
+      const clientName = getClientName({ projects: project, client_id: project.client_id });
+      
+      return {
+        project,
+        quotes: projectQuotes,
+        isMatch: 
+          project.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          project.job_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          clientName.toLowerCase().includes(searchTerm.toLowerCase())
+      };
+    } catch (error) {
+      console.error('Error processing project:', project?.id, error);
+      return null;
+    }
   }).filter(group => {
+    if (!group) return false;
     if (!group.isMatch && searchTerm) return false;
     if (statusFilter === 'all') return true;
-    return group.project.status === statusFilter;
-  });
+    return group.project?.status === statusFilter;
+  }) as Array<{ project: any; quotes: any[]; isMatch: boolean }>;
 
   // Pagination logic  
   const totalItems = groupedData.length;
@@ -243,25 +253,30 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
   };
 
   const getClientName = (quote: any) => {
-    if (quote.clients?.name) {
-      return quote.clients.name;
-    }
-    
-    if (quote.client_id && clients.length > 0) {
-      const client = clients.find(c => c.id === quote.client_id);
-      if (client?.name) {
-        return client.name;
+    try {
+      if (quote?.clients?.name) {
+        return quote.clients.name;
       }
-    }
-    
-    if (quote.projects?.client_id && clients.length > 0) {
-      const client = clients.find(c => c.id === quote.projects.client_id);
-      if (client?.name) {
-        return client.name;
+      
+      if (quote?.client_id && clients.length > 0) {
+        const client = clients.find(c => c?.id === quote.client_id);
+        if (client?.name) {
+          return client.name;
+        }
       }
+      
+      if (quote?.projects?.client_id && clients.length > 0) {
+        const client = clients.find(c => c?.id === quote.projects.client_id);
+        if (client?.name) {
+          return client.name;
+        }
+      }
+      
+      return 'No Client';
+    } catch (error) {
+      console.error('Error getting client name:', error);
+      return 'No Client';
     }
-    
-    return 'No Client';
   };
 
   const getClientForQuote = (quote: any) => {

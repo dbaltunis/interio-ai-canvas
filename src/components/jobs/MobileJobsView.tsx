@@ -118,23 +118,30 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
     };
   }, []);
 
-  const filteredQuotes = quotes.filter((quote) => {
-    const project = projects.find((p) => p.id === quote.project_id);
+  // Group by projects (like desktop) to avoid duplicates
+  const groupedData = projects.map(project => {
+    const projectQuotes = quotes.filter(quote => quote.project_id === project.id);
     
-    // Get client from multiple possible locations
-    let client = clients.find((c) => c.id === quote.client_id);
-    if (!client && project?.client_id) {
-      client = clients.find((c) => c.id === project.client_id);
-    }
+    // Get client name for search
+    let client = clients.find((c) => c.id === project.client_id);
+    const clientName = client?.name || 'No Client';
     
-    const matchesSearch = 
-      quote.quote_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    return {
+      project,
+      quotes: projectQuotes,
+      clientName,
+      isMatch: 
+        project.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.job_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        clientName.toLowerCase().includes(searchTerm.toLowerCase())
+    };
+  }).filter(group => {
+    // Filter by search term
+    if (!group.isMatch && searchTerm) return false;
     
-    const matchesStatus = statusFilter === "all" || quote.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
+    // Filter by status
+    if (statusFilter === 'all') return true;
+    return group.project.status === statusFilter;
   });
 
   if (isLoading) {
@@ -274,112 +281,123 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
 
   return (
     <div className="space-y-3 p-4 pb-20 animate-fade-in bg-background/50" data-create-project>
-      {filteredQuotes.map((quote) => {
-        const project = projects.find((p) => p.id === quote.project_id);
-        const clientName = getClientName(quote, project);
-        const initials = getClientInitials(clientName);
-        const avatarColor = getClientAvatarColor(clientName);
-        const notesCount = project ? projectNotes[project.id] || 0 : 0;
+      {groupedData.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">No projects found matching your criteria.</p>
+        </div>
+      ) : (
+        groupedData.map((group) => {
+          const { project, quotes: projectQuotes, clientName } = group;
+          
+          // Safety checks
+          if (!project?.id) return null;
+          
+          // Get the primary quote (first non-draft or first quote)
+          const primaryQuote = projectQuotes.find(q => q.status !== 'draft') || projectQuotes[0];
+          if (!primaryQuote) return null;
+          
+          const initials = getClientInitials(clientName);
+          const avatarColor = getClientAvatarColor(clientName);
+          const notesCount = projectNotes[project.id] || 0;
         
-        return (
-          <Card 
-            key={quote.id} 
-            className="overflow-hidden cursor-pointer hover:shadow-md transition-all rounded-xl border-border/40 bg-card"
-            onClick={() => onJobSelect(quote)}
-          >
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                {/* Avatar */}
-                <Avatar className="h-10 w-10 shrink-0">
-                  <AvatarFallback className={`${avatarColor} text-primary-foreground text-xs font-semibold`}>
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
+          return (
+            <Card 
+              key={project.id} 
+              className="overflow-hidden cursor-pointer hover:shadow-md transition-all rounded-xl border-border/40 bg-card"
+              onClick={() => onJobSelect(primaryQuote)}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  {/* Avatar */}
+                  <Avatar className="h-10 w-10 shrink-0">
+                    <AvatarFallback className={`${avatarColor} text-primary-foreground text-xs font-semibold`}>
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
 
-                {/* Main Content */}
-                <div className="flex-1 min-w-0 space-y-2">
-                  {/* Header Row */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-mono text-muted-foreground">
-                          {formatJobNumber(project?.job_number || quote.quote_number)}
-                        </span>
-                        <JobStatusBadge statusId={project?.status_id || null} fallbackText={project?.status || quote.status || "No Status"} />
+                  {/* Main Content */}
+                  <div className="flex-1 min-w-0 space-y-2">
+                    {/* Header Row */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-mono text-muted-foreground">
+                            {formatJobNumber(project.job_number || primaryQuote.quote_number)}
+                          </span>
+                          <JobStatusBadge statusId={project.status_id || null} fallbackText={project.status || primaryQuote.status || "No Status"} />
+                        </div>
+                        <h4 className="font-semibold text-sm line-clamp-1">
+                          {clientName.length > 14 ? clientName.substring(0, 14) + '...' : clientName}
+                        </h4>
                       </div>
-                      <h4 className="font-semibold text-sm line-clamp-1">
-                        {clientName.length > 14 ? clientName.substring(0, 14) + '...' : clientName}
-                      </h4>
-                    </div>
-                    
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0 relative">
-                          {notesCount > 0 && (
-                            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-medium text-primary-foreground flex items-center justify-center">
-                              {notesCount}
-                            </span>
-                          )}
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={(e) => {
-                          e.stopPropagation();
-                          onJobSelect(quote);
-                        }}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Job
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={(e) => handleNotesClick(quote, project, e)}>
-                          <StickyNote className="h-4 w-4 mr-2" />
-                          Write Note
-                          {notesCount > 0 && (
-                            <Badge variant="secondary" className="ml-auto">
-                              {notesCount}
-                            </Badge>
-                          )}
-                        </DropdownMenuItem>
-                        {project && (
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0 relative">
+                            {notesCount > 0 && (
+                              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-medium text-primary-foreground flex items-center justify-center">
+                                {notesCount}
+                              </span>
+                            )}
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation();
+                            onJobSelect(primaryQuote);
+                          }}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Job
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => handleNotesClick(primaryQuote, project, e)}>
+                            <StickyNote className="h-4 w-4 mr-2" />
+                            Write Note
+                            {notesCount > 0 && (
+                              <Badge variant="secondary" className="ml-auto">
+                                {notesCount}
+                              </Badge>
+                            )}
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={(e) => handleNewQuote(project, e)}>
                             <Copy className="h-4 w-4 mr-2" />
                             New Quote
                           </DropdownMenuItem>
-                        )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          className="text-destructive focus:text-destructive"
-                          onClick={(e) => handleDeleteClick(quote, e)}
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete Job
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            className="text-destructive focus:text-destructive"
+                            onClick={(e) => handleDeleteClick(primaryQuote, e)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete Job
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
 
-                  {/* Details Row */}
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    {project?.name && (
-                      <div className="flex items-center gap-1 flex-1 min-w-0">
-                        <MapPin className="h-3 w-3 shrink-0" />
-                        <span className="truncate">{project.name}</span>
-                      </div>
-                    )}
-                    {quote.total_amount && (
-                      <div className="flex items-center gap-1 shrink-0">
-                        <span className="font-semibold">
-                          {formatCurrency(quote.total_amount, userCurrency)}
-                        </span>
-                      </div>
-                    )}
+                    {/* Details Row */}
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      {project.name && (
+                        <div className="flex items-center gap-1 flex-1 min-w-0">
+                          <MapPin className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{project.name}</span>
+                        </div>
+                      )}
+                      {primaryQuote.total_amount != null && (
+                        <div className="flex items-center gap-1 shrink-0">
+                          <span className="font-semibold">
+                            {formatCurrency(primaryQuote.total_amount, userCurrency)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+              </CardContent>
+            </Card>
+          );
+        })
+      )}
 
       {/* Dialogs */}
       <JobNotesDialog

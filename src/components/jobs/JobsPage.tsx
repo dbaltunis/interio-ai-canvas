@@ -72,6 +72,12 @@ const JobsPage = () => {
   if (canViewJobs === undefined) {
     console.warn('[JOBS] canViewJobs undefined - selectedJobId:', selectedJobId);
     
+    // If we have a selectedJobId, try to render the detail page immediately
+    // This prevents the "Something went wrong" error during permission checks
+    if (selectedJobId) {
+      return <JobDetailPage jobId={selectedJobId} onBack={handleBackFromJob} />;
+    }
+    
     return (
       <div className="min-h-screen flex items-center justify-center animate-fade-in">
         <div className="flex items-center gap-3">
