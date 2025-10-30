@@ -121,6 +121,7 @@ export const TreatmentPreviewEngine = ({
             fabric={selectedItems.fabric}
             hardware={selectedItems.hardware}
             className={className}
+            hideDetails={hideDetails}
           />
         );
       
