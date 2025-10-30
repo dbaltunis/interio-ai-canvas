@@ -20,7 +20,7 @@ import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useEmailKPIs } from "@/hooks/useEmails";
 import { ShopifyIntegrationDialog } from "@/components/library/ShopifyIntegrationDialog";
-import { Users, FileText, Package, DollarSign, Mail, MousePointerClick, Clock, TrendingUp, Store } from "lucide-react";
+import { Users, FileText, Package, DollarSign, Mail, MousePointerClick, Clock, TrendingUp, Store, CalendarCheck } from "lucide-react";
 
 export const EnhancedHomeDashboard = () => {
   const [showShopifyDialog, setShowShopifyDialog] = useState(false);
@@ -69,6 +69,15 @@ export const EnhancedHomeDashboard = () => {
       subtitle: "active relationships",
       icon: Users,
       trend: { value: 15.3, isPositive: true },
+      category: "primary" as const,
+    },
+    {
+      id: "appointments-booked",
+      title: "Appointments Booked",
+      value: stats?.totalAppointments || 0,
+      subtitle: `${stats?.activeSchedulers || 0} active scheduler${(stats?.activeSchedulers || 0) !== 1 ? 's' : ''}`,
+      icon: CalendarCheck,
+      trend: { value: 18.7, isPositive: true },
       category: "primary" as const,
     },
   ];

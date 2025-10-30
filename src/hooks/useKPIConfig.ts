@@ -39,6 +39,7 @@ const defaultKPIConfigs: KPIConfig[] = [
   { id: 'active-projects', title: 'Active Projects', enabled: true, order: 1, category: 'primary', displayFormat: 'card', size: 'medium', refreshInterval: 15, showTrend: true, dataPeriod: '30d' },
   { id: 'pending-quotes', title: 'Pending Quotes', enabled: true, order: 2, category: 'primary', displayFormat: 'card', size: 'medium', refreshInterval: 15, showTrend: true, dataPeriod: '30d' },
   { id: 'total-clients', title: 'Total Clients', enabled: true, order: 3, category: 'primary', displayFormat: 'card', size: 'medium', refreshInterval: 30, showTrend: true, dataPeriod: 'all' },
+  { id: 'appointments-booked', title: 'Appointments Booked', enabled: true, order: 4, category: 'primary', displayFormat: 'card', size: 'medium', refreshInterval: 10, showTrend: true, dataPeriod: '30d' },
   { id: 'emails-sent', title: 'Emails Sent', enabled: true, order: 0, category: 'email', displayFormat: 'card', size: 'medium', refreshInterval: 5, showTrend: true, dataPeriod: '7d' },
   { id: 'open-rate', title: 'Open Rate', enabled: true, order: 1, category: 'email', displayFormat: 'gauge', size: 'medium', refreshInterval: 5, showTrend: true, dataPeriod: '7d' },
   { id: 'click-rate', title: 'Click Rate', enabled: true, order: 2, category: 'email', displayFormat: 'gauge', size: 'medium', refreshInterval: 5, showTrend: true, dataPeriod: '7d' },
