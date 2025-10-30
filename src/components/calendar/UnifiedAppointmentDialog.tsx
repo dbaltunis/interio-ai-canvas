@@ -425,36 +425,21 @@ export const UnifiedAppointmentDialog = ({
                 <Palette className="w-3.5 h-3.5" />
                 Color
               </Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-10 justify-start gap-2"
-                  >
-                    <div
-                      className="w-5 h-5 rounded-full border-2 border-border"
-                      style={{ backgroundColor: event.color || defaultColors[0] }}
+              <div className="p-3 border rounded-lg bg-muted/30">
+                <div className="grid grid-cols-4 gap-2">
+                  {defaultColors.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      className={`w-12 h-12 rounded-full border-2 hover:scale-110 transition-transform ${
+                        event.color === color ? 'ring-2 ring-offset-2 ring-primary' : 'border-border'
+                      }`}
+                      style={{ backgroundColor: color }}
+                      onClick={() => setEvent({ ...event, color })}
                     />
-                    <span>Color</span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-3" align="start">
-                  <div className="grid grid-cols-4 gap-2">
-                    {defaultColors.map((color) => (
-                      <button
-                        key={color}
-                        type="button"
-                        className={`w-10 h-10 rounded-full border-2 hover:scale-110 transition-transform ${
-                          event.color === color ? 'ring-2 ring-offset-2 ring-primary' : 'border-border'
-                        }`}
-                        style={{ backgroundColor: color }}
-                        onClick={() => setEvent({ ...event, color })}
-                      />
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
