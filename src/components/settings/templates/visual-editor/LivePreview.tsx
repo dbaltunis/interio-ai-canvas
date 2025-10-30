@@ -215,38 +215,38 @@ const LivePreviewBlock = ({
         <div 
           className="mb-8" 
           style={{ 
-            backgroundColor: style.backgroundColor || '#ffffff',
-            color: style.textColor || '#1e293b',
-            padding: style.padding || '32px',
-            borderRadius: style.borderRadius || '0px',
-            borderBottom: style.borderBottom || '2px solid #e5e7eb',
-            margin: style.margin || '0 0 32px 0'
+            backgroundColor: '#ffffff',
+            color: '#111827',
+            padding: '24px',
+            borderRadius: '0px',
+            borderBottom: '1px solid #e5e7eb',
+            margin: '0 0 24px 0'
           }}
         >
           {headerLayout === 'centered' && (
             <div className="text-center space-y-4">
               {/* Logo */}
               {content.showLogo !== false && (
-                <div className="flex justify-center mb-4">
+                <div className="flex justify-center mb-3">
                   {projectData?.businessSettings?.company_logo_url ? (
                     <img 
                       src={projectData.businessSettings.company_logo_url} 
                       alt="Company Logo" 
                       className="object-contain"
                       style={{ 
-                        height: content.logoSize || '80px',
-                        maxWidth: '300px'
+                        height: content.logoSize || '60px',
+                        maxWidth: '240px'
                       }}
                     />
                   ) : (
                     <div 
-                      className="bg-blue-600 rounded-lg flex items-center justify-center"
+                      className="bg-gray-600 flex items-center justify-center"
                       style={{ 
-                        height: content.logoSize || '80px',
-                        width: content.logoSize || '80px'
+                        height: content.logoSize || '60px',
+                        width: content.logoSize || '60px'
                       }}
                     >
-                      <Building2 className="h-10 w-10 text-white" />
+                      <Building2 className="h-8 w-8 text-white" />
                     </div>
                   )}
                 </div>
@@ -265,7 +265,7 @@ const LivePreviewBlock = ({
               )}
 
               {/* Metadata Row */}
-              <div className="flex items-start justify-between pt-6 mt-6 border-t border-gray-200">
+              <div className="flex items-start justify-between pt-4 mt-4 border-t border-gray-200">
                 {/* Client Info - Left */}
                 <div className="text-left">
                   <div className="text-xs font-semibold text-gray-500 mb-2">
@@ -319,33 +319,13 @@ const LivePreviewBlock = ({
                       <span className="text-gray-500">{content.quoteNumberLabel || "Order number:"} </span>
                       <span className="font-semibold text-gray-900">{renderTokenValue('job_number')}</span>
                     </div>
-                    <div className="flex items-center justify-end gap-1">
+                    <div>
                       <span className="text-gray-500">Start Date: </span>
                       <span className="text-gray-900">{renderTokenValue('start_date') || (content.customDate ? format(new Date(content.customDate), 'M/d/yyyy') : renderTokenValue('date'))}</span>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="h-3 w-3 text-muted-foreground cursor-help ml-1" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="text-xs">Set timeline dates in Client & Project Overview tab</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
                     </div>
-                    <div className="flex items-center justify-end gap-1">
+                    <div>
                       <span className="text-gray-500">Due Date: </span>
                       <span className="text-gray-900">{renderTokenValue('due_date') || (content.customValidUntil ? format(new Date(content.customValidUntil), 'M/d/yyyy') : renderTokenValue('valid_until'))}</span>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="h-3 w-3 text-muted-foreground cursor-help ml-1" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="text-xs">Set timeline dates in Client & Project Overview tab</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
                     </div>
                   </div>
                 </div>
@@ -823,9 +803,9 @@ const LivePreviewBlock = ({
           </div>
 
           {!hasRealData && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-              <p className="text-yellow-800 text-sm">
-                💡 No project data available. Add treatments to your project to see itemized breakdown.
+            <div className="bg-gray-50 border border-gray-200 p-4 mb-4">
+              <p className="text-gray-700 text-sm">
+                No project data available. Add treatments to your project to see itemized breakdown.
               </p>
             </div>
           )}
@@ -846,8 +826,8 @@ const LivePreviewBlock = ({
                 {Object.entries(groupedItems).map(([roomName, items]: [string, any]) => (
                   <React.Fragment key={roomName}>
                     {groupByRoom && hasRealData && (
-                      <tr style={{ backgroundColor: '#f9fafb', borderTop: '2px solid #d1d5db' }}>
-                        <td colSpan={6} style={{ padding: '6px 8px', fontSize: '10px', fontWeight: '600', color: '#374151' }}>
+                      <tr style={{ backgroundColor: '#f3f4f6', borderTop: '1px solid #d1d5db' }}>
+                        <td colSpan={6} style={{ padding: '8px 8px', fontSize: '10px', fontWeight: '600', color: '#111827', letterSpacing: '0.025em' }}>
                           {roomName}
                         </td>
                       </tr>
@@ -855,11 +835,12 @@ const LivePreviewBlock = ({
                     {(items as any[]).map((item: any, itemIndex: number) => {
                       const itemNumber = groupByRoom ? itemIndex + 1 : Object.values(groupedItems).flat().indexOf(item) + 1;
                       const breakdown = getItemizedBreakdown(item);
+                      const isEven = itemNumber % 2 === 0;
                       
                       return (
                         <React.Fragment key={`item-${roomName}-${itemIndex}`}>
                           {/* Main product row */}
-                          <tr style={{ borderTop: '1px solid #e5e7eb', backgroundColor: '#ffffff' }}>
+                          <tr style={{ borderTop: '1px solid #e5e7eb', backgroundColor: isEven ? '#fafafa' : '#ffffff' }}>
                             <td style={{ padding: '12px 8px', fontSize: '10px', fontWeight: '500', color: '#6b7280', verticalAlign: 'top' }}>{itemNumber}</td>
                             <td style={{ padding: '12px 8px', fontSize: '10px', fontWeight: '600', color: '#111827', verticalAlign: 'top' }}>
                               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
@@ -890,7 +871,7 @@ const LivePreviewBlock = ({
                           
                           {/* Detailed breakdown rows - Clean, professional styling */}
                           {breakdown.length > 0 && showDetailedProducts && (
-                            <tr style={{ backgroundColor: '#fafafa', borderTop: '1px solid #e5e7eb' }}>
+                            <tr style={{ backgroundColor: isEven ? '#f5f5f5' : '#fafafa', borderTop: '1px solid #e5e7eb' }}>
                               <td colSpan={6} style={{ padding: '8px 8px 8px 56px' }}>
                                 <div style={{ borderLeft: '2px solid #e5e7eb', paddingLeft: '16px' }}>
                                   {breakdown.map((breakdownItem: any, bidx: number) => (
