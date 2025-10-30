@@ -36,9 +36,8 @@ import { QuotePreview } from "@/components/quotation/QuotePreview";
 import { WorkOrderView } from "@/components/quotation/WorkOrderView";
 import { EmptyQuoteVersionState } from "@/components/jobs/EmptyQuoteVersionState";
 import { useQuoteVersions } from "@/hooks/useQuoteVersions";
-import { PDFPreview } from "@/components/jobs/quotation/PDFPreview";
-import { pdf } from '@react-pdf/renderer';
-import { QuotePDFDocument } from '../quotation/pdf/QuotePDFDocument';
+import { SimpleQuoteTemplate } from '@/components/jobs/quotation/SimpleQuoteTemplate';
+import { generateQuotePDF, generateQuotePDFBlob } from '@/utils/generateQuotePDF';
 interface QuotationTabProps {
   projectId: string;
   quoteId?: string;
@@ -169,7 +168,7 @@ export const QuotationTab = ({
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [showDetailedBreakdown, setShowDetailedBreakdown] = useState(false);
   const [showImages, setShowImages] = useState(true);
-  const [viewMode, setViewMode] = useState<'preview' | 'pdf'>('preview');
+  const quoteRef = React.useRef<HTMLDivElement>(null);
   const {
     data: clients
   } = useClients();
@@ -263,29 +262,24 @@ export const QuotationTab = ({
     sourceTreatments: sourceTreatments.slice(0, 2) // Log first 2 for debugging
   });
   const handlePrint = async () => {
+    if (!quoteRef.current) {
+      toast({
+        title: "Error",
+        description: "Quote preview not ready. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       toast({
-        title: "Generating PDF...",
-        description: "Please wait while we prepare your quote"
+        title: "Opening PDF...",
+        description: "Generating your professional quote"
       });
 
-      // Prepare data for PDF
-      const pdfProjectData = {
-        ...projectData,
-        items: quotationData.items,
-        windowSummaries: projectSummaries
-      };
-
-      // Generate PDF blob
-      const pdfBlob = await pdf(
-        <QuotePDFDocument
-          blocks={templateBlocks}
-          projectData={pdfProjectData}
-          showDetailedBreakdown={showDetailedBreakdown}
-          showImages={showImages}
-        />
-      ).toBlob();
-
+      // Generate PDF blob from the visible quote template
+      const pdfBlob = await generateQuotePDFBlob(quoteRef.current);
+      
       // Create object URL and open in new tab
       const url = URL.createObjectURL(pdfBlob);
       window.open(url, '_blank');
@@ -308,38 +302,25 @@ export const QuotationTab = ({
   };
 
   const handleDownloadPDF = async () => {
+    if (!quoteRef.current) {
+      toast({
+        title: "Error",
+        description: "Quote preview not ready. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       toast({
         title: "Downloading PDF...",
         description: "Please wait..."
       });
 
-      // Prepare data for PDF
-      const pdfProjectData = {
-        ...projectData,
-        items: quotationData.items,
-        windowSummaries: projectSummaries
-      };
-
-      // Generate PDF blob
-      const pdfBlob = await pdf(
-        <QuotePDFDocument
-          blocks={templateBlocks}
-          projectData={pdfProjectData}
-          showDetailedBreakdown={showDetailedBreakdown}
-          showImages={showImages}
-        />
-      ).toBlob();
-
-      // Create download link
-      const url = URL.createObjectURL(pdfBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `quote-${project?.job_number || 'QT-' + Math.floor(Math.random() * 10000)}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      const filename = `quote-${project?.job_number || 'QT-' + Math.floor(Math.random() * 10000)}.pdf`;
+      
+      // Generate and download PDF
+      await generateQuotePDF(quoteRef.current, { filename });
 
       toast({
         title: "PDF Downloaded",
@@ -359,6 +340,15 @@ export const QuotationTab = ({
     subject: string;
     message: string;
   }) => {
+    if (!quoteRef.current) {
+      toast({
+        title: "Error",
+        description: "Quote preview not ready. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsSendingEmail(true);
     try {
       toast({
@@ -366,23 +356,8 @@ export const QuotationTab = ({
         description: "Please wait while we prepare your quote"
       });
 
-      // Use @react-pdf/renderer for professional PDF generation
-      const {
-        pdf
-      } = await import('@react-pdf/renderer');
-      const {
-        QuotePDFDocument
-      } = await import('../quotation/pdf/QuotePDFDocument');
-
-      // Prepare data for PDF
-      const pdfProjectData = {
-        ...projectData,
-        items: quotationData.items,
-        windowSummaries: projectSummaries
-      };
-
-      // Generate PDF from React component (server-side rendering)
-      const pdfBlob = await pdf(<QuotePDFDocument blocks={templateBlocks} projectData={pdfProjectData} showDetailedBreakdown={showDetailedBreakdown} showImages={showImages} />).toBlob();
+      // Generate PDF blob from the visible quote template
+      const pdfBlob = await generateQuotePDFBlob(quoteRef.current);
       console.log('✅ Professional PDF generated:', pdfBlob.size, 'bytes');
 
       // Generate unique filename with timestamp to avoid conflicts
@@ -594,28 +569,6 @@ export const QuotationTab = ({
       {/* Detailed Options Section */}
       <div className="flex items-center justify-between overflow-x-auto pb-2">
         <div className="flex items-center space-x-2 sm:space-x-4 min-w-max">
-          {/* View Mode Toggle */}
-          <div className="flex items-center space-x-2">
-            <Button 
-              variant={viewMode === 'preview' ? 'default' : 'outline'} 
-              size="sm" 
-              onClick={() => setViewMode('preview')}
-              className="h-8"
-            >
-              <Eye className="h-4 w-4 mr-1" />
-              Preview
-            </Button>
-            <Button 
-              variant={viewMode === 'pdf' ? 'default' : 'outline'} 
-              size="sm" 
-              onClick={() => setViewMode('pdf')}
-              className="h-8"
-            >
-              <FileText className="h-4 w-4 mr-1" />
-              PDF
-            </Button>
-          </div>
-
           {/* Show Images Toggle */}
           <div className="flex items-center space-x-2">
             <Switch id="show-images" checked={showImages} onCheckedChange={setShowImages} />
@@ -629,21 +582,6 @@ export const QuotationTab = ({
           <div className="flex items-center space-x-2">
             <Switch id="show-detailed" checked={showDetailedBreakdown} onCheckedChange={setShowDetailedBreakdown} />
             <Label htmlFor="show-detailed" className="text-xs cursor-pointer">Detailed</Label>
-          </div>
-
-          {/* Template Selector */}
-          <div className="flex items-center space-x-2">
-            <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Template:</span>
-            <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
-              <SelectTrigger className="w-36 sm:w-48 h-8 text-sm">
-                <SelectValue placeholder="Select template" />
-              </SelectTrigger>
-              <SelectContent className="z-50 bg-background">
-                {activeTemplates.map(template => <SelectItem key={template.id} value={template.id.toString()}>
-                    {template.name}
-                  </SelectItem>)}
-              </SelectContent>
-            </Select>
           </div>
         </div>
       </div>
@@ -660,45 +598,31 @@ export const QuotationTab = ({
       if (roomsTab) {
         roomsTab.click();
       }
-    }} /> : selectedTemplate ? <section className="mt-2 sm:mt-4" key={`preview-${projectSummaries?.projectTotal}-${quotationData.total}-${selectedTemplateId}`}>
+    }} /> : <section className="mt-2 sm:mt-4" key={`preview-${projectSummaries?.projectTotal}-${quotationData.total}`}>
           <div className="w-full flex justify-center">
             <div className="transform scale-[0.38] sm:scale-[0.55] md:scale-[0.65] lg:scale-75 xl:scale-90 origin-top">
-              <LivePreview blocks={templateBlocks} projectData={{
-            project: {
-              ...project,
-              client: client
-            },
-            client: client,
-            businessSettings: businessSettings || {},
-            treatments: sourceTreatments,
-            rooms: rooms || [],
-            surfaces: surfaces || [],
-            subtotal: quotationData.subtotal || 0,
-            taxRate: businessSettings?.tax_rate ? businessSettings.tax_rate / 100 : 0.08,
-            taxAmount: quotationData.taxAmount || 0,
-            total: quotationData.total || 0,
-            markupPercentage: markupPercentage,
-            currency: (businessSettings?.measurement_units ? (typeof businessSettings.measurement_units === 'string' ? JSON.parse(businessSettings.measurement_units) : businessSettings.measurement_units).currency : null) || 'GBP',
-            windowSummaries: projectSummaries?.windows || [],
-            workshopItems: workshopItems || [],
-            items: quotationData.items || [] // Pass the actual quote items
-          }} isEditable={false} onBlocksChange={updatedBlocks => {
-            // Update edited template blocks when user makes changes (like date selection)
-            setEditedTemplateBlocks(updatedBlocks);
-          }} />
-            </div>
-
-            {/* PDF Preview Mode */}
-            {viewMode === 'pdf' && (
-              <PDFPreview
-                blocks={templateBlocks}
-                projectData={projectData}
+              <SimpleQuoteTemplate
+                ref={quoteRef}
+                projectData={{
+                  project: {
+                    ...project,
+                    client: client
+                  },
+                  client: client,
+                  businessSettings: businessSettings || {},
+                  items: quotationData.items || [],
+                  subtotal: quotationData.subtotal || 0,
+                  taxRate: businessSettings?.tax_rate ? businessSettings.tax_rate / 100 : 0,
+                  taxAmount: quotationData.taxAmount || 0,
+                  total: quotationData.total || 0,
+                  currency: (businessSettings?.measurement_units ? (typeof businessSettings.measurement_units === 'string' ? JSON.parse(businessSettings.measurement_units) : businessSettings.measurement_units).currency : null) || 'GBP',
+                }}
                 showDetailedBreakdown={showDetailedBreakdown}
                 showImages={showImages}
               />
-            )}
+            </div>
           </div>
-        </section> : null}
+        </section>}
       <JobNotesDialog open={notesOpen} onOpenChange={open => {
       setNotesOpen(open);
       if (!open) setSelectedQuote(null);

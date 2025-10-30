@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Download, Eye, FileText, Image as ImageIcon } from "lucide-react";
 import { formatCurrency } from "@/utils/currency";
-import { PDFDownloadLink } from '@react-pdf/renderer';
-import { QuotePDFDocument } from "../jobs/quotation/pdf/QuotePDFDocument";
+import { useToast } from "@/hooks/use-toast";
+import { generateQuotePDFBlob } from "@/utils/generateQuotePDF";
+import { SimpleQuoteTemplate } from "@/components/jobs/quotation/SimpleQuoteTemplate";
+import React from "react";
 
 interface QuoteItem {
   id: string;
@@ -37,6 +39,50 @@ export const QuotePreview = ({
   showImages = true,
   onToggleImages 
 }: QuotePreviewProps) => {
+  const { toast } = useToast();
+  const quoteRef = React.useRef<HTMLDivElement>(null);
+  
+  const handleDownloadPDF = async () => {
+    if (!quoteRef.current) {
+      toast({
+        title: "Error",
+        description: "Quote preview not ready. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      toast({
+        title: "Generating PDF...",
+        description: "Please wait..."
+      });
+
+      const pdfBlob = await generateQuotePDFBlob(quoteRef.current);
+      
+      // Create download link
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${quote.quote_number || 'quote'}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "PDF Downloaded",
+        description: "Your quote has been downloaded successfully"
+      });
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to download PDF. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
   
   // Group items by room for better presentation
   const itemsByRoom = items.reduce((acc, item) => {
@@ -90,24 +136,10 @@ export const QuotePreview = ({
                 <ImageIcon className="h-4 w-4 mr-1" />
                 {showImages ? 'Hide' : 'Show'} Images
               </Button>
-              <PDFDownloadLink
-                document={
-                  <QuotePDFDocument
-                    blocks={[]} // Will use items from projectData
-                    projectData={{ ...projectData, items }}
-                    showDetailedBreakdown={true}
-                    showImages={showImages}
-                  />
-                }
-                fileName={`${quote.quote_number || 'quote'}.pdf`}
-              >
-                {({ loading }) => (
-                  <Button disabled={loading}>
-                    <Download className="h-4 w-4 mr-1" />
-                    {loading ? 'Generating...' : 'Download PDF'}
-                  </Button>
-                )}
-              </PDFDownloadLink>
+              <Button onClick={handleDownloadPDF}>
+                <Download className="h-4 w-4 mr-1" />
+                Download PDF
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -248,6 +280,16 @@ export const QuotePreview = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Hidden quote template for PDF generation */}
+      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+        <SimpleQuoteTemplate
+          ref={quoteRef}
+          projectData={{ ...projectData, items }}
+          showDetailedBreakdown={true}
+          showImages={showImages}
+        />
+      </div>
     </div>
   );
 };
