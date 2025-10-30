@@ -25,8 +25,8 @@ interface ClientInfo {
 
 export const BookingConfirmation = ({ slug }: BookingConfirmationProps) => {
   const { data: scheduler, isLoading: schedulerLoading } = usePublicScheduler(slug);
-  // Refetch slots every 30 seconds to show real-time availability
-  const { data: allSlots, refetch: refetchSlots } = useSchedulerSlots(undefined, 30000);
+  // Refetch slots every 10 seconds to show real-time availability
+  const { data: allSlots, refetch: refetchSlots, isLoading: slotsLoading } = useSchedulerSlots(new Date(), 10000);
   const createBooking = useCreateBooking();
   const { toast } = useToast();
 
@@ -96,7 +96,7 @@ export const BookingConfirmation = ({ slug }: BookingConfirmationProps) => {
   };
 
   // Loading state
-  if (schedulerLoading) {
+  if (schedulerLoading || slotsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

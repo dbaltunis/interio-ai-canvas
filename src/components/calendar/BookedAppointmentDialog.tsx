@@ -51,9 +51,9 @@ export const BookedAppointmentDialog = ({ open, onOpenChange, appointment }: Boo
             )}
           </div>
           
-          {appointment.video_meeting_link && (
+          {(appointment.video_meeting_link || booking.video_call_link) && (
             <Button variant="outline" className="w-full" asChild>
-              <a href={appointment.video_meeting_link} target="_blank" rel="noopener noreferrer">
+              <a href={appointment.video_meeting_link || booking.video_call_link} target="_blank" rel="noopener noreferrer">
                 <Video className="h-4 w-4 mr-2" />
                 Join Video Call
               </a>

@@ -172,7 +172,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
           scheduler_id: booking.scheduler_id,
           scheduler_name: schedulerName,
           scheduler_slug: schedulerInfo?.slug || '',
-          video_meeting_link: schedulerInfo?.google_meet_link || ''
+          video_meeting_link: booking.video_call_link || schedulerInfo?.google_meet_link || ''
         };
       })
       .filter(Boolean); // Remove null values from invalid bookings

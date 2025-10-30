@@ -471,6 +471,7 @@ export type Database = {
           scheduler_id: string
           status: string | null
           updated_at: string
+          video_call_link: string | null
         }
         Insert: {
           appointment_date: string
@@ -488,6 +489,7 @@ export type Database = {
           scheduler_id: string
           status?: string | null
           updated_at?: string
+          video_call_link?: string | null
         }
         Update: {
           appointment_date?: string
@@ -505,6 +507,7 @@ export type Database = {
           scheduler_id?: string
           status?: string | null
           updated_at?: string
+          video_call_link?: string | null
         }
         Relationships: [
           {
