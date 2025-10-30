@@ -126,19 +126,20 @@ export const AddTreatmentDialog = ({
           </div>
 
           {selectedType && (
-            <div className="space-y-3">
+            <div className="space-y-3 p-4 rounded-lg bg-muted/30 border border-border">
               <Label htmlFor="treatment-name" className="text-base font-semibold">
-                Treatment Name (Optional)
+                Name Your Treatment
               </Label>
               <Input
                 id="treatment-name"
                 value={treatmentName}
                 onChange={(e) => setTreatmentName(e.target.value)}
-                placeholder={`${windowName} - ${TREATMENT_OPTIONS.find(opt => opt.type === selectedType)?.name}`}
+                placeholder={`e.g., "${windowName} - Sheer ${TREATMENT_OPTIONS.find(opt => opt.type === selectedType)?.name}"`}
                 className="w-full"
+                autoFocus
               />
               <p className="text-sm text-muted-foreground">
-                If left blank, will use default naming: "{windowName} - {TREATMENT_OPTIONS.find(opt => opt.type === selectedType)?.name}"
+                💡 Give it a descriptive name to easily identify this treatment later. Good names include fabric type, color, or function (e.g., "Bay Window - Blackout Curtains", "Kitchen - Roller Blinds").
               </p>
             </div>
           )}

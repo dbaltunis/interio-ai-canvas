@@ -21,7 +21,6 @@ interface WindowSummaryCardProps {
   onDeleteSurface?: (id: string) => void;
   onViewDetails?: (surface: any) => void;
   onRenameSurface?: (id: string, newName: string) => void;
-  onAddTreatment?: (surfaceId: string) => void;
   isMainWindow?: boolean;
   treatmentLabel?: string;
   treatmentType?: string;
@@ -43,7 +42,6 @@ export function WindowSummaryCard({
   onDeleteSurface, 
   onViewDetails, 
   onRenameSurface,
-  onAddTreatment,
   isMainWindow = true,
   treatmentLabel,
   treatmentType: propTreatmentType
@@ -294,13 +292,13 @@ export function WindowSummaryCard({
       className={`group relative overflow-hidden rounded-xl border transition-all duration-200 hover:shadow-lg ${
         isMainWindow 
           ? 'bg-card border-border shadow-md hover:border-primary/30' 
-          : 'bg-muted/30 border-muted-foreground/20 ml-4 shadow-sm hover:bg-muted/50'
+          : 'bg-muted/30 border-muted-foreground/20 ml-3 shadow-sm hover:bg-muted/50'
       }`}
     >
-      <CardHeader className={`relative ${isMainWindow ? 'pb-3' : 'pb-2 py-3'}`}>
-        <div className="flex justify-between items-start gap-3">
+      <CardHeader className={`relative ${isMainWindow ? 'pb-2' : 'pb-2 py-2'}`}>
+        <div className="flex justify-between items-start gap-2">
           <div className="min-w-0 flex-1">
-            {isMainWindow && onRenameSurface ? (
+            {onRenameSurface ? (
               <WindowRenameButton
                 windowName={displayName}
                 onRename={(newName) => onRenameSurface(surface.id, newName)}
@@ -320,27 +318,13 @@ export function WindowSummaryCard({
                 {treatmentType && (
                   <TreatmentTypeIndicator treatmentType={treatmentType} size="sm" />
                 )}
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-xs py-0 px-2">
                   Additional Treatment
                 </Badge>
               </div>
             )}
           </div>
           <div className="flex gap-2 flex-shrink-0">
-            {isMainWindow && onAddTreatment && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAddTreatment(surface.id);
-                }}
-                className="text-primary hover:text-primary hover:border-primary/30"
-                title="Add another treatment to this window"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            )}
             {canEditJobs && (
               <Button
                 variant="outline"
@@ -390,12 +374,12 @@ export function WindowSummaryCard({
         )}
 
         {summary && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {/* Treatment Card with Visual & Details */}
             <div className="rounded-lg border bg-card overflow-hidden">
-              <div className="flex flex-col md:flex-row gap-3 p-3">
+              <div className="flex flex-col md:flex-row gap-2 p-2">
                 {/* LEFT: Compact Treatment Preview - Hidden on mobile due to rendering issues */}
-                <div className="hidden md:block w-32 h-32 flex-shrink-0">
+                <div className="hidden md:block w-24 h-24 flex-shrink-0">
                   <TreatmentPreviewEngine
                     windowType={surface.window_type || 'standard'}
                     treatmentType={treatmentType}
@@ -422,7 +406,7 @@ export function WindowSummaryCard({
                 {/* RIGHT: Compact Details */}
                 <div className="flex-1 min-w-0 w-full">
                   {/* Compact Header */}
-                  <div className="flex items-start justify-between gap-2 mb-3">
+                  <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex-1 min-w-0">
                       <h4 className="font-semibold text-base mb-0.5 truncate">
                         {treatmentType === 'curtains' && (summary.fabric_details?.name || 'Sheer curtain')}
@@ -448,7 +432,7 @@ export function WindowSummaryCard({
                   </div>
 
                   {/* Compact Info Grid - Better mobile layout */}
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
                     {/* Curtains Measurements */}
                     {(treatmentType === 'curtains' || !treatmentType) && (
                       <>

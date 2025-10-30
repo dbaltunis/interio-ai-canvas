@@ -189,7 +189,6 @@ export const SurfaceList = ({
                      onDeleteSurface={onDeleteSurface}
                      onViewDetails={() => handleViewWindow(window.mainSurface)}
                      onRenameSurface={handleRenameSurface}
-                     onAddTreatment={handleAddTreatment}
                      isMainWindow={true}
                      treatmentType={window.mainSurface.treatment_type}
                    />
@@ -200,9 +199,10 @@ export const SurfaceList = ({
                       <WindowSummaryCard 
                         surface={treatment}
                         onEditSurface={() => handleViewWindow(treatment)}
-                        onDeleteSurface={onDeleteSurface}
-                        onViewDetails={() => handleViewWindow(treatment)}
-                        isMainWindow={false}
+                     onDeleteSurface={onDeleteSurface}
+                     onViewDetails={() => handleViewWindow(treatment)}
+                     onRenameSurface={handleRenameSurface}
+                     isMainWindow={false}
                         treatmentLabel={`${window.baseWindowName} - Treatment ${index + 2}`}
                         treatmentType={treatment.treatment_type || "curtains"}
                       />
