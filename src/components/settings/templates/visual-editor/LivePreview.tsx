@@ -691,45 +691,41 @@ const LivePreviewBlock = ({
       
       const hasRealData = projectItems.length > 0;
 
-      // Get comprehensive breakdown - FROM CHILDREN ARRAY OR fabric_details/manufacturing_details
+      // Get comprehensive breakdown - FROM fabric_details, manufacturing_details, AND options
       const getItemizedBreakdown = (item: any) => {
         const breakdown = [];
         
-        // FIRST: Check if item has children array (new structure)
-        if (item.children && Array.isArray(item.children) && item.children.length > 0) {
-          console.log('[BREAKDOWN] Using children array:', item.children);
-          item.children.forEach((child: any) => {
-            breakdown.push({
-              id: child.id || `${item.id}-child-${breakdown.length}`,
-              name: child.name || 'Item',
-              category: child.category || 'Component',
-              description: child.description || '',
-              quantity: child.quantity || 0,
-              unit: child.unit || '',
-              unit_price: child.unit_price || child.price || 0,
-              total_cost: child.total_cost || child.total || (child.quantity * (child.unit_price || child.price || 0)),
-              image_url: child.image_url
-            });
-          });
-          return breakdown;
-        }
+        console.log('[BREAKDOWN] Processing item:', {
+          name: item.name,
+          has_fabric: !!item.fabric_details,
+          has_manufacturing: !!item.manufacturing_details,
+          has_options: !!item.options,
+          linear_meters: item.linear_meters
+        });
         
-        // FALLBACK: Try fabric_details and manufacturing_details (old structure)
+        // Add fabric details (material cost)
         if (item.fabric_details && item.fabric_details.selling_price) {
           const fabricCost = (item.linear_meters || 0) * (item.fabric_details.selling_price || 0);
           breakdown.push({
             id: `${item.id}-fabric`,
             name: item.fabric_details.name || 'Fabric',
             category: 'Material',
-            description: `${item.fabric_details.fabric_width || ''}cm width`,
+            description: `${(item.linear_meters || 0).toFixed(2)}m × ${item.fabric_details.fabric_width || ''}cm width`,
             quantity: item.linear_meters || 0,
             unit: 'm',
             unit_price: item.fabric_details.selling_price || 0,
             total_cost: fabricCost,
             image_url: item.fabric_details.image_url
           });
+          console.log('[BREAKDOWN] Added fabric:', {
+            name: item.fabric_details.name,
+            quantity: item.linear_meters,
+            unit_price: item.fabric_details.selling_price,
+            total: fabricCost
+          });
         }
         
+        // Add manufacturing details (labor cost)
         if (item.manufacturing_details && item.manufacturing_details.cost) {
           breakdown.push({
             id: `${item.id}-manufacturing`,
@@ -741,8 +737,34 @@ const LivePreviewBlock = ({
             unit_price: item.manufacturing_details.cost || 0,
             total_cost: item.manufacturing_details.cost || 0
           });
+          console.log('[BREAKDOWN] Added manufacturing:', {
+            cost: item.manufacturing_details.cost
+          });
         }
         
+        // Add options (additional features/upgrades)
+        if (item.options && Array.isArray(item.options) && item.options.length > 0) {
+          const optionsTotal = item.options.reduce((sum: number, opt: any) => sum + (opt.price || 0), 0);
+          const optionsDescription = item.options.map((opt: any) => opt.name).join(', ');
+          
+          breakdown.push({
+            id: `${item.id}-options`,
+            name: 'Options',
+            category: 'Options',
+            description: optionsDescription,
+            quantity: 1,
+            unit: 'set',
+            unit_price: optionsTotal,
+            total_cost: optionsTotal
+          });
+          console.log('[BREAKDOWN] Added options:', {
+            count: item.options.length,
+            total: optionsTotal,
+            options: item.options
+          });
+        }
+        
+        console.log('[BREAKDOWN] Final breakdown count:', breakdown.length);
         return breakdown;
       };
       
