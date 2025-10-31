@@ -794,12 +794,12 @@ const LivePreviewBlock = ({
           <div style={{ overflow: 'visible', width: '100%' }}>
             <table className="w-full" style={{ borderCollapse: 'collapse', tableLayout: 'fixed', width: '100%' }}>
               <colgroup>
-                <col style={{ width: '32px' }} />
-                <col style={{ width: '18%' }} />
+                <col style={{ width: '30px' }} />
+                <col style={{ width: '17%' }} />
                 <col style={{ width: 'auto' }} />
-                <col style={{ width: '75px' }} />
-                <col style={{ width: '95px' }} />
-                <col style={{ width: '125px' }} />
+                <col style={{ width: '70px' }} />
+                <col style={{ width: '90px' }} />
+                <col style={{ width: '145px' }} />
               </colgroup>
               <thead>
                 <tr style={{ borderBottom: '1px solid #333' }}>
