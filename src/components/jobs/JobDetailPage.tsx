@@ -86,11 +86,11 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
     <div className="h-screen bg-background w-full flex flex-col overflow-hidden">
       {/* Enhanced Header Section - Scrolls away */}
       <div className="bg-gradient-to-r from-card/95 to-card border-b border-border/50 shadow-sm backdrop-blur-sm">
-        <div className="px-3 sm:px-6 py-4">
-          {/* Single Row Layout */}
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            {/* Left Side: Navigation + Job Info */}
-            <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="px-3 sm:px-6 py-5">
+          {/* Reorganized Header Layout */}
+          <div className="flex flex-col gap-4">
+            {/* Top Row: Back Button + Client Name */}
+            <div className="flex items-center gap-3">
               <Button
                 variant="outline"
                 size="sm"
@@ -102,37 +102,34 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                 <span>Jobs</span>
               </Button>
               
-              <Separator orientation="vertical" className="h-6 bg-border/60 hidden sm:block" />
+              <Separator orientation="vertical" className="h-6 bg-border/60" />
               
-              <div className="min-w-0 flex-1">
-                <h1 className="text-lg sm:text-xl font-bold text-foreground truncate leading-tight">
-                  {project.name}
-                </h1>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <Badge variant="outline" className="font-mono text-xs px-2 py-0.5 bg-muted/50">
-                    #{formatJobNumber(project.job_number)}
-                  </Badge>
-                  {client && (
-                    <span className="text-xs text-muted-foreground truncate hidden sm:inline">
-                      {client.name}
-                    </span>
-                  )}
+              {client && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <User className="h-4 w-4" />
+                  <span className="text-sm font-medium">{client.name}</span>
                 </div>
-              </div>
+              )}
             </div>
 
-            {/* Right Side: Status - More Prominent */}
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs text-muted-foreground hidden sm:inline">Status:</span>
-              <JobStatusDropdown
-                currentStatusId={project.status_id}
-                currentStatus={project.status}
-                jobType="project"
-                jobId={project.id}
-                onStatusChange={(newStatus) => {
-                  // Status updated via mutation
-                }}
-              />
+            {/* Bottom Row: Prominent Status */}
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Job Status
+                </span>
+                <div className="scale-110 origin-left">
+                  <JobStatusDropdown
+                    currentStatusId={project.status_id}
+                    currentStatus={project.status}
+                    jobType="project"
+                    jobId={project.id}
+                    onStatusChange={(newStatus) => {
+                      // Status updated via mutation
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
