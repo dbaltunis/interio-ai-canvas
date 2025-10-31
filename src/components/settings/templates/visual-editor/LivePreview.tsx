@@ -815,6 +815,19 @@ const LivePreviewBlock = ({
             </div>
           )}
 
+          {/* Get tax settings for dynamic headers */}
+          {(() => {
+            const businessSettings = projectData?.businessSettings || {};
+            const pricingSettings = businessSettings.pricing_settings || {};
+            const taxInclusive = pricingSettings.tax_inclusive || false;
+            const taxType = (businessSettings.tax_type || 'VAT').toUpperCase();
+            const totalColumnHeader = taxInclusive 
+              ? `Total (incl. ${taxType})` 
+              : `Total (excl. ${taxType})`;
+            
+            return null;
+          })()}
+
           <div style={{ overflow: 'visible', width: '100%' }}>
             <table className="w-full" style={{ borderCollapse: 'collapse', tableLayout: 'auto' }}>
               <thead>
@@ -824,7 +837,15 @@ const LivePreviewBlock = ({
                   <th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '11px', fontWeight: '600', color: '#333' }}>Description</th>
                   <th style={{ textAlign: 'center', padding: '10px 8px', fontSize: '11px', fontWeight: '600', color: '#333', width: '70px' }}>Quantity</th>
                   <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '11px', fontWeight: '600', color: '#333', width: '100px' }}>Unit Price</th>
-                  <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '11px', fontWeight: '600', color: '#333', width: '120px' }}>Total</th>
+                  <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '11px', fontWeight: '600', color: '#333', width: '120px' }}>
+                    {(() => {
+                      const businessSettings = projectData?.businessSettings || {};
+                      const pricingSettings = businessSettings.pricing_settings || {};
+                      const taxInclusive = pricingSettings.tax_inclusive || false;
+                      const taxType = (businessSettings.tax_type || 'VAT').toUpperCase();
+                      return taxInclusive ? `Total (incl. ${taxType})` : `Total (excl. ${taxType})`;
+                    })()}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -862,10 +883,13 @@ const LivePreviewBlock = ({
                               {itemNumber}
                             </td>
                             <td style={{ padding: '10px 12px', fontSize: '14px', fontWeight: '700', color: '#000', verticalAlign: 'top' }}>
-                              {item.name || item.surface_name || item.treatment_type || 'Window Treatment'}
+                              {item.treatment_type ? 
+                                item.treatment_type.charAt(0).toUpperCase() + item.treatment_type.slice(1) : 
+                                (item.name || item.surface_name || 'Window Treatment')
+                              }
                             </td>
                             <td style={{ padding: '10px 12px', fontSize: '13px', color: '#333', verticalAlign: 'top' }}>
-                              {item.room_name || '-'}
+                              {item.notes || item.description || '-'}
                             </td>
                             <td style={{ padding: '10px 12px', fontSize: '13px', fontWeight: '600', color: '#000', textAlign: 'center', verticalAlign: 'top' }}>
                               {item.quantity || 1}
