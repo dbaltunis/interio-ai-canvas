@@ -744,7 +744,12 @@ const LivePreviewBlock = ({
         rooms: rooms.map((r: any) => r.name),
         groupByRoom,
         showDetailedProducts,
-        showImages
+        showImages,
+        sampleItemChildren: projectItems[0]?.children?.map((c: any) => ({
+          name: c.name,
+          unit_price: c.unit_price,
+          total: c.total
+        }))
       });
 
       // Group items by room if enabled

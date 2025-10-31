@@ -147,21 +147,19 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   const pricingSettings = businessSettings?.pricing_settings as any;
   const markupPercentage = pricingSettings?.default_markup_percentage || 50;
 
-  const sourceTreatments = (quotationData.items || []).filter(item => !item.isHeader).map(item => ({
-    id: item.id,
-    name: item.name,
-    description: item.description,
-    image_url: item.image_url,
-    room_name: item.room_name,
-    surface_name: item.surface_name,
-    quantity: item.quantity || 1,
-    unit_price: item.unit_price || 0,
-    total: item.total || 0,
-    children: item.breakdown?.map((b: any) => ({
-      name: b.name,
-      price: b.price
-    })) || []
-  }));
+  // Use quotationData.items directly - they already have the correct children array with pricing!
+  // DO NOT map/simplify the children array - it has the correct structure from useQuotationSync
+  const sourceTreatments = (quotationData.items || []).filter(item => !item.isHeader);
+  
+  console.log('[QuotationTab] Items with children:', {
+    itemsCount: sourceTreatments.length,
+    sampleItem: sourceTreatments[0] ? {
+      name: sourceTreatments[0].name,
+      has_children: !!sourceTreatments[0].children,
+      children_count: sourceTreatments[0].children?.length || 0,
+      sample_child: sourceTreatments[0].children?.[0]
+    } : null
+  });
 
   // Get settings from template blocks safely - MUST be before early returns
   const templateSettings = useMemo(() => {
