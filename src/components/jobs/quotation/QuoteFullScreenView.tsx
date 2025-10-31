@@ -78,7 +78,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0 bg-background text-foreground">
+      <DialogContent className="max-w-[1400px] h-[90vh] flex flex-col p-0 bg-background text-foreground">
         <DialogHeader className="px-6 py-4 border-b bg-background flex-shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle>Quote Full View</DialogTitle>
