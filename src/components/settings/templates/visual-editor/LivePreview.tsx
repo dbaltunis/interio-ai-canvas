@@ -792,15 +792,23 @@ const LivePreviewBlock = ({
           })()}
 
           <div style={{ overflow: 'visible', width: '100%' }}>
-            <table className="w-full" style={{ borderCollapse: 'collapse', tableLayout: 'auto' }}>
+            <table className="w-full" style={{ borderCollapse: 'collapse', tableLayout: 'fixed', width: '100%' }}>
+              <colgroup>
+                <col style={{ width: '40px' }} />
+                <col style={{ width: '22%' }} />
+                <col style={{ width: 'auto' }} />
+                <col style={{ width: '90px' }} />
+                <col style={{ width: '115px' }} />
+                <col style={{ width: '135px' }} />
+              </colgroup>
               <thead>
                 <tr style={{ borderBottom: '1px solid #333' }}>
-                  <th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '13px', fontWeight: '500', color: '#333', width: '30px' }}>#</th>
+                  <th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '13px', fontWeight: '500', color: '#333' }}>#</th>
                   <th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '13px', fontWeight: '500', color: '#333' }}>Product/Service</th>
                   <th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '13px', fontWeight: '500', color: '#333' }}>Description</th>
-                  <th style={{ textAlign: 'center', padding: '10px 8px', fontSize: '13px', fontWeight: '500', color: '#333', width: '70px' }}>Quantity</th>
-                  <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '13px', fontWeight: '500', color: '#333', width: '100px' }}>Unit Price</th>
-                  <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '13px', fontWeight: '500', color: '#333', width: '120px' }}>
+                  <th style={{ textAlign: 'center', padding: '10px 8px', fontSize: '13px', fontWeight: '500', color: '#333' }}>Quantity</th>
+                  <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '13px', fontWeight: '500', color: '#333' }}>Unit Price</th>
+                  <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '13px', fontWeight: '500', color: '#333' }}>
                     {(() => {
                       const businessSettings = projectData?.businessSettings || {};
                       const pricingSettings = businessSettings.pricing_settings || {};
@@ -867,7 +875,7 @@ const LivePreviewBlock = ({
                                 </span>
                               </div>
                             </td>
-                            <td style={{ padding: '10px 12px', fontSize: '14px', color: '#333', fontWeight: '400', verticalAlign: 'top' }}>
+                            <td style={{ padding: '10px 12px', fontSize: '14px', color: '#333', fontWeight: '400', verticalAlign: 'top', wordWrap: 'break-word', overflowWrap: 'break-word' }}>
                               {item.notes || item.description || '-'}
                             </td>
                             <td style={{ padding: '10px 12px', fontSize: '15px', fontWeight: '400', color: '#000', textAlign: 'center', verticalAlign: 'top' }}>
@@ -906,7 +914,7 @@ const LivePreviewBlock = ({
                                   <span>{breakdownItem.name}</span>
                                 </div>
                               </td>
-                              <td style={{ padding: '8px 12px', fontSize: '13px', color: '#555', fontWeight: '400' }}>
+                              <td style={{ padding: '8px 12px', fontSize: '13px', color: '#555', fontWeight: '400', wordWrap: 'break-word', overflowWrap: 'break-word' }}>
                                 {breakdownItem.description || '-'}
                               </td>
                               <td style={{ padding: '8px 12px', fontSize: '14px', color: '#000', fontWeight: '400', textAlign: 'center' }}>
