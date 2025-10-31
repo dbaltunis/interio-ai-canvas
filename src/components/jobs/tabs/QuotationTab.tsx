@@ -567,7 +567,7 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
       ) : (
         <section className="mt-2 sm:mt-4" key={`preview-${selectedTemplate?.id}-${templateSettings.showDetailedBreakdown}-${templateSettings.showImages}-${templateSettings.groupByRoom}-${projectSummaries?.projectTotal}`}>
           {/* A4 Background Container - Gray background to simulate paper on desk */}
-          <div className="w-full flex justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 p-4 sm:p-6 md:p-8 rounded-lg">
+          <div className="w-full flex justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 p-4 sm:p-2 md:p-3 lg:p-6 rounded-lg">
             <div className="transform scale-[0.42] sm:scale-[0.58] md:scale-[0.68] lg:scale-[0.78] xl:scale-[0.88] origin-top shadow-2xl">
               <div
                 id="quote-live-preview"
