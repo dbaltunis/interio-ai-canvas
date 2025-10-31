@@ -822,7 +822,7 @@ const LivePreviewBlock = ({
                   <React.Fragment key={roomName}>
                     {groupByRoom && hasRealData && (
                       <tr>
-                        <td colSpan={5} style={{ padding: '8px 6px 4px 6px', fontSize: '14px', fontWeight: '500', color: '#333', borderTop: isPrintMode ? 'none' : '1px solid #ddd', backgroundColor: '#fff' }}>
+                        <td colSpan={5} style={{ padding: '8px 6px 4px 6px', fontSize: '14px', fontWeight: '500', color: '#333', borderTop: '1px solid rgba(0,0,0,0.15)', backgroundColor: '#fff' }}>
                           {roomName}
                         </td>
                       </tr>
