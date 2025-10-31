@@ -950,28 +950,29 @@ const LivePreviewBlock = ({
 
     case 'totals':
       return (
-        <div className="mb-8">
+        <div style={{ marginBottom: '32px', backgroundColor: '#ffffff !important' }}>
           <div className="flex justify-end">
             <div 
-              className="space-y-2 px-8 py-4"
               style={{ 
-                backgroundColor: '#ffffff',
+                backgroundColor: '#ffffff !important',
                 border: 'none',
-                minWidth: '340px'
+                minWidth: '340px',
+                padding: '16px 32px',
+                color: '#000 !important'
               }}
             >
               {/* Total (including tax) */}
-              <div className="flex justify-end py-2">
-                <div className="text-right" style={{ minWidth: '200px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#111827' }}>Total: {renderTokenValue('total')}</span>
+              <div className="flex justify-end py-2" style={{ backgroundColor: '#ffffff !important' }}>
+                <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#111827 !important' }}>Total: {renderTokenValue('total')}</span>
                 </div>
               </div>
               
               {/* Price excl. GST (Subtotal) */}
               {content.showSubtotal !== false && (
-                <div className="flex justify-end py-1">
-                  <div className="text-right" style={{ minWidth: '200px' }}>
-                    <span style={{ fontSize: '14px', color: '#111827' }}>
+                <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
+                  <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
+                    <span style={{ fontSize: '14px', color: '#111827 !important' }}>
                       Price excl. {userBusinessSettings?.tax_type && userBusinessSettings.tax_type !== 'none' 
                         ? userBusinessSettings.tax_type.toUpperCase() 
                         : 'Tax'}: {renderTokenValue('subtotal')}
@@ -982,9 +983,9 @@ const LivePreviewBlock = ({
               
               {/* GST/Tax */}
               {content.showTax && (
-                <div className="flex justify-end py-1">
-                  <div className="text-right" style={{ minWidth: '200px' }}>
-                    <span style={{ fontSize: '14px', color: '#111827' }}>
+                <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
+                  <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
+                    <span style={{ fontSize: '14px', color: '#111827 !important' }}>
                       {userBusinessSettings?.tax_type && userBusinessSettings.tax_type !== 'none' 
                         ? userBusinessSettings.tax_type.toUpperCase() 
                         : 'Tax'} ({renderTokenValue('tax_rate')}): {renderTokenValue('tax_amount')}
@@ -994,9 +995,9 @@ const LivePreviewBlock = ({
               )}
               
               {/* Grand total */}
-              <div className="flex justify-end py-3 mt-2">
-                <div className="text-right" style={{ minWidth: '200px' }}>
-                  <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#111827' }}>Grand total: {renderTokenValue('total')}</span>
+              <div className="flex justify-end py-3 mt-2" style={{ backgroundColor: '#ffffff !important' }}>
+                <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
+                  <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#111827 !important' }}>Grand total: {renderTokenValue('total')}</span>
                 </div>
               </div>
             </div>
@@ -1216,15 +1217,15 @@ const LivePreviewBlock = ({
 
     case 'terms-conditions':
       return (
-        <div className="mb-6" style={{ backgroundColor: '#ffffff', padding: '16px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#000' }}>
+        <div style={{ marginBottom: '24px', backgroundColor: '#ffffff !important', padding: '16px', color: '#000 !important' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#000 !important', backgroundColor: 'transparent !important' }}>
             {content.title || 'Terms & Conditions'}
           </h3>
-          <div style={{ fontSize: '14px', color: '#000', backgroundColor: '#ffffff' }}>
-            <div style={{ marginBottom: '12px', color: '#000' }}>1. Payment Terms: 50% deposit required upon acceptance of this quote. Remaining balance due upon completion.</div>
-            <div style={{ marginBottom: '12px', color: '#000' }}>2. Timeline: Project completion is estimated at 2-3 weeks from deposit receipt and final measurements.</div>
-            <div style={{ marginBottom: '12px', color: '#000' }}>3. Warranty: All work comes with a 1-year warranty against defects in workmanship.</div>
-            <div style={{ marginBottom: '12px', color: '#000' }}>4. Cancellation: This quote is valid for 30 days. Cancellation after work begins subject to materials and labor charges.</div>
+          <div style={{ fontSize: '14px', color: '#000 !important', backgroundColor: '#ffffff !important' }}>
+            <div style={{ marginBottom: '12px', color: '#000 !important' }}>1. Payment Terms: 50% deposit required upon acceptance of this quote. Remaining balance due upon completion.</div>
+            <div style={{ marginBottom: '12px', color: '#000 !important' }}>2. Timeline: Project completion is estimated at 2-3 weeks from deposit receipt and final measurements.</div>
+            <div style={{ marginBottom: '12px', color: '#000 !important' }}>3. Warranty: All work comes with a 1-year warranty against defects in workmanship.</div>
+            <div style={{ marginBottom: '12px', color: '#000 !important' }}>4. Cancellation: This quote is valid for 30 days. Cancellation after work begins subject to materials and labor charges.</div>
           </div>
         </div>
       );
@@ -1290,28 +1291,28 @@ const LivePreviewBlock = ({
 
     case 'signature':
       return (
-        <div className="mt-8 mb-6" style={{ backgroundColor: '#ffffff', padding: '16px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '24px', color: '#000' }}>
+        <div style={{ marginTop: '32px', marginBottom: '24px', backgroundColor: '#ffffff !important', padding: '16px', color: '#000 !important' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '24px', color: '#000 !important', backgroundColor: 'transparent !important' }}>
             {content.title || 'Authorization'}
           </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
-            <div style={{ backgroundColor: '#ffffff' }}>
-              <p style={{ fontSize: '14px', marginBottom: '16px', color: '#000' }}>{content.authorizationText || "By signing below, you authorize us to proceed with this work as described:"}</p>
-              <div style={{ borderTop: '1px solid #9ca3af', paddingTop: '8px', marginTop: '48px' }}>
-                <div style={{ fontSize: '14px', color: '#000' }}>
-                  <div style={{ fontWeight: '500', color: '#000' }}>{content.clientSignatureLabel || "Client Signature"}</div>
-                  <div style={{ color: '#000' }}>{content.printNameLabel || "Print Name"}: {renderTokenValue('client_name')}</div>
-                  <div style={{ color: '#000' }}>{content.dateLabel || "Date"}: _________________</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', backgroundColor: '#ffffff !important' }}>
+            <div style={{ backgroundColor: '#ffffff !important' }}>
+              <p style={{ fontSize: '14px', marginBottom: '16px', color: '#000 !important' }}>{content.authorizationText || "By signing below, you authorize us to proceed with this work as described:"}</p>
+              <div style={{ borderTop: '1px solid #9ca3af', paddingTop: '8px', marginTop: '48px', backgroundColor: '#ffffff !important' }}>
+                <div style={{ fontSize: '14px', color: '#000 !important', backgroundColor: '#ffffff !important' }}>
+                  <div style={{ fontWeight: '500', color: '#000 !important' }}>{content.clientSignatureLabel || "Client Signature"}</div>
+                  <div style={{ color: '#000 !important' }}>{content.printNameLabel || "Print Name"}: {renderTokenValue('client_name')}</div>
+                  <div style={{ color: '#000 !important' }}>{content.dateLabel || "Date"}: _________________</div>
                 </div>
               </div>
             </div>
-            <div style={{ backgroundColor: '#ffffff' }}>
-              <p style={{ fontSize: '14px', marginBottom: '16px', color: '#000' }}>{content.thankYouText || "Thank you for choosing us for your project!"}</p>
-              <div style={{ borderTop: '1px solid #9ca3af', paddingTop: '8px', marginTop: '48px' }}>
-                <div style={{ fontSize: '14px', color: '#000' }}>
-                  <div style={{ fontWeight: '500', color: '#000' }}>{content.companySignatureLabel || "Company Representative"}</div>
-                  <div style={{ color: '#000' }}>{content.printNameLabel || "Print Name"}: _________________</div>
-                  <div style={{ color: '#000' }}>{content.dateLabel || "Date"}: _________________</div>
+            <div style={{ backgroundColor: '#ffffff !important' }}>
+              <p style={{ fontSize: '14px', marginBottom: '16px', color: '#000 !important' }}>{content.thankYouText || "Thank you for choosing us for your project!"}</p>
+              <div style={{ borderTop: '1px solid #9ca3af', paddingTop: '8px', marginTop: '48px', backgroundColor: '#ffffff !important' }}>
+                <div style={{ fontSize: '14px', color: '#000 !important', backgroundColor: '#ffffff !important' }}>
+                  <div style={{ fontWeight: '500', color: '#000 !important' }}>{content.companySignatureLabel || "Company Representative"}</div>
+                  <div style={{ color: '#000 !important' }}>{content.printNameLabel || "Print Name"}: _________________</div>
+                  <div style={{ color: '#000 !important' }}>{content.dateLabel || "Date"}: _________________</div>
                 </div>
               </div>
             </div>
@@ -1436,11 +1437,12 @@ export const LivePreview = ({
   if (isPrintMode) {
     return (
       <div
-        className="w-full bg-white"
         style={{
-          backgroundColor: '#ffffff',
+          backgroundColor: '#ffffff !important',
+          color: '#000000 !important',
           padding: 0,
-          margin: 0
+          margin: 0,
+          width: '100%'
         }}
       >
         {blocks.map((block, index) => (
