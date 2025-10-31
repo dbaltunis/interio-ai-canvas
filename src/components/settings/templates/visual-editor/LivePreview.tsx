@@ -1100,10 +1100,10 @@ const LivePreviewBlock = ({
       ];
 
       return (
-        <div className="mb-6">
+        <div className="mb-6" style={{ backgroundColor: '#ffffff' }}>
           <div className="flex justify-between items-center mb-4">
-            <h3 className="flex items-center gap-2" style={{ fontSize: '18px', fontWeight: '600', color: '#333' }}>
-              <ShoppingCart className="h-5 w-5" />
+            <h3 className="flex items-center gap-2" style={{ fontSize: '18px', fontWeight: '600', color: '#000' }}>
+              <ShoppingCart className="h-5 w-5" style={{ color: '#000' }} />
               {content.title || 'Line Items'}
             </h3>
             <Button
@@ -1130,38 +1130,38 @@ const LivePreviewBlock = ({
             // Detailed Itemized View
             <div className="space-y-6">
               {detailedItems.map((category, categoryIndex) => (
-                <div key={categoryIndex} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
+                <div key={categoryIndex} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#ffffff' }}>
                   <div style={{ backgroundColor: '#f3f4f6', padding: '8px 16px', borderBottom: '1px solid #e5e7eb' }}>
-                    <h4 style={{ fontWeight: '500', color: '#111827' }}>{category.category}</h4>
+                    <h4 style={{ fontWeight: '500', color: '#000' }}>{category.category}</h4>
                   </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
+                  <div style={{ overflowX: 'auto', backgroundColor: '#ffffff' }}>
+                    <table style={{ width: '100%', backgroundColor: '#ffffff' }}>
                       <thead>
                         <tr style={{ backgroundColor: '#f9fafb', fontSize: '14px' }}>
-                          <th style={{ textAlign: 'left', padding: '12px', fontWeight: '500' }}>Item Description</th>
-                          <th style={{ textAlign: 'center', padding: '12px', fontWeight: '500', width: '80px' }}>Qty</th>
-                          <th style={{ textAlign: 'center', padding: '12px', fontWeight: '500', width: '80px' }}>Unit</th>
-                          <th style={{ textAlign: 'right', padding: '12px', fontWeight: '500', width: '96px' }}>Unit Price</th>
-                          <th style={{ textAlign: 'right', padding: '12px', fontWeight: '500', width: '96px' }}>Total</th>
+                          <th style={{ textAlign: 'left', padding: '12px', fontWeight: '500', color: '#000' }}>Item Description</th>
+                          <th style={{ textAlign: 'center', padding: '12px', fontWeight: '500', width: '80px', color: '#000' }}>Qty</th>
+                          <th style={{ textAlign: 'center', padding: '12px', fontWeight: '500', width: '80px', color: '#000' }}>Unit</th>
+                          <th style={{ textAlign: 'right', padding: '12px', fontWeight: '500', width: '96px', color: '#000' }}>Unit Price</th>
+                          <th style={{ textAlign: 'right', padding: '12px', fontWeight: '500', width: '96px', color: '#000' }}>Total</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody style={{ backgroundColor: '#ffffff' }}>
                         {category.items.map((item, itemIndex) => (
-                          <tr key={itemIndex} style={{ borderTop: '1px solid #e5e7eb' }}>
-                            <td style={{ padding: '12px', fontSize: '14px' }}>{item.name}</td>
-                            <td style={{ padding: '12px', fontSize: '14px', textAlign: 'center' }}>{item.quantity}</td>
-                            <td style={{ padding: '12px', fontSize: '14px', textAlign: 'center', color: '#4b5563' }}>{item.unit}</td>
-                            <td style={{ padding: '12px', fontSize: '14px', textAlign: 'right' }}>${item.unitPrice.toFixed(2)}</td>
-                            <td style={{ padding: '12px', fontSize: '14px', textAlign: 'right', fontWeight: '500' }}>${item.total.toFixed(2)}</td>
+                          <tr key={itemIndex} style={{ borderTop: '1px solid #e5e7eb', backgroundColor: '#ffffff' }}>
+                            <td style={{ padding: '12px', fontSize: '14px', color: '#000' }}>{item.name}</td>
+                            <td style={{ padding: '12px', fontSize: '14px', textAlign: 'center', color: '#000' }}>{item.quantity}</td>
+                            <td style={{ padding: '12px', fontSize: '14px', textAlign: 'center', color: '#000' }}>{item.unit}</td>
+                            <td style={{ padding: '12px', fontSize: '14px', textAlign: 'right', color: '#000' }}>${item.unitPrice.toFixed(2)}</td>
+                            <td style={{ padding: '12px', fontSize: '14px', textAlign: 'right', fontWeight: '500', color: '#000' }}>${item.total.toFixed(2)}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
                   <div style={{ backgroundColor: '#f9fafb', padding: '8px 16px', borderTop: '1px solid #e5e7eb' }}>
-                    <div className="flex justify-between items-center" style={{ fontSize: '14px', fontWeight: '500' }}>
-                      <span>{category.category} Subtotal:</span>
-                      <span>${category.items.reduce((sum, item) => sum + item.total, 0).toFixed(2)}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', fontWeight: '500', color: '#000' }}>
+                      <span style={{ color: '#000' }}>{category.category} Subtotal:</span>
+                      <span style={{ color: '#000' }}>${category.items.reduce((sum, item) => sum + item.total, 0).toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
@@ -1169,23 +1169,23 @@ const LivePreviewBlock = ({
             </div>
           ) : (
             // Simple View
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse border border-gray-300">
+            <div style={{ overflowX: 'auto', backgroundColor: '#ffffff' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #d1d5db', backgroundColor: '#ffffff' }}>
                 <thead>
-                  <tr className="bg-gray-50">
-                    <th className="border border-gray-300 p-3 text-left font-medium">Description</th>
-                    <th className="border border-gray-300 p-3 text-center w-24 font-medium">Qty</th>
-                    <th className="border border-gray-300 p-3 text-right w-32 font-medium">Unit Price</th>
-                    <th className="border border-gray-300 p-3 text-right w-32 font-medium">Total</th>
+                  <tr style={{ backgroundColor: '#f9fafb' }}>
+                    <th style={{ border: '1px solid #d1d5db', padding: '12px', textAlign: 'left', fontWeight: '500', color: '#000' }}>Description</th>
+                    <th style={{ border: '1px solid #d1d5db', padding: '12px', textAlign: 'center', width: '96px', fontWeight: '500', color: '#000' }}>Qty</th>
+                    <th style={{ border: '1px solid #d1d5db', padding: '12px', textAlign: 'right', width: '128px', fontWeight: '500', color: '#000' }}>Unit Price</th>
+                    <th style={{ border: '1px solid #d1d5db', padding: '12px', textAlign: 'right', width: '128px', fontWeight: '500', color: '#000' }}>Total</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody style={{ backgroundColor: '#ffffff' }}>
                   {simpleItems.map((item, index) => (
-                    <tr key={index}>
-                      <td className="border border-gray-300 p-3">{item.description}</td>
-                      <td className="border border-gray-300 p-3 text-center">{item.quantity}</td>
-                      <td className="border border-gray-300 p-3 text-right">{item.unitPrice}</td>
-                      <td className="border border-gray-300 p-3 text-right font-medium">{item.total}</td>
+                    <tr key={index} style={{ backgroundColor: '#ffffff' }}>
+                      <td style={{ border: '1px solid #d1d5db', padding: '12px', color: '#000' }}>{item.description}</td>
+                      <td style={{ border: '1px solid #d1d5db', padding: '12px', textAlign: 'center', color: '#000' }}>{item.quantity}</td>
+                      <td style={{ border: '1px solid #d1d5db', padding: '12px', textAlign: 'right', color: '#000' }}>{item.unitPrice}</td>
+                      <td style={{ border: '1px solid #d1d5db', padding: '12px', textAlign: 'right', fontWeight: '500', color: '#000' }}>{item.total}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1193,20 +1193,20 @@ const LivePreviewBlock = ({
             </div>
           )}
 
-          <div className="mt-4 bg-gray-50 p-4 rounded-lg">
-            <div className="flex justify-end">
-              <div className="w-64">
-                <div className="flex justify-between py-1">
-                  <span>Subtotal:</span>
-                  <span className="font-medium">{renderTokenValue('subtotal')}</span>
+          <div style={{ marginTop: '16px', backgroundColor: '#f9fafb', padding: '16px', borderRadius: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <div style={{ width: '256px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '4px', paddingBottom: '4px' }}>
+                  <span style={{ color: '#000' }}>Subtotal:</span>
+                  <span style={{ fontWeight: '500', color: '#000' }}>{renderTokenValue('subtotal')}</span>
                 </div>
-                <div className="flex justify-between py-1">
-                  <span>Tax ({renderTokenValue('tax_rate')}):</span>
-                  <span className="font-medium">{renderTokenValue('tax_amount')}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '4px', paddingBottom: '4px' }}>
+                  <span style={{ color: '#000' }}>Tax ({renderTokenValue('tax_rate')}):</span>
+                  <span style={{ fontWeight: '500', color: '#000' }}>{renderTokenValue('tax_amount')}</span>
                 </div>
-                <div className="flex justify-between py-2 border-t border-gray-300 font-bold text-lg">
-                  <span>Total:</span>
-                  <span>{renderTokenValue('total')}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', paddingBottom: '8px', borderTop: '1px solid #d1d5db', fontWeight: 'bold', fontSize: '18px' }}>
+                  <span style={{ color: '#000' }}>Total:</span>
+                  <span style={{ color: '#000' }}>{renderTokenValue('total')}</span>
                 </div>
               </div>
             </div>
@@ -1216,44 +1216,44 @@ const LivePreviewBlock = ({
 
     case 'terms-conditions':
       return (
-        <div className="mb-6">
-          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#333' }}>
+        <div className="mb-6" style={{ backgroundColor: '#ffffff', padding: '16px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#000' }}>
             {content.title || 'Terms & Conditions'}
           </h3>
-          <div style={{ fontSize: '14px', color: '#000' }}>
-            <div style={{ marginBottom: '12px' }}>1. Payment Terms: 50% deposit required upon acceptance of this quote. Remaining balance due upon completion.</div>
-            <div style={{ marginBottom: '12px' }}>2. Timeline: Project completion is estimated at 2-3 weeks from deposit receipt and final measurements.</div>
-            <div style={{ marginBottom: '12px' }}>3. Warranty: All work comes with a 1-year warranty against defects in workmanship.</div>
-            <div style={{ marginBottom: '12px' }}>4. Cancellation: This quote is valid for 30 days. Cancellation after work begins subject to materials and labor charges.</div>
+          <div style={{ fontSize: '14px', color: '#000', backgroundColor: '#ffffff' }}>
+            <div style={{ marginBottom: '12px', color: '#000' }}>1. Payment Terms: 50% deposit required upon acceptance of this quote. Remaining balance due upon completion.</div>
+            <div style={{ marginBottom: '12px', color: '#000' }}>2. Timeline: Project completion is estimated at 2-3 weeks from deposit receipt and final measurements.</div>
+            <div style={{ marginBottom: '12px', color: '#000' }}>3. Warranty: All work comes with a 1-year warranty against defects in workmanship.</div>
+            <div style={{ marginBottom: '12px', color: '#000' }}>4. Cancellation: This quote is valid for 30 days. Cancellation after work begins subject to materials and labor charges.</div>
           </div>
         </div>
       );
 
     case 'payment-info':
       return (
-        <div className="mb-6" style={{ backgroundColor: '#f9fafb', padding: '16px', borderRadius: '8px' }}>
-          <h3 className="flex items-center gap-2" style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#333' }}>
-            <DollarSign className="h-5 w-5" />
+        <div className="mb-6" style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#000', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <DollarSign className="h-5 w-5" style={{ color: '#000' }} />
             {content.title || 'Payment Information'}
           </h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <h4 className="font-medium mb-2 flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div style={{ backgroundColor: '#ffffff' }}>
+              <h4 style={{ fontWeight: '500', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px', color: '#000' }}>
+                <DollarSign className="h-4 w-4" style={{ color: '#000' }} />
                 Payment Methods
               </h4>
-              <div className="text-sm space-y-1">
-                <div>• Cash, Check, or Credit Card</div>
-                <div>• Bank Transfer (ACH)</div>
-                <div>• Financing Available</div>
+              <div style={{ fontSize: '14px', color: '#000' }}>
+                <div style={{ marginBottom: '4px', color: '#000' }}>• Cash, Check, or Credit Card</div>
+                <div style={{ marginBottom: '4px', color: '#000' }}>• Bank Transfer (ACH)</div>
+                <div style={{ color: '#000' }}>• Financing Available</div>
               </div>
             </div>
-            <div>
-              <h4 className="font-medium mb-2">Payment Schedule</h4>
-              <div className="text-sm space-y-1">
-                <div>Deposit: 50% upon signing</div>
-                <div>Progress: 25% at midpoint</div>
-                <div>Final: 25% upon completion</div>
+            <div style={{ backgroundColor: '#ffffff' }}>
+              <h4 style={{ fontWeight: '500', marginBottom: '8px', color: '#000' }}>Payment Schedule</h4>
+              <div style={{ fontSize: '14px', color: '#000' }}>
+                <div style={{ marginBottom: '4px', color: '#000' }}>Deposit: 50% upon signing</div>
+                <div style={{ marginBottom: '4px', color: '#000' }}>Progress: 25% at midpoint</div>
+                <div style={{ color: '#000' }}>Final: 25% upon completion</div>
               </div>
             </div>
           </div>
@@ -1262,26 +1262,26 @@ const LivePreviewBlock = ({
 
     case 'project-scope':
       return (
-        <div className="mb-6">
-          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#333' }}>
+        <div className="mb-6" style={{ backgroundColor: '#ffffff', padding: '16px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#000' }}>
             {content.title || 'Project Scope'}
           </h3>
-          <div className="space-y-4">
-            <div>
-              <h4 className="font-medium mb-2">Included:</h4>
-              <div className="text-sm space-y-1 pl-4">
-                <div>✓ Professional measurement and consultation</div>
-                <div>✓ Custom fabrication of drapery</div>
-                <div>✓ Hardware installation and mounting</div>
-                <div>✓ Final styling and adjustments</div>
+          <div style={{ backgroundColor: '#ffffff' }}>
+            <div style={{ marginBottom: '16px' }}>
+              <h4 style={{ fontWeight: '500', marginBottom: '8px', color: '#000' }}>Included:</h4>
+              <div style={{ fontSize: '14px', paddingLeft: '16px' }}>
+                <div style={{ marginBottom: '4px', color: '#000' }}>✓ Professional measurement and consultation</div>
+                <div style={{ marginBottom: '4px', color: '#000' }}>✓ Custom fabrication of drapery</div>
+                <div style={{ marginBottom: '4px', color: '#000' }}>✓ Hardware installation and mounting</div>
+                <div style={{ color: '#000' }}>✓ Final styling and adjustments</div>
               </div>
             </div>
             <div>
-              <h4 className="font-medium mb-2">Not Included:</h4>
-              <div className="text-sm space-y-1 pl-4">
-                <div>• Wall repairs or painting</div>
-                <div>• Removal of existing treatments</div>
-                <div>• Electrical work for motorization</div>
+              <h4 style={{ fontWeight: '500', marginBottom: '8px', color: '#000' }}>Not Included:</h4>
+              <div style={{ fontSize: '14px', paddingLeft: '16px' }}>
+                <div style={{ marginBottom: '4px', color: '#000' }}>• Wall repairs or painting</div>
+                <div style={{ marginBottom: '4px', color: '#000' }}>• Removal of existing treatments</div>
+                <div style={{ color: '#000' }}>• Electrical work for motorization</div>
               </div>
             </div>
           </div>
@@ -1290,28 +1290,28 @@ const LivePreviewBlock = ({
 
     case 'signature':
       return (
-        <div className="mt-8 mb-6">
-          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '24px', color: '#333' }}>
+        <div className="mt-8 mb-6" style={{ backgroundColor: '#ffffff', padding: '16px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '24px', color: '#000' }}>
             {content.title || 'Authorization'}
           </h3>
-          <div className="grid md:grid-cols-2 gap-8">
-            <div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+            <div style={{ backgroundColor: '#ffffff' }}>
               <p style={{ fontSize: '14px', marginBottom: '16px', color: '#000' }}>{content.authorizationText || "By signing below, you authorize us to proceed with this work as described:"}</p>
               <div style={{ borderTop: '1px solid #9ca3af', paddingTop: '8px', marginTop: '48px' }}>
                 <div style={{ fontSize: '14px', color: '#000' }}>
-                  <div style={{ fontWeight: '500' }}>{content.clientSignatureLabel || "Client Signature"}</div>
-                  <div style={{ color: '#666' }}>{content.printNameLabel || "Print Name"}: {renderTokenValue('client_name')}</div>
-                  <div style={{ color: '#666' }}>{content.dateLabel || "Date"}: _________________</div>
+                  <div style={{ fontWeight: '500', color: '#000' }}>{content.clientSignatureLabel || "Client Signature"}</div>
+                  <div style={{ color: '#000' }}>{content.printNameLabel || "Print Name"}: {renderTokenValue('client_name')}</div>
+                  <div style={{ color: '#000' }}>{content.dateLabel || "Date"}: _________________</div>
                 </div>
               </div>
             </div>
-            <div>
+            <div style={{ backgroundColor: '#ffffff' }}>
               <p style={{ fontSize: '14px', marginBottom: '16px', color: '#000' }}>{content.thankYouText || "Thank you for choosing us for your project!"}</p>
               <div style={{ borderTop: '1px solid #9ca3af', paddingTop: '8px', marginTop: '48px' }}>
                 <div style={{ fontSize: '14px', color: '#000' }}>
-                  <div style={{ fontWeight: '500' }}>{content.companySignatureLabel || "Company Representative"}</div>
-                  <div style={{ color: '#666' }}>{content.printNameLabel || "Print Name"}: _________________</div>
-                  <div style={{ color: '#666' }}>{content.dateLabel || "Date"}: _________________</div>
+                  <div style={{ fontWeight: '500', color: '#000' }}>{content.companySignatureLabel || "Company Representative"}</div>
+                  <div style={{ color: '#000' }}>{content.printNameLabel || "Print Name"}: _________________</div>
+                  <div style={{ color: '#000' }}>{content.dateLabel || "Date"}: _________________</div>
                 </div>
               </div>
             </div>
@@ -1322,34 +1322,34 @@ const LivePreviewBlock = ({
     case 'footer':
       const businessSettings = projectData?.businessSettings || {};
       return (
-        <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid #d1d5db', backgroundColor: 'transparent', borderRadius: '8px', padding: '24px' }}>
-          <div className="text-center space-y-3">
+        <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid #d1d5db', backgroundColor: '#ffffff', borderRadius: '8px', padding: '24px' }}>
+          <div style={{ textAlign: 'center' }}>
             {content.footerText && (
-              <p style={{ fontSize: '14px', color: '#666', fontStyle: 'italic' }}>
+              <p style={{ fontSize: '14px', color: '#666', fontStyle: 'italic', marginBottom: '12px' }}>
                 {content.footerText}
               </p>
             )}
             {content.showCompanyInfo !== false && (
-              <div className="text-xs text-muted-foreground space-y-1">
-                <p className="font-semibold">{renderTokenValue('company_name')}</p>
+              <div style={{ fontSize: '12px', color: '#666' }}>
+                <p style={{ fontWeight: '600', color: '#000', marginBottom: '4px' }}>{renderTokenValue('company_name')}</p>
                 {businessSettings?.address && (
-                  <p>{renderTokenValue('company_address')}</p>
+                  <p style={{ color: '#666', marginBottom: '4px' }}>{renderTokenValue('company_address')}</p>
                 )}
-                <div className="flex justify-center gap-4 flex-wrap">
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap', marginTop: '8px' }}>
                   {businessSettings?.business_phone && (
-                    <span>📞 {renderTokenValue('company_phone')}</span>
+                    <span style={{ color: '#666' }}>📞 {renderTokenValue('company_phone')}</span>
                   )}
                   {businessSettings?.business_email && (
-                    <span>✉️ {renderTokenValue('company_email')}</span>
+                    <span style={{ color: '#666' }}>✉️ {renderTokenValue('company_email')}</span>
                   )}
                   {businessSettings?.website && (
-                    <span>🌐 {businessSettings.website}</span>
+                    <span style={{ color: '#666' }}>🌐 {businessSettings.website}</span>
                   )}
                 </div>
               </div>
             )}
             {content.additionalText && (
-              <p className="text-xs text-muted-foreground mt-2">
+              <p style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
                 {content.additionalText}
               </p>
             )}
