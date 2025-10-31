@@ -104,7 +104,7 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   });
 
   // Fetch active quote templates
-  const { data: activeTemplates, isLoading: templatesLoading } = useQuery({
+  const { data: activeTemplates, isLoading: templatesLoading, refetch: refetchTemplates } = useQuery({
     queryKey: ["quote-templates"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -201,6 +201,14 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
         .eq('id', selectedTemplate.id);
 
       if (error) throw error;
+      
+      // Refresh templates to show updated settings
+      await refetchTemplates();
+      
+      toast({
+        title: "Settings updated",
+        description: "Quote display settings have been updated",
+      });
     } catch (error) {
       console.error('Error updating template settings:', error);
       toast({
@@ -572,21 +580,10 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
                   blocks={templateBlocks}
                   projectData={projectData}
                   isEditable={false}
-                  isPrintMode={false}
+                  isPrintMode={true}
                   showDetailedBreakdown={templateSettings.showDetailedBreakdown}
                   showImages={templateSettings.showImages}
-                  onSettingsChange={(settings) => {
-                    // Update template settings when user toggles buttons
-                    if (settings.showDetailedBreakdown !== undefined) {
-                      handleUpdateTemplateSettings('showDetailedBreakdown', settings.showDetailedBreakdown);
-                    }
-                    if (settings.showImages !== undefined) {
-                      handleUpdateTemplateSettings('showImages', settings.showImages);
-                    }
-                    if (settings.groupByRoom !== undefined) {
-                      handleUpdateTemplateSettings('groupByRoom', settings.groupByRoom);
-                    }
-                  }}
+                  groupByRoom={templateSettings.groupByRoom}
                 />
               </div>
             </div>
