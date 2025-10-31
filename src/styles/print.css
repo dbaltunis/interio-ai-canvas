@@ -48,10 +48,35 @@
     break-inside: avoid;
   }
 
-  /* Ensure images are visible */
-  img {
-    max-width: 100%;
-    page-break-inside: avoid;
-    break-inside: avoid;
+  /* CRITICAL: Ensure images are visible in PDF */
+  img, .print-image {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Force white background and black text for quote content */
+  #quote-live-preview,
+  #quote-live-preview *,
+  .quote-preview-container,
+  .quote-preview-container * {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-color: transparent !important;
+  }
+
+  /* Remove all borders and grid patterns */
+  #quote-live-preview *,
+  .quote-preview-container * {
+    background-image: none !important;
+    border: none !important;
+    box-shadow: none !important;
   }
 }

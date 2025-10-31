@@ -265,7 +265,7 @@ const LivePreviewBlock = ({
               )}
 
               {/* Metadata Row */}
-              <div className="flex items-start justify-between pt-5 mt-5" style={{ borderTop: '2px solid #d0d0d0' }}>
+              <div className="flex items-start justify-between pt-5 mt-5" style={{ borderTop: isPrintMode ? 'none' : '2px solid #d0d0d0' }}>
                 {/* Client Info - Left */}
                 <div className="text-left">
                   <div className="text-xs font-bold text-gray-900 mb-2 uppercase tracking-wider">
@@ -799,10 +799,10 @@ const LivePreviewBlock = ({
                 <col style={{ width: 'auto' }} />
                 <col style={{ width: '70px' }} />
                 <col style={{ width: '90px' }} />
-                <col style={{ width: '145px' }} />
+                <col style={{ width: '155px' }} />
               </colgroup>
               <thead>
-                <tr style={{ borderBottom: '1px solid #333' }}>
+                <tr style={{ borderBottom: isPrintMode ? 'none' : '1px solid #333' }}>
                   <th style={{ textAlign: 'left', padding: '8px 6px', fontSize: '11px', fontWeight: '500', color: '#333' }}>#</th>
                   <th style={{ textAlign: 'left', padding: '8px 6px', fontSize: '11px', fontWeight: '500', color: '#333' }}>Product/Service</th>
                   <th style={{ textAlign: 'left', padding: '8px 6px', fontSize: '11px', fontWeight: '500', color: '#333' }}>Description</th>
@@ -824,7 +824,7 @@ const LivePreviewBlock = ({
                   <React.Fragment key={roomName}>
                     {groupByRoom && hasRealData && (
                       <tr>
-                        <td colSpan={6} style={{ padding: '8px 6px 4px 6px', fontSize: '12px', fontWeight: '500', color: '#333', borderTop: '1px solid #ddd', backgroundColor: '#fff' }}>
+                        <td colSpan={6} style={{ padding: '8px 6px 4px 6px', fontSize: '12px', fontWeight: '500', color: '#333', borderTop: isPrintMode ? 'none' : '1px solid #ddd', backgroundColor: '#fff' }}>
                           {roomName}
                         </td>
                       </tr>
@@ -846,7 +846,7 @@ const LivePreviewBlock = ({
                         <React.Fragment key={`item-${roomName}-${itemIndex}`}>
                           {/* Main product row */}
                           <tr style={{ 
-                            borderBottom: breakdown.length > 0 && showDetailedProducts ? 'none' : '1px solid #ddd',
+                            borderBottom: (breakdown.length > 0 && showDetailedProducts) || isPrintMode ? 'none' : '1px solid #ddd',
                             backgroundColor: '#fff'
                           }}>
                             <td style={{ padding: '7px 6px', fontSize: '13px', fontWeight: '400', color: '#000', verticalAlign: 'top' }}>
@@ -864,9 +864,9 @@ const LivePreviewBlock = ({
                                       height: '40px', 
                                       objectFit: 'cover', 
                                       borderRadius: '2px',
-                                      border: '1px solid #ddd',
+                                      border: isPrintMode ? 'none' : '1px solid #ddd',
                                       flexShrink: 0
-                                    }} 
+                                    }}
                                   />
                                 )}
                                 <span>
@@ -895,7 +895,7 @@ const LivePreviewBlock = ({
                           {breakdown.length > 0 && showDetailedProducts && breakdown.map((breakdownItem: any, bidx: number) => (
                             <tr key={bidx} style={{ 
                               backgroundColor: '#fff',
-                              borderBottom: bidx === breakdown.length - 1 ? '1px solid #ddd' : '1px solid #e8e8e8'
+                              borderBottom: isPrintMode ? 'none' : (bidx === breakdown.length - 1 ? '1px solid #ddd' : '1px solid #e8e8e8')
                             }}>
                               <td style={{ padding: '6px 6px' }}></td>
                               <td style={{ padding: '6px 6px 6px 20px', fontSize: '12px', color: '#000', fontWeight: '400' }}>
@@ -910,9 +910,9 @@ const LivePreviewBlock = ({
                                         height: '30px', 
                                         objectFit: 'cover', 
                                         borderRadius: '2px',
-                                        border: '1px solid #ddd',
+                                        border: isPrintMode ? 'none' : '1px solid #ddd',
                                         flexShrink: 0
-                                      }} 
+                                      }}
                                     />
                                   )}
                                   <span>{breakdownItem.name}</span>
@@ -971,7 +971,7 @@ const LivePreviewBlock = ({
                   <span className="text-sm font-bold text-gray-900">{renderTokenValue('tax_amount')}</span>
                 </div>
               )}
-              <div className="flex justify-between py-3 border-t-2" style={{ borderTop: '2px solid #000000' }}>
+              <div className="flex justify-between py-3 border-t-2" style={{ borderTop: isPrintMode ? 'none' : '2px solid #000000' }}>
                 <span className="text-lg font-bold text-gray-900">Total</span>
                 <span className="text-xl font-bold text-gray-900">{renderTokenValue('total')}</span>
               </div>
@@ -1450,8 +1450,8 @@ export const LivePreview = ({
             maxWidth: '794px',
             minHeight: '1123px',
             backgroundColor: containerStyles?.backgroundColor || '#ffffff',
-            border: '2px solid hsl(var(--border))',
-            boxShadow: '0 0 20px rgba(0, 0, 0, 0.1)'
+            border: isPrintMode ? 'none' : '2px solid hsl(var(--border))',
+            boxShadow: isPrintMode ? 'none' : '0 0 20px rgba(0, 0, 0, 0.1)'
           }}
         >
           {/* Print cut line indicator at top - barely visible */}

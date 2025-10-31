@@ -656,6 +656,21 @@ button, .btn, [role="button"], input, textarea, select {
     color-adjust: exact !important;
   }
   
+  /* Force white background and black text in print mode */
+  #quote-live-preview,
+  #quote-live-preview *,
+  .quote-preview-container,
+  .quote-preview-container * {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Remove all grid patterns and decorative borders */
+  .bg-grid-pattern,
+  *[style*="background-image"] {
+    background-image: none !important;
+  }
+  
   /* Ensure table rows don't break */
   tr, td, th {
     page-break-inside: avoid !important;

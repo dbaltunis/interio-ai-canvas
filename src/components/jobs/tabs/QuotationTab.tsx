@@ -442,103 +442,105 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
 
   return (
     <div className="space-y-2 sm:space-y-3 pb-4 overflow-x-hidden">
-      {/* Header with Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3">
-        <div>
-          <h2 className="text-base sm:text-lg font-semibold">Quotation</h2>
+      {/* Header with Actions - Improved Organization */}
+      <Card className="p-3 sm:p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h2 className="text-base sm:text-lg font-semibold">Quotation</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Generate and send professional quotes</p>
+          </div>
+
+          {/* Action Buttons - Better organized */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Primary Action */}
+            <Button
+              size="sm"
+              onClick={handleDownloadPDF}
+              disabled={isGeneratingPDF || !selectedTemplate}
+              className="h-9 px-4"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {isGeneratingPDF ? 'Generating...' : 'Download PDF'}
+            </Button>
+
+            {/* Secondary Actions */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEmailModalOpen(true)}
+              disabled={isGeneratingPDF || !selectedTemplate}
+              className="h-9 px-4"
+            >
+              <Mail className="h-4 w-4 mr-2" />
+              Email
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 px-3">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleAddDiscount}>
+                  <Percent className="h-4 w-4 mr-2" />
+                  Add Discount
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleAddTerms}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Add Terms & Conditions
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleAddDeposit}>
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Add Deposit
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handlePrint}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Preview
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
+        {/* Quote Display Options - Toggle Controls */}
+        <div className="flex items-center gap-3 mt-4 pt-3 border-t flex-wrap">
+          <span className="text-xs font-medium text-muted-foreground">Display Options:</span>
+          
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <Switch
+              checked={templateSettings.groupByRoom}
+              onCheckedChange={(checked) => {
+                handleUpdateTemplateSettings('groupByRoom', checked);
+              }}
+            />
+            <span className="text-sm">Group by room</span>
+          </label>
+          
           <Button
-            variant="default"
+            variant="ghost"
             size="sm"
-            onClick={handleDownloadPDF}
-            disabled={isGeneratingPDF || !selectedTemplate}
-            className="h-8 px-2 sm:px-3"
-          >
-            <Download className="h-4 w-4" />
-            <span className="hidden sm:inline sm:ml-2">
-              {isGeneratingPDF ? 'Generating...' : 'PDF'}
-            </span>
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsEmailModalOpen(true)}
-            disabled={isGeneratingPDF || !selectedTemplate}
-            className="hidden sm:flex h-8"
-          >
-            <Mail className="h-4 w-4 mr-2" />
-            Email
-          </Button>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 px-2">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setIsEmailModalOpen(true)} className="sm:hidden">
-                <Mail className="mr-2 h-4 w-4" />
-                Email Quote
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleAddDiscount}>
-                <Percent className="h-4 w-4 mr-2" />
-                Add Discount
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleAddTerms}>
-                <FileText className="h-4 w-4 mr-2" />
-                Add T&C
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleAddDeposit}>
-                <DollarSign className="h-4 w-4 mr-2" />
-                Add Deposit
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
-      {/* Quote Display Options - Toggle Controls */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2">
-        <label className="flex items-center gap-2 text-sm cursor-pointer">
-          <input
-            type="checkbox"
-            checked={templateSettings.groupByRoom}
-            onChange={(e) => {
-              handleUpdateTemplateSettings('groupByRoom', e.target.checked);
+            onClick={() => {
+              handleUpdateTemplateSettings('showDetailedBreakdown', !templateSettings.showDetailedBreakdown);
             }}
-            className="rounded border-input cursor-pointer"
-          />
-          <span className="text-sm">Group by room</span>
-        </label>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            handleUpdateTemplateSettings('showDetailedBreakdown', !templateSettings.showDetailedBreakdown);
-          }}
-          className="h-8"
-        >
-          {templateSettings.showDetailedBreakdown ? 'Simple View' : 'Detailed View'}
-        </Button>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            handleUpdateTemplateSettings('showImages', !templateSettings.showImages);
-          }}
-          className="h-8"
-        >
-          <ImageIconLucide className="h-4 w-4 mr-2" />
-          {templateSettings.showImages ? 'Hide Images' : 'Show Images'}
-        </Button>
-      </div>
+            className="h-8"
+          >
+            {templateSettings.showDetailedBreakdown ? 'Simple View' : 'Detailed View'}
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              handleUpdateTemplateSettings('showImages', !templateSettings.showImages);
+            }}
+            className="h-8"
+          >
+            <ImageIconLucide className="h-4 w-4 mr-2" />
+            {templateSettings.showImages ? 'Hide Images' : 'Show Images'}
+          </Button>
+        </div>
+      </Card>
 
       {/* Quotation Items Modal */}
       <QuotationItemsModal
@@ -564,10 +566,12 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
         />
       ) : (
         <section className="mt-2 sm:mt-4" key={`preview-${selectedTemplate?.id}-${templateSettings.showDetailedBreakdown}-${templateSettings.showImages}-${templateSettings.groupByRoom}-${projectSummaries?.projectTotal}`}>
-          <div className="w-full flex justify-center">
-            <div className="transform scale-[0.42] sm:scale-[0.58] md:scale-[0.68] lg:scale-[0.78] xl:scale-[0.88] origin-top">
+          {/* A4 Background Container - Gray background to simulate paper on desk */}
+          <div className="w-full flex justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 p-4 sm:p-6 md:p-8 rounded-lg">
+            <div className="transform scale-[0.42] sm:scale-[0.58] md:scale-[0.68] lg:scale-[0.78] xl:scale-[0.88] origin-top shadow-2xl">
               <div
                 id="quote-live-preview"
+                className="quote-preview-container"
                 style={{
                   width: '210mm',
                   minHeight: '297mm',
