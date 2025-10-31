@@ -691,11 +691,30 @@ const LivePreviewBlock = ({
       
       const hasRealData = projectItems.length > 0;
 
-      // Get comprehensive breakdown - ONLY from fabric_details and manufacturing_details
+      // Get comprehensive breakdown - FROM CHILDREN ARRAY OR fabric_details/manufacturing_details
       const getItemizedBreakdown = (item: any) => {
         const breakdown = [];
         
-        // Always build from fabric_details first (has actual pricing)
+        // FIRST: Check if item has children array (new structure)
+        if (item.children && Array.isArray(item.children) && item.children.length > 0) {
+          console.log('[BREAKDOWN] Using children array:', item.children);
+          item.children.forEach((child: any) => {
+            breakdown.push({
+              id: child.id || `${item.id}-child-${breakdown.length}`,
+              name: child.name || 'Item',
+              category: child.category || 'Component',
+              description: child.description || '',
+              quantity: child.quantity || 0,
+              unit: child.unit || '',
+              unit_price: child.unit_price || child.price || 0,
+              total_cost: child.total_cost || child.total || (child.quantity * (child.unit_price || child.price || 0)),
+              image_url: child.image_url
+            });
+          });
+          return breakdown;
+        }
+        
+        // FALLBACK: Try fabric_details and manufacturing_details (old structure)
         if (item.fabric_details && item.fabric_details.selling_price) {
           const fabricCost = (item.linear_meters || 0) * (item.fabric_details.selling_price || 0);
           breakdown.push({
@@ -711,7 +730,6 @@ const LivePreviewBlock = ({
           });
         }
         
-        // Then add manufacturing (has actual pricing)
         if (item.manufacturing_details && item.manufacturing_details.cost) {
           breakdown.push({
             id: `${item.id}-manufacturing`,
@@ -831,10 +849,27 @@ const LivePreviewBlock = ({
                               {itemNumber}
                             </td>
                             <td style={{ padding: '10px 12px', fontSize: '14px', fontWeight: '700', color: '#000', verticalAlign: 'top' }}>
-                              {item.treatment_type ? 
-                                item.treatment_type.charAt(0).toUpperCase() + item.treatment_type.slice(1) : 
-                                (item.name || item.surface_name || 'Window Treatment')
-                              }
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                {showImages && item.image_url && (
+                                  <img 
+                                    src={item.image_url} 
+                                    alt={item.name || 'Product'} 
+                                    style={{ 
+                                      width: '50px', 
+                                      height: '50px', 
+                                      objectFit: 'cover', 
+                                      borderRadius: '4px',
+                                      border: '1px solid #ddd'
+                                    }} 
+                                  />
+                                )}
+                                <span>
+                                  {item.treatment_type ? 
+                                    item.treatment_type.charAt(0).toUpperCase() + item.treatment_type.slice(1) : 
+                                    (item.name || item.surface_name || 'Window Treatment')
+                                  }
+                                </span>
+                              </div>
                             </td>
                             <td style={{ padding: '10px 12px', fontSize: '13px', color: '#333', verticalAlign: 'top' }}>
                               {item.notes || item.description || '-'}
@@ -858,7 +893,22 @@ const LivePreviewBlock = ({
                             }}>
                               <td style={{ padding: '8px 12px' }}></td>
                               <td style={{ padding: '8px 12px 8px 28px', fontSize: '13px', color: '#000', fontWeight: '600' }}>
-                                {breakdownItem.name}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                  {showImages && breakdownItem.image_url && (
+                                    <img 
+                                      src={breakdownItem.image_url} 
+                                      alt={breakdownItem.name || 'Component'} 
+                                      style={{ 
+                                        width: '40px', 
+                                        height: '40px', 
+                                        objectFit: 'cover', 
+                                        borderRadius: '4px',
+                                        border: '1px solid #ddd'
+                                      }} 
+                                    />
+                                  )}
+                                  <span>{breakdownItem.name}</span>
+                                </div>
                               </td>
                               <td style={{ padding: '8px 12px', fontSize: '12px', color: '#555' }}>
                                 {breakdownItem.description || '-'}
