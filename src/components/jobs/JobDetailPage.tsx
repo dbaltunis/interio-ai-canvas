@@ -4,13 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Package, FileText, Wrench, Mail, Calendar, Clock, MoreHorizontal } from "lucide-react";
+import { ArrowLeft, User, Package, FileText, Wrench, Mail, Calendar, Clock, MoreHorizontal, Copy, FileDown, Archive, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
+import { useToast } from "@/hooks/use-toast";
 import { useProjects, useUpdateProject } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
 import { ProjectDetailsTab } from "./tabs/ProjectDetailsTab";
@@ -33,6 +35,7 @@ interface JobDetailPageProps {
 
 export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const [activeTab, setActiveTab] = useState("details");
+  const { toast } = useToast();
   
   const { data: projects } = useProjects();
   const { data: clients } = useClients();
@@ -86,53 +89,84 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
     <div className="h-screen bg-background w-full flex flex-col overflow-hidden">
       {/* Enhanced Header Section - Scrolls away */}
       <div className="bg-gradient-to-r from-card/95 to-card border-b border-border/50 shadow-sm backdrop-blur-sm">
-        <div className="px-3 sm:px-6 py-5">
-          {/* Reorganized Header Layout */}
-          <div className="flex flex-col gap-4">
-            {/* Top Row: Back Button + Client Name */}
-            <div className="flex items-center gap-3">
+        <div className="px-3 sm:px-6 py-4">
+          {/* Single Row Layout */}
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            {/* Left Side: Navigation + Client + Job Name */}
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={onBack}
-                className="flex items-center gap-2 shrink-0 px-3 py-2 font-medium
-                  hover:bg-accent transition-all duration-200"
+                className="shrink-0"
               >
-                <ArrowLeft className="h-4 w-4" />
+                <ArrowLeft className="h-4 w-4 mr-1" />
                 <span>Jobs</span>
               </Button>
               
               <Separator orientation="vertical" className="h-6 bg-border/60" />
               
               {client && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <User className="h-4 w-4" />
-                  <span className="text-sm font-medium">{client.name}</span>
-                </div>
+                <span className="text-sm font-medium text-muted-foreground truncate">
+                  {client.name}
+                </span>
               )}
+              
+              <Separator orientation="vertical" className="h-6 bg-border/60 hidden sm:block" />
+              
+              <h1 className="text-lg sm:text-xl font-bold text-foreground truncate min-w-0">
+                {project.name}
+              </h1>
             </div>
 
-            {/* Bottom Row: Prominent Status */}
-            <div className="flex items-center gap-4">
-              <div className="flex flex-col gap-1.5 min-w-0 flex-1">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Job Status
-                </span>
-                <div className="scale-110 origin-left">
-                  <JobStatusDropdown
-                    currentStatusId={project.status_id}
-                    currentStatus={project.status}
-                    jobType="project"
-                    jobId={project.id}
-                    onStatusChange={(newStatus) => {
-                      // Status updated via mutation
-                    }}
-                  />
-                </div>
-              </div>
+            {/* Right Side: Status + Actions */}
+            <div className="flex items-center gap-3 shrink-0">
+              <JobStatusDropdown
+                currentStatusId={project.status_id}
+                currentStatus={project.status}
+                jobType="project"
+                jobId={project.id}
+                onStatusChange={(newStatus) => {
+                  // Status updated via mutation
+                }}
+              />
+              
+              <ThreeDotMenu
+                items={[
+                  {
+                    label: 'Duplicate Job',
+                    icon: <Copy className="h-4 w-4" />,
+                    onClick: () => {
+                      toast({ title: "Duplicate Job", description: "Feature coming soon" });
+                    }
+                  },
+                  {
+                    label: 'Export to PDF',
+                    icon: <FileDown className="h-4 w-4" />,
+                    onClick: () => {
+                      toast({ title: "Export to PDF", description: "Feature coming soon" });
+                    }
+                  },
+                  {
+                    label: 'Archive Job',
+                    icon: <Archive className="h-4 w-4" />,
+                    onClick: () => {
+                      toast({ title: "Archive Job", description: "Feature coming soon" });
+                    },
+                    variant: 'warning'
+                  },
+                  {
+                    label: 'Delete Job',
+                    icon: <Trash2 className="h-4 w-4" />,
+                    onClick: () => {
+                      toast({ title: "Delete Job", description: "Feature coming soon", variant: "destructive" });
+                    },
+                    variant: 'destructive'
+                  }
+                ]}
+              />
             </div>
           </div>
-
         </div>
       </div>
 
