@@ -176,6 +176,41 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
     };
   }, [selectedTemplate]);
 
+  // Function to update template settings
+  const handleUpdateTemplateSettings = async (key: string, value: any) => {
+    if (!selectedTemplate) return;
+    
+    try {
+      const blocks = Array.isArray(selectedTemplate.blocks) ? selectedTemplate.blocks : [];
+      const updatedBlocks = blocks.map((block: any) => {
+        if (block?.type === 'products') {
+          return {
+            ...block,
+            content: {
+              ...block.content,
+              [key]: value
+            }
+          };
+        }
+        return block;
+      });
+
+      const { error } = await supabase
+        .from('quote_templates')
+        .update({ blocks: updatedBlocks })
+        .eq('id', selectedTemplate.id);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating template settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update template settings",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Get template blocks safely - MUST be before early returns
   const templateBlocks = useMemo(() => {
     const blocks = selectedTemplate?.blocks;
@@ -525,9 +560,21 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
                   blocks={templateBlocks}
                   projectData={projectData}
                   isEditable={false}
-                  isPrintMode={true}
+                  isPrintMode={false}
                   showDetailedBreakdown={templateSettings.showDetailedBreakdown}
                   showImages={templateSettings.showImages}
+                  onSettingsChange={(settings) => {
+                    // Update template settings when user toggles buttons
+                    if (settings.showDetailedBreakdown !== undefined) {
+                      handleUpdateTemplateSettings('showDetailedBreakdown', settings.showDetailedBreakdown);
+                    }
+                    if (settings.showImages !== undefined) {
+                      handleUpdateTemplateSettings('showImages', settings.showImages);
+                    }
+                    if (settings.groupByRoom !== undefined) {
+                      handleUpdateTemplateSettings('groupByRoom', settings.groupByRoom);
+                    }
+                  }}
                 />
               </div>
             </div>
