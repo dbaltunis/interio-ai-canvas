@@ -753,54 +753,6 @@ const LivePreviewBlock = ({
             <h3 className="text-xl font-bold text-gray-900">
               {content.title || 'Quote Items'}
             </h3>
-            {!isPrintMode && (
-              <div className="flex items-center gap-2">
-                <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer font-medium">
-                  <input
-                    type="checkbox"
-                    checked={groupByRoom}
-                    onChange={(e) => {
-                      const newValue = e.target.checked;
-                      if (onSettingsChange) {
-                        onSettingsChange({ groupByRoom: newValue });
-                      } else {
-                        setInternalGroupByRoom(newValue);
-                      }
-                    }}
-                    className="rounded border-gray-300 cursor-pointer"
-                  />
-                  <span>Group by room</span>
-                </label>
-                <button
-                  onClick={() => {
-                    const newValue = !showDetailedProducts;
-                    if (onSettingsChange) {
-                      onSettingsChange({ showDetailedBreakdown: newValue });
-                    } else {
-                      setInternalShowDetailed(newValue);
-                    }
-                  }}
-                  className="px-3 py-1.5 text-xs font-semibold border-2 border-gray-900 rounded hover:bg-gray-900 hover:text-white active:bg-gray-800 transition-colors"
-                  title={showDetailedProducts ? "Switch to simple view" : "Switch to detailed view with itemized breakdown"}
-                >
-                  {showDetailedProducts ? 'Simple View' : 'Detailed View'}
-                </button>
-                <button
-                  onClick={() => {
-                    const newValue = !showImages;
-                    if (onSettingsChange) {
-                      onSettingsChange({ showImages: newValue });
-                    } else {
-                      setInternalShowImages(newValue);
-                    }
-                  }}
-                  className="px-3 py-1.5 text-xs font-semibold border-2 border-gray-900 rounded hover:bg-gray-900 hover:text-white active:bg-gray-800 transition-colors"
-                  title={showImages ? "Hide product images" : "Show product images"}
-                >
-                  {showImages ? 'Hide Images' : 'Show Images'}
-                </button>
-              </div>
-            )}
           </div>
 
           {!hasRealData && (

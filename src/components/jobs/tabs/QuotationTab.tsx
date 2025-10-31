@@ -496,24 +496,36 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
         </div>
       </div>
 
-      {/* Quote Display Options - using template settings */}
-      <div className="flex items-center justify-between overflow-x-auto pb-2">
-        <div className="flex items-center space-x-2 sm:space-x-4 min-w-max">
-          <div className="flex items-center space-x-2">
-            <span className="text-xs text-muted-foreground">
-              <ImageIconLucide className="h-3 w-3 inline mr-1" />
-              Images: {templateSettings.showImages ? 'On' : 'Off'}
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-xs text-muted-foreground">
-              Detailed: {templateSettings.showDetailedBreakdown ? 'On' : 'Off'}
-            </span>
-          </div>
-          <div className="text-xs text-muted-foreground">
-            (Configure in Settings → Document Templates)
-          </div>
-        </div>
+      {/* Quote Display Options - Toggle Controls */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2">
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={templateSettings.groupByRoom}
+            onChange={(e) => handleUpdateTemplateSettings('groupByRoom', e.target.checked)}
+            className="rounded border-input cursor-pointer"
+          />
+          <span className="text-sm">Group by room</span>
+        </label>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleUpdateTemplateSettings('showDetailedBreakdown', !templateSettings.showDetailedBreakdown)}
+          className="h-8"
+        >
+          {templateSettings.showDetailedBreakdown ? 'Simple View' : 'Detailed View'}
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleUpdateTemplateSettings('showImages', !templateSettings.showImages)}
+          className="h-8"
+        >
+          <ImageIconLucide className="h-4 w-4 mr-2" />
+          {templateSettings.showImages ? 'Hide Images' : 'Show Images'}
+        </Button>
       </div>
 
       {/* Quotation Items Modal */}
