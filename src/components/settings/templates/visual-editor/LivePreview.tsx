@@ -649,8 +649,10 @@ const LivePreviewBlock = ({
         hasItems: !!(projectData?.items && projectData.items.length > 0),
         itemsCount: projectData?.items?.length || 0,
         items: projectData?.items,
+        itemsSample: projectData?.items?.[0],
         hasTreatments: !!(projectData?.treatments && projectData.treatments.length > 0),
         treatmentsCount: projectData?.treatments?.length || 0,
+        treatmentsSample: projectData?.treatments?.[0],
         workshopItemsCount: workshopItems.length,
         surfacesCount: surfaces.length
       });
@@ -687,7 +689,7 @@ const LivePreviewBlock = ({
         console.log('[PRODUCTS BLOCK] Using workshop/surfaces fallback:', projectItems);
       }
       
-      const hasRealData = projectItems.length > 0 && !projectItems.every((item: any) => item._isPending);
+      const hasRealData = projectItems.length > 0;
 
       // Get comprehensive breakdown - ONLY from fabric_details and manufacturing_details
       const getItemizedBreakdown = (item: any) => {
@@ -821,8 +823,8 @@ const LivePreviewBlock = ({
                   <th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '11px', fontWeight: '600', color: '#333' }}>Product/Service</th>
                   <th style={{ textAlign: 'left', padding: '10px 8px', fontSize: '11px', fontWeight: '600', color: '#333' }}>Description</th>
                   <th style={{ textAlign: 'center', padding: '10px 8px', fontSize: '11px', fontWeight: '600', color: '#333', width: '70px' }}>Quantity</th>
-                  <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '11px', fontWeight: '600', color: '#333', width: '100px' }}>Price rate</th>
-                  <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '11px', fontWeight: '600', color: '#333', width: '120px' }}>Total without GST</th>
+                  <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '11px', fontWeight: '600', color: '#333', width: '100px' }}>Unit Price</th>
+                  <th style={{ textAlign: 'right', padding: '10px 8px', fontSize: '11px', fontWeight: '600', color: '#333', width: '120px' }}>Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -839,6 +841,15 @@ const LivePreviewBlock = ({
                       const itemNumber = groupByRoom ? itemIndex + 1 : Object.values(groupedItems).flat().indexOf(item) + 1;
                       const breakdown = getItemizedBreakdown(item);
                       const isEven = itemNumber % 2 === 0;
+                      
+                      console.log('[PRODUCT ROW]', {
+                        itemNumber,
+                        itemName: item.name || item.surface_name,
+                        total_cost: item.total_cost,
+                        unit_price: item.unit_price,
+                        total: item.total,
+                        allItemData: item
+                      });
                       
                       return (
                         <React.Fragment key={`item-${roomName}-${itemIndex}`}>
@@ -860,10 +871,10 @@ const LivePreviewBlock = ({
                               {item.quantity || 1}
                             </td>
                             <td style={{ padding: '10px 12px', fontSize: '13px', fontWeight: '600', color: '#000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                              {breakdown.length > 0 && showDetailedProducts ? '' : `${renderTokenValue('currency_symbol')}${(item.total_cost || 0).toFixed(2)}`}
+                              {breakdown.length > 0 && showDetailedProducts ? '' : `${renderTokenValue('currency_symbol')}${((item.unit_price || item.total_cost || item.total || 0)).toFixed(2)}`}
                             </td>
                             <td style={{ padding: '10px 12px', fontSize: '14px', fontWeight: '700', color: '#000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                              {breakdown.length > 0 && showDetailedProducts ? '' : `${renderTokenValue('currency_symbol')}${(item.total_cost || 0).toFixed(2)}`}
+                              {breakdown.length > 0 && showDetailedProducts ? '' : `${renderTokenValue('currency_symbol')}${((item.total_cost || item.total || 0)).toFixed(2)}`}
                             </td>
                           </tr>
                           
