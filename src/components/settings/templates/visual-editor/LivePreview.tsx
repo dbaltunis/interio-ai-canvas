@@ -689,51 +689,39 @@ const LivePreviewBlock = ({
       
       const hasRealData = projectItems.length > 0 && !projectItems.every((item: any) => item._isPending);
 
-      // Get comprehensive breakdown - prioritize item.children, then build from item details
+      // Get comprehensive breakdown - ONLY from fabric_details and manufacturing_details
       const getItemizedBreakdown = (item: any) => {
-        // First, check if item has children array (from saved quote items)
-        if (item.children && Array.isArray(item.children) && item.children.length > 0) {
-          console.log('[DETAILED VIEW] Using item.children:', {
-            itemName: item.name,
-            childrenCount: item.children.length
-          });
-          return item.children;
-        }
-        
-        // Build breakdown from workshop item details
         const breakdown = [];
         
-        if (item.fabric_details) {
+        // Always build from fabric_details first (has actual pricing)
+        if (item.fabric_details && item.fabric_details.selling_price) {
+          const fabricCost = (item.linear_meters || 0) * (item.fabric_details.selling_price || 0);
           breakdown.push({
             id: `${item.id}-fabric`,
             name: item.fabric_details.name || 'Fabric',
             category: 'Material',
+            description: `${item.fabric_details.fabric_width || ''}cm width`,
             quantity: item.linear_meters || 0,
             unit: 'm',
             unit_price: item.fabric_details.selling_price || 0,
-            total_cost: (item.linear_meters || 0) * (item.fabric_details.selling_price || 0),
+            total_cost: fabricCost,
             image_url: item.fabric_details.image_url
           });
         }
         
-        if (item.manufacturing_details) {
+        // Then add manufacturing (has actual pricing)
+        if (item.manufacturing_details && item.manufacturing_details.cost) {
           breakdown.push({
             id: `${item.id}-manufacturing`,
-            name: `Manufacturing (${item.manufacturing_details.heading_type || 'Standard'})`,
+            name: 'Manufacturing',
             category: 'Labor',
-            description: `${item.manufacturing_details.type || 'machine'} made${item.manufacturing_details.hand_finished ? ', hand finished' : ''}`,
+            description: `${item.manufacturing_details.heading_type || 'Standard'} heading, ${item.manufacturing_details.type || 'machine'} made`,
             quantity: 1,
             unit: 'unit',
             unit_price: item.manufacturing_details.cost || 0,
             total_cost: item.manufacturing_details.cost || 0
           });
         }
-        
-        console.log('[DETAILED VIEW] Built breakdown from item details:', {
-          itemName: item.surface_name,
-          breakdownCount: breakdown.length,
-          breakdown
-        });
         
         return breakdown;
       };
@@ -855,51 +843,51 @@ const LivePreviewBlock = ({
                       return (
                         <React.Fragment key={`item-${roomName}-${itemIndex}`}>
                           {/* Main product row */}
-                          <tr style={{ borderBottom: breakdown.length > 0 && showDetailedProducts ? 'none' : '1px solid #e5e5e5', backgroundColor: isEven ? '#fafafa' : '#fff' }}>
-                            <td style={{ padding: '8px', fontSize: '11px', fontWeight: '600', color: '#000', verticalAlign: 'top' }}>{itemNumber}</td>
-                            <td style={{ padding: '8px', fontSize: '12px', fontWeight: '700', color: '#000', verticalAlign: 'top' }}>
+                          <tr style={{ 
+                            borderBottom: breakdown.length > 0 && showDetailedProducts ? 'none' : '1px solid #ddd',
+                            backgroundColor: isEven ? '#fafafa' : '#fff'
+                          }}>
+                            <td style={{ padding: '10px 12px', fontSize: '13px', fontWeight: '700', color: '#000', verticalAlign: 'top' }}>
+                              {itemNumber}
+                            </td>
+                            <td style={{ padding: '10px 12px', fontSize: '14px', fontWeight: '700', color: '#000', verticalAlign: 'top' }}>
                               {item.name || item.surface_name || item.treatment_type || 'Window Treatment'}
                             </td>
-                            <td style={{ padding: '8px', fontSize: '11px', color: '#444', verticalAlign: 'top' }}>
-                              {item.description || item.treatment_type || ''}
+                            <td style={{ padding: '10px 12px', fontSize: '13px', color: '#333', verticalAlign: 'top' }}>
+                              {item.room_name || '-'}
                             </td>
-                            <td style={{ padding: '8px', fontSize: '11px', fontWeight: '600', color: '#000', textAlign: 'center', verticalAlign: 'top' }}>
+                            <td style={{ padding: '10px 12px', fontSize: '13px', fontWeight: '600', color: '#000', textAlign: 'center', verticalAlign: 'top' }}>
                               {item.quantity || 1}
                             </td>
-                            <td style={{ padding: '8px', fontSize: '11px', fontWeight: '600', color: '#000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                              {breakdown.length > 0 && showDetailedProducts ? '' : `${renderTokenValue('currency_symbol')}${((item.unit_price || item.total_cost || item.total || 0)).toFixed(2)}`}
+                            <td style={{ padding: '10px 12px', fontSize: '13px', fontWeight: '600', color: '#000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                              {breakdown.length > 0 && showDetailedProducts ? '' : `${renderTokenValue('currency_symbol')}${(item.total_cost || 0).toFixed(2)}`}
                             </td>
-                            <td style={{ padding: '8px', fontSize: '12px', fontWeight: '700', color: '#000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                              {breakdown.length > 0 && showDetailedProducts ? '' : `${renderTokenValue('currency_symbol')}${((item.total || item.total_cost || 0)).toFixed(2)}`}
+                            <td style={{ padding: '10px 12px', fontSize: '14px', fontWeight: '700', color: '#000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                              {breakdown.length > 0 && showDetailedProducts ? '' : `${renderTokenValue('currency_symbol')}${(item.total_cost || 0).toFixed(2)}`}
                             </td>
                           </tr>
                           
                           {/* Detailed breakdown rows - indented */}
                           {breakdown.length > 0 && showDetailedProducts && breakdown.map((breakdownItem: any, bidx: number) => (
-                            <tr key={bidx} style={{ backgroundColor: bidx % 2 === 0 ? '#f9f9f9' : '#fff', borderBottom: '1px solid #e5e5e5' }}>
-                              <td style={{ padding: '6px 8px' }}></td>
-                              <td style={{ padding: '6px 8px', fontSize: '11px', color: '#000', fontWeight: '500', paddingLeft: '20px' }}>
-                                {breakdownItem.name || breakdownItem.category}
+                            <tr key={bidx} style={{ 
+                              backgroundColor: bidx % 2 === 0 ? '#f5f5f5' : '#fff',
+                              borderBottom: bidx === breakdown.length - 1 ? '1px solid #ddd' : '1px solid #e8e8e8'
+                            }}>
+                              <td style={{ padding: '8px 12px' }}></td>
+                              <td style={{ padding: '8px 12px 8px 28px', fontSize: '13px', color: '#000', fontWeight: '600' }}>
+                                {breakdownItem.name}
                               </td>
-                              <td style={{ padding: '6px 8px', fontSize: '11px', color: '#333' }}>
-                                {breakdownItem.description && breakdownItem.description !== '-' && breakdownItem.description !== breakdownItem.name ? breakdownItem.description : '-'}
+                              <td style={{ padding: '8px 12px', fontSize: '12px', color: '#555' }}>
+                                {breakdownItem.description || '-'}
                               </td>
-                              <td style={{ padding: '6px 8px', fontSize: '11px', color: '#000', textAlign: 'center' }}>
-                                {breakdownItem.quantity && typeof breakdownItem.quantity === 'number' && breakdownItem.quantity > 0 
-                                  ? `${breakdownItem.quantity.toFixed(1)} ${breakdownItem.unit || ''}`.trim() 
-                                  : '-'}
+                              <td style={{ padding: '8px 12px', fontSize: '13px', color: '#000', fontWeight: '600', textAlign: 'center' }}>
+                                {breakdownItem.quantity > 0 ? `${breakdownItem.quantity.toFixed(2)} ${breakdownItem.unit || ''}`.trim() : '-'}
                               </td>
-                              <td style={{ padding: '6px 8px', fontSize: '11px', fontWeight: '600', color: '#000', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                                {breakdownItem.unit_price && breakdownItem.unit_price > 0 
-                                  ? `${renderTokenValue('currency_symbol')}${breakdownItem.unit_price.toFixed(2)}` 
-                                  : '-'}
+                              <td style={{ padding: '8px 12px', fontSize: '13px', fontWeight: '700', color: '#000', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                {breakdownItem.unit_price > 0 ? `${renderTokenValue('currency_symbol')}${breakdownItem.unit_price.toFixed(2)}` : '-'}
                               </td>
-                              <td style={{ padding: '6px 8px', fontSize: '11px', fontWeight: '700', color: '#000', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                                {breakdownItem.total_cost !== undefined && breakdownItem.total_cost > 0 
-                                  ? `${renderTokenValue('currency_symbol')}${breakdownItem.total_cost.toFixed(2)}`
-                                  : breakdownItem.total > 0 
-                                    ? `${renderTokenValue('currency_symbol')}${breakdownItem.total.toFixed(2)}`
-                                    : '-'}
+                              <td style={{ padding: '8px 12px', fontSize: '14px', fontWeight: '700', color: '#000', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                {renderTokenValue('currency_symbol')}{(breakdownItem.total_cost || 0).toFixed(2)}
                               </td>
                             </tr>
                           ))}
