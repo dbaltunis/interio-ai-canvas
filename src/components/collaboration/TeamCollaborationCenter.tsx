@@ -323,31 +323,17 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                            
                            <Tooltip>
                              <TooltipTrigger asChild>
-                               <Button
-                                 variant="ghost"
-                                 size="sm"
-                                 onClick={() => handleThemeChange('dark')}
-                                 className={cn("h-8 w-8 p-0", theme === 'dark' && "bg-accent")}
-                               >
-                                 <Moon className="h-4 w-4" />
-                               </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Dark Mode</TooltipContent>
-                          </Tooltip>
-                          
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                               <Button
-                                 variant="ghost"
-                                 size="sm"
-                                 onClick={() => handleThemeChange('apple-graphite')}
-                                 className={cn("h-8 w-8 p-0", theme === 'apple-graphite' && "bg-muted")}
-                              >
-                                <Palette className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Graphite Mode</TooltipContent>
-                          </Tooltip>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleThemeChange('dark')}
+                                  className={cn("h-8 w-8 p-0", theme === 'dark' && "bg-accent")}
+                                >
+                                  <Moon className="h-4 w-4" />
+                                </Button>
+                             </TooltipTrigger>
+                             <TooltipContent>Dark Mode</TooltipContent>
+                           </Tooltip>
                           
                           <div className="h-4 w-px bg-border mx-1" />
                           

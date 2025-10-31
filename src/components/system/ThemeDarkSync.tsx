@@ -7,12 +7,10 @@ export function ThemeDarkSync() {
 
   useEffect(() => {
     const root = document.documentElement;
-    const hasMidnight = root.classList.contains("midnight");
-    const hasGraphite = root.classList.contains("apple-graphite");
-    const wantsDark = hasMidnight || hasGraphite || theme === "dark" || resolvedTheme === "dark";
+    const wantsDark = theme === "dark" || resolvedTheme === "dark";
 
     try {
-      console.debug("[ThemeDarkSync] sync", { theme, resolvedTheme, hasMidnight, hasGraphite, wantsDark });
+      console.debug("[ThemeDarkSync] sync", { theme, resolvedTheme, wantsDark });
     } catch {}
 
     if (wantsDark) {
@@ -35,7 +33,7 @@ export function ThemeDarkSync() {
   // Initial check on mount (covers SSR/initial render)
   useEffect(() => {
     const root = document.documentElement;
-    const hasCustomDark = root.classList.contains("midnight") || root.classList.contains("apple-graphite");
+    const hasCustomDark = false; // No custom dark themes anymore
     if (hasCustomDark) {
       root.classList.add("dark");
       try {

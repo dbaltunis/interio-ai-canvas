@@ -70,12 +70,10 @@ const App = () => {
               attribute="class"
               defaultTheme="light"
               enableSystem={false}
-              themes={['light','dark','apple-graphite']}
+              themes={['light','dark']}
               value={{
                 light: 'light',
                 dark: 'dark',
-                midnight: 'midnight',
-                'apple-graphite': 'apple-graphite',
               }}
             >
               <ThemeDarkSync />

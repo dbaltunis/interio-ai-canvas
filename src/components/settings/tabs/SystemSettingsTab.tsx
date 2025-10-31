@@ -58,7 +58,6 @@ export const SystemSettingsTab = () => {
                 <SelectContent>
                   <SelectItem value="light">Light</SelectItem>
                   <SelectItem value="dark">Dark</SelectItem>
-                  <SelectItem value="apple-graphite">Graphite dark</SelectItem>
                   <SelectItem value="system">System</SelectItem>
                 </SelectContent>
               </Select>
