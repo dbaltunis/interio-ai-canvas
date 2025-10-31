@@ -949,25 +949,44 @@ const LivePreviewBlock = ({
                 minWidth: '340px'
               }}
             >
+              {/* Total (including tax) */}
+              <div className="flex justify-end py-2">
+                <div className="text-right" style={{ minWidth: '200px' }}>
+                  <span className="text-sm font-bold text-gray-900">Total: {renderTokenValue('total')}</span>
+                </div>
+              </div>
+              
+              {/* Price excl. GST (Subtotal) */}
               {content.showSubtotal !== false && (
-                <div className="flex justify-between py-2">
-                  <span className="text-sm font-semibold text-gray-900">Subtotal</span>
-                  <span className="text-sm font-bold text-gray-900">{renderTokenValue('subtotal')}</span>
+                <div className="flex justify-end py-1">
+                  <div className="text-right" style={{ minWidth: '200px' }}>
+                    <span className="text-sm text-gray-900">
+                      Price excl. {userBusinessSettings?.tax_type && userBusinessSettings.tax_type !== 'none' 
+                        ? userBusinessSettings.tax_type.toUpperCase() 
+                        : 'Tax'}: {renderTokenValue('subtotal')}
+                    </span>
+                  </div>
                 </div>
               )}
+              
+              {/* GST/Tax */}
               {content.showTax && (
-                <div className="flex justify-between py-2">
-                  <span className="text-sm font-semibold text-gray-900">
-                    {userBusinessSettings?.tax_type && userBusinessSettings.tax_type !== 'none' 
-                      ? userBusinessSettings.tax_type.toUpperCase() 
-                      : 'Tax'} ({renderTokenValue('tax_rate')})
-                  </span>
-                  <span className="text-sm font-bold text-gray-900">{renderTokenValue('tax_amount')}</span>
+                <div className="flex justify-end py-1">
+                  <div className="text-right" style={{ minWidth: '200px' }}>
+                    <span className="text-sm text-gray-900">
+                      {userBusinessSettings?.tax_type && userBusinessSettings.tax_type !== 'none' 
+                        ? userBusinessSettings.tax_type.toUpperCase() 
+                        : 'Tax'} ({renderTokenValue('tax_rate')}): {renderTokenValue('tax_amount')}
+                    </span>
+                  </div>
                 </div>
               )}
-              <div className="flex justify-between py-3 border-t-2" style={{ borderTop: isPrintMode ? 'none' : '2px solid #000000' }}>
-                <span className="text-lg font-bold text-gray-900">Total</span>
-                <span className="text-xl font-bold text-gray-900">{renderTokenValue('total')}</span>
+              
+              {/* Grand total */}
+              <div className="flex justify-end py-3 mt-2">
+                <div className="text-right" style={{ minWidth: '200px' }}>
+                  <span className="text-base font-bold text-gray-900">Grand total: {renderTokenValue('total')}</span>
+                </div>
               </div>
             </div>
           </div>
