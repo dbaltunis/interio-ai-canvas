@@ -765,14 +765,14 @@ const LivePreviewBlock = ({
       return (
         <div className="mb-4" style={{ pageBreakInside: 'avoid' }}>
           <div className="flex justify-between items-center mb-2">
-            <h3 className="text-lg font-bold text-gray-900" style={{ margin: 0 }}>
+            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#000' }}>
               {content.title || 'Quote Items'}
             </h3>
           </div>
 
           {!hasRealData && (
-            <div className="bg-gray-100 border-l-4 border-gray-400 p-3 mb-3">
-              <p className="text-gray-800 text-sm font-medium">
+            <div style={{ backgroundColor: '#f3f4f6', borderLeft: '4px solid #9ca3af', padding: '12px', marginBottom: '12px' }}>
+              <p style={{ color: '#1f2937', fontSize: '14px', fontWeight: '500' }}>
                 No project data available. Add treatments to your project to see itemized breakdown.
               </p>
             </div>
@@ -1206,22 +1206,22 @@ const LivePreviewBlock = ({
     case 'terms-conditions':
       return (
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-4 text-brand-primary">
+          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#333' }}>
             {content.title || 'Terms & Conditions'}
           </h3>
-          <div className="text-sm space-y-3">
-            <div>1. Payment Terms: 50% deposit required upon acceptance of this quote. Remaining balance due upon completion.</div>
-            <div>2. Timeline: Project completion is estimated at 2-3 weeks from deposit receipt and final measurements.</div>
-            <div>3. Warranty: All work comes with a 1-year warranty against defects in workmanship.</div>
-            <div>4. Cancellation: This quote is valid for 30 days. Cancellation after work begins subject to materials and labor charges.</div>
+          <div style={{ fontSize: '14px', color: '#000' }}>
+            <div style={{ marginBottom: '12px' }}>1. Payment Terms: 50% deposit required upon acceptance of this quote. Remaining balance due upon completion.</div>
+            <div style={{ marginBottom: '12px' }}>2. Timeline: Project completion is estimated at 2-3 weeks from deposit receipt and final measurements.</div>
+            <div style={{ marginBottom: '12px' }}>3. Warranty: All work comes with a 1-year warranty against defects in workmanship.</div>
+            <div style={{ marginBottom: '12px' }}>4. Cancellation: This quote is valid for 30 days. Cancellation after work begins subject to materials and labor charges.</div>
           </div>
         </div>
       );
 
     case 'payment-info':
       return (
-        <div className="mb-6 bg-gray-50 p-4 rounded-lg">
-          <h3 className="text-lg font-semibold mb-4 text-brand-primary flex items-center gap-2">
+        <div className="mb-6" style={{ backgroundColor: '#f9fafb', padding: '16px', borderRadius: '8px' }}>
+          <h3 className="flex items-center gap-2" style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#333' }}>
             <DollarSign className="h-5 w-5" />
             {content.title || 'Payment Information'}
           </h3>
@@ -1252,7 +1252,7 @@ const LivePreviewBlock = ({
     case 'project-scope':
       return (
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-4 text-brand-primary">
+          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#333' }}>
             {content.title || 'Project Scope'}
           </h3>
           <div className="space-y-4">
@@ -1280,27 +1280,27 @@ const LivePreviewBlock = ({
     case 'signature':
       return (
         <div className="mt-8 mb-6">
-          <h3 className="text-lg font-semibold mb-6 text-brand-primary">
+          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '24px', color: '#333' }}>
             {content.title || 'Authorization'}
           </h3>
           <div className="grid md:grid-cols-2 gap-8">
             <div>
-              <p className="text-sm mb-4">{content.authorizationText || "By signing below, you authorize us to proceed with this work as described:"}</p>
-              <div className="border-t border-gray-400 pt-2 mt-12">
-                <div className="text-sm">
-                  <div className="font-medium">{content.clientSignatureLabel || "Client Signature"}</div>
-                  <div className="text-gray-600">{content.printNameLabel || "Print Name"}: {renderTokenValue('client_name')}</div>
-                  <div className="text-gray-600">{content.dateLabel || "Date"}: _________________</div>
+              <p style={{ fontSize: '14px', marginBottom: '16px', color: '#000' }}>{content.authorizationText || "By signing below, you authorize us to proceed with this work as described:"}</p>
+              <div style={{ borderTop: '1px solid #9ca3af', paddingTop: '8px', marginTop: '48px' }}>
+                <div style={{ fontSize: '14px', color: '#000' }}>
+                  <div style={{ fontWeight: '500' }}>{content.clientSignatureLabel || "Client Signature"}</div>
+                  <div style={{ color: '#666' }}>{content.printNameLabel || "Print Name"}: {renderTokenValue('client_name')}</div>
+                  <div style={{ color: '#666' }}>{content.dateLabel || "Date"}: _________________</div>
                 </div>
               </div>
             </div>
             <div>
-              <p className="text-sm mb-4">{content.thankYouText || "Thank you for choosing us for your project!"}</p>
-              <div className="border-t border-gray-400 pt-2 mt-12">
-                <div className="text-sm">
-                  <div className="font-medium">{content.companySignatureLabel || "Company Representative"}</div>
-                  <div className="text-gray-600">{content.printNameLabel || "Print Name"}: _________________</div>
-                  <div className="text-gray-600">{content.dateLabel || "Date"}: _________________</div>
+              <p style={{ fontSize: '14px', marginBottom: '16px', color: '#000' }}>{content.thankYouText || "Thank you for choosing us for your project!"}</p>
+              <div style={{ borderTop: '1px solid #9ca3af', paddingTop: '8px', marginTop: '48px' }}>
+                <div style={{ fontSize: '14px', color: '#000' }}>
+                  <div style={{ fontWeight: '500' }}>{content.companySignatureLabel || "Company Representative"}</div>
+                  <div style={{ color: '#666' }}>{content.printNameLabel || "Print Name"}: _________________</div>
+                  <div style={{ color: '#666' }}>{content.dateLabel || "Date"}: _________________</div>
                 </div>
               </div>
             </div>
@@ -1311,10 +1311,10 @@ const LivePreviewBlock = ({
     case 'footer':
       const businessSettings = projectData?.businessSettings || {};
       return (
-        <div className="mt-8 pt-6 border-t border-gray-300 bg-muted/30 rounded-lg p-6">
+        <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid #d1d5db', backgroundColor: 'transparent', borderRadius: '8px', padding: '24px' }}>
           <div className="text-center space-y-3">
             {content.footerText && (
-              <p className="text-sm text-muted-foreground italic">
+              <p style={{ fontSize: '14px', color: '#666', fontStyle: 'italic' }}>
                 {content.footerText}
               </p>
             )}
