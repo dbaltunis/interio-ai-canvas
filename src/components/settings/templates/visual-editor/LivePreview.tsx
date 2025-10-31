@@ -240,10 +240,13 @@ const LivePreviewBlock = ({
                     />
                   ) : (
                     <div 
-                      className="bg-gray-600 flex items-center justify-center"
                       style={{ 
                         height: content.logoSize || '70px',
-                        width: content.logoSize || '70px'
+                        width: content.logoSize || '70px',
+                        backgroundColor: '#4b5563',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                       }}
                     >
                       <Building2 className="h-10 w-10 text-white" />
@@ -253,13 +256,13 @@ const LivePreviewBlock = ({
               )}
 
               {/* Document Title */}
-              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+              <h1 style={{ fontSize: '30px', fontWeight: 'bold', color: '#111827', letterSpacing: '-0.025em' }}>
                 {content.documentTitle || "Quotation"}
               </h1>
 
               {/* Tagline */}
               {content.tagline && (
-                <p className="text-base text-gray-700 max-w-2xl mx-auto mt-2 font-medium">
+                <p style={{ fontSize: '16px', color: '#374151', maxWidth: '672px', margin: '8px auto 0', fontWeight: '500' }}>
                   {content.tagline}
                 </p>
               )}
@@ -268,46 +271,46 @@ const LivePreviewBlock = ({
               <div className="flex items-start justify-between pt-5 mt-5" style={{ borderTop: isPrintMode ? 'none' : '2px solid #d0d0d0' }}>
                 {/* Client Info - Left */}
                 <div className="text-left">
-                  <div className="text-xs font-bold text-gray-900 mb-2 uppercase tracking-wider">
+                  <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#111827', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     {content.clientLabel || "Sold to"}
                   </div>
                   <div className="text-sm space-y-1">
                     {/* Name - Always visible */}
-                    <div className="font-bold text-gray-900 text-sm">{renderTokenValue('client_name') || 'Client Name'}</div>
+                    <div style={{ fontWeight: 'bold', color: '#111827', fontSize: '14px' }}>{renderTokenValue('client_name') || 'Client Name'}</div>
                     
                     {/* Company */}
                     {content.showClientCompany !== false && renderTokenValue('client_company') && (
-                      <div className="text-gray-900 font-medium text-sm">{renderTokenValue('client_company')}</div>
+                      <div style={{ color: '#111827', fontWeight: '500', fontSize: '14px' }}>{renderTokenValue('client_company')}</div>
                     )}
                     
                     {/* ABN */}
                     {content.showClientABN !== false && renderTokenValue('client_abn') && (
-                      <div className="text-gray-700 font-medium text-sm">ABN: {renderTokenValue('client_abn')}</div>
+                      <div style={{ color: '#374151', fontWeight: '500', fontSize: '14px' }}>ABN: {renderTokenValue('client_abn')}</div>
                     )}
                     
                     {/* Business Email */}
                     {content.showClientBusinessEmail !== false && renderTokenValue('client_business_email') && (
-                      <div className="text-gray-700 font-medium text-sm">{renderTokenValue('client_business_email')}</div>
+                      <div style={{ color: '#374151', fontWeight: '500', fontSize: '14px' }}>{renderTokenValue('client_business_email')}</div>
                     )}
                     
                     {/* Business Phone */}
                     {content.showClientBusinessPhone !== false && renderTokenValue('client_business_phone') && (
-                      <div className="text-gray-700 font-medium text-sm">{renderTokenValue('client_business_phone')}</div>
+                      <div style={{ color: '#374151', fontWeight: '500', fontSize: '14px' }}>{renderTokenValue('client_business_phone')}</div>
                     )}
                     
                     {/* Contact Email */}
                     {content.showClientEmail !== false && renderTokenValue('client_email') && (
-                      <div className="text-gray-700 font-medium text-sm">{renderTokenValue('client_email')}</div>
+                      <div style={{ color: '#374151', fontWeight: '500', fontSize: '14px' }}>{renderTokenValue('client_email')}</div>
                     )}
                     
                     {/* Contact Phone */}
                     {content.showClientPhone !== false && renderTokenValue('client_phone') && (
-                      <div className="text-gray-700 font-medium text-sm">{renderTokenValue('client_phone')}</div>
+                      <div style={{ color: '#374151', fontWeight: '500', fontSize: '14px' }}>{renderTokenValue('client_phone')}</div>
                     )}
                     
                     {/* Address */}
                     {content.showClientAddress !== false && renderTokenValue('client_address') && (
-                      <div className="text-gray-700 font-medium text-sm">{renderTokenValue('client_address')}</div>
+                      <div style={{ color: '#374151', fontWeight: '500', fontSize: '14px' }}>{renderTokenValue('client_address')}</div>
                     )}
                   </div>
                 </div>
@@ -316,16 +319,16 @@ const LivePreviewBlock = ({
                 <div className="text-right">
                   <div className="text-sm space-y-1">
                     <div>
-                      <span className="text-gray-700 font-semibold text-sm">{content.quoteNumberLabel || "Order number:"} </span>
-                      <span className="font-bold text-gray-900 text-sm">{renderTokenValue('job_number')}</span>
+                      <span style={{ color: '#374151', fontWeight: '600', fontSize: '14px' }}>{content.quoteNumberLabel || "Order number:"} </span>
+                      <span style={{ fontWeight: 'bold', color: '#111827', fontSize: '14px' }}>{renderTokenValue('job_number')}</span>
                     </div>
                     <div>
-                      <span className="text-gray-700 font-semibold text-sm">Start Date: </span>
-                      <span className="text-gray-900 font-bold text-sm">{renderTokenValue('start_date') || (content.customDate ? format(new Date(content.customDate), 'M/d/yyyy') : renderTokenValue('date'))}</span>
+                      <span style={{ color: '#374151', fontWeight: '600', fontSize: '14px' }}>Start Date: </span>
+                      <span style={{ color: '#111827', fontWeight: 'bold', fontSize: '14px' }}>{renderTokenValue('start_date') || (content.customDate ? format(new Date(content.customDate), 'M/d/yyyy') : renderTokenValue('date'))}</span>
                     </div>
                     <div>
-                      <span className="text-gray-700 font-semibold text-sm">Due Date: </span>
-                      <span className="text-gray-900 font-bold text-sm">{renderTokenValue('due_date') || (content.customValidUntil ? format(new Date(content.customValidUntil), 'M/d/yyyy') : renderTokenValue('valid_until'))}</span>
+                      <span style={{ color: '#374151', fontWeight: '600', fontSize: '14px' }}>Due Date: </span>
+                      <span style={{ color: '#111827', fontWeight: 'bold', fontSize: '14px' }}>{renderTokenValue('due_date') || (content.customValidUntil ? format(new Date(content.customValidUntil), 'M/d/yyyy') : renderTokenValue('valid_until'))}</span>
                     </div>
                   </div>
                 </div>
@@ -351,10 +354,14 @@ const LivePreviewBlock = ({
                       />
                     ) : (
                       <div 
-                        className="bg-blue-600 rounded-lg flex items-center justify-center"
                         style={{ 
                           height: content.logoSize || '60px',
-                          width: content.logoSize || '60px'
+                          width: content.logoSize || '60px',
+                          backgroundColor: '#2563eb',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
                         }}
                       >
                         <Building2 className="h-8 w-8 text-white" />
@@ -432,10 +439,14 @@ const LivePreviewBlock = ({
                       />
                     ) : (
                       <div 
-                        className="bg-blue-600 rounded-lg flex items-center justify-center"
                         style={{ 
                           height: content.logoSize || '60px',
-                          width: content.logoSize || '60px'
+                          width: content.logoSize || '60px',
+                          backgroundColor: '#2563eb',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
                         }}
                       >
                         <Building2 className="h-8 w-8 text-white" />
@@ -526,7 +537,7 @@ const LivePreviewBlock = ({
                       style={{ maxWidth: '200px' }}
                     />
                   ) : (
-                    <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <div style={{ width: '64px', height: '64px', backgroundColor: '#2563eb', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <Building2 className="h-8 w-8 text-white" />
                     </div>
                   )}
@@ -602,33 +613,33 @@ const LivePreviewBlock = ({
       
       return (
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-3 text-brand-primary flex items-center gap-2">
+          <h3 className="flex items-center gap-2" style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px', color: '#333' }}>
             <User className="h-5 w-5" />
             {content.title || 'Bill To:'}
           </h3>
-          <div className="bg-gray-50 p-4 rounded-lg">
+          <div style={{ backgroundColor: '#f9fafb', padding: '16px', borderRadius: '8px' }}>
             <div className="space-y-1">
-              {clientName && <p className="font-medium">{clientName}</p>}
+              {clientName && <p style={{ fontWeight: '500', color: '#000' }}>{clientName}</p>}
               {clientCompany && (
-                <p className="text-gray-600 font-medium">{clientCompany}</p>
+                <p style={{ color: '#4b5563', fontWeight: '500' }}>{clientCompany}</p>
               )}
               {isB2B && clientAbn && (
-                <p className="text-gray-600 text-sm">ABN: {clientAbn}</p>
+                <p style={{ color: '#4b5563', fontSize: '14px' }}>ABN: {clientAbn}</p>
               )}
               {isB2B && clientBusinessEmail && (
-                <p className="text-gray-600 text-sm">Business: {clientBusinessEmail}</p>
+                <p style={{ color: '#4b5563', fontSize: '14px' }}>Business: {clientBusinessEmail}</p>
               )}
               {isB2B && clientBusinessPhone && (
-                <p className="text-gray-600 text-sm">Business Phone: {clientBusinessPhone}</p>
+                <p style={{ color: '#4b5563', fontSize: '14px' }}>Business Phone: {clientBusinessPhone}</p>
               )}
               {clientEmail && (
-                <p className="text-gray-600">{isB2B ? 'Contact: ' : ''}{clientEmail}</p>
+                <p style={{ color: '#4b5563' }}>{isB2B ? 'Contact: ' : ''}{clientEmail}</p>
               )}
               {clientPhone && (
-                <p className="text-gray-600">{isB2B ? 'Contact Phone: ' : 'Phone: '}{clientPhone}</p>
+                <p style={{ color: '#4b5563' }}>{isB2B ? 'Contact Phone: ' : 'Phone: '}{clientPhone}</p>
               )}
               {clientAddress && (
-                <p className="text-gray-600">{clientAddress}</p>
+                <p style={{ color: '#4b5563' }}>{clientAddress}</p>
               )}
             </div>
           </div>
@@ -952,7 +963,7 @@ const LivePreviewBlock = ({
               {/* Total (including tax) */}
               <div className="flex justify-end py-2">
                 <div className="text-right" style={{ minWidth: '200px' }}>
-                  <span className="text-sm font-bold text-gray-900">Total: {renderTokenValue('total')}</span>
+                  <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#111827' }}>Total: {renderTokenValue('total')}</span>
                 </div>
               </div>
               
@@ -960,7 +971,7 @@ const LivePreviewBlock = ({
               {content.showSubtotal !== false && (
                 <div className="flex justify-end py-1">
                   <div className="text-right" style={{ minWidth: '200px' }}>
-                    <span className="text-sm text-gray-900">
+                    <span style={{ fontSize: '14px', color: '#111827' }}>
                       Price excl. {userBusinessSettings?.tax_type && userBusinessSettings.tax_type !== 'none' 
                         ? userBusinessSettings.tax_type.toUpperCase() 
                         : 'Tax'}: {renderTokenValue('subtotal')}
@@ -973,7 +984,7 @@ const LivePreviewBlock = ({
               {content.showTax && (
                 <div className="flex justify-end py-1">
                   <div className="text-right" style={{ minWidth: '200px' }}>
-                    <span className="text-sm text-gray-900">
+                    <span style={{ fontSize: '14px', color: '#111827' }}>
                       {userBusinessSettings?.tax_type && userBusinessSettings.tax_type !== 'none' 
                         ? userBusinessSettings.tax_type.toUpperCase() 
                         : 'Tax'} ({renderTokenValue('tax_rate')}): {renderTokenValue('tax_amount')}
@@ -985,7 +996,7 @@ const LivePreviewBlock = ({
               {/* Grand total */}
               <div className="flex justify-end py-3 mt-2">
                 <div className="text-right" style={{ minWidth: '200px' }}>
-                  <span className="text-base font-bold text-gray-900">Grand total: {renderTokenValue('total')}</span>
+                  <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#111827' }}>Grand total: {renderTokenValue('total')}</span>
                 </div>
               </div>
             </div>
@@ -1026,9 +1037,9 @@ const LivePreviewBlock = ({
               style={{ width: content.width || 'auto' }}
             />
           ) : (
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-gray-50">
-              <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-500">Image placeholder</p>
+            <div style={{ border: '2px dashed #d1d5db', borderRadius: '8px', padding: '32px', backgroundColor: '#f9fafb' }}>
+              <ImageIcon className="h-12 w-12 mx-auto mb-2" style={{ color: '#9ca3af' }} />
+              <p style={{ color: '#6b7280' }}>Image placeholder</p>
             </div>
           )}
         </div>
@@ -1091,7 +1102,7 @@ const LivePreviewBlock = ({
       return (
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-brand-primary flex items-center gap-2">
+            <h3 className="flex items-center gap-2" style={{ fontSize: '18px', fontWeight: '600', color: '#333' }}>
               <ShoppingCart className="h-5 w-5" />
               {content.title || 'Line Items'}
             </h3>
@@ -1119,36 +1130,36 @@ const LivePreviewBlock = ({
             // Detailed Itemized View
             <div className="space-y-6">
               {detailedItems.map((category, categoryIndex) => (
-                <div key={categoryIndex} className="border rounded-lg overflow-hidden">
-                  <div className="bg-gray-100 px-4 py-2 border-b">
-                    <h4 className="font-medium text-gray-900">{category.category}</h4>
+                <div key={categoryIndex} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
+                  <div style={{ backgroundColor: '#f3f4f6', padding: '8px 16px', borderBottom: '1px solid #e5e7eb' }}>
+                    <h4 style={{ fontWeight: '500', color: '#111827' }}>{category.category}</h4>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
-                        <tr className="bg-gray-50 text-sm">
-                          <th className="text-left p-3 font-medium">Item Description</th>
-                          <th className="text-center p-3 font-medium w-20">Qty</th>
-                          <th className="text-center p-3 font-medium w-20">Unit</th>
-                          <th className="text-right p-3 font-medium w-24">Unit Price</th>
-                          <th className="text-right p-3 font-medium w-24">Total</th>
+                        <tr style={{ backgroundColor: '#f9fafb', fontSize: '14px' }}>
+                          <th style={{ textAlign: 'left', padding: '12px', fontWeight: '500' }}>Item Description</th>
+                          <th style={{ textAlign: 'center', padding: '12px', fontWeight: '500', width: '80px' }}>Qty</th>
+                          <th style={{ textAlign: 'center', padding: '12px', fontWeight: '500', width: '80px' }}>Unit</th>
+                          <th style={{ textAlign: 'right', padding: '12px', fontWeight: '500', width: '96px' }}>Unit Price</th>
+                          <th style={{ textAlign: 'right', padding: '12px', fontWeight: '500', width: '96px' }}>Total</th>
                         </tr>
                       </thead>
                       <tbody>
                         {category.items.map((item, itemIndex) => (
-                          <tr key={itemIndex} className="border-t border-gray-200">
-                            <td className="p-3 text-sm">{item.name}</td>
-                            <td className="p-3 text-sm text-center">{item.quantity}</td>
-                            <td className="p-3 text-sm text-center text-gray-600">{item.unit}</td>
-                            <td className="p-3 text-sm text-right">${item.unitPrice.toFixed(2)}</td>
-                            <td className="p-3 text-sm text-right font-medium">${item.total.toFixed(2)}</td>
+                          <tr key={itemIndex} style={{ borderTop: '1px solid #e5e7eb' }}>
+                            <td style={{ padding: '12px', fontSize: '14px' }}>{item.name}</td>
+                            <td style={{ padding: '12px', fontSize: '14px', textAlign: 'center' }}>{item.quantity}</td>
+                            <td style={{ padding: '12px', fontSize: '14px', textAlign: 'center', color: '#4b5563' }}>{item.unit}</td>
+                            <td style={{ padding: '12px', fontSize: '14px', textAlign: 'right' }}>${item.unitPrice.toFixed(2)}</td>
+                            <td style={{ padding: '12px', fontSize: '14px', textAlign: 'right', fontWeight: '500' }}>${item.total.toFixed(2)}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                  <div className="bg-gray-50 px-4 py-2 border-t">
-                    <div className="flex justify-between items-center text-sm font-medium">
+                  <div style={{ backgroundColor: '#f9fafb', padding: '8px 16px', borderTop: '1px solid #e5e7eb' }}>
+                    <div className="flex justify-between items-center" style={{ fontSize: '14px', fontWeight: '500' }}>
                       <span>{category.category} Subtotal:</span>
                       <span>${category.items.reduce((sum, item) => sum + item.total, 0).toFixed(2)}</span>
                     </div>
