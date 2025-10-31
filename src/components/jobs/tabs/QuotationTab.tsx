@@ -567,18 +567,16 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
       ) : (
         <section className="mt-2 sm:mt-4" key={`preview-${selectedTemplate?.id}-${templateSettings.showDetailedBreakdown}-${templateSettings.showImages}-${templateSettings.groupByRoom}-${projectSummaries?.projectTotal}`}>
           {/* A4 Background Container - Gray background to simulate paper on desk */}
-          <div className="w-full flex justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 px-1 py-2 rounded-lg">
-            <div className="transform scale-[0.52] sm:scale-[0.72] md:scale-[0.85] lg:scale-[0.95] xl:scale-[1.0] origin-top shadow-2xl">
+          <div className="w-full flex justify-center bg-gradient-to-br from-muted/30 to-muted/50 dark:from-background dark:to-card/20 px-1 py-2 rounded-lg border border-border/40">
+            <div className="transform scale-[0.52] sm:scale-[0.72] md:scale-[0.85] lg:scale-[0.95] xl:scale-[1.0] origin-top shadow-2xl dark:shadow-xl">
               <div
                 id="quote-live-preview"
-                className="quote-preview-container"
+                className="quote-preview-container bg-document text-document-foreground"
                 style={{
                   width: '210mm',
                   minHeight: '297mm',
                   fontFamily: 'Arial, Helvetica, sans-serif',
                   fontSize: '10pt',
-                  color: '#000000',
-                  backgroundColor: '#ffffff',
                   padding: '8mm',
                   boxSizing: 'border-box',
                   overflow: 'hidden'
