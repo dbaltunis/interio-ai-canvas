@@ -629,6 +629,21 @@ button, .btn, [role="button"], input, textarea, select {
   .no-print {
     display: none !important;
   }
+  
+  /* Ensure images print correctly */
+  img {
+    display: block !important;
+    max-width: 100% !important;
+    page-break-inside: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Force backgrounds and images to print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 
 /* Dropdown and Select component fixes for dark mode */
 .dark [data-radix-select-content],
@@ -680,6 +695,7 @@ button, .btn, [role="button"], input, textarea, select {
   }
   
   @page {
-    margin: 1in;
+    margin: 0.5in;
+    size: A4;
   }
 }
