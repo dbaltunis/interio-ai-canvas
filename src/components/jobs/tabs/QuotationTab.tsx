@@ -510,7 +510,9 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
           <input
             type="checkbox"
             checked={templateSettings.groupByRoom}
-            onChange={(e) => handleUpdateTemplateSettings('groupByRoom', e.target.checked)}
+            onChange={(e) => {
+              handleUpdateTemplateSettings('groupByRoom', e.target.checked);
+            }}
             className="rounded border-input cursor-pointer"
           />
           <span className="text-sm">Group by room</span>
@@ -519,7 +521,9 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => handleUpdateTemplateSettings('showDetailedBreakdown', !templateSettings.showDetailedBreakdown)}
+          onClick={() => {
+            handleUpdateTemplateSettings('showDetailedBreakdown', !templateSettings.showDetailedBreakdown);
+          }}
           className="h-8"
         >
           {templateSettings.showDetailedBreakdown ? 'Simple View' : 'Detailed View'}
@@ -528,7 +532,9 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => handleUpdateTemplateSettings('showImages', !templateSettings.showImages)}
+          onClick={() => {
+            handleUpdateTemplateSettings('showImages', !templateSettings.showImages);
+          }}
           className="h-8"
         >
           <ImageIconLucide className="h-4 w-4 mr-2" />
@@ -559,7 +565,7 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
           }}
         />
       ) : (
-        <section className="mt-2 sm:mt-4" key={`preview-${projectSummaries?.projectTotal}-${quotationData.total}`}>
+        <section className="mt-2 sm:mt-4" key={`preview-${selectedTemplate?.id}-${templateSettings.showDetailedBreakdown}-${templateSettings.showImages}-${templateSettings.groupByRoom}-${projectSummaries?.projectTotal}`}>
           <div className="w-full flex justify-center">
             <div className="transform scale-[0.42] sm:scale-[0.58] md:scale-[0.68] lg:scale-[0.78] xl:scale-[0.88] origin-top">
               <div
@@ -577,6 +583,7 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
                 }}
               >
                 <LivePreview
+                  key={`live-preview-${templateSettings.showDetailedBreakdown}-${templateSettings.showImages}-${templateSettings.groupByRoom}`}
                   blocks={templateBlocks}
                   projectData={projectData}
                   isEditable={false}
