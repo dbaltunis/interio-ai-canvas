@@ -65,28 +65,20 @@ const Index = () => {
   console.log('Index: Rendering with activeTab =', activeTab, 'user =', user?.email || 'no user');
   console.log('Index: Render time =', new Date().toISOString());
 
-  // Sync activeTab state with URL changes
+  // Sync activeTab with URL (single source of truth)
   useEffect(() => {
-    const urlTab = searchParams.get('tab');
-    if (urlTab && urlTab !== activeTab) {
-      console.warn('[NAV] Index: URL changed, updating activeTab from', activeTab, 'to', urlTab);
+    const urlTab = searchParams.get('tab') || "projects";
+    if (urlTab !== activeTab) {
+      console.warn('[NAV] Index: Syncing activeTab from URL:', urlTab);
       setActiveTab(urlTab);
       sessionStorage.setItem('active_tab', urlTab);
     }
-  }, [searchParams]);
-
-  // Update URL when activeTab changes internally (from UI clicks, not from navigation)
-  useEffect(() => {
-    const currentTab = searchParams.get('tab') || "projects";
-    if (activeTab !== currentTab) {
-      console.warn('[NAV] Index: activeTab changed, updating URL from', currentTab, 'to', activeTab);
-      setSearchParams({ tab: activeTab }, { replace: true });
-    }
-    sessionStorage.setItem('active_tab', activeTab);
-  }, [activeTab]);
+  }, [searchParams, activeTab]);
 
   const handleTabChange = (tabId: string) => {
-    setActiveTab(tabId);
+    console.warn('[NAV] Index: handleTabChange called with:', tabId);
+    setSearchParams({ tab: tabId }, { replace: true });
+    sessionStorage.setItem('active_tab', tabId);
   };
 
   const renderActiveComponent = () => {

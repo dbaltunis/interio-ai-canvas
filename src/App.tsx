@@ -55,10 +55,10 @@ function NavObserver() {
 }
 
 const App = () => {
-  // Install navigation logging on app start
-  useEffect(() => { 
-    installNavLogger(); 
-  }, []);
+  // Navigation logging disabled to prevent security errors
+  // useEffect(() => { 
+  //   installNavLogger(); 
+  // }, []);
 
   return (
     <ErrorBoundary>
