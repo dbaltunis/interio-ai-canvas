@@ -107,8 +107,12 @@ export const useQuotationSync = ({
           const headingDetails = summary.heading_details || {};
           const wallpaperDetails = summary.wallpaper_details || {};
           
-          // Extract image URLs from material/fabric details
-          const imageUrl = materialDetails.image_url || fabricDetails.image_url || null;
+          // Extract image URLs separately:
+          // Treatment template image (for parent row - the visual rendering)
+          const treatmentImageUrl = summary.template_image_url || summary.image_url || null;
+          
+          // Material/Fabric image from inventory (for child rows - the actual fabric swatch)
+          const materialImageUrl = materialDetails.image_url || fabricDetails.image_url || null;
           
           // Determine material type label
           const getMaterialLabel = () => {
@@ -156,7 +160,7 @@ export const useQuotationSync = ({
             room_id: roomId,
             surface_name: window.surface_name,
             treatment_type: summary.template_name,
-            image_url: imageUrl,
+            image_url: treatmentImageUrl, // Parent shows treatment template visual
             hasChildren: true,
             children: [] as any[]
           };
@@ -184,7 +188,7 @@ export const useQuotationSync = ({
               unit: 'm',
               unit_price: pricePerMetre,
               total: summary.fabric_cost,
-              image_url: imageUrl,
+              image_url: materialImageUrl, // Child shows actual fabric/material from inventory
               isChild: true
             });
           }
