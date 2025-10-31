@@ -794,16 +794,14 @@ const LivePreviewBlock = ({
           <div style={{ overflow: 'visible', width: '100%' }}>
             <table className="w-full" style={{ borderCollapse: 'collapse', tableLayout: 'fixed', width: '100%' }}>
               <colgroup>
-                <col style={{ width: '30px' }} />
-                <col style={{ width: '17%' }} />
+                <col style={{ width: '20%' }} />
                 <col style={{ width: 'auto' }} />
-                <col style={{ width: '70px' }} />
-                <col style={{ width: '90px' }} />
-                <col style={{ width: '155px' }} />
+                <col style={{ width: '80px' }} />
+                <col style={{ width: '100px' }} />
+                <col style={{ width: '170px' }} />
               </colgroup>
               <thead>
                 <tr style={{ borderBottom: isPrintMode ? 'none' : '1px solid #333' }}>
-                  <th style={{ textAlign: 'left', padding: '8px 6px', fontSize: '11px', fontWeight: '500', color: '#333' }}>#</th>
                   <th style={{ textAlign: 'left', padding: '8px 6px', fontSize: '11px', fontWeight: '500', color: '#333' }}>Product/Service</th>
                   <th style={{ textAlign: 'left', padding: '8px 6px', fontSize: '11px', fontWeight: '500', color: '#333' }}>Description</th>
                   <th style={{ textAlign: 'center', padding: '8px 6px', fontSize: '11px', fontWeight: '500', color: '#333' }}>Quantity</th>
@@ -824,7 +822,7 @@ const LivePreviewBlock = ({
                   <React.Fragment key={roomName}>
                     {groupByRoom && hasRealData && (
                       <tr>
-                        <td colSpan={6} style={{ padding: '8px 6px 4px 6px', fontSize: '12px', fontWeight: '500', color: '#333', borderTop: isPrintMode ? 'none' : '1px solid #ddd', backgroundColor: '#fff' }}>
+                        <td colSpan={5} style={{ padding: '8px 6px 4px 6px', fontSize: '12px', fontWeight: '500', color: '#333', borderTop: isPrintMode ? 'none' : '1px solid #ddd', backgroundColor: '#fff' }}>
                           {roomName}
                         </td>
                       </tr>
@@ -849,9 +847,6 @@ const LivePreviewBlock = ({
                             borderBottom: (breakdown.length > 0 && showDetailedProducts) || isPrintMode ? 'none' : '1px solid #ddd',
                             backgroundColor: '#fff'
                           }}>
-                            <td style={{ padding: '7px 6px', fontSize: '13px', fontWeight: '400', color: '#000', verticalAlign: 'top' }}>
-                              {itemNumber}
-                            </td>
                             <td style={{ padding: '7px 6px', fontSize: '14px', fontWeight: '400', color: '#000', verticalAlign: 'top' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 {showImages && item.image_url && (
@@ -897,7 +892,6 @@ const LivePreviewBlock = ({
                               backgroundColor: '#fff',
                               borderBottom: isPrintMode ? 'none' : (bidx === breakdown.length - 1 ? '1px solid #ddd' : '1px solid #e8e8e8')
                             }}>
-                              <td style={{ padding: '6px 6px' }}></td>
                               <td style={{ padding: '6px 6px 6px 20px', fontSize: '12px', color: '#000', fontWeight: '400' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                   {showImages && breakdownItem.image_url && (
