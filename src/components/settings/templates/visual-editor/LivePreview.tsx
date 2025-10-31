@@ -847,7 +847,7 @@ const LivePreviewBlock = ({
                             borderBottom: (breakdown.length > 0 && showDetailedProducts) || isPrintMode ? 'none' : '1px solid #ddd',
                             backgroundColor: '#fff'
                           }}>
-                            <td style={{ padding: '7px 6px', fontSize: '14px', fontWeight: '400', color: '#000', verticalAlign: 'top' }}>
+                            <td style={{ padding: '5px 6px', fontSize: '13px', fontWeight: '500', color: '#000', verticalAlign: 'top' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 {showImages && item.image_url && (
                                   <img 
@@ -855,8 +855,8 @@ const LivePreviewBlock = ({
                                     alt={item.name || 'Product'} 
                                     className="print-image"
                                     style={{ 
-                                      width: '40px', 
-                                      height: '40px', 
+                                      width: '35px', 
+                                      height: '35px', 
                                       objectFit: 'cover', 
                                       borderRadius: '2px',
                                       border: isPrintMode ? 'none' : '1px solid #ddd',
@@ -872,16 +872,16 @@ const LivePreviewBlock = ({
                                 </span>
                               </div>
                             </td>
-                            <td style={{ padding: '7px 6px', fontSize: '12px', color: '#333', fontWeight: '400', verticalAlign: 'top', wordWrap: 'break-word', overflowWrap: 'break-word' }}>
+                            <td style={{ padding: '5px 6px', fontSize: '11px', color: '#666', fontWeight: '400', verticalAlign: 'top', wordWrap: 'break-word', overflowWrap: 'break-word' }}>
                               {item.notes || item.description || '-'}
                             </td>
-                            <td style={{ padding: '7px 6px', fontSize: '13px', fontWeight: '400', color: '#000', textAlign: 'center', verticalAlign: 'top' }}>
+                            <td style={{ padding: '5px 6px', fontSize: '12px', fontWeight: '400', color: '#000', textAlign: 'center', verticalAlign: 'top' }}>
                               {item.quantity || 1}
                             </td>
-                            <td style={{ padding: '7px 6px', fontSize: '13px', fontWeight: '400', color: '#000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                            <td style={{ padding: '5px 6px', fontSize: '12px', fontWeight: '400', color: '#000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                               {breakdown.length > 0 && showDetailedProducts ? '' : `${renderTokenValue('currency_symbol')}${((item.unit_price || item.total_cost || item.total || 0)).toFixed(2)}`}
                             </td>
-                            <td style={{ padding: '7px 6px', fontSize: '13px', fontWeight: '400', color: '#000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                            <td style={{ padding: '5px 6px', fontSize: '12px', fontWeight: '500', color: '#000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                               {breakdown.length > 0 && showDetailedProducts ? '' : `${renderTokenValue('currency_symbol')}${((item.total_cost || item.total || 0)).toFixed(2)}`}
                             </td>
                           </tr>
@@ -892,7 +892,7 @@ const LivePreviewBlock = ({
                               backgroundColor: '#fff',
                               borderBottom: isPrintMode ? 'none' : (bidx === breakdown.length - 1 ? '1px solid #ddd' : '1px solid #e8e8e8')
                             }}>
-                              <td style={{ padding: '6px 6px 6px 20px', fontSize: '12px', color: '#000', fontWeight: '400' }}>
+                              <td style={{ padding: '3px 6px 3px 20px', fontSize: '11px', color: '#333', fontWeight: '400' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                   {showImages && breakdownItem.image_url && (
                                     <img 
@@ -900,8 +900,8 @@ const LivePreviewBlock = ({
                                       alt={breakdownItem.name || 'Component'}
                                       className="print-image"
                                       style={{ 
-                                        width: '30px', 
-                                        height: '30px', 
+                                        width: '25px', 
+                                        height: '25px', 
                                         objectFit: 'cover', 
                                         borderRadius: '2px',
                                         border: isPrintMode ? 'none' : '1px solid #ddd',
@@ -912,16 +912,16 @@ const LivePreviewBlock = ({
                                   <span>{breakdownItem.name}</span>
                                 </div>
                               </td>
-                              <td style={{ padding: '6px 6px', fontSize: '11px', color: '#555', fontWeight: '400', wordWrap: 'break-word', overflowWrap: 'break-word' }}>
+                              <td style={{ padding: '3px 6px', fontSize: '10px', color: '#666', fontWeight: '400', wordWrap: 'break-word', overflowWrap: 'break-word' }}>
                                 {breakdownItem.description || '-'}
                               </td>
-                              <td style={{ padding: '6px 6px', fontSize: '12px', color: '#000', fontWeight: '400', textAlign: 'center' }}>
+                              <td style={{ padding: '3px 6px', fontSize: '11px', color: '#000', fontWeight: '400', textAlign: 'center' }}>
                                 {breakdownItem.quantity > 0 ? `${breakdownItem.quantity.toFixed(2)} ${breakdownItem.unit || ''}`.trim() : '-'}
                               </td>
-                              <td style={{ padding: '6px 6px', fontSize: '12px', fontWeight: '400', color: '#000', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                              <td style={{ padding: '3px 6px', fontSize: '11px', fontWeight: '400', color: '#000', textAlign: 'right', whiteSpace: 'nowrap' }}>
                                 {breakdownItem.unit_price > 0 ? `${renderTokenValue('currency_symbol')}${breakdownItem.unit_price.toFixed(2)}` : '-'}
                               </td>
-                              <td style={{ padding: '6px 6px', fontSize: '12px', fontWeight: '400', color: '#000', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                              <td style={{ padding: '3px 6px', fontSize: '11px', fontWeight: '400', color: '#000', textAlign: 'right', whiteSpace: 'nowrap' }}>
                                 {renderTokenValue('currency_symbol')}{(breakdownItem.total_cost || 0).toFixed(2)}
                               </td>
                             </tr>
