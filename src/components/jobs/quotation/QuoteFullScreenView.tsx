@@ -52,7 +52,8 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
   const { toast } = useToast();
 
   // Prepare the project data structure for LivePreview
-  const rawProjectData = useMemo(() => ({
+  // CRITICAL: Use quotationItems from props - they have the children array with pricing!
+  const projectData = useMemo(() => ({
     project: {
       ...project,
       client: client
@@ -60,24 +61,14 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
     client,
     businessSettings,
     windowSummaries: projectSummaries || project?.window_summaries || project?.windowSummaries,
+    items: quotationItems, // Use the items with children array directly
     subtotal,
     taxRate,
     taxAmount,
     total,
     markupPercentage,
     validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-  }), [project, client, businessSettings, projectSummaries, subtotal, taxRate, taxAmount, total, markupPercentage]);
-
-  // Use prepareQuoteData to properly format items for LivePreview
-  const preparedData = useMemo(() => {
-    return prepareQuoteData(rawProjectData, showDetailedBreakdown);
-  }, [rawProjectData, showDetailedBreakdown]);
-
-  // Combine raw project data with prepared items
-  const projectData = useMemo(() => ({
-    ...rawProjectData,
-    items: preparedData.items
-  }), [rawProjectData, preparedData]);
+  }), [project, client, businessSettings, projectSummaries, quotationItems, subtotal, taxRate, taxAmount, total, markupPercentage]);
 
   const handleDownloadPDF = () => {
     // Open browser's native print dialog - most reliable approach

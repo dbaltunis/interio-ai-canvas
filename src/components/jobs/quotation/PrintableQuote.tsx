@@ -23,7 +23,7 @@ export const PrintableQuote = React.forwardRef<HTMLDivElement, PrintableQuotePro
           backgroundColor: '#ffffff',
           width: '210mm',
           minHeight: '297mm',
-          padding: '8mm',
+          padding: '12mm 8mm 8mm 12mm',
           margin: '0',
           boxSizing: 'border-box',
           overflow: 'hidden',
