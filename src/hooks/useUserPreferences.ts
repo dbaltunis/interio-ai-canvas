@@ -22,11 +22,32 @@ export const useUserPreferences = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
       
-      const { data, error } = await supabase
+      // First try to get user's own preferences
+      let { data, error } = await supabase
         .from("user_preferences")
         .select("*")
         .eq("user_id", user.id)
         .maybeSingle();
+
+      // If no preferences found, try to get parent account's preferences
+      if (!data) {
+        const { data: accountOwnerId } = await supabase
+          .rpc('get_account_owner', { user_id_param: user.id });
+
+        if (accountOwnerId && accountOwnerId !== user.id) {
+          const { data: ownerPrefs, error: ownerError } = await supabase
+            .from('user_preferences')
+            .select('*')
+            .eq('user_id', accountOwnerId)
+            .maybeSingle();
+
+          if (ownerError && ownerError.code !== 'PGRST116') {
+            console.error('Error fetching parent user preferences:', ownerError);
+          } else {
+            data = ownerPrefs;
+          }
+        }
+      }
 
       if (error && error.code !== 'PGRST116') throw error;
       return data as UserPreferences | null;

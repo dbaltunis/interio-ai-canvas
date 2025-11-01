@@ -51,6 +51,7 @@ export const useEnhancedEmailSettings = () => {
   };
 
   const isTeamMember = profile?.parent_account_id && profile.parent_account_id !== profile.user_id;
+  const isInheritingSettings = isTeamMember && !!emailSettings && emailSettings.user_id !== profile?.user_id;
 
   return {
     ...emailQuery,
@@ -61,6 +62,6 @@ export const useEnhancedEmailSettings = () => {
     getFromName,
     getReplyToEmail,
     isTeamMember,
-    isInheritingSettings: isTeamMember && !!emailSettings,
+    isInheritingSettings,
   };
 };

@@ -12,7 +12,8 @@ import { TeamOverview } from "../user-management/TeamOverview";
 import { CostVisibilitySettings } from "../CostVisibilitySettings";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Info } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const UserManagementTab = () => {
   const { data: users = [], isLoading: usersLoading } = useUsers();
@@ -26,6 +27,16 @@ export const UserManagementTab = () => {
     <div className="space-y-6">
       {/* Team Overview - Clean and informative */}
       <TeamOverview />
+      
+      {/* Settings Inheritance Info */}
+      <Alert className="bg-brand-accent/10 border-brand-accent">
+        <Info className="h-4 w-4 text-brand-accent" />
+        <AlertDescription className="text-sm">
+          <strong>Settings Inheritance:</strong> Team members automatically inherit business settings, 
+          measurement units, email settings, product templates, and inventory from the organization account. 
+          They can create custom settings if needed with appropriate permissions.
+        </AlertDescription>
+      </Alert>
       
       {/* Cost Visibility Settings - Security & Access Control */}
       <CostVisibilitySettings />

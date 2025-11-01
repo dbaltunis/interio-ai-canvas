@@ -16,6 +16,9 @@ import {
   imperialFabricOptions,
   currencyOptions
 } from "./measurement-units/MeasurementUnitOptions";
+import { SettingsInheritanceInfo } from "../SettingsInheritanceInfo";
+import { useCurrentUserProfile } from "@/hooks/useUserProfile";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 export const MeasurementUnitsTab = () => {
   const {
@@ -26,6 +29,12 @@ export const MeasurementUnitsTab = () => {
     handleUnitChange,
     handleSave
   } = useMeasurementUnitsForm();
+  
+  const { data: profile } = useCurrentUserProfile();
+  const { data: businessSettings } = useBusinessSettings();
+  
+  const isTeamMember = profile?.parent_account_id && profile.parent_account_id !== profile.user_id;
+  const isInheritingSettings = isTeamMember && businessSettings?.user_id !== profile?.user_id;
 
   if (isLoading) {
     return (
@@ -47,6 +56,11 @@ export const MeasurementUnitsTab = () => {
           <p className="text-sm text-brand-neutral">Configure your preferred measurement units and currency</p>
         </div>
       </div>
+
+      <SettingsInheritanceInfo 
+        settingsType="measurement units" 
+        isInheriting={isInheritingSettings}
+      />
 
       <Card>
         <CardHeader>
