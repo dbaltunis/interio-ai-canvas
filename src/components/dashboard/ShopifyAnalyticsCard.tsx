@@ -115,25 +115,15 @@ export const ShopifyAnalyticsCard = () => {
               {analytics.shop_domain} • Last synced {timeSinceSync < 60 ? `${timeSinceSync}m` : `${Math.floor(timeSinceSync / 60)}h`} ago
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleProductSync}
-              disabled={isSyncing}
-            >
-              <Package className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-              Sync Products
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => syncAnalytics.mutate()}
-              disabled={syncAnalytics.isPending}
-            >
-              <RefreshCw className={`h-4 w-4 ${syncAnalytics.isPending ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => syncAnalytics.mutate()}
+            disabled={syncAnalytics.isPending}
+            title="Refresh analytics data"
+          >
+            <RefreshCw className={`h-4 w-4 ${syncAnalytics.isPending ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
       </CardHeader>
       <CardContent className="flex-1">

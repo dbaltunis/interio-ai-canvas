@@ -157,11 +157,14 @@ export const ShopifyOrdersWidget = () => {
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => window.open(`https://${integration.shop_domain}/admin`, '_blank')}
+                onClick={() => {
+                  const url = `https://${integration.shop_domain}/admin`;
+                  window.open(url, '_blank', 'noopener,noreferrer');
+                }}
                 className="gap-1 px-2"
               >
                 <ExternalLink className="h-3 w-3" />
-                <span className="hidden lg:inline text-xs">View Store</span>
+                <span className="hidden lg:inline text-xs">Shopify Admin</span>
               </Button>
             )}
           </div>
@@ -185,31 +188,35 @@ export const ShopifyOrdersWidget = () => {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Package className="h-4 w-4 text-primary" />
-                  <h3 className="font-semibold text-sm">Product Sync Status</h3>
+                  <h3 className="font-semibold text-sm">Product Sync</h3>
                 </div>
                 <Badge variant="secondary" className="text-xs">
-                  {integration?.last_sync_at ? `Synced ${formatDate(integration.last_sync_at)}` : 'Never synced'}
+                  {integration?.last_sync_at ? `Last: ${formatDate(integration.last_sync_at)}` : 'Not synced'}
                 </Badge>
               </div>
               
-              <div className="grid grid-cols-3 gap-3 mb-3">
-                <div className="text-center p-3 rounded-md bg-card/80">
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="p-3 rounded-md bg-card border border-border">
+                  <div className="text-xs text-muted-foreground mb-1">InterioApp Inventory</div>
                   <div className="text-2xl font-bold text-primary">{productStats?.totalProducts || 0}</div>
-                  <div className="text-xs text-muted-foreground mt-1">Products in InterioApp</div>
-                </div>
-                <div className="text-center p-3 rounded-md bg-card/80">
-                  <div className="text-2xl font-bold text-primary">{productStats?.categories || 0}</div>
-                  <div className="text-xs text-muted-foreground mt-1">Categories</div>
-                </div>
-                <div className="text-center p-3 rounded-md bg-card/80">
-                  <div className="text-2xl font-bold text-primary">
-                    {productStats?.topCategory ? productStats.topCategory[1] : 0}
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {productStats?.categories || 0} categories • {productStats?.topCategory ? `Top: ${productStats.topCategory[0]}` : 'No products'}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1 truncate">
-                    {productStats?.topCategory ? productStats.topCategory[0] : 'No products'}
+                </div>
+                <div className="p-3 rounded-md bg-card border border-border">
+                  <div className="text-xs text-muted-foreground mb-1">Shopify Store</div>
+                  <div className="text-2xl font-bold text-orange-600">?</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Click "Import" to check
                   </div>
                 </div>
               </div>
+
+              {(productStats?.totalProducts || 0) === 0 && (
+                <div className="mb-3 p-2 bg-amber-500/10 border border-amber-500/20 rounded text-xs text-amber-600">
+                  <strong>Note:</strong> Add products in Library/Inventory first, then use "Export to Shopify"
+                </div>
+              )}
 
               <div className="flex gap-2">
                 <Button
@@ -217,7 +224,8 @@ export const ShopifyOrdersWidget = () => {
                   variant="outline"
                   onClick={() => handleProductSync('pull')}
                   disabled={isSyncingProducts}
-                  className="flex-1 gap-1"
+                  className="flex-1 gap-1 h-9"
+                  title="Import products from Shopify to InterioApp"
                 >
                   <ArrowDownLeft className={`h-3 w-3 ${isSyncingProducts ? 'animate-spin' : ''}`} />
                   <span className="text-xs">Import from Shopify</span>
@@ -227,7 +235,8 @@ export const ShopifyOrdersWidget = () => {
                   variant="outline"
                   onClick={() => handleProductSync('push')}
                   disabled={isSyncingProducts || (productStats?.totalProducts || 0) === 0}
-                  className="flex-1 gap-1"
+                  className="flex-1 gap-1 h-9"
+                  title="Export InterioApp products to Shopify"
                 >
                   <ArrowUpRight className={`h-3 w-3 ${isSyncingProducts ? 'animate-spin' : ''}`} />
                   <span className="text-xs">Export to Shopify</span>
