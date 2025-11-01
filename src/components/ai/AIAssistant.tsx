@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Brain, Send, Loader2 } from "lucide-react";
+import { Brain, Send, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -68,64 +68,87 @@ export const AIAssistant = () => {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Brain className="mr-2 h-4 w-4" />
-          AI Assistant
+        <Button variant="outline" size="sm" className="gap-2">
+          <Brain className="h-4 w-4" />
+          <span className="hidden sm:inline">InterioApp AI</span>
+          <span className="sm:hidden">AI</span>
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>AI Assistant - InterioApp</DialogTitle>
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-full bg-primary/10">
+              <Brain className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <DialogTitle className="text-lg">InterioApp AI Assistant</DialogTitle>
+              <p className="text-xs text-muted-foreground mt-1">Your smart business advisor</p>
+            </div>
+          </div>
         </DialogHeader>
         
-        <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto px-6 py-4">
           {/* Conversation History */}
-          {messages.length > 0 && (
-            <div className="max-h-96 overflow-y-auto space-y-3 p-3 bg-muted/20 rounded-lg">
+          {messages.length > 0 ? (
+            <div className="space-y-4">
               {messages.map((msg, idx) => (
                 <div 
                   key={idx} 
                   className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div 
-                    className={`max-w-[85%] p-3 rounded-lg ${
+                    className={`max-w-[85%] p-4 rounded-2xl ${
                       msg.role === 'user' 
-                        ? 'bg-primary text-primary-foreground' 
-                        : 'bg-card border'
+                        ? 'bg-primary text-primary-foreground rounded-br-sm' 
+                        : 'bg-muted rounded-bl-sm'
                     }`}
                   >
                     {msg.role === 'assistant' && (
-                      <div className="flex items-center gap-2 mb-2 text-xs font-semibold">
-                        <Brain className="h-3 w-3" />
-                        AI Advisor
+                      <div className="flex items-center gap-2 mb-2">
+                        <Brain className="h-4 w-4 text-primary" />
+                        <span className="text-xs font-semibold text-foreground">InterioApp AI</span>
                       </div>
                     )}
-                    <p className="text-sm whitespace-pre-line">{msg.content}</p>
+                    <p className="text-sm whitespace-pre-line leading-relaxed">{msg.content}</p>
                   </div>
                 </div>
               ))}
             </div>
-          )}
-          
-          {messages.length === 0 && (
-            <Card>
+          ) : (
+            <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
               <CardHeader>
-                <CardTitle className="text-sm">I can help you with:</CardTitle>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  How can I help you today?
+                </CardTitle>
               </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                • Shopify store setup & analytics<br/>
-                • Marketing strategies & sales optimization<br/>
-                • Inventory management & product recommendations<br/>
-                • Business insights based on your data<br/>
-                • Next steps for growing your store
+              <CardContent className="text-sm text-muted-foreground space-y-2">
+                <div className="flex items-start gap-2">
+                  <span className="text-primary mt-0.5">•</span>
+                  <span>Shopify store setup & analytics</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-primary mt-0.5">•</span>
+                  <span>Marketing strategies & sales optimization</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-primary mt-0.5">•</span>
+                  <span>Business insights based on your data</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-primary mt-0.5">•</span>
+                  <span>Next steps for growing your store</span>
+                </div>
               </CardContent>
             </Card>
           )}
-          
+        </div>
+        
+        <div className="px-6 pb-6 pt-4 border-t bg-background">
           <div className="space-y-3">
             <Textarea
-              placeholder="e.g., 'How can I get my first sale?' or 'What should I do after connecting my store?'"
+              placeholder="Ask me anything about your store..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => {
@@ -134,24 +157,25 @@ export const AIAssistant = () => {
                   handleAIQuery();
                 }
               }}
-              rows={3}
+              rows={2}
               disabled={isLoading}
+              className="resize-none"
             />
             
             <Button 
               onClick={handleAIQuery} 
               disabled={isLoading || !query.trim()}
-              className="w-full"
+              className="w-full gap-2"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Thinking...
                 </>
               ) : (
                 <>
-                  <Send className="mr-2 h-4 w-4" />
-                  Ask AI Advisor
+                  <Send className="h-4 w-4" />
+                  Send Message
                 </>
               )}
             </Button>

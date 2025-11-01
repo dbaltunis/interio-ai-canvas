@@ -31,7 +31,7 @@ export const ShopifyOrdersWidget = () => {
   };
 
   return (
-    <Card className="col-span-1 xl:col-span-2 border-primary/20 bg-gradient-to-br from-card to-card/95">
+    <Card className="border-primary/20 bg-gradient-to-br from-card to-card/95">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex-1">
@@ -88,11 +88,25 @@ export const ShopifyOrdersWidget = () => {
             <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
               We're fetching your analytics for the first time. This usually takes a few seconds.
             </p>
-            <div className="flex gap-2 justify-center">
-              <Skeleton className="h-20 w-32" />
-              <Skeleton className="h-20 w-32" />
-              <Skeleton className="h-20 w-32" />
-              <Skeleton className="h-20 w-32" />
+            
+            {/* Animated Progress Bar */}
+            <div className="max-w-xs mx-auto mb-6">
+              <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="absolute inset-0 bg-gradient-to-r from-primary to-primary/60 animate-pulse"
+                  style={{
+                    animation: 'progress 2s ease-in-out infinite',
+                  }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">Fetching store analytics...</p>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
             </div>
           </div>
         ) : (

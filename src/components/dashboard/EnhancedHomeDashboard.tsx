@@ -144,7 +144,7 @@ export const EnhancedHomeDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         {/* Shopify Orders Widget - Always show first if connected */}
         {isShopifyConnected && (
-          <div className="col-span-1 xl:col-span-2">
+          <div className="col-span-full">
             <ShopifyOrdersWidget />
           </div>
         )}

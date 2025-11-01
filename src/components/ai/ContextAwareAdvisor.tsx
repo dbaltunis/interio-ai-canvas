@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Brain, X, ChevronDown, ChevronUp, Sparkles, AlertCircle } from "lucide-react";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
-import { useShopifyAnalytics } from "@/hooks/useShopifyAnalytics";
+import { useShopifyAnalytics, useSyncShopifyAnalytics } from "@/hooks/useShopifyAnalytics";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +22,7 @@ export const ContextAwareAdvisor = () => {
   const [dismissedSuggestions, setDismissedSuggestions] = useState<string[]>([]);
   const { integration: shopifyIntegration } = useShopifyIntegrationReal();
   const { data: analytics } = useShopifyAnalytics();
+  const { mutate: syncAnalytics } = useSyncShopifyAnalytics();
 
   // Generate context-aware suggestions
   const getSuggestions = (): Suggestion[] => {
@@ -45,7 +46,8 @@ export const ContextAwareAdvisor = () => {
         title: 'Sync Your Store Analytics',
         description: 'Get insights into your store performance. This is your first step after connecting!',
         priority: 'high',
-        actionLabel: 'Sync Analytics'
+        actionLabel: 'Sync Analytics',
+        action: () => syncAnalytics()
       });
     }
 
