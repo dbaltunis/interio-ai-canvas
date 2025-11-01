@@ -21,6 +21,8 @@ export interface Appointment {
   invited_client_emails?: string[];
   notification_enabled?: boolean;
   notification_minutes?: number;
+  visibility?: 'private' | 'team' | 'organization';
+  shared_with_organization?: boolean;
   created_at: string;
   updated_at: string;
 }

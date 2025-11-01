@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { formatDistanceToNow, format } from "date-fns";
 import { useState, useEffect } from "react";
 import { CalendarFilters, CalendarFilterState } from "./CalendarFilters";
+import { CalendarVisibilityFilter } from "./filters/CalendarVisibilityFilter";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useIsTablet } from "@/hooks/use-tablet";
 
@@ -194,7 +195,10 @@ export const CalendarSyncToolbar = ({
 
         {/* Filters */}
         {onFiltersChange && (
-          <CalendarFilters onFiltersChange={onFiltersChange} />
+          <>
+            <CalendarVisibilityFilter />
+            <CalendarFilters onFiltersChange={onFiltersChange} />
+          </>
         )}
 
         {/* Scheduler button - Tablets only */}

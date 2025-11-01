@@ -21,7 +21,9 @@ import { useClients } from "@/hooks/useClients";
 import { useCalendarColors } from "@/hooks/useCalendarColors";
 import { useVideoMeetingProviders } from "@/hooks/useVideoMeetingProviders";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { AppointmentSharingDialog } from "./sharing/AppointmentSharingDialog";
+import { EventVisibilitySelector } from "./EventVisibilitySelector";
+import { TeamMemberPicker } from "./TeamMemberPicker";
+import { useCalendarPreferences } from "@/hooks/useCalendarPreferences";
 import { format } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { getAvatarColor, getInitials } from "@/lib/avatar-utils";
@@ -53,7 +55,9 @@ export const UnifiedAppointmentDialog = ({
     selectedTeamMembers: [] as string[],
     inviteClientEmail: "",
     notification_enabled: false,
-    notification_minutes: 15
+    notification_minutes: 15,
+    visibility: "private" as "private" | "team" | "organization",
+    shared_with_organization: false
   });
 
   const [selectedCalendars, setSelectedCalendars] = useState<string[]>([]);
@@ -73,6 +77,7 @@ export const UnifiedAppointmentDialog = ({
   const { data: clients } = useClients();
   const { defaultColors, colorOptions } = useCalendarColors();
   const { providers, generateMeetingLink, isGenerating } = useVideoMeetingProviders();
+  const { data: preferences } = useCalendarPreferences();
   
   // Fetch event owner profile if editing an appointment
   const { data: eventOwnerProfile } = useUserProfile(appointment?.user_id);
@@ -106,7 +111,9 @@ export const UnifiedAppointmentDialog = ({
         selectedTeamMembers: appointment.team_member_ids || [],
         inviteClientEmail: appointment.invited_client_emails?.join(', ') || "",
         notification_enabled: appointment.notification_enabled || false,
-        notification_minutes: appointment.notification_minutes || 15
+        notification_minutes: appointment.notification_minutes || 15,
+        visibility: appointment.visibility || "private",
+        shared_with_organization: appointment.shared_with_organization || false
       });
     } else if (selectedDate) {
       setEvent({
@@ -122,10 +129,12 @@ export const UnifiedAppointmentDialog = ({
         selectedTeamMembers: [],
         inviteClientEmail: "",
         notification_enabled: true, // Enable notifications by default for new events
-        notification_minutes: 15
+        notification_minutes: 15,
+        visibility: preferences?.default_event_visibility || "private",
+        shared_with_organization: false
       });
     }
-  }, [appointment, selectedDate, defaultColors]);
+  }, [appointment, selectedDate, defaultColors, preferences]);
 
   // Validate date range
   const isValidDateRange = useMemo(() => {
@@ -173,7 +182,9 @@ export const UnifiedAppointmentDialog = ({
       team_member_ids: event.selectedTeamMembers,
       invited_client_emails: event.inviteClientEmail ? event.inviteClientEmail.split(',').map(email => email.trim()) : [],
       notification_enabled: event.notification_enabled,
-      notification_minutes: event.notification_minutes
+      notification_minutes: event.notification_minutes,
+      visibility: event.visibility,
+      shared_with_organization: event.visibility === 'organization' || event.shared_with_organization
     };
 
     try {
@@ -243,7 +254,9 @@ export const UnifiedAppointmentDialog = ({
       selectedTeamMembers: [],
       inviteClientEmail: "",
       notification_enabled: false,
-      notification_minutes: 15
+      notification_minutes: 15,
+      visibility: "private",
+      shared_with_organization: false
     });
     setSelectedCalendars([]);
     setSyncToCalendars(false);
@@ -597,41 +610,19 @@ export const UnifiedAppointmentDialog = ({
             />
           </div>
 
-          {/* Team Members with Avatars */}
-          {teamMembers && teamMembers.length > 0 && (
-            <div className="space-y-3">
-              <Label className="text-sm font-medium flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5" />
-                Team Members
-              </Label>
-              <div className="flex flex-wrap gap-3">
-                {teamMembers.map((member) => {
-                  const isSelected = event.selectedTeamMembers.includes(member.id);
-                  const initials = getInitials(member.name);
-                  const avatarColor = getAvatarColor(member.id);
-                  
-                  return (
-                    <button
-                      key={member.id}
-                      type="button"
-                      onClick={() => handleTeamMemberToggle(member.id, !isSelected)}
-                      className="flex flex-col items-center gap-1.5 group"
-                    >
-                      <div
-                        className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold text-white transition-all ${
-                          isSelected
-                            ? `${avatarColor} ring-2 ring-offset-2 ring-primary scale-110`
-                            : `${avatarColor} opacity-60 group-hover:opacity-100 group-hover:scale-105`
-                        }`}
-                      >
-                        {initials}
-                      </div>
-                      <span className="text-xs max-w-[60px] truncate">{member.name.split(' ')[0]}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+          {/* Event Visibility Selector */}
+          <EventVisibilitySelector
+            value={event.visibility}
+            onChange={(value) => setEvent(prev => ({ ...prev, visibility: value }))}
+            hasTeamMembers={event.selectedTeamMembers.length > 0}
+          />
+
+          {/* Team Members Picker - Only show if visibility is team or organization */}
+          {(event.visibility === 'team' || event.visibility === 'organization') && (
+            <TeamMemberPicker
+              selectedMembers={event.selectedTeamMembers}
+              onChange={(members) => setEvent(prev => ({ ...prev, selectedTeamMembers: members }))}
+            />
           )}
 
           {/* Client Invitations */}
@@ -774,15 +765,6 @@ export const UnifiedAppointmentDialog = ({
             </Button>
           </div>
         </div>
-
-        {isEditing && (
-          <AppointmentSharingDialog
-            open={showSharingDialog}
-            onOpenChange={setShowSharingDialog}
-            appointmentId={appointment?.id || ""}
-            appointmentTitle={event?.title || ""}
-          />
-        )}
       </DialogContent>
     </Dialog>
   );

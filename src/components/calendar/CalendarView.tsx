@@ -36,6 +36,8 @@ import { CalendarSharingDialog } from "./sharing/CalendarSharingDialog";
 import { CalendarColorPicker } from "./colors/CalendarColorPicker";
 import { CalendarFilters, CalendarFilterState } from "./CalendarFilters";
 import { useCalendarColors } from "@/hooks/useCalendarColors";
+import { useCalendarPreferences } from "@/hooks/useCalendarPreferences";
+import { supabase } from "@/integrations/supabase/client";
 // Two-way sync removed - using Google Calendar OAuth only
 import { ConflictDialog } from "./ConflictDialog";
 import { useCompactMode } from "@/hooks/useCompactMode";
@@ -105,6 +107,16 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const createAppointment = useCreateAppointment();
   const { toast } = useToast();
   const { userTimezone, isTimezoneDifferent } = useTimezone();
+  const { data: preferences } = useCalendarPreferences();
+  
+  // Get current user ID for visibility filtering
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUserId(user?.id || null);
+    });
+  }, []);
 
   // New appointment form state - MOVED BEFORE EARLY RETURN
   const [newEvent, setNewEvent] = useState({
@@ -435,6 +447,29 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
 
   // Filter appointments based on current filters
   const filteredAppointments = appointments?.filter(appointment => {
+    // Visibility filter based on preferences
+    if (preferences && currentUserId) {
+      const visibility = appointment.visibility || 'private';
+      const isOwner = appointment.user_id === currentUserId;
+      const isTeamMember = appointment.team_member_ids?.includes(currentUserId);
+      
+      // Organization events - visible to all
+      if (visibility === 'organization' || appointment.shared_with_organization) {
+        if (!preferences.show_organization_events) return false;
+      }
+      // Team events - visible to team members
+      else if (visibility === 'team') {
+        if (!preferences.show_team_events) return false;
+        // Only show if user is owner or in team_member_ids
+        if (!isOwner && !isTeamMember) return false;
+      }
+      // Personal events - only visible to owner
+      else if (visibility === 'private') {
+        if (!isOwner) return false; // Hide other people's private events
+        if (!preferences.show_personal_events) return false;
+      }
+    }
+
     // Search term filter
     if (filters.searchTerm) {
       const searchLower = filters.searchTerm.toLowerCase();
