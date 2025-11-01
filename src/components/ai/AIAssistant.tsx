@@ -91,8 +91,8 @@ export const AIAssistant = ({ open: externalOpen, onOpenChange: externalOnOpenCh
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <Brain className="h-4 w-4" />
-          <span className="hidden sm:inline">InterioApp AI</span>
-          <span className="sm:hidden">AI</span>
+          <span className="hidden sm:inline">Setup Guide</span>
+          <span className="sm:hidden">Help</span>
         </Button>
       </DialogTrigger>
       
@@ -103,8 +103,8 @@ export const AIAssistant = ({ open: externalOpen, onOpenChange: externalOnOpenCh
               <Brain className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <DialogTitle className="text-lg">InterioApp AI Assistant</DialogTitle>
-              <p className="text-xs text-muted-foreground mt-1">Your smart business advisor</p>
+              <DialogTitle className="text-lg">InterioApp Setup Guide</DialogTitle>
+              <p className="text-xs text-muted-foreground mt-1">Learn how to use InterioApp features</p>
             </div>
           </div>
         </DialogHeader>
@@ -128,7 +128,7 @@ export const AIAssistant = ({ open: externalOpen, onOpenChange: externalOnOpenCh
                     {msg.role === 'assistant' && (
                       <div className="flex items-center gap-2 mb-2">
                         <Brain className="h-4 w-4 text-primary" />
-                        <span className="text-xs font-semibold text-foreground">InterioApp AI</span>
+                        <span className="text-xs font-semibold text-foreground">Setup Guide</span>
                       </div>
                     )}
                     <p className="text-sm whitespace-pre-line leading-relaxed">{msg.content}</p>
@@ -146,20 +146,24 @@ export const AIAssistant = ({ open: externalOpen, onOpenChange: externalOnOpenCh
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground space-y-2">
                 <div className="flex items-start gap-2">
-                  <span className="text-primary mt-0.5">•</span>
-                  <span>Shopify store setup & analytics</span>
+                  <span className="text-primary mt-0.5">📦</span>
+                  <span>How to add products (curtains, blinds, wallpaper, hardware)</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="text-primary mt-0.5">•</span>
-                  <span>Marketing strategies & sales optimization</span>
+                  <span className="text-primary mt-0.5">🛒</span>
+                  <span>Connecting & syncing your Shopify store</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="text-primary mt-0.5">•</span>
-                  <span>Business insights based on your data</span>
+                  <span className="text-primary mt-0.5">📋</span>
+                  <span>Creating CSV files for bulk product upload</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="text-primary mt-0.5">•</span>
-                  <span>Next steps for growing your store</span>
+                  <span className="text-primary mt-0.5">✨</span>
+                  <span>Setting up your first order or project</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-primary mt-0.5">📅</span>
+                  <span>Calendar integration & appointment booking</span>
                 </div>
               </CardContent>
             </Card>
@@ -169,7 +173,7 @@ export const AIAssistant = ({ open: externalOpen, onOpenChange: externalOnOpenCh
         <div className="px-6 pb-6 pt-4 border-t bg-background">
           <div className="space-y-3">
             <Textarea
-              placeholder="Ask me anything about your store..."
+              placeholder="Ask me how to use InterioApp features..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => {
