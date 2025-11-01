@@ -43,7 +43,7 @@ export const ShopifyAnalyticsCard = () => {
   const timeSinceSync = Math.floor((Date.now() - lastSyncedDate.getTime()) / 1000 / 60);
 
   return (
-    <Card>
+    <Card className="h-full flex flex-col">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -65,7 +65,7 @@ export const ShopifyAnalyticsCard = () => {
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="space-y-2">
             <div className="flex items-center text-muted-foreground">

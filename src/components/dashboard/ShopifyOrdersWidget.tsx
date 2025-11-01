@@ -31,26 +31,20 @@ export const ShopifyOrdersWidget = () => {
   };
 
   return (
-    <Card className="border-primary/20 bg-gradient-to-br from-card to-card/95">
+    <Card className="border-primary/20 bg-gradient-to-br from-card to-card/95 h-full flex flex-col">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <CardTitle className="flex items-center gap-2 text-lg font-bold">
-              <Store className="h-5 w-5 text-primary" />
-              Shopify Store Performance
+              <Store className="h-5 w-5 text-primary shrink-0" />
+              <span className="truncate">Shopify Store Performance</span>
             </CardTitle>
-            {analytics?.last_synced_at && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Last synced: {formatDate(analytics.last_synced_at)}
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground mt-1 truncate">
+              {integration?.shop_domain}
+              {analytics?.last_synced_at && ` • Last synced ${formatDate(analytics.last_synced_at)}`}
+            </p>
           </div>
-          <div className="flex items-center gap-2">
-            {integration?.shop_domain && (
-              <Badge variant="outline" className="text-xs hidden sm:flex">
-                {integration.shop_domain}
-              </Badge>
-            )}
+          <div className="flex items-center gap-1 ml-2 shrink-0">
             <Badge variant={showSyncing ? "secondary" : "success"} className="text-xs">
               {showSyncing ? "Syncing..." : "Connected"}
             </Badge>
@@ -59,28 +53,28 @@ export const ShopifyOrdersWidget = () => {
               variant="outline"
               onClick={() => syncAnalytics()}
               disabled={isSyncing}
-              className="gap-2"
+              className="gap-1 px-2"
             >
               <RefreshCw className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Sync</span>
+              <span className="hidden lg:inline text-xs">Sync</span>
             </Button>
             {integration?.shop_domain && (
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => window.open(`https://${integration.shop_domain}/admin`, '_blank')}
-                className="gap-2"
+                className="gap-1 px-2"
               >
                 <ExternalLink className="h-3 w-3" />
-                <span className="hidden sm:inline">View Store</span>
+                <span className="hidden lg:inline text-xs">View Store</span>
               </Button>
             )}
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1">
         {showEmptyState ? (
-          <div className="text-center py-12">
+          <div className="text-center py-8">
             <div className="mb-4">
               <Package className="h-16 w-16 mx-auto text-muted-foreground/20" />
             </div>
