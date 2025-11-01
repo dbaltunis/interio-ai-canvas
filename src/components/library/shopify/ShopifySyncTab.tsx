@@ -19,6 +19,7 @@ interface ShopifySyncTabProps {
 export const ShopifySyncTab = ({ integration }: ShopifySyncTabProps) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [isSyncing, setIsSyncing] = React.useState(false);
 
   const handleSyncSettingChange = async (field: string, value: boolean) => {
     try {
@@ -34,8 +35,8 @@ export const ShopifySyncTab = ({ integration }: ShopifySyncTabProps) => {
 
       queryClient.invalidateQueries({ queryKey: ["shopify-integration"] });
       toast({
-        title: "Success",
-        description: "Setting updated successfully",
+        title: "Sync Setting Updated",
+        description: `${field.replace('sync_', '').replace('_', ' ')} sync ${value ? 'enabled' : 'disabled'}`,
       });
     } catch (error: any) {
       toast({
@@ -43,6 +44,56 @@ export const ShopifySyncTab = ({ integration }: ShopifySyncTabProps) => {
         description: error.message,
         variant: "destructive",
       });
+    }
+  };
+
+  const handleFullSync = async () => {
+    setIsSyncing(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Get inventory items
+      const { data: inventory, error: invError } = await supabase
+        .from('inventory')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (invError) throw invError;
+
+      // Call edge function with sync settings
+      const { data, error: functionError } = await supabase.functions.invoke(
+        'shopify-push-products',
+        {
+          method: 'POST',
+          body: { 
+            products: inventory,
+            syncSettings: {
+              sync_inventory: integration?.sync_inventory ?? true,
+              sync_prices: integration?.sync_prices ?? true,
+              sync_images: integration?.sync_images ?? true,
+            }
+          },
+        }
+      );
+
+      if (functionError) throw functionError;
+
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['shopify-integration'] });
+      
+      toast({
+        title: 'Sync Complete',
+        description: `Successfully synced ${data.synced || 0} products to Shopify`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Sync Failed',
+        description: error.message || 'Failed to sync products to Shopify',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -54,16 +105,10 @@ export const ShopifySyncTab = ({ integration }: ShopifySyncTabProps) => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label htmlFor="auto-sync">Enable Auto Sync</Label>
-            <Switch
-              id="auto-sync"
-              checked={integration?.auto_sync_enabled || false}
-              onCheckedChange={(checked) => handleSyncSettingChange("auto_sync_enabled", checked)}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Label htmlFor="sync-inventory">Sync Inventory</Label>
+            <div>
+              <Label htmlFor="sync-inventory" className="font-medium">Sync Inventory</Label>
+              <p className="text-xs text-muted-foreground">Keep stock levels in sync</p>
+            </div>
             <Switch
               id="sync-inventory"
               checked={integration?.sync_inventory || false}
@@ -72,7 +117,10 @@ export const ShopifySyncTab = ({ integration }: ShopifySyncTabProps) => {
           </div>
 
           <div className="flex items-center justify-between">
-            <Label htmlFor="sync-prices">Sync Prices</Label>
+            <div>
+              <Label htmlFor="sync-prices" className="font-medium">Sync Prices</Label>
+              <p className="text-xs text-muted-foreground">Update product pricing</p>
+            </div>
             <Switch
               id="sync-prices"
               checked={integration?.sync_prices || false}
@@ -81,7 +129,10 @@ export const ShopifySyncTab = ({ integration }: ShopifySyncTabProps) => {
           </div>
 
           <div className="flex items-center justify-between">
-            <Label htmlFor="sync-images">Sync Images</Label>
+            <div>
+              <Label htmlFor="sync-images" className="font-medium">Sync Images</Label>
+              <p className="text-xs text-muted-foreground">Upload product images</p>
+            </div>
             <Switch
               id="sync-images"
               checked={integration?.sync_images || false}
@@ -96,13 +147,22 @@ export const ShopifySyncTab = ({ integration }: ShopifySyncTabProps) => {
           <CardTitle>Manual Sync</CardTitle>
         </CardHeader>
         <CardContent>
-          <Button className="w-full" disabled={!integration?.is_connected}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Run Full Sync
+          <Button 
+            className="w-full" 
+            disabled={!integration?.is_connected || isSyncing}
+            onClick={handleFullSync}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? 'Syncing...' : 'Run Full Sync'}
           </Button>
           {!integration?.is_connected && (
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm text-muted-foreground mt-2">
               Connect your Shopify store first to enable sync functionality
+            </p>
+          )}
+          {integration?.is_connected && (
+            <p className="text-xs text-muted-foreground mt-2">
+              This will push all products to Shopify respecting the settings above
             </p>
           )}
         </CardContent>
