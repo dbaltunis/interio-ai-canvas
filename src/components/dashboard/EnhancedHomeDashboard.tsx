@@ -11,6 +11,7 @@ import { RevenuePieChart } from "./RevenuePieChart";
 import { CalendarConnectionCard } from "./CalendarConnectionCard";
 import { ShopifyConnectionCTA } from "./ShopifyConnectionCTA";
 import { ShopifyAnalyticsCard } from "./ShopifyAnalyticsCard";
+import { ShopifyOrdersWidget } from "./ShopifyOrdersWidget";
 import { DraggableKPISection } from "./DraggableKPISection";
 import { TeamMembersWidget } from "./TeamMembersWidget";
 import { RecentlyCreatedJobsWidget } from "./RecentlyCreatedJobsWidget";
@@ -140,6 +141,13 @@ export const EnhancedHomeDashboard = () => {
 
       {/* Dynamic Widgets Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+        {/* Shopify Orders Widget - Always show first if connected */}
+        {isShopifyConnected && (
+          <div className="col-span-1 xl:col-span-2">
+            <ShopifyOrdersWidget />
+          </div>
+        )}
+        
         {enabledWidgets.map((widget) => {
           const sizeClasses = {
             small: "col-span-1",

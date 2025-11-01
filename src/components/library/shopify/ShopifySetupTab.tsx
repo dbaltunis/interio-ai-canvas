@@ -186,13 +186,16 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      const normalizedDomain = extractShopDomain(shopDomain);
+      
       const { data, error } = await supabase
         .from('shopify_integrations')
         .upsert([{
           user_id: user.id,
-          shop_domain: shopDomain,
-          access_token: accessToken,
-          webhook_secret: webhookSecret,
+          shop_domain: normalizedDomain,
+          access_token: accessToken || undefined,
+          webhook_secret: webhookSecret || undefined,
+          is_connected: true,
         }], {
           onConflict: 'user_id,shop_domain',
         })
