@@ -142,21 +142,21 @@ export const EnhancedHomeDashboard = () => {
 
       {/* Dynamic Widgets Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-        {/* Shopify Orders Widget - Always show first if connected */}
-        {isShopifyConnected && (
-          <div className="col-span-full">
-            <ShopifyOrdersWidget />
-          </div>
-        )}
-        
         {enabledWidgets.map((widget) => {
           const sizeClasses = {
             small: "col-span-1",
             medium: "col-span-1 xl:col-span-2",
-            large: "col-span-1 xl:col-span-3"
+            large: "col-span-full"
           };
           
           switch (widget.id) {
+            case "shopify-orders":
+              return isShopifyConnected ? (
+                <div key={widget.id} className={sizeClasses[widget.size]}>
+                  <ShopifyOrdersWidget />
+                </div>
+              ) : null;
+            
             case "shopify":
               return isShopifyConnected ? (
                 <div key={widget.id} className={sizeClasses[widget.size]}>
