@@ -9,7 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { ShopifyOAuthGuide } from "./ShopifyOAuthGuide";
 
 type ShopifyIntegration = Database['public']['Tables']['shopify_integrations']['Row'];
@@ -278,11 +278,12 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Alert>
-            <AlertDescription className="text-sm">
-              <p className="font-semibold mb-2">✅ Ready to Connect</p>
-              <p className="text-xs mb-2">
-                After completing the setup steps above, enter your shop domain below. You can paste any Shopify URL - we'll extract the domain automatically.
+          <Alert className="bg-green-50 border-green-200">
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-sm ml-2">
+              <p className="font-semibold text-green-900 mb-2">✅ Quick Setup (No OAuth Required)</p>
+              <p className="text-xs text-green-800 mb-2">
+                Simply paste your shop domain and access token from the "API credentials" tab in your Shopify app settings below, then click "Save Configuration".
               </p>
             </AlertDescription>
           </Alert>
@@ -303,27 +304,6 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
             </p>
           </div>
 
-          <div className="pt-2 pb-2 border-b border-border">
-            <Button 
-              onClick={handleOAuthConnect} 
-              disabled={isConnectingOAuth || !shopDomain}
-              className="w-full"
-              size="lg"
-            >
-              {isConnectingOAuth ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Connecting...
-                </>
-              ) : (
-                "🔗 Connect via OAuth (Recommended)"
-              )}
-            </Button>
-            <p className="text-xs text-center text-muted-foreground mt-2">
-              Or manually enter credentials below ↓
-            </p>
-          </div>
-
           <div>
             <Label htmlFor="access-token">
               Admin API Access Token <span className="text-red-500">*</span>
@@ -334,9 +314,10 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
               value={accessToken}
               onChange={(e) => setAccessToken(e.target.value)}
               placeholder="shpat_..."
+              className="font-mono"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              From Shopify Admin → Settings → Apps and sales channels → Develop apps
+              📋 Copy from: <strong>API credentials</strong> tab → <strong>Admin API access token</strong>
             </p>
           </div>
 
