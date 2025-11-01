@@ -11,6 +11,7 @@ import { ShopifySetupTab } from "./shopify/ShopifySetupTab";
 import { ShopifySyncTab } from "./shopify/ShopifySyncTab";
 import { ShopifyStatusTab } from "./shopify/ShopifyStatusTab";
 import { ShopifyWebhookSetupTab } from "./shopify/ShopifyWebhookSetupTab";
+import { ShopifySuccessScreen } from "./shopify/ShopifySuccessScreen";
 import { useSyncShopifyAnalytics } from "@/hooks/useShopifyAnalytics";
 
 interface ShopifyIntegrationDialogProps {
@@ -22,6 +23,7 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
   const { integration, isLoading, syncProducts } = useShopifyIntegrationReal();
   const syncAnalytics = useSyncShopifyAnalytics();
   const [activeTab, setActiveTab] = useState("guide");
+  const [showSuccessScreen, setShowSuccessScreen] = useState(false);
 
   const [formData, setFormData] = useState(() => ({
     shop_domain: integration?.shop_domain || "",
@@ -39,7 +41,9 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
   };
 
   const handleSetupSuccess = () => {
-    setActiveTab("webhooks");
+    // Show success screen after OAuth connection
+    setShowSuccessScreen(true);
+    setActiveTab("overview");
   };
 
   if (isLoading) {
@@ -94,11 +98,29 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
           </TabsContent>
 
           <TabsContent value="overview">
-            <ShopifyOverviewTabEnhanced 
-              integration={integration} 
-              onSyncProducts={syncProducts}
-              onSyncAnalytics={() => syncAnalytics.mutate()}
-            />
+            {showSuccessScreen && integration?.shop_domain ? (
+              <ShopifySuccessScreen
+                shopDomain={integration.shop_domain}
+                onStartSync={() => {
+                  setShowSuccessScreen(false);
+                  syncProducts?.();
+                }}
+                onViewAnalytics={() => {
+                  setShowSuccessScreen(false);
+                  syncAnalytics.mutate();
+                }}
+                onConfigureSettings={() => {
+                  setShowSuccessScreen(false);
+                  setActiveTab("sync");
+                }}
+              />
+            ) : (
+              <ShopifyOverviewTabEnhanced 
+                integration={integration} 
+                onSyncProducts={syncProducts}
+                onSyncAnalytics={() => syncAnalytics.mutate()}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="setup">
