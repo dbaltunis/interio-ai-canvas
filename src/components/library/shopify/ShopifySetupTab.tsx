@@ -23,10 +23,49 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isConnectingOAuth, setIsConnectingOAuth] = useState(false);
   
   const [shopDomain, setShopDomain] = useState(integration?.shop_domain || "");
   const [accessToken, setAccessToken] = useState("");
   const [webhookSecret, setWebhookSecret] = useState("");
+
+  const handleOAuthConnect = async () => {
+    if (!shopDomain) {
+      toast({
+        title: "Error",
+        description: "Please enter your shop domain first (e.g., your-store.myshopify.com)",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsConnectingOAuth(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Call edge function to get OAuth URL
+      const { data, error } = await supabase.functions.invoke('shopify-oauth-initiate', {
+        body: { userId: user.id, shopDomain }
+      });
+
+      if (error) throw error;
+
+      if (data?.authUrl) {
+        // Open OAuth URL in current window
+        window.location.href = data.authUrl;
+      } else {
+        throw new Error('Failed to generate OAuth URL');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to initiate OAuth",
+        variant: "destructive"
+      });
+      setIsConnectingOAuth(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!shopDomain) {
@@ -135,14 +174,8 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
         <CardContent className="space-y-4">
           <Alert>
             <AlertDescription className="text-sm">
-              <p className="font-semibold mb-2">Quick Setup Steps:</p>
-              <ol className="list-decimal list-inside space-y-1 text-xs">
-                <li>Go to your Shopify Admin → Settings → Apps and sales channels</li>
-                <li>Click "Develop apps" → "Create an app"</li>
-                <li>Install the app and get your Admin API access token</li>
-                <li>Copy your store domain (e.g., your-store.myshopify.com)</li>
-                <li>Paste both below and click Save</li>
-              </ol>
+              <p className="font-semibold mb-2">🚀 Easy OAuth Setup (Recommended)</p>
+              <p className="text-xs mb-2">Enter your shop domain below and click "Connect via OAuth" to authorize InterioApp with one click.</p>
             </AlertDescription>
           </Alert>
 
@@ -159,6 +192,27 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
             />
             <p className="text-xs text-muted-foreground mt-1">
               Your store's myshopify.com domain (found in Shopify Admin → Settings → Domains)
+            </p>
+          </div>
+
+          <div className="pt-2 pb-2 border-b border-border">
+            <Button 
+              onClick={handleOAuthConnect} 
+              disabled={isConnectingOAuth || !shopDomain}
+              className="w-full"
+              size="lg"
+            >
+              {isConnectingOAuth ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                "🔗 Connect via OAuth (Recommended)"
+              )}
+            </Button>
+            <p className="text-xs text-center text-muted-foreground mt-2">
+              Or manually enter credentials below ↓
             </p>
           </div>
 

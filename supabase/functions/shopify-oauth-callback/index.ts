@@ -85,7 +85,8 @@ serve(async (req) => {
     console.log('Shopify integration saved successfully');
 
     // Redirect back to app with success message
-    const redirectUrl = `${url.origin}/?shopify_connected=true`;
+    const appUrl = Deno.env.get('SITE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co';
+    const redirectUrl = `${appUrl}/?tab=settings&shopify_connected=true&shop=${shop}`;
     
     return new Response(null, {
       status: 302,
