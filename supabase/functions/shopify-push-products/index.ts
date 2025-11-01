@@ -62,6 +62,19 @@ serve(async (req) => {
     // Push each product to Shopify
     for (const product of products) {
       try {
+        // Validate required fields
+        if (!product.name || product.name.trim() === '') {
+          errorCount++;
+          console.error(`[Shopify Push Products] Skipping product ${product.id}: missing name`);
+          continue;
+        }
+
+        if (!product.sku || product.sku.trim() === '') {
+          errorCount++;
+          console.error(`[Shopify Push Products] Skipping product ${product.name}: missing SKU`);
+          continue;
+        }
+
         const shopifyProduct = {
           product: {
             title: product.name,
@@ -71,11 +84,10 @@ serve(async (req) => {
             tags: [product.subcategory, product.category].filter(Boolean).join(', '),
             variants: [{
               option1: 'Default',
-              price: product.price?.toString() || '0',
-              cost: product.cost_price?.toString() || '0',
-              inventory_quantity: product.quantity || 0,
+              price: product.unit_price?.toString() || '0',
+              inventory_quantity: product.stock_quantity || 0,
               inventory_management: 'shopify',
-              sku: product.sku || product.product_code,
+              sku: product.sku,
             }],
             images: product.image_url ? [{
               src: product.image_url,

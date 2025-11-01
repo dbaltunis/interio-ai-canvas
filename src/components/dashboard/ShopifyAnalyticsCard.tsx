@@ -14,7 +14,8 @@ export const ShopifyAnalyticsCard = () => {
   const { data: analytics, isLoading } = useShopifyAnalytics();
   const syncAnalytics = useSyncShopifyAnalytics();
   const { integration } = useShopifyIntegrationReal();
-  const [isSyncingProducts, setIsSyncingProducts] = useState(false);
+  const [isSyncingImport, setIsSyncingImport] = useState(false);
+  const [isSyncingExport, setIsSyncingExport] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -45,12 +46,15 @@ export const ShopifyAnalyticsCard = () => {
   });
 
   const handleProductSync = async (direction: 'pull' | 'push') => {
-    setIsSyncingProducts(true);
+    const isImport = direction === 'pull';
+    const setLoading = isImport ? setIsSyncingImport : setIsSyncingExport;
+    
+    setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      if (direction === 'pull') {
+      if (isImport) {
         const { data, error } = await supabase.functions.invoke('shopify-pull-products', {
           body: {
             userId: user.id,
@@ -69,27 +73,31 @@ export const ShopifyAnalyticsCard = () => {
           description: `Imported ${data.imported || 0}, Updated ${data.updated || 0} products`,
         });
       } else {
+        // Validate products before export
         const { data: inventory } = await supabase
           .from('inventory')
           .select('*')
           .eq('user_id', user.id);
 
+        const invalidProducts = inventory?.filter(p => !p.name || !p.sku) || [];
+        if (invalidProducts.length > 0) {
+          toast({
+            title: "Validation failed",
+            description: `${invalidProducts.length} product(s) missing name or SKU. Fix them first.`,
+            variant: "destructive",
+          });
+          return;
+        }
+
         const { data, error } = await supabase.functions.invoke('shopify-push-products', {
-          body: {
-            products: inventory,
-            syncSettings: {
-              sync_inventory: integration?.sync_inventory ?? true,
-              sync_prices: integration?.sync_prices ?? true,
-              sync_images: integration?.sync_images ?? true,
-            }
-          }
+          body: { products: inventory }
         });
 
         if (error) throw error;
 
         toast({
           title: "✓ Products exported",
-          description: `Pushed ${inventory?.length || 0} products to Shopify`,
+          description: `Synced ${data.synced || 0} products${data.errors > 0 ? ` (${data.errors} errors)` : ''}`,
         });
       }
 
@@ -102,7 +110,7 @@ export const ShopifyAnalyticsCard = () => {
         variant: "destructive",
       });
     } finally {
-      setIsSyncingProducts(false);
+      setLoading(false);
     }
   };
 
@@ -214,22 +222,22 @@ export const ShopifyAnalyticsCard = () => {
               size="sm"
               variant="outline"
               onClick={() => handleProductSync('pull')}
-              disabled={isSyncingProducts}
+              disabled={isSyncingImport || isSyncingExport}
               className="flex-1 gap-1 h-9"
               title="Import products from Shopify to InterioApp"
             >
-              <ArrowDownLeft className={`h-3 w-3 ${isSyncingProducts ? 'animate-spin' : ''}`} />
+              <ArrowDownLeft className={`h-3 w-3 ${isSyncingImport ? 'animate-spin' : ''}`} />
               <span className="text-xs">Import from Shopify</span>
             </Button>
             <Button
               size="sm"
               variant="outline"
               onClick={() => handleProductSync('push')}
-              disabled={isSyncingProducts || (productStats?.totalProducts || 0) === 0}
+              disabled={isSyncingImport || isSyncingExport || (productStats?.totalProducts || 0) === 0}
               className="flex-1 gap-1 h-9"
               title="Export InterioApp products to Shopify"
             >
-              <ArrowUpRight className={`h-3 w-3 ${isSyncingProducts ? 'animate-spin' : ''}`} />
+              <ArrowUpRight className={`h-3 w-3 ${isSyncingExport ? 'animate-spin' : ''}`} />
               <span className="text-xs">Export to Shopify</span>
             </Button>
           </div>

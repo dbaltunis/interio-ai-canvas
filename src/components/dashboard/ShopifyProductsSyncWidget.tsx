@@ -8,7 +8,8 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 
 export const ShopifyProductsSyncWidget = () => {
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [isSyncingImport, setIsSyncingImport] = useState(false);
+  const [isSyncingExport, setIsSyncingExport] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -50,7 +51,10 @@ export const ShopifyProductsSyncWidget = () => {
   });
 
   const handleSync = async (direction: 'pull' | 'push') => {
-    setIsSyncing(true);
+    const isImport = direction === 'pull';
+    const setLoading = isImport ? setIsSyncingImport : setIsSyncingExport;
+    
+    setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
@@ -71,7 +75,7 @@ export const ShopifyProductsSyncWidget = () => {
         return;
       }
 
-      if (direction === 'pull') {
+      if (isImport) {
         const { data, error } = await supabase.functions.invoke('shopify-pull-products', {
           body: {
             userId: user.id,
@@ -90,27 +94,31 @@ export const ShopifyProductsSyncWidget = () => {
           description: `Imported ${data.imported || 0}, Updated ${data.updated || 0} products from Shopify`,
         });
       } else {
+        // Validate products before export
         const { data: inventory } = await supabase
           .from('inventory')
           .select('*')
           .eq('user_id', user.id);
 
+        const invalidProducts = inventory?.filter(p => !p.name || !p.sku) || [];
+        if (invalidProducts.length > 0) {
+          toast({
+            title: "Validation failed",
+            description: `${invalidProducts.length} product(s) are missing name or SKU. Please fix them before exporting.`,
+            variant: "destructive",
+          });
+          return;
+        }
+
         const { data, error } = await supabase.functions.invoke('shopify-push-products', {
-          body: {
-            products: inventory,
-            syncSettings: {
-              sync_inventory: integration.sync_inventory,
-              sync_prices: integration.sync_prices,
-              sync_images: integration.sync_images,
-            }
-          }
+          body: { products: inventory }
         });
 
         if (error) throw error;
 
         toast({
           title: "✓ Products exported",
-          description: `Pushed ${inventory?.length || 0} products to Shopify`,
+          description: `Successfully synced ${data.synced || 0} products to Shopify${data.errors > 0 ? ` (${data.errors} errors)` : ''}`,
         });
       }
 
@@ -123,7 +131,7 @@ export const ShopifyProductsSyncWidget = () => {
         variant: "destructive",
       });
     } finally {
-      setIsSyncing(false);
+      setLoading(false);
     }
   };
 
@@ -213,20 +221,20 @@ export const ShopifyProductsSyncWidget = () => {
         <div className="space-y-2 pt-4 border-t">
           <Button
             onClick={() => handleSync('pull')}
-            disabled={isSyncing}
+            disabled={isSyncingImport || isSyncingExport}
             className="w-full"
             variant="outline"
           >
-            <ArrowDownLeft className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            <ArrowDownLeft className={`mr-2 h-4 w-4 ${isSyncingImport ? 'animate-spin' : ''}`} />
             Import from Shopify
           </Button>
           <Button
             onClick={() => handleSync('push')}
-            disabled={isSyncing || (stats?.totalProducts || 0) === 0}
+            disabled={isSyncingImport || isSyncingExport || (stats?.totalProducts || 0) === 0}
             className="w-full"
             variant="outline"
           >
-            <ArrowUpRight className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            <ArrowUpRight className={`mr-2 h-4 w-4 ${isSyncingExport ? 'animate-spin' : ''}`} />
             Export to Shopify
           </Button>
         </div>
