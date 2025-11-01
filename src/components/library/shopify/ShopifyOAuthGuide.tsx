@@ -62,27 +62,15 @@ export const ShopifyOAuthGuide = () => {
                 <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
                   4
                 </div>
-                <div>
-                  <p className="font-semibold text-sm">Configure Admin API</p>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Go to "Configuration" tab → Click "Configure" under "Admin API integration"
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
-                  5
-                </div>
                 <div className="space-y-2">
-                  <p className="font-semibold text-sm">Add Redirect URL & Select Scopes</p>
+                  <p className="font-semibold text-sm">Set Redirect URL (App Setup Section)</p>
                   <p className="text-xs text-muted-foreground mb-2">
-                    On the Admin API configuration page:
+                    In "Configuration" tab, scroll to find the <strong>"App setup"</strong> section (above Admin API)
                   </p>
-                  <div className="bg-amber-50 border border-amber-300 rounded p-3 space-y-2 mb-2">
-                    <p className="text-xs font-semibold text-amber-900">Step 5a: Allowed redirection URL(s)</p>
+                  <div className="bg-amber-50 border border-amber-300 rounded p-3 space-y-2">
+                    <p className="text-xs font-semibold text-amber-900">Look for "Allowed redirection URL(s)" field</p>
                     <p className="text-xs text-amber-800 mb-1">
-                      Scroll down to find the "App URL" or "Allowed redirection URL(s)" field
+                      This is usually near the top, in the "App setup" or "URLs" section
                     </p>
                     <code className="text-xs bg-white p-2 rounded block break-all border border-amber-300">
                       https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/shopify-oauth-callback
@@ -91,8 +79,20 @@ export const ShopifyOAuthGuide = () => {
                       ⚠️ Copy this exact URL - it must match exactly!
                     </p>
                   </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
+                  5
+                </div>
+                <div className="space-y-2">
+                  <p className="font-semibold text-sm">Select API Scopes (Admin API Section)</p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Scroll down to "Admin API integration" → Click "Configure"
+                  </p>
                   <div className="bg-gray-100 p-3 rounded">
-                    <p className="text-xs font-semibold mb-1">Step 5b: Select these API scopes:</p>
+                    <p className="text-xs font-semibold mb-1">Select these scopes (you're on this page now!):</p>
                     <ul className="text-xs font-mono space-y-1">
                       <li>✓ read_products</li>
                       <li>✓ write_products</li>
@@ -100,6 +100,9 @@ export const ShopifyOAuthGuide = () => {
                       <li>✓ read_inventory</li>
                       <li>✓ write_inventory</li>
                     </ul>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Click "Save" when done selecting scopes
+                    </p>
                   </div>
                 </div>
               </div>
