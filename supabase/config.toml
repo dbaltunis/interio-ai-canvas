@@ -36,6 +36,12 @@ verify_jwt = false
 [functions.shopify-sync-products]
 verify_jwt = true
 
+[functions.shopify-sync-customers]
+verify_jwt = true
+
+[functions.shopify-webhook-order]
+verify_jwt = false
+
 [functions.check-feature-access]
 verify_jwt = true
 
@@ -53,3 +59,4 @@ verify_jwt = true
 
 [functions.ai-advisor]
 verify_jwt = true
+

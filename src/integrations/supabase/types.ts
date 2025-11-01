@@ -1299,6 +1299,7 @@ export type Database = {
           id: string
           last_activity_date: string | null
           last_contact_date: string | null
+          last_order_date: string | null
           lead_score: number | null
           lead_source: string | null
           lead_source_details: Json | null
@@ -1313,6 +1314,8 @@ export type Database = {
           stage_changed_at: string | null
           state: string | null
           tags: string[] | null
+          total_orders: number | null
+          total_spent: number | null
           updated_at: string
           user_id: string
           zip_code: string | null
@@ -1338,6 +1341,7 @@ export type Database = {
           id?: string
           last_activity_date?: string | null
           last_contact_date?: string | null
+          last_order_date?: string | null
           lead_score?: number | null
           lead_source?: string | null
           lead_source_details?: Json | null
@@ -1352,6 +1356,8 @@ export type Database = {
           stage_changed_at?: string | null
           state?: string | null
           tags?: string[] | null
+          total_orders?: number | null
+          total_spent?: number | null
           updated_at?: string
           user_id: string
           zip_code?: string | null
@@ -1377,6 +1383,7 @@ export type Database = {
           id?: string
           last_activity_date?: string | null
           last_contact_date?: string | null
+          last_order_date?: string | null
           lead_score?: number | null
           lead_source?: string | null
           lead_source_details?: Json | null
@@ -1391,6 +1398,8 @@ export type Database = {
           stage_changed_at?: string | null
           state?: string | null
           tags?: string[] | null
+          total_orders?: number | null
+          total_spent?: number | null
           updated_at?: string
           user_id?: string
           zip_code?: string | null
@@ -5655,6 +5664,115 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           webhook_secret?: string | null
+        }
+        Relationships: []
+      }
+      shopify_orders: {
+        Row: {
+          client_id: string | null
+          created_at: string | null
+          currency: string | null
+          customer_email: string | null
+          customer_name: string | null
+          financial_status: string | null
+          fulfillment_status: string | null
+          id: string
+          order_data: Json | null
+          order_number: string | null
+          project_id: string | null
+          shopify_order_id: string
+          total_price: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          financial_status?: string | null
+          fulfillment_status?: string | null
+          id?: string
+          order_data?: Json | null
+          order_number?: string | null
+          project_id?: string | null
+          shopify_order_id: string
+          total_price?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          financial_status?: string | null
+          fulfillment_status?: string | null
+          id?: string
+          order_data?: Json | null
+          order_number?: string | null
+          project_id?: string | null
+          shopify_order_id?: string
+          total_price?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopify_orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_stats_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopify_orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopify_orders_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopify_sync_log: {
+        Row: {
+          created_at: string | null
+          direction: string
+          errors: Json | null
+          id: string
+          items_synced: number | null
+          status: string
+          sync_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          direction: string
+          errors?: Json | null
+          id?: string
+          items_synced?: number | null
+          status: string
+          sync_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          direction?: string
+          errors?: Json | null
+          id?: string
+          items_synced?: number | null
+          status?: string
+          sync_type?: string
+          user_id?: string
         }
         Relationships: []
       }

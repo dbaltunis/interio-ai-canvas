@@ -204,7 +204,17 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
 
       if (error) throw error;
 
+      // Ensure Shopify job statuses exist for this user
+      const { error: statusError } = await supabase.rpc('ensure_shopify_statuses', {
+        p_user_id: user.id
+      });
+
+      if (statusError) {
+        console.error('Failed to create Shopify statuses:', statusError);
+      }
+
       queryClient.invalidateQueries({ queryKey: ["shopify-integration"] });
+      queryClient.invalidateQueries({ queryKey: ["job_statuses"] });
       toast({
         title: "Success",
         description: "Shopify integration updated successfully",
@@ -262,9 +272,70 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
     }, 2000);
   };
 
+  const handleDisconnect = async () => {
+    if (!confirm('Are you sure you want to disconnect this Shopify store? This will stop all syncing.')) {
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      await supabase
+        .from('shopify_integrations')
+        .update({ is_connected: false })
+        .eq('user_id', user.id);
+
+      queryClient.invalidateQueries({ queryKey: ["shopify-integration"] });
+      toast({
+        title: "Success",
+        description: "Shopify store disconnected successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSwitchStore = () => {
+    if (confirm('Switch to a different store? You can enter new credentials below.')) {
+      setShopDomain("");
+      setAccessToken("");
+      setWebhookSecret("");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <ShopifyOAuthGuide />
+      
+      {integration?.is_connected && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardHeader>
+            <CardTitle className="text-blue-900">Current Store Connection</CardTitle>
+            <CardDescription className="text-blue-700">
+              Connected to: <strong>{integration.shop_domain}</strong>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2">
+              <Button variant="destructive" onClick={handleDisconnect} disabled={isLoading}>
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Disconnect Store
+              </Button>
+              <Button variant="outline" onClick={handleSwitchStore}>
+                Switch to Different Store
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       
       <Card>
         <CardHeader>

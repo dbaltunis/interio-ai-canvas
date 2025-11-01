@@ -1,9 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingBag, ShoppingCart, Package, RefreshCw, Upload, Download } from "lucide-react";
+import { ShoppingBag, ShoppingCart, Package, RefreshCw, Upload, Download, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Database } from "@/integrations/supabase/types";
+import { useSyncCustomers } from "@/hooks/useShopifyOrders";
 
 type ShopifyIntegration = Database['public']['Tables']['shopify_integrations']['Row'];
 
@@ -19,6 +20,7 @@ export const ShopifyOverviewTabEnhanced = ({
   onSyncAnalytics 
 }: ShopifyOverviewTabEnhancedProps) => {
   const isConnected = integration?.is_connected;
+  const { mutate: syncCustomers, isPending: isSyncingCustomers } = useSyncCustomers();
 
   return (
     <div className="space-y-6">
@@ -78,29 +80,30 @@ export const ShopifyOverviewTabEnhanced = ({
             </Card>
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-4 flex-wrap">
             <Button 
               onClick={onSyncProducts} 
               disabled={!isConnected}
-              className="flex-1"
+              className="flex-1 min-w-[200px]"
               variant="outline"
             >
               <Upload className="h-4 w-4 mr-2" />
               Push Products to Shopify
             </Button>
             <Button 
-              onClick={onSyncAnalytics} 
-              disabled={!isConnected}
-              className="flex-1"
+              onClick={() => syncCustomers()} 
+              disabled={!isConnected || isSyncingCustomers}
+              className="flex-1 min-w-[200px]"
               variant="outline"
             >
-              <Download className="h-4 w-4 mr-2" />
-              Pull Shopify Orders
+              <Users className="h-4 w-4 mr-2" />
+              {isSyncingCustomers ? 'Syncing...' : 'Sync Customers to CRM'}
             </Button>
             <Button 
               onClick={onSyncAnalytics} 
               disabled={!isConnected}
               variant="outline"
+              className="min-w-[150px]"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Sync Analytics

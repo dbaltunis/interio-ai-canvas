@@ -15,7 +15,7 @@ interface ShopifyWebhookSetupTabProps {
 
 export const ShopifyWebhookSetupTab = ({ integration }: ShopifyWebhookSetupTabProps) => {
   const { toast } = useToast();
-  const webhookUrl = `https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/shopify-webhooks`;
+  const webhookUrl = `https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/shopify-webhook-order`;
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -29,22 +29,26 @@ export const ShopifyWebhookSetupTab = ({ integration }: ShopifyWebhookSetupTabPr
     {
       topic: 'orders/create',
       description: 'Triggered when a new order is placed',
-      action: 'Creates a new work order with status "Online Store Lead"',
+      action: 'Automatically creates a new project/job with "Online Store Lead" status and adds customer to CRM',
+      required: true,
     },
     {
       topic: 'orders/updated',
       description: 'Triggered when an order is updated',
-      action: 'Updates the work order status (e.g., to "Online Store Sale" when paid)',
+      action: 'Updates project status (e.g., to "Online Store Sale" when order is paid or fulfilled)',
+      required: true,
     },
     {
-      topic: 'customers/create',
-      description: 'Triggered when a new customer registers',
-      action: 'Creates a new lead in your CRM',
+      topic: 'orders/fulfilled',
+      description: 'Triggered when an order is fulfilled',
+      action: 'Updates project to "Online Store Sale" status',
+      required: false,
     },
     {
-      topic: 'customers/update',
-      description: 'Triggered when customer details are updated',
-      action: 'Updates the client information in CRM',
+      topic: 'orders/paid',
+      description: 'Triggered when an order payment is confirmed',
+      action: 'Marks order as paid and updates project status',
+      required: false,
     },
   ];
 
