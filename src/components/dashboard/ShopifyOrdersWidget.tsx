@@ -4,107 +4,12 @@ import { Button } from "@/components/ui/button";
 import { useShopifyAnalytics, useSyncShopifyAnalytics } from "@/hooks/useShopifyAnalytics";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Store, DollarSign, ShoppingCart, Users, TrendingUp, RefreshCw, ExternalLink, Package, ArrowUpRight, ArrowDownLeft } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { Store, DollarSign, ShoppingCart, Users, TrendingUp, RefreshCw, ExternalLink, Package } from "lucide-react";
 
 export const ShopifyOrdersWidget = () => {
   const { data: analytics, isLoading } = useShopifyAnalytics(true);
   const { integration } = useShopifyIntegrationReal();
   const { mutate: syncAnalytics, isPending: isSyncing } = useSyncShopifyAnalytics();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [isSyncingProducts, setIsSyncingProducts] = useState(false);
-
-  // Get product sync stats
-  const { data: productStats } = useQuery({
-    queryKey: ['shopify-product-stats'],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-
-      const { data: inventory } = await supabase
-        .from('inventory')
-        .select('id, category')
-        .eq('user_id', user.id);
-
-      const categoryCount: Record<string, number> = {};
-      inventory?.forEach(item => {
-        const category = item.category || 'Uncategorized';
-        categoryCount[category] = (categoryCount[category] || 0) + 1;
-      });
-
-      return {
-        totalProducts: inventory?.length || 0,
-        categories: Object.keys(categoryCount).length,
-        topCategory: Object.entries(categoryCount).sort(([, a], [, b]) => b - a)[0],
-      };
-    },
-  });
-
-  const handleProductSync = async (direction: 'pull' | 'push') => {
-    setIsSyncingProducts(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      if (direction === 'pull') {
-        const { data, error } = await supabase.functions.invoke('shopify-pull-products', {
-          body: {
-            userId: user.id,
-            syncSettings: {
-              sync_inventory: integration?.sync_inventory ?? true,
-              sync_prices: integration?.sync_prices ?? true,
-              sync_images: integration?.sync_images ?? true,
-            }
-          }
-        });
-
-        if (error) throw error;
-
-        toast({
-          title: "✓ Products imported",
-          description: `Imported ${data.imported || 0}, Updated ${data.updated || 0} products`,
-        });
-      } else {
-        const { data: inventory } = await supabase
-          .from('inventory')
-          .select('*')
-          .eq('user_id', user.id);
-
-        const { data, error } = await supabase.functions.invoke('shopify-push-products', {
-          body: {
-            products: inventory,
-            syncSettings: {
-              sync_inventory: integration?.sync_inventory ?? true,
-              sync_prices: integration?.sync_prices ?? true,
-              sync_images: integration?.sync_images ?? true,
-            }
-          }
-        });
-
-        if (error) throw error;
-
-        toast({
-          title: "✓ Products exported",
-          description: `Pushed ${inventory?.length || 0} products to Shopify`,
-        });
-      }
-
-      queryClient.invalidateQueries({ queryKey: ['shopify-product-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
-    } catch (error: any) {
-      toast({
-        title: "Sync failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsSyncingProducts(false);
-    }
-  };
 
   const showSyncing = isLoading || isSyncing;
   const showEmptyState = !isLoading && !analytics;
@@ -183,67 +88,6 @@ export const ShopifyOrdersWidget = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Product Sync Section */}
-            <div className="p-4 rounded-lg border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Package className="h-4 w-4 text-primary" />
-                  <h3 className="font-semibold text-sm">Product Sync</h3>
-                </div>
-                <Badge variant="secondary" className="text-xs">
-                  {integration?.last_sync_at ? `Last: ${formatDate(integration.last_sync_at)}` : 'Not synced'}
-                </Badge>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                <div className="p-3 rounded-md bg-card border border-border">
-                  <div className="text-xs text-muted-foreground mb-1">InterioApp Inventory</div>
-                  <div className="text-2xl font-bold text-primary">{productStats?.totalProducts || 0}</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {productStats?.categories || 0} categories • {productStats?.topCategory ? `Top: ${productStats.topCategory[0]}` : 'No products'}
-                  </div>
-                </div>
-                <div className="p-3 rounded-md bg-card border border-border">
-                  <div className="text-xs text-muted-foreground mb-1">Shopify Store</div>
-                  <div className="text-2xl font-bold text-orange-600">?</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Click "Import" to check
-                  </div>
-                </div>
-              </div>
-
-              {(productStats?.totalProducts || 0) === 0 && (
-                <div className="mb-3 p-2 bg-amber-500/10 border border-amber-500/20 rounded text-xs text-amber-600">
-                  <strong>Note:</strong> Add products in Library/Inventory first, then use "Export to Shopify"
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleProductSync('pull')}
-                  disabled={isSyncingProducts}
-                  className="flex-1 gap-1 h-9"
-                  title="Import products from Shopify to InterioApp"
-                >
-                  <ArrowDownLeft className={`h-3 w-3 ${isSyncingProducts ? 'animate-spin' : ''}`} />
-                  <span className="text-xs">Import from Shopify</span>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleProductSync('push')}
-                  disabled={isSyncingProducts || (productStats?.totalProducts || 0) === 0}
-                  className="flex-1 gap-1 h-9"
-                  title="Export InterioApp products to Shopify"
-                >
-                  <ArrowUpRight className={`h-3 w-3 ${isSyncingProducts ? 'animate-spin' : ''}`} />
-                  <span className="text-xs">Export to Shopify</span>
-                </Button>
-              </div>
-            </div>
-
             {/* Orders Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {/* Total Revenue */}
