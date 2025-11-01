@@ -20,6 +20,7 @@ import { NotificationManagementTab } from "./tabs/NotificationManagementTab";
 import { EnhancedPersonalizationTab } from "./tabs/EnhancedPersonalizationTab";
 import { SecurityPrivacyTab } from "./tabs/SecurityPrivacyTab";
 import { ShopifyStatusManagementTab } from "./tabs/ShopifyStatusManagementTab";
+import { ShopifySetupTab } from "@/components/library/shopify/ShopifySetupTab";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useHasPermission } from "@/hooks/usePermissions";
@@ -275,11 +276,18 @@ export const SettingsView = () => {
         
         {shopifyIntegration && canViewSettings && (
           <TabsContent value="shopify-statuses" className="animate-fade-in">
-            <Card className="hover:shadow-md transition-all duration-300">
-              <CardContent className="p-6">
-                <ShopifyStatusManagementTab />
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              <Card className="hover:shadow-md transition-all duration-300">
+                <CardContent className="p-6">
+                  <ShopifySetupTab integration={shopifyIntegration} />
+                </CardContent>
+              </Card>
+              <Card className="hover:shadow-md transition-all duration-300">
+                <CardContent className="p-6">
+                  <ShopifyStatusManagementTab />
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         )}
       </Tabs>
