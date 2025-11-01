@@ -372,6 +372,7 @@ export type Database = {
           notification_enabled: boolean | null
           notification_minutes: number | null
           project_id: string | null
+          shared_with_organization: boolean | null
           start_time: string
           status: string | null
           team_member_ids: string[] | null
@@ -381,6 +382,7 @@ export type Database = {
           video_meeting_data: Json | null
           video_meeting_link: string | null
           video_provider: string | null
+          visibility: string | null
         }
         Insert: {
           appointment_type?: string | null
@@ -396,6 +398,7 @@ export type Database = {
           notification_enabled?: boolean | null
           notification_minutes?: number | null
           project_id?: string | null
+          shared_with_organization?: boolean | null
           start_time: string
           status?: string | null
           team_member_ids?: string[] | null
@@ -405,6 +408,7 @@ export type Database = {
           video_meeting_data?: Json | null
           video_meeting_link?: string | null
           video_provider?: string | null
+          visibility?: string | null
         }
         Update: {
           appointment_type?: string | null
@@ -420,6 +424,7 @@ export type Database = {
           notification_enabled?: boolean | null
           notification_minutes?: number | null
           project_id?: string | null
+          shared_with_organization?: boolean | null
           start_time?: string
           status?: string | null
           team_member_ids?: string[] | null
@@ -429,6 +434,7 @@ export type Database = {
           video_meeting_data?: Json | null
           video_meeting_link?: string | null
           video_provider?: string | null
+          visibility?: string | null
         }
         Relationships: [
           {
@@ -1104,6 +1110,48 @@ export type Database = {
           user_id?: string
           website?: string | null
           zip_code?: string | null
+        }
+        Relationships: []
+      }
+      calendar_preferences: {
+        Row: {
+          created_at: string | null
+          default_event_visibility: string | null
+          default_view: string | null
+          id: string
+          show_organization_events: boolean | null
+          show_personal_events: boolean | null
+          show_team_events: boolean | null
+          updated_at: string | null
+          user_id: string
+          work_hours_end: string | null
+          work_hours_start: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_event_visibility?: string | null
+          default_view?: string | null
+          id?: string
+          show_organization_events?: boolean | null
+          show_personal_events?: boolean | null
+          show_team_events?: boolean | null
+          updated_at?: string | null
+          user_id: string
+          work_hours_end?: string | null
+          work_hours_start?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          default_event_visibility?: string | null
+          default_view?: string | null
+          id?: string
+          show_organization_events?: boolean | null
+          show_personal_events?: boolean | null
+          show_team_events?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+          work_hours_end?: string | null
+          work_hours_start?: string | null
         }
         Relationships: []
       }
