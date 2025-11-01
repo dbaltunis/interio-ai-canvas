@@ -19,11 +19,12 @@ export const ShopifyProductsSyncWidget = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Get total products in inventory
+      // Get total products in enhanced inventory
       const { data: inventory, error: invError } = await supabase
-        .from('inventory')
+        .from('enhanced_inventory_items')
         .select('id, category')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .eq('active', true);
 
       if (invError) throw invError;
 
@@ -94,23 +95,25 @@ export const ShopifyProductsSyncWidget = () => {
           description: `Imported ${data.imported || 0}, Updated ${data.updated || 0} products from Shopify`,
         });
       } else {
-        // Validate products before export
+        // Validate products before export  
         const { data: inventory } = await supabase
-          .from('inventory')
+          .from('enhanced_inventory_items')
           .select('*')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .eq('active', true);
 
-        const invalidProducts = inventory?.filter(p => !p.name || !p.sku) || [];
+        // Only check for missing names (SKU is optional for non-stocked items)
+        const invalidProducts = inventory?.filter(p => !p.name || p.name.trim() === '') || [];
         if (invalidProducts.length > 0) {
           toast({
             title: "Validation failed",
-            description: `${invalidProducts.length} product(s) are missing name or SKU. Please fix them before exporting.`,
+            description: `${invalidProducts.length} product(s) are missing names. Please add names before exporting.`,
             variant: "destructive",
           });
           return;
         }
 
-        const { data, error } = await supabase.functions.invoke('shopify-push-products', {
+        const { data, error} = await supabase.functions.invoke('shopify-push-products', {
           body: { products: inventory }
         });
 

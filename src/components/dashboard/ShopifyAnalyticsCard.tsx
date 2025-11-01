@@ -27,9 +27,10 @@ export const ShopifyAnalyticsCard = () => {
       if (!user) return null;
 
       const { data: inventory } = await supabase
-        .from('inventory')
+        .from('enhanced_inventory_items')
         .select('id, category')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .eq('active', true);
 
       const categoryCount: Record<string, number> = {};
       inventory?.forEach(item => {
@@ -75,15 +76,17 @@ export const ShopifyAnalyticsCard = () => {
       } else {
         // Validate products before export
         const { data: inventory } = await supabase
-          .from('inventory')
+          .from('enhanced_inventory_items')
           .select('*')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .eq('active', true);
 
-        const invalidProducts = inventory?.filter(p => !p.name || !p.sku) || [];
+        // Only validate names (SKU optional for non-stocked items)
+        const invalidProducts = inventory?.filter(p => !p.name || p.name.trim() === '') || [];
         if (invalidProducts.length > 0) {
           toast({
             title: "Validation failed",
-            description: `${invalidProducts.length} product(s) missing name or SKU. Fix them first.`,
+            description: `${invalidProducts.length} product(s) missing names. Add names first.`,
             variant: "destructive",
           });
           return;

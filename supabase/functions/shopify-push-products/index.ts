@@ -62,16 +62,10 @@ serve(async (req) => {
     // Push each product to Shopify
     for (const product of products) {
       try {
-        // Validate required fields
+        // Validate required fields (only name is required - SKU optional)
         if (!product.name || product.name.trim() === '') {
           errorCount++;
           console.error(`[Shopify Push Products] Skipping product ${product.id}: missing name`);
-          continue;
-        }
-
-        if (!product.sku || product.sku.trim() === '') {
-          errorCount++;
-          console.error(`[Shopify Push Products] Skipping product ${product.name}: missing SKU`);
           continue;
         }
 
@@ -84,10 +78,10 @@ serve(async (req) => {
             tags: [product.subcategory, product.category].filter(Boolean).join(', '),
             variants: [{
               option1: 'Default',
-              price: product.unit_price?.toString() || '0',
-              inventory_quantity: product.stock_quantity || 0,
-              inventory_management: 'shopify',
-              sku: product.sku,
+              price: (product.selling_price || product.unit_price || 0).toString(),
+              inventory_quantity: product.quantity || product.stock_quantity || 0,
+              inventory_management: null, // Don't track inventory for made-to-order products
+              sku: product.sku || `INT-${product.id.slice(0, 8)}`, // Generate SKU if missing
             }],
             images: product.image_url ? [{
               src: product.image_url,
@@ -96,8 +90,9 @@ serve(async (req) => {
         };
 
         // Check if product exists by SKU
+        const productSku = product.sku || `INT-${product.id.slice(0, 8)}`;
         const searchResponse = await fetch(
-          `https://${shop_domain}/admin/api/2024-01/products.json?limit=1&fields=id,variants&vendor=InterioApp`,
+          `https://${shop_domain}/admin/api/2024-01/products.json?limit=250&fields=id,variants&vendor=InterioApp`,
           {
             headers: {
               'X-Shopify-Access-Token': access_token,
@@ -109,7 +104,7 @@ serve(async (req) => {
         if (searchResponse.ok) {
           const searchData = await searchResponse.json();
           const existingProduct = searchData.products?.find((p: any) =>
-            p.variants?.some((v: any) => v.sku === (product.sku || product.product_code))
+            p.variants?.some((v: any) => v.sku === productSku)
           );
 
           let response;
