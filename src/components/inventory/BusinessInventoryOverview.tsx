@@ -19,21 +19,31 @@ export const BusinessInventoryOverview = () => {
   // Filter out treatment options - only show physical inventory
   const inventory = allInventory?.filter(item => item.category !== 'treatment_option') || [];
 
-  // Financial Calculations
-  const totalCostValue = inventory.reduce((sum, item) => {
+  // Stock on Hand Calculations (items with quantity > 0)
+  const stockedItems = inventory.filter(item => (item.quantity || 0) > 0);
+  const totalStockCost = stockedItems.reduce((sum, item) => {
     const cost = item.cost_price || 0;
     const qty = item.quantity || 0;
     return sum + (cost * qty);
   }, 0);
 
-  const totalRetailValue = inventory.reduce((sum, item) => {
+  const totalStockRetail = stockedItems.reduce((sum, item) => {
     const retail = item.selling_price || item.price_per_unit || 0;
     const qty = item.quantity || 0;
     return sum + (retail * qty);
   }, 0);
 
-  const potentialProfit = totalRetailValue - totalCostValue;
-  const profitMargin = totalRetailValue > 0 ? ((potentialProfit / totalRetailValue) * 100) : 0;
+  // Catalog Value Calculations (all items with prices, regardless of stock)
+  const catalogItems = inventory.filter(item => 
+    (item.selling_price || item.price_per_unit || 0) > 0
+  );
+  
+  const avgCatalogPrice = catalogItems.length > 0 
+    ? catalogItems.reduce((sum, item) => sum + (item.selling_price || item.price_per_unit || 0), 0) / catalogItems.length
+    : 0;
+
+  const potentialProfit = totalStockRetail - totalStockCost;
+  const profitMargin = totalStockRetail > 0 ? ((potentialProfit / totalStockRetail) * 100) : 0;
 
   // Inventory Health Metrics
   const lowStockItems = inventory.filter(item => 
@@ -94,52 +104,52 @@ export const BusinessInventoryOverview = () => {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card className="border-2">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Inventory Value (Cost)</CardTitle>
+              <CardTitle className="text-sm font-medium">Stock on Hand (Cost)</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totalCostValue)}</div>
+              <div className="text-2xl font-bold">{formatCurrency(totalStockCost)}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Total invested in inventory
+                {stockedItems.length} items in stock
               </p>
             </CardContent>
           </Card>
 
           <Card className="border-2">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Inventory Value (Retail)</CardTitle>
+              <CardTitle className="text-sm font-medium">Stock on Hand (Retail)</CardTitle>
               <TrendingUp className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{formatCurrency(totalRetailValue)}</div>
+              <div className="text-2xl font-bold text-green-600">{formatCurrency(totalStockRetail)}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Potential selling value
+                Potential profit: {formatCurrency(potentialProfit)}
               </p>
             </CardContent>
           </Card>
 
           <Card className="border-2">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Potential Profit</CardTitle>
-              <BarChart3 className="h-4 w-4 text-blue-600" />
+              <CardTitle className="text-sm font-medium">Catalog Items</CardTitle>
+              <Package className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{formatCurrency(potentialProfit)}</div>
+              <div className="text-2xl font-bold text-blue-600">{catalogItems.length}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Average markup: {profitMargin.toFixed(1)}%
+                Avg price: {formatCurrency(avgCatalogPrice)}
               </p>
             </CardContent>
           </Card>
 
           <Card className="border-2">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Physical Items</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{inventory.length}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Across {Object.keys(categoryStats).length} categories
+                {Object.keys(categoryStats).length} categories
               </p>
             </CardContent>
           </Card>
