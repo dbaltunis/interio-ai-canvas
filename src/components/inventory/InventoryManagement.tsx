@@ -8,7 +8,7 @@ import { Plus, AlertTriangle, TrendingUp, Package, ShoppingBag } from "lucide-re
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { InventoryImportDialog } from "./InventoryImportDialog";
-import { ShopifyProductSyncButton } from "../library/shopify/ShopifyProductSyncButton";
+import { ShopifySyncManager } from "./ShopifySyncManager";
 import { ShopifyQuickSetupBanner } from "./ShopifyQuickSetupBanner";
 import { ShopifyIntegrationDialog } from "../library/ShopifyIntegrationDialog";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
@@ -87,7 +87,7 @@ export const InventoryManagement = () => {
         <div className="flex items-center gap-2">
           {canManageInventory && (
             <>
-              {integration?.shop_domain && <ShopifyProductSyncButton />}
+              <ShopifySyncManager />
               <InventoryImportDialog />
               <Button variant="default">
                 <Plus className="mr-2 h-4 w-4" />
