@@ -29,10 +29,10 @@ export const useUserRole = () => {
       const { data: isAdminData } = await supabase
         .rpc("is_admin", { _user_id: user.id });
 
-      // Get business settings for cost visibility permissions
+      // Get business settings for cost visibility and markup permissions
       const { data: businessSettings } = await supabase
         .from("business_settings")
-        .select("show_vendor_costs_to_managers, show_vendor_costs_to_staff")
+        .select("show_vendor_costs_to_managers, show_vendor_costs_to_staff, pricing_settings")
         .eq("user_id", profile?.parent_account_id || user.id)
         .order('updated_at', { ascending: false })
         .limit(1)
@@ -52,13 +52,26 @@ export const useUserRole = () => {
         canViewVendorCosts = businessSettings?.show_vendor_costs_to_staff || false;
       }
 
+      // Determine if user can view markups based on role and settings
+      const pricingSettings = businessSettings?.pricing_settings as any;
+      const showMarkupToStaff = pricingSettings?.show_markup_to_staff || false;
+      
+      let canViewMarkup = false;
+      if (isOwner || isAdminData) {
+        canViewMarkup = true; // Owners and Admins always see markups
+      } else if (isManagerOrAdmin) {
+        canViewMarkup = true; // Managers can see markups
+      } else if (isStaff) {
+        canViewMarkup = showMarkupToStaff; // Staff can see if enabled
+      }
+
       return {
         role,
         isOwner,
         isAdmin: isAdminData || false, // Use secure function result
         isManager: isManagerOrAdmin || isOwner,
         canManageMarkup: isAdminData || false, // Use secure function result
-        canViewMarkup: isOwner || role === 'Admin' || role === 'Manager',
+        canViewMarkup,
         canViewVendorCosts,
         parentAccountId: profile?.parent_account_id
       };
