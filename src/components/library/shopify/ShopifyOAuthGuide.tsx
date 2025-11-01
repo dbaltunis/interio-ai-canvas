@@ -62,20 +62,11 @@ export const ShopifyOAuthGuide = () => {
                 <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
                   4
                 </div>
-                <div className="space-y-2">
-                  <p className="font-semibold text-sm">Configure App Setup</p>
+                <div>
+                  <p className="font-semibold text-sm">Configure Admin API</p>
                   <p className="text-xs text-muted-foreground mb-2">
-                    In "Configuration" tab → "App setup" section
+                    Go to "Configuration" tab → Click "Configure" under "Admin API integration"
                   </p>
-                  <div className="bg-gray-100 p-3 rounded space-y-2">
-                    <p className="text-xs font-semibold">Allowed redirection URL(s):</p>
-                    <code className="text-xs bg-white p-2 rounded block break-all border border-blue-200">
-                      https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/shopify-oauth-callback
-                    </code>
-                    <p className="text-xs text-red-600 font-semibold">
-                      ⚠️ Copy this exact URL - it must match exactly!
-                    </p>
-                  </div>
                 </div>
               </div>
 
@@ -83,19 +74,31 @@ export const ShopifyOAuthGuide = () => {
                 <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
                   5
                 </div>
-                <div>
-                  <p className="font-semibold text-sm">Configure API Scopes</p>
+                <div className="space-y-2">
+                  <p className="font-semibold text-sm">Add Redirect URL & Select Scopes</p>
                   <p className="text-xs text-muted-foreground mb-2">
-                    In "Configuration" tab → "Admin API integration" → "Configure"
+                    On the Admin API configuration page:
                   </p>
-                  <div className="bg-gray-100 p-2 rounded">
-                    <p className="text-xs font-mono">Required scopes:</p>
-                    <ul className="text-xs font-mono space-y-1 mt-1">
-                      <li>• read_products</li>
-                      <li>• write_products</li>
-                      <li>• read_orders</li>
-                      <li>• read_inventory</li>
-                      <li>• write_inventory</li>
+                  <div className="bg-amber-50 border border-amber-300 rounded p-3 space-y-2 mb-2">
+                    <p className="text-xs font-semibold text-amber-900">Step 5a: Allowed redirection URL(s)</p>
+                    <p className="text-xs text-amber-800 mb-1">
+                      Scroll down to find the "App URL" or "Allowed redirection URL(s)" field
+                    </p>
+                    <code className="text-xs bg-white p-2 rounded block break-all border border-amber-300">
+                      https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/shopify-oauth-callback
+                    </code>
+                    <p className="text-xs text-red-600 font-semibold">
+                      ⚠️ Copy this exact URL - it must match exactly!
+                    </p>
+                  </div>
+                  <div className="bg-gray-100 p-3 rounded">
+                    <p className="text-xs font-semibold mb-1">Step 5b: Select these API scopes:</p>
+                    <ul className="text-xs font-mono space-y-1">
+                      <li>✓ read_products</li>
+                      <li>✓ write_products</li>
+                      <li>✓ read_orders</li>
+                      <li>✓ read_inventory</li>
+                      <li>✓ write_inventory</li>
                     </ul>
                   </div>
                 </div>
@@ -107,8 +110,11 @@ export const ShopifyOAuthGuide = () => {
                 </div>
                 <div>
                   <p className="font-semibold text-sm">Save & Install App</p>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Click "Save" at the top of the Admin API configuration page
+                  </p>
                   <p className="text-xs text-muted-foreground">
-                    Click "Save" then "Install app" to activate it on your store
+                    Then go back to Overview tab and click "Install app" to activate it on your store
                   </p>
                 </div>
               </div>
