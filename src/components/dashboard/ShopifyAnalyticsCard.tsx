@@ -1,12 +1,72 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useShopifyAnalytics, useSyncShopifyAnalytics } from "@/hooks/useShopifyAnalytics";
-import { ShoppingBag, DollarSign, Users, TrendingUp, RefreshCw } from "lucide-react";
+import { ShoppingBag, DollarSign, Users, TrendingUp, RefreshCw, Package } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const ShopifyAnalyticsCard = () => {
   const { data: analytics, isLoading } = useShopifyAnalytics();
   const syncAnalytics = useSyncShopifyAnalytics();
+  const [isSyncing, setIsSyncing] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const handleProductSync = async () => {
+    setIsSyncing(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data: integration } = await supabase
+        .from('shopify_integrations')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_connected', true)
+        .single();
+
+      if (!integration) {
+        toast({
+          title: "Not connected",
+          description: "Please connect your Shopify store first",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Pull products from Shopify
+      const { data, error } = await supabase.functions.invoke('shopify-pull-products', {
+        body: {
+          userId: user.id,
+          syncSettings: {
+            sync_inventory: integration.sync_inventory ?? true,
+            sync_prices: integration.sync_prices ?? true,
+            sync_images: integration.sync_images ?? true,
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "✓ Products synced",
+        description: `Imported ${data.imported || 0}, Updated ${data.updated || 0} products`,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+    } catch (error: any) {
+      toast({
+        title: "Sync failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -55,14 +115,25 @@ export const ShopifyAnalyticsCard = () => {
               {analytics.shop_domain} • Last synced {timeSinceSync < 60 ? `${timeSinceSync}m` : `${Math.floor(timeSinceSync / 60)}h`} ago
             </CardDescription>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => syncAnalytics.mutate()}
-            disabled={syncAnalytics.isPending}
-          >
-            <RefreshCw className={`h-4 w-4 ${syncAnalytics.isPending ? 'animate-spin' : ''}`} />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleProductSync}
+              disabled={isSyncing}
+            >
+              <Package className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+              Sync Products
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => syncAnalytics.mutate()}
+              disabled={syncAnalytics.isPending}
+            >
+              <RefreshCw className={`h-4 w-4 ${syncAnalytics.isPending ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="flex-1">
