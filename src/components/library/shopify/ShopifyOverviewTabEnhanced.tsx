@@ -53,8 +53,8 @@ export const ShopifyOverviewTabEnhanced = ({
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <p>• New orders create work orders automatically</p>
-                <p>• Status: <Badge>Online Store Lead</Badge></p>
-                <p>• Paid orders marked as <Badge variant="outline">Online Store Sale</Badge></p>
+                <div>• Status: <Badge>Online Store Lead</Badge></div>
+                <div>• Paid orders marked as <Badge variant="outline">Online Store Sale</Badge></div>
               </CardContent>
             </Card>
 
