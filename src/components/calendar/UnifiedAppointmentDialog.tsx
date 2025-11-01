@@ -12,8 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Share, Plus, Minus, Palette, Users, Video, UserPlus, Bell, User, AlertCircle, Copy, Check } from "lucide-react";
+import { CalendarDays, Clock, MapPin, FileText, Loader2, Trash2, Share, Plus, Minus, Palette, Users, Video, UserPlus, Bell, User, AlertCircle, Copy, Check, Mail } from "lucide-react";
 import { useCreateAppointment, useUpdateAppointment, useDeleteAppointment } from "@/hooks/useAppointments";
+import { useSendCalendarInvitation } from "@/hooks/useSendCalendarInvitation";
 // CalDAV sync removed - using Google Calendar OAuth only
 import { useOfflineSupport } from "@/hooks/useOfflineSupport";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
@@ -67,10 +68,13 @@ export const UnifiedAppointmentDialog = ({
   const [videoProvider, setVideoProvider] = useState<string>('google_meet');
   const [videoLink, setVideoLink] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteName, setInviteName] = useState("");
 
   const createAppointment = useCreateAppointment();
   const updateAppointment = useUpdateAppointment();
   const deleteAppointment = useDeleteAppointment();
+  const sendInvitation = useSendCalendarInvitation();
   // CalDAV sync removed
   const { isOnline, queueOfflineOperation } = useOfflineSupport();
   const { data: teamMembers } = useTeamMembers();
@@ -264,6 +268,8 @@ export const UnifiedAppointmentDialog = ({
     setVideoProvider('google_meet');
     setVideoLink("");
     setCopiedLink(false);
+    setInviteEmail("");
+    setInviteName("");
   };
 
   const handleCalendarToggle = (calendarId: string, checked: boolean) => {
@@ -592,8 +598,63 @@ export const UnifiedAppointmentDialog = ({
                   </Alert>
                 )}
               </div>
-            )}
+          )}
           </div>
+
+          {/* Email Invitations */}
+          {isEditing && appointment?.id && (
+            <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+              <Label className="text-sm font-medium flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5" />
+                Send Email Invitation
+              </Label>
+              <div className="space-y-2">
+                <Input
+                  placeholder="Recipient name (optional)"
+                  value={inviteName}
+                  onChange={(e) => setInviteName(e.target.value)}
+                  className="h-9"
+                />
+                <Input
+                  type="email"
+                  placeholder="recipient@email.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  className="h-9"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (inviteEmail && appointment?.id) {
+                      sendInvitation.mutate({
+                        appointmentId: appointment.id,
+                        recipientEmail: inviteEmail,
+                        recipientName: inviteName || undefined
+                      });
+                      setInviteEmail("");
+                      setInviteName("");
+                    }
+                  }}
+                  disabled={!inviteEmail || sendInvitation.isPending}
+                  className="w-full"
+                >
+                  {sendInvitation.isPending ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="w-3.5 h-3.5 mr-2" />
+                      Send Invitation
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Location */}
           <div className="space-y-2">

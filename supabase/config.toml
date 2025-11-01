@@ -63,4 +63,7 @@ verify_jwt = true
 [functions.submit-feedback]
 verify_jwt = true
 
+[functions.send-calendar-invitation]
+verify_jwt = true
+
 
