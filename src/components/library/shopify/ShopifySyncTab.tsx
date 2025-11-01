@@ -53,11 +53,12 @@ export const ShopifySyncTab = ({ integration }: ShopifySyncTabProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Get inventory items
+      // Get inventory items (exclude treatment options)
       const { data: inventory, error: invError } = await supabase
-        .from('inventory')
+        .from('enhanced_inventory_items')
         .select('*')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .neq('category', 'treatment_option');
 
       if (invError) throw invError;
 

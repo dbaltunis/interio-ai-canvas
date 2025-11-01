@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Plus, Filter, Grid, List, Package, Home, Minus, Palette, Wallpaper } from "lucide-react";
-import { InventoryStats } from "./InventoryStats";
+import { BusinessInventoryOverview } from "./BusinessInventoryOverview";
 import { FabricInventoryView } from "./FabricInventoryView";
 import { HardwareInventoryView } from "./HardwareInventoryView";
 import { WallcoveringInventoryView } from "./WallcoveringInventoryView";
@@ -33,15 +33,12 @@ export const ModernInventoryDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [showSearch, setShowSearch] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const { data: inventory, refetch } = useEnhancedInventory();
+  const { data: allInventory, refetch } = useEnhancedInventory();
   const { data: vendors } = useVendors();
   const isMobile = useIsMobile();
   
-  // Check if we have any stock tracking data
-  const hasStockTracking = inventory?.some(item => 
-    (item.reorder_point && item.reorder_point > 0) || 
-    (item.quantity && item.quantity > 0)
-  ) ?? false;
+  // Filter out treatment options - only show physical inventory
+  const inventory = allInventory?.filter(item => item.category !== 'treatment_option') || [];
 
   return (
     <div className={cn("flex-1 space-y-4", isMobile ? "p-3 pb-20" : "p-6")}>
@@ -210,11 +207,8 @@ export const ModernInventoryDashboard = () => {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          {/* Key Metrics - Minimal */}
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">Key Metrics</h2>
-          </div>
-          <InventoryStats hasStockTracking={hasStockTracking} />
+          <BusinessInventoryOverview />
+          
           {/* Quick Access */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-foreground">Quick Access</h2>
@@ -238,7 +232,7 @@ export const ModernInventoryDashboard = () => {
                 <CardContent className="pt-0">
                   <div className="flex items-center justify-between">
                     <Badge variant="secondary" className="text-xs">
-                      {inventory?.filter(i => i.category === 'fabric').length || 0} Items
+                      {inventory.filter(i => i.category === 'fabric').length || 0} Items
                     </Badge>
                     <Button variant="ghost" size="sm" className="text-xs group-hover:text-primary">
                       View →
@@ -266,7 +260,7 @@ export const ModernInventoryDashboard = () => {
                 <CardContent className="pt-0">
                   <div className="flex items-center justify-between">
                     <Badge variant="secondary" className="text-xs">
-                      {inventory?.filter(i => i.category === 'hardware').length || 0} Items
+                      {inventory.filter(i => i.category === 'hardware').length || 0} Items
                     </Badge>
                     <Button variant="ghost" size="sm" className="text-xs group-hover:text-primary">
                       View →
@@ -294,7 +288,7 @@ export const ModernInventoryDashboard = () => {
                 <CardContent className="pt-0">
                   <div className="flex items-center justify-between">
                     <Badge variant="secondary" className="text-xs">
-                      {inventory?.filter(i => i.category === 'wallcovering').length || 0} Items
+                      {inventory.filter(i => i.category === 'wallcovering').length || 0} Items
                     </Badge>
                     <Button variant="ghost" size="sm" className="text-xs group-hover:text-primary">
                       View →
@@ -361,13 +355,11 @@ export const ModernInventoryDashboard = () => {
             </div>
           </div>
 
-          {/* Alerts - Only show if stock tracking is enabled */}
-          {hasStockTracking && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-foreground">Alerts</h2>
-              <ReorderNotificationSystem />
-            </div>
-          )}
+          {/* Alerts */}
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-foreground">Alerts</h2>
+            <ReorderNotificationSystem />
+          </div>
         </TabsContent>
 
         <TabsContent value="fabrics" className="space-y-6">

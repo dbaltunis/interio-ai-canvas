@@ -87,9 +87,10 @@ export const ShopifySyncManager = () => {
       setSyncStatus("Fetching inventory...");
 
       const { data: inventory, error: invError } = await supabase
-        .from('inventory')
+        .from('enhanced_inventory_items')
         .select('*')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .neq('category', 'treatment_option');
 
       if (invError) throw invError;
 

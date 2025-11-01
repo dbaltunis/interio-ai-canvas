@@ -30,7 +30,8 @@ export const ShopifyAnalyticsCard = () => {
         .from('enhanced_inventory_items')
         .select('id, category')
         .eq('user_id', user.id)
-        .eq('active', true);
+        .eq('active', true)
+        .neq('category', 'treatment_option');
 
       const categoryCount: Record<string, number> = {};
       inventory?.forEach(item => {
@@ -74,12 +75,13 @@ export const ShopifyAnalyticsCard = () => {
           description: `Imported ${data.imported || 0}, Updated ${data.updated || 0} products`,
         });
       } else {
-        // Validate products before export
+        // Validate products before export (exclude treatment options)
         const { data: inventory } = await supabase
           .from('enhanced_inventory_items')
           .select('*')
           .eq('user_id', user.id)
-          .eq('active', true);
+          .eq('active', true)
+          .neq('category', 'treatment_option');
 
         // Only validate names (SKU optional for non-stocked items)
         const invalidProducts = inventory?.filter(p => !p.name || p.name.trim() === '') || [];

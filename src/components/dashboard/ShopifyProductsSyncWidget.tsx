@@ -19,12 +19,13 @@ export const ShopifyProductsSyncWidget = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Get total products in enhanced inventory
+      // Get total products in enhanced inventory, excluding treatment options
       const { data: inventory, error: invError } = await supabase
         .from('enhanced_inventory_items')
         .select('id, category')
         .eq('user_id', user.id)
-        .eq('active', true);
+        .eq('active', true)
+        .neq('category', 'treatment_option');
 
       if (invError) throw invError;
 
@@ -95,12 +96,13 @@ export const ShopifyProductsSyncWidget = () => {
           description: `Imported ${data.imported || 0}, Updated ${data.updated || 0} products from Shopify`,
         });
       } else {
-        // Validate products before export  
+        // Validate products before export (exclude treatment options)
         const { data: inventory } = await supabase
           .from('enhanced_inventory_items')
           .select('*')
           .eq('user_id', user.id)
-          .eq('active', true);
+          .eq('active', true)
+          .neq('category', 'treatment_option');
 
         // Only check for missing names (SKU is optional for non-stocked items)
         const invalidProducts = inventory?.filter(p => !p.name || p.name.trim() === '') || [];

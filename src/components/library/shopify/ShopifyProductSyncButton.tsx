@@ -25,9 +25,10 @@ export const ShopifyProductSyncButton = () => {
       if (!user) throw new Error('Not authenticated');
 
       const { data: inventory, error } = await supabase
-        .from('inventory')
+        .from('enhanced_inventory_items')
         .select('*')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .neq('category', 'treatment_option');
 
       if (error) throw error;
 
