@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,17 +13,38 @@ interface Message {
   content: string;
 }
 
-export const AIAssistant = () => {
-  const [isOpen, setIsOpen] = useState(false);
+interface AIAssistantProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  initialPrompt?: string;
+}
+
+export const AIAssistant = ({ open: externalOpen, onOpenChange: externalOnOpenChange, initialPrompt }: AIAssistantProps = {}) => {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const { toast } = useToast();
 
-  const handleAIQuery = async () => {
-    if (!query.trim()) return;
+  // Use external control if provided, otherwise use internal state
+  const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setIsOpen = externalOnOpenChange || setInternalOpen;
 
-    const userMessage = query;
+  // Handle initial prompt
+  useEffect(() => {
+    if (initialPrompt && isOpen) {
+      setQuery(initialPrompt);
+      // Auto-send if there's an initial prompt
+      setTimeout(() => {
+        handleAIQuery(initialPrompt);
+      }, 500);
+    }
+  }, [initialPrompt, isOpen]);
+
+  const handleAIQuery = async (messageText?: string) => {
+    const userMessage = messageText || query;
+    if (!userMessage.trim()) return;
+
     setQuery("");
     setIsLoading(true);
 
@@ -163,7 +184,7 @@ export const AIAssistant = () => {
             />
             
             <Button 
-              onClick={handleAIQuery} 
+              onClick={() => handleAIQuery()} 
               disabled={isLoading || !query.trim()}
               className="w-full gap-2"
             >

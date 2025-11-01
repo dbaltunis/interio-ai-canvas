@@ -6686,6 +6686,48 @@ export type Database = {
           },
         ]
       }
+      user_feedback: {
+        Row: {
+          conversation_context: Json | null
+          created_at: string | null
+          description: string
+          feature_area: string | null
+          feedback_type: string
+          id: string
+          priority: string | null
+          status: string | null
+          updated_at: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          conversation_context?: Json | null
+          created_at?: string | null
+          description: string
+          feature_area?: string | null
+          feedback_type: string
+          id?: string
+          priority?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          conversation_context?: Json | null
+          created_at?: string | null
+          description?: string
+          feature_area?: string | null
+          feedback_type?: string
+          id?: string
+          priority?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_invitations: {
         Row: {
           created_at: string

@@ -60,3 +60,7 @@ verify_jwt = true
 [functions.ai-advisor]
 verify_jwt = true
 
+[functions.submit-feedback]
+verify_jwt = true
+
+
