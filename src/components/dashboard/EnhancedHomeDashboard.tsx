@@ -13,6 +13,8 @@ import { CalendarConnectionCard } from "./CalendarConnectionCard";
 import { ShopifyConnectionCTA } from "./ShopifyConnectionCTA";
 import { ShopifyAnalyticsCard } from "./ShopifyAnalyticsCard";
 import { ShopifyOrdersWidget } from "./ShopifyOrdersWidget";
+import { ShopifyProductsSyncWidget } from "./ShopifyProductsSyncWidget";
+import { ShopifyProductCategoriesWidget } from "./ShopifyProductCategoriesWidget";
 import { DraggableKPISection } from "./DraggableKPISection";
 import { TeamMembersWidget } from "./TeamMembersWidget";
 import { RecentlyCreatedJobsWidget } from "./RecentlyCreatedJobsWidget";
@@ -154,6 +156,20 @@ export const EnhancedHomeDashboard = () => {
               return isShopifyConnected ? (
                 <div key={widget.id} className={sizeClasses[widget.size]}>
                   <ShopifyOrdersWidget />
+                </div>
+              ) : null;
+            
+            case "shopify-products":
+              return isShopifyConnected ? (
+                <div key={widget.id} className={sizeClasses[widget.size]}>
+                  <ShopifyProductsSyncWidget />
+                </div>
+              ) : null;
+            
+            case "shopify-categories":
+              return isShopifyConnected ? (
+                <div key={widget.id} className={sizeClasses[widget.size]}>
+                  <ShopifyProductCategoriesWidget />
                 </div>
               ) : null;
             
