@@ -66,4 +66,7 @@ verify_jwt = true
 [functions.send-calendar-invitation]
 verify_jwt = true
 
+[functions.send-appointment-reminder]
+verify_jwt = false
+
 
