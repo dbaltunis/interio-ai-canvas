@@ -18,8 +18,11 @@ export interface ShopifyAnalytics {
   updated_at: string;
 }
 
-export const useShopifyAnalytics = () => {
-  return useQuery({
+export const useShopifyAnalytics = (autoSync = false) => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const query = useQuery({
     queryKey: ["shopify-analytics"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -32,10 +35,29 @@ export const useShopifyAnalytics = () => {
         .maybeSingle();
 
       if (error) throw error;
+
+      // Auto-sync if no data and autoSync is enabled
+      if (!data && autoSync) {
+        console.log("No analytics found, triggering auto-sync");
+        try {
+          await supabase.functions.invoke("shopify-sync-analytics", {
+            method: "POST",
+          });
+          // Refetch after a short delay
+          setTimeout(() => {
+            queryClient.invalidateQueries({ queryKey: ["shopify-analytics"] });
+          }, 2000);
+        } catch (error) {
+          console.error("Auto-sync failed:", error);
+        }
+      }
+
       return data as ShopifyAnalytics | null;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  return query;
 };
 
 export const useSyncShopifyAnalytics = () => {

@@ -207,10 +207,25 @@ export const ShopifyLeadsSection = () => {
               )}
 
               <div className="mt-3 flex gap-2">
-                <Button size="sm" variant="outline" className="flex-1">
-                  Create Job
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => {
+                    toast({
+                      title: "Convert to Job",
+                      description: `Creating job for order #${order.order_number}...`,
+                    });
+                  }}
+                >
+                  <User className="h-3 w-3 mr-1" />
+                  Convert to Job
                 </Button>
-                <Button size="sm" variant="ghost">
+                <Button 
+                  size="sm" 
+                  variant="ghost"
+                  onClick={() => window.open(`mailto:${order.customer_email}`, '_blank')}
+                >
                   <ExternalLink className="h-4 w-4" />
                 </Button>
               </div>

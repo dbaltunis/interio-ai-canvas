@@ -1,33 +1,18 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useShopifyAnalytics } from "@/hooks/useShopifyAnalytics";
-import { ShoppingCart, TrendingUp, DollarSign, Package, ExternalLink } from "lucide-react";
+import { useShopifyAnalytics, useSyncShopifyAnalytics } from "@/hooks/useShopifyAnalytics";
+import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Store, DollarSign, ShoppingCart, Users, TrendingUp, RefreshCw, ExternalLink, Package } from "lucide-react";
 
 export const ShopifyOrdersWidget = () => {
-  const { data: analytics, isLoading } = useShopifyAnalytics();
+  const { data: analytics, isLoading } = useShopifyAnalytics(true); // Enable auto-sync
+  const { integration } = useShopifyIntegrationReal();
+  const { mutate: syncAnalytics, isPending: isSyncing } = useSyncShopifyAnalytics();
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-48" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!analytics) {
-    return null;
-  }
+  const showSyncing = isLoading || isSyncing;
+  const showEmptyState = !isLoading && !analytics;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -46,113 +31,159 @@ export const ShopifyOrdersWidget = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="col-span-1 xl:col-span-2 border-primary/20 bg-gradient-to-br from-card to-card/95">
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5 text-primary" />
+          <div className="flex-1">
+            <CardTitle className="flex items-center gap-2 text-lg font-bold">
+              <Store className="h-5 w-5 text-primary" />
               Shopify Store Performance
             </CardTitle>
-            <CardDescription>
-              Sales & orders from {analytics.shop_domain}
-            </CardDescription>
+            {analytics?.last_synced_at && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Last synced: {formatDate(analytics.last_synced_at)}
+              </p>
+            )}
           </div>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => window.open(`https://${analytics.shop_domain}/admin/orders`, '_blank')}
-          >
-            <ExternalLink className="h-4 w-4 mr-2" />
-            View in Shopify
-          </Button>
+          <div className="flex items-center gap-2">
+            {integration?.shop_domain && (
+              <Badge variant="outline" className="text-xs hidden sm:flex">
+                {integration.shop_domain}
+              </Badge>
+            )}
+            <Badge variant={showSyncing ? "secondary" : "success"} className="text-xs">
+              {showSyncing ? "Syncing..." : "Connected"}
+            </Badge>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => syncAnalytics()}
+              disabled={isSyncing}
+              className="gap-2"
+            >
+              <RefreshCw className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Sync</span>
+            </Button>
+            {integration?.shop_domain && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => window.open(`https://${integration.shop_domain}/admin`, '_blank')}
+                className="gap-2"
+              >
+                <ExternalLink className="h-3 w-3" />
+                <span className="hidden sm:inline">View Store</span>
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Key Metrics Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
-            <div className="flex items-center gap-2 mb-1">
-              <DollarSign className="h-4 w-4 text-green-600" />
-              <p className="text-xs font-medium text-green-900 dark:text-green-100">Total Revenue</p>
+      <CardContent>
+        {showEmptyState ? (
+          <div className="text-center py-12">
+            <div className="mb-4">
+              <Store className="h-16 w-16 mx-auto text-muted-foreground/20" />
             </div>
-            <p className="text-2xl font-bold text-green-700 dark:text-green-300">
-              {formatCurrency(analytics.total_revenue || 0)}
+            <h3 className="text-lg font-semibold mb-2">Syncing Your Store Data</h3>
+            <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+              We're fetching your analytics for the first time. This usually takes a few seconds.
             </p>
-            <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-              {analytics.orders_this_month || 0} orders this month
-            </p>
-          </div>
-
-          <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
-            <div className="flex items-center gap-2 mb-1">
-              <ShoppingCart className="h-4 w-4 text-blue-600" />
-              <p className="text-xs font-medium text-blue-900 dark:text-blue-100">Total Orders</p>
+            <div className="flex gap-2 justify-center">
+              <Skeleton className="h-20 w-32" />
+              <Skeleton className="h-20 w-32" />
+              <Skeleton className="h-20 w-32" />
+              <Skeleton className="h-20 w-32" />
             </div>
-            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
-              {analytics.total_orders || 0}
-            </p>
-            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-              All time orders
-            </p>
           </div>
-
-          <div className="p-4 bg-purple-50 dark:bg-purple-950 rounded-lg border border-purple-200 dark:border-purple-800">
-            <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="h-4 w-4 text-purple-600" />
-              <p className="text-xs font-medium text-purple-900 dark:text-purple-100">Avg Order</p>
-            </div>
-            <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
-              {formatCurrency(analytics.avg_order_value || 0)}
-            </p>
-            <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
-              Average value
-            </p>
-          </div>
-
-          <div className="p-4 bg-orange-50 dark:bg-orange-950 rounded-lg border border-orange-200 dark:border-orange-800">
-            <div className="flex items-center gap-2 mb-1">
-              <Package className="h-4 w-4 text-orange-600" />
-              <p className="text-xs font-medium text-orange-900 dark:text-orange-100">Customers</p>
-            </div>
-            <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">
-              {analytics.total_customers || 0}
-            </p>
-            <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-              Total customers
-            </p>
-          </div>
-        </div>
-
-        {/* This Month Stats */}
-        <div className="p-4 bg-muted/50 rounded-lg border">
-          <h4 className="font-semibold mb-3 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-primary" />
-            This Month
-          </h4>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Revenue</p>
-              <p className="text-xl font-bold text-foreground">
-                {formatCurrency(analytics.revenue_this_month || 0)}
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Total Revenue */}
+            <div className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-2 rounded-full bg-green-500/10">
+                  <DollarSign className="h-4 w-4 text-green-600" />
+                </div>
+              </div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Total Revenue</p>
+              <p className="text-2xl font-bold">
+                {formatCurrency(analytics?.total_revenue || 0)}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {analytics?.orders_this_month || 0} orders this month
               </p>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Orders</p>
-              <p className="text-xl font-bold text-foreground">
-                {analytics.orders_this_month || 0}
+
+            {/* Total Orders */}
+            <div className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-2 rounded-full bg-blue-500/10">
+                  <ShoppingCart className="h-4 w-4 text-blue-600" />
+                </div>
+              </div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Total Orders</p>
+              <p className="text-2xl font-bold">
+                {analytics?.total_orders || 0}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                All time orders
               </p>
             </div>
-          </div>
-        </div>
 
-        {/* Last Synced */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
-          <span>Last synced: {formatDate(analytics.last_synced_at)}</span>
-          <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-200">
-            Connected
-          </Badge>
-        </div>
+            {/* Average Order Value */}
+            <div className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-2 rounded-full bg-purple-500/10">
+                  <TrendingUp className="h-4 w-4 text-purple-600" />
+                </div>
+              </div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Avg Order Value</p>
+              <p className="text-2xl font-bold">
+                {formatCurrency(analytics?.avg_order_value || 0)}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Average value
+              </p>
+            </div>
+
+            {/* Total Customers */}
+            <div className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-2 rounded-full bg-orange-500/10">
+                  <Users className="h-4 w-4 text-orange-600" />
+                </div>
+              </div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Total Customers</p>
+              <p className="text-2xl font-bold">
+                {analytics?.total_customers || 0}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Unique customers
+              </p>
+            </div>
+
+            {/* This Month Revenue */}
+            <div className="col-span-2 p-4 rounded-lg border bg-gradient-to-br from-primary/5 to-primary/10">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <p className="text-sm font-semibold">This Month</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">Revenue</p>
+                  <p className="text-xl font-bold">
+                    {formatCurrency(analytics?.revenue_this_month || 0)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Orders</p>
+                  <p className="text-xl font-bold">
+                    {analytics?.orders_this_month || 0}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

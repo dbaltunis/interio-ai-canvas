@@ -50,3 +50,6 @@ verify_jwt = true
 
 [functions.predict-order-timeline]
 verify_jwt = true
+
+[functions.ai-advisor]
+verify_jwt = true
