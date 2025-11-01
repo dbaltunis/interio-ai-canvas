@@ -55,10 +55,13 @@ export const ShopifyStatusManagementTab = () => {
 
       if (error) throw error;
 
-      queryClient.invalidateQueries({ queryKey: ["job_statuses"] });
+      // Immediately refetch to show the new statuses
+      await queryClient.invalidateQueries({ queryKey: ["job_statuses"] });
+      await queryClient.refetchQueries({ queryKey: ["job_statuses"] });
+      
       toast({
-        title: "Success",
-        description: "Shopify statuses created successfully",
+        title: "✅ Statuses Created Successfully!",
+        description: "You can now customize 'Online Store Lead' and 'Online Store Sale' below.",
       });
     } catch (error: any) {
       toast({
@@ -125,7 +128,16 @@ export const ShopifyStatusManagementTab = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {shopifyStatuses.map((status) => {
+          {isCreating && (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center gap-3 text-lg">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                <span className="font-semibold">Creating your Shopify statuses...</span>
+              </div>
+            </div>
+          )}
+          
+          {!isCreating && shopifyStatuses.map((status) => {
             const isEditing = editingId === status.id;
             const Icon = status.name === 'Online Store Lead' ? ShoppingCart : ShoppingBag;
 

@@ -316,41 +316,43 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
       <ShopifyOAuthGuide />
       
       {integration?.is_connected && (
-        <Alert className="border-green-200 bg-green-50">
-          <AlertDescription className="space-y-4">
+        <Card className="border-2 border-green-500 bg-green-50">
+          <CardContent className="pt-6">
             <div className="flex items-start gap-4">
-              <CheckCircle2 className="h-6 w-6 text-green-600 mt-0.5 flex-shrink-0" />
+              <CheckCircle2 className="h-8 w-8 text-green-600 flex-shrink-0" />
               <div className="flex-1">
-                <p className="font-bold text-green-900 mb-1 text-base">
-                  ✅ Connected to: {integration.shop_domain}
+                <p className="font-bold text-green-900 mb-1 text-xl">
+                  ✅ Store Connected
                 </p>
-                <p className="text-sm text-green-800 mb-3">
-                  Your Shopify store is connected and syncing. Orders automatically create jobs/projects in InterioApp with appropriate statuses.
+                <p className="text-base text-green-900 mb-1">
+                  {integration.shop_domain}
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <p className="text-sm text-green-800 mb-4">
+                  Your Shopify store is connected and syncing automatically.
+                </p>
+                <div className="flex flex-wrap gap-3">
                   <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleSwitchStore}
-                    className="bg-white hover:bg-green-50"
+                    variant="destructive" 
+                    size="lg"
+                    onClick={handleDisconnect} 
+                    disabled={isLoading}
                   >
-                    🔄 Switch to Different Store
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    🔌 Disconnect Store
                   </Button>
                   <Button 
                     variant="outline" 
-                    size="sm" 
-                    onClick={handleDisconnect} 
-                    disabled={isLoading}
-                    className="bg-white hover:bg-red-50 text-red-600 hover:text-red-700"
+                    size="lg"
+                    onClick={handleSwitchStore}
+                    className="bg-white"
                   >
-                    {isLoading ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
-                    🔌 Disconnect Store
+                    🔄 Switch to Different Store
                   </Button>
                 </div>
               </div>
             </div>
-          </AlertDescription>
-        </Alert>
+          </CardContent>
+        </Card>
       )}
       
       <Card>
