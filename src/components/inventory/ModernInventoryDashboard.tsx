@@ -12,7 +12,6 @@ import { WallcoveringInventoryView } from "./WallcoveringInventoryView";
 import { HeadingInventoryView } from "./HeadingInventoryView";
 import { TrimmingsInventoryView } from "./TrimmingsInventoryView";
 import { RemnantsInventoryView } from "./RemnantsInventoryView";
-import { AssemblyKitBuilder } from "./AssemblyKitBuilder";
 import { InventoryAnalytics } from "./InventoryAnalytics";
 import { AddInventoryDialog } from "./AddInventoryDialog";
 import { InventoryDemoData } from "./InventoryDemoData";
@@ -194,10 +193,6 @@ export const ModernInventoryDashboard = () => {
           </TabsTrigger>
           {!isMobile && (
             <>
-              <TabsTrigger value="assemblies" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">
-                <Package className="h-4 w-4" />
-                <span>Assemblies</span>
-              </TabsTrigger>
               <TabsTrigger value="analytics" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">
                 <Palette className="h-4 w-4" />
                 <span>Analytics</span>
@@ -324,34 +319,6 @@ export const ModernInventoryDashboard = () => {
                   </div>
                 </CardContent>
               </Card>
-
-              <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20" onClick={() => setActiveTab("assemblies")}>
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <Package className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-base">Assembly Kits</CardTitle>
-                        <CardDescription className="text-xs">
-                          Pre-configured kits
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="flex items-center justify-between">
-                    <Badge variant="secondary" className="text-xs">
-                      23 Kits
-                    </Badge>
-                    <Button variant="ghost" size="sm" className="text-xs group-hover:text-primary">
-                      Build →
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </div>
 
@@ -390,9 +357,6 @@ export const ModernInventoryDashboard = () => {
           <VendorDashboard />
         </TabsContent>
 
-        <TabsContent value="assemblies" className="space-y-6">
-          <AssemblyKitBuilder />
-        </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
           <InventoryAnalytics />
