@@ -316,43 +316,32 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
       <ShopifyOAuthGuide />
       
       {integration?.is_connected && (
-        <Card className="border-2 border-green-500 bg-green-50">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-4">
-              <CheckCircle2 className="h-8 w-8 text-green-600 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="font-bold text-green-900 mb-1 text-xl">
-                  ✅ Store Connected
-                </p>
-                <p className="text-base text-green-900 mb-1">
-                  {integration.shop_domain}
-                </p>
-                <p className="text-sm text-green-800 mb-4">
-                  Your Shopify store is connected and syncing automatically.
-                </p>
-                <div className="flex flex-wrap gap-3">
-                  <Button 
-                    variant="destructive" 
-                    size="lg"
-                    onClick={handleDisconnect} 
-                    disabled={isLoading}
-                  >
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    🔌 Disconnect Store
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="lg"
-                    onClick={handleSwitchStore}
-                    className="bg-white"
-                  >
-                    🔄 Switch to Different Store
-                  </Button>
-                </div>
-              </div>
+        <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg mb-4">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="h-5 w-5 text-green-600" />
+            <div>
+              <p className="text-sm font-semibold text-green-900">Connected: {integration.shop_domain}</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={handleSwitchStore}
+            >
+              Switch Store
+            </Button>
+            <Button 
+              variant="destructive" 
+              size="sm"
+              onClick={handleDisconnect} 
+              disabled={isLoading}
+            >
+              {isLoading ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
+              Disconnect
+            </Button>
+          </div>
+        </div>
       )}
       
       <Card>
