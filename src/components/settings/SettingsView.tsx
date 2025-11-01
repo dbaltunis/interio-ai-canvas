@@ -19,12 +19,9 @@ import { InteractiveOnboarding } from "./InteractiveOnboarding";
 import { NotificationManagementTab } from "./tabs/NotificationManagementTab";
 import { EnhancedPersonalizationTab } from "./tabs/EnhancedPersonalizationTab";
 import { SecurityPrivacyTab } from "./tabs/SecurityPrivacyTab";
-import { ShopifyStatusManagementTab } from "./tabs/ShopifyStatusManagementTab";
-import { ShopifySetupTab } from "@/components/library/shopify/ShopifySetupTab";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useHasPermission } from "@/hooks/usePermissions";
-import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 
 export const SettingsView = () => {
   const [showTutorial, setShowTutorial] = useState(false);
@@ -41,9 +38,6 @@ export const SettingsView = () => {
   const canManageUsers = useHasPermission('manage_users');
   const canViewWindowTreatments = useHasPermission('view_window_treatments');
   const canManageMarkup = useHasPermission('manage_settings'); // Only owners/admins can manage pricing
-  
-  // Check if Shopify is connected
-  const { integration: shopifyIntegration } = useShopifyIntegrationReal();
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -80,7 +74,7 @@ export const SettingsView = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-        <TabsList className={`modern-card p-1 h-auto bg-muted/30 backdrop-blur-sm grid ${shopifyIntegration ? 'grid-cols-11' : 'grid-cols-10'} gap-1`}>
+        <TabsList className="modern-card p-1 h-auto bg-muted/30 backdrop-blur-sm grid grid-cols-10 gap-1">
           <TabsTrigger value="personal" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <User className="h-4 w-4" />
             <span className="hidden sm:inline font-medium">Personal</span>
@@ -150,13 +144,6 @@ export const SettingsView = () => {
             <TabsTrigger value="integrations" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
               <Zap className="h-4 w-4" />
               <span className="hidden sm:inline font-medium">Integrations</span>
-            </TabsTrigger>
-          )}
-          
-          {shopifyIntegration && canViewSettings && (
-            <TabsTrigger value="shopify-statuses" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              <Package className="h-4 w-4" />
-              <span className="hidden sm:inline font-medium">Shopify</span>
             </TabsTrigger>
           )}
         </TabsList>
@@ -271,23 +258,6 @@ export const SettingsView = () => {
                 <IntegrationsTab />
               </CardContent>
             </Card>
-          </TabsContent>
-        )}
-        
-        {shopifyIntegration && canViewSettings && (
-          <TabsContent value="shopify-statuses" className="animate-fade-in">
-            <div className="space-y-6">
-              <Card className="hover:shadow-md transition-all duration-300">
-                <CardContent className="p-6">
-                  <ShopifySetupTab integration={shopifyIntegration} />
-                </CardContent>
-              </Card>
-              <Card className="hover:shadow-md transition-all duration-300">
-                <CardContent className="p-6">
-                  <ShopifyStatusManagementTab />
-                </CardContent>
-              </Card>
-            </div>
           </TabsContent>
         )}
       </Tabs>

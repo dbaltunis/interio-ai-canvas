@@ -10,18 +10,23 @@ import { MYOBExoIntegrationTab } from "@/components/integrations/MYOBExoIntegrat
 import { RFMSIntegrationTab } from "@/components/integrations/RFMSIntegrationTab";
 import { TwilioIntegrationTab } from "@/components/integrations/TwilioIntegrationTab";
 import { WebsiteAPIIntegrationTab } from "@/components/integrations/WebsiteAPIIntegrationTab";
+import { ShopifySetupTab } from "@/components/library/shopify/ShopifySetupTab";
+import { ShopifyStatusManagementTab } from "./ShopifyStatusManagementTab";
 import { useIntegrations } from "@/hooks/useIntegrations";
+import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export const IntegrationsTab = () => {
   const { integrations } = useIntegrations();
+  const { integration: shopifyIntegration } = useShopifyIntegrationReal();
   
   const getIntegrationByType = (type: string) => 
     integrations.find(integration => integration.integration_type === type);
 
-  // Calculate integration status
+  // Calculate integration status - include Shopify if active
   const activeIntegrations = integrations.filter(i => i.active);
-  const totalIntegrations = integrations.length;
+  const totalShopifyCount = shopifyIntegration ? 1 : 0;
+  const totalIntegrations = integrations.length + totalShopifyCount;
 
   return (
     <div className="space-y-6">
@@ -38,10 +43,10 @@ export const IntegrationsTab = () => {
         <AlertTitle>Integration Status</AlertTitle>
         <AlertDescription>
           <div className="flex items-center gap-2 mt-2">
-            <Badge variant={activeIntegrations.length > 0 ? "default" : "secondary"}>
-              {activeIntegrations.length} of {totalIntegrations > 0 ? totalIntegrations : 8} integrations active
+            <Badge variant={(activeIntegrations.length + (shopifyIntegration ? 1 : 0)) > 0 ? "default" : "secondary"}>
+              {activeIntegrations.length + (shopifyIntegration ? 1 : 0)} of {totalIntegrations > 0 ? totalIntegrations : 9} integrations active
             </Badge>
-            {activeIntegrations.length === 0 && (
+            {(activeIntegrations.length + (shopifyIntegration ? 1 : 0)) === 0 && (
               <span className="text-xs text-muted-foreground">Configure integrations below to connect your services</span>
             )}
           </div>
@@ -49,7 +54,7 @@ export const IntegrationsTab = () => {
       </Alert>
 
       <Tabs defaultValue="email" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-9">
+        <TabsList className="grid w-full grid-cols-10">
           <TabsTrigger value="email" className="flex items-center gap-2">
             <Mail className="h-4 w-4" />
             Email
@@ -86,6 +91,12 @@ export const IntegrationsTab = () => {
             <Globe className="h-4 w-4" />
             Website API
           </TabsTrigger>
+          {shopifyIntegration && (
+            <TabsTrigger value="shopify" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Shopify
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="email">
@@ -149,6 +160,15 @@ export const IntegrationsTab = () => {
         <TabsContent value="website">
           <WebsiteAPIIntegrationTab integration={getIntegrationByType('website_api') as any} />
         </TabsContent>
+
+        {shopifyIntegration && (
+          <TabsContent value="shopify">
+            <div className="space-y-6">
+              <ShopifySetupTab integration={shopifyIntegration} />
+              <ShopifyStatusManagementTab />
+            </div>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
