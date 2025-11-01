@@ -82,32 +82,33 @@ export const ShopifyOrdersWidget = () => {
         {showEmptyState ? (
           <div className="text-center py-12">
             <div className="mb-4">
-              <Store className="h-16 w-16 mx-auto text-muted-foreground/20" />
+              <Package className="h-16 w-16 mx-auto text-muted-foreground/20" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">Syncing Your Store Data</h3>
-            <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
-              We're fetching your analytics for the first time. This usually takes a few seconds.
+            <h3 className="text-lg font-semibold mb-2">No Orders Yet</h3>
+            <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
+              Your Shopify store is connected! When customers place orders, they'll appear here automatically.
             </p>
-            
-            {/* Animated Progress Bar */}
-            <div className="max-w-xs mx-auto mb-6">
-              <div className="relative h-2 bg-muted rounded-full overflow-hidden">
-                <div 
-                  className="absolute inset-0 bg-gradient-to-r from-primary to-primary/60 animate-pulse"
-                  style={{
-                    animation: 'progress 2s ease-in-out infinite',
-                  }}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">Fetching store analytics...</p>
+            <div className="max-w-md mx-auto mb-6 p-4 bg-muted/50 rounded-lg text-left">
+              <p className="text-xs font-semibold mb-2">💡 What you'll see here:</p>
+              <ul className="text-xs text-muted-foreground space-y-1">
+                <li>• <strong>Total Revenue</strong> - All-time sales from Shopify orders</li>
+                <li>• <strong>Total Orders</strong> - Number of orders placed</li>
+                <li>• <strong>Avg Order Value</strong> - Average amount per order</li>
+                <li>• <strong>Total Customers</strong> - Unique customers who placed orders</li>
+              </ul>
+              <p className="text-xs text-muted-foreground mt-3 pt-3 border-t">
+                <strong>Note:</strong> Store visitor analytics (views, sessions) are not available through Shopify's API. 
+                For visitor data, check your Shopify admin dashboard.
+              </p>
             </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-20 w-full" />
-            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => window.open(`https://${integration?.shop_domain}/admin`, '_blank')}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              View Shopify Dashboard
+            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

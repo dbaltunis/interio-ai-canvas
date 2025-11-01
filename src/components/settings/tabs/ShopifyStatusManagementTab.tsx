@@ -73,12 +73,55 @@ export const ShopifyStatusManagementTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Educational Banner */}
+      <Card className="border-blue-200 bg-blue-50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-blue-900">
+            <ShoppingCart className="h-5 w-5" />
+            What are Shopify Statuses?
+          </CardTitle>
+          <CardDescription className="text-blue-800">
+            These are special job statuses that InterioApp automatically applies to orders coming from your Shopify store.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 text-sm text-blue-900">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="flex gap-3 p-3 bg-white rounded-lg">
+              <ShoppingCart className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">🛒 Online Store Lead</p>
+                <p className="text-xs text-blue-700 mt-1">
+                  Applied when a customer places an unpaid order (like abandoned carts or payment pending)
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 p-3 bg-white rounded-lg">
+              <ShoppingBag className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">💰 Online Store Sale</p>
+                <p className="text-xs text-blue-700 mt-1">
+                  Applied when an order is paid or fulfilled - ready to process!
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="p-3 bg-white rounded-lg">
+            <p className="font-semibold mb-2">🔄 How it works:</p>
+            <ol className="text-xs text-blue-700 space-y-1 list-decimal list-inside">
+              <li>Customer places order on your Shopify store</li>
+              <li>InterioApp automatically creates a job/project with the appropriate status</li>
+              <li>Customer details are added to your CRM</li>
+              <li>You can track and manage the order in InterioApp</li>
+            </ol>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
-          <CardTitle>Shopify Integration Statuses</CardTitle>
+          <CardTitle>Manage Your Shopify Statuses</CardTitle>
           <CardDescription>
-            Customize the statuses used for leads and sales from your Shopify store. 
-            These statuses appear in Jobs and CRM when orders come through Shopify.
+            Customize the names, colors, and descriptions of your Shopify order statuses
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -176,53 +219,45 @@ export const ShopifyStatusManagementTab = () => {
           })}
 
           {shopifyStatuses.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="font-medium text-foreground mb-2">No Shopify statuses found</p>
-              <p className="text-sm mb-4">Create the default Shopify integration statuses to start tracking online orders</p>
-              <Button onClick={handleCreateStatuses} disabled={isCreating}>
-                {isCreating ? (
-                  <>Creating...</>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Shopify Statuses
-                  </>
-                )}
-              </Button>
+            <div className="text-center py-12 border-2 border-dashed rounded-lg">
+              <div className="max-w-md mx-auto">
+                <ShoppingCart className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-30" />
+                <p className="font-semibold text-lg text-foreground mb-2">Set Up Your Shopify Statuses</p>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Click below to create two special job statuses that InterioApp will use to categorize orders from your Shopify store:
+                </p>
+                <div className="grid grid-cols-2 gap-3 mb-6 text-left">
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center gap-2 mb-1">
+                      <ShoppingCart className="h-4 w-4 text-green-600" />
+                      <p className="font-semibold text-sm">Online Store Lead</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Unpaid orders</p>
+                  </div>
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center gap-2 mb-1">
+                      <ShoppingBag className="h-4 w-4 text-blue-600" />
+                      <p className="font-semibold text-sm">Online Store Sale</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Paid orders</p>
+                  </div>
+                </div>
+                <Button onClick={handleCreateStatuses} disabled={isCreating} size="lg">
+                  {isCreating ? (
+                    <>Creating Statuses...</>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Shopify Statuses Now
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>How It Works</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm text-muted-foreground">
-          <div className="flex gap-3">
-            <ShoppingCart className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium text-foreground">Online Store Lead</p>
-              <p>Applied when a customer places an order that hasn't been paid yet</p>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <ShoppingBag className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium text-foreground">Online Store Sale</p>
-              <p>Applied when an order is paid or fulfilled in Shopify</p>
-            </div>
-          </div>
-          <div className="mt-4 p-4 bg-muted rounded-lg">
-            <p className="font-medium text-foreground mb-2">Automatic Sync</p>
-            <p>
-              When connected to Shopify, orders automatically create jobs/work orders with these statuses.
-              Customers are added to your CRM, and products are synced to your inventory.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
