@@ -4,7 +4,6 @@ import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
 import { WelcomeHeader } from "./WelcomeHeader";
 import { DashboardCustomizationButton } from "./DashboardCustomizationButton";
 import { DashboardWidgetCustomizer } from "./DashboardWidgetCustomizer";
-import { ContextAwareAdvisor } from "../ai/ContextAwareAdvisor";
 import { UpcomingEventsWidget } from "./UpcomingEventsWidget";
 import { StatusOverviewWidget } from "./StatusOverviewWidget";
 import { RecentEmailsWidget } from "./RecentEmailsWidget";
@@ -263,9 +262,6 @@ export const EnhancedHomeDashboard = () => {
         onReorder={reorderWidgets}
         onSizeChange={updateWidgetSize}
       />
-      
-      {/* Context-Aware AI Advisor */}
-      <ContextAwareAdvisor />
     </div>
   );
 };
