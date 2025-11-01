@@ -1,27 +1,54 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useJobStatuses, useUpdateJobStatus } from "@/hooks/useJobStatuses";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShoppingCart, ShoppingBag, Edit2, Check, X, Plus } from "lucide-react";
-import { useState } from "react";
+import { ShoppingCart, ShoppingBag, Edit2, Check, X } from "lucide-react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
 export const ShopifyStatusManagementTab = () => {
-  const { data: statuses = [] } = useJobStatuses();
+  const { data: statuses = [], isLoading } = useJobStatuses();
   const updateStatus = useUpdateJobStatus();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ name: '', color: '', description: '' });
-  const [isCreating, setIsCreating] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
 
   const shopifyStatuses = statuses.filter(
     (s) => s.name === 'Online Store Lead' || s.name === 'Online Store Sale'
   );
+
+  // Auto-create statuses on mount if they don't exist
+  useEffect(() => {
+    const initializeStatuses = async () => {
+      if (isLoading) return;
+      if (shopifyStatuses.length > 0) return; // Already exist
+      
+      setIsInitializing(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        await supabase.rpc('ensure_shopify_statuses', {
+          p_user_id: user.id
+        });
+
+        await queryClient.invalidateQueries({ queryKey: ["job_statuses"] });
+      } catch (error) {
+        console.error('Failed to initialize statuses:', error);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    initializeStatuses();
+  }, [isLoading, shopifyStatuses.length, queryClient]);
 
   const handleEdit = (status: any) => {
     setEditingId(status.id);
@@ -43,65 +70,35 @@ export const ShopifyStatusManagementTab = () => {
     setEditForm({ name: '', color: '', description: '' });
   };
 
-  const handleCreateStatuses = async () => {
-    setIsCreating(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { error } = await supabase.rpc('ensure_shopify_statuses', {
-        p_user_id: user.id
-      });
-
-      if (error) throw error;
-
-      // Immediately refetch to show the new statuses
-      await queryClient.invalidateQueries({ queryKey: ["job_statuses"] });
-      await queryClient.refetchQueries({ queryKey: ["job_statuses"] });
-      
-      toast({
-        title: "✅ Statuses Created Successfully!",
-        description: "You can now customize 'Online Store Lead' and 'Online Store Sale' below.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
   return (
     <div className="space-y-4">
-      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm font-semibold text-blue-900 mb-2">💡 What are Shopify Statuses?</p>
-        <p className="text-xs text-blue-800">
-          These are special job statuses that InterioApp automatically applies to orders from your Shopify store:
-          <strong> Online Store Lead</strong> (unpaid orders) and <strong>Online Store Sale</strong> (paid orders).
-        </p>
-      </div>
+      <Alert className="bg-blue-50 border-blue-200">
+        <AlertDescription>
+          <p className="text-sm font-semibold text-blue-900 mb-1">💡 What are Shopify Statuses?</p>
+          <p className="text-xs text-blue-800">
+            These are job statuses automatically applied to Shopify orders: <strong>Online Store Lead</strong> (unpaid) and <strong>Online Store Sale</strong> (paid).
+          </p>
+        </AlertDescription>
+      </Alert>
 
       <Card>
         <CardHeader>
-          <CardTitle>Manage Your Shopify Statuses</CardTitle>
+          <CardTitle>Shopify Order Statuses</CardTitle>
           <CardDescription>
-            Customize the names, colors, and descriptions of your Shopify order statuses
+            Customize how Shopify orders appear in your system
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {isCreating && (
+          {(isLoading || isInitializing) && (
             <div className="text-center py-8">
-              <div className="inline-flex items-center gap-3 text-lg">
+              <div className="inline-flex items-center gap-3">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                <span className="font-semibold">Creating your Shopify statuses...</span>
+                <span className="font-medium">Loading statuses...</span>
               </div>
             </div>
           )}
           
-          {!isCreating && shopifyStatuses.map((status) => {
+          {!isLoading && !isInitializing && shopifyStatuses.map((status) => {
             const isEditing = editingId === status.id;
             const Icon = status.name === 'Online Store Lead' ? ShoppingCart : ShoppingBag;
 
@@ -193,29 +190,8 @@ export const ShopifyStatusManagementTab = () => {
               </Card>
             );
           })}
-
-          {shopifyStatuses.length === 0 && (
-            <div className="text-center py-8 border-2 border-dashed rounded-lg">
-              <ShoppingCart className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-30" />
-              <p className="font-semibold mb-2">Set Up Shopify Statuses</p>
-              <p className="text-sm text-muted-foreground mb-4">
-                Create two job statuses for categorizing Shopify orders
-              </p>
-              <Button onClick={handleCreateStatuses} disabled={isCreating}>
-                {isCreating ? (
-                  <>Creating...</>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Now
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
-
     </div>
   );
 };

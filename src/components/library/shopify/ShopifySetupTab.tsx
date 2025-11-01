@@ -316,32 +316,39 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
       <ShopifyOAuthGuide />
       
       {integration?.is_connected && (
-        <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg mb-4">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
-            <div>
-              <p className="text-sm font-semibold text-green-900">Connected: {integration.shop_domain}</p>
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3 flex-1">
+                <CheckCircle2 className="h-6 w-6 text-green-600 mt-1" />
+                <div>
+                  <p className="font-semibold text-green-900 mb-1">Store Connected</p>
+                  <p className="text-sm text-green-800">{integration.shop_domain}</p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleSwitchStore}
+                  className="w-full"
+                >
+                  Switch Store
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  onClick={handleDisconnect} 
+                  disabled={isLoading}
+                  className="w-full"
+                >
+                  {isLoading ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
+                  Disconnect
+                </Button>
+              </div>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={handleSwitchStore}
-            >
-              Switch Store
-            </Button>
-            <Button 
-              variant="destructive" 
-              size="sm"
-              onClick={handleDisconnect} 
-              disabled={isLoading}
-            >
-              {isLoading ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
-              Disconnect
-            </Button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
       
       <Card>
