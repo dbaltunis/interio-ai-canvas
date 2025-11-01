@@ -63,20 +63,20 @@ export const ShopifyOAuthGuide = () => {
                   4
                 </div>
                 <div className="space-y-2">
-                  <p className="font-semibold text-sm">Set Redirect URL (App Setup Section)</p>
+                  <p className="font-semibold text-sm">Set Redirect URL</p>
                   <p className="text-xs text-muted-foreground mb-2">
-                    In "Configuration" tab, scroll to find the <strong>"App setup"</strong> section (above Admin API)
+                    On the "Configuration" tab, <strong>scroll down past "App settings"</strong> section
                   </p>
                   <div className="bg-amber-50 border border-amber-300 rounded p-3 space-y-2">
-                    <p className="text-xs font-semibold text-amber-900">Look for "Allowed redirection URL(s)" field</p>
+                    <p className="text-xs font-semibold text-amber-900">Find "Allowed redirection URL(s)" field</p>
                     <p className="text-xs text-amber-800 mb-1">
-                      This is usually near the top, in the "App setup" or "URLs" section
+                      Keep scrolling down - it's below the app name/description area, look for a URLs or App URL section
                     </p>
                     <code className="text-xs bg-white p-2 rounded block break-all border border-amber-300">
                       https://ldgrcodffsalkevafbkb.supabase.co/functions/v1/shopify-oauth-callback
                     </code>
                     <p className="text-xs text-red-600 font-semibold">
-                      ⚠️ Copy this exact URL - it must match exactly!
+                      ⚠️ Paste this URL and save it
                     </p>
                   </div>
                 </div>
