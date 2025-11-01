@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
+import { toast } from "@/hooks/use-toast";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -48,9 +49,54 @@ const queryClient = new QueryClient({
 // Navigation observer component
 function NavObserver() {
   const location = useLocation();
+  
   useEffect(() => {
     console.warn('[NAV] location changed ->', location.pathname + location.search + location.hash);
+    
+    // Handle Shopify OAuth callback
+    const params = new URLSearchParams(location.search);
+    const shopifyConnected = params.get('shopify_connected');
+    const shop = params.get('shop');
+    
+    if (shopifyConnected === 'true' && shop) {
+      // Notify parent window (popup opener) of success
+      if (window.opener) {
+        window.opener.postMessage({
+          type: 'shopify-oauth-success',
+          shop
+        }, '*');
+        window.close();
+      } else {
+        // If not in popup, show toast and clean URL
+        toast({
+          title: "Success",
+          description: `Shopify store ${shop} connected successfully!`,
+        });
+        // Clean up URL
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      }
+    } else if (shopifyConnected === 'false') {
+      const errorMessage = params.get('error') || 'Failed to connect Shopify store';
+      if (window.opener) {
+        window.opener.postMessage({
+          type: 'shopify-oauth-error',
+          message: errorMessage
+        }, '*');
+        window.close();
+      } else {
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        // Clean up URL
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
   }, [location]);
+  
   return null;
 }
 

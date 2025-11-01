@@ -85,8 +85,13 @@ serve(async (req) => {
     console.log('Shopify integration saved successfully');
 
     // Redirect back to app with success message
-    const appUrl = Deno.env.get('SITE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co';
-    const redirectUrl = `${appUrl}/?tab=settings&shopify_connected=true&shop=${shop}`;
+    const appUrl = Deno.env.get('SITE_URL');
+    if (!appUrl) {
+      console.error('SITE_URL environment variable is not set');
+      throw new Error('Server configuration error: SITE_URL not configured');
+    }
+    
+    const redirectUrl = `${appUrl}/?shopify_connected=true&shop=${shop}`;
     
     return new Response(null, {
       status: 302,

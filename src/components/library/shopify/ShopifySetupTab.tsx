@@ -52,8 +52,52 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
       if (error) throw error;
 
       if (data?.authUrl) {
-        // Open OAuth URL in current window
-        window.location.href = data.authUrl;
+        // Open OAuth in popup window
+        const width = 600;
+        const height = 700;
+        const left = window.screen.width / 2 - width / 2;
+        const top = window.screen.height / 2 - height / 2;
+        
+        const popup = window.open(
+          data.authUrl,
+          'shopify-oauth',
+          `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
+        );
+
+        // Listen for successful OAuth completion
+        const handleMessage = (event: MessageEvent) => {
+          if (event.data?.type === 'shopify-oauth-success') {
+            popup?.close();
+            setIsConnectingOAuth(false);
+            queryClient.invalidateQueries({ queryKey: ["shopify-integration"] });
+            toast({
+              title: "Success",
+              description: "Shopify store connected successfully!",
+            });
+            onSuccess?.();
+            window.removeEventListener('message', handleMessage);
+          } else if (event.data?.type === 'shopify-oauth-error') {
+            popup?.close();
+            setIsConnectingOAuth(false);
+            toast({
+              title: "Error",
+              description: event.data.message || "Failed to connect Shopify store",
+              variant: "destructive",
+            });
+            window.removeEventListener('message', handleMessage);
+          }
+        };
+
+        window.addEventListener('message', handleMessage);
+
+        // Check if popup was closed manually
+        const checkPopupClosed = setInterval(() => {
+          if (popup?.closed) {
+            clearInterval(checkPopupClosed);
+            setIsConnectingOAuth(false);
+            window.removeEventListener('message', handleMessage);
+          }
+        }, 500);
       } else {
         throw new Error('Failed to generate OAuth URL');
       }
