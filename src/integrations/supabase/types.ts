@@ -7877,6 +7877,7 @@ export type Database = {
         Returns: string[]
       }
       get_user_email: { Args: { user_id: string }; Returns: string }
+      get_user_role: { Args: { _user_id: string }; Returns: string }
       has_permission: { Args: { permission_name: string }; Returns: boolean }
       has_role: {
         Args: {
@@ -7933,6 +7934,7 @@ export type Database = {
       seed_roller_blind_defaults: { Args: never; Returns: undefined }
       seed_system_option_types: { Args: never; Returns: undefined }
       sync_inventory_usage: { Args: { p_user_id: string }; Returns: undefined }
+      sync_user_role_from_profile: { Args: never; Returns: undefined }
       trigger_automation_workflow: {
         Args: {
           entity_id: string
@@ -7947,6 +7949,13 @@ export type Database = {
         Returns: undefined
       }
       update_user_last_seen: { Args: { user_id: string }; Returns: undefined }
+      user_has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       validate_permission_dependencies: {
         Args: { permissions_param: string[]; user_id_param: string }
         Returns: Json

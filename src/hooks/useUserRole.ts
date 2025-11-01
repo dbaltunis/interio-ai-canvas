@@ -8,10 +8,20 @@ export const useUserRole = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      // Get user profile for role display
+      // Get role from secure user_roles table using SECURITY DEFINER function
+      const { data: roleData, error: roleError } = await supabase
+        .rpc("get_user_role", { _user_id: user.id });
+
+      if (roleError) {
+        console.error("Error fetching user role:", roleError);
+      }
+
+      const role = roleData || 'User';
+
+      // Get user profile for parent_account_id
       const { data: profile } = await supabase
         .from("user_profiles")
-        .select("role, parent_account_id")
+        .select("parent_account_id")
         .eq("user_id", user.id)
         .single();
 
@@ -28,10 +38,10 @@ export const useUserRole = () => {
         .limit(1)
         .maybeSingle();
 
-      // Determine if user can view vendor costs
-      const isOwner = profile?.role === 'Owner';
-      const isManagerOrAdmin = profile?.role === 'Manager' || profile?.role === 'Admin';
-      const isStaff = profile?.role === 'Staff' || profile?.role === 'User';
+      // Determine if user can view vendor costs based on secure role
+      const isOwner = role === 'Owner';
+      const isManagerOrAdmin = role === 'Manager' || role === 'Admin';
+      const isStaff = role === 'Staff' || role === 'User';
       
       let canViewVendorCosts = false;
       if (isOwner || isAdminData) {
@@ -43,12 +53,12 @@ export const useUserRole = () => {
       }
 
       return {
-        role: profile?.role || 'User',
+        role,
         isOwner,
         isAdmin: isAdminData || false, // Use secure function result
         isManager: isManagerOrAdmin || isOwner,
         canManageMarkup: isAdminData || false, // Use secure function result
-        canViewMarkup: isOwner || profile?.role === 'Admin' || profile?.role === 'Manager',
+        canViewMarkup: isOwner || role === 'Admin' || role === 'Manager',
         canViewVendorCosts,
         parentAccountId: profile?.parent_account_id
       };

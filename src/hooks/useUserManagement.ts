@@ -12,21 +12,28 @@ export const useUserManagement = () => {
 
   const updateUserRole = useMutation({
     mutationFn: async ({ userId, newRole }: { userId: string; newRole: string }) => {
-      const { data, error } = await supabase
-        .from("user_profiles")
-        .update({ 
-          role: newRole,
-          updated_at: new Date().toISOString()
-        })
-        .eq("user_id", userId)
-        .select()
-        .single();
+      // Delete existing role entries for this user
+      const { error: deleteError } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", userId);
 
-      if (error) throw error;
-      return data;
+      if (deleteError) throw deleteError;
+
+      // Insert new role entry - trigger will sync to user_profiles automatically
+      const { error: insertError } = await supabase
+        .from("user_roles")
+        .insert({ 
+          user_id: userId, 
+          role: newRole as any
+        });
+
+      if (insertError) throw insertError;
+      return { role: newRole };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["user-permissions"] });
+      queryClient.invalidateQueries({ queryKey: ["user-role"] });
       queryClient.invalidateQueries({ queryKey: ["users"] });
       toast({
         title: "Role Updated",
