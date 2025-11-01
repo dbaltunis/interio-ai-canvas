@@ -4,12 +4,107 @@ import { Button } from "@/components/ui/button";
 import { useShopifyAnalytics, useSyncShopifyAnalytics } from "@/hooks/useShopifyAnalytics";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Store, DollarSign, ShoppingCart, Users, TrendingUp, RefreshCw, ExternalLink, Package } from "lucide-react";
+import { Store, DollarSign, ShoppingCart, Users, TrendingUp, RefreshCw, ExternalLink, Package, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 export const ShopifyOrdersWidget = () => {
-  const { data: analytics, isLoading } = useShopifyAnalytics(true); // Enable auto-sync
+  const { data: analytics, isLoading } = useShopifyAnalytics(true);
   const { integration } = useShopifyIntegrationReal();
   const { mutate: syncAnalytics, isPending: isSyncing } = useSyncShopifyAnalytics();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isSyncingProducts, setIsSyncingProducts] = useState(false);
+
+  // Get product sync stats
+  const { data: productStats } = useQuery({
+    queryKey: ['shopify-product-stats'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data: inventory } = await supabase
+        .from('inventory')
+        .select('id, category')
+        .eq('user_id', user.id);
+
+      const categoryCount: Record<string, number> = {};
+      inventory?.forEach(item => {
+        const category = item.category || 'Uncategorized';
+        categoryCount[category] = (categoryCount[category] || 0) + 1;
+      });
+
+      return {
+        totalProducts: inventory?.length || 0,
+        categories: Object.keys(categoryCount).length,
+        topCategory: Object.entries(categoryCount).sort(([, a], [, b]) => b - a)[0],
+      };
+    },
+  });
+
+  const handleProductSync = async (direction: 'pull' | 'push') => {
+    setIsSyncingProducts(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      if (direction === 'pull') {
+        const { data, error } = await supabase.functions.invoke('shopify-pull-products', {
+          body: {
+            userId: user.id,
+            syncSettings: {
+              sync_inventory: integration?.sync_inventory ?? true,
+              sync_prices: integration?.sync_prices ?? true,
+              sync_images: integration?.sync_images ?? true,
+            }
+          }
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: "✓ Products imported",
+          description: `Imported ${data.imported || 0}, Updated ${data.updated || 0} products`,
+        });
+      } else {
+        const { data: inventory } = await supabase
+          .from('inventory')
+          .select('*')
+          .eq('user_id', user.id);
+
+        const { data, error } = await supabase.functions.invoke('shopify-push-products', {
+          body: {
+            products: inventory,
+            syncSettings: {
+              sync_inventory: integration?.sync_inventory ?? true,
+              sync_prices: integration?.sync_prices ?? true,
+              sync_images: integration?.sync_images ?? true,
+            }
+          }
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: "✓ Products exported",
+          description: `Pushed ${inventory?.length || 0} products to Shopify`,
+        });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['shopify-product-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+    } catch (error: any) {
+      toast({
+        title: "Sync failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSyncingProducts(false);
+    }
+  };
 
   const showSyncing = isLoading || isSyncing;
   const showEmptyState = !isLoading && !analytics;
@@ -82,112 +177,149 @@ export const ShopifyOrdersWidget = () => {
             <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
               Your Shopify store is connected! When customers place orders, they'll appear here automatically.
             </p>
-            <div className="max-w-md mx-auto mb-6 p-4 bg-muted/50 rounded-lg text-left">
-              <p className="text-xs font-semibold mb-2">💡 What you'll see here:</p>
-              <ul className="text-xs text-muted-foreground space-y-1">
-                <li>• <strong>Total Revenue</strong> - All-time sales from Shopify orders</li>
-                <li>• <strong>Total Orders</strong> - Number of orders placed</li>
-                <li>• <strong>Avg Order Value</strong> - Average amount per order</li>
-                <li>• <strong>Total Customers</strong> - Unique customers who placed orders</li>
-              </ul>
-              <p className="text-xs text-muted-foreground mt-3 pt-3 border-t">
-                <strong>Note:</strong> Store visitor analytics (views, sessions) are not available through Shopify's API. 
-                For visitor data, check your Shopify admin dashboard.
-              </p>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => window.open(`https://${integration?.shop_domain}/admin`, '_blank')}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              View Shopify Dashboard
-            </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Total Revenue */}
-            <div className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="p-2 rounded-full bg-green-500/10">
-                  <DollarSign className="h-4 w-4 text-green-600" />
+          <div className="space-y-4">
+            {/* Product Sync Section */}
+            <div className="p-4 rounded-lg border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4 text-primary" />
+                  <h3 className="font-semibold text-sm">Product Sync Status</h3>
+                </div>
+                <Badge variant="secondary" className="text-xs">
+                  {integration?.last_sync_at ? `Synced ${formatDate(integration.last_sync_at)}` : 'Never synced'}
+                </Badge>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                <div className="text-center p-3 rounded-md bg-card/80">
+                  <div className="text-2xl font-bold text-primary">{productStats?.totalProducts || 0}</div>
+                  <div className="text-xs text-muted-foreground mt-1">Products in InterioApp</div>
+                </div>
+                <div className="text-center p-3 rounded-md bg-card/80">
+                  <div className="text-2xl font-bold text-primary">{productStats?.categories || 0}</div>
+                  <div className="text-xs text-muted-foreground mt-1">Categories</div>
+                </div>
+                <div className="text-center p-3 rounded-md bg-card/80">
+                  <div className="text-2xl font-bold text-primary">
+                    {productStats?.topCategory ? productStats.topCategory[1] : 0}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1 truncate">
+                    {productStats?.topCategory ? productStats.topCategory[0] : 'No products'}
+                  </div>
                 </div>
               </div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">Total Revenue</p>
-              <p className="text-2xl font-bold">
-                {formatCurrency(analytics?.total_revenue || 0)}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {analytics?.orders_this_month || 0} orders this month
-              </p>
+
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleProductSync('pull')}
+                  disabled={isSyncingProducts}
+                  className="flex-1 gap-1"
+                >
+                  <ArrowDownLeft className={`h-3 w-3 ${isSyncingProducts ? 'animate-spin' : ''}`} />
+                  <span className="text-xs">Import from Shopify</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleProductSync('push')}
+                  disabled={isSyncingProducts || (productStats?.totalProducts || 0) === 0}
+                  className="flex-1 gap-1"
+                >
+                  <ArrowUpRight className={`h-3 w-3 ${isSyncingProducts ? 'animate-spin' : ''}`} />
+                  <span className="text-xs">Export to Shopify</span>
+                </Button>
+              </div>
             </div>
 
-            {/* Total Orders */}
-            <div className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="p-2 rounded-full bg-blue-500/10">
-                  <ShoppingCart className="h-4 w-4 text-blue-600" />
+            {/* Orders Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Total Revenue */}
+              <div className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-2 rounded-full bg-green-500/10">
+                    <DollarSign className="h-4 w-4 text-green-600" />
+                  </div>
                 </div>
+                <p className="text-xs font-medium text-muted-foreground mb-1">Total Revenue</p>
+                <p className="text-2xl font-bold">
+                  {formatCurrency(analytics?.total_revenue || 0)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {analytics?.orders_this_month || 0} orders this month
+                </p>
               </div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">Total Orders</p>
-              <p className="text-2xl font-bold">
-                {analytics?.total_orders || 0}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                All time orders
-              </p>
-            </div>
 
-            {/* Average Order Value */}
-            <div className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="p-2 rounded-full bg-purple-500/10">
-                  <TrendingUp className="h-4 w-4 text-purple-600" />
+              {/* Total Orders */}
+              <div className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-2 rounded-full bg-blue-500/10">
+                    <ShoppingCart className="h-4 w-4 text-blue-600" />
+                  </div>
                 </div>
+                <p className="text-xs font-medium text-muted-foreground mb-1">Total Orders</p>
+                <p className="text-2xl font-bold">
+                  {analytics?.total_orders || 0}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  All time orders
+                </p>
               </div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">Avg Order Value</p>
-              <p className="text-2xl font-bold">
-                {formatCurrency(analytics?.avg_order_value || 0)}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Average value
-              </p>
-            </div>
 
-            {/* Total Customers */}
-            <div className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="p-2 rounded-full bg-orange-500/10">
-                  <Users className="h-4 w-4 text-orange-600" />
+              {/* Average Order Value */}
+              <div className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-2 rounded-full bg-purple-500/10">
+                    <TrendingUp className="h-4 w-4 text-purple-600" />
+                  </div>
                 </div>
+                <p className="text-xs font-medium text-muted-foreground mb-1">Avg Order Value</p>
+                <p className="text-2xl font-bold">
+                  {formatCurrency(analytics?.avg_order_value || 0)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Average value
+                </p>
               </div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">Total Customers</p>
-              <p className="text-2xl font-bold">
-                {analytics?.total_customers || 0}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Unique customers
-              </p>
-            </div>
 
-            {/* This Month Revenue */}
-            <div className="col-span-2 p-4 rounded-lg border bg-gradient-to-br from-primary/5 to-primary/10">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="h-4 w-4 text-primary" />
-                <p className="text-sm font-semibold">This Month</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-muted-foreground">Revenue</p>
-                  <p className="text-xl font-bold">
-                    {formatCurrency(analytics?.revenue_this_month || 0)}
-                  </p>
+              {/* Total Customers */}
+              <div className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-2 rounded-full bg-orange-500/10">
+                    <Users className="h-4 w-4 text-orange-600" />
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Orders</p>
-                  <p className="text-xl font-bold">
-                    {analytics?.orders_this_month || 0}
-                  </p>
+                <p className="text-xs font-medium text-muted-foreground mb-1">Total Customers</p>
+                <p className="text-2xl font-bold">
+                  {analytics?.total_customers || 0}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Unique customers
+                </p>
+              </div>
+
+              {/* This Month Revenue */}
+              <div className="col-span-2 p-4 rounded-lg border bg-gradient-to-br from-primary/5 to-primary/10">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                  <p className="text-sm font-semibold">This Month</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Revenue</p>
+                    <p className="text-xl font-bold">
+                      {formatCurrency(analytics?.revenue_this_month || 0)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Orders</p>
+                    <p className="text-xl font-bold">
+                      {analytics?.orders_this_month || 0}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
