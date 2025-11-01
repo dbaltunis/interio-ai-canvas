@@ -4,14 +4,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShoppingCart, ShoppingBag, Edit2, Check, X } from "lucide-react";
+import { ShoppingCart, ShoppingBag, Edit2, Check, X, Plus } from "lucide-react";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const ShopifyStatusManagementTab = () => {
   const { data: statuses = [] } = useJobStatuses();
   const updateStatus = useUpdateJobStatus();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ name: '', color: '', description: '' });
+  const [isCreating, setIsCreating] = useState(false);
 
   const shopifyStatuses = statuses.filter(
     (s) => s.name === 'Online Store Lead' || s.name === 'Online Store Sale'
@@ -35,6 +41,34 @@ export const ShopifyStatusManagementTab = () => {
   const handleCancel = () => {
     setEditingId(null);
     setEditForm({ name: '', color: '', description: '' });
+  };
+
+  const handleCreateStatuses = async () => {
+    setIsCreating(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase.rpc('ensure_shopify_statuses', {
+        p_user_id: user.id
+      });
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ["job_statuses"] });
+      toast({
+        title: "Success",
+        description: "Shopify statuses created successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -144,8 +178,18 @@ export const ShopifyStatusManagementTab = () => {
           {shopifyStatuses.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No Shopify statuses found</p>
-              <p className="text-sm">Default statuses will be created automatically</p>
+              <p className="font-medium text-foreground mb-2">No Shopify statuses found</p>
+              <p className="text-sm mb-4">Create the default Shopify integration statuses to start tracking online orders</p>
+              <Button onClick={handleCreateStatuses} disabled={isCreating}>
+                {isCreating ? (
+                  <>Creating...</>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Shopify Statuses
+                  </>
+                )}
+              </Button>
             </div>
           )}
         </CardContent>

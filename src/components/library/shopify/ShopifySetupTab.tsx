@@ -316,25 +316,30 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
       <ShopifyOAuthGuide />
       
       {integration?.is_connected && (
-        <Card className="border-blue-200 bg-blue-50">
-          <CardHeader>
-            <CardTitle className="text-blue-900">Current Store Connection</CardTitle>
-            <CardDescription className="text-blue-700">
-              Connected to: <strong>{integration.shop_domain}</strong>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-2">
-              <Button variant="destructive" onClick={handleDisconnect} disabled={isLoading}>
+        <Alert className="border-blue-200 bg-blue-50">
+          <AlertDescription className="space-y-4">
+            <div className="flex items-start gap-4">
+              <CheckCircle2 className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-semibold text-blue-900 mb-1">
+                  ✅ Store Connected: {integration.shop_domain}
+                </p>
+                <p className="text-sm text-blue-700">
+                  Your Shopify store is connected and syncing. Orders will automatically create projects in InterioApp.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 ml-9">
+              <Button variant="destructive" size="sm" onClick={handleDisconnect} disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Disconnect Store
               </Button>
-              <Button variant="outline" onClick={handleSwitchStore}>
+              <Button variant="outline" size="sm" onClick={handleSwitchStore}>
                 Switch to Different Store
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </AlertDescription>
+        </Alert>
       )}
       
       <Card>

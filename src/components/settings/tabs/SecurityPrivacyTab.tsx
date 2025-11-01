@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from "@/integrations/supabase/client";
 import { SettingsCard, SettingsSection, SettingsToggle, SettingsInput, SettingsAction } from '@/components/ui/settings-components';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -119,11 +120,73 @@ export const SecurityPrivacyTab = () => {
     });
   };
 
-  const recentSessions = [
-    { id: 1, device: 'MacBook Pro', location: 'New York, US', lastActive: '2 minutes ago', current: true },
-    { id: 2, device: 'iPhone 14', location: 'New York, US', lastActive: '1 hour ago', current: false },
-    { id: 3, device: 'Windows PC', location: 'Los Angeles, US', lastActive: '3 days ago', current: false },
-  ];
+  const [recentSessions, setRecentSessions] = useState<Array<{
+    id: string;
+    device: string;
+    location: string;
+    lastActive: string;
+    current: boolean;
+    ip?: string;
+    user_agent?: string;
+  }>>([]);
+
+  useEffect(() => {
+    loadActiveSessions();
+  }, []);
+
+  const loadActiveSessions = async () => {
+    try {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      if (!currentSession) {
+        setRecentSessions([]);
+        return;
+      }
+
+      // Parse user agent to get device info
+      const parseUserAgent = (ua: string) => {
+        if (ua.includes('iPhone')) return 'iPhone';
+        if (ua.includes('iPad')) return 'iPad';
+        if (ua.includes('Android')) return 'Android Device';
+        if (ua.includes('Mac')) return 'MacBook/Mac';
+        if (ua.includes('Windows')) return 'Windows PC';
+        if (ua.includes('Linux')) return 'Linux PC';
+        return 'Unknown Device';
+      };
+
+      const currentDevice = parseUserAgent(navigator.userAgent);
+      
+      // For now, show only current session since Supabase doesn't expose all sessions
+      // In production, you'd query a custom sessions table or use Supabase Auth Admin API
+      setRecentSessions([{
+        id: currentSession.user.id,
+        device: currentDevice,
+        location: 'Current Location', // IP geolocation would be needed for real location
+        lastActive: 'Active now',
+        current: true,
+        user_agent: navigator.userAgent
+      }]);
+    } catch (error) {
+      console.error('Error loading sessions:', error);
+    }
+  };
+
+  const handleRevokeSession = async (sessionId: string) => {
+    try {
+      // Sign out
+      await supabase.auth.signOut();
+      toast({
+        title: "Session Revoked",
+        description: "You have been signed out successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -256,10 +319,23 @@ export const SecurityPrivacyTab = () => {
                   </div>
                 </div>
                 {!session.current && (
-                  <Button variant="destructive" size="sm">
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={() => handleRevokeSession(session.id)}
+                  >
                     Revoke
                   </Button>
                 )}
+                {session.current && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    disabled
+                  >
+                    Current Session
+                  </Button>
+                 )}
               </div>
             ))}
           </div>
