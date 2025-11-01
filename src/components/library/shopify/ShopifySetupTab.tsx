@@ -9,7 +9,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
+import { ShopifyOAuthGuide } from "./ShopifyOAuthGuide";
 
 type ShopifyIntegration = Database['public']['Tables']['shopify_integrations']['Row'];
 type ShopifyIntegrationUpdate = Database['public']['Tables']['shopify_integrations']['Update'];
@@ -29,6 +30,33 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
   const [accessToken, setAccessToken] = useState("");
   const [webhookSecret, setWebhookSecret] = useState("");
 
+  // Extract myshopify.com domain from various formats
+  const extractShopDomain = (input: string): string => {
+    // Remove protocol
+    let domain = input.replace(/^https?:\/\//, '');
+    
+    // Extract from admin URL (admin.shopify.com/store/shop-name/...)
+    const adminMatch = domain.match(/admin\.shopify\.com\/store\/([^\/]+)/);
+    if (adminMatch) {
+      return `${adminMatch[1]}.myshopify.com`;
+    }
+    
+    // Remove trailing slash and path
+    domain = domain.split('/')[0];
+    
+    // If already myshopify.com, return as is
+    if (domain.includes('.myshopify.com')) {
+      return domain;
+    }
+    
+    // If just store name, add .myshopify.com
+    if (!domain.includes('.')) {
+      return `${domain}.myshopify.com`;
+    }
+    
+    return domain;
+  };
+
   const handleOAuthConnect = async () => {
     if (!shopDomain) {
       toast({
@@ -39,6 +67,10 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
       return;
     }
 
+    // Extract and normalize shop domain
+    const normalizedDomain = extractShopDomain(shopDomain);
+    console.log('Normalized domain:', normalizedDomain);
+
     setIsConnectingOAuth(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -46,13 +78,15 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
 
       // Call edge function to get OAuth URL
       const { data, error } = await supabase.functions.invoke('shopify-oauth-initiate', {
-        body: { userId: user.id, shopDomain }
+        body: { userId: user.id, shopDomain: normalizedDomain }
       });
 
       if (error) throw error;
 
       if (data?.authUrl) {
-        // Open OAuth in popup window
+        console.log('Opening OAuth URL:', data.authUrl);
+        
+        // Try to open popup
         const width = 600;
         const height = 700;
         const left = window.screen.width / 2 - width / 2;
@@ -61,11 +95,35 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
         const popup = window.open(
           data.authUrl,
           'shopify-oauth',
-          `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
+          `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,resizable=yes,scrollbars=yes`
         );
+
+        // Check if popup was blocked
+        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+          console.error('Popup blocked');
+          toast({
+            title: "Popup Blocked",
+            description: "Please allow popups for this site and try again. Or click the button below to continue in this window.",
+            variant: "destructive",
+          });
+          setIsConnectingOAuth(false);
+          
+          // Fallback: open in same window after 2 seconds
+          setTimeout(() => {
+            if (confirm('Popup was blocked. Open Shopify authorization in this window instead?')) {
+              window.location.href = data.authUrl;
+            } else {
+              setIsConnectingOAuth(false);
+            }
+          }, 2000);
+          return;
+        }
+
+        console.log('Popup opened, waiting for OAuth completion...');
 
         // Listen for successful OAuth completion
         const handleMessage = (event: MessageEvent) => {
+          console.log('Received message:', event.data);
           if (event.data?.type === 'shopify-oauth-success') {
             popup?.close();
             setIsConnectingOAuth(false);
@@ -93,6 +151,7 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
         // Check if popup was closed manually
         const checkPopupClosed = setInterval(() => {
           if (popup?.closed) {
+            console.log('Popup closed');
             clearInterval(checkPopupClosed);
             setIsConnectingOAuth(false);
             window.removeEventListener('message', handleMessage);
@@ -102,6 +161,7 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
         throw new Error('Failed to generate OAuth URL');
       }
     } catch (error: any) {
+      console.error('OAuth error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to initiate OAuth",
@@ -201,6 +261,8 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
 
   return (
     <div className="space-y-6">
+      <ShopifyOAuthGuide />
+      
       <Card>
         <CardHeader>
           <CardTitle>Shopify Store Connection</CardTitle>
@@ -218,8 +280,10 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
         <CardContent className="space-y-4">
           <Alert>
             <AlertDescription className="text-sm">
-              <p className="font-semibold mb-2">🚀 Easy OAuth Setup (Recommended)</p>
-              <p className="text-xs mb-2">Enter your shop domain below and click "Connect via OAuth" to authorize InterioApp with one click.</p>
+              <p className="font-semibold mb-2">✅ Ready to Connect</p>
+              <p className="text-xs mb-2">
+                After completing the setup steps above, enter your shop domain below. You can paste any Shopify URL - we'll extract the domain automatically.
+              </p>
             </AlertDescription>
           </Alert>
 
@@ -231,11 +295,11 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
               id="shop-domain"
               value={shopDomain}
               onChange={(e) => setShopDomain(e.target.value)}
-              placeholder="your-store.myshopify.com"
+              placeholder="your-store.myshopify.com or paste any Shopify admin URL"
               className="font-mono"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Your store's myshopify.com domain (found in Shopify Admin → Settings → Domains)
+              💡 Accepted formats: <code>your-store.myshopify.com</code> or full admin URL
             </p>
           </div>
 
