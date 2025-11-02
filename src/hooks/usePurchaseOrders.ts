@@ -59,8 +59,19 @@ export const useCreatePurchaseOrder = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user?.id) throw new Error("User not authenticated");
 
-      // Generate order number
-      const orderNumber = `PO-${Date.now()}`;
+      // Generate order number using number sequences
+      let orderNumber;
+      const { data: generatedNumber, error: seqError } = await supabase.rpc("get_next_sequence_number", {
+        p_user_id: user.id,
+        p_entity_type: "order",
+      });
+      
+      if (seqError) {
+        console.error("Error generating order number:", seqError);
+        orderNumber = `PO-${Date.now()}`;
+      } else {
+        orderNumber = generatedNumber || `PO-${Date.now()}`;
+      }
       
       // Calculate total
       const totalAmount = order.items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);

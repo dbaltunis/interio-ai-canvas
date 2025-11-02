@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { generateSequenceNumber, getEntityTypeFromStatus, shouldRegenerateNumber } from "./useNumberSequenceGeneration";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 type Project = Tables<"projects">;
@@ -132,6 +133,37 @@ export const useUpdateProject = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & Partial<ProjectUpdate>) => {
+      // Check if status is changing and if we need to regenerate the number
+      if (updates.status_id) {
+        const { data: oldProject } = await supabase
+          .from("projects")
+          .select("job_number, status_id, job_statuses(name)")
+          .eq("id", id)
+          .single();
+        
+        const { data: newStatus } = await supabase
+          .from("job_statuses")
+          .select("name")
+          .eq("id", updates.status_id)
+          .single();
+        
+        if (oldProject && newStatus) {
+          const oldStatusName = (oldProject as any).job_statuses?.name || '';
+          const newStatusName = newStatus.name;
+          
+          if (shouldRegenerateNumber(oldStatusName, newStatusName)) {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              const entityType = getEntityTypeFromStatus(newStatusName);
+              if (entityType) {
+                const newNumber = await generateSequenceNumber(user.id, entityType, 'JOB');
+                updates.job_number = newNumber;
+              }
+            }
+          }
+        }
+      }
+      
       const { data, error } = await supabase
         .from("projects")
         .update(updates)
