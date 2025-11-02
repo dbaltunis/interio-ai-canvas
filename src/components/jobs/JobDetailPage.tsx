@@ -315,11 +315,12 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               console.log(`Copied ${surfaces.length} surfaces for room ${newRoom.name}`);
             }
 
-            // Copy treatments for this room
+            // Copy treatments specifically for this room (not null room_id)
             const { data: treatments, error: treatmentsError } = await supabase
               .from('treatments')
               .select('*')
-              .eq('room_id', oldRoomId);
+              .eq('room_id', oldRoomId)
+              .eq('project_id', jobId);
 
             if (treatmentsError) {
               console.error('Error fetching treatments:', treatmentsError);
@@ -331,7 +332,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                 const { id, room_id, project_id, created_at, updated_at, ...treatmentData } = treatment;
                 return { 
                   ...treatmentData, 
-                  room_id: newRoom.id, 
+                  room_id: newRoom.id,
                   project_id: newProject.id,
                   user_id: user.id
                 };
@@ -348,9 +349,54 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               }
 
               treatmentsCopied += treatments.length;
-              console.log(`Copied ${treatments.length} treatments for room ${newRoom.name}`);
+              console.log(`✓ Copied ${treatments.length} treatments for room ${newRoom.name}`);
             }
           }
+        }
+      }
+
+      // STEP 2.5: Copy orphaned treatments (treatments with null room_id)
+      console.log('Checking for orphaned treatments (null room_id)...');
+      const { data: orphanedTreatments, error: orphanedError } = await supabase
+        .from('treatments')
+        .select('*')
+        .eq('project_id', jobId)
+        .is('room_id', null);
+
+      if (orphanedError) {
+        console.error('Error fetching orphaned treatments:', orphanedError);
+        throw orphanedError;
+      }
+
+      if (orphanedTreatments && orphanedTreatments.length > 0) {
+        console.log(`Found ${orphanedTreatments.length} orphaned treatments to copy`);
+        
+        // If there's at least one room, assign orphaned treatments to the first room
+        // Otherwise, keep them as orphaned
+        const firstNewRoomId = Object.values(roomIdMapping)[0] || null;
+        
+        const orphanedToInsert = orphanedTreatments.map((treatment: any) => {
+          const { id, room_id, project_id, created_at, updated_at, ...treatmentData } = treatment;
+          return { 
+            ...treatmentData, 
+            room_id: firstNewRoomId, // Assign to first room or keep as null
+            project_id: newProject.id,
+            user_id: user.id
+          };
+        });
+        
+        const { error: insertOrphanedError } = await supabase
+          .from('treatments')
+          .insert(orphanedToInsert);
+
+        if (insertOrphanedError) {
+          console.error('❌ CRITICAL: Error inserting orphaned treatments:', insertOrphanedError);
+          console.error('Orphaned treatments data attempted:', orphanedToInsert);
+          // Don't throw - continue with duplication even if orphaned treatments fail
+          console.warn(`⚠️ Skipping ${orphanedTreatments.length} orphaned treatments`);
+        } else {
+          treatmentsCopied += orphanedTreatments.length;
+          console.log(`✓ Copied ${orphanedTreatments.length} orphaned treatments`);
         }
       }
 
