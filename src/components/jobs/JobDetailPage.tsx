@@ -389,13 +389,23 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
 
       console.log('Duplication complete:', summary);
 
+      // Invalidate all relevant queries to refresh data
+      const queryClient = (window as any).queryClient;
+      if (queryClient) {
+        await queryClient.invalidateQueries({ queryKey: ["rooms"] });
+        await queryClient.invalidateQueries({ queryKey: ["surfaces"] });
+        await queryClient.invalidateQueries({ queryKey: ["treatments"] });
+        await queryClient.invalidateQueries({ queryKey: ["quotes"] });
+        await queryClient.invalidateQueries({ queryKey: ["projects"] });
+      }
+
       toast({
         title: "✓ Job Duplicated Successfully",
-        description: `Copied: ${summary}`
+        description: `Copied: ${summary}. Opening new job...`
       });
       
-      // Navigate to the new job
-      onBack();
+      // Navigate to the new job instead of going back
+      window.location.href = `/?tab=projects&jobId=${newProject.id}`;
     } catch (error) {
       console.error('Error duplicating job:', error);
       toast({
