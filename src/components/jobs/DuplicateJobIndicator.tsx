@@ -1,5 +1,4 @@
-import { Badge } from "@/components/ui/badge";
-import { Copy } from "lucide-react";
+import { Copy, GitFork } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DuplicateJobIndicatorProps {
@@ -16,19 +15,26 @@ export const DuplicateJobIndicator = ({
   if (!isDuplicate && duplicateCount === 0) return null;
 
   return (
-    <Badge 
-      variant="secondary" 
+    <div 
       className={cn(
-        "flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium",
+        "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-semibold tracking-wide uppercase transition-all duration-200 hover:scale-105",
         isDuplicate 
-          ? "bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-700" 
-          : "bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700",
+          ? "bg-gradient-to-r from-orange-500/10 to-orange-600/10 text-orange-600 border border-orange-500/20 hover:border-orange-500/30 dark:from-orange-400/20 dark:to-orange-500/20 dark:text-orange-400 dark:border-orange-400/30" 
+          : "bg-gradient-to-r from-blue-500/10 to-blue-600/10 text-blue-600 border border-blue-500/20 hover:border-blue-500/30 dark:from-blue-400/20 dark:to-blue-500/20 dark:text-blue-400 dark:border-blue-400/30",
         className
       )}
     >
-      <Copy className="h-3 w-3" />
-      {isDuplicate && <span>Duplicate</span>}
-      {duplicateCount > 0 && <span>{duplicateCount} {duplicateCount === 1 ? 'Copy' : 'Copies'}</span>}
-    </Badge>
+      {isDuplicate ? (
+        <GitFork className="h-3 w-3" />
+      ) : (
+        <Copy className="h-3 w-3" />
+      )}
+      {isDuplicate && <span className="leading-none">Copy</span>}
+      {duplicateCount > 0 && (
+        <span className="leading-none font-bold">
+          {duplicateCount}
+        </span>
+      )}
+    </div>
   );
 };
