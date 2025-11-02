@@ -113,6 +113,21 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
       console.log('Starting duplication for project:', jobId);
       console.log('Original project data:', project);
 
+      // Generate a NEW unique job number for the duplicate
+      // Get all existing children of the parent (or this job if it's a parent)
+      const parentId = project.parent_job_id || jobId;
+      const { data: existingDuplicates } = await supabase
+        .from('projects')
+        .select('job_number')
+        .eq('parent_job_id', parentId)
+        .order('created_at', { ascending: false });
+
+      // Calculate the copy number
+      const copyNumber = (existingDuplicates?.length || 0) + 1;
+      const newJobNumber = `${project.job_number}-COPY-${copyNumber}`;
+
+      console.log(`📋 Generating new job number: ${newJobNumber} (Copy ${copyNumber})`);
+
       // Create a new project with ALL fields from the original (except IDs and timestamps)
       const newProject = await createProject.mutateAsync({
         name: `${project.name} (Copy)`,
@@ -126,6 +141,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
         funnel_stage: project.funnel_stage || null,
         source: project.source || null,
         parent_job_id: jobId, // Track this is a duplicate
+        job_number: newJobNumber, // Use the new unique job number
       });
 
       console.log('📋 New project created:', newProject);

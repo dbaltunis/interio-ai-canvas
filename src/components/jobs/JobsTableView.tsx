@@ -52,6 +52,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useIsTablet } from "@/hooks/use-tablet";
 import { MobileJobsView } from "./MobileJobsView";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { useJobDuplicates } from "@/hooks/useJobDuplicates";
+import { DuplicateJobIndicator } from "./DuplicateJobIndicator";
 
 interface JobsTableViewProps {
   onJobSelect: (quote: any) => void;
@@ -83,6 +85,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
   const [currentPage, setCurrentPage] = useState(1);
   const [projectNotes, setProjectNotes] = useState<Record<string, number>>({});
   const [projectAppointments, setProjectAppointments] = useState<Record<string, any[]>>({});
+  const [duplicateData, setDuplicateData] = useState<Record<string, any>>({});
 
   // Filter columns for tablet view - show only 5 most important columns
   const tabletImportantColumns = ['job_no', 'client', 'status', 'total', 'actions'];
@@ -95,7 +98,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
 
-  // Fetch notes and appointments count for projects
+  // Fetch notes, appointments, and duplicate info for projects
   useEffect(() => {
     const fetchIndicators = async () => {
       const projectIds = projects.map(p => p.id);
@@ -127,6 +130,27 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
         appointmentsMap[apt.project_id].push(apt);
       });
       setProjectAppointments(appointmentsMap);
+
+      // Fetch duplicate information for all projects
+      const duplicatesMap: Record<string, any> = {};
+      
+      for (const project of projects) {
+        // Check if this job has a parent (is a duplicate)
+        const isDuplicate = !!project.parent_job_id;
+        
+        // Count children (duplicates of this job)
+        const { count: childrenCount } = await supabase
+          .from('projects')
+          .select('*', { count: 'exact', head: true })
+          .eq('parent_job_id', project.id);
+        
+        duplicatesMap[project.id] = {
+          isDuplicate,
+          duplicateCount: childrenCount || 0
+        };
+      }
+      
+      setDuplicateData(duplicatesMap);
     };
 
     fetchIndicators();
@@ -481,14 +505,21 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
   const renderCellContent = (columnId: string, project: any, quotes: any[], clientName: string, client: any) => {
     switch (columnId) {
       case 'job_no':
+        const dupInfo = duplicateData[project.id];
         return (
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-1">
             <span 
               title={project.job_number}
               className="font-mono text-xs text-muted-foreground whitespace-nowrap"
             >
               {formatJobNumber(project.job_number)}
             </span>
+            {dupInfo && (
+              <DuplicateJobIndicator
+                isDuplicate={dupInfo.isDuplicate}
+                duplicateCount={dupInfo.duplicateCount}
+              />
+            )}
           </div>
         );
       
