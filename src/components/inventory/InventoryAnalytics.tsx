@@ -3,10 +3,12 @@ import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { Package, AlertTriangle, DollarSign, RotateCcw, TrendingUp } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const InventoryAnalytics = () => {
   const { data: inventory, isLoading: inventoryLoading } = useEnhancedInventory();
+  const canManageInventory = useHasPermission('manage_inventory');
 
   const isLoading = inventoryLoading;
 
@@ -86,20 +88,22 @@ export const InventoryAnalytics = () => {
     <div className="space-y-6">
       {/* Key Metrics */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Inventory Value</p>
-                <p className="text-2xl font-bold">${totalValue.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Real-time calculation
-                </p>
+        {canManageInventory === true && (
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Inventory Value</p>
+                  <p className="text-2xl font-bold">${totalValue.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Real-time calculation
+                  </p>
+                </div>
+                <DollarSign className="h-8 w-8 text-muted-foreground" />
               </div>
-              <DollarSign className="h-8 w-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardContent className="p-6">
@@ -212,36 +216,38 @@ export const InventoryAnalytics = () => {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Inventory Value by Category */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Inventory Value Distribution</CardTitle>
-            <CardDescription>
-              Total value breakdown by product category
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-center">
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={categoryValueData}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {categoryValueData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Value']} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Inventory Value by Category - Only visible to users with manage_inventory permission */}
+        {canManageInventory === true && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Inventory Value Distribution</CardTitle>
+              <CardDescription>
+                Total value breakdown by product category
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-center">
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={categoryValueData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {categoryValueData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Value']} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Recent Items */}
         <Card>
@@ -271,7 +277,9 @@ export const InventoryAnalytics = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-semibold">${((item.quantity || 0) * (item.selling_price || 0)).toLocaleString()}</div>
+                        {canManageInventory === true && (
+                          <div className="font-semibold">${((item.quantity || 0) * (item.selling_price || 0)).toLocaleString()}</div>
+                        )}
                         <div className="text-xs text-muted-foreground">{item.quantity} in stock</div>
                       </div>
                     </div>

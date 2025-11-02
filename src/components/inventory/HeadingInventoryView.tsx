@@ -8,6 +8,7 @@ import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useDeleteEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { useLoadDefaultHeadings } from "@/hooks/useDefaultInventory";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { useState } from "react";
 import { EyeletRing } from "./EyeletRingSelector";
 
@@ -22,6 +23,7 @@ export const HeadingInventoryView = ({ searchQuery, viewMode }: HeadingInventory
   const loadDefaults = useLoadDefaultHeadings();
   const { toast } = useToast();
   const [editingItem, setEditingItem] = useState<any>(null);
+  const canManageInventory = useHasPermission('manage_inventory');
 
   // Filter and clean data - ensure we're only showing heading items from enhanced_inventory
   const filteredHeadings = headings
@@ -157,7 +159,7 @@ export const HeadingInventoryView = ({ searchQuery, viewMode }: HeadingInventory
 
                 {(item.cost_price || item.selling_price) ? (
                   <div className="flex gap-2 text-sm">
-                    {item.cost_price && item.cost_price > 0 && (
+                    {canManageInventory === true && item.cost_price && item.cost_price > 0 && (
                       <Badge variant="secondary" className="text-xs">
                         Cost: ${item.cost_price.toFixed(2)}/m
                       </Badge>

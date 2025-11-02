@@ -17,6 +17,7 @@ import { Progress } from "@/components/ui/progress";
 export const BusinessInventoryOverview = () => {
   const { data: allInventory, isLoading } = useEnhancedInventory();
   const canManageInventory = useHasPermission('manage_inventory');
+  const canViewInventory = useHasPermission('view_inventory');
   
   // Filter out treatment options - only show physical inventory
   const inventory = allInventory?.filter(item => item.category !== 'treatment_option') || [];
@@ -98,10 +99,30 @@ export const BusinessInventoryOverview = () => {
     return <div className="text-muted-foreground">Loading business metrics...</div>;
   }
 
+  // If user doesn't have view or manage permissions, show permission denied
+  if (canViewInventory === false && canManageInventory === false) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <div className="text-center space-y-2">
+          <Package className="h-12 w-12 text-muted-foreground mx-auto" />
+          <h3 className="text-lg font-medium">Access Restricted</h3>
+          <p className="text-muted-foreground text-sm">
+            You don't have permission to view inventory details.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // During permission check loading, show nothing to prevent data flash
+  if (canManageInventory === undefined && canViewInventory === undefined) {
+    return <div className="text-muted-foreground">Loading...</div>;
+  }
+
   return (
     <div className="space-y-6">
       {/* Primary Financial KPIs - Only visible to users with manage_inventory permission */}
-      {canManageInventory && (
+      {canManageInventory === true && (
         <div>
           <h2 className="text-lg font-semibold text-foreground mb-4">Financial Overview</h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -184,9 +205,11 @@ export const BusinessInventoryOverview = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-amber-600">{deadStock.length}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Value: {formatCurrency(deadStockValue)}
-              </p>
+              {canManageInventory === true && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Value: {formatCurrency(deadStockValue)}
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -214,7 +237,7 @@ export const BusinessInventoryOverview = () => {
           <CardHeader>
             <CardTitle className="text-base">Top Categories by Value</CardTitle>
             <CardDescription>
-              {canManageInventory ? 'Revenue potential by inventory category' : 'Inventory distribution by category'}
+              {canManageInventory === true ? 'Revenue potential by inventory category' : 'Inventory distribution by category'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -232,7 +255,7 @@ export const BusinessInventoryOverview = () => {
                           {stats.count} items
                         </Badge>
                       </div>
-                      {canManageInventory && (
+                      {canManageInventory === true && (
                         <div className="text-right">
                           <div className="font-semibold">{formatCurrency(stats.value)}</div>
                           <div className="text-xs text-muted-foreground">

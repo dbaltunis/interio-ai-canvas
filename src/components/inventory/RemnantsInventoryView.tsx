@@ -7,6 +7,7 @@ import { AddInventoryDialog } from "./AddInventoryDialog";
 import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useDeleteEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { format } from "date-fns";
 import { useState } from "react";
 
@@ -20,6 +21,7 @@ export const RemnantsInventoryView = ({ searchQuery, viewMode }: RemnantsInvento
   const deleteItem = useDeleteEnhancedInventoryItem();
   const { toast } = useToast();
   const [editingItem, setEditingItem] = useState<any>(null);
+  const canManageInventory = useHasPermission('manage_inventory');
 
   // Filter for remnants - just use category='remnant' for simplicity
   const remnants = allInventory.filter(item => {
@@ -79,7 +81,10 @@ export const RemnantsInventoryView = ({ searchQuery, viewMode }: RemnantsInvento
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <p className="text-sm text-muted-foreground">
-            {remnants.length} remnant{remnants.length !== 1 ? 's' : ''} found • Total value: ${remnants.reduce((sum, r) => sum + ((r.cost_price || 0) * (r.quantity || 0)), 0).toFixed(2)}
+            {remnants.length} remnant{remnants.length !== 1 ? 's' : ''} found
+            {canManageInventory === true && (
+              <> • Total value: ${remnants.reduce((sum, r) => sum + ((r.cost_price || 0) * (r.quantity || 0)), 0).toFixed(2)}</>
+            )}
           </p>
           <AddInventoryDialog
             trigger={<Button>Add Remnant</Button>}
@@ -129,12 +134,14 @@ export const RemnantsInventoryView = ({ searchQuery, viewMode }: RemnantsInvento
                     {remnant.quantity || 0} {remnant.unit || 'm'}
                   </Badge>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Value:</span>
-                  <span className="font-semibold">
-                    ${((remnant.cost_price || 0) * (remnant.quantity || 0)).toFixed(2)}
-                  </span>
-                </div>
+                {canManageInventory === true && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Value:</span>
+                    <span className="font-semibold">
+                      ${((remnant.cost_price || 0) * (remnant.quantity || 0)).toFixed(2)}
+                    </span>
+                  </div>
+                )}
                 {remnant.location && (
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Location:</span>

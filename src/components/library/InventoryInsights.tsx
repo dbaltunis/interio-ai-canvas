@@ -2,10 +2,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useFabricLibrary, mockFabricItems } from "@/hooks/useFabricLibrary";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { TrendingUp, TrendingDown, AlertTriangle, Package } from "lucide-react";
 
 export const InventoryInsights = () => {
   const { data: fabricItems = mockFabricItems, isLoading } = useFabricLibrary();
+  const canManageInventory = useHasPermission('manage_inventory');
 
   if (isLoading) {
     return (
@@ -31,6 +33,16 @@ export const InventoryInsights = () => {
   const lowStockItems = fabricItems.filter(item => item.quantity_in_stock <= item.reorder_point);
   const totalItems = fabricItems.length;
   const averageValue = totalItems > 0 ? totalValue / totalItems : 0;
+
+  // Don't show financial data if user doesn't have manage_inventory permission
+  if (canManageInventory === false) {
+    return null;
+  }
+
+  // During permission loading, show nothing to prevent flash
+  if (canManageInventory === undefined) {
+    return null;
+  }
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
