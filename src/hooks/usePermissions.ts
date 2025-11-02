@@ -41,7 +41,6 @@ export const useUserPermissions = () => {
       if (hasCustomPermissionsConfigured) {
         const permissionsList = customPermissions ? customPermissions.map(p => p.permission_name) : [];
         console.log('🔥🔥🔥 [PERMISSIONS] ✅ USING CUSTOM PERMISSIONS:', permissionsList);
-        alert(`🔥 CUSTOM PERMISSIONS ACTIVE (${permissionsList.length}): ${permissionsList.join(', ') || 'NONE - ALL TOGGLES OFF'}`);
         // Return only the custom permissions (could be empty array if all toggles are OFF)
         return customPermissions ? customPermissions.map(p => ({ permission_name: p.permission_name })) : [];
       }
@@ -121,7 +120,6 @@ export const useUserPermissions = () => {
       const permissions = rolePermissions[userRole as keyof typeof rolePermissions] || ['view_profile'];
       
       console.log(`🔥🔥🔥 [PERMISSIONS] ✅ USING ROLE-BASED for ${userRole}:`, permissions);
-      alert(`🔥 ROLE-BASED PERMISSIONS (${userRole}): ${permissions.join(', ')}`);
       return permissions.map(permission => ({ permission_name: permission }));
     },
     enabled: !!user && !authLoading,
