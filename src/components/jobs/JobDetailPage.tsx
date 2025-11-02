@@ -11,9 +11,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
 import { useToast } from "@/hooks/use-toast";
-import { useProjects, useUpdateProject } from "@/hooks/useProjects";
+import { useProjects, useUpdateProject, useCreateProject } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
 import { ProjectDetailsTab } from "./tabs/ProjectDetailsTab";
 import { RoomsTab } from "./tabs/RoomsTab";
@@ -27,6 +37,8 @@ import { JobSkeleton } from "./JobSkeleton";
 import { JobNotFound } from "./JobNotFound";
 import { useProjectMaterialsUsage } from "@/hooks/useProjectMaterialsUsage";
 import { useTreatmentMaterialsStatus } from "@/hooks/useProjectMaterialsStatus";
+import { generateQuotePDF } from "@/utils/generateQuotePDF";
+import { supabase } from "@/integrations/supabase/client";
 
 interface JobDetailPageProps {
   jobId: string;
@@ -35,11 +47,15 @@ interface JobDetailPageProps {
 
 export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const [activeTab, setActiveTab] = useState("details");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
   
   const { data: projects } = useProjects();
   const { data: clients } = useClients();
   const updateProject = useUpdateProject();
+  const createProject = useCreateProject();
   
   // Fetch materials data for badge indicators
   const { data: treatmentMaterials = [] } = useProjectMaterialsUsage(jobId);
@@ -70,6 +86,201 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
 
   const handleUpdateProject = async (projectData: any) => {
     await updateProject.mutateAsync(projectData);
+  };
+
+  const handleDuplicateJob = async () => {
+    try {
+      if (!project) return;
+      
+      toast({
+        title: "Duplicating job...",
+        description: "Please wait while we create a copy"
+      });
+
+      // Create a new project with similar data
+      const newProject = await createProject.mutateAsync({
+        name: `${project.name} (Copy)`,
+        description: project.description,
+        client_id: project.client_id,
+        status_id: project.status_id,
+        start_date: project.start_date,
+        due_date: project.due_date,
+      });
+
+      // Copy rooms and their treatments
+      const { data: rooms } = await supabase
+        .from('rooms')
+        .select('*')
+        .eq('project_id', jobId);
+
+      if (rooms && rooms.length > 0) {
+        for (const room of rooms) {
+          const { id: oldRoomId, project_id: _, created_at: __, updated_at: ___, ...roomData } = room;
+          const { data: newRoom } = await supabase
+            .from('rooms')
+            .insert({ ...roomData, project_id: newProject.id })
+            .select()
+            .single();
+
+          if (newRoom) {
+            // Copy treatments for this room
+            const { data: treatments } = await supabase
+              .from('treatments')
+              .select('*')
+              .eq('room_id', oldRoomId);
+
+            if (treatments && treatments.length > 0) {
+              const treatmentsToInsert = treatments.map(({ id, room_id, created_at, updated_at, ...treatmentData }) => ({
+                ...treatmentData,
+                room_id: newRoom.id
+              }));
+              await supabase.from('treatments').insert(treatmentsToInsert);
+            }
+          }
+        }
+      }
+
+      toast({
+        title: "Success",
+        description: "Job duplicated successfully"
+      });
+      
+      // Navigate to the new job
+      onBack();
+    } catch (error) {
+      console.error('Error duplicating job:', error);
+      toast({
+        title: "Error",
+        description: "Failed to duplicate job. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      const element = document.getElementById('quote-live-preview');
+      if (!element) {
+        toast({
+          title: "Error",
+          description: "Quote preview not available. Please switch to the Quote tab first.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Generating PDF...",
+        description: "Please wait..."
+      });
+
+      const filename = `${project?.job_number || project?.name || 'job'}.pdf`;
+      await generateQuotePDF(element, { filename });
+      
+      toast({
+        title: "Success",
+        description: "PDF exported successfully"
+      });
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to export PDF. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleArchiveJob = async () => {
+    try {
+      if (!project) return;
+      
+      // Find "Completed" or "Archived" status
+      const { data: archivedStatus } = await supabase
+        .from("job_statuses")
+        .select("id")
+        .eq("user_id", project.user_id)
+        .eq("category", "Project")
+        .eq("is_active", true)
+        .ilike("name", "%completed%")
+        .order("slot_number", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      
+      if (archivedStatus) {
+        await updateProject.mutateAsync({
+          id: project.id,
+          status_id: archivedStatus.id
+        });
+
+        toast({
+          title: "Success",
+          description: "Job archived successfully"
+        });
+        
+        setShowArchiveDialog(false);
+        onBack();
+      } else {
+        toast({
+          title: "Info",
+          description: "No 'Completed' status found. Create one in Settings to archive jobs.",
+          variant: "default"
+        });
+        setShowArchiveDialog(false);
+      }
+    } catch (error) {
+      console.error('Error archiving job:', error);
+      toast({
+        title: "Error",
+        description: "Failed to archive job. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteJob = async () => {
+    try {
+      if (!project) return;
+      
+      setIsDeleting(true);
+
+      // Delete associated rooms and treatments (cascade should handle this, but being explicit)
+      const { data: rooms } = await supabase
+        .from('rooms')
+        .select('id')
+        .eq('project_id', jobId);
+
+      if (rooms && rooms.length > 0) {
+        const roomIds = rooms.map(r => r.id);
+        await supabase.from('treatments').delete().in('room_id', roomIds);
+        await supabase.from('rooms').delete().in('id', roomIds);
+      }
+
+      // Delete the project
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', jobId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Job deleted successfully"
+      });
+      
+      setShowDeleteDialog(false);
+      onBack();
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete job. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const allTabs = [
@@ -136,16 +347,12 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                   {
                     label: 'Duplicate Job',
                     icon: <Copy className="h-4 w-4" />,
-                    onClick: () => {
-                      toast({ title: "Duplicate Job", description: "Feature coming soon" });
-                    }
+                    onClick: handleDuplicateJob
                   },
                   {
                     label: 'Export to PDF',
                     icon: <FileDown className="h-4 w-4" />,
-                    onClick: () => {
-                      toast({ title: "Export to PDF", description: "Feature coming soon" });
-                    }
+                    onClick: handleExportPDF
                   },
                   {
                     label: 'Workflows',
@@ -157,17 +364,13 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                   {
                     label: 'Archive Job',
                     icon: <Archive className="h-4 w-4" />,
-                    onClick: () => {
-                      toast({ title: "Archive Job", description: "Feature coming soon" });
-                    },
+                    onClick: () => setShowArchiveDialog(true),
                     variant: 'warning'
                   },
                   {
                     label: 'Delete Job',
                     icon: <Trash2 className="h-4 w-4" />,
-                    onClick: () => {
-                      toast({ title: "Delete Job", description: "Feature coming soon", variant: "destructive" });
-                    },
+                    onClick: () => setShowDeleteDialog(true),
                     variant: 'destructive'
                   }
                 ]}
@@ -339,6 +542,47 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
           </div>
         </Tabs>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Job</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this job? This action cannot be undone. 
+              All rooms, treatments, and associated data will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteJob}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Archive Confirmation Dialog */}
+      <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive Job</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to archive this job? You can restore it later from the archived jobs list.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleArchiveJob}>
+              Archive
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

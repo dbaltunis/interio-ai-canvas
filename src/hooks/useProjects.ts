@@ -57,9 +57,20 @@ export const useCreateProject = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (project: Omit<ProjectInsert, "user_id">) => {
+    mutationFn: async (project: Omit<ProjectInsert, "user_id" | "job_number"> & { job_number?: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
+
+      // Generate job number if not provided
+      let jobNumber = project.job_number;
+      if (!jobNumber) {
+        const { count } = await supabase
+          .from("projects")
+          .select("*", { count: 'exact', head: true })
+          .eq("user_id", user.id);
+        
+        jobNumber = `JOB-${String(((count || 0) + 1)).padStart(4, '0')}`;
+      }
 
       // Get first Project status (slot 5) if status_id not provided
       let statusId = project.status_id;
@@ -82,6 +93,7 @@ export const useCreateProject = () => {
         .insert({
           ...project,
           user_id: user.id,
+          job_number: jobNumber,
           status_id: statusId,
         })
         .select()
