@@ -42,6 +42,7 @@ interface LivePreviewBlockProps {
   showDetailedBreakdown?: boolean;
   showImages?: boolean;
   groupByRoom?: boolean;
+  typographySettings?: any;
   onSettingsChange?: (settings: { showDetailedBreakdown?: boolean; showImages?: boolean; groupByRoom?: boolean }) => void;
 }
 
@@ -54,6 +55,7 @@ const LivePreviewBlock = ({
   showDetailedBreakdown: propsShowDetailed,
   showImages: propsShowImages,
   groupByRoom: propsGroupByRoom,
+  typographySettings,
   onSettingsChange
 }: LivePreviewBlockProps) => {
   const content = block.content || {};
@@ -216,9 +218,11 @@ const LivePreviewBlock = ({
       
       return (
         <div className="my-6">
-          <h3 className="text-lg font-semibold mb-4">{content.title || 'Quote Items'}</h3>
+          <h3 className="text-lg font-semibold mb-4" style={{ 
+            fontSize: typographySettings?.headingSize === 'large' ? '1.5rem' : typographySettings?.headingSize === 'small' ? '1rem' : '1.25rem' 
+          }}>{content.title || 'Quote Items'}</h3>
           <div className="border rounded-lg overflow-hidden">
-            <table className="w-full">
+            <table className="w-full" style={{ tableLayout: 'fixed', wordWrap: 'break-word' }}>
               <thead className="bg-muted/50">
                 <tr>
                   {showImages && <th className="p-2 text-left text-xs font-medium">Image</th>}
@@ -239,11 +243,23 @@ const LivePreviewBlock = ({
                         )}
                       </td>
                     )}
-                    <td className="p-2 text-sm font-medium">{item.name}</td>
-                    {content.showDescription !== false && <td className="p-2 text-sm text-muted-foreground">{item.description || '-'}</td>}
-                    <td className="p-2 text-sm text-right">{item.quantity || 1}</td>
-                    <td className="p-2 text-sm text-right">{currencySymbol}{(item.unit_price || item.price || 0).toFixed(2)}</td>
-                    <td className="p-2 text-sm text-right font-medium">{currencySymbol}{((item.quantity || 1) * (item.unit_price || item.price || 0)).toFixed(2)}</td>
+                    <td className="p-2 text-sm font-medium" style={{ 
+                      overflowWrap: 'break-word',
+                      fontSize: typographySettings?.bodySize === 'large' ? '1rem' : typographySettings?.bodySize === 'small' ? '0.75rem' : '0.875rem'
+                    }}>{item.name}</td>
+                    {content.showDescription !== false && <td className="p-2 text-sm text-muted-foreground" style={{ 
+                      overflowWrap: 'break-word',
+                      fontSize: typographySettings?.bodySize === 'large' ? '1rem' : typographySettings?.bodySize === 'small' ? '0.75rem' : '0.875rem'
+                    }}>{item.description || '-'}</td>}
+                    <td className="p-2 text-sm text-right" style={{ 
+                      fontSize: typographySettings?.bodySize === 'large' ? '1rem' : typographySettings?.bodySize === 'small' ? '0.75rem' : '0.875rem'
+                    }}>{item.quantity || 1}</td>
+                    <td className="p-2 text-sm text-right" style={{ 
+                      fontSize: typographySettings?.bodySize === 'large' ? '1rem' : typographySettings?.bodySize === 'small' ? '0.75rem' : '0.875rem'
+                    }}>{currencySymbol}{(item.unit_price || item.price || 0).toFixed(2)}</td>
+                    <td className="p-2 text-sm text-right font-medium" style={{ 
+                      fontSize: typographySettings?.bodySize === 'large' ? '1rem' : typographySettings?.bodySize === 'small' ? '0.75rem' : '0.875rem'
+                    }}>{currencySymbol}{((item.quantity || 1) * (item.unit_price || item.price || 0)).toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -322,13 +338,24 @@ const LivePreviewBlock = ({
               )}
 
               {/* Document Title */}
-              <h1 style={{ fontSize: '30px', fontWeight: 'bold', color: '#111827', letterSpacing: '-0.025em' }}>
+              <h1 style={{ 
+                fontSize: typographySettings?.headingSize === 'large' ? '2rem' : typographySettings?.headingSize === 'small' ? '1.5rem' : '1.875rem',
+                fontWeight: 'bold', 
+                color: '#111827', 
+                letterSpacing: '-0.025em' 
+              }}>
                 {content.documentTitle || "Quotation"}
               </h1>
 
               {/* Tagline */}
               {content.tagline && (
-                <p style={{ fontSize: '16px', color: '#374151', maxWidth: '672px', margin: '8px auto 0', fontWeight: '500' }}>
+                <p style={{ 
+                  fontSize: typographySettings?.bodySize === 'large' ? '1.125rem' : typographySettings?.bodySize === 'small' ? '0.875rem' : '1rem',
+                  color: '#374151', 
+                  maxWidth: '672px', 
+                  margin: '8px auto 0', 
+                  fontWeight: '500' 
+                }}>
                   {content.tagline}
                 </p>
               )}
@@ -1452,6 +1479,7 @@ interface LivePreviewProps {
   showDetailedBreakdown?: boolean;
   showImages?: boolean;
   groupByRoom?: boolean;
+  typographySettings?: any;
   onSettingsChange?: (settings: { showDetailedBreakdown?: boolean; showImages?: boolean; groupByRoom?: boolean }) => void;
 }
 
@@ -1466,6 +1494,7 @@ export const LivePreview = ({
   showDetailedBreakdown,
   showImages,
   groupByRoom,
+  typographySettings,
   onSettingsChange
 }: LivePreviewProps) => {
   const { data: businessSettings } = useBusinessSettings();
@@ -1499,28 +1528,21 @@ export const LivePreview = ({
     );
   }
 
-  // Print Mode: Clean rendering without wrappers, borders, or UI elements
+  // Print Mode: Clean rendering without editor UI
   if (isPrintMode) {
     return (
-      <div
-        style={{
-          backgroundColor: '#ffffff !important',
-          color: '#000000 !important',
-          padding: 0,
-          margin: 0,
-          width: '100%'
-        }}
-      >
+      <div className="space-y-0" style={{ maxWidth: '100%', overflowWrap: 'break-word' }}>
         {blocks.map((block, index) => (
-          <LivePreviewBlock
-            key={block.id || index}
-            block={block}
+          <LivePreviewBlock 
+            key={block.id || index} 
+            block={block} 
             projectData={projectData}
             isEditable={false}
             isPrintMode={true}
             userBusinessSettings={businessSettings}
             showDetailedBreakdown={showDetailedBreakdown}
             showImages={showImages}
+            typographySettings={typographySettings}
             groupByRoom={groupByRoom}
             onSettingsChange={onSettingsChange}
           />
@@ -1581,28 +1603,20 @@ export const LivePreview = ({
           >
             {blocks.map((block, index) => (
               <LivePreviewBlock 
-                key={block.id || index} 
-                block={block} 
+                key={block.id || index}
+                block={block}
                 projectData={projectData}
                 isEditable={isEditable}
-                isPrintMode={false}
+                isPrintMode={isPrintMode}
                 userBusinessSettings={businessSettings}
                 showDetailedBreakdown={showDetailedBreakdown}
                 showImages={showImages}
+                typographySettings={typographySettings}
                 groupByRoom={groupByRoom}
                 onSettingsChange={onSettingsChange}
               />
             ))}
           </div>
-          
-          {/* Page break indicator every 297mm - subtle */}
-          <div 
-            className="no-print absolute left-0 right-0 border-t border-dashed border-destructive/10 pointer-events-none"
-            style={{ 
-              top: '297mm',
-              borderTopWidth: '1px'
-            }}
-          />
         </div>
       </div>
     </ScrollArea>

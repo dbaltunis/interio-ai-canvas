@@ -29,17 +29,14 @@ export const ProTemplateEditor = ({ template, onSave, onClose }: ProTemplateEdit
   
   const { data: templateData } = useTemplateData(selectedProjectId, useRealData);
   
-  // Document Layout Settings - Initialize from template if available
+  // Document Layout Settings - Initialize from template if available (in millimeters)
   const [documentSettings, setDocumentSettings] = useState({
     pageSize: template.settings?.document?.pageSize || 'A4',
     orientation: template.settings?.document?.orientation || 'portrait',
-    marginTop: template.settings?.document?.marginTop || 40,
-    marginBottom: template.settings?.document?.marginBottom || 40,
-    marginLeft: template.settings?.document?.marginLeft || 40,
-    marginRight: template.settings?.document?.marginRight || 40,
-    headerPadding: template.settings?.document?.headerPadding || 24,
-    contentPadding: template.settings?.document?.contentPadding || 20,
-    footerPadding: template.settings?.document?.footerPadding || 24,
+    marginTop: template.settings?.document?.marginTop || 15,
+    marginBottom: template.settings?.document?.marginBottom || 15,
+    marginLeft: template.settings?.document?.marginLeft || 15,
+    marginRight: template.settings?.document?.marginRight || 15,
   });
 
   // Products/Items Settings - Initialize from template if available
@@ -221,102 +218,56 @@ export const ProTemplateEditor = ({ template, onSave, onClose }: ProTemplateEdit
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label className="text-xs">Top</Label>
-                      <span className="text-xs text-muted-foreground">{documentSettings.marginTop}px</span>
+                      <span className="text-xs text-muted-foreground">{documentSettings.marginTop}mm</span>
                     </div>
                     <Slider
                       value={[documentSettings.marginTop]}
                       onValueChange={([value]) => setDocumentSettings({ ...documentSettings, marginTop: value })}
                       min={0}
-                      max={100}
-                      step={5}
+                      max={50}
+                      step={1}
                     />
                   </div>
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label className="text-xs">Bottom</Label>
-                      <span className="text-xs text-muted-foreground">{documentSettings.marginBottom}px</span>
+                      <span className="text-xs text-muted-foreground">{documentSettings.marginBottom}mm</span>
                     </div>
                     <Slider
                       value={[documentSettings.marginBottom]}
                       onValueChange={([value]) => setDocumentSettings({ ...documentSettings, marginBottom: value })}
                       min={0}
-                      max={100}
-                      step={5}
+                      max={50}
+                      step={1}
                     />
                   </div>
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label className="text-xs">Left</Label>
-                      <span className="text-xs text-muted-foreground">{documentSettings.marginLeft}px</span>
+                      <span className="text-xs text-muted-foreground">{documentSettings.marginLeft}mm</span>
                     </div>
                     <Slider
                       value={[documentSettings.marginLeft]}
                       onValueChange={([value]) => setDocumentSettings({ ...documentSettings, marginLeft: value })}
                       min={0}
-                      max={100}
-                      step={5}
+                      max={50}
+                      step={1}
                     />
                   </div>
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label className="text-xs">Right</Label>
-                      <span className="text-xs text-muted-foreground">{documentSettings.marginRight}px</span>
+                      <span className="text-xs text-muted-foreground">{documentSettings.marginRight}mm</span>
                     </div>
                     <Slider
                       value={[documentSettings.marginRight]}
                       onValueChange={([value]) => setDocumentSettings({ ...documentSettings, marginRight: value })}
                       min={0}
-                      max={100}
-                      step={5}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4 pt-4 border-t">
-                  <Label className="text-sm font-semibold">Section Padding</Label>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs">Header</Label>
-                      <span className="text-xs text-muted-foreground">{documentSettings.headerPadding}px</span>
-                    </div>
-                    <Slider
-                      value={[documentSettings.headerPadding]}
-                      onValueChange={([value]) => setDocumentSettings({ ...documentSettings, headerPadding: value })}
-                      min={0}
-                      max={60}
-                      step={4}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs">Content</Label>
-                      <span className="text-xs text-muted-foreground">{documentSettings.contentPadding}px</span>
-                    </div>
-                    <Slider
-                      value={[documentSettings.contentPadding]}
-                      onValueChange={([value]) => setDocumentSettings({ ...documentSettings, contentPadding: value })}
-                      min={0}
-                      max={60}
-                      step={4}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs">Footer</Label>
-                      <span className="text-xs text-muted-foreground">{documentSettings.footerPadding}px</span>
-                    </div>
-                    <Slider
-                      value={[documentSettings.footerPadding]}
-                      onValueChange={([value]) => setDocumentSettings({ ...documentSettings, footerPadding: value })}
-                      min={0}
-                      max={60}
-                      step={4}
+                      max={50}
+                      step={1}
                     />
                   </div>
                 </div>
