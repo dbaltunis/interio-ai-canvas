@@ -17,14 +17,51 @@ import { useEmailSettings } from "@/hooks/useEmailSettings";
 import { useEmails } from "@/hooks/useEmails";
 import { HelpDrawer } from "@/components/ui/help-drawer";
 import { HelpIcon } from "@/components/ui/help-icon";
+import { useHasPermission } from "@/hooks/usePermissions";
+import { Shield } from "lucide-react";
 
 export const EmailManagement = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const canAccessEmails = useHasPermission('view_jobs'); // Email access tied to jobs permission
   const [showFilters, setShowFilters] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const { hasSendGridIntegration, isLoading: integrationLoading } = useIntegrationStatus();
   const { data: emailSettings } = useEmailSettings();
   const { data: emails = [] } = useEmails();
+
+  // Check permissions
+  if (canAccessEmails === undefined) {
+    return (
+      <div className="w-full animate-fade-in">
+        <div className="w-full px-6 py-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="flex items-center gap-3">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <div className="text-lg text-muted-foreground">Loading permissions...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canAccessEmails) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-background">
+        <Card className="w-96">
+          <CardContent className="p-6 text-center space-y-4">
+            <Shield className="h-12 w-12 text-muted-foreground mx-auto" />
+            <div>
+              <h3 className="text-lg font-medium">Access Denied</h3>
+              <p className="text-muted-foreground text-sm mt-1">
+                You don't have permission to access emails. Please contact your administrator.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleEmailSettingsClick = () => {
     setActiveTab("settings");

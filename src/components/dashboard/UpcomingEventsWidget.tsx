@@ -8,9 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
+import { useHasPermission } from "@/hooks/usePermissions";
 
 export const UpcomingEventsWidget = () => {
   const navigate = useNavigate();
+  const canViewCalendar = useHasPermission('view_calendar');
   const { data: appointments, isLoading } = useAppointments();
   const { integration: calendarIntegration } = useGoogleCalendarIntegration();
 
@@ -30,8 +32,12 @@ export const UpcomingEventsWidget = () => {
     return format(date, "MMM d, yyyy");
   };
 
+  // Don't show widget if no calendar permission
+  if (canViewCalendar === false) {
+    return null;
+  }
 
-  if (isLoading) {
+  if (isLoading || canViewCalendar === undefined) {
     return (
       <Card>
         <CardHeader>

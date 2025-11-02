@@ -48,6 +48,7 @@ import { CalendarSyncToolbar } from "./CalendarSyncToolbar";
 import { SchedulerManagement } from "./SchedulerManagement";
 import { BookingManagement } from "./BookingManagement";
 import { AnalyticsDashboard } from "./AnalyticsDashboard";
+import { Shield } from "lucide-react";
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -56,6 +57,7 @@ interface CalendarViewProps {
 }
 
 const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
+  const canViewCalendar = useHasPermission('view_calendar');
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
   const isDesktop = !isMobile && !isTablet;
@@ -119,6 +121,36 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   }, []);
 
   // newEvent state removed - using UnifiedAppointmentDialog now
+
+  // Check permissions BEFORE returning any view
+  if (canViewCalendar === undefined) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <div className="text-lg text-muted-foreground">Loading calendar...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canViewCalendar) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-background">
+        <Card className="w-96">
+          <CardContent className="p-6 text-center space-y-4">
+            <Shield className="h-12 w-12 text-muted-foreground mx-auto" />
+            <div>
+              <h3 className="text-lg font-medium">Access Denied</h3>
+              <p className="text-muted-foreground text-sm mt-1">
+                You don't have permission to access the calendar. Please contact your administrator.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // Return mobile view for mobile devices (AFTER all hooks are called)
   if (isMobile) {

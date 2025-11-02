@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, AlertTriangle, TrendingUp, Package, ShoppingBag } from "lucide-react";
+import { Plus, AlertTriangle, TrendingUp, Package, ShoppingBag, Shield } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { InventoryImportDialog } from "./InventoryImportDialog";
@@ -19,6 +19,7 @@ export const InventoryManagement = () => {
   // Permission checks
   const canViewInventory = useHasPermission('view_inventory');
   const canManageInventory = useHasPermission('manage_inventory');
+  const canViewVendorCosts = useHasPermission('view_inventory'); // Sensitive data tied to inventory permission
 
   const { data: inventory, isLoading } = useEnhancedInventory();
   const { integration } = useShopifyIntegrationReal();
@@ -44,11 +45,18 @@ export const InventoryManagement = () => {
   // If user doesn't have permission to view inventory, show access denied
   if (!canViewInventory) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold text-foreground mb-2">Access Denied</h2>
-          <p className="text-muted-foreground">You don't have permission to view inventory.</p>
-        </div>
+      <div className="min-h-screen w-full flex items-center justify-center bg-background">
+        <Card className="w-96">
+          <CardContent className="p-6 text-center space-y-4">
+            <Shield className="h-12 w-12 text-muted-foreground mx-auto" />
+            <div>
+              <h3 className="text-lg font-medium">Access Denied</h3>
+              <p className="text-muted-foreground text-sm mt-1">
+                You don't have permission to view inventory. Please contact your administrator.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -206,10 +214,10 @@ export const InventoryManagement = () => {
                   <TableHead>Item</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Stock</TableHead>
-                  <TableHead>Cost/Unit</TableHead>
+                  {canViewVendorCosts && <TableHead>Cost/Unit</TableHead>}
                   <TableHead>Supplier</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
+                  {canManageInventory && <TableHead>Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -232,11 +240,13 @@ export const InventoryManagement = () => {
                       <TableCell className="font-medium">
                         {item.quantity} units
                       </TableCell>
-                      <TableCell>
-                        {(item.selling_price || item.price_per_unit || item.cost_price) 
-                          ? formatCurrency(item.selling_price || item.price_per_unit || item.cost_price || 0) 
-                          : "N/A"}
-                      </TableCell>
+                      {canViewVendorCosts && (
+                        <TableCell>
+                          {(item.selling_price || item.price_per_unit || item.cost_price) 
+                            ? formatCurrency(item.selling_price || item.price_per_unit || item.cost_price || 0) 
+                            : "N/A"}
+                        </TableCell>
+                      )}
                       <TableCell>{item.supplier || "N/A"}</TableCell>
                       <TableCell>
                         {isLowStock ? (
@@ -250,18 +260,20 @@ export const InventoryManagement = () => {
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button variant="ghost" size="sm">
-                            Edit
-                          </Button>
-                          {isLowStock && (
-                            <Button variant="outline" size="sm">
-                              Reorder
+                      {canManageInventory && (
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Button variant="ghost" size="sm">
+                              Edit
                             </Button>
-                          )}
-                        </div>
-                      </TableCell>
+                            {isLowStock && (
+                              <Button variant="outline" size="sm">
+                                Reorder
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}

@@ -7,6 +7,10 @@ import { useClients } from "@/hooks/useClients";
 import { useUpdateProject } from "@/hooks/useProjects";
 import { useToast } from "@/hooks/use-toast";
 import { EmailManagement } from "@/components/jobs/EmailManagement";
+import { useHasPermission } from "@/hooks/usePermissions";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Lock } from "lucide-react";
 
 interface ProjectTabContentProps {
   activeTab: string;
@@ -30,7 +34,14 @@ export const ProjectTabContent = ({
   const { data: clients } = useClients();
   const updateProject = useUpdateProject();
   const { toast } = useToast();
+  const { user } = useAuth();
   const client = clients?.find(c => c.id === project.client_id);
+  
+  // Permission checks
+  const canEditAllJobs = useHasPermission('edit_all_jobs');
+  const canEditOwnJobs = useHasPermission('edit_own_jobs');
+  const canEditJob = canEditAllJobs || (canEditOwnJobs && project?.user_id === user?.id);
+  const isReadOnly = !canEditJob;
 
   const handleClientSelect = async (clientId: string) => {
     try {
@@ -94,30 +105,54 @@ export const ProjectTabContent = ({
   };
 
   const renderTabContent = () => {
+    // Show read-only alert if user can't edit
+    const readOnlyAlert = isReadOnly && (
+      <Alert className="mb-4">
+        <Lock className="h-4 w-4" />
+        <AlertDescription>
+          <strong>View Only:</strong> You don't have permission to edit this job. Contact your administrator if you need access.
+        </AlertDescription>
+      </Alert>
+    );
+
     switch (activeTab) {
       case "client":
         return (
-          <ProjectClientTab 
-            project={project} 
-            onClientSelect={handleClientSelect}
-            onClientRemove={handleClientRemove}
-          />
+          <>
+            {readOnlyAlert}
+            <ProjectClientTab 
+              project={project} 
+              onClientSelect={handleClientSelect}
+              onClientRemove={handleClientRemove}
+            />
+          </>
         );
       case "jobs":
-        return <ProjectJobsTab project={project} onProjectUpdate={handleProjectUpdate} />;
+        return (
+          <>
+            {readOnlyAlert}
+            <ProjectJobsTab project={project} onProjectUpdate={handleProjectUpdate} />
+          </>
+        );
       case "quote":
         return (
-          <ProjectQuoteTab 
-            project={project} 
-            shouldHighlightNewQuote={shouldRedirectToQuote}
-          />
+          <>
+            {readOnlyAlert}
+            <ProjectQuoteTab 
+              project={project} 
+              shouldHighlightNewQuote={shouldRedirectToQuote}
+            />
+          </>
         );
       case "workshop":
-        return <ProjectWorkshopTab project={project} />;
-      case "emails":
         return (
-          <EmailManagement />
+          <>
+            {readOnlyAlert}
+            <ProjectWorkshopTab project={project} />
+          </>
         );
+      case "emails":
+        return <EmailManagement />;
       case "calendar":
         return (
           <div className="company-gradient-soft glass-morphism rounded-xl border border-border/60 shadow-sm p-6">
@@ -126,7 +161,12 @@ export const ProjectTabContent = ({
           </div>
         );
       default:
-        return <ProjectJobsTab project={project} onProjectUpdate={handleProjectUpdate} />;
+        return (
+          <>
+            {readOnlyAlert}
+            <ProjectJobsTab project={project} onProjectUpdate={handleProjectUpdate} />
+          </>
+        );
     }
   };
 
