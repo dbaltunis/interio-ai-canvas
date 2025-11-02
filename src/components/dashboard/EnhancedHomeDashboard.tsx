@@ -50,12 +50,13 @@ export const EnhancedHomeDashboard = () => {
       // If widget doesn't require permission, show it
       if (!widget.requiredPermission) return true;
 
-      // Check specific permissions
-      if (widget.requiredPermission === 'view_calendar') return canViewCalendar;
-      if (widget.requiredPermission === 'view_shopify') return canViewShopify;
-      if (widget.requiredPermission === 'view_emails') return canViewEmails;
-      if (widget.requiredPermission === 'view_inventory') return canViewInventory;
+      // Check specific permissions - only show if explicitly true
+      if (widget.requiredPermission === 'view_calendar') return canViewCalendar === true;
+      if (widget.requiredPermission === 'view_shopify') return canViewShopify === true;
+      if (widget.requiredPermission === 'view_emails') return canViewEmails === true;
+      if (widget.requiredPermission === 'view_inventory') return canViewInventory === true;
 
+      // If permission check is undefined or false, don't show
       return false;
     });
   }, [getEnabledWidgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory]);

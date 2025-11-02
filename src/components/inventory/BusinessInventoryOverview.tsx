@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { 
   DollarSign, 
   TrendingUp, 
@@ -15,6 +16,7 @@ import { Progress } from "@/components/ui/progress";
 
 export const BusinessInventoryOverview = () => {
   const { data: allInventory, isLoading } = useEnhancedInventory();
+  const canManageInventory = useHasPermission('manage_inventory');
   
   // Filter out treatment options - only show physical inventory
   const inventory = allInventory?.filter(item => item.category !== 'treatment_option') || [];
@@ -98,63 +100,65 @@ export const BusinessInventoryOverview = () => {
 
   return (
     <div className="space-y-6">
-      {/* Primary Financial KPIs */}
-      <div>
-        <h2 className="text-lg font-semibold text-foreground mb-4">Financial Overview</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-2">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Stock on Hand (Cost)</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totalStockCost)}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {stockedItems.length} items in stock
-              </p>
-            </CardContent>
-          </Card>
+      {/* Primary Financial KPIs - Only visible to users with manage_inventory permission */}
+      {canManageInventory && (
+        <div>
+          <h2 className="text-lg font-semibold text-foreground mb-4">Financial Overview</h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card className="border-2">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Stock on Hand (Cost)</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(totalStockCost)}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {stockedItems.length} items in stock
+                </p>
+              </CardContent>
+            </Card>
 
-          <Card className="border-2">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Stock on Hand (Retail)</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{formatCurrency(totalStockRetail)}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Potential profit: {formatCurrency(potentialProfit)}
-              </p>
-            </CardContent>
-          </Card>
+            <Card className="border-2">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Stock on Hand (Retail)</CardTitle>
+                <TrendingUp className="h-4 w-4 text-green-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">{formatCurrency(totalStockRetail)}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Potential profit: {formatCurrency(potentialProfit)}
+                </p>
+              </CardContent>
+            </Card>
 
-          <Card className="border-2">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Catalog Items</CardTitle>
-              <Package className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{catalogItems.length}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Avg price: {formatCurrency(avgCatalogPrice)}
-              </p>
-            </CardContent>
-          </Card>
+            <Card className="border-2">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Catalog Items</CardTitle>
+                <Package className="h-4 w-4 text-blue-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-600">{catalogItems.length}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Avg price: {formatCurrency(avgCatalogPrice)}
+                </p>
+              </CardContent>
+            </Card>
 
-          <Card className="border-2">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{inventory.length}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {Object.keys(categoryStats).length} categories
-              </p>
-            </CardContent>
-          </Card>
+            <Card className="border-2">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{inventory.length}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {Object.keys(categoryStats).length} categories
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Inventory Health & Operational Metrics */}
       <div>
@@ -203,13 +207,15 @@ export const BusinessInventoryOverview = () => {
         </div>
       </div>
 
-      {/* Category Performance */}
+      {/* Category Performance - Only show profit data if user can manage inventory */}
       <div>
         <h2 className="text-lg font-semibold text-foreground mb-4">Category Performance</h2>
         <Card className="border-2">
           <CardHeader>
             <CardTitle className="text-base">Top Categories by Value</CardTitle>
-            <CardDescription>Revenue potential by inventory category</CardDescription>
+            <CardDescription>
+              {canManageInventory ? 'Revenue potential by inventory category' : 'Inventory distribution by category'}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {topCategories.length > 0 ? (
@@ -226,12 +232,14 @@ export const BusinessInventoryOverview = () => {
                           {stats.count} items
                         </Badge>
                       </div>
-                      <div className="text-right">
-                        <div className="font-semibold">{formatCurrency(stats.value)}</div>
-                        <div className="text-xs text-muted-foreground">
-                          Profit: {formatCurrency(stats.profit)}
+                      {canManageInventory && (
+                        <div className="text-right">
+                          <div className="font-semibold">{formatCurrency(stats.value)}</div>
+                          <div className="text-xs text-muted-foreground">
+                            Profit: {formatCurrency(stats.profit)}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                     <Progress value={percentage} className="h-2" />
                   </div>
