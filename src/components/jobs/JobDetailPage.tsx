@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Package, FileText, Wrench, Mail, Calendar, Clock, MoreHorizontal, Copy, FileDown, Archive, Trash2 } from "lucide-react";
+import { ArrowLeft, User, Package, FileText, Wrench, Mail, Calendar, Clock, MoreHorizontal, Copy, FileDown, Archive, Trash2, Workflow } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -145,6 +145,13 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                     icon: <FileDown className="h-4 w-4" />,
                     onClick: () => {
                       toast({ title: "Export to PDF", description: "Feature coming soon" });
+                    }
+                  },
+                  {
+                    label: 'Workflows',
+                    icon: <Workflow className="h-4 w-4" />,
+                    onClick: () => {
+                      toast({ title: "Workflows", description: "Feature coming soon" });
                     }
                   },
                   {
