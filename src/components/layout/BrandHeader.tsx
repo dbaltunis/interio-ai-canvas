@@ -37,21 +37,6 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
           aria-hidden="true"
         />
       </div>
-      {showTagline && (
-        <>
-          <div className="mx-2 sm:mx-3 h-4 sm:h-5 md:h-6 w-px bg-brand-secondary/40 hidden lg:block" />
-          <div className="hidden lg:block">
-            <div className="flex flex-col">
-              <p className={`text-foreground ${sloganSizeClasses[size]} leading-tight`}>
-                The future of window décor
-              </p>
-              <p className={`text-foreground ${sloganSizeClasses[size]} leading-tight`}>
-                is online and bespoke
-              </p>
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 };
