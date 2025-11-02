@@ -44,21 +44,52 @@ export const EnhancedHomeDashboard = () => {
   const canViewEmails = useHasPermission('view_emails');
   const canViewInventory = useHasPermission('view_inventory');
 
-  // Filter enabled widgets by permissions
+  // Debug logging for Shopify permission
+  console.log('[Dashboard] Shopify Permission Check:', {
+    canViewShopify,
+    type: typeof canViewShopify,
+    isTrue: canViewShopify === true,
+    isFalse: canViewShopify === false,
+    isUndefined: canViewShopify === undefined
+  });
+
+  // Filter enabled widgets by permissions - STRICT checks
   const enabledWidgets = useMemo(() => {
-    return getEnabledWidgets().filter(widget => {
+    const widgets = getEnabledWidgets();
+    console.log('[Dashboard] All enabled widgets before filtering:', widgets.map(w => ({ id: w.id, permission: w.requiredPermission })));
+    
+    const filtered = widgets.filter(widget => {
       // If widget doesn't require permission, show it
       if (!widget.requiredPermission) return true;
 
-      // Check specific permissions - only show if explicitly true
-      if (widget.requiredPermission === 'view_calendar') return canViewCalendar === true;
-      if (widget.requiredPermission === 'view_shopify') return canViewShopify === true;
-      if (widget.requiredPermission === 'view_emails') return canViewEmails === true;
-      if (widget.requiredPermission === 'view_inventory') return canViewInventory === true;
+      // Check specific permissions - ONLY show if explicitly true
+      if (widget.requiredPermission === 'view_calendar') {
+        const result = canViewCalendar === true;
+        console.log(`[Dashboard] Widget ${widget.id} requires view_calendar:`, { canViewCalendar, result });
+        return result;
+      }
+      if (widget.requiredPermission === 'view_shopify') {
+        const result = canViewShopify === true;
+        console.log(`[Dashboard] Widget ${widget.id} requires view_shopify:`, { canViewShopify, result });
+        return result;
+      }
+      if (widget.requiredPermission === 'view_emails') {
+        const result = canViewEmails === true;
+        console.log(`[Dashboard] Widget ${widget.id} requires view_emails:`, { canViewEmails, result });
+        return result;
+      }
+      if (widget.requiredPermission === 'view_inventory') {
+        const result = canViewInventory === true;
+        console.log(`[Dashboard] Widget ${widget.id} requires view_inventory:`, { canViewInventory, result });
+        return result;
+      }
 
-      // If permission check is undefined or false, don't show
+      // If permission check is undefined or false, DON'T show
       return false;
     });
+    
+    console.log('[Dashboard] Filtered enabled widgets:', filtered.map(w => w.id));
+    return filtered;
   }, [getEnabledWidgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory]);
 
   // Prepare KPI data for primary metrics

@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Filter, Grid, List, Package, Home, Minus, Palette, Wallpaper } from "lucide-react";
+import { Search, Plus, Filter, Grid, List, Package, Home, Minus, Palette, Wallpaper, Lock } from "lucide-react";
 import { BusinessInventoryOverview } from "./BusinessInventoryOverview";
 import { FabricInventoryView } from "./FabricInventoryView";
 import { HardwareInventoryView } from "./HardwareInventoryView";
@@ -21,6 +21,7 @@ import { VendorDashboard } from "../vendors/VendorDashboard";
 
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useVendors } from "@/hooks/useVendors";
+import { useHasPermission, useHasAnyPermission } from "@/hooks/usePermissions";
 import { HelpDrawer } from "@/components/ui/help-drawer";
 import { HelpIcon } from "@/components/ui/help-icon";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -36,8 +37,40 @@ export const ModernInventoryDashboard = () => {
   const { data: vendors } = useVendors();
   const isMobile = useIsMobile();
   
+  // Permission checks - CRITICAL for data security
+  const canViewInventory = useHasPermission('view_inventory');
+  const canManageInventory = useHasPermission('manage_inventory');
+  const hasAnyInventoryAccess = useHasAnyPermission(['view_inventory', 'manage_inventory']);
+  
   // Filter out treatment options - only show physical inventory
   const inventory = allInventory?.filter(item => item.category !== 'treatment_option') || [];
+
+  // If no inventory permissions at all, show access denied
+  if (hasAnyInventoryAccess === false) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-12">
+        <div className="text-center space-y-4">
+          <Lock className="h-16 w-16 text-muted-foreground mx-auto" />
+          <h2 className="text-2xl font-semibold">Access Denied</h2>
+          <p className="text-muted-foreground max-w-md">
+            You don't have permission to access the inventory library. Please contact your administrator for access.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // During permission loading, show loading state
+  if (hasAnyInventoryAccess === undefined) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-12">
+        <div className="text-center space-y-4">
+          <Package className="h-16 w-16 text-muted-foreground mx-auto animate-pulse" />
+          <p className="text-muted-foreground">Loading inventory...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("flex-1 space-y-4", isMobile ? "p-3 pb-20" : "p-6")}>
