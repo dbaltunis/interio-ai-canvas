@@ -26,6 +26,7 @@ import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useEmailKPIs } from "@/hooks/useEmails";
 import { ShopifyIntegrationDialog } from "@/components/library/ShopifyIntegrationDialog";
 import { Users, FileText, Package, DollarSign, Mail, MousePointerClick, Clock, TrendingUp, Store, CalendarCheck } from "lucide-react";
+import { useHasPermission } from "@/hooks/usePermissions";
 
 export const EnhancedHomeDashboard = () => {
   const [showShopifyDialog, setShowShopifyDialog] = useState(false);
@@ -36,6 +37,9 @@ export const EnhancedHomeDashboard = () => {
   const { data: emailKPIs } = useEmailKPIs();
   const { integration: shopifyIntegration } = useShopifyIntegrationReal();
   const isShopifyConnected = !!shopifyIntegration?.is_connected;
+  
+  // Permission checks for calendar widgets
+  const canViewCalendar = useHasPermission('view_calendar');
 
   const enabledWidgets = getEnabledWidgets();
 
@@ -209,9 +213,13 @@ export const EnhancedHomeDashboard = () => {
               return <div key={widget.id} className={sizeClasses[widget.size]}><TeamMembersWidget /></div>;
             
             case "events":
+              // Don't render calendar widgets without permission
+              if (!canViewCalendar) return null;
               return <div key={widget.id} className={sizeClasses[widget.size]}><UpcomingEventsWidget /></div>;
             
             case "recent-appointments":
+              // Don't render calendar widgets without permission
+              if (!canViewCalendar) return null;
               return <div key={widget.id} className={sizeClasses[widget.size]}><RecentAppointmentsWidget /></div>;
             
             case "emails":
