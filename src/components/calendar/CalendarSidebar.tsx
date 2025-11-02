@@ -145,6 +145,7 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
     toast({
       title: "Manage Attendees",
       description: "Attendee management functionality will open here.",
+      importance: 'silent',
     });
   };
 
@@ -157,6 +158,7 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
           toast({
             title: "Event Deleted",
             description: "The event has been successfully deleted.",
+            importance: 'silent',
           });
         },
         onError: () => {
@@ -174,6 +176,7 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
     toast({
       title: "Reminder Sent",
       description: "Notification reminder has been sent to all attendees.",
+      importance: 'important',
     });
   };
 

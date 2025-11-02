@@ -28,6 +28,7 @@ export const useSendCalendarInvitation = () => {
       toast({
         title: "Invitation Sent",
         description: `Calendar invitation sent to ${variables.recipientEmail}`,
+        importance: 'important',
       });
     },
     onError: (error: any) => {

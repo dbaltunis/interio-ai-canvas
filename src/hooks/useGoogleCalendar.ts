@@ -290,12 +290,15 @@ export const useGoogleCalendarSync = () => {
       await queryClient.refetchQueries({ queryKey: ['appointments'] });
       await queryClient.invalidateQueries({ queryKey: ['google-calendar-integration'] });
       
-      toast({
-        title: "Success",
-        description: data?.imported 
-          ? `Imported ${data.imported} new events from Google Calendar`
-          : "Synced from Google Calendar",
-      });
+      // Only show toast if events were actually imported
+      const importedCount = data?.imported || 0;
+      if (importedCount > 0) {
+        toast({
+          title: "Calendar Synced",
+          description: `Imported ${importedCount} new event${importedCount > 1 ? 's' : ''} from Google Calendar`,
+          importance: 'important',
+        });
+      }
     },
     onError: (error: Error) => {
       toast({

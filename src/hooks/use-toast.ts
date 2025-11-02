@@ -15,6 +15,7 @@ type ToasterToast = ToastProps & {
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
+  importance?: 'silent' | 'normal' | 'important' // Control notification visibility
 }
 
 const actionTypes = {
@@ -144,20 +145,31 @@ type Toast = Omit<ToasterToast, "id">
 function toast({ ...props }: Toast) {
   const id = genId()
 
+  // Filter out silent notifications unless they're errors
+  const isError = props.variant === "destructive" || 
+                  props.title?.toString().toLowerCase().includes("error") ||
+                  props.title?.toString().toLowerCase().includes("failed");
+  
+  // Don't show silent notifications unless they're errors
+  if (props.importance === 'silent' && !isError) {
+    return {
+      id: id,
+      dismiss: () => {},
+      update: () => {},
+    }
+  }
+
   const update = (props: ToasterToast) =>
     dispatch({
       type: "UPDATE_TOAST",
       toast: { ...props, id },
     })
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
-
-  // Determine if this is an error/destructive toast
-  const isError = props.variant === "destructive" || 
-                  props.title?.toString().toLowerCase().includes("error") ||
-                  props.title?.toString().toLowerCase().includes("failed");
   
-  // Error toasts don't auto-dismiss, success toasts do
-  const delay = isError ? ERROR_TOAST_REMOVE_DELAY : TOAST_REMOVE_DELAY;
+  // Error toasts don't auto-dismiss, important ones show longer
+  const delay = isError ? ERROR_TOAST_REMOVE_DELAY : 
+                props.importance === 'important' ? 4000 : 
+                TOAST_REMOVE_DELAY;
   
   let timeout: ReturnType<typeof setTimeout> | null = null;
   

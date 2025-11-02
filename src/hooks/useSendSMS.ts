@@ -28,6 +28,7 @@ export const useSendSMS = () => {
       toast({
         title: "SMS Sent",
         description: `SMS sent successfully to ${variables.to}`,
+        importance: 'important',
       });
     },
     onError: (error: any) => {
