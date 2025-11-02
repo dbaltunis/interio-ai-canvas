@@ -201,6 +201,20 @@ export const CalendarSyncToolbar = ({
           </>
         )}
 
+        {/* View selector - Moved directly under Filters to save space */}
+        {view && onViewChange && (
+          <Select value={view} onValueChange={onViewChange}>
+            <SelectTrigger className="w-24 h-7 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-background z-50">
+              {!isTablet && <SelectItem value="month">Month</SelectItem>}
+              <SelectItem value="week">Week</SelectItem>
+              <SelectItem value="day">Day</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
+
         {/* Scheduler button - Tablets only */}
         {isTablet && onSchedulerClick && (
           <Button
@@ -227,7 +241,7 @@ export const CalendarSyncToolbar = ({
                 <CalendarIcon className="h-4 w-4" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
+            <PopoverContent className="w-auto p-0 bg-background z-50" align="end">
               <div className="p-3 border-b bg-muted/30">
                 <p className="text-xs text-muted-foreground">
                   Today: <span className="font-medium text-foreground">{format(new Date(), 'MMM dd, yyyy')}</span>
@@ -246,20 +260,6 @@ export const CalendarSyncToolbar = ({
               />
             </PopoverContent>
           </Popover>
-        )}
-
-        {/* View selector */}
-        {view && onViewChange && (
-          <Select value={view} onValueChange={onViewChange}>
-            <SelectTrigger className="w-24 h-7 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {!isTablet && <SelectItem value="month">Month</SelectItem>}
-              <SelectItem value="week">Week</SelectItem>
-              <SelectItem value="day">Day</SelectItem>
-            </SelectContent>
-          </Select>
         )}
 
         {/* Google Calendar sync controls (only if connected) */}
