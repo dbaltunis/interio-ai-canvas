@@ -42,6 +42,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useJobDuplicates } from "@/hooks/useJobDuplicates";
 import { DuplicateJobIndicator } from "./DuplicateJobIndicator";
 import { DuplicateJobsSection } from "./DuplicateJobsSection";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface JobDetailPageProps {
   jobId: string;
@@ -54,6 +55,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const { data: projects } = useProjects();
   const { data: clients } = useClients();
@@ -187,12 +189,14 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                 .insert(itemsToInsert);
 
               if (insertItemsError) {
-                console.error('Error inserting quote items:', insertItemsError);
-                throw insertItemsError;
+                console.error('❌ CRITICAL: Error inserting quote items:', insertItemsError);
+                console.error('Quote items data attempted:', itemsToInsert);
+                // Don't throw - continue with duplication even if quote items fail
+                console.warn(`⚠️ Skipping ${quoteItems.length} quote items due to RLS error`);
+              } else {
+                quoteItemsCopied += quoteItems.length;
+                console.log(`Copied ${quoteItems.length} quote items`);
               }
-
-              quoteItemsCopied += quoteItems.length;
-              console.log(`Copied ${quoteItems.length} quote items`);
             }
 
             // Copy manual quote items
@@ -217,12 +221,14 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                 .insert(manualItemsToInsert);
 
               if (insertManualItemsError) {
-                console.error('Error inserting manual quote items:', insertManualItemsError);
-                throw insertManualItemsError;
+                console.error('❌ CRITICAL: Error inserting manual quote items:', insertManualItemsError);
+                console.error('Manual items data attempted:', manualItemsToInsert);
+                // Don't throw - continue with duplication even if manual items fail
+                console.warn(`⚠️ Skipping ${manualItems.length} manual quote items due to RLS error`);
+              } else {
+                manualItemsCopied += manualItems.length;
+                console.log(`Copied ${manualItems.length} manual quote items`);
               }
-
-              manualItemsCopied += manualItems.length;
-              console.log(`Copied ${manualItems.length} manual quote items`);
             }
           }
         }
@@ -264,8 +270,9 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
             .single();
 
           if (roomError) {
-            console.error('Error creating room:', roomError);
-            throw roomError;
+            console.error('❌ CRITICAL: Error creating room:', roomError);
+            console.error('Room data attempted:', { ...roomData, project_id: newProject.id, quote_id: newQuoteId, user_id: user.id });
+            throw new Error(`Failed to copy room "${room.name}": ${roomError.message}. This may be an RLS policy issue.`);
           }
 
           if (newRoom) {
@@ -299,8 +306,9 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                 .insert(surfacesToInsert);
 
               if (insertSurfacesError) {
-                console.error('Error inserting surfaces:', insertSurfacesError);
-                throw insertSurfacesError;
+                console.error('❌ CRITICAL: Error inserting surfaces:', insertSurfacesError);
+                console.error('Surfaces data attempted:', surfacesToInsert);
+                throw new Error(`Failed to copy ${surfaces.length} surfaces for room "${newRoom.name}": ${insertSurfacesError.message}`);
               }
 
               surfacesCopied += surfaces.length;
@@ -334,8 +342,9 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                 .insert(treatmentsToInsert);
 
               if (insertTreatmentsError) {
-                console.error('Error inserting treatments:', insertTreatmentsError);
-                throw insertTreatmentsError;
+                console.error('❌ CRITICAL: Error inserting treatments:', insertTreatmentsError);
+                console.error('Treatments data attempted:', treatmentsToInsert);
+                throw new Error(`Failed to copy ${treatments.length} treatments for room "${newRoom.name}": ${insertTreatmentsError.message}`);
               }
 
               treatmentsCopied += treatments.length;
@@ -390,14 +399,12 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
       console.log('Duplication complete:', summary);
 
       // Invalidate all relevant queries to refresh data
-      const queryClient = (window as any).queryClient;
-      if (queryClient) {
-        await queryClient.invalidateQueries({ queryKey: ["rooms"] });
-        await queryClient.invalidateQueries({ queryKey: ["surfaces"] });
-        await queryClient.invalidateQueries({ queryKey: ["treatments"] });
-        await queryClient.invalidateQueries({ queryKey: ["quotes"] });
-        await queryClient.invalidateQueries({ queryKey: ["projects"] });
-      }
+      await queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      await queryClient.invalidateQueries({ queryKey: ["surfaces"] });
+      await queryClient.invalidateQueries({ queryKey: ["treatments"] });
+      await queryClient.invalidateQueries({ queryKey: ["quotes"] });
+      await queryClient.invalidateQueries({ queryKey: ["projects"] });
+      await queryClient.invalidateQueries({ queryKey: ["job-duplicates"] });
 
       toast({
         title: "✓ Job Duplicated Successfully",
