@@ -113,10 +113,8 @@ export const ProTemplateEditor = ({ template, onSave, onClose }: ProTemplateEdit
     setIsExportingPDF(true);
     try {
       const filename = `${template.name.toLowerCase().replace(/\s+/g, '-')}-preview.pdf`;
-      await generateQuotePDF(element, { 
-        filename,
-        margin: [documentSettings.marginTop, documentSettings.marginRight, documentSettings.marginBottom, documentSettings.marginLeft]
-      });
+      // Margins are now handled by the element's padding, not by PDF options
+      await generateQuotePDF(element, { filename });
       toast.success("PDF exported successfully");
     } catch (error) {
       console.error('PDF export error:', error);
