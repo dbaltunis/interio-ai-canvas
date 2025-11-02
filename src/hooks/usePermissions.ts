@@ -109,7 +109,6 @@ export const useUserPermissions = () => {
           'view_jobs', 'create_jobs', 'edit_own_jobs',
           'view_clients', 'create_clients', 'edit_own_clients', 
           'view_calendar',
-          'view_inventory',
           'view_profile'
         ],
         User: [
