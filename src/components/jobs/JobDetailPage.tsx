@@ -388,41 +388,13 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
         .select('*')
         .eq('project_id', jobId);
       
-      const curtainTemplates = templatesQuery.data;
-      const templatesError = templatesQuery.error;
-
-      if (templatesError) {
-        console.error('❌ Error fetching curtain templates:', templatesError);
-      }
-
-      let templatesCopied = 0;
-      if (curtainTemplates && curtainTemplates.length > 0) {
-        console.log(`📊 Found ${curtainTemplates.length} curtain templates to copy`);
-        
-        const templatesToInsert = curtainTemplates.map((template: any) => {
-          const { id, project_id, created_at, updated_at, ...templateData } = template;
-          return {
-            ...templateData,
-            project_id: newProject.id,
-            user_id: user.id
-          };
-        });
-
-        // @ts-ignore
-        const { error: insertTemplatesError } = await supabase
-          .from('curtain_templates')
-          .insert(templatesToInsert);
-
-        if (insertTemplatesError) {
-          console.error('❌ Error copying curtain templates:', insertTemplatesError);
-        } else {
-          templatesCopied = curtainTemplates.length;
-          console.log(`✅ Copied ${templatesCopied} curtain templates`);
-        }
-      } else {
-        console.log('ℹ️ No curtain templates to copy');
-      }
+      // STEP 2.5: Note about curtain templates
+      console.log('📋 ============ CURTAIN TEMPLATES INFO ============');
+      console.log('ℹ️ Curtain templates are user-specific, NOT project-specific');
+      console.log('ℹ️ Templates are referenced from treatment_details.template_id');
+      console.log('ℹ️ No need to copy - they are shared across all projects');
       console.log('');
+
 
       // STEP 2.6: Copy orphaned treatments (treatments with null room_id)
       console.log('🔍 ============ CHECKING FOR ORPHANED TREATMENTS ============');
@@ -476,9 +448,8 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
 
         if (insertOrphanedError) {
           console.error('❌ CRITICAL: Error inserting orphaned treatments:', insertOrphanedError);
-          console.error('Orphaned treatments data attempted:', orphanedToInsert);
-          // Don't throw - continue with duplication even if orphaned treatments fail
-          console.warn(`⚠️ Skipping ${orphanedTreatments.length} orphaned treatments`);
+          console.error('Orphaned treatments data attempted:', JSON.stringify(orphanedToInsert, null, 2));
+          throw new Error(`Failed to copy ${orphanedTreatments.length} orphaned treatments: ${insertOrphanedError.message}`);
         } else {
           treatmentsCopied += orphanedTreatments.length;
           console.log(`✅ Successfully copied ${orphanedTreatments.length} orphaned treatments`);
@@ -525,7 +496,6 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
         `Rooms: ${rooms?.length || 0}`,
         `Surfaces: ${surfacesCopied}`,
         `Treatments: ${treatmentsCopied}`,
-        `Templates: ${templatesCopied}`,
         `Quotes: ${quotes?.length || 0}`,
         `Quote Items: ${quoteItemsCopied}`,
         `Manual Items: ${manualItemsCopied}`,
