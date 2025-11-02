@@ -98,6 +98,10 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
     try {
       if (!project) return;
       
+      console.log('🚀 ============ STARTING JOB DUPLICATION ============');
+      console.log('📋 Original Job ID:', jobId);
+      console.log('📋 Original Job Name:', project.name);
+      
       toast({
         title: "Duplicating job...",
         description: "Please wait while we create a complete copy of all data"
@@ -124,7 +128,9 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
         parent_job_id: jobId, // Track this is a duplicate
       });
 
-      console.log('New project created:', newProject);
+      console.log('📋 New project created:', newProject);
+      console.log('✅ New Project ID:', newProject.id);
+      console.log('');
 
       // STEP 1: Copy all quotes FIRST (rooms need quote_id)
       const { data: quotes, error: quotesError } = await supabase
@@ -245,7 +251,11 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
         throw roomsError;
       }
 
-      console.log('Found rooms to copy:', rooms?.length || 0);
+      console.log('📊 Found rooms to copy:', rooms?.length || 0);
+      if (rooms && rooms.length > 0) {
+        console.log('📋 Rooms:', rooms.map(r => ({ id: r.id, name: r.name, quote_id: r.quote_id })));
+      }
+      console.log('');
 
       const roomIdMapping: Record<string, string> = {}; // Map old room IDs to new ones
       let surfacesCopied = 0;
@@ -356,7 +366,10 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
       }
 
       // STEP 2.5: Copy orphaned treatments (treatments with null room_id)
-      console.log('Checking for orphaned treatments (null room_id)...');
+      console.log('');
+      console.log('🔍 ============ CHECKING FOR ORPHANED TREATMENTS ============');
+      console.log('🔍 Looking for treatments with room_id = null for project:', jobId);
+      
       const { data: orphanedTreatments, error: orphanedError } = await supabase
         .from('treatments')
         .select('*')
@@ -364,16 +377,24 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
         .is('room_id', null);
 
       if (orphanedError) {
-        console.error('Error fetching orphaned treatments:', orphanedError);
+        console.error('❌ Error fetching orphaned treatments:', orphanedError);
         throw orphanedError;
       }
 
+      console.log(`📊 Found ${orphanedTreatments?.length || 0} orphaned treatments`);
       if (orphanedTreatments && orphanedTreatments.length > 0) {
-        console.log(`Found ${orphanedTreatments.length} orphaned treatments to copy`);
+        console.log('📋 Orphaned treatments:', orphanedTreatments.map(t => ({ 
+          id: t.id, 
+          type: t.treatment_type,
+          price: t.total_price,
+          room_id: t.room_id 
+        })));
+        console.log('');
         
         // If there's at least one room, assign orphaned treatments to the first room
         // Otherwise, keep them as orphaned
         const firstNewRoomId = Object.values(roomIdMapping)[0] || null;
+        console.log('🎯 Assigning orphaned treatments to room:', firstNewRoomId);
         
         const orphanedToInsert = orphanedTreatments.map((treatment: any) => {
           const { id, room_id, project_id, created_at, updated_at, ...treatmentData } = treatment;
@@ -385,6 +406,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
           };
         });
         
+        console.log('📤 Inserting orphaned treatments:', orphanedToInsert.length);
         const { error: insertOrphanedError } = await supabase
           .from('treatments')
           .insert(orphanedToInsert);
@@ -396,9 +418,13 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
           console.warn(`⚠️ Skipping ${orphanedTreatments.length} orphaned treatments`);
         } else {
           treatmentsCopied += orphanedTreatments.length;
-          console.log(`✓ Copied ${orphanedTreatments.length} orphaned treatments`);
+          console.log(`✅ Successfully copied ${orphanedTreatments.length} orphaned treatments`);
         }
+      } else {
+        console.log('ℹ️ No orphaned treatments found');
       }
+      console.log('');
+
 
       // STEP 3: Copy project notes
       const { data: notes, error: notesError } = await supabase
@@ -442,7 +468,11 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
         `Notes: ${notes?.length || 0}`
       ].join(', ');
 
-      console.log('Duplication complete:', summary);
+      console.log('');
+      console.log('🎉 ============ DUPLICATION COMPLETE ============');
+      console.log('📊 Summary:', summary);
+      console.log('✅ New Job ID:', newProject.id);
+      console.log('');
 
       // Invalidate all relevant queries to refresh data
       await queryClient.invalidateQueries({ queryKey: ["rooms"] });
