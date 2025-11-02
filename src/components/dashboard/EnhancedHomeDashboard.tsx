@@ -190,11 +190,6 @@ export const EnhancedHomeDashboard = () => {
     enabledEmailKPIs.some(config => config.id === kpi.id)
   );
 
-  // Debug logging
-  console.log('🔍 [DASHBOARD] Rendering widgets:', enabledWidgets.map(w => ({ id: w.id, permission: w.requiredPermission })));
-  console.log('🔍 [DASHBOARD] Shopify connected:', isShopifyConnected);
-  console.log('🔍 [DASHBOARD] Permissions:', { canViewShopify, canViewCalendar, canViewEmails, canViewInventory });
-
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header Section */}
@@ -203,7 +198,6 @@ export const EnhancedHomeDashboard = () => {
       {/* Dynamic Widgets Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         {enabledWidgets.map((widget) => {
-          console.log(`🔍 [DASHBOARD] Rendering widget: ${widget.id}`);
           const sizeClasses = {
             small: "col-span-1",
             medium: "col-span-1 xl:col-span-2",

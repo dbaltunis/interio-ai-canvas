@@ -135,17 +135,9 @@ export const useUserPermissions = () => {
 export const useHasPermission = (permission: string) => {
   const { data: permissions, isLoading } = useUserPermissions();
   
-  // Only show loading state on initial load when no cached data exists
-  // This prevents navigation disruption during background refetches
-  if (isLoading && permissions === undefined) {
-    console.log(`[useHasPermission] Loading permission check for: ${permission}`);
-    return undefined;
-  }
+  if (isLoading && permissions === undefined) return undefined;
   
-  const hasPermission = permissions?.some(p => p.permission_name === permission) || false;
-  console.log(`[useHasPermission] ⚡ Checking "${permission}":`, hasPermission, '| All permissions:', permissions?.map(p => p.permission_name));
-  
-  return hasPermission;
+  return permissions?.some(p => p.permission_name === permission) || false;
 };
 
 export const useHasAnyPermission = (permissionList: string[]) => {

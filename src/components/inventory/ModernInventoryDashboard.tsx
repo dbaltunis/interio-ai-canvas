@@ -42,14 +42,11 @@ export const ModernInventoryDashboard = () => {
   const canManageInventory = useHasPermission('manage_inventory');
   const hasAnyInventoryAccess = useHasAnyPermission(['view_inventory', 'manage_inventory']);
   
-  console.log('🔍 [INVENTORY] Permission checks:', { canViewInventory, canManageInventory, hasAnyInventoryAccess });
-  
   // Filter out treatment options - only show physical inventory
   const inventory = allInventory?.filter(item => item.category !== 'treatment_option') || [];
 
   // If no inventory permissions at all, show access denied
   if (hasAnyInventoryAccess === false) {
-    console.log('🔍 [INVENTORY] ❌ ACCESS DENIED - No permissions');
     return (
       <div className="flex-1 flex items-center justify-center p-12">
         <div className="text-center space-y-4">
@@ -65,7 +62,6 @@ export const ModernInventoryDashboard = () => {
 
   // During permission loading, show loading state
   if (hasAnyInventoryAccess === undefined) {
-    console.log('🔍 [INVENTORY] ⏳ Loading permissions...');
     return (
       <div className="flex-1 flex items-center justify-center p-12">
         <div className="text-center space-y-4">
@@ -75,8 +71,6 @@ export const ModernInventoryDashboard = () => {
       </div>
     );
   }
-
-  console.log('🔍 [INVENTORY] ✅ ACCESS GRANTED - Rendering inventory');
 
   return (
     <div className={cn("flex-1 space-y-4", isMobile ? "p-3 pb-20" : "p-6")}>
