@@ -318,7 +318,7 @@ export const SimpleTemplateManager: React.FC = () => {
         blocks: Array.isArray(template.blocks) ? template.blocks : [],
         category: template.template_style || 'quote',
         created_at: template.created_at,
-        is_default: defaultTemplates.some(dt => dt.name === template.name)
+        is_default: false // All templates from database are user-editable/deletable
       })) || [];
 
       setTemplates(userTemplates);
@@ -372,13 +372,6 @@ export const SimpleTemplateManager: React.FC = () => {
   };
 
   const deleteTemplate = async (templateId: string) => {
-    const template = templates.find(t => t.id === templateId);
-    
-    if (template?.is_default) {
-      toast.error('Cannot delete default templates');
-      return;
-    }
-
     try {
       const { error } = await supabase
         .from('quote_templates')
@@ -623,16 +616,14 @@ export const SimpleTemplateManager: React.FC = () => {
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
-                  {!template.is_default && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => deleteTemplate(template.id)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => deleteTemplate(template.id)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </CardContent>
             </Card>
