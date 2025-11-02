@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -6,13 +6,15 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Eye, Save, Palette, Layout, Image as ImageIcon, FileText } from "lucide-react";
+import { Download, Eye, Save, Palette, Layout, Image as ImageIcon, FileText, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { LivePreview } from "./visual-editor/LivePreview";
 import { ProjectDataSelector } from "./ProjectDataSelector";
 import { useTemplateData } from "@/hooks/useTemplateData";
 import { supabase } from "@/integrations/supabase/client";
 import { generateQuotePDF } from '@/utils/generateQuotePDF';
+import { AutoSaveIndicator } from "./visual-editor/AutoSaveIndicator";
+import { useDebounce } from "@/hooks/use-debounce";
 
 interface ProTemplateEditorProps {
   template: any;
@@ -26,6 +28,8 @@ export const ProTemplateEditor = ({ template, onSave, onClose }: ProTemplateEdit
   const [useRealData, setUseRealData] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
   const { data: templateData } = useTemplateData(selectedProjectId, useRealData);
   
@@ -58,7 +62,68 @@ export const ProTemplateEditor = ({ template, onSave, onClose }: ProTemplateEdit
     fontFamily: template.settings?.typography?.fontFamily || 'default',
   });
 
-  const handleSaveTemplate = async () => {
+  // Auto-save debounced settings
+  const debouncedDocumentSettings = useDebounce(documentSettings, 1000);
+  const debouncedProductsSettings = useDebounce(productsSettings, 1000);
+  const debouncedTypographySettings = useDebounce(typographySettings, 1000);
+
+  // Auto-save effect
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    
+    const autoSave = async () => {
+      setSaveStatus('saving');
+      try {
+        const updatedTemplate = {
+          ...template,
+          blocks: template.blocks.map((block: any) => {
+            if (block.type === 'products') {
+              return {
+                ...block,
+                content: {
+                  ...block.content,
+                  ...productsSettings,
+                }
+              };
+            }
+            return block;
+          }),
+          settings: {
+            document: documentSettings,
+            products: productsSettings,
+            typography: typographySettings,
+          }
+        };
+
+        const { error } = await supabase
+          .from('quote_templates')
+          .update({
+            blocks: updatedTemplate.blocks,
+            settings: updatedTemplate.settings,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', template.id);
+
+        if (error) throw error;
+
+        setSaveStatus('saved');
+        setHasUnsavedChanges(false);
+        onSave?.(updatedTemplate);
+      } catch (error) {
+        console.error('Auto-save error:', error);
+        setSaveStatus('error');
+      }
+    };
+
+    autoSave();
+  }, [debouncedDocumentSettings, debouncedProductsSettings, debouncedTypographySettings]);
+
+  // Mark changes when settings update
+  useEffect(() => {
+    setHasUnsavedChanges(true);
+  }, [documentSettings, productsSettings, typographySettings]);
+
+  const handleSaveTemplate = useCallback(async () => {
     setIsSaving(true);
     try {
       const updatedTemplate = {
@@ -101,7 +166,7 @@ export const ProTemplateEditor = ({ template, onSave, onClose }: ProTemplateEdit
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [template, documentSettings, productsSettings, typographySettings, onSave]);
 
   const handleExportPDF = async () => {
     const element = previewRef.current;
@@ -136,7 +201,13 @@ export const ProTemplateEditor = ({ template, onSave, onClose }: ProTemplateEdit
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Template Settings</CardTitle>
+              <div className="flex items-center gap-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  Template Settings
+                </CardTitle>
+                <AutoSaveIndicator status={saveStatus} />
+              </div>
               <div className="flex gap-2">
                 <Button
                   size="sm"
@@ -151,12 +222,16 @@ export const ProTemplateEditor = ({ template, onSave, onClose }: ProTemplateEdit
                   size="sm"
                   onClick={handleSaveTemplate}
                   disabled={isSaving}
+                  variant={hasUnsavedChanges ? 'default' : 'outline'}
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  {isSaving ? 'Saving...' : 'Save'}
+                  {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save Now' : 'Saved'}
                 </Button>
               </div>
             </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Changes auto-save. Adjust settings and see instant preview.
+            </p>
           </CardHeader>
           <CardContent className="space-y-4">
             <Tabs defaultValue="layout" className="w-full">
