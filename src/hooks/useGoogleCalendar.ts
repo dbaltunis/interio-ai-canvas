@@ -60,6 +60,53 @@ export const useGoogleCalendarIntegration = () => {
     },
   });
 
+  // Fetch account owner's integration if user is not owner
+  const { data: accountOwnerIntegration } = useQuery({
+    queryKey: ['google-calendar-integration-owner'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || integration) return null;
+
+      // Get account owner
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('parent_account_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!profile?.parent_account_id) return null;
+
+      const { data, error } = await supabase
+        .from('integration_settings')
+        .select('*')
+        .eq('user_id', profile.parent_account_id)
+        .eq('integration_type', 'google_calendar')
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      if (!data) return null;
+
+      const credentials = data.api_credentials as any;
+      const config = data.configuration as any;
+      
+      return {
+        id: data.id,
+        user_id: data.user_id,
+        access_token: credentials?.access_token || '',
+        refresh_token: credentials?.refresh_token || null,
+        calendar_id: config?.calendar_id || null,
+        sync_enabled: config?.sync_enabled || false,
+        token_expires_at: credentials?.expires_at || null,
+        last_sync: data.last_sync,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        active: data.active || false,
+        configuration: config,
+      } as GoogleCalendarIntegration;
+    },
+    enabled: !integration && !isLoading,
+  });
+
   const connect = useMutation({
     mutationFn: async ({ useRedirect = false }: { useRedirect?: boolean } = {}) => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -192,8 +239,9 @@ export const useGoogleCalendarIntegration = () => {
 
   return {
     integration,
+    accountOwnerIntegration,
     isLoading,
-    isConnected: !!integration,
+    isConnected: !!integration || !!accountOwnerIntegration,
     connect: connect.mutate,
     disconnect: disconnect.mutate,
     toggleSync: toggleSync.mutate,

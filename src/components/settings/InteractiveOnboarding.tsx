@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useUserRole } from "@/hooks/useUserRole";
+import { RoleBasedWelcome } from "./RoleBasedWelcome";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -105,6 +107,7 @@ interface InteractiveOnboardingProps {
 }
 
 export const InteractiveOnboarding = ({ isOpen, onClose }: InteractiveOnboardingProps) => {
+  const { data: userRole } = useUserRole();
   const [currentStep, setCurrentStep] = useState(0);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [showMouse, setShowMouse] = useState(false);
@@ -171,6 +174,22 @@ export const InteractiveOnboarding = ({ isOpen, onClose }: InteractiveOnboarding
   };
 
   if (!isOpen) return null;
+
+  // Show role-based welcome for team members instead of full onboarding
+  if (userRole && !userRole.isOwner) {
+    return (
+      <div className="fixed inset-0 bg-black/80 z-50 overflow-hidden flex items-center justify-center p-4">
+        <div className="max-w-2xl w-full">
+          <RoleBasedWelcome />
+          <div className="mt-4 flex justify-end">
+            <Button onClick={onClose} size="lg">
+              Get Started
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/80 z-50 overflow-hidden" ref={overlayRef}>

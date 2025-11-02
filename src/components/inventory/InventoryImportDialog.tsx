@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Upload, FileText, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Upload, FileText, CheckCircle2, AlertTriangle, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ImportResultRow {
@@ -18,6 +19,7 @@ interface ImportResultRow {
 
 export const InventoryImportDialog: React.FC = () => {
   const { toast } = useToast();
+  const canImportInventory = useHasPermission('import_inventory');
   const [open, setOpen] = useState(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
@@ -167,7 +169,8 @@ export const InventoryImportDialog: React.FC = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">
+        <Button variant="outline" disabled={!canImportInventory}>
+          {!canImportInventory && <Shield className="mr-2 h-4 w-4" />}
           <Upload className="mr-2 h-4 w-4" />
           Import CSV
         </Button>

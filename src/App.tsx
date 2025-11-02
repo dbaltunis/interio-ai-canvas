@@ -28,6 +28,8 @@ import ResetPassword from "./pages/ResetPassword";
 import { PublicBookingPage } from "./components/calendar/PublicBookingPage";
 import { SubscriptionTest } from "./pages/SubscriptionTest";
 import { ManualQuoteTest } from "./pages/ManualQuoteTest";
+import Billing from "./pages/Billing";
+import Purchasing from "./pages/Purchasing";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -162,6 +164,24 @@ const App = () => {
                   <ProtectedRoute>
                     <ErrorBoundary>
                       <Settings />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+
+                {/* Billing page - owner only */}
+                <Route path="/billing" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary>
+                      <Billing />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+
+                {/* Purchasing page - requires purchasing permission */}
+                <Route path="/purchasing" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary>
+                      <Purchasing />
                     </ErrorBoundary>
                   </ProtectedRoute>
                 } />

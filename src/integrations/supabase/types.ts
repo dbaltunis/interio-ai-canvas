@@ -2471,6 +2471,84 @@ export type Database = {
           },
         ]
       }
+      export_audit_log: {
+        Row: {
+          export_type: string
+          exported_at: string
+          file_format: string | null
+          id: string
+          included_fields: string[] | null
+          ip_address: unknown
+          record_count: number
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          export_type: string
+          exported_at?: string
+          file_format?: string | null
+          id?: string
+          included_fields?: string[] | null
+          ip_address?: unknown
+          record_count: number
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          export_type?: string
+          exported_at?: string
+          file_format?: string | null
+          id?: string
+          included_fields?: string[] | null
+          ip_address?: unknown
+          record_count?: number
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      export_requests: {
+        Row: {
+          account_owner_id: string
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          export_type: string
+          id: string
+          reason: string | null
+          record_count: number | null
+          request_notes: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          account_owner_id: string
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          export_type: string
+          id?: string
+          reason?: string | null
+          record_count?: number | null
+          request_notes?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          account_owner_id?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          export_type?: string
+          id?: string
+          reason?: string | null
+          record_count?: number | null
+          request_notes?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       eyelet_rings: {
         Row: {
           active: boolean | null

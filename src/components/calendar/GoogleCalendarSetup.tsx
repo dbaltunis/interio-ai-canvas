@@ -2,12 +2,17 @@ import { useGoogleCalendarIntegration, useGoogleCalendarSync } from "@/hooks/use
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Calendar, CheckCircle2, Loader2, XCircle, Clock } from "lucide-react";
 import { format } from "date-fns";
 
 export const GoogleCalendarSetup = () => {
-  const { integration, isLoading, isConnected, connect, disconnect, isConnecting, isDisconnecting } = useGoogleCalendarIntegration();
+  const { integration, isLoading, isConnected, connect, disconnect, isConnecting, isDisconnecting, accountOwnerIntegration } = useGoogleCalendarIntegration();
   const { syncFromGoogle, isSyncingFromGoogle } = useGoogleCalendarSync();
+  
+  // Show account owner's integration status if user is not owner
+  const displayIntegration = accountOwnerIntegration || integration;
+  const isAccountOwnerConnection = !!accountOwnerIntegration && !integration;
 
   if (isLoading) {
     return (
@@ -29,7 +34,9 @@ export const GoogleCalendarSetup = () => {
               Google Calendar
             </CardTitle>
             <CardDescription>
-              {isConnected 
+              {isAccountOwnerConnection
+                ? "Your account uses the owner's Google Calendar integration"
+                : isConnected 
                 ? "Your calendar is syncing automatically with Google Calendar" 
                 : "Connect your Google Calendar to sync events automatically"}
             </CardDescription>
@@ -43,21 +50,32 @@ export const GoogleCalendarSetup = () => {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {isConnected ? (
+        {isAccountOwnerConnection && (
+          <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800">
+            <AlertDescription className="text-blue-800 dark:text-blue-200">
+              Your organization's Google Calendar is connected. All appointments sync automatically.
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {isConnected || isAccountOwnerConnection ? (
           <div className="space-y-4">
-            {integration?.calendar_id && (
+            {displayIntegration?.calendar_id && (
               <div className="rounded-lg border p-4 space-y-2">
                 <p className="text-sm font-medium">Calendar ID:</p>
                 <p className="text-sm text-muted-foreground font-mono break-all">
-                  {integration.calendar_id}
+                  {displayIntegration.calendar_id}
                 </p>
+                {isAccountOwnerConnection && (
+                  <Badge variant="secondary" className="mt-2">Account Owner's Calendar</Badge>
+                )}
               </div>
             )}
             
-            {integration && (integration as any).last_sync && (
+            {displayIntegration && (displayIntegration as any).last_sync && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="h-4 w-4" />
-                <span>Last synced: {format(new Date((integration as any).last_sync), "PPp")}</span>
+                <span>Last synced: {format(new Date((displayIntegration as any).last_sync), "PPp")}</span>
               </div>
             )}
 
@@ -72,12 +90,47 @@ export const GoogleCalendarSetup = () => {
               </ul>
             </div>
 
-            <div className="flex gap-2">
+            {!isAccountOwnerConnection && (
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => syncFromGoogle()} 
+                  variant="outline"
+                  disabled={isSyncingFromGoogle}
+                  className="flex-1"
+                >
+                  {isSyncingFromGoogle ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Syncing...
+                    </>
+                  ) : (
+                    "Manual Sync Now"
+                  )}
+                </Button>
+                
+                <Button 
+                  onClick={() => disconnect()} 
+                  variant="destructive"
+                  disabled={isDisconnecting}
+                >
+                  {isDisconnecting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Disconnecting...
+                    </>
+                  ) : (
+                    'Disconnect'
+                  )}
+                </Button>
+              </div>
+            )}
+            
+            {isAccountOwnerConnection && (
               <Button 
                 onClick={() => syncFromGoogle()} 
                 variant="outline"
                 disabled={isSyncingFromGoogle}
-                className="flex-1"
+                className="w-full"
               >
                 {isSyncingFromGoogle ? (
                   <>
@@ -88,22 +141,7 @@ export const GoogleCalendarSetup = () => {
                   "Manual Sync Now"
                 )}
               </Button>
-              
-              <Button 
-                onClick={() => disconnect()} 
-                variant="destructive"
-                disabled={isDisconnecting}
-              >
-                {isDisconnecting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Disconnecting...
-                  </>
-                ) : (
-                  'Disconnect'
-                )}
-              </Button>
-            </div>
+            )}
           </div>
         ) : (
           <div className="space-y-4">

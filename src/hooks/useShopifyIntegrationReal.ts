@@ -13,6 +13,7 @@ export const useShopifyIntegrationReal = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Try to get user's own integration first
       const { data, error } = await supabase
         .from('shopify_integrations')
         .select('*')
@@ -20,6 +21,31 @@ export const useShopifyIntegrationReal = () => {
         .maybeSingle();
 
       if (error) throw error;
+      
+      // If no integration found, check account owner's integration
+      if (!data) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('parent_account_id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (profile?.parent_account_id) {
+          const { data: ownerIntegration, error: ownerError } = await supabase
+            .from('shopify_integrations')
+            .select('*')
+            .eq('user_id', profile.parent_account_id)
+            .maybeSingle();
+
+          if (ownerError) throw ownerError;
+          
+          // Mark as read-only
+          if (ownerIntegration) {
+            return { ...ownerIntegration, isAccountOwner: true } as ShopifyIntegration & { isAccountOwner: boolean };
+          }
+        }
+      }
+      
       return data as ShopifyIntegration | null;
     },
   });
