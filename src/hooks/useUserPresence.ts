@@ -106,8 +106,7 @@ export const useUserPresence = () => {
         }
       };
 
-      // TEMPORARILY DISABLED FOR DEBUGGING - This might be causing page navigation issues
-      // document.addEventListener('visibilitychange', onVisibilityChange);
+      document.addEventListener('visibilitychange', onVisibilityChange);
 
       // Attempt to mark user offline before unload (may not always complete)
       const handleBeforeUnload = () => {
@@ -118,7 +117,7 @@ export const useUserPresence = () => {
       
       return () => {
         clearInterval(activityInterval);
-        // document.removeEventListener('visibilitychange', onVisibilityChange); // DISABLED
+        document.removeEventListener('visibilitychange', onVisibilityChange);
         window.removeEventListener('beforeunload', handleBeforeUnload);
         updatePresenceMutation.mutate({ status: 'offline' });
       };
