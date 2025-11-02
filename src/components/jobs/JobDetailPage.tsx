@@ -104,44 +104,72 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Create a new project with parent_job_id to track the duplicate relationship
+      console.log('Starting duplication for project:', jobId);
+      console.log('Original project data:', project);
+
+      // Create a new project with ALL fields from the original (except IDs and timestamps)
       const newProject = await createProject.mutateAsync({
         name: `${project.name} (Copy)`,
-        description: project.description,
-        client_id: project.client_id,
-        status_id: project.status_id,
-        start_date: project.start_date,
-        due_date: project.due_date,
-        priority: project.priority,
-        funnel_stage: project.funnel_stage,
+        description: project.description || null,
+        client_id: project.client_id || null,
+        status_id: project.status_id || null,
+        start_date: project.start_date || null,
+        due_date: project.due_date || null,
+        completion_date: null, // Reset completion date for new job
+        priority: project.priority || null,
+        funnel_stage: project.funnel_stage || null,
+        source: project.source || null,
         parent_job_id: jobId, // Track this is a duplicate
       });
 
-      // 1. Copy all rooms
-      const { data: rooms } = await supabase
+      console.log('New project created:', newProject);
+
+      // 1. Copy all rooms with surfaces and treatments
+      const { data: rooms, error: roomsError } = await supabase
         .from('rooms')
         .select('*')
         .eq('project_id', jobId);
 
+      if (roomsError) {
+        console.error('Error fetching rooms:', roomsError);
+        throw roomsError;
+      }
+
+      console.log('Found rooms to copy:', rooms?.length || 0);
+
       const roomIdMapping: Record<string, string> = {}; // Map old room IDs to new ones
+      let surfacesCopied = 0;
+      let treatmentsCopied = 0;
 
       if (rooms && rooms.length > 0) {
         for (const room of rooms) {
           const { id: oldRoomId, project_id: _, created_at: __, updated_at: ___, ...roomData } = room;
-          const { data: newRoom } = await supabase
+          
+          const { data: newRoom, error: roomError } = await supabase
             .from('rooms')
             .insert({ ...roomData, project_id: newProject.id })
             .select()
             .single();
 
+          if (roomError) {
+            console.error('Error creating room:', roomError);
+            throw roomError;
+          }
+
           if (newRoom) {
             roomIdMapping[oldRoomId] = newRoom.id;
+            console.log(`Created room: ${newRoom.name} (${oldRoomId} -> ${newRoom.id})`);
 
             // Copy surfaces for this room
-            const { data: surfaces } = await supabase
+            const { data: surfaces, error: surfacesError } = await supabase
               .from('surfaces')
               .select('*')
               .eq('room_id', oldRoomId);
+
+            if (surfacesError) {
+              console.error('Error fetching surfaces:', surfacesError);
+              throw surfacesError;
+            }
 
             if (surfaces && surfaces.length > 0) {
               const surfacesToInsert = surfaces.map((surface: any) => {
@@ -153,14 +181,30 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                   user_id: user.id 
                 };
               });
-              await supabase.from('surfaces').insert(surfacesToInsert);
+              
+              const { error: insertSurfacesError } = await supabase
+                .from('surfaces')
+                .insert(surfacesToInsert);
+
+              if (insertSurfacesError) {
+                console.error('Error inserting surfaces:', insertSurfacesError);
+                throw insertSurfacesError;
+              }
+
+              surfacesCopied += surfaces.length;
+              console.log(`Copied ${surfaces.length} surfaces for room ${newRoom.name}`);
             }
 
             // Copy treatments for this room
-            const { data: treatments } = await supabase
+            const { data: treatments, error: treatmentsError } = await supabase
               .from('treatments')
               .select('*')
               .eq('room_id', oldRoomId);
+
+            if (treatmentsError) {
+              console.error('Error fetching treatments:', treatmentsError);
+              throw treatmentsError;
+            }
 
             if (treatments && treatments.length > 0) {
               const treatmentsToInsert = treatments.map((treatment: any) => {
@@ -172,82 +216,172 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                   user_id: user.id
                 };
               });
-              await supabase.from('treatments').insert(treatmentsToInsert);
+              
+              const { error: insertTreatmentsError } = await supabase
+                .from('treatments')
+                .insert(treatmentsToInsert);
+
+              if (insertTreatmentsError) {
+                console.error('Error inserting treatments:', insertTreatmentsError);
+                throw insertTreatmentsError;
+              }
+
+              treatmentsCopied += treatments.length;
+              console.log(`Copied ${treatments.length} treatments for room ${newRoom.name}`);
             }
           }
         }
       }
 
       // 2. Copy all quotes and their items
-      const { data: quotes } = await supabase
+      const { data: quotes, error: quotesError } = await supabase
         .from('quotes')
         .select('*')
         .eq('project_id', jobId);
 
+      if (quotesError) {
+        console.error('Error fetching quotes:', quotesError);
+        throw quotesError;
+      }
+
+      console.log('Found quotes to copy:', quotes?.length || 0);
+
+      let quoteItemsCopied = 0;
+      let manualItemsCopied = 0;
+
       if (quotes && quotes.length > 0) {
         for (const quote of quotes) {
-          const { id: oldQuoteId, project_id, created_at, updated_at, ...quoteData } = quote;
+          const { id: oldQuoteId, project_id, created_at, updated_at, quote_number, ...quoteData } = quote;
           
-          const { data: newQuote } = await supabase
+          const { data: newQuote, error: quoteError } = await supabase
             .from('quotes')
             .insert({ 
               ...quoteData, 
               project_id: newProject.id,
               user_id: user.id,
-              quote_number: undefined, // Let it generate a new quote number
+              // Don't copy quote_number, let it auto-generate
             })
             .select()
             .single();
 
+          if (quoteError) {
+            console.error('Error creating quote:', quoteError);
+            throw quoteError;
+          }
+
           if (newQuote) {
+            console.log(`Created quote: ${newQuote.quote_number || newQuote.id}`);
+
             // Copy quote items
-            const { data: quoteItems } = await supabase
+            const { data: quoteItems, error: quoteItemsError } = await supabase
               .from('quote_items')
               .select('*')
               .eq('quote_id', oldQuoteId);
+
+            if (quoteItemsError) {
+              console.error('Error fetching quote items:', quoteItemsError);
+              throw quoteItemsError;
+            }
 
             if (quoteItems && quoteItems.length > 0) {
               const itemsToInsert = quoteItems.map((item: any) => {
                 const { id, quote_id, created_at, updated_at, ...itemData } = item;
                 return { ...itemData, quote_id: newQuote.id };
               });
-              await supabase.from('quote_items').insert(itemsToInsert);
+              
+              const { error: insertItemsError } = await supabase
+                .from('quote_items')
+                .insert(itemsToInsert);
+
+              if (insertItemsError) {
+                console.error('Error inserting quote items:', insertItemsError);
+                throw insertItemsError;
+              }
+
+              quoteItemsCopied += quoteItems.length;
+              console.log(`Copied ${quoteItems.length} quote items`);
             }
 
             // Copy manual quote items
-            const { data: manualItems } = await supabase
+            const { data: manualItems, error: manualItemsError } = await supabase
               .from('manual_quote_items')
               .select('*')
               .eq('quote_id', oldQuoteId);
+
+            if (manualItemsError) {
+              console.error('Error fetching manual quote items:', manualItemsError);
+              throw manualItemsError;
+            }
 
             if (manualItems && manualItems.length > 0) {
               const manualItemsToInsert = manualItems.map((item: any) => {
                 const { id, quote_id, created_at, updated_at, ...itemData } = item;
                 return { ...itemData, quote_id: newQuote.id };
               });
-              await supabase.from('manual_quote_items').insert(manualItemsToInsert);
+              
+              const { error: insertManualItemsError } = await supabase
+                .from('manual_quote_items')
+                .insert(manualItemsToInsert);
+
+              if (insertManualItemsError) {
+                console.error('Error inserting manual quote items:', insertManualItemsError);
+                throw insertManualItemsError;
+              }
+
+              manualItemsCopied += manualItems.length;
+              console.log(`Copied ${manualItems.length} manual quote items`);
             }
           }
         }
       }
 
       // 3. Copy project notes
-      const { data: notes } = await supabase
+      const { data: notes, error: notesError } = await supabase
         .from('project_notes')
         .select('*')
         .eq('project_id', jobId);
+
+      if (notesError) {
+        console.error('Error fetching notes:', notesError);
+        throw notesError;
+      }
+
+      console.log('Found notes to copy:', notes?.length || 0);
 
       if (notes && notes.length > 0) {
         const notesToInsert = notes.map((note: any) => {
           const { id, project_id, created_at, updated_at, ...noteData } = note;
           return { ...noteData, project_id: newProject.id, user_id: user.id };
         });
-        await supabase.from('project_notes').insert(notesToInsert);
+        
+        const { error: insertNotesError } = await supabase
+          .from('project_notes')
+          .insert(notesToInsert);
+
+        if (insertNotesError) {
+          console.error('Error inserting notes:', insertNotesError);
+          throw insertNotesError;
+        }
+
+        console.log(`Copied ${notes.length} notes`);
       }
 
+      // Success summary
+      const summary = [
+        `Rooms: ${rooms?.length || 0}`,
+        `Surfaces: ${surfacesCopied}`,
+        `Treatments: ${treatmentsCopied}`,
+        `Quotes: ${quotes?.length || 0}`,
+        `Quote Items: ${quoteItemsCopied}`,
+        `Manual Items: ${manualItemsCopied}`,
+        `Notes: ${notes?.length || 0}`
+      ].join(', ');
+
+      console.log('Duplication complete:', summary);
+
       toast({
-        title: "Success",
-        description: "Job duplicated with all rooms, treatments, quotes, and notes"
+        title: "✓ Job Duplicated Successfully",
+        description: `Copied: ${summary}`
       });
       
       // Navigate to the new job
