@@ -5375,7 +5375,6 @@ export type Database = {
           is_default: boolean | null
           name: string
           preview_image_url: string | null
-          settings: Json | null
           template_style: string
           updated_at: string
           user_id: string
@@ -5390,7 +5389,6 @@ export type Database = {
           is_default?: boolean | null
           name: string
           preview_image_url?: string | null
-          settings?: Json | null
           template_style?: string
           updated_at?: string
           user_id: string
@@ -5405,7 +5403,6 @@ export type Database = {
           is_default?: boolean | null
           name?: string
           preview_image_url?: string | null
-          settings?: Json | null
           template_style?: string
           updated_at?: string
           user_id?: string

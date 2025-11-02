@@ -23,7 +23,7 @@ export const generateQuotePDF = async (
   } = options;
 
   const pdfOptions = {
-    margin: 0,
+    margin,
     filename,
     image: { 
       type: 'jpeg' as const, 
@@ -36,8 +36,8 @@ export const generateQuotePDF = async (
       letterRendering: true,
       allowTaint: false,
       backgroundColor: '#ffffff',
-      width: element.offsetWidth,
-      height: element.offsetHeight,
+      windowWidth: 794, // A4 width in pixels at 96 DPI
+      windowHeight: 1123, // A4 height in pixels at 96 DPI
     },
     jsPDF: {
       unit: 'mm',
@@ -75,7 +75,7 @@ export const generateQuotePDFBlob = async (
   } = options;
 
   const pdfOptions = {
-    margin: 0,
+    margin,
     image: { 
       type: 'jpeg' as const, 
       quality: imageQuality 
@@ -87,8 +87,8 @@ export const generateQuotePDFBlob = async (
       letterRendering: true,
       allowTaint: false,
       backgroundColor: '#ffffff',
-      width: element.offsetWidth,
-      height: element.offsetHeight,
+      windowWidth: 794,
+      windowHeight: 1123,
     },
     jsPDF: {
       unit: 'mm',

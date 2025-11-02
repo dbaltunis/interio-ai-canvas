@@ -11,9 +11,6 @@
   /* A4 paper dimensions */
   width: 210mm;
   min-height: 297mm;
-  max-width: 100%;
-  overflow-wrap: break-word;
-  word-wrap: break-word;
   
   /* Print-friendly styles */
   @media print {

@@ -22,7 +22,6 @@ import { LivePreview } from "./visual-editor/LivePreview";
 import { useTemplateData } from "@/hooks/useTemplateData";
 import { ProjectDataSelector } from "./ProjectDataSelector";
 import { useQueryClient } from "@tanstack/react-query";
-import { ProTemplateEditor } from "./ProTemplateEditor";
 
 interface Template {
   id: string;
@@ -692,24 +691,20 @@ export const SimpleTemplateManager: React.FC = () => {
 
       {/* Template Editor/Preview */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] h-[95vh] p-0">
-          <DialogHeader className="px-6 pt-6 pb-0">
+        <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
+          <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              Edit Template: {selectedTemplate?.name}
+              {selectedTemplate?.name}
             </DialogTitle>
           </DialogHeader>
-          <div className="flex-1 overflow-auto px-6 pb-6">
+          <div className="flex-1 overflow-auto">
             {selectedTemplate && (
-              <ProTemplateEditor
-                template={selectedTemplate}
-                onSave={(updatedTemplate) => {
-                  setTemplates(prev => 
-                    prev.map(t => t.id === updatedTemplate.id ? updatedTemplate : t)
-                  );
-                  setIsPreviewOpen(false);
-                }}
-                onClose={() => setIsPreviewOpen(false)}
+              <LivePreview
+                blocks={selectedTemplate.blocks}
+                projectData={displayProjectData}
+                isEditable={true}
+                onBlocksChange={saveTemplateChanges}
               />
             )}
           </div>
