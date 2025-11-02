@@ -99,8 +99,13 @@ export const BusinessInventoryOverview = () => {
     return <div className="text-muted-foreground">Loading business metrics...</div>;
   }
 
-  // If user doesn't have view or manage permissions, show permission denied
-  if (canViewInventory === false && canManageInventory === false) {
+  // During permission check loading, show nothing to prevent data flash
+  if (canManageInventory === undefined || canViewInventory === undefined) {
+    return <div className="text-muted-foreground">Loading...</div>;
+  }
+
+  // If user doesn't have ANY inventory permission, show access denied
+  if (canViewInventory !== true && canManageInventory !== true) {
     return (
       <div className="flex items-center justify-center p-12">
         <div className="text-center space-y-2">
@@ -112,11 +117,6 @@ export const BusinessInventoryOverview = () => {
         </div>
       </div>
     );
-  }
-
-  // During permission check loading, show nothing to prevent data flash
-  if (canManageInventory === undefined && canViewInventory === undefined) {
-    return <div className="text-muted-foreground">Loading...</div>;
   }
 
   return (
@@ -181,102 +181,106 @@ export const BusinessInventoryOverview = () => {
         </div>
       )}
 
-      {/* Inventory Health & Operational Metrics */}
-      <div>
-        <h2 className="text-lg font-semibold text-foreground mb-4">Inventory Health</h2>
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card className="border-2">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Low Stock Alerts</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-orange-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{lowStockItems.length}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Items need reordering
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-2">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Aging Inventory (90+ days)</CardTitle>
-              <Clock className="h-4 w-4 text-amber-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-amber-600">{deadStock.length}</div>
-              {canManageInventory === true && (
+      {/* Inventory Health & Operational Metrics - Non-financial data */}
+      {canViewInventory === true && (
+        <div>
+          <h2 className="text-lg font-semibold text-foreground mb-4">Inventory Health</h2>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card className="border-2">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Low Stock Alerts</CardTitle>
+                <AlertTriangle className="h-4 w-4 text-orange-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-orange-600">{lowStockItems.length}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Value: {formatCurrency(deadStockValue)}
+                  Items need reordering
                 </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Aging Inventory (90+ days)</CardTitle>
+                <Clock className="h-4 w-4 text-amber-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-amber-600">{deadStock.length}</div>
+                {canManageInventory === true && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Value: {formatCurrency(deadStockValue)}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-2">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Stock Efficiency</CardTitle>
+                <Archive className="h-4 w-4 text-green-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">
+                  {inventory.length > 0 ? Math.round(((inventory.length - deadStock.length) / inventory.length) * 100) : 0}%
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Active inventory utilization
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Category Performance - Only visible with view_inventory, profit only with manage_inventory */}
+      {canViewInventory === true && (
+        <div>
+          <h2 className="text-lg font-semibold text-foreground mb-4">Category Performance</h2>
+          <Card className="border-2">
+            <CardHeader>
+              <CardTitle className="text-base">Top Categories by Item Count</CardTitle>
+              <CardDescription>
+                Inventory distribution by category
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {topCategories.length > 0 ? (
+                topCategories.map(([category, stats]) => {
+                  const maxValue = topCategories[0][1].value;
+                  const percentage = (stats.value / maxValue) * 100;
+                  
+                  return (
+                    <div key={category} className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium capitalize">{category}</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {stats.count} items
+                          </Badge>
+                        </div>
+                        {canManageInventory === true && (
+                          <div className="text-right">
+                            <div className="font-semibold">{formatCurrency(stats.value)}</div>
+                            <div className="text-xs text-muted-foreground">
+                              Profit: {formatCurrency(stats.profit)}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <Progress value={percentage} className="h-2" />
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-sm text-muted-foreground">No category data available</p>
               )}
             </CardContent>
           </Card>
-
-          <Card className="border-2">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Stock Efficiency</CardTitle>
-              <Archive className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {inventory.length > 0 ? Math.round(((inventory.length - deadStock.length) / inventory.length) * 100) : 0}%
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Active inventory utilization
-              </p>
-            </CardContent>
-          </Card>
         </div>
-      </div>
+      )}
 
-      {/* Category Performance - Only show profit data if user can manage inventory */}
-      <div>
-        <h2 className="text-lg font-semibold text-foreground mb-4">Category Performance</h2>
-        <Card className="border-2">
-          <CardHeader>
-            <CardTitle className="text-base">Top Categories by Value</CardTitle>
-            <CardDescription>
-              {canManageInventory === true ? 'Revenue potential by inventory category' : 'Inventory distribution by category'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {topCategories.length > 0 ? (
-              topCategories.map(([category, stats]) => {
-                const maxValue = topCategories[0][1].value;
-                const percentage = (stats.value / maxValue) * 100;
-                
-                return (
-                  <div key={category} className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium capitalize">{category}</span>
-                        <Badge variant="secondary" className="text-xs">
-                          {stats.count} items
-                        </Badge>
-                      </div>
-                      {canManageInventory === true && (
-                        <div className="text-right">
-                          <div className="font-semibold">{formatCurrency(stats.value)}</div>
-                          <div className="text-xs text-muted-foreground">
-                            Profit: {formatCurrency(stats.profit)}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <Progress value={percentage} className="h-2" />
-                  </div>
-                );
-              })
-            ) : (
-              <p className="text-sm text-muted-foreground">No category data available</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Low Stock Items Alert */}
-      {lowStockItems.length > 0 && (
+      {/* Low Stock Items Alert - Only visible with view_inventory */}
+      {canViewInventory === true && lowStockItems.length > 0 && (
         <Card className="border-2 border-orange-200 bg-orange-50/50 dark:bg-orange-950/20 dark:border-orange-900">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
