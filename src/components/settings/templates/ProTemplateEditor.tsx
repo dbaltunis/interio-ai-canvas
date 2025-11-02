@@ -493,19 +493,24 @@ export const ProTemplateEditor = ({ template, onSave, onClose }: ProTemplateEdit
             </div>
           </CardHeader>
           <CardContent className="p-6 overflow-auto h-full bg-muted/30">
-            <div 
-              className="bg-white shadow-lg mx-auto"
-              style={{
-                width: documentSettings.orientation === 'portrait' ? '794px' : '1123px',
-                minHeight: documentSettings.orientation === 'portrait' ? '1123px' : '794px',
-                padding: `${documentSettings.marginTop}px ${documentSettings.marginRight}px ${documentSettings.marginBottom}px ${documentSettings.marginLeft}px`,
-              }}
-            >
-              <div ref={previewRef} id="template-preview">
+            <div className="flex justify-center">
+              <div 
+                ref={previewRef}
+                id="template-preview"
+                className="bg-white shadow-lg"
+                style={{
+                  width: documentSettings.orientation === 'portrait' ? '210mm' : '297mm',
+                  minHeight: documentSettings.orientation === 'portrait' ? '297mm' : '210mm',
+                  padding: `${documentSettings.marginTop}px ${documentSettings.marginRight}px ${documentSettings.marginBottom}px ${documentSettings.marginLeft}px`,
+                  boxSizing: 'border-box',
+                  overflow: 'visible'
+                }}
+              >
                 <LivePreview
                   blocks={template.blocks || []}
                   projectData={templateData}
                   isEditable={false}
+                  isPrintMode={true}
                   showDetailedBreakdown={productsSettings.showDetailedBreakdown}
                   showImages={productsSettings.showImages}
                   groupByRoom={productsSettings.groupByRoom}
