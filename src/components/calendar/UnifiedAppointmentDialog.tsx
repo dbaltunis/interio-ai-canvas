@@ -198,26 +198,29 @@ export const UnifiedAppointmentDialog = ({
             id: appointment.id, 
             ...appointmentData 
           } as any);
-
-          // CalDAV sync removed
         } else {
           const newAppointment = await createAppointment.mutateAsync(appointmentData as any);
           
-          // Generate meeting link if auto-generation is enabled
+          // Generate meeting link asynchronously after dialog closes
           if (addVideoMeeting && videoProvider !== 'manual' && newAppointment?.id) {
             const duration = Math.round((endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60));
-            generateMeetingLink({
-              appointmentId: newAppointment.id,
-              provider: videoProvider as any,
-              title: event.title,
-              startTime: startDateTime.toISOString(),
-              endTime: endDateTime.toISOString(),
-              duration
+            // Run async without blocking dialog close
+            Promise.resolve().then(() => {
+              generateMeetingLink({
+                appointmentId: newAppointment.id,
+                provider: videoProvider as any,
+                title: event.title,
+                startTime: startDateTime.toISOString(),
+                endTime: endDateTime.toISOString(),
+                duration
+              });
             });
           }
-          
-          // CalDAV sync removed
         }
+        
+        // Close dialog immediately after successful mutation
+        onOpenChange(false);
+        resetForm();
       } else {
         // Queue for offline processing
         if (isEditing) {
@@ -225,10 +228,9 @@ export const UnifiedAppointmentDialog = ({
         } else {
           queueOfflineOperation('create', 'appointments', appointmentData);
         }
+        onOpenChange(false);
+        resetForm();
       }
-
-      onOpenChange(false);
-      resetForm();
     } catch (error) {
       console.error('Failed to save appointment:', error);
     }
@@ -321,7 +323,7 @@ export const UnifiedAppointmentDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-full sm:max-w-[95vw] md:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold flex items-center gap-2">
             <CalendarDays className="w-5 h-5" />
@@ -722,7 +724,7 @@ export const UnifiedAppointmentDialog = ({
             <div className="flex items-center justify-between">
               <Label htmlFor="notifications" className="text-sm font-medium flex items-center gap-1.5">
                 <Bell className="w-3.5 h-3.5" />
-                Notifications
+                Enable Notifications
               </Label>
               <Switch
                 id="notifications"
@@ -731,23 +733,29 @@ export const UnifiedAppointmentDialog = ({
               />
             </div>
             {event.notification_enabled && (
-              <Select 
-                value={event.notification_minutes?.toString() || '15'}
-                onValueChange={(value) => setEvent({ ...event, notification_minutes: parseInt(value) })}
-              >
-                <SelectTrigger className="h-10">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">At event time</SelectItem>
-                  <SelectItem value="5">5 minutes before</SelectItem>
-                  <SelectItem value="15">15 minutes before</SelectItem>
-                  <SelectItem value="30">30 minutes before</SelectItem>
-                  <SelectItem value="60">1 hour before</SelectItem>
-                  <SelectItem value="120">2 hours before</SelectItem>
-                  <SelectItem value="1440">1 day before</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground">Remind me</Label>
+                <Select 
+                  value={event.notification_minutes?.toString() || '15'}
+                  onValueChange={(value) => setEvent({ ...event, notification_minutes: parseInt(value) })}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">At event time</SelectItem>
+                    <SelectItem value="5">5 minutes before</SelectItem>
+                    <SelectItem value="15">15 minutes before</SelectItem>
+                    <SelectItem value="30">30 minutes before</SelectItem>
+                    <SelectItem value="60">1 hour before</SelectItem>
+                    <SelectItem value="120">2 hours before</SelectItem>
+                    <SelectItem value="1440">1 day before</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Notification methods are configured in Settings
+                </p>
+              </div>
             )}
           </div>
 
