@@ -258,6 +258,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
       console.log('');
 
       const roomIdMapping: Record<string, string> = {}; // Map old room IDs to new ones
+      const surfaceIdMapping: Record<string, string> = {}; // Map old surface (window) IDs to new ones
       let surfacesCopied = 0;
       let treatmentsCopied = 0;
 
@@ -311,9 +312,10 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                 };
               });
               
-              const { error: insertSurfacesError } = await supabase
+              const { data: newSurfaces, error: insertSurfacesError } = await supabase
                 .from('surfaces')
-                .insert(surfacesToInsert);
+                .insert(surfacesToInsert)
+                .select();
 
               if (insertSurfacesError) {
                 console.error('❌ CRITICAL: Error inserting surfaces:', insertSurfacesError);
@@ -321,8 +323,14 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                 throw new Error(`Failed to copy ${surfaces.length} surfaces for room "${newRoom.name}": ${insertSurfacesError.message}`);
               }
 
-              surfacesCopied += surfaces.length;
-              console.log(`Copied ${surfaces.length} surfaces for room ${newRoom.name}`);
+              // Create surface ID mapping
+              if (newSurfaces) {
+                surfaces.forEach((oldSurface, index) => {
+                  surfaceIdMapping[oldSurface.id] = newSurfaces[index].id;
+                });
+                surfacesCopied += surfaces.length;
+                console.log(`Copied ${surfaces.length} surfaces for room ${newRoom.name}`);
+              }
             }
 
             // Copy treatments specifically for this room (not null room_id)
@@ -339,9 +347,14 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
 
             if (treatments && treatments.length > 0) {
               const treatmentsToInsert = treatments.map((treatment: any) => {
-                const { id, room_id, project_id, created_at, updated_at, ...treatmentData } = treatment;
+                const { id, room_id, project_id, created_at, updated_at, window_id, ...treatmentData } = treatment;
+                
+                // Map window_id to new surface ID, or null if no mapping
+                const newWindowId = window_id && surfaceIdMapping[window_id] ? surfaceIdMapping[window_id] : null;
+                
                 return { 
-                  ...treatmentData, 
+                  ...treatmentData,
+                  window_id: newWindowId, // Use mapped window_id
                   room_id: newRoom.id,
                   project_id: newProject.id,
                   user_id: user.id
@@ -442,9 +455,14 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
         console.log('🎯 Assigning orphaned treatments to room:', firstNewRoomId);
         
         const orphanedToInsert = orphanedTreatments.map((treatment: any) => {
-          const { id, room_id, project_id, created_at, updated_at, ...treatmentData } = treatment;
+          const { id, room_id, project_id, created_at, updated_at, window_id, ...treatmentData } = treatment;
+          
+          // Map window_id to new surface ID, or null if no mapping
+          const newWindowId = window_id && surfaceIdMapping[window_id] ? surfaceIdMapping[window_id] : null;
+          
           return { 
-            ...treatmentData, 
+            ...treatmentData,
+            window_id: newWindowId, // Use mapped window_id
             room_id: firstNewRoomId, // Assign to first room or keep as null
             project_id: newProject.id,
             user_id: user.id
