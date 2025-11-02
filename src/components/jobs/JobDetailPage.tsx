@@ -365,8 +365,53 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
         }
       }
 
-      // STEP 2.5: Copy orphaned treatments (treatments with null room_id)
+      // STEP 2.5: Copy curtain templates
       console.log('');
+      console.log('🎨 ============ COPYING CURTAIN TEMPLATES ============');
+      
+      // @ts-ignore - Complex type from curtain_templates causing deep instantiation
+      const templatesQuery = await supabase
+        .from('curtain_templates')
+        .select('*')
+        .eq('project_id', jobId);
+      
+      const curtainTemplates = templatesQuery.data;
+      const templatesError = templatesQuery.error;
+
+      if (templatesError) {
+        console.error('❌ Error fetching curtain templates:', templatesError);
+      }
+
+      let templatesCopied = 0;
+      if (curtainTemplates && curtainTemplates.length > 0) {
+        console.log(`📊 Found ${curtainTemplates.length} curtain templates to copy`);
+        
+        const templatesToInsert = curtainTemplates.map((template: any) => {
+          const { id, project_id, created_at, updated_at, ...templateData } = template;
+          return {
+            ...templateData,
+            project_id: newProject.id,
+            user_id: user.id
+          };
+        });
+
+        // @ts-ignore
+        const { error: insertTemplatesError } = await supabase
+          .from('curtain_templates')
+          .insert(templatesToInsert);
+
+        if (insertTemplatesError) {
+          console.error('❌ Error copying curtain templates:', insertTemplatesError);
+        } else {
+          templatesCopied = curtainTemplates.length;
+          console.log(`✅ Copied ${templatesCopied} curtain templates`);
+        }
+      } else {
+        console.log('ℹ️ No curtain templates to copy');
+      }
+      console.log('');
+
+      // STEP 2.6: Copy orphaned treatments (treatments with null room_id)
       console.log('🔍 ============ CHECKING FOR ORPHANED TREATMENTS ============');
       console.log('🔍 Looking for treatments with room_id = null for project:', jobId);
       
@@ -462,6 +507,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
         `Rooms: ${rooms?.length || 0}`,
         `Surfaces: ${surfacesCopied}`,
         `Treatments: ${treatmentsCopied}`,
+        `Templates: ${templatesCopied}`,
         `Quotes: ${quotes?.length || 0}`,
         `Quote Items: ${quoteItemsCopied}`,
         `Manual Items: ${manualItemsCopied}`,

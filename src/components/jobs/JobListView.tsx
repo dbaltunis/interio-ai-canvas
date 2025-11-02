@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, Eye, Edit, Copy, Calendar, User, DollarSign } from "lucide-react";
 import { JobActionsMenu } from "./JobActionsMenu";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
+import { DuplicateJobIndicator } from "./DuplicateJobIndicator";
 
 interface JobListViewProps {
   jobs: any[];
@@ -114,8 +115,11 @@ export const JobListView = ({ jobs, onJobEdit, onJobView, onJobCopy }: JobListVi
                 className="font-medium text-foreground group-hover:text-primary"
                 onClick={() => onJobView(job.id)}
               >
-                <div className="flex flex-col">
-                  <span className="font-medium">{job.name}</span>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{job.name}</span>
+                    <DuplicateJobIndicator isDuplicate={!!job.project?.parent_job_id} />
+                  </div>
                   {job.description && (
                     <span className="text-xs text-muted-foreground truncate max-w-xs">
                       {job.description}
