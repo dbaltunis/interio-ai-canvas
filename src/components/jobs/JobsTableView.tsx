@@ -507,18 +507,21 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
       case 'job_no':
         const dupInfo = duplicateData[project.id];
         return (
-          <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1.5">
             <span 
               title={project.job_number}
               className="font-mono text-xs text-muted-foreground whitespace-nowrap"
             >
               {formatJobNumber(project.job_number)}
             </span>
-            {dupInfo && (
-              <DuplicateJobIndicator
-                isDuplicate={dupInfo.isDuplicate}
-                duplicateCount={dupInfo.duplicateCount}
-              />
+            {dupInfo && dupInfo.isDuplicate && (
+              <Copy className="h-3 w-3 text-orange-500 dark:text-orange-400" strokeWidth={2.5} />
+            )}
+            {dupInfo && dupInfo.duplicateCount > 0 && (
+              <div className="flex items-center gap-0.5">
+                <Copy className="h-3 w-3 text-blue-500 dark:text-blue-400" strokeWidth={2.5} />
+                <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">{dupInfo.duplicateCount}</span>
+              </div>
             )}
           </div>
         );
