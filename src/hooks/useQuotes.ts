@@ -63,16 +63,26 @@ export const useCreateQuote = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Generate quote number if not provided
+      // Generate quote number using number sequences if not provided
       let quoteNumber = quote.quote_number;
       if (!quoteNumber || quoteNumber.trim() === '') {
-        // Get the count of existing quotes for this user to generate a sequential number
-        const { count } = await supabase
-          .from("quotes")
-          .select("*", { count: 'exact', head: true })
-          .eq("user_id", user.id);
+        const { data: generatedNumber, error: seqError } = await supabase.rpc("get_next_sequence_number", {
+          p_user_id: user.id,
+          p_entity_type: "quote",
+        });
         
-        quoteNumber = `QT-${String(((count || 0) + 1)).padStart(4, '0')}`;
+        if (seqError) {
+          console.error("Error generating quote number:", seqError);
+          // Fallback to old method if sequence generation fails
+          const { count } = await supabase
+            .from("quotes")
+            .select("*", { count: 'exact', head: true })
+            .eq("user_id", user.id);
+          
+          quoteNumber = `QT-${String(((count || 0) + 1)).padStart(4, '0')}`;
+        } else {
+          quoteNumber = generatedNumber || `QT-${Date.now()}`;
+        }
       }
 
       // Get first Quote status (slot 1) if status_id not provided

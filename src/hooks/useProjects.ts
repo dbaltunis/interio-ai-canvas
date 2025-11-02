@@ -61,15 +61,26 @@ export const useCreateProject = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Generate job number if not provided
+      // Generate job number using number sequences if not provided
       let jobNumber = project.job_number;
-      if (!jobNumber) {
-        const { count } = await supabase
-          .from("projects")
-          .select("*", { count: 'exact', head: true })
-          .eq("user_id", user.id);
+      if (!jobNumber || jobNumber.trim() === '') {
+        const { data: generatedNumber, error: seqError } = await supabase.rpc("get_next_sequence_number", {
+          p_user_id: user.id,
+          p_entity_type: "job",
+        });
         
-        jobNumber = `JOB-${String(((count || 0) + 1)).padStart(4, '0')}`;
+        if (seqError) {
+          console.error("Error generating job number:", seqError);
+          // Fallback to old method if sequence generation fails
+          const { count } = await supabase
+            .from("projects")
+            .select("*", { count: 'exact', head: true })
+            .eq("user_id", user.id);
+          
+          jobNumber = `JOB-${String(((count || 0) + 1)).padStart(4, '0')}`;
+        } else {
+          jobNumber = generatedNumber || `JOB-${Date.now()}`;
+        }
       }
 
       // Get first Project status (slot 5) if status_id not provided
