@@ -124,7 +124,111 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
 
       console.log('New project created:', newProject);
 
-      // 1. Copy all rooms with surfaces and treatments
+      // STEP 1: Copy all quotes FIRST (rooms need quote_id)
+      const { data: quotes, error: quotesError } = await supabase
+        .from('quotes')
+        .select('*')
+        .eq('project_id', jobId);
+
+      if (quotesError) {
+        console.error('Error fetching quotes:', quotesError);
+        throw quotesError;
+      }
+
+      console.log('Found quotes to copy:', quotes?.length || 0);
+
+      const quoteIdMapping: Record<string, string> = {}; // Map old quote IDs to new ones
+      let quoteItemsCopied = 0;
+      let manualItemsCopied = 0;
+
+      if (quotes && quotes.length > 0) {
+        for (const quote of quotes) {
+          const { id: oldQuoteId, project_id, created_at, updated_at, quote_number, ...quoteData } = quote;
+          
+          const { data: newQuote, error: quoteError } = await supabase
+            .from('quotes')
+            .insert({ 
+              ...quoteData, 
+              project_id: newProject.id,
+              user_id: user.id,
+              // Don't copy quote_number, let it auto-generate
+            })
+            .select()
+            .single();
+
+          if (quoteError) {
+            console.error('Error creating quote:', quoteError);
+            throw quoteError;
+          }
+
+          if (newQuote) {
+            quoteIdMapping[oldQuoteId] = newQuote.id;
+            console.log(`Created quote: ${newQuote.quote_number || newQuote.id}`);
+
+            // Copy quote items
+            const { data: quoteItems, error: quoteItemsError } = await supabase
+              .from('quote_items')
+              .select('*')
+              .eq('quote_id', oldQuoteId);
+
+            if (quoteItemsError) {
+              console.error('Error fetching quote items:', quoteItemsError);
+              throw quoteItemsError;
+            }
+
+            if (quoteItems && quoteItems.length > 0) {
+              const itemsToInsert = quoteItems.map((item: any) => {
+                const { id, quote_id, created_at, updated_at, ...itemData } = item;
+                return { ...itemData, quote_id: newQuote.id };
+              });
+              
+              const { error: insertItemsError } = await supabase
+                .from('quote_items')
+                .insert(itemsToInsert);
+
+              if (insertItemsError) {
+                console.error('Error inserting quote items:', insertItemsError);
+                throw insertItemsError;
+              }
+
+              quoteItemsCopied += quoteItems.length;
+              console.log(`Copied ${quoteItems.length} quote items`);
+            }
+
+            // Copy manual quote items
+            const { data: manualItems, error: manualItemsError } = await supabase
+              .from('manual_quote_items')
+              .select('*')
+              .eq('quote_id', oldQuoteId);
+
+            if (manualItemsError) {
+              console.error('Error fetching manual quote items:', manualItemsError);
+              throw manualItemsError;
+            }
+
+            if (manualItems && manualItems.length > 0) {
+              const manualItemsToInsert = manualItems.map((item: any) => {
+                const { id, quote_id, created_at, updated_at, ...itemData } = item;
+                return { ...itemData, quote_id: newQuote.id };
+              });
+              
+              const { error: insertManualItemsError } = await supabase
+                .from('manual_quote_items')
+                .insert(manualItemsToInsert);
+
+              if (insertManualItemsError) {
+                console.error('Error inserting manual quote items:', insertManualItemsError);
+                throw insertManualItemsError;
+              }
+
+              manualItemsCopied += manualItems.length;
+              console.log(`Copied ${manualItems.length} manual quote items`);
+            }
+          }
+        }
+      }
+
+      // STEP 2: Copy all rooms with surfaces and treatments (now that quotes exist)
       const { data: rooms, error: roomsError } = await supabase
         .from('rooms')
         .select('*')
@@ -143,11 +247,19 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
 
       if (rooms && rooms.length > 0) {
         for (const room of rooms) {
-          const { id: oldRoomId, project_id: _, created_at: __, updated_at: ___, ...roomData } = room;
+          const { id: oldRoomId, project_id: _, created_at: __, updated_at: ___, quote_id: oldQuoteId, ...roomData } = room;
+          
+          // Map the quote_id to the new quote
+          const newQuoteId = oldQuoteId ? quoteIdMapping[oldQuoteId] : null;
           
           const { data: newRoom, error: roomError } = await supabase
             .from('rooms')
-            .insert({ ...roomData, project_id: newProject.id })
+            .insert({ 
+              ...roomData, 
+              project_id: newProject.id, 
+              quote_id: newQuoteId, // Use the mapped quote_id
+              user_id: user.id 
+            })
             .select()
             .single();
 
@@ -233,109 +345,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
         }
       }
 
-      // 2. Copy all quotes and their items
-      const { data: quotes, error: quotesError } = await supabase
-        .from('quotes')
-        .select('*')
-        .eq('project_id', jobId);
-
-      if (quotesError) {
-        console.error('Error fetching quotes:', quotesError);
-        throw quotesError;
-      }
-
-      console.log('Found quotes to copy:', quotes?.length || 0);
-
-      let quoteItemsCopied = 0;
-      let manualItemsCopied = 0;
-
-      if (quotes && quotes.length > 0) {
-        for (const quote of quotes) {
-          const { id: oldQuoteId, project_id, created_at, updated_at, quote_number, ...quoteData } = quote;
-          
-          const { data: newQuote, error: quoteError } = await supabase
-            .from('quotes')
-            .insert({ 
-              ...quoteData, 
-              project_id: newProject.id,
-              user_id: user.id,
-              // Don't copy quote_number, let it auto-generate
-            })
-            .select()
-            .single();
-
-          if (quoteError) {
-            console.error('Error creating quote:', quoteError);
-            throw quoteError;
-          }
-
-          if (newQuote) {
-            console.log(`Created quote: ${newQuote.quote_number || newQuote.id}`);
-
-            // Copy quote items
-            const { data: quoteItems, error: quoteItemsError } = await supabase
-              .from('quote_items')
-              .select('*')
-              .eq('quote_id', oldQuoteId);
-
-            if (quoteItemsError) {
-              console.error('Error fetching quote items:', quoteItemsError);
-              throw quoteItemsError;
-            }
-
-            if (quoteItems && quoteItems.length > 0) {
-              const itemsToInsert = quoteItems.map((item: any) => {
-                const { id, quote_id, created_at, updated_at, ...itemData } = item;
-                return { ...itemData, quote_id: newQuote.id };
-              });
-              
-              const { error: insertItemsError } = await supabase
-                .from('quote_items')
-                .insert(itemsToInsert);
-
-              if (insertItemsError) {
-                console.error('Error inserting quote items:', insertItemsError);
-                throw insertItemsError;
-              }
-
-              quoteItemsCopied += quoteItems.length;
-              console.log(`Copied ${quoteItems.length} quote items`);
-            }
-
-            // Copy manual quote items
-            const { data: manualItems, error: manualItemsError } = await supabase
-              .from('manual_quote_items')
-              .select('*')
-              .eq('quote_id', oldQuoteId);
-
-            if (manualItemsError) {
-              console.error('Error fetching manual quote items:', manualItemsError);
-              throw manualItemsError;
-            }
-
-            if (manualItems && manualItems.length > 0) {
-              const manualItemsToInsert = manualItems.map((item: any) => {
-                const { id, quote_id, created_at, updated_at, ...itemData } = item;
-                return { ...itemData, quote_id: newQuote.id };
-              });
-              
-              const { error: insertManualItemsError } = await supabase
-                .from('manual_quote_items')
-                .insert(manualItemsToInsert);
-
-              if (insertManualItemsError) {
-                console.error('Error inserting manual quote items:', insertManualItemsError);
-                throw insertManualItemsError;
-              }
-
-              manualItemsCopied += manualItems.length;
-              console.log(`Copied ${manualItems.length} manual quote items`);
-            }
-          }
-        }
-      }
-
-      // 3. Copy project notes
+      // STEP 3: Copy project notes
       const { data: notes, error: notesError } = await supabase
         .from('project_notes')
         .select('*')
