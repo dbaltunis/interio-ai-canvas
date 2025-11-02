@@ -209,6 +209,72 @@ const LivePreviewBlock = ({
   };
 
   switch (blockType) {
+    case 'products':
+      // Render products/items table
+      const items = projectData?.items || projectData?.treatments || [];
+      const currencySymbol = renderTokenValue('currency_symbol');
+      
+      return (
+        <div className="my-6">
+          <h3 className="text-lg font-semibold mb-4">{content.title || 'Quote Items'}</h3>
+          <div className="border rounded-lg overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-muted/50">
+                <tr>
+                  {showImages && <th className="p-2 text-left text-xs font-medium">Image</th>}
+                  <th className="p-2 text-left text-xs font-medium">Item</th>
+                  {content.showDescription !== false && <th className="p-2 text-left text-xs font-medium">Description</th>}
+                  <th className="p-2 text-right text-xs font-medium">Qty</th>
+                  <th className="p-2 text-right text-xs font-medium">Unit Price</th>
+                  <th className="p-2 text-right text-xs font-medium">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item: any, index: number) => (
+                  <tr key={index} className="border-t">
+                    {showImages && (
+                      <td className="p-2">
+                        {item.image_url && (
+                          <img src={item.image_url} alt={item.name} className="w-16 h-16 object-cover rounded" />
+                        )}
+                      </td>
+                    )}
+                    <td className="p-2 text-sm font-medium">{item.name}</td>
+                    {content.showDescription !== false && <td className="p-2 text-sm text-muted-foreground">{item.description || '-'}</td>}
+                    <td className="p-2 text-sm text-right">{item.quantity || 1}</td>
+                    <td className="p-2 text-sm text-right">{currencySymbol}{(item.unit_price || item.price || 0).toFixed(2)}</td>
+                    <td className="p-2 text-sm text-right font-medium">{currencySymbol}{((item.quantity || 1) * (item.unit_price || item.price || 0)).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+
+    case 'totals':
+      // Render financial totals
+      const totalCurrencySymbol = renderTokenValue('currency_symbol');
+      
+      return (
+        <div className="my-6 flex justify-end">
+          <div className="w-64 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Subtotal:</span>
+              <span className="font-medium">{renderTokenValue('subtotal')}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Tax ({renderTokenValue('tax_rate')}):</span>
+              <span className="font-medium">{renderTokenValue('tax_amount')}</span>
+            </div>
+            <div className="flex justify-between text-base font-bold border-t pt-2">
+              <span>Total:</span>
+              <span>{renderTokenValue('total')}</span>
+            </div>
+          </div>
+        </div>
+      );
+
     case 'document-header':
       const headerLayout = content.layout || 'centered';
       return (
