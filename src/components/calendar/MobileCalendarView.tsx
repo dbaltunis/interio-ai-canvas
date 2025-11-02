@@ -16,6 +16,7 @@ import {
   Link2,
   Bell
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, addDays, startOfWeek, isSameDay, isToday, addWeeks, subWeeks } from "date-fns";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useCreateAppointment } from "@/hooks/useAppointments";
@@ -27,6 +28,8 @@ import { AppointmentSchedulerSlider } from "./AppointmentSchedulerSlider";
 import { CalendarFilters } from "./filters/CalendarFilters";
 import { CalendarFilterState } from "./CalendarFilters";
 
+type CalendarView = 'month' | 'week' | 'day';
+
 export const MobileCalendarView = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -35,6 +38,7 @@ export const MobileCalendarView = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [showCalendarPicker, setShowCalendarPicker] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  const [view, setView] = useState<CalendarView>('week');
   const [filters, setFilters] = useState<CalendarFilterState>({
     searchTerm: "",
     userIds: [],
@@ -163,6 +167,19 @@ export const MobileCalendarView = () => {
           <CalendarFilters onFiltersChange={handleFiltersChange} />
         </div>
       )}
+
+      {/* View Selector - placed under filters */}
+      <div className="mb-4 shrink-0">
+        <Select value={view} onValueChange={(value: CalendarView) => setView(value)}>
+          <SelectTrigger className="w-full h-10 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-background z-50">
+            <SelectItem value="week">Week</SelectItem>
+            <SelectItem value="day">Day</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Week Navigation */}
       <Card className="overflow-hidden mb-4 shrink-0">
