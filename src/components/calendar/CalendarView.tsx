@@ -120,6 +120,11 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
 
   // newEvent state removed - using UnifiedAppointmentDialog now
 
+  // Return mobile view for mobile devices (AFTER all hooks are called)
+  if (isMobile) {
+    return <MobileCalendarView />;
+  }
+
   const getEventsForDate = (date: Date) => {
     if (!appointments) return [];
     return appointments.filter(appointment => 
