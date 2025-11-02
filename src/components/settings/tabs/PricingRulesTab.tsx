@@ -12,6 +12,8 @@ import { useMarkupSettings, useUpdateMarkupSettings, MarkupSettings } from "@/ho
 import { useBusinessSettings, useUpdateBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { SettingsInheritanceInfo } from "../SettingsInheritanceInfo";
+import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 
 export const PricingRulesTab = () => {
   const { data: markupSettings, isLoading } = useMarkupSettings();
@@ -19,11 +21,15 @@ export const PricingRulesTab = () => {
   const canManageSettings = useHasPermission('manage_settings');
   const updateMarkupSettings = useUpdateMarkupSettings();
   const updateBusinessSettings = useUpdateBusinessSettings();
+  const { data: profile } = useCurrentUserProfile();
   
   const [formData, setFormData] = useState<MarkupSettings | null>(null);
   const [taxRate, setTaxRate] = useState<number>(0);
   const [taxType, setTaxType] = useState<'none' | 'vat' | 'gst' | 'sales_tax'>('none');
   const [taxInclusive, setTaxInclusive] = useState<boolean>(false);
+  
+  const isTeamMember = profile?.parent_account_id && profile.parent_account_id !== profile.user_id;
+  const isInheritingSettings = isTeamMember && businessSettings?.user_id !== profile?.user_id;
 
   useEffect(() => {
     if (markupSettings) {
@@ -107,6 +113,11 @@ export const PricingRulesTab = () => {
 
   return (
     <div className="space-y-6">
+      <SettingsInheritanceInfo 
+        settingsType="pricing and markup" 
+        isInheriting={isInheritingSettings}
+      />
+      
       {/* Tax Settings */}
       <Card>
         <CardHeader>

@@ -11,6 +11,9 @@ import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useCompactMode } from "@/hooks/useCompactMode";
 import { FeatureFlagsSettings } from "@/components/settings/FeatureFlagsSettings";
+import { SettingsInheritanceInfo } from "../SettingsInheritanceInfo";
+import { useCurrentUserProfile } from "@/hooks/useUserProfile";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 export const SystemSettingsTab = () => {
   const [notifications, setNotifications] = useState({
@@ -22,6 +25,11 @@ export const SystemSettingsTab = () => {
   const { theme, resolvedTheme, setTheme } = useTheme();
   const { compact, toggleCompact } = useCompactMode();
   const [accent, setAccent] = useState<'primary' | 'secondary'>('primary');
+  const { data: profile } = useCurrentUserProfile();
+  const { data: businessSettings } = useBusinessSettings();
+  
+  const isTeamMember = profile?.parent_account_id && profile.parent_account_id !== profile.user_id;
+  const isInheritingSettings = isTeamMember && businessSettings?.user_id !== profile?.user_id;
 
   useEffect(() => {
     const existing = document.documentElement.getAttribute('data-accent') as 'primary' | 'secondary' | null;
@@ -34,6 +42,11 @@ export const SystemSettingsTab = () => {
 
   return (
     <div className="space-y-6">
+      <SettingsInheritanceInfo 
+        settingsType="system and feature" 
+        isInheriting={isInheritingSettings}
+      />
+      
       {/* Feature Flags & Inventory Configuration */}
       <FeatureFlagsSettings />
 

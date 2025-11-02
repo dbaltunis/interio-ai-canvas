@@ -8,12 +8,17 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProductTemplates } from "@/hooks/useProductTemplates";
 import { ProductTemplateForm } from "./products/ProductTemplateForm";
+import { SettingsInheritanceInfo } from "../SettingsInheritanceInfo";
+import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 
 export const ProductTemplatesTab = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<any>(null);
   const { templates, isLoading: templatesLoading, createTemplate, updateTemplate, deleteTemplate } = useProductTemplates();
   const { toast } = useToast();
+  const { data: profile } = useCurrentUserProfile();
+  
+  const isTeamMember = profile?.parent_account_id && profile.parent_account_id !== profile.user_id;
 
   const handleSave = async (templateData: any) => {
     try {
@@ -95,6 +100,11 @@ export const ProductTemplatesTab = () => {
 
   return (
     <div className="space-y-4">
+      <SettingsInheritanceInfo 
+        settingsType="product template" 
+        isInheriting={isTeamMember}
+      />
+      
       {!showForm ? (
         <>
           <Card>
