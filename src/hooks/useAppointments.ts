@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useHasPermission } from "@/hooks/usePermissions";
 
 export interface Appointment {
   id: string;
@@ -28,6 +29,8 @@ export interface Appointment {
 }
 
 export const useAppointments = () => {
+  const canViewCalendar = useHasPermission('view_calendar');
+  
   return useQuery({
     queryKey: ['appointments'],
     queryFn: async () => {
@@ -53,6 +56,7 @@ export const useAppointments = () => {
     // Reduce cache time to ensure fresh data
     staleTime: 1000 * 60, // 1 minute
     gcTime: 1000 * 60 * 5, // 5 minutes (formerly cacheTime)
+    enabled: canViewCalendar === true, // Only fetch if user has calendar permission
   });
 };
 

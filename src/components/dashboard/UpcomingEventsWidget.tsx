@@ -13,7 +13,14 @@ import { useHasPermission } from "@/hooks/usePermissions";
 export const UpcomingEventsWidget = () => {
   const navigate = useNavigate();
   const canViewCalendar = useHasPermission('view_calendar');
+  
+  // Only fetch appointments if user has calendar permission
   const { data: appointments, isLoading } = useAppointments();
+  
+  // Don't show widget at all if no calendar permission
+  if (canViewCalendar === false) {
+    return null;
+  }
   const { integration: calendarIntegration } = useGoogleCalendarIntegration();
 
   // Filter events to only show those within the next 24 hours
@@ -31,11 +38,6 @@ export const UpcomingEventsWidget = () => {
     if (isTomorrow(date)) return "Tomorrow";
     return format(date, "MMM d, yyyy");
   };
-
-  // Don't show widget if no calendar permission
-  if (canViewCalendar === false) {
-    return null;
-  }
 
   if (isLoading || canViewCalendar === undefined) {
     return (

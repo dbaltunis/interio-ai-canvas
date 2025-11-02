@@ -13,6 +13,11 @@ export const RecentAppointmentsWidget = () => {
   const navigate = useNavigate();
   const canViewCalendar = useHasPermission('view_calendar');
   
+  // Don't show widget at all if no calendar permission
+  if (canViewCalendar === false) {
+    return null;
+  }
+  
   const { data: bookings, isLoading } = useQuery({
     queryKey: ["recent-appointment-bookings"],
     queryFn: async () => {
@@ -49,13 +54,8 @@ export const RecentAppointmentsWidget = () => {
       return data || [];
     },
     staleTime: 30 * 1000, // 30 seconds
-    enabled: canViewCalendar !== false, // Only fetch if user has permission
+    enabled: canViewCalendar === true, // Only fetch if user has calendar permission
   });
-
-  // Don't show widget if no calendar permission
-  if (canViewCalendar === false) {
-    return null;
-  }
 
   if (isLoading || canViewCalendar === undefined) {
     return (
