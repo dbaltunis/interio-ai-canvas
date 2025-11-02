@@ -67,8 +67,17 @@ export const ProTemplateEditor = ({ template, onSave, onClose }: ProTemplateEdit
   const debouncedProductsSettings = useDebounce(productsSettings, 1000);
   const debouncedTypographySettings = useDebounce(typographySettings, 1000);
 
-  // Auto-save effect
+  // Track initial mount to avoid auto-save on first render
+  const isInitialMount = useRef(true);
+
+  // Auto-save effect with proper dependencies
   useEffect(() => {
+    // Skip on initial mount
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
     if (!hasUnsavedChanges) return;
     
     const autoSave = async () => {
@@ -82,16 +91,16 @@ export const ProTemplateEditor = ({ template, onSave, onClose }: ProTemplateEdit
                 ...block,
                 content: {
                   ...block.content,
-                  ...productsSettings,
+                  ...debouncedProductsSettings,
                 }
               };
             }
             return block;
           }),
           settings: {
-            document: documentSettings,
-            products: productsSettings,
-            typography: typographySettings,
+            document: debouncedDocumentSettings,
+            products: debouncedProductsSettings,
+            typography: debouncedTypographySettings,
           }
         };
 
@@ -108,7 +117,7 @@ export const ProTemplateEditor = ({ template, onSave, onClose }: ProTemplateEdit
 
         setSaveStatus('saved');
         setHasUnsavedChanges(false);
-        onSave?.(updatedTemplate);
+        if (onSave) onSave(updatedTemplate);
       } catch (error) {
         console.error('Auto-save error:', error);
         setSaveStatus('error');
@@ -116,11 +125,14 @@ export const ProTemplateEditor = ({ template, onSave, onClose }: ProTemplateEdit
     };
 
     autoSave();
-  }, [debouncedDocumentSettings, debouncedProductsSettings, debouncedTypographySettings]);
+  }, [debouncedDocumentSettings, debouncedProductsSettings, debouncedTypographySettings, hasUnsavedChanges, template, onSave]);
 
-  // Mark changes when settings update
+  // Mark changes when settings update (skip initial mount)
   useEffect(() => {
-    setHasUnsavedChanges(true);
+    if (!isInitialMount.current) {
+      setHasUnsavedChanges(true);
+      setSaveStatus('idle');
+    }
   }, [documentSettings, productsSettings, typographySettings]);
 
   const handleSaveTemplate = useCallback(async () => {
