@@ -5076,6 +5076,7 @@ export type Database = {
           id: string
           job_number: string | null
           name: string
+          parent_job_id: string | null
           priority: string | null
           shopify_order_id: string | null
           shopify_order_number: string | null
@@ -5097,6 +5098,7 @@ export type Database = {
           id?: string
           job_number?: string | null
           name: string
+          parent_job_id?: string | null
           priority?: string | null
           shopify_order_id?: string | null
           shopify_order_number?: string | null
@@ -5118,6 +5120,7 @@ export type Database = {
           id?: string
           job_number?: string | null
           name?: string
+          parent_job_id?: string | null
           priority?: string | null
           shopify_order_id?: string | null
           shopify_order_number?: string | null
@@ -5156,6 +5159,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "projects_parent_job_id_fkey"
+            columns: ["parent_job_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "projects_status_id_fkey"

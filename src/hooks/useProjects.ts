@@ -15,10 +15,10 @@ export const useProjects = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
-      // Simply select all projects - RLS policies will handle filtering
+      // Simply select all projects including parent_job_id - RLS policies will handle filtering
       const { data, error } = await supabase
         .from("projects")
-        .select("*, clients(name)")
+        .select("*, clients(name), parent_job_id")
         .order("created_at", { ascending: false });
 
       if (error) throw error;

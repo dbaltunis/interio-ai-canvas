@@ -39,6 +39,9 @@ import { useProjectMaterialsUsage } from "@/hooks/useProjectMaterialsUsage";
 import { useTreatmentMaterialsStatus } from "@/hooks/useProjectMaterialsStatus";
 import { generateQuotePDF } from "@/utils/generateQuotePDF";
 import { supabase } from "@/integrations/supabase/client";
+import { useJobDuplicates } from "@/hooks/useJobDuplicates";
+import { DuplicateJobIndicator } from "./DuplicateJobIndicator";
+import { DuplicateJobsSection } from "./DuplicateJobsSection";
 
 interface JobDetailPageProps {
   jobId: string;
@@ -56,6 +59,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const { data: clients } = useClients();
   const updateProject = useUpdateProject();
   const createProject = useCreateProject();
+  const { data: duplicates } = useJobDuplicates(jobId);
   
   // Fetch materials data for badge indicators
   const { data: treatmentMaterials = [] } = useProjectMaterialsUsage(jobId);
@@ -94,10 +98,13 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
       
       toast({
         title: "Duplicating job...",
-        description: "Please wait while we create a copy"
+        description: "Please wait while we create a complete copy of all data"
       });
 
-      // Create a new project with similar data
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      // Create a new project with parent_job_id to track the duplicate relationship
       const newProject = await createProject.mutateAsync({
         name: `${project.name} (Copy)`,
         description: project.description,
@@ -105,13 +112,18 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
         status_id: project.status_id,
         start_date: project.start_date,
         due_date: project.due_date,
+        priority: project.priority,
+        funnel_stage: project.funnel_stage,
+        parent_job_id: jobId, // Track this is a duplicate
       });
 
-      // Copy rooms and their treatments
+      // 1. Copy all rooms
       const { data: rooms } = await supabase
         .from('rooms')
         .select('*')
         .eq('project_id', jobId);
+
+      const roomIdMapping: Record<string, string> = {}; // Map old room IDs to new ones
 
       if (rooms && rooms.length > 0) {
         for (const room of rooms) {
@@ -123,6 +135,27 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
             .single();
 
           if (newRoom) {
+            roomIdMapping[oldRoomId] = newRoom.id;
+
+            // Copy surfaces for this room
+            const { data: surfaces } = await supabase
+              .from('surfaces')
+              .select('*')
+              .eq('room_id', oldRoomId);
+
+            if (surfaces && surfaces.length > 0) {
+              const surfacesToInsert = surfaces.map((surface: any) => {
+                const { id, room_id, project_id, created_at, updated_at, ...surfaceData } = surface;
+                return { 
+                  ...surfaceData, 
+                  room_id: newRoom.id, 
+                  project_id: newProject.id,
+                  user_id: user.id 
+                };
+              });
+              await supabase.from('surfaces').insert(surfacesToInsert);
+            }
+
             // Copy treatments for this room
             const { data: treatments } = await supabase
               .from('treatments')
@@ -130,19 +163,91 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               .eq('room_id', oldRoomId);
 
             if (treatments && treatments.length > 0) {
-              const treatmentsToInsert = treatments.map(({ id, room_id, created_at, updated_at, ...treatmentData }) => ({
-                ...treatmentData,
-                room_id: newRoom.id
-              }));
+              const treatmentsToInsert = treatments.map((treatment: any) => {
+                const { id, room_id, project_id, created_at, updated_at, ...treatmentData } = treatment;
+                return { 
+                  ...treatmentData, 
+                  room_id: newRoom.id, 
+                  project_id: newProject.id,
+                  user_id: user.id
+                };
+              });
               await supabase.from('treatments').insert(treatmentsToInsert);
             }
           }
         }
       }
 
+      // 2. Copy all quotes and their items
+      const { data: quotes } = await supabase
+        .from('quotes')
+        .select('*')
+        .eq('project_id', jobId);
+
+      if (quotes && quotes.length > 0) {
+        for (const quote of quotes) {
+          const { id: oldQuoteId, project_id, created_at, updated_at, ...quoteData } = quote;
+          
+          const { data: newQuote } = await supabase
+            .from('quotes')
+            .insert({ 
+              ...quoteData, 
+              project_id: newProject.id,
+              user_id: user.id,
+              quote_number: undefined, // Let it generate a new quote number
+            })
+            .select()
+            .single();
+
+          if (newQuote) {
+            // Copy quote items
+            const { data: quoteItems } = await supabase
+              .from('quote_items')
+              .select('*')
+              .eq('quote_id', oldQuoteId);
+
+            if (quoteItems && quoteItems.length > 0) {
+              const itemsToInsert = quoteItems.map((item: any) => {
+                const { id, quote_id, created_at, updated_at, ...itemData } = item;
+                return { ...itemData, quote_id: newQuote.id };
+              });
+              await supabase.from('quote_items').insert(itemsToInsert);
+            }
+
+            // Copy manual quote items
+            const { data: manualItems } = await supabase
+              .from('manual_quote_items')
+              .select('*')
+              .eq('quote_id', oldQuoteId);
+
+            if (manualItems && manualItems.length > 0) {
+              const manualItemsToInsert = manualItems.map((item: any) => {
+                const { id, quote_id, created_at, updated_at, ...itemData } = item;
+                return { ...itemData, quote_id: newQuote.id };
+              });
+              await supabase.from('manual_quote_items').insert(manualItemsToInsert);
+            }
+          }
+        }
+      }
+
+      // 3. Copy project notes
+      const { data: notes } = await supabase
+        .from('project_notes')
+        .select('*')
+        .eq('project_id', jobId);
+
+      if (notes && notes.length > 0) {
+        const notesToInsert = notes.map((note: any) => {
+          const { id, project_id, created_at, updated_at, ...noteData } = note;
+          return { ...noteData, project_id: newProject.id, user_id: user.id };
+        });
+        await supabase.from('project_notes').insert(notesToInsert);
+      }
+
       toast({
         title: "Success",
-        description: "Job duplicated successfully"
+        description: "Job duplicated with all rooms, treatments, quotes, and notes"
       });
       
       // Navigate to the new job
@@ -325,8 +430,14 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               
               <Separator orientation="vertical" className="h-6 bg-border/60 hidden sm:block" />
               
-              <h1 className="text-lg sm:text-xl font-bold text-foreground truncate min-w-0">
+              <h1 className="text-lg sm:text-xl font-bold text-foreground truncate min-w-0 flex items-center gap-2">
                 {project.name}
+                {duplicates && (
+                  <DuplicateJobIndicator 
+                    isDuplicate={duplicates.isDuplicate}
+                    duplicateCount={duplicates.children.length}
+                  />
+                )}
               </h1>
             </div>
 
@@ -498,8 +609,23 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
           <div className="bg-background pb-24">
             <div className="p-2 sm:p-4">
               <TabsContent value="details" className="mt-0">
-                <div className="modern-card p-3 sm:p-6">
-                  <ProjectDetailsTab project={project} onUpdate={handleUpdateProject} />
+                <div className="space-y-4">
+                  {/* Duplicate Jobs Section */}
+                  {duplicates && (duplicates.parent || duplicates.children.length > 0 || duplicates.siblings.length > 0) && (
+                    <DuplicateJobsSection
+                      parent={duplicates.parent}
+                      children={duplicates.children}
+                      siblings={duplicates.siblings}
+                      onJobClick={(newJobId) => {
+                        // Navigate to the other job - handled by parent component
+                        window.location.href = `/?jobId=${newJobId}`;
+                      }}
+                    />
+                  )}
+                  
+                  <div className="modern-card p-3 sm:p-6">
+                    <ProjectDetailsTab project={project} onUpdate={handleUpdateProject} />
+                  </div>
                 </div>
               </TabsContent>
 
