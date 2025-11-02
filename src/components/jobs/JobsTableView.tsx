@@ -369,13 +369,21 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
     try {
       const projectId = quote.id; // This is actually the project ID
       
-      // Delete the project (which cascades to quotes, rooms, surfaces, treatments)
-      const { error } = await supabase
+      // Delete quotes first to avoid foreign key constraint
+      const { error: quotesError } = await supabase
+        .from('quotes')
+        .delete()
+        .eq('project_id', projectId);
+      
+      if (quotesError) throw quotesError;
+      
+      // Then delete the project (which cascades to rooms, surfaces, treatments)
+      const { error: projectError } = await supabase
         .from('projects')
         .delete()
         .eq('id', projectId);
       
-      if (error) throw error;
+      if (projectError) throw projectError;
       
       // Invalidate and refetch both quotes and projects
       await queryClient.invalidateQueries({ queryKey: ["projects"] });
