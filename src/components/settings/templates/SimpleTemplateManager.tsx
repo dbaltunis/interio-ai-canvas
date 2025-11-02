@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LivePreview } from "./visual-editor/LivePreview";
 import { useTemplateData } from "@/hooks/useTemplateData";
 import { ProjectDataSelector } from "./ProjectDataSelector";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Template {
   id: string;
@@ -154,6 +155,7 @@ const defaultTemplates: Template[] = [
 ];
 
 export const SimpleTemplateManager: React.FC = () => {
+  const queryClient = useQueryClient();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -380,6 +382,9 @@ export const SimpleTemplateManager: React.FC = () => {
 
       if (error) throw error;
 
+      // Invalidate React Query cache to update QuotationTab immediately
+      queryClient.invalidateQueries({ queryKey: ['quote-templates'] });
+      
       setTemplates(prev => prev.filter(t => t.id !== templateId));
       toast.success('Template deleted');
     } catch (error) {
