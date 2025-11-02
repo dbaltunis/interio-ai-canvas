@@ -23,6 +23,7 @@ import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
 import { formatJobNumber } from "@/lib/format-job-number";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   DropdownMenu, 
   DropdownMenuContent, 
@@ -72,6 +73,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
   const { toast } = useToast();
   const deleteQuote = useDeleteQuote();
   const updateQuote = useUpdateQuote();
+  const queryClient = useQueryClient();
   const userCurrency = useUserCurrency();
   const canDeleteJobs = useHasPermission('delete_jobs');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -365,23 +367,34 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
 
   const handleDeleteJob = async (quote: any) => {
     try {
-      await deleteQuote.mutateAsync(quote.id);
+      const projectId = quote.id; // This is actually the project ID
       
-      // Immediately refetch the quotes to update the UI
+      // Delete the project (which cascades to quotes, rooms, surfaces, treatments)
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', projectId);
+      
+      if (error) throw error;
+      
+      // Invalidate and refetch both quotes and projects
+      await queryClient.invalidateQueries({ queryKey: ["projects"] });
+      await queryClient.invalidateQueries({ queryKey: ["quotes"] });
       await refetch();
       
       toast({
-        title: "Success",
-        description: "Job deleted successfully",
+        title: "Job Deleted",
+        description: "Job and all associated data have been deleted",
+        importance: 'silent',
       });
       
       setDeleteDialogOpen(false);
       setQuoteToDelete(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting job:", error);
       toast({
-        title: "Error",
-        description: "Failed to delete job",
+        title: "Failed to Delete",
+        description: error.message || "Could not delete job. Please try again.",
         variant: "destructive"
       });
     }
