@@ -17,6 +17,7 @@ import {
   ShoppingCart
 } from "lucide-react";
 import { useMaterialQueueCount } from "@/hooks/useMaterialQueueCount";
+import { useHasPermission } from "@/hooks/usePermissions";
 
 interface MainNavProps {
   activeTab: string;
@@ -25,26 +26,48 @@ interface MainNavProps {
 
 const navItems = [
   { id: "dashboard", label: "Homepage", icon: LayoutDashboard },
-  { id: "projects", label: "Projects", icon: FolderOpen },
-  { id: "job-editor", label: "Job Editor", icon: PlusCircle },
-  { id: "quotes", label: "Quote Builder", icon: FileText },
-  { id: "workshop", label: "Work Orders", icon: Wrench },
-  { id: "inventory", label: "Product Library", icon: Package },
-  { id: "ordering-hub", label: "Ordering Hub", icon: ShoppingCart, badge: true },
-  { id: "calendar", label: "Calendar", icon: Calendar },
-  { id: "clients", label: "CRM", icon: Users },
+  { id: "projects", label: "Projects", icon: FolderOpen, permission: "view_jobs" },
+  { id: "job-editor", label: "Job Editor", icon: PlusCircle, permission: "create_jobs" },
+  { id: "quotes", label: "Quote Builder", icon: FileText, permission: "view_jobs" },
+  { id: "workshop", label: "Work Orders", icon: Wrench, permission: "view_jobs" },
+  { id: "inventory", label: "Product Library", icon: Package, permission: "view_inventory" },
+  { id: "ordering-hub", label: "Ordering Hub", icon: ShoppingCart, badge: true, permission: "view_inventory" },
+  { id: "calendar", label: "Calendar", icon: Calendar, permission: "view_calendar" },
+  { id: "clients", label: "CRM", icon: Users, permission: "view_clients" },
   { id: "calculator", label: "Calculator", icon: Calculator },
-  { id: "settings", label: "Settings", icon: Settings },
+  { id: "settings", label: "Settings", icon: Settings, permission: "view_settings" },
 ];
 
 export const MainNav = ({ activeTab, onTabChange }: MainNavProps) => {
   const { data: queueCount } = useMaterialQueueCount();
   
+  // Permission checks
+  const canViewJobs = useHasPermission('view_jobs');
+  const canCreateJobs = useHasPermission('create_jobs');
+  const canViewInventory = useHasPermission('view_inventory');
+  const canViewCalendar = useHasPermission('view_calendar');
+  const canViewClients = useHasPermission('view_clients');
+  const canViewSettings = useHasPermission('view_settings');
+  
+  // Filter nav items based on permissions
+  const visibleNavItems = navItems.filter(item => {
+    if (!item.permission) return true; // No permission required
+    
+    if (item.permission === 'view_jobs') return canViewJobs === true;
+    if (item.permission === 'create_jobs') return canCreateJobs === true;
+    if (item.permission === 'view_inventory') return canViewInventory === true;
+    if (item.permission === 'view_calendar') return canViewCalendar === true;
+    if (item.permission === 'view_clients') return canViewClients === true;
+    if (item.permission === 'view_settings') return canViewSettings === true;
+    
+    return false;
+  });
+  
   return (
     <nav className="w-64 bg-background border-r border-border min-h-screen hidden lg:block">
       <div className="p-6">
         <div className="space-y-2">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = item.icon;
             const showBadge = item.badge && queueCount && queueCount > 0;
             

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useMaterialQueueCount } from '@/hooks/useMaterialQueueCount';
+import { useHasPermission } from '@/hooks/usePermissions';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -31,12 +32,12 @@ interface ResponsiveHeaderProps {
 
 const navItems = [
   { id: "dashboard", label: "Home", icon: LayoutDashboard, tourId: "dashboard-tab" },
-  { id: "projects", label: "Jobs", icon: FolderOpen, tourId: "projects-tab" },
-  { id: "clients", label: "CRM", icon: Users, tourId: "clients-tab" },
-  { id: "quotes", label: "Emails", icon: FileText, tourId: "emails-tab" },
-  { id: "calendar", label: "Calendar", icon: Calendar, tourId: "calendar-tab" },
-  { id: "inventory", label: "Library", icon: Package, tourId: "library-tab" },
-  { id: "ordering-hub", label: "Purchasing", icon: ShoppingCart, tourId: "ordering-hub-tab", badge: true },
+  { id: "projects", label: "Jobs", icon: FolderOpen, tourId: "projects-tab", permission: "view_jobs" },
+  { id: "clients", label: "CRM", icon: Users, tourId: "clients-tab", permission: "view_clients" },
+  { id: "quotes", label: "Emails", icon: FileText, tourId: "emails-tab", permission: "view_emails" },
+  { id: "calendar", label: "Calendar", icon: Calendar, tourId: "calendar-tab", permission: "view_calendar" },
+  { id: "inventory", label: "Library", icon: Package, tourId: "library-tab", permission: "view_inventory" },
+  { id: "ordering-hub", label: "Purchasing", icon: ShoppingCart, tourId: "ordering-hub-tab", badge: true, permission: "view_inventory" },
 ];
 
 export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderProps) => {
@@ -48,6 +49,26 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   const { activeUsers, currentUser } = useUserPresence();
   const { conversations } = useDirectMessages();
   const { data: queueCount } = useMaterialQueueCount();
+  
+  // Permission checks
+  const canViewJobs = useHasPermission('view_jobs');
+  const canViewClients = useHasPermission('view_clients');
+  const canViewEmails = useHasPermission('view_emails');
+  const canViewCalendar = useHasPermission('view_calendar');
+  const canViewInventory = useHasPermission('view_inventory');
+  
+  // Filter nav items based on permissions
+  const visibleNavItems = navItems.filter(item => {
+    if (!item.permission) return true; // No permission required (dashboard)
+    
+    if (item.permission === 'view_jobs') return canViewJobs === true;
+    if (item.permission === 'view_clients') return canViewClients === true;
+    if (item.permission === 'view_emails') return canViewEmails === true;
+    if (item.permission === 'view_calendar') return canViewCalendar === true;
+    if (item.permission === 'view_inventory') return canViewInventory === true;
+    
+    return false;
+  });
   
   // Check if there are other active users or unread messages
   const otherActiveUsers = activeUsers.filter(user => user.user_id !== currentUser?.user_id && user.status === 'online');
@@ -68,7 +89,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
 
           {/* Center: Navigation items */}
           <nav className="flex items-center space-x-2 lg:space-x-3">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const Icon = item.icon;
               const showBadge = item.badge && queueCount && queueCount > 0;
               

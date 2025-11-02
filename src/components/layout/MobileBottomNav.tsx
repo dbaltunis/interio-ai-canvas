@@ -17,6 +17,7 @@ import { useUserPresence } from "@/hooks/useUserPresence";
 import { useDirectMessages } from "@/hooks/useDirectMessages";
 import { TeamCollaborationCenter } from "../collaboration/TeamCollaborationCenter";
 import { useMaterialQueueCount } from "@/hooks/useMaterialQueueCount";
+import { useHasPermission } from "@/hooks/usePermissions";
 
 interface MobileBottomNavProps {
   activeTab: string;
@@ -24,10 +25,10 @@ interface MobileBottomNavProps {
 }
 
 const navItems = [
-  { id: "projects", label: "Jobs", icon: FolderOpen },
-  { id: "clients", label: "Clients", icon: Users },
-  { id: "calendar", label: "Calendar", icon: Calendar },
-  { id: "inventory", label: "Library", icon: Package },
+  { id: "projects", label: "Jobs", icon: FolderOpen, permission: "view_jobs" },
+  { id: "clients", label: "Clients", icon: Users, permission: "view_clients" },
+  { id: "calendar", label: "Calendar", icon: Calendar, permission: "view_calendar" },
+  { id: "inventory", label: "Library", icon: Package, permission: "view_inventory" },
 ];
 
 export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps) => {
@@ -38,16 +39,39 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
   const { conversations } = useDirectMessages();
   const { data: queueCount } = useMaterialQueueCount();
   
+  // Permission checks
+  const canViewJobs = useHasPermission('view_jobs');
+  const canViewClients = useHasPermission('view_clients');
+  const canViewCalendar = useHasPermission('view_calendar');
+  const canViewInventory = useHasPermission('view_inventory');
+  
+  // Filter nav items based on permissions
+  const visibleNavItems = navItems.filter(item => {
+    if (!item.permission) return true;
+    
+    if (item.permission === 'view_jobs') return canViewJobs === true;
+    if (item.permission === 'view_clients') return canViewClients === true;
+    if (item.permission === 'view_calendar') return canViewCalendar === true;
+    if (item.permission === 'view_inventory') return canViewInventory === true;
+    
+    return false;
+  });
+  
   const otherActiveUsers = activeUsers.filter(user => user.user_id !== currentUser?.user_id && user.status === 'online');
   const unreadCount = conversations.reduce((total, conv) => total + conv.unread_count, 0);
   const hasActivity = otherActiveUsers.length > 0 || unreadCount > 0;
 
+  // Calculate grid columns based on number of visible items
+  const gridCols = visibleNavItems.length === 4 ? "grid-cols-5" : 
+                   visibleNavItems.length === 3 ? "grid-cols-4" :
+                   visibleNavItems.length === 2 ? "grid-cols-3" : "grid-cols-2";
+
   return (
     <>
       <nav className="fixed bottom-0 left-0 right-0 lg:hidden z-50 bg-background/95 backdrop-blur-md border-t border-border shadow-lg pb-safe">
-        <div className="relative grid grid-cols-5 h-16">
-          {/* First two items */}
-          {navItems.slice(0, 2).map((item) => {
+        <div className={cn("relative grid h-16", gridCols)}>
+          {/* First half of items */}
+          {visibleNavItems.slice(0, Math.floor(visibleNavItems.length / 2)).map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             
@@ -90,8 +114,8 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
             </Button>
           </div>
           
-          {/* Last two items */}
-          {navItems.slice(2).map((item) => {
+          {/* Second half of items */}
+          {visibleNavItems.slice(Math.floor(visibleNavItems.length / 2)).map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             
