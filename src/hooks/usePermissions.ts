@@ -14,7 +14,7 @@ export const useUserPermissions = () => {
         return [];
       }
 
-      console.log('[useUserPermissions] Fetching permissions for user:', user.id);
+      console.log('🔥🔥🔥 [PERMISSIONS] Fetching for user:', user.id, user.email);
 
       // Always prioritize custom permissions from user_permissions table
       const { data: customPermissions, error: customError } = await supabase
@@ -40,7 +40,8 @@ export const useUserPermissions = () => {
       
       if (hasCustomPermissionsConfigured) {
         const permissionsList = customPermissions ? customPermissions.map(p => p.permission_name) : [];
-        console.log('[useUserPermissions] ✅ CUSTOM PERMISSIONS (count:', permissionsList.length, '):', permissionsList);
+        console.log('🔥🔥🔥 [PERMISSIONS] ✅ USING CUSTOM PERMISSIONS:', permissionsList);
+        alert(`🔥 CUSTOM PERMISSIONS ACTIVE (${permissionsList.length}): ${permissionsList.join(', ') || 'NONE - ALL TOGGLES OFF'}`);
         // Return only the custom permissions (could be empty array if all toggles are OFF)
         return customPermissions ? customPermissions.map(p => ({ permission_name: p.permission_name })) : [];
       }
@@ -119,15 +120,16 @@ export const useUserPermissions = () => {
       const userRole = profile?.role || 'User';
       const permissions = rolePermissions[userRole as keyof typeof rolePermissions] || ['view_profile'];
       
-      console.log(`[useUserPermissions] ✅ ROLE-BASED PERMISSIONS for ${userRole}:`, permissions);
+      console.log(`🔥🔥🔥 [PERMISSIONS] ✅ USING ROLE-BASED for ${userRole}:`, permissions);
+      alert(`🔥 ROLE-BASED PERMISSIONS (${userRole}): ${permissions.join(', ')}`);
       return permissions.map(permission => ({ permission_name: permission }));
     },
-    enabled: !!user && !authLoading, // Only run when user is available and not loading
-    staleTime: 30 * 1000, // 30 seconds - shorter for more frequent updates
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!user && !authLoading,
+    staleTime: 0, // NO CACHING - always fetch fresh
+    gcTime: 0, // NO CACHING
     retry: 3,
     refetchOnWindowFocus: true,
-    // Prevent loading states during background refetch to maintain current permissions
+    refetchOnMount: true,
     notifyOnChangeProps: ['data', 'error'],
   });
 };
