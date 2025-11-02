@@ -62,7 +62,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date()); // Pre-select today
   const [view, setView] = useState<CalendarView>('week'); // Default to week view
-  const [showNewEventDialog, setShowNewEventDialog] = useState(false);
+  const [showCreateEventDialog, setShowCreateEventDialog] = useState(false);
   const [showSchedulerSlider, setShowSchedulerSlider] = useState(false);
   const [showEventDetails, setShowEventDetails] = useState(false);
   // Appointment scheduling dialogs
@@ -118,114 +118,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
     });
   }, []);
 
-  // New appointment form state - MOVED BEFORE EARLY RETURN
-  const [newEvent, setNewEvent] = useState({
-    title: '',
-    description: '',
-    date: format(new Date(), 'yyyy-MM-dd'),
-    startTime: '09:00',
-    endTime: '10:00',
-    appointmentType: 'meeting' as const,
-    location: '',
-    color: '',
-    videoMeetingLink: '',
-    selectedTeamMembers: [] as string[],
-    inviteClientEmail: '',
-    enableNotifications: false,
-    notificationMethods: [] as string[],
-    notificationTiming: '15',
-    customNotificationMessage: ''
-  });
-
-  // Return mobile view for mobile devices (AFTER all hooks are called)
-  if (isMobile) {
-    return <MobileCalendarView />;
-  }
-
-  const handleCreateEvent = async () => {
-    console.log("handleCreateEvent called", newEvent);
-    try {
-      const startDateTime = new Date(`${newEvent.date}T${newEvent.startTime}`);
-      const endDateTime = new Date(`${newEvent.date}T${newEvent.endTime}`);
-      
-      console.log("Start time:", startDateTime);
-      console.log("End time:", endDateTime);
-      
-      // Validate that end time is after start time
-      if (endDateTime <= startDateTime) {
-        console.log("Validation failed: end time before start time");
-        toast({
-          title: "Invalid Time",
-          description: "End time must be after start time",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      console.log("Validation passed, creating appointment...");
-      
-      // Helper function to check if a string is a valid UUID
-      const isValidUUID = (str: string) => {
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        return uuidRegex.test(str);
-      };
-
-      // Filter out invalid UUIDs for team members (since we're using mock data)
-      const validTeamMemberIds = newEvent.selectedTeamMembers.filter(isValidUUID);
-      
-      const newAppointment = await createAppointment.mutateAsync({
-        title: newEvent.title,
-        description: newEvent.description,
-        start_time: startDateTime.toISOString(),
-        end_time: endDateTime.toISOString(),
-        appointment_type: newEvent.appointmentType,
-        location: newEvent.location,
-        status: 'scheduled',
-        color: newEvent.color || undefined,
-        team_member_ids: validTeamMemberIds.length > 0 ? validTeamMemberIds : undefined,
-        invited_client_emails: newEvent.inviteClientEmail ? [newEvent.inviteClientEmail] : undefined,
-        notification_enabled: newEvent.enableNotifications,
-        notification_minutes: parseInt(newEvent.notificationTiming),
-        project_id: projectId || undefined
-      });
-
-      // Show success message
-      toast({
-        title: "Event Created",
-        description: `Event "${newEvent.title}" has been created successfully. ${
-          newEvent.selectedTeamMembers.length > 0 || newEvent.inviteClientEmail || newEvent.videoMeetingLink
-            ? 'Additional features like team invitations and video links will be fully integrated soon.'
-            : ''
-        }`,
-      });
-      
-      setShowNewEventDialog(false);
-      setNewEvent({
-        title: '',
-        description: '',
-        date: format(new Date(), 'yyyy-MM-dd'),
-        startTime: '09:00',
-        endTime: '10:00',
-        appointmentType: 'meeting',
-        location: '',
-        color: '',
-        videoMeetingLink: '',
-        selectedTeamMembers: [],
-        inviteClientEmail: '',
-        enableNotifications: false,
-        notificationMethods: [],
-        notificationTiming: '15',
-        customNotificationMessage: ''
-      });
-    } catch (error: any) {
-      console.error("Error creating appointment:", error);
-      toast({
-        title: "Error",
-        description: error?.message || "Failed to create appointment",
-        variant: "destructive",
-      });
-    }
-  };
+  // newEvent state removed - using UnifiedAppointmentDialog now
 
   const getEventsForDate = (date: Date) => {
     if (!appointments) return [];
@@ -313,11 +206,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
                 } ${!isCurrentMonth ? 'text-muted-foreground bg-muted/10' : 'bg-background'}`}
                 onClick={() => {
                   setSelectedDate(day);
-                  setNewEvent({
-                    ...newEvent,
-                    date: format(day, 'yyyy-MM-dd')
-                  });
-                  setShowNewEventDialog(true);
+                  setShowCreateEventDialog(true);
                 }}
               >
                 {/* Day number */}
@@ -418,13 +307,8 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
       endTime = `${(hour + 1).toString().padStart(2, '0')}:${minutes}`;
     }
     
-    setNewEvent({
-      ...newEvent,
-      date: format(date, 'yyyy-MM-dd'),
-      startTime: startTime,
-      endTime: endTime
-    });
-    setShowNewEventDialog(true);
+    setSelectedDate(date);
+    setShowCreateEventDialog(true);
   };
 
   const handleAppointmentClick = (appointment: any) => {
@@ -562,347 +446,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
         </div>
       </div>
 
-      {/* New Event Dialog */}
-      <Dialog open={showNewEventDialog} onOpenChange={setShowNewEventDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-primary" />
-              Create New Event
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-6 overflow-y-auto max-h-[calc(90vh-8rem)] pr-2">
-            {/* Event Details */}
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="title">Event Title</Label>
-                <Input
-                  id="title"
-                  value={newEvent.title}
-                  onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                  placeholder="Enter event title"
-                  className="text-lg"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="date" className="flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4" />
-                    Date
-                  </Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={newEvent.date}
-                    onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="type">Event Type</Label>
-                  <Select value={newEvent.appointmentType} onValueChange={(value: any) => setNewEvent({ ...newEvent, appointmentType: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="meeting">Meeting</SelectItem>
-                      <SelectItem value="consultation">Consultation</SelectItem>
-                      <SelectItem value="call">Call</SelectItem>
-                      <SelectItem value="follow-up">Follow-up</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <DurationPicker
-                startTime={newEvent.startTime}
-                endTime={newEvent.endTime}
-                onStartTimeChange={(time) => setNewEvent({ ...newEvent, startTime: time })}
-                onEndTimeChange={(time) => setNewEvent({ ...newEvent, endTime: time })}
-              />
-
-              <div>
-                <Label htmlFor="location" className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  Location
-                </Label>
-                <Input
-                  id="location"
-                  value={newEvent.location}
-                  onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
-                  placeholder="Enter meeting location"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={newEvent.description}
-                  onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                  placeholder="Enter event description"
-                  rows={3}
-                />
-              </div>
-
-              {/* Event Color Selection */}
-              <div>
-                <Label className="text-sm font-medium flex items-center gap-2">
-                  <Palette className="h-4 w-4" />
-                  Event Color
-                </Label>
-                <div className="flex gap-2 mt-2">
-                  {[
-                    { name: 'Primary', value: '#415e6b', bg: 'bg-primary' },
-                    { name: 'Secondary', value: '#9bb6bc', bg: 'bg-secondary' },
-                    { name: 'Blue', value: '#3B82F6', bg: 'bg-blue-500' },
-                    { name: 'Green', value: '#10B981', bg: 'bg-green-500' },
-                    { name: 'Orange', value: '#F59E0B', bg: 'bg-orange-500' },
-                    { name: 'Red', value: '#EF4444', bg: 'bg-red-500' },
-                    { name: 'Indigo', value: '#6366F1', bg: 'bg-indigo-500' },
-                  ].map((color) => (
-                    <button
-                      key={color.value}
-                      type="button"
-                      className={`w-8 h-8 rounded-full border-2 transition-all ${
-                        newEvent.color === color.value 
-                          ? 'border-foreground scale-110' 
-                          : 'border-muted hover:border-muted-foreground'
-                      } ${color.bg}`}
-                      onClick={() => setNewEvent({ ...newEvent, color: color.value })}
-                      title={color.name}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Video Meeting Link */}
-              <div>
-                <Label htmlFor="videoMeetingLink" className="flex items-center gap-2">
-                  <Video className="h-4 w-4 text-muted-foreground" />
-                  Video Meeting Link
-                </Label>
-                <Input
-                  id="videoMeetingLink"
-                  value={newEvent.videoMeetingLink}
-                  onChange={(e) => setNewEvent({ ...newEvent, videoMeetingLink: e.target.value })}
-                  placeholder="https://meet.google.com/... or https://zoom.us/..."
-                />
-              </div>
-            </div>
-
-            {/* Team Members and Client Invitation */}
-            <div className="space-y-4 border-t pt-6">
-              <h3 className="text-sm font-medium flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Attendees
-              </h3>
-
-              {/* Team Members Selection */}
-              {teamMembers && teamMembers.length > 0 && (
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Invite Team Members</Label>
-                  <div className="space-y-2 max-h-32 overflow-y-auto border rounded-lg p-3">
-                    {teamMembers.map(member => (
-                      <div key={member.id} className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded cursor-pointer"
-                           onClick={() => {
-                             const isSelected = newEvent.selectedTeamMembers.includes(member.id);
-                             setNewEvent({
-                               ...newEvent,
-                               selectedTeamMembers: isSelected 
-                                 ? newEvent.selectedTeamMembers.filter(id => id !== member.id)
-                                 : [...newEvent.selectedTeamMembers, member.id]
-                             });
-                           }}>
-                        <Checkbox 
-                          checked={newEvent.selectedTeamMembers.includes(member.id)}
-                          onChange={() => {}}
-                        />
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-xs">
-                            {member.name.slice(0, 2).toUpperCase()}
-                          </div>
-                          <span className="text-sm flex-1">{member.name}</span>
-                          <Badge variant="outline" className="text-xs">{member.role}</Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Client Invitation */}
-              <div>
-                <Label htmlFor="inviteClientEmail" className="text-sm font-medium mb-2 block">Invite Client</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="inviteClientEmail"
-                    value={newEvent.inviteClientEmail}
-                    onChange={(e) => setNewEvent({ ...newEvent, inviteClientEmail: e.target.value })}
-                    placeholder="client@example.com"
-                    className="flex-1"
-                  />
-                  {clients && clients.length > 0 && (
-                    <Select onValueChange={(email) => setNewEvent({ ...newEvent, inviteClientEmail: email })}>
-                      <SelectTrigger className="w-40">
-                        <SelectValue placeholder="Select client" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clients
-                          .filter(client => client.email && client.email.trim() !== '')
-                          .map(client => (
-                            <SelectItem key={client.id} value={client.email!}>
-                              {client.name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Notification Settings */}
-            <div className="space-y-4 border-t pt-6">
-              <h3 className="text-sm font-medium flex items-center gap-2">
-                <Bell className="h-4 w-4" />
-                Notifications
-              </h3>
-              
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="enableNotifications" className="text-sm">Enable notifications for this event</Label>
-                  <Switch
-                    id="enableNotifications"
-                    checked={newEvent.enableNotifications || false}
-                    onCheckedChange={(checked) => setNewEvent({ ...newEvent, enableNotifications: checked })}
-                  />
-                </div>
-
-                {newEvent.enableNotifications && (
-                  <div className="space-y-3 ml-4 pl-4 border-l-2 border-muted">
-                    <div>
-                      <Label className="text-sm font-medium mb-2 block">Notification methods</Label>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="emailNotification"
-                            checked={newEvent.notificationMethods?.includes('email') || false}
-                            onCheckedChange={(checked) => {
-                              const methods = newEvent.notificationMethods || [];
-                              setNewEvent({
-                                ...newEvent,
-                                notificationMethods: checked
-                                  ? [...methods.filter(m => m !== 'email'), 'email']
-                                  : methods.filter(m => m !== 'email')
-                              });
-                            }}
-                          />
-                          <Label htmlFor="emailNotification" className="text-sm">Email</Label>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="smsNotification"
-                            checked={newEvent.notificationMethods?.includes('sms') || false}
-                            onCheckedChange={(checked) => {
-                              const methods = newEvent.notificationMethods || [];
-                              setNewEvent({
-                                ...newEvent,
-                                notificationMethods: checked
-                                  ? [...methods.filter(m => m !== 'sms'), 'sms']
-                                  : methods.filter(m => m !== 'sms')
-                              });
-                            }}
-                          />
-                          <Label htmlFor="smsNotification" className="text-sm">SMS</Label>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="inAppNotification"
-                            checked={newEvent.notificationMethods?.includes('in_app') || false}
-                            onCheckedChange={(checked) => {
-                              const methods = newEvent.notificationMethods || [];
-                              setNewEvent({
-                                ...newEvent,
-                                notificationMethods: checked
-                                  ? [...methods.filter(m => m !== 'in_app'), 'in_app']
-                                  : methods.filter(m => m !== 'in_app')
-                              });
-                            }}
-                          />
-                          <Label htmlFor="inAppNotification" className="text-sm">In-app notification</Label>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="notificationTiming" className="text-sm font-medium">Notify before event</Label>
-                      <Select 
-                        value={newEvent.notificationTiming || '15'}
-                        onValueChange={(value) => setNewEvent({ ...newEvent, notificationTiming: value })}
-                      >
-                        <SelectTrigger className="mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="0">At event time</SelectItem>
-                          <SelectItem value="5">5 minutes before</SelectItem>
-                          <SelectItem value="15">15 minutes before</SelectItem>
-                          <SelectItem value="30">30 minutes before</SelectItem>
-                          <SelectItem value="60">1 hour before</SelectItem>
-                          <SelectItem value="120">2 hours before</SelectItem>
-                          <SelectItem value="1440">1 day before</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="customMessage" className="text-sm font-medium">Custom message (optional)</Label>
-                      <Textarea
-                        id="customMessage"
-                        value={newEvent.customNotificationMessage || ''}
-                        onChange={(e) => setNewEvent({ ...newEvent, customNotificationMessage: e.target.value })}
-                        placeholder="Add a custom message to the notification..."
-                        rows={2}
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-end space-x-2 pt-4 border-t">
-              <Button variant="outline" onClick={() => setShowNewEventDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleCreateEvent} disabled={!newEvent.title}>
-                Create Event
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-
-      {/* Appointment Scheduler Slider */}
-      <AppointmentSchedulerSlider 
-        isOpen={showSchedulerSlider}
-        onClose={() => setShowSchedulerSlider(false)}
-      />
-
-      {/* Appointment Scheduling Management Dialogs */}
-      <Dialog open={showSchedulerManagement} onOpenChange={setShowSchedulerManagement}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Manage Appointment Schedulers</DialogTitle>
-          </DialogHeader>
-          <SchedulerManagement />
-        </DialogContent>
-      </Dialog>
+      {/* Old New Event Dialog removed - using UnifiedAppointmentDialog */}
 
       <Dialog open={showBookingManagement} onOpenChange={setShowBookingManagement}>
         <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
@@ -924,11 +468,15 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
 
       {/* Unified Appointment Dialog for both create and edit */}
       <UnifiedAppointmentDialog
-        open={showEventDetails || showEditDialog}
+        open={showEventDetails || showEditDialog || showCreateEventDialog}
         onOpenChange={(open) => {
           setShowEventDetails(open);
           setShowEditDialog(open);
-          if (!open) setSelectedAppointment(null);
+          setShowCreateEventDialog(open);
+          if (!open) {
+            setSelectedAppointment(null);
+            setSelectedDate(undefined);
+          }
         }}
         appointment={selectedAppointment}
         selectedDate={selectedDate}
@@ -963,16 +511,9 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
           }}
           onMarkAsBusy={() => {
             setShowSlotConflictDialog(false);
-            // Create a "Busy" event
-            setNewEvent({
-              ...newEvent,
-              title: 'Busy',
-              description: 'Time slot marked as busy',
-              date: format(conflictData.proposedSlot.date, 'yyyy-MM-dd'),
-              startTime: conflictData.proposedSlot.time,
-              endTime: `${(parseInt(conflictData.proposedSlot.time.split(':')[0]) + 1).toString().padStart(2, '0')}:${conflictData.proposedSlot.time.split(':')[1]}`
-            });
-            setShowNewEventDialog(true);
+            // Just open the dialog with the proposed slot selected
+            setSelectedDate(conflictData.proposedSlot.date);
+            setShowCreateEventDialog(true);
           }}
           onCancel={() => setShowSlotConflictDialog(false)}
         />
