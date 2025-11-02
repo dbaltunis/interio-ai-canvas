@@ -29,36 +29,36 @@ export const ProTemplateEditor = ({ template, onSave, onClose }: ProTemplateEdit
   
   const { data: templateData } = useTemplateData(selectedProjectId, useRealData);
   
-  // Document Layout Settings
+  // Document Layout Settings - Initialize from template if available
   const [documentSettings, setDocumentSettings] = useState({
-    pageSize: 'A4',
-    orientation: 'portrait',
-    marginTop: 40,
-    marginBottom: 40,
-    marginLeft: 40,
-    marginRight: 40,
-    headerPadding: 24,
-    contentPadding: 20,
-    footerPadding: 24,
+    pageSize: template.settings?.document?.pageSize || 'A4',
+    orientation: template.settings?.document?.orientation || 'portrait',
+    marginTop: template.settings?.document?.marginTop || 40,
+    marginBottom: template.settings?.document?.marginBottom || 40,
+    marginLeft: template.settings?.document?.marginLeft || 40,
+    marginRight: template.settings?.document?.marginRight || 40,
+    headerPadding: template.settings?.document?.headerPadding || 24,
+    contentPadding: template.settings?.document?.contentPadding || 20,
+    footerPadding: template.settings?.document?.footerPadding || 24,
   });
 
-  // Products/Items Settings
+  // Products/Items Settings - Initialize from template if available
   const [productsSettings, setProductsSettings] = useState({
-    showImages: true,
-    imageSize: 'medium', // small, medium, large
-    imagePosition: 'left', // left, right, top
-    showDetailedBreakdown: true,
-    groupByRoom: false,
-    showQuantity: true,
-    showUnitPrice: true,
-    showTotal: true,
+    showImages: template.settings?.products?.showImages ?? true,
+    imageSize: template.settings?.products?.imageSize || 'medium',
+    imagePosition: template.settings?.products?.imagePosition || 'left',
+    showDetailedBreakdown: template.settings?.products?.showDetailedBreakdown ?? true,
+    groupByRoom: template.settings?.products?.groupByRoom ?? false,
+    showQuantity: template.settings?.products?.showQuantity ?? true,
+    showUnitPrice: template.settings?.products?.showUnitPrice ?? true,
+    showTotal: template.settings?.products?.showTotal ?? true,
   });
 
-  // Typography Settings
+  // Typography Settings - Initialize from template if available
   const [typographySettings, setTypographySettings] = useState({
-    headingSize: 'large',
-    bodySize: 'medium',
-    fontFamily: 'default',
+    headingSize: template.settings?.typography?.headingSize || 'large',
+    bodySize: template.settings?.typography?.bodySize || 'medium',
+    fontFamily: template.settings?.typography?.fontFamily || 'default',
   });
 
   const handleSaveTemplate = async () => {
@@ -89,6 +89,7 @@ export const ProTemplateEditor = ({ template, onSave, onClose }: ProTemplateEdit
         .from('quote_templates')
         .update({
           blocks: updatedTemplate.blocks,
+          settings: updatedTemplate.settings,
           updated_at: new Date().toISOString(),
         })
         .eq('id', template.id);
