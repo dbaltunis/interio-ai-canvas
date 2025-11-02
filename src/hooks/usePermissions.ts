@@ -26,13 +26,25 @@ export const useUserPermissions = () => {
         console.error('[useUserPermissions] Error fetching custom permissions:', customError);
       }
 
-      // If user has custom permissions, use those
-      if (customPermissions && customPermissions.length > 0) {
-        console.log('[useUserPermissions] Using custom permissions:', customPermissions.map(p => p.permission_name));
-        return customPermissions.map(p => ({ permission_name: p.permission_name }));
+      // Check if custom permissions have been explicitly set (even if empty)
+      // Look for ANY record in user_permissions for this user
+      const { data: anyPermissionRecord } = await supabase
+        .from('user_permissions')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .limit(1);
+
+      // If user has ANY permission record, use custom permissions ONLY (even if empty)
+      // This means "custom permissions have been configured, even if all toggles are OFF"
+      const hasCustomPermissionsConfigured = anyPermissionRecord && anyPermissionRecord.length > 0;
+      
+      if (hasCustomPermissionsConfigured) {
+        console.log('[useUserPermissions] Custom permissions configured (count:', customPermissions?.length || 0, ')');
+        // Return only the custom permissions (could be empty array if all toggles are OFF)
+        return customPermissions ? customPermissions.map(p => ({ permission_name: p.permission_name })) : [];
       }
 
-      console.log('[useUserPermissions] No custom permissions found, checking user profile for role-based permissions');
+      console.log('[useUserPermissions] No custom permissions configured, using role-based permissions');
 
       // Otherwise, fall back to role-based permissions
       const { data: profile, error: profileError } = await supabase

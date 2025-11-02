@@ -42,14 +42,19 @@ export const useUpdateCustomPermissions = () => {
         }
       }
       // Delete existing custom permissions
-      await supabase
+      const { error: deleteError } = await supabase
         .from('user_permissions')
         .delete()
         .eq('user_id', userId);
 
-      // Insert new permissions
+      if (deleteError) throw deleteError;
+
+      // ALWAYS insert at least one record to mark that custom permissions have been set
+      // This prevents fallback to role-based permissions
+      const { data: { user } } = await supabase.auth.getUser();
+      
       if (permissions.length > 0) {
-        const { data: { user } } = await supabase.auth.getUser();
+        // Insert the actual permissions
         const permissionRows = permissions.map(permission => ({
           user_id: userId,
           permission_name: permission,
@@ -59,6 +64,18 @@ export const useUpdateCustomPermissions = () => {
         const { error } = await supabase
           .from('user_permissions')
           .insert(permissionRows);
+
+        if (error) throw error;
+      } else {
+        // When all toggles are OFF, insert a marker permission
+        // This signals "custom permissions have been explicitly set to empty"
+        const { error } = await supabase
+          .from('user_permissions')
+          .insert({
+            user_id: userId,
+            permission_name: 'view_profile', // Always grant at minimum
+            granted_by: user?.id
+          });
 
         if (error) throw error;
       }
