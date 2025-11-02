@@ -344,29 +344,33 @@ export const WindowManagementDialog = ({
   // Track the template ID to detect when it changes
   const currentTemplateId = currentTreatment?.id || windowSummary?.template_id;
   
+  // Helper function to filter out "undefined" strings and null/undefined values
+  const cleanValue = (value: any): string => {
+    if (!value || value === 'undefined' || value === 'null') return '';
+    return String(value);
+  };
+
   useEffect(() => {
     console.log('🔄 Treatment data changed:', { currentTreatment, windowSummary, templateId: currentTemplateId });
     
     // ALWAYS overwrite fields when template changes - this is the key fix
     if (currentTreatment) {
       // Priority: treatment_name > product_name > template name
-      const name = currentTreatment.treatment_name || 
-                   currentTreatment.product_name || 
-                   currentTreatment.treatment_type || 
-                   '';
+      const name = cleanValue(currentTreatment.treatment_name) || 
+                   cleanValue(currentTreatment.product_name) || 
+                   cleanValue(currentTreatment.treatment_type);
       setTreatmentName(name);
       setEditProductValue(name);
       // Only use actual description field, not fallbacks
-      const desc = currentTreatment.description || '';
+      const desc = cleanValue(currentTreatment.description);
       setTreatmentDescription(desc);
       setEditDescriptionValue(desc);
     } else if (windowSummary) {
       // Fallback to windows_summary data
-      const name = windowSummary.template_name || 
-                   windowSummary.treatment_type || 
-                   '';
+      const name = cleanValue(windowSummary.template_name) || 
+                   cleanValue(windowSummary.treatment_type);
       // Only use description_text field, empty if not set
-      const desc = windowSummary.description_text || '';
+      const desc = cleanValue(windowSummary.description_text);
       setTreatmentName(name);
       setEditProductValue(name);
       setTreatmentDescription(desc);
@@ -450,13 +454,13 @@ export const WindowManagementDialog = ({
           <DialogHeader className="flex-shrink-0 pb-1 sm:pb-2 border-b border-border">
             <div className="flex items-center justify-between">
               <DialogTitle className="flex items-center flex-wrap gap-2 text-sm font-semibold text-foreground w-full">
-                <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md w-[200px] h-[32px]">
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md min-w-[280px] max-w-[320px] h-[32px]">
                   <Ruler className="h-3.5 w-3.5 text-primary shrink-0" />
                   <span className="text-xs font-medium text-muted-foreground shrink-0">Design:</span>
                   <WindowRenameButton windowName={surface?.name || 'Untitled'} onRename={handleRename} />
                 </div>
                 
-                <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md w-[200px] h-[32px]">
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md min-w-[280px] max-w-[320px] h-[32px]">
                   <span className="text-xs font-medium text-muted-foreground shrink-0">Product:</span>
                   {isEditingProduct ? (
                     <>
@@ -519,7 +523,7 @@ export const WindowManagementDialog = ({
                   )}
                 </div>
                 
-                <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md w-[200px] h-[32px]">
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md min-w-[280px] max-w-[320px] h-[32px]">
                   <span className="text-xs font-medium text-muted-foreground shrink-0">Description:</span>
                   {isEditingDescription ? (
                     <>

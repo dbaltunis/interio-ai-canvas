@@ -35,7 +35,7 @@ export const WindowRenameButton = ({ windowName, onRename, disabled }: WindowRen
             if (e.key === 'Enter') handleSave();
             if (e.key === 'Escape') handleCancel();
           }}
-          className="h-8 text-sm font-semibold"
+          className="h-8 text-sm font-semibold flex-1"
           autoFocus
         />
         <Button
