@@ -39,7 +39,8 @@ export const useUserPermissions = () => {
       const hasCustomPermissionsConfigured = anyPermissionRecord && anyPermissionRecord.length > 0;
       
       if (hasCustomPermissionsConfigured) {
-        console.log('[useUserPermissions] Custom permissions configured (count:', customPermissions?.length || 0, ')');
+        const permissionsList = customPermissions ? customPermissions.map(p => p.permission_name) : [];
+        console.log('[useUserPermissions] ✅ CUSTOM PERMISSIONS (count:', permissionsList.length, '):', permissionsList);
         // Return only the custom permissions (could be empty array if all toggles are OFF)
         return customPermissions ? customPermissions.map(p => ({ permission_name: p.permission_name })) : [];
       }
@@ -119,7 +120,7 @@ export const useUserPermissions = () => {
       const userRole = profile?.role || 'User';
       const permissions = rolePermissions[userRole as keyof typeof rolePermissions] || ['view_profile'];
       
-      console.log(`[useUserPermissions] Using role-based permissions for ${userRole}:`, permissions);
+      console.log(`[useUserPermissions] ✅ ROLE-BASED PERMISSIONS for ${userRole}:`, permissions);
       return permissions.map(permission => ({ permission_name: permission }));
     },
     enabled: !!user && !authLoading, // Only run when user is available and not loading
@@ -137,9 +138,15 @@ export const useHasPermission = (permission: string) => {
   
   // Only show loading state on initial load when no cached data exists
   // This prevents navigation disruption during background refetches
-  if (isLoading && permissions === undefined) return undefined;
+  if (isLoading && permissions === undefined) {
+    console.log(`[useHasPermission] Loading permission check for: ${permission}`);
+    return undefined;
+  }
   
-  return permissions?.some(p => p.permission_name === permission) || false;
+  const hasPermission = permissions?.some(p => p.permission_name === permission) || false;
+  console.log(`[useHasPermission] ⚡ Checking "${permission}":`, hasPermission, '| All permissions:', permissions?.map(p => p.permission_name));
+  
+  return hasPermission;
 };
 
 export const useHasAnyPermission = (permissionList: string[]) => {
