@@ -14,6 +14,7 @@ import { FeatureFlagsSettings } from "@/components/settings/FeatureFlagsSettings
 import { SettingsInheritanceInfo } from "../SettingsInheritanceInfo";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { NumberSequenceSettings } from "@/components/settings/NumberSequenceSettings";
 
 export const SystemSettingsTab = () => {
   const [notifications, setNotifications] = useState({
@@ -49,6 +50,9 @@ export const SystemSettingsTab = () => {
       
       {/* Feature Flags & Inventory Configuration */}
       <FeatureFlagsSettings />
+
+      {/* Number Sequences Configuration */}
+      <NumberSequenceSettings />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Appearance */}

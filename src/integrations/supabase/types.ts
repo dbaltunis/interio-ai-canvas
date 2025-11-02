@@ -3938,6 +3938,42 @@ export type Database = {
         }
         Relationships: []
       }
+      number_sequences: {
+        Row: {
+          active: boolean
+          created_at: string
+          entity_type: string
+          id: string
+          next_number: number
+          padding: number
+          prefix: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          entity_type: string
+          id?: string
+          next_number?: number
+          padding?: number
+          prefix?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          entity_type?: string
+          id?: string
+          next_number?: number
+          padding?: number
+          prefix?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       option_categories: {
         Row: {
           active: boolean | null
@@ -7968,6 +8004,10 @@ export type Database = {
           role: string
           status: string
         }[]
+      }
+      get_next_sequence_number: {
+        Args: { p_entity_type: string; p_user_id: string }
+        Returns: string
       }
       get_notification_usage: {
         Args: { period_start_param: string; user_id_param: string }
