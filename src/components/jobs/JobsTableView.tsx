@@ -50,6 +50,7 @@ import { JobStatusBadge } from "./JobStatusBadge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useIsTablet } from "@/hooks/use-tablet";
 import { MobileJobsView } from "./MobileJobsView";
+import { useHasPermission } from "@/hooks/usePermissions";
 
 interface JobsTableViewProps {
   onJobSelect: (quote: any) => void;
@@ -72,6 +73,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
   const deleteQuote = useDeleteQuote();
   const updateQuote = useUpdateQuote();
   const userCurrency = useUserCurrency();
+  const canDeleteJobs = useHasPermission('delete_jobs');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [quoteToDelete, setQuoteToDelete] = useState<any>(null);
   const [notesDialogOpen, setNotesDialogOpen] = useState(false);
@@ -618,13 +620,15 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => {
-                  setQuoteToDelete({ id: project.id, projects: project });
-                  setDeleteDialogOpen(true);
-                }}>
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete Job
-                </DropdownMenuItem>
+                {canDeleteJobs && (
+                  <DropdownMenuItem onClick={() => {
+                    setQuoteToDelete({ id: project.id, projects: project });
+                    setDeleteDialogOpen(true);
+                  }}>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Job
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

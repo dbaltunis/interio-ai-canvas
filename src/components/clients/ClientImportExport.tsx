@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Download, Upload, Users, Mail, FileText } from "lucide-react";
+import { ArrowLeft, Download, Upload, Users, Mail, FileText, Shield } from "lucide-react";
 import { useClients, useCreateClient } from "@/hooks/useClients";
 import { useToast } from "@/hooks/use-toast";
+import { useUserRole } from "@/hooks/useUserRole";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ClientImportExportProps {
   onBack: () => void;
@@ -17,8 +19,12 @@ export const ClientImportExport = ({ onBack }: ClientImportExportProps) => {
   const { data: clients } = useClients();
   const createClient = useCreateClient();
   const { toast } = useToast();
+  const { data: userRole } = useUserRole();
   const [importing, setImporting] = useState(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
+
+  // Only Owner and Admin can export data
+  const canExport = userRole?.isOwner || userRole?.isAdmin;
 
   const downloadSampleCSV = () => {
     const sampleData = [
@@ -73,6 +79,15 @@ export const ClientImportExport = ({ onBack }: ClientImportExportProps) => {
   };
 
   const exportClientsCSV = () => {
+    if (!canExport) {
+      toast({
+        title: "Access Denied",
+        description: "Only Owners and Admins can export client data",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!clients || clients.length === 0) {
       toast({
         title: "No Data",
@@ -193,6 +208,15 @@ export const ClientImportExport = ({ onBack }: ClientImportExportProps) => {
         </div>
       </div>
 
+      {!canExport && (
+        <Alert className="bg-destructive/10 border-destructive">
+          <Shield className="h-4 w-4 text-destructive" />
+          <AlertDescription>
+            <strong>Export Restricted:</strong> Only Owners and Admins can export client data. You can still import clients.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="grid gap-6 md:grid-cols-2">
         {/* Import Section */}
         <Card>
@@ -266,7 +290,7 @@ export const ClientImportExport = ({ onBack }: ClientImportExportProps) => {
               </div>
             </div>
 
-            <Button onClick={exportClientsCSV} className="w-full">
+            <Button onClick={exportClientsCSV} className="w-full" disabled={!canExport}>
               <Download className="mr-2 h-4 w-4" />
               Export All Clients to CSV
             </Button>

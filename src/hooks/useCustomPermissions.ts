@@ -53,7 +53,7 @@ export const useUpdateCustomPermissions = () => {
         const permissionRows = permissions.map(permission => ({
           user_id: userId,
           permission_name: permission,
-          created_by: user?.id
+          granted_by: user?.id
         }));
 
         const { error } = await supabase

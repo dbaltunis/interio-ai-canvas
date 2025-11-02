@@ -10,7 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useEnhancedInventory, useCreateEnhancedInventoryItem, useUpdateEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
-import { Download, Upload, FileSpreadsheet, Database, CheckCircle, XCircle, AlertTriangle, FileDown, FileUp } from "lucide-react";
+import { Download, Upload, FileSpreadsheet, Database, CheckCircle, XCircle, AlertTriangle, FileDown, FileUp, Shield } from "lucide-react";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export const InventoryImportExport = () => {
   const [importData, setImportData] = useState("");
@@ -26,9 +27,22 @@ export const InventoryImportExport = () => {
   const createMutation = useCreateEnhancedInventoryItem();
   const updateMutation = useUpdateEnhancedInventoryItem();
   const { toast } = useToast();
+  const { data: userRole } = useUserRole();
+
+  // Only Owner and Admin can export data
+  const canExport = userRole?.isOwner || userRole?.isAdmin;
 
   // Enhanced export with all fields
   const exportInventory = (format: 'basic' | 'complete' = 'complete') => {
+    if (!canExport) {
+      toast({
+        title: "Access Denied",
+        description: "Only Owners and Admins can export inventory data",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!inventory || inventory.length === 0) {
       toast({
         title: "No Data",
@@ -495,9 +509,19 @@ export const InventoryImportExport = () => {
   };
 
   return (
-    <Tabs defaultValue="import" className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="import">
+    <div className="space-y-4">
+      {!canExport && (
+        <Alert className="bg-destructive/10 border-destructive">
+          <Shield className="h-4 w-4 text-destructive" />
+          <AlertDescription>
+            <strong>Export Restricted:</strong> Only Owners and Admins can export inventory data. You can still import inventory items.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <Tabs defaultValue="import" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="import">
           <Upload className="h-4 w-4 mr-2" />
           Import Data
         </TabsTrigger>
@@ -768,5 +792,6 @@ export const InventoryImportExport = () => {
         </Card>
       </TabsContent>
     </Tabs>
+    </div>
   );
 };
