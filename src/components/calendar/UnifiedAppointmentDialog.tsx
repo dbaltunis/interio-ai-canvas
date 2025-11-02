@@ -191,6 +191,8 @@ export const UnifiedAppointmentDialog = ({
       shared_with_organization: event.visibility === 'organization' || event.shared_with_organization
     };
 
+    console.log('[UnifiedAppointmentDialog] Submitting appointment with data:', appointmentData);
+
     try {
       if (isOnline) {
         if (isEditing) {
