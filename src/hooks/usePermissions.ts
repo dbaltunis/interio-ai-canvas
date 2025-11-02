@@ -78,6 +78,8 @@ export const useUserPermissions = () => {
           'view_inventory', 'manage_inventory',
           'view_window_treatments', 'manage_window_treatments',
           'view_analytics', 'view_settings', 'manage_settings', 'manage_users',
+          'view_shopify', 'manage_shopify',
+          'view_emails',
           'view_profile'
         ],
         Admin: [
@@ -87,6 +89,8 @@ export const useUserPermissions = () => {
           'view_inventory', 'manage_inventory',
           'view_window_treatments', 'manage_window_treatments',
           'view_analytics', 'view_settings',
+          'view_shopify', 'manage_shopify',
+          'view_emails',
           'view_profile'
         ],
         Manager: [
@@ -96,6 +100,8 @@ export const useUserPermissions = () => {
           'view_inventory', 'manage_inventory',
           'view_window_treatments', 'manage_window_treatments',
           'view_analytics', 'view_settings',
+          'view_shopify',
+          'view_emails',
           'view_profile'
         ],
         Staff: [

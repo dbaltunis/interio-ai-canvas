@@ -62,6 +62,19 @@ const PERMISSION_CATEGORIES: PermissionCategory[] = [
     ]
   },
   {
+    name: "Communications",
+    permissions: [
+      { id: "view_emails", label: "View Emails", description: "Access email campaigns and metrics" },
+    ]
+  },
+  {
+    name: "Integrations",
+    permissions: [
+      { id: "view_shopify", label: "View Online Store", description: "View Shopify integration and store data" },
+      { id: "manage_shopify", label: "Manage Online Store", description: "Sync products and manage Shopify integration", requiredBy: ["view_shopify"] },
+    ]
+  },
+  {
     name: "Analytics & Reports",
     permissions: [
       { id: "view_analytics", label: "View Analytics", description: "Access analytics and reports" },

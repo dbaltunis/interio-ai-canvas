@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useKPIConfig } from "@/hooks/useKPIConfig";
 import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
 import { WelcomeHeader } from "./WelcomeHeader";
@@ -32,16 +32,33 @@ export const EnhancedHomeDashboard = () => {
   const [showShopifyDialog, setShowShopifyDialog] = useState(false);
   const [showWidgetCustomizer, setShowWidgetCustomizer] = useState(false);
   const { kpiConfigs, toggleKPI, reorderKPIs, getEnabledKPIs } = useKPIConfig();
-  const { widgets, toggleWidget, reorderWidgets, getEnabledWidgets, updateWidgetSize } = useDashboardWidgets();
+  const { widgets, toggleWidget, reorderWidgets, getEnabledWidgets, getAvailableWidgets, updateWidgetSize } = useDashboardWidgets();
   const { data: stats } = useDashboardStats();
   const { data: emailKPIs } = useEmailKPIs();
   const { integration: shopifyIntegration } = useShopifyIntegrationReal();
   const isShopifyConnected = !!shopifyIntegration?.is_connected;
   
-  // Permission checks for calendar widgets
+  // Permission checks for widgets
   const canViewCalendar = useHasPermission('view_calendar');
+  const canViewShopify = useHasPermission('view_shopify');
+  const canViewEmails = useHasPermission('view_emails');
+  const canViewInventory = useHasPermission('view_inventory');
 
-  const enabledWidgets = getEnabledWidgets();
+  // Filter enabled widgets by permissions
+  const enabledWidgets = useMemo(() => {
+    return getEnabledWidgets().filter(widget => {
+      // If widget doesn't require permission, show it
+      if (!widget.requiredPermission) return true;
+
+      // Check specific permissions
+      if (widget.requiredPermission === 'view_calendar') return canViewCalendar;
+      if (widget.requiredPermission === 'view_shopify') return canViewShopify;
+      if (widget.requiredPermission === 'view_emails') return canViewEmails;
+      if (widget.requiredPermission === 'view_inventory') return canViewInventory;
+
+      return false;
+    });
+  }, [getEnabledWidgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory]);
 
   // Prepare KPI data for primary metrics
   const primaryKPIs = [
@@ -213,13 +230,9 @@ export const EnhancedHomeDashboard = () => {
               return <div key={widget.id} className={sizeClasses[widget.size]}><TeamMembersWidget /></div>;
             
             case "events":
-              // Don't render calendar widgets without permission
-              if (!canViewCalendar) return null;
               return <div key={widget.id} className={sizeClasses[widget.size]}><UpcomingEventsWidget /></div>;
             
             case "recent-appointments":
-              // Don't render calendar widgets without permission
-              if (!canViewCalendar) return null;
               return <div key={widget.id} className={sizeClasses[widget.size]}><RecentAppointmentsWidget /></div>;
             
             case "emails":
@@ -282,7 +295,7 @@ export const EnhancedHomeDashboard = () => {
       <DashboardWidgetCustomizer
         open={showWidgetCustomizer}
         onOpenChange={setShowWidgetCustomizer}
-        widgets={widgets}
+        widgets={getAvailableWidgets()}
         onToggle={toggleWidget}
         onReorder={reorderWidgets}
         onSizeChange={updateWidgetSize}

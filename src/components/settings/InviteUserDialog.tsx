@@ -20,7 +20,10 @@ const ROLE_PERMISSIONS = {
     'view_calendar', 'create_appointments', 'delete_appointments',
     'view_inventory', 'manage_inventory',
     'view_window_treatments', 'manage_window_treatments',
-    'view_analytics', 'view_settings', 'manage_settings', 'manage_users', 'view_profile'
+    'view_analytics', 'view_settings', 'manage_settings', 'manage_users',
+    'view_shopify', 'manage_shopify',
+    'view_emails',
+    'view_profile'
   ],
   Admin: [
     'view_jobs', 'create_jobs', 'delete_jobs',
@@ -28,7 +31,10 @@ const ROLE_PERMISSIONS = {
     'view_calendar', 'create_appointments', 'delete_appointments', 
     'view_inventory', 'manage_inventory',
     'view_window_treatments', 'manage_window_treatments',
-    'view_analytics', 'view_settings', 'view_profile'
+    'view_analytics', 'view_settings',
+    'view_shopify', 'manage_shopify',
+    'view_emails',
+    'view_profile'
   ],
   Manager: [
     'view_jobs', 'create_jobs',
@@ -36,7 +42,10 @@ const ROLE_PERMISSIONS = {
     'view_calendar', 'create_appointments',
     'view_inventory', 'manage_inventory',
     'view_window_treatments', 'manage_window_treatments',
-    'view_analytics', 'view_profile'
+    'view_analytics',
+    'view_shopify',
+    'view_emails',
+    'view_profile'
   ],
   Staff: [
     'view_jobs', 'create_jobs',
@@ -64,6 +73,9 @@ const PERMISSION_LABELS = {
   view_settings: 'View Settings',
   manage_settings: 'Manage Settings',
   manage_users: 'Manage Users',
+  view_shopify: 'View Online Store',
+  manage_shopify: 'Manage Online Store',
+  view_emails: 'View Emails',
   view_profile: 'View Profile'
 };
 

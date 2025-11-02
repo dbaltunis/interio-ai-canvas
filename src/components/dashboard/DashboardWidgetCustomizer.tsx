@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
@@ -80,11 +81,33 @@ export const DashboardWidgetCustomizer = ({
 }: DashboardWidgetCustomizerProps) => {
   const [filter, setFilter] = useState<string>("all");
 
-  const filteredWidgets = filter === "all" 
-    ? widgets 
-    : widgets.filter(w => w.category === filter);
+  // Get all permission checks at once
+  const canViewCalendar = useHasPermission('view_calendar');
+  const canViewShopify = useHasPermission('view_shopify');
+  const canViewEmails = useHasPermission('view_emails');
+  const canViewInventory = useHasPermission('view_inventory');
 
-  const enabledCount = widgets.filter(w => w.enabled).length;
+  // Filter widgets based on permissions
+  const permissionFilteredWidgets = useMemo(() => {
+    return widgets.filter(widget => {
+      // If widget doesn't require permission, show it
+      if (!widget.requiredPermission) return true;
+
+      // Check specific permissions
+      if (widget.requiredPermission === 'view_calendar') return canViewCalendar;
+      if (widget.requiredPermission === 'view_shopify') return canViewShopify;
+      if (widget.requiredPermission === 'view_emails') return canViewEmails;
+      if (widget.requiredPermission === 'view_inventory') return canViewInventory;
+
+      return false;
+    });
+  }, [widgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory]);
+
+  const filteredWidgets = filter === "all" 
+    ? permissionFilteredWidgets 
+    : permissionFilteredWidgets.filter(w => w.category === filter);
+
+  const enabledCount = permissionFilteredWidgets.filter(w => w.enabled).length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -97,7 +120,7 @@ export const DashboardWidgetCustomizer = ({
             Show, hide, and reorder widgets to personalize your dashboard experience.
             {enabledCount > 0 && (
               <span className="ml-2 text-primary font-medium">
-                {enabledCount} of {widgets.length} widgets enabled
+                {enabledCount} of {permissionFilteredWidgets.length} widgets enabled
               </span>
             )}
           </DialogDescription>

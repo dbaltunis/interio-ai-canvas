@@ -9,6 +9,7 @@ export interface DashboardWidget {
   order: number;
   category: "analytics" | "communication" | "finance" | "integrations";
   size: "small" | "medium" | "large";
+  requiredPermission?: string; // Permission required to view this widget
 }
 
 const DEFAULT_WIDGETS: DashboardWidget[] = [
@@ -20,6 +21,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     order: 1,
     category: "integrations",
     size: "medium",
+    requiredPermission: "view_shopify",
   },
   {
     id: "shopify-orders",
@@ -29,6 +31,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     order: 2,
     category: "integrations",
     size: "large",
+    requiredPermission: "view_shopify",
   },
   {
     id: "shopify-products",
@@ -38,6 +41,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     order: 3,
     category: "integrations",
     size: "small",
+    requiredPermission: "view_shopify",
   },
   {
     id: "shopify-categories",
@@ -47,6 +51,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     order: 4,
     category: "integrations",
     size: "small",
+    requiredPermission: "view_shopify",
   },
   {
     id: "team",
@@ -65,6 +70,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     order: 6,
     category: "communication",
     size: "small",
+    requiredPermission: "view_calendar",
   },
   {
     id: "recent-appointments",
@@ -74,6 +80,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     order: 7,
     category: "communication",
     size: "small",
+    requiredPermission: "view_calendar",
   },
   {
     id: "emails",
@@ -83,6 +90,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     order: 8,
     category: "communication",
     size: "small",
+    requiredPermission: "view_emails",
   },
   {
     id: "status",
@@ -216,12 +224,18 @@ export const useDashboardWidgets = () => {
     return widgets.filter(w => w.enabled).sort((a, b) => a.order - b.order);
   };
 
+  const getAvailableWidgets = () => {
+    // Returns all widgets (for the customizer to filter by permissions)
+    return widgets;
+  };
+
   return {
     widgets,
     isLoading,
     toggleWidget,
     reorderWidgets,
     getEnabledWidgets,
+    getAvailableWidgets,
     updateWidgetSize,
   };
 };
