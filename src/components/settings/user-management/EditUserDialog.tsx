@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { User as UserIcon, Shield } from "lucide-react";
 import { useUpdateUser } from "@/hooks/useUpdateUser";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@/hooks/useUsers";
+import { CustomPermissionsManager } from "./CustomPermissionsManager";
 
 interface EditUserDialogProps {
   user: User | null;
@@ -64,15 +67,27 @@ export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit User</DialogTitle>
+          <DialogTitle>Edit User - {user?.name}</DialogTitle>
           <DialogDescription>
-            Update user information and permissions.
+            Update user information and custom permissions.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid gap-4 py-4">
+        <Tabs defaultValue="basic" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="basic" className="flex items-center gap-2">
+              <UserIcon className="h-4 w-4" />
+              Basic Info
+            </TabsTrigger>
+            <TabsTrigger value="permissions" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Custom Permissions
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="basic" className="space-y-4 mt-4">
           <div className="grid gap-2">
             <Label htmlFor="displayName">Display Name</Label>
             <Input
@@ -127,23 +142,34 @@ export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps
             />
             <Label htmlFor="isActive">Active User</Label>
           </div>
-        </div>
-        
-        <div className="flex justify-end space-x-2">
-          <Button 
-            variant="outline" 
-            onClick={() => onOpenChange(false)}
-            disabled={updateUser.isPending}
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSave}
-            disabled={updateUser.isPending || !displayName.trim()}
-          >
-            {updateUser.isPending ? "Saving..." : "Save Changes"}
-          </Button>
-        </div>
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              disabled={updateUser.isPending}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSave}
+              disabled={updateUser.isPending || !displayName.trim()}
+            >
+              {updateUser.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
+          </TabsContent>
+
+          <TabsContent value="permissions" className="mt-4">
+            {user && (
+              <CustomPermissionsManager 
+                userId={user.id}
+                userRole={role}
+                userName={displayName || user.name || "User"}
+              />
+            )}
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
