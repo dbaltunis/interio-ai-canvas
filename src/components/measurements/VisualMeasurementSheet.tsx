@@ -900,7 +900,16 @@ export const VisualMeasurementSheet = ({
                     <CardTitle className="text-sm">Curtain Options</CardTitle>
                     <p className="text-xs text-muted-foreground">Configure options from your template settings</p>
                   </CardHeader>
-                  
+                  <CardContent className="space-y-4 pt-4">
+                    <DynamicCurtainOptions
+                      measurements={measurements}
+                      onChange={onMeasurementChange}
+                      template={selectedTemplate}
+                      onOptionPriceChange={(optionType, price, name) => {
+                        console.log(`Option ${optionType} changed: ${name} - ${price}`);
+                      }}
+                    />
+                  </CardContent>
                 </Card>}
 
               {/* BLIND-SPECIFIC FIELDS - Dynamic Options */}
