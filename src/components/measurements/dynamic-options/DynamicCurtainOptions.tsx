@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { Loader2 } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
+import { useTreatmentOptions } from "@/hooks/useTreatmentOptions";
+import { getOptionPrice } from "@/utils/optionDataAdapter";
 import type { EyeletRing } from "@/hooks/useEyeletRings";
 
 interface DynamicCurtainOptionsProps {
@@ -32,6 +34,8 @@ export const DynamicCurtainOptions = ({
   onEyeletRingChange
 }: DynamicCurtainOptionsProps) => {
   const [availableRings, setAvailableRings] = useState<EyeletRing[]>([]);
+  const [treatmentOptionSelections, setTreatmentOptionSelections] = useState<Record<string, string>>({});
+  
   // Early returns MUST come before hooks to prevent violations
   if (!template) {
     return (
@@ -44,6 +48,7 @@ export const DynamicCurtainOptions = ({
   // Hooks MUST be called unconditionally after early returns
   const { units } = useMeasurementUnits();
   const { data: inventory = [], isLoading: headingsLoading } = useEnhancedInventory();
+  const { data: treatmentOptions = [], isLoading: treatmentOptionsLoading } = useTreatmentOptions('curtains', 'category');
   
   // Filter for heading items from inventory
   const headingOptions = inventory.filter(item => 
@@ -116,7 +121,24 @@ export const DynamicCurtainOptions = ({
     console.log('🏭 Manufacturing type changed to:', type);
   };
 
-  if (headingsLoading) {
+  const handleTreatmentOptionChange = (optionKey: string, valueId: string) => {
+    setTreatmentOptionSelections(prev => ({ ...prev, [optionKey]: valueId }));
+    
+    // Find the selected option value and its price
+    const option = treatmentOptions.find(opt => opt.key === optionKey);
+    if (option && option.option_values) {
+      const selectedValue = option.option_values.find(val => val.id === valueId);
+      if (selectedValue && onOptionPriceChange) {
+        const price = getOptionPrice(selectedValue);
+        onOptionPriceChange(optionKey, price, selectedValue.label);
+      }
+    }
+    
+    // Store in measurements
+    onChange(`treatment_option_${optionKey}`, valueId);
+  };
+
+  if (headingsLoading || treatmentOptionsLoading) {
     return (
       <div className="p-6 flex items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -190,15 +212,24 @@ export const DynamicCurtainOptions = ({
             >
               {availableHeadings.map(heading => (
                 <SelectItem key={heading.id} value={heading.id}>
-                  <div className="flex items-center justify-between w-full gap-4">
-                    <span>{heading.name}</span>
-                    <div className="flex gap-2 text-xs text-muted-foreground">
-                      {(heading as any).fullness_ratio && (
-                        <span>Fullness: {(heading as any).fullness_ratio}x</span>
-                      )}
-                      {(heading.price_per_meter || heading.selling_price) && (
-                        <span>{formatCurrency(heading.price_per_meter || heading.selling_price || 0)}</span>
-                      )}
+                  <div className="flex items-center gap-3 w-full">
+                    {heading.image_url && (
+                      <img 
+                        src={heading.image_url} 
+                        alt={heading.name}
+                        className="w-10 h-10 object-cover rounded border border-border"
+                      />
+                    )}
+                    <div className="flex items-center justify-between flex-1 gap-4">
+                      <span>{heading.name}</span>
+                      <div className="flex gap-2 text-xs text-muted-foreground">
+                        {(heading as any).fullness_ratio && (
+                          <span>Fullness: {(heading as any).fullness_ratio}x</span>
+                        )}
+                        {(heading.price_per_meter || heading.selling_price) && (
+                          <span>{formatCurrency(heading.price_per_meter || heading.selling_price || 0)}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </SelectItem>
@@ -372,6 +403,73 @@ export const DynamicCurtainOptions = ({
               </Label>
             </div>
           </RadioGroup>
+        </div>
+      )}
+
+      {/* Dynamic Treatment Options from Database */}
+      {treatmentOptions.length > 0 && (
+        <div className="space-y-4 pt-2 border-t border-border">
+          {treatmentOptions.map(option => {
+            if (!option.visible || !option.option_values || option.option_values.length === 0) {
+              return null;
+            }
+
+            return (
+              <div key={option.id} className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  {option.label}
+                  {option.required && (
+                    <Badge variant="secondary" className="text-xs">Required</Badge>
+                  )}
+                </Label>
+                
+                <Select
+                  value={treatmentOptionSelections[option.key] || measurements[`treatment_option_${option.key}`] || ''}
+                  onValueChange={(value) => handleTreatmentOptionChange(option.key, value)}
+                  disabled={readOnly}
+                >
+                  <SelectTrigger className="bg-background border-input">
+                    <SelectValue placeholder={`Select ${option.label.toLowerCase()}`} />
+                  </SelectTrigger>
+                  <SelectContent 
+                    className="bg-popover border-border z-50"
+                    position="popper"
+                    sideOffset={5}
+                  >
+                    {option.option_values.map(value => {
+                      const price = getOptionPrice(value);
+                      return (
+                        <SelectItem key={value.id} value={value.id}>
+                          <div className="flex items-center gap-3 w-full">
+                            {value.extra_data?.image_url && (
+                              <img 
+                                src={value.extra_data.image_url} 
+                                alt={value.label}
+                                className="w-10 h-10 object-cover rounded border border-border"
+                              />
+                            )}
+                            <div className="flex items-center justify-between flex-1 gap-4">
+                              <div className="flex flex-col">
+                                <span>{value.label}</span>
+                                {value.extra_data?.description && (
+                                  <span className="text-xs text-muted-foreground">{value.extra_data.description}</span>
+                                )}
+                              </div>
+                              {price > 0 && (
+                                <Badge variant="outline" className="text-xs">
+                                  {formatCurrency(price)}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            );
+          })}
         </div>
       )}
 
