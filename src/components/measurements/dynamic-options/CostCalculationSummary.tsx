@@ -1,11 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calculator, Info, Settings } from "lucide-react";
+import { Calculator, Info, Settings, AlertCircle } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import { calculateBlindCosts, isBlindCategory } from "./utils/blindCostCalculator";
 import { calculateWallpaperCost } from "@/utils/wallpaperCalculations";
 import { detectTreatmentType } from "@/utils/treatmentTypeDetection";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
+import { safeParseFloat } from "@/utils/costCalculationErrors";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Simple SVG icons
 const FabricSwatchIcon = ({ className }: { className?: string }) => (
@@ -93,8 +95,8 @@ export const CostCalculationSummary = ({
 
   // Use proper treatment detection instead of template.treatment_category
   const treatmentCategory = detectTreatmentType(template);
-  const width = parseFloat(measurements.rail_width) || 0;
-  const height = parseFloat(measurements.drop) || 0;
+  const width = safeParseFloat(measurements.rail_width, 0);
+  const height = safeParseFloat(measurements.drop, 0);
 
   console.log('🔍 CostCalculationSummary Debug:', {
     treatmentCategory,
@@ -107,20 +109,47 @@ export const CostCalculationSummary = ({
     selectedFabric: selectedFabric?.name
   });
 
+  // Validation checks
+  if (width <= 0 || height <= 0) {
+    return (
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Missing Measurements</AlertTitle>
+        <AlertDescription>
+          Please enter valid width and height measurements to calculate costs.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   // WALLPAPER: Add before blind check
   if (treatmentCategory === 'wallpaper' && measurements.wall_width && measurements.wall_height && selectedFabric) {
-    const wallWidth = parseFloat(measurements.wall_width) || 0;
-    const wallHeight = parseFloat(measurements.wall_height) || 0;
+    const wallWidth = safeParseFloat(measurements.wall_width, 0);
+    const wallHeight = safeParseFloat(measurements.wall_height, 0);
+    
+    if (wallWidth <= 0 || wallHeight <= 0) {
+      return (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Invalid Wall Dimensions</AlertTitle>
+          <AlertDescription>
+            Please enter valid wall width and height for wallpaper calculation.
+          </AlertDescription>
+        </Alert>
+      );
+    }
     
     const wallpaperCalc = calculateWallpaperCost(wallWidth, wallHeight, selectedFabric);
     
     if (!wallpaperCalc) {
       return (
-        <div className="p-4 border rounded-lg bg-muted/50">
-          <p className="text-sm text-muted-foreground">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Calculation Error</AlertTitle>
+          <AlertDescription>
             Unable to calculate wallpaper costs. Please check measurements and wallpaper selection.
-          </p>
-        </div>
+          </AlertDescription>
+        </Alert>
       );
     }
 
@@ -179,9 +208,10 @@ export const CostCalculationSummary = ({
 
   // BLINDS: Use clean calculator (check both category and template name)
   if (isBlindCategory(treatmentCategory, template.name) && width > 0 && height > 0) {
-    const blindCosts = calculateBlindCosts(width, height, template, selectedFabric, selectedOptions);
-    
-    console.log('✅ Using blind calculator, costs:', blindCosts);
+    try {
+      const blindCosts = calculateBlindCosts(width, height, template, selectedFabric, selectedOptions);
+      
+      console.log('✅ Using blind calculator, costs:', blindCosts);
 
     return (
       <div className="bg-card border border-border rounded-lg p-3 space-y-3">
@@ -283,15 +313,29 @@ export const CostCalculationSummary = ({
         </details>
       </div>
     );
+    } catch (error) {
+      console.error('Blind cost calculation error:', error);
+      return (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Calculation Error</AlertTitle>
+          <AlertDescription>
+            {error instanceof Error ? error.message : 'Unable to calculate blind costs. Please verify your inputs.'}
+          </AlertDescription>
+        </Alert>
+      );
+    }
   }
 
   // CURTAINS: Use pre-calculated values or default to 0
-  const fabricCost = calculatedFabricCost || 0;
-  const liningCost = calculatedLiningCost || 0;
-  const manufacturingCost = calculatedManufacturingCost || 0;
-  const headingCost = calculatedHeadingCost || 0;
-  const optionsCost = calculatedOptionsCost || 0;
-  const totalCost = calculatedTotalCost || (fabricCost + liningCost + manufacturingCost + headingCost + optionsCost);
+  const fabricCost = safeParseFloat(calculatedFabricCost, 0);
+  const liningCost = safeParseFloat(calculatedLiningCost, 0);
+  const manufacturingCost = safeParseFloat(calculatedManufacturingCost, 0);
+  const headingCost = safeParseFloat(calculatedHeadingCost, 0);
+  const optionsCost = safeParseFloat(calculatedOptionsCost, 0);
+  const totalCost = calculatedTotalCost 
+    ? safeParseFloat(calculatedTotalCost, 0)
+    : (fabricCost + liningCost + manufacturingCost + headingCost + optionsCost);
 
   console.log('📊 Curtain costs:', {
     fabricCost,

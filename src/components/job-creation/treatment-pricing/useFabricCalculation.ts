@@ -143,9 +143,10 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
   };
 
   const calculateCosts = async () => {
-    // Check if window covering has making cost linked
-    const windowCovering = formData.window_covering;
-    const makingCostId = windowCovering?.making_cost_id;
+    try {
+      // Check if window covering has making cost linked
+      const windowCovering = formData.window_covering;
+      const makingCostId = windowCovering?.making_cost_id;
     
     // If making cost is linked, use integrated calculation
     if (makingCostId && windowCovering?.id) {
@@ -295,6 +296,25 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
       widthsRequired: fabricUsage.widthsRequired,
       optionDetails
     };
+    } catch (error) {
+      console.error('Cost calculation error:', error);
+      // Return fallback values with error indicator
+      return {
+        fabricCost: "0.00",
+        optionsCost: "0.00",
+        laborCost: "0.00",
+        totalCost: "0.00",
+        fabricUsage: "0.0",
+        fabricOrientation: 'vertical',
+        costComparison: null,
+        warnings: ['Error calculating costs. Please check your inputs and try again.'],
+        seamsRequired: 0,
+        seamLaborHours: 0,
+        widthsRequired: 0,
+        optionDetails: [],
+        hasError: true
+      };
+    }
   };
 
   // Create integrated calculation hook

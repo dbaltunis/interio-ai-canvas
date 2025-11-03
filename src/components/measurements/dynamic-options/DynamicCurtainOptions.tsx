@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -11,6 +11,8 @@ import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useTreatmentOptions } from "@/hooks/useTreatmentOptions";
 import { getOptionPrice } from "@/utils/optionDataAdapter";
 import type { EyeletRing } from "@/hooks/useEyeletRings";
+import { validateTreatmentOptions } from "@/utils/treatmentOptionValidation";
+import { ValidationAlert } from "@/components/shared/ValidationAlert";
 
 interface DynamicCurtainOptionsProps {
   measurements: Record<string, any>;
@@ -138,6 +140,12 @@ export const DynamicCurtainOptions = ({
     onChange(`treatment_option_${optionKey}`, valueId);
   };
 
+  // Validate treatment options
+  const validation = useMemo(() => {
+    if (treatmentOptionsLoading) return { isValid: true, errors: [], warnings: [] };
+    return validateTreatmentOptions(treatmentOptions, treatmentOptionSelections);
+  }, [treatmentOptions, treatmentOptionSelections, treatmentOptionsLoading]);
+
   if (headingsLoading || treatmentOptionsLoading) {
     return (
       <div className="p-6 flex items-center justify-center">
@@ -190,6 +198,14 @@ export const DynamicCurtainOptions = ({
 
   return (
     <div className="space-y-4">
+      {/* Validation Alert */}
+      {(validation.errors.length > 0 || validation.warnings.length > 0) && (
+        <ValidationAlert 
+          errors={validation.errors}
+          warnings={validation.warnings}
+        />
+      )}
+
       {/* Heading Selection */}
       {availableHeadings.length > 0 && (
         <div className="space-y-2">
@@ -416,11 +432,11 @@ export const DynamicCurtainOptions = ({
 
             return (
               <div key={option.id} className="space-y-2">
-                <Label className="text-sm font-medium flex items-center gap-2">
-                  {option.label}
-                  {option.required && (
-                    <Badge variant="secondary" className="text-xs">Required</Badge>
-                  )}
+              <Label className="text-sm font-medium flex items-center gap-2">
+                {option.label}
+                {option.required && (
+                  <Badge variant="destructive" className="text-xs">Required</Badge>
+                )}
                 </Label>
                 
                 <Select
