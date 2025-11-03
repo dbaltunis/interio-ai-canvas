@@ -31,6 +31,7 @@ import { SubscriptionTest } from "./pages/SubscriptionTest";
 import { ManualQuoteTest } from "./pages/ManualQuoteTest";
 import Billing from "./pages/Billing";
 import Purchasing from "./pages/Purchasing";
+import AdminBugManagement from "./pages/AdminBugManagement";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -184,6 +185,15 @@ const App = () => {
                   <ProtectedRoute>
                     <ErrorBoundary>
                       <Purchasing />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+
+                {/* Admin Bug Management - admin only */}
+                <Route path="/admin/bugs" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary>
+                      <AdminBugManagement />
                     </ErrorBoundary>
                   </ProtectedRoute>
                 } />
