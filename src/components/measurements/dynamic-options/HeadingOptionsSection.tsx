@@ -78,17 +78,35 @@ export const HeadingOptionsSection = ({
   useEffect(() => {
     if (selectedHeading && selectedHeading !== 'standard') {
       const selectedItem = inventory.find(item => item.id === selectedHeading);
+      console.log('🔍 HeadingOptionsSection - Selected heading item:', {
+        selectedHeading,
+        selectedItem: selectedItem ? {
+          id: selectedItem.id,
+          name: selectedItem.name,
+          metadata: selectedItem.metadata
+        } : null
+      });
+      
       if (selectedItem && selectedItem.metadata) {
         const metadata = selectedItem.metadata as any;
+        console.log('🔍 Checking for eyelet rings:', {
+          heading_type: metadata.heading_type,
+          has_eyelet_rings: !!metadata.eyelet_rings,
+          rings_count: metadata.eyelet_rings?.length || 0,
+          rings: metadata.eyelet_rings
+        });
+        
         // Check if it's an eyelet heading
         if (metadata.heading_type === 'eyelet' && metadata.eyelet_rings) {
           setAvailableRings(metadata.eyelet_rings);
+          console.log('✅ Eyelet rings found and set:', metadata.eyelet_rings);
           // Auto-select first ring if none selected
           if (!selectedEyeletRing && metadata.eyelet_rings.length > 0 && onEyeletRingChange) {
             onEyeletRingChange(metadata.eyelet_rings[0].id);
           }
         } else {
           setAvailableRings([]);
+          console.log('❌ No eyelet rings found or heading type is not eyelet');
         }
       }
     } else {
