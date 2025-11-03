@@ -118,7 +118,7 @@ export const BugReportDialog = ({ className }: BugReportDialogProps) => {
         <Button
           variant="destructive"
           size="icon"
-          className={`fixed bottom-20 md:bottom-6 right-6 z-40 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 animate-pulse ${className}`}
+          className={`fixed bottom-20 md:bottom-6 right-6 z-40 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 ${className}`}
           title="Report a Bug (BETA)"
         >
           <Bug className="h-5 w-5" />

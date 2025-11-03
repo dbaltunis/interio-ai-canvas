@@ -2,13 +2,10 @@ import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Sparkles, CheckCircle2, AlertCircle, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -19,17 +16,16 @@ interface WhatsNewDialogProps {
 
 interface ReleaseNotes {
   summary: string;
-  highlights: string[];
-  new_features: Array<{
-    title: string;
-    description: string;
-    category: string;
-  }>;
-  improvements: Array<{
+  highlights?: string[];
+  newFeatures?: Array<{
     title: string;
     description: string;
   }>;
-  known_issues: string[];
+  improvements?: Array<{
+    title: string;
+    description: string;
+  }>;
+  knownIssues?: string[];
 }
 
 interface AppVersion {
@@ -117,102 +113,55 @@ export const WhatsNewDialog = ({ open, onOpenChange }: WhatsNewDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl max-h-[85vh]">
+      <DialogContent className="max-w-2xl max-h-[85vh]">
         <DialogHeader>
-          <div className="flex items-center gap-3">
-            <Sparkles className="h-6 w-6 text-primary" />
-            <DialogTitle className="text-2xl">What's New</DialogTitle>
-          </div>
-          <div className="flex items-center gap-2 pt-2">
-            <Badge variant="outline" className="border-warning/50 text-warning">
-              {version.version}
-            </Badge>
-            <Badge variant="secondary">
-              {new Date(version.release_date).toLocaleDateString()}
-            </Badge>
-          </div>
-          <DialogDescription className="text-base pt-2">
-            {notes.summary}
-          </DialogDescription>
+          <DialogTitle className="text-sm font-mono">
+            {version.version} — {new Date(version.release_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+          </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[60vh] pr-4">
-          <div className="space-y-6">
-            {/* Highlights */}
-            {notes.highlights && notes.highlights.length > 0 && (
+        <ScrollArea className="max-h-[70vh]">
+          <div className="space-y-4 text-[9px] leading-tight font-mono pr-4">
+            {/* Summary */}
+            <div className="pb-2 border-b border-border/50">
+              <p className="text-muted-foreground">{notes.summary}</p>
+            </div>
+
+            {/* New Features */}
+            {notes.newFeatures && notes.newFeatures.length > 0 && (
               <div>
-                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                  Highlights
-                </h3>
-                <ul className="space-y-2">
-                  {notes.highlights.map((highlight, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                      <span className="text-muted-foreground">{highlight}</span>
+                <h3 className="font-semibold mb-1.5 text-foreground">NEW</h3>
+                <ul className="space-y-1 list-disc list-inside text-muted-foreground">
+                  {notes.newFeatures.map((feature, index) => (
+                    <li key={index}>
+                      <span className="font-medium text-foreground">{feature.title}:</span> {feature.description}
                     </li>
                   ))}
                 </ul>
               </div>
             )}
 
-            {/* New Features */}
-            {notes.new_features && notes.new_features.length > 0 && (
-              <div>
-                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  New Features
-                </h3>
-                <div className="space-y-3">
-                  {notes.new_features.map((feature, index) => (
-                    <div
-                      key={index}
-                      className="border rounded-lg p-4 bg-card hover:bg-accent/50 transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <h4 className="font-medium">{feature.title}</h4>
-                        <Badge variant="secondary" className="text-xs">
-                          {feature.category}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{feature.description}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Improvements */}
+            {/* Improvements/Fixes */}
             {notes.improvements && notes.improvements.length > 0 && (
               <div>
-                <h3 className="font-semibold text-lg mb-3">Improvements</h3>
-                <div className="space-y-2">
+                <h3 className="font-semibold mb-1.5 text-foreground">FIXED</h3>
+                <ul className="space-y-1 list-disc list-inside text-muted-foreground">
                   {notes.improvements.map((improvement, index) => (
-                    <div key={index} className="flex items-start gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500 mt-1 flex-shrink-0" />
-                      <div>
-                        <span className="font-medium text-sm">{improvement.title}</span>
-                        <p className="text-sm text-muted-foreground">{improvement.description}</p>
-                      </div>
-                    </div>
+                    <li key={index}>
+                      <span className="font-medium text-foreground">{improvement.title}:</span> {improvement.description}
+                    </li>
                   ))}
-                </div>
+                </ul>
               </div>
             )}
 
             {/* Known Issues */}
-            {notes.known_issues && notes.known_issues.length > 0 && (
+            {notes.knownIssues && notes.knownIssues.length > 0 && (
               <div>
-                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-warning" />
-                  Known Issues
-                </h3>
-                <ul className="space-y-2">
-                  {notes.known_issues.map((issue, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <AlertCircle className="h-4 w-4 text-warning mt-1 flex-shrink-0" />
-                      <span className="text-sm text-muted-foreground">{issue}</span>
-                    </li>
+                <h3 className="font-semibold mb-1.5 text-foreground">KNOWN ISSUES</h3>
+                <ul className="space-y-1 list-disc list-inside text-muted-foreground">
+                  {notes.knownIssues.map((issue, index) => (
+                    <li key={index}>{issue}</li>
                   ))}
                 </ul>
               </div>
@@ -220,8 +169,10 @@ export const WhatsNewDialog = ({ open, onOpenChange }: WhatsNewDialogProps) => {
           </div>
         </ScrollArea>
 
-        <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button onClick={handleClose}>Got it!</Button>
+        <div className="flex justify-end pt-3 border-t">
+          <Button size="sm" variant="ghost" onClick={handleClose} className="text-xs">
+            Close
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
