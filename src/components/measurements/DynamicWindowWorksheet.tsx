@@ -706,7 +706,8 @@ export const DynamicWindowWorksheet = forwardRef<{
               : selectedTemplate.pricing_methods?.[0]; // Default to first method
             
             const manufacturingType = measurements.manufacturing_type || selectedTemplate.manufacturing_type || 'machine';
-            const pricingType = selectedTemplate.pricing_type || selectedTemplate.makeup_pricing_method || 'per_metre';
+            // ✅ FIX: Get pricing type from selected pricing method, not template
+            const pricingType = selectedPricingMethod?.pricing_type || selectedTemplate.pricing_type || selectedTemplate.makeup_pricing_method || 'per_metre';
             
             console.log('💰 [SAVE] Manufacturing cost calculation:', {
               selectedPricingMethodId: measurements.selected_pricing_method,
@@ -1479,7 +1480,8 @@ export const DynamicWindowWorksheet = forwardRef<{
                     // ✅ FIX: Calculate manufacturing/labor cost using selected pricing method prices
                     let manufacturingCost = 0;
                     const manufacturingType = measurements.manufacturing_type || 'machine'; // 'machine' or 'hand'
-                    const pricingType = selectedTemplate.pricing_type || selectedTemplate.makeup_pricing_method || selectedTemplate.pricing_method || 'per_metre';
+                    // ✅ FIX: Get pricing type from selected pricing method, not template
+                    const pricingType = selectedPricingMethod?.pricing_type || selectedTemplate.pricing_type || selectedTemplate.makeup_pricing_method || selectedTemplate.pricing_method || 'per_metre';
                     
                     // Determine which price to use based on manufacturing type and pricing method
                     let pricePerUnit = 0;
