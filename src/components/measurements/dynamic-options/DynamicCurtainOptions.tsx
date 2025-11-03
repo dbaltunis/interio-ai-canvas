@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -6,7 +7,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { Loader2 } from "lucide-react";
-import { useHeadingInventory } from "@/hooks/useHeadingInventory";
+import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
+import type { EyeletRing } from "@/hooks/useEyeletRings";
 
 interface DynamicCurtainOptionsProps {
   measurements: Record<string, any>;
@@ -15,6 +17,8 @@ interface DynamicCurtainOptionsProps {
   readOnly?: boolean;
   onOptionPriceChange?: (optionKey: string, price: number, label: string) => void;
   selectedOptions?: Array<{ name: string; price: number }>;
+  selectedEyeletRing?: string;
+  onEyeletRingChange?: (ringId: string) => void;
 }
 
 export const DynamicCurtainOptions = ({
@@ -23,8 +27,11 @@ export const DynamicCurtainOptions = ({
   template,
   readOnly = false,
   onOptionPriceChange,
-  selectedOptions = []
+  selectedOptions = [],
+  selectedEyeletRing,
+  onEyeletRingChange
 }: DynamicCurtainOptionsProps) => {
+  const [availableRings, setAvailableRings] = useState<EyeletRing[]>([]);
   // Early returns MUST come before hooks to prevent violations
   if (!template) {
     return (
@@ -36,7 +43,14 @@ export const DynamicCurtainOptions = ({
 
   // Hooks MUST be called unconditionally after early returns
   const { units } = useMeasurementUnits();
-  const { data: headingOptions = [], isLoading: headingsLoading } = useHeadingInventory();
+  const { data: inventory = [], isLoading: headingsLoading } = useEnhancedInventory();
+  
+  // Filter for heading items from inventory
+  const headingOptions = inventory.filter(item => 
+    item.category?.toLowerCase().includes('heading') || 
+    item.category?.toLowerCase().includes('hardware') ||
+    item.category?.toLowerCase().includes('pleat')
+  );
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -53,6 +67,30 @@ export const DynamicCurtainOptions = ({
       onOptionPriceChange('heading', headingPrice, heading.name);
     }
     onChange('selected_heading', headingId);
+    
+    // Check for eyelet rings
+    if (heading && heading.metadata) {
+      const metadata = heading.metadata as any;
+      console.log('🔍 DynamicCurtainOptions - Selected heading:', {
+        id: heading.id,
+        name: heading.name,
+        heading_type: metadata.heading_type,
+        has_eyelet_rings: !!metadata.eyelet_rings,
+        rings: metadata.eyelet_rings
+      });
+      
+      if (metadata.heading_type === 'eyelet' && metadata.eyelet_rings) {
+        setAvailableRings(metadata.eyelet_rings);
+        // Auto-select first ring if none selected
+        if (!selectedEyeletRing && metadata.eyelet_rings.length > 0 && onEyeletRingChange) {
+          onEyeletRingChange(metadata.eyelet_rings[0].id);
+        }
+      } else {
+        setAvailableRings([]);
+      }
+    } else {
+      setAvailableRings([]);
+    }
   };
 
   const handleLiningChange = (liningType: string) => {
@@ -140,12 +178,13 @@ export const DynamicCurtainOptions = ({
           <Select
             value={measurements.selected_heading || ''}
             onValueChange={handleHeadingChange}
+            disabled={readOnly}
           >
             <SelectTrigger className="bg-background border-input">
               <SelectValue placeholder="Select heading type" />
             </SelectTrigger>
             <SelectContent 
-              className="bg-popover border-border"
+              className="bg-popover border-border z-50"
               position="popper"
               sideOffset={5}
             >
@@ -161,6 +200,34 @@ export const DynamicCurtainOptions = ({
                         <span>{formatCurrency(heading.price_per_meter || heading.selling_price || 0)}</span>
                       )}
                     </div>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Eyelet Ring Selection - Only show if eyelet heading selected */}
+      {availableRings.length > 0 && onEyeletRingChange && (
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Eyelet Ring</Label>
+          <Select 
+            value={selectedEyeletRing} 
+            onValueChange={onEyeletRingChange}
+            disabled={readOnly}
+          >
+            <SelectTrigger className="bg-background border-input">
+              <SelectValue placeholder="Choose eyelet ring" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover border-border z-50" position="popper" sideOffset={5}>
+              {availableRings.map((ring) => (
+                <SelectItem key={ring.id} value={ring.id}>
+                  <div className="flex items-center justify-between w-full gap-4">
+                    <span>{ring.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {ring.color} • {ring.diameter}mm
+                    </span>
                   </div>
                 </SelectItem>
               ))}

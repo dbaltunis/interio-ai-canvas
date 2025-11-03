@@ -905,6 +905,8 @@ export const VisualMeasurementSheet = ({
                       measurements={measurements}
                       onChange={onMeasurementChange}
                       template={selectedTemplate}
+                      selectedEyeletRing={measurements.selected_eyelet_ring}
+                      onEyeletRingChange={(ringId) => onMeasurementChange('selected_eyelet_ring', ringId)}
                       onOptionPriceChange={(optionType, price, name) => {
                         console.log(`Option ${optionType} changed: ${name} - ${price}`);
                       }}
