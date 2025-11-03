@@ -523,44 +523,13 @@ export const HeadingInventoryManager = () => {
 
                     {formData.heading_type === 'eyelet' && (
                       <>
-                        <div>
-                          <Label htmlFor="eyelet_diameter">Eyelet Diameter (mm)</Label>
-                          <Input
-                            id="eyelet_diameter"
-                            type="number"
-                            step="1"
-                            value={formData.eyelet_diameter}
-                            onChange={(e) => setFormData({ ...formData, eyelet_diameter: parseFloat(e.target.value) || 0 })}
-                            placeholder="8"
-                          />
-                        </div>
-
-                        <div>
-                          <Label htmlFor="eyelet_color">Eyelet Color</Label>
-                          <Select 
-                            value={formData.eyelet_color} 
-                            onValueChange={(value) => setFormData({ ...formData, eyelet_color: value })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="antique-brass">Antique Brass</SelectItem>
-                              <SelectItem value="chrome">Chrome</SelectItem>
-                              <SelectItem value="black">Black</SelectItem>
-                              <SelectItem value="white">White</SelectItem>
-                              <SelectItem value="brushed-nickel">Brushed Nickel</SelectItem>
-                              <SelectItem value="bronze">Bronze</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
                         {/* Eyelet Rings Section */}
                         <div className="col-span-2">
                           <Label>Eyelet Rings</Label>
                           <EyeletRingSelector
                             selectedRings={eyeletRings}
                             onRingsChange={setEyeletRings}
+                            showLabel={false}
                           />
                           <p className="text-xs text-muted-foreground mt-1">
                             Select the eyelet ring options available for this heading

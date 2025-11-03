@@ -24,9 +24,10 @@ interface EyeletRingSelectorProps {
   onRingsChange?: (rings: EyeletRing[]) => void;
   onChange?: (rings: EyeletRing[]) => void;
   readOnly?: boolean;
+  showLabel?: boolean;
 }
 
-export const EyeletRingSelector = ({ selectedRings, onRingsChange, onChange, readOnly = false }: EyeletRingSelectorProps) => {
+export const EyeletRingSelector = ({ selectedRings, onRingsChange, onChange, readOnly = false, showLabel = true }: EyeletRingSelectorProps) => {
   const { data: predefinedRings = [] } = useEyeletRings();
   const { data: colors = [] } = useProductVariants('color');
   const { data: materials = [] } = useProductVariants('material');
@@ -88,8 +89,8 @@ export const EyeletRingSelector = ({ selectedRings, onRingsChange, onChange, rea
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <Label>Eyelet Rings</Label>
+      <div className={`flex items-center ${showLabel ? 'justify-between' : 'justify-end'}`}>
+        {showLabel && <Label>Eyelet Rings</Label>}
         {!readOnly && (
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>

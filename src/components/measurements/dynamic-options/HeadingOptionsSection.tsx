@@ -57,6 +57,15 @@ export const HeadingOptionsSection = ({
       return template.fullness_ratio;
     }
     
+    // Check inventory items first for multiple ratios
+    const selectedItem = inventory.find(item => item.id === selectedHeading);
+    if (selectedItem && selectedItem.metadata) {
+      const metadata = selectedItem.metadata as any;
+      if (metadata.use_multiple_ratios && metadata.multiple_fullness_ratios && metadata.multiple_fullness_ratios.length > 0) {
+        return metadata.multiple_fullness_ratios.join(' / ') + 'x';
+      }
+    }
+    
     const selectedHeadingOption = headingOptionsFromSettings.find(h => h.id === selectedHeading);
     if (selectedHeadingOption) {
       return selectedHeadingOption.fullness;
@@ -176,7 +185,7 @@ export const HeadingOptionsSection = ({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <div className="font-semibold text-card-foreground text-xs mb-1">Fullness</div>
-            <div className="text-primary font-bold text-sm">{getSelectedFullnessRatio()}x</div>
+            <div className="text-primary font-bold text-sm">{typeof getSelectedFullnessRatio() === 'string' ? getSelectedFullnessRatio() : `${getSelectedFullnessRatio()}x`}</div>
           </div>
           <div>
             <div className="font-semibold text-card-foreground text-xs mb-1">Type</div>
