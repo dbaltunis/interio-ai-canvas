@@ -243,8 +243,6 @@ export const HeadingInventoryManager = () => {
     } catch (e) {
       console.error('Failed to parse advanced settings:', e);
     }
-      multiple_fullness_ratios: [heading.fullness_ratio || 2.5]
-    };
 
     try {
       if (heading.description) {

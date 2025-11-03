@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import type { Json } from "@/integrations/supabase/types";
 
 export interface EnhancedInventoryItem {
   // Core fields (exact database column names)
@@ -64,6 +65,10 @@ export interface EnhancedInventoryItem {
   fullness_ratio?: number;
   service_rate?: number;
   treatment_type?: string;
+  
+  // Metadata (JSONB field)
+  metadata?: Json;
+  show_in_quote?: boolean;
   
   // Timestamps
   created_at: string;
@@ -132,7 +137,7 @@ export const useCreateEnhancedInventoryItem = () => {
         'hardware_finish','hardware_material','hardware_dimensions','hardware_weight','hardware_mounting_type','hardware_load_capacity',
         'price_per_yard','price_per_meter','price_per_unit','markup_percentage',
         'width','height','depth','weight','color','finish','collection_name','image_url',
-        'labor_hours','fullness_ratio','service_rate','treatment_type',
+        'labor_hours','fullness_ratio','service_rate','treatment_type','metadata','show_in_quote',
         'wallpaper_roll_width','wallpaper_roll_length','wallpaper_sold_by','wallpaper_unit_of_measure','wallpaper_match_type','wallpaper_horizontal_repeat','wallpaper_waste_factor','wallpaper_pattern_offset'
       ] as const;
 
