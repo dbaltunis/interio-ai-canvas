@@ -12,7 +12,7 @@ interface HeadingSelectorProps {
 
 export const HeadingSelector = ({ selectedHeading, onHeadingChange }: HeadingSelectorProps) => {
   const { data: headingOptions = [], isLoading } = useHeadingInventory();
-  const { getFabricUnitLabel } = useMeasurementUnits();
+  const { getFabricUnitLabel, units } = useMeasurementUnits();
 
   if (isLoading) {
     return (
@@ -34,20 +34,33 @@ export const HeadingSelector = ({ selectedHeading, onHeadingChange }: HeadingSel
           <SelectItem value="no-heading">No heading</SelectItem>
           {headingOptions.map((heading) => (
             <SelectItem key={heading.id} value={heading.id}>
-              <div className="flex items-center justify-between w-full">
-                <span>{heading.name}</span>
-                <div className="flex gap-2 ml-2">
-                  <Badge variant="outline" className="text-xs">
-                    {heading.fullness_ratio}x fullness
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    ${heading.selling_price}/{getFabricUnitLabel()}
-                  </Badge>
-                  {heading.category && heading.category !== 'heading' && (
-                    <Badge variant="secondary" className="text-xs">
-                      {heading.category}
-                    </Badge>
-                  )}
+              <div className="flex items-center gap-3 w-full">
+                {heading.image_url && (
+                  <img 
+                    src={heading.image_url} 
+                    alt={heading.name}
+                    className="w-10 h-10 object-cover rounded border border-border"
+                  />
+                )}
+                <div className="flex items-center justify-between flex-1 gap-2">
+                  <span>{heading.name}</span>
+                  <div className="flex gap-2 items-center">
+                    {heading.fullness_ratio && (
+                      <Badge variant="outline" className="text-xs">
+                        {heading.fullness_ratio}x
+                      </Badge>
+                    )}
+                    {(heading.price_per_meter || heading.selling_price) && (
+                      <Badge variant="secondary" className="text-xs">
+                        {units.currency} {(heading.price_per_meter || heading.selling_price).toFixed(2)}
+                      </Badge>
+                    )}
+                    {heading.category && heading.category !== 'heading' && (
+                      <Badge variant="outline" className="text-xs capitalize">
+                        {heading.category}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
             </SelectItem>
