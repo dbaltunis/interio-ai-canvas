@@ -19,8 +19,19 @@ export const BusinessSettingsTab = () => {
   const createBusinessSettings = useCreateBusinessSettings();
   const updateBusinessSettings = useUpdateBusinessSettings();
   const { toast } = useToast();
-  const [savedSuccessfully, setSavedSuccessfully] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  
+  // Separate editing states for each section
+  const [isEditingCompany, setIsEditingCompany] = useState(false);
+  const [isEditingContact, setIsEditingContact] = useState(false);
+  const [isEditingAddress, setIsEditingAddress] = useState(false);
+  const [isEditingAdvanced, setIsEditingAdvanced] = useState(false);
+  
+  // Separate saved successfully states for each section
+  const [companySavedSuccessfully, setCompanySavedSuccessfully] = useState(false);
+  const [contactSavedSuccessfully, setContactSavedSuccessfully] = useState(false);
+  const [addressSavedSuccessfully, setAddressSavedSuccessfully] = useState(false);
+  const [advancedSavedSuccessfully, setAdvancedSavedSuccessfully] = useState(false);
+  
   const [showSimpleLogoUpload, setShowSimpleLogoUpload] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const uploadFile = useUploadFile();
@@ -63,7 +74,12 @@ export const BusinessSettingsTab = () => {
   }, [businessSettings]);
 
   const handleInputChange = (field: string, value: string | boolean) => {
-    setSavedSuccessfully(false);
+    // Reset all saved states when making changes
+    setCompanySavedSuccessfully(false);
+    setContactSavedSuccessfully(false);
+    setAddressSavedSuccessfully(false);
+    setAdvancedSavedSuccessfully(false);
+    
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -113,7 +129,7 @@ export const BusinessSettingsTab = () => {
     }
   };
 
-  const handleSave = async () => {
+  const handleSaveSection = async (sectionName: 'company' | 'contact' | 'address' | 'advanced') => {
     try {
       let savedData;
       if (businessSettings?.id) {
@@ -143,17 +159,35 @@ export const BusinessSettingsTab = () => {
         });
       }
       
-      setSavedSuccessfully(true);
-      setIsEditing(false);
+      // Set the appropriate saved state and editing state
+      switch (sectionName) {
+        case 'company':
+          setCompanySavedSuccessfully(true);
+          setIsEditingCompany(false);
+          setTimeout(() => setCompanySavedSuccessfully(false), 3000);
+          break;
+        case 'contact':
+          setContactSavedSuccessfully(true);
+          setIsEditingContact(false);
+          setTimeout(() => setContactSavedSuccessfully(false), 3000);
+          break;
+        case 'address':
+          setAddressSavedSuccessfully(true);
+          setIsEditingAddress(false);
+          setTimeout(() => setAddressSavedSuccessfully(false), 3000);
+          break;
+        case 'advanced':
+          setAdvancedSavedSuccessfully(true);
+          setIsEditingAdvanced(false);
+          setTimeout(() => setAdvancedSavedSuccessfully(false), 3000);
+          break;
+      }
       
       toast({
         title: "Success",
         description: "Business settings saved successfully",
       });
-      
-      setTimeout(() => setSavedSuccessfully(false), 3000);
     } catch (error) {
-      setSavedSuccessfully(false);
       toast({
         title: "Error",
         description: "Failed to save business settings",
@@ -162,13 +196,28 @@ export const BusinessSettingsTab = () => {
     }
   };
 
-  const handleEdit = () => {
-    setIsEditing(true);
-    setSavedSuccessfully(false);
+  const handleEditSection = (sectionName: 'company' | 'contact' | 'address' | 'advanced') => {
+    switch (sectionName) {
+      case 'company':
+        setIsEditingCompany(true);
+        setCompanySavedSuccessfully(false);
+        break;
+      case 'contact':
+        setIsEditingContact(true);
+        setContactSavedSuccessfully(false);
+        break;
+      case 'address':
+        setIsEditingAddress(true);
+        setAddressSavedSuccessfully(false);
+        break;
+      case 'advanced':
+        setIsEditingAdvanced(true);
+        setAdvancedSavedSuccessfully(false);
+        break;
+    }
   };
 
-  const handleCancel = () => {
-    setIsEditing(false);
+  const handleCancelSection = (sectionName: 'company' | 'contact' | 'address' | 'advanced') => {
     // Reset form data to original values
     if (businessSettings) {
       setFormData({
@@ -186,6 +235,22 @@ export const BusinessSettingsTab = () => {
         allow_in_app_template_editing: businessSettings.allow_in_app_template_editing || false
       });
     }
+    
+    // Set the appropriate editing state to false
+    switch (sectionName) {
+      case 'company':
+        setIsEditingCompany(false);
+        break;
+      case 'contact':
+        setIsEditingContact(false);
+        break;
+      case 'address':
+        setIsEditingAddress(false);
+        break;
+      case 'advanced':
+        setIsEditingAdvanced(false);
+        break;
+    }
   };
 
   if (isLoading) {
@@ -199,12 +264,12 @@ export const BusinessSettingsTab = () => {
         title="Company Information"
         description="Manage your business details and company profile"
         icon={<Building2 className="h-5 w-5" />}
-        isEditing={isEditing}
-        onEdit={handleEdit}
-        onSave={handleSave}
-        onCancel={handleCancel}
+        isEditing={isEditingCompany}
+        onEdit={() => handleEditSection('company')}
+        onSave={() => handleSaveSection('company')}
+        onCancel={() => handleCancelSection('company')}
         isSaving={createBusinessSettings.isPending || updateBusinessSettings.isPending}
-        savedSuccessfully={savedSuccessfully}
+        savedSuccessfully={companySavedSuccessfully}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormFieldGroup label="Company Name" required>
@@ -212,7 +277,7 @@ export const BusinessSettingsTab = () => {
               value={formData.company_name}
               onChange={(e) => handleInputChange("company_name", e.target.value)}
               placeholder="Enter company name"
-              disabled={!isEditing}
+              disabled={!isEditingCompany}
             />
           </FormFieldGroup>
           
@@ -221,7 +286,7 @@ export const BusinessSettingsTab = () => {
               value={formData.abn}
               onChange={(e) => handleInputChange("abn", e.target.value)}
               placeholder="Enter ABN or Tax ID"
-              disabled={!isEditing}
+              disabled={!isEditingCompany}
             />
           </FormFieldGroup>
         </div>
@@ -234,7 +299,7 @@ export const BusinessSettingsTab = () => {
             value={formData.website}
             onChange={(e) => handleInputChange("website", e.target.value)}
             placeholder="https://www.example.com"
-            disabled={!isEditing}
+            disabled={!isEditingCompany}
           />
         </FormFieldGroup>
 
@@ -265,7 +330,7 @@ export const BusinessSettingsTab = () => {
                     <span className="text-xs text-muted-foreground">Ready for use in documents</span>
                   </div>
                 </div>
-                {isEditing && (
+                {isEditingCompany && (
                   <Button
                     type="button"
                     variant="outline"
@@ -287,7 +352,7 @@ export const BusinessSettingsTab = () => {
               type="button"
               variant="outline"
               onClick={() => setShowSimpleLogoUpload(true)}
-              disabled={!isEditing || uploadFile.isPending}
+              disabled={!isEditingCompany || uploadFile.isPending}
               className="w-full"
             >
               <Upload className="h-4 w-4 mr-2" />
@@ -302,10 +367,12 @@ export const BusinessSettingsTab = () => {
         title="Contact Information"
         description="Business contact details for customer communication"
         icon={<Mail className="h-5 w-5" />}
-        isEditing={isEditing}
-        onEdit={() => setIsEditing(true)}
-        onSave={handleSave}
-        onCancel={handleCancel}
+        isEditing={isEditingContact}
+        onEdit={() => handleEditSection('contact')}
+        onSave={() => handleSaveSection('contact')}
+        onCancel={() => handleCancelSection('contact')}
+        isSaving={createBusinessSettings.isPending || updateBusinessSettings.isPending}
+        savedSuccessfully={contactSavedSuccessfully}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormFieldGroup label="Business Email">
@@ -314,7 +381,7 @@ export const BusinessSettingsTab = () => {
               value={formData.business_email}
               onChange={(e) => handleInputChange("business_email", e.target.value)}
               placeholder="business@example.com"
-              disabled={!isEditing}
+              disabled={!isEditingContact}
             />
           </FormFieldGroup>
           
@@ -323,7 +390,7 @@ export const BusinessSettingsTab = () => {
               value={formData.business_phone}
               onChange={(e) => handleInputChange("business_phone", e.target.value)}
               placeholder="+61 2 1234 5678"
-              disabled={!isEditing}
+              disabled={!isEditingContact}
             />
           </FormFieldGroup>
         </div>
@@ -334,10 +401,12 @@ export const BusinessSettingsTab = () => {
         title="Business Address"
         description="Your business location and address details"
         icon={<MapPin className="h-5 w-5" />}
-        isEditing={isEditing}
-        onEdit={() => setIsEditing(true)}
-        onSave={handleSave}
-        onCancel={handleCancel}
+        isEditing={isEditingAddress}
+        onEdit={() => handleEditSection('address')}
+        onSave={() => handleSaveSection('address')}
+        onCancel={() => handleCancelSection('address')}
+        isSaving={createBusinessSettings.isPending || updateBusinessSettings.isPending}
+        savedSuccessfully={addressSavedSuccessfully}
       >
         <FormFieldGroup label="Street Address">
           <Textarea
@@ -345,7 +414,7 @@ export const BusinessSettingsTab = () => {
             onChange={(e) => handleInputChange("address", e.target.value)}
             placeholder="Enter street address"
             rows={2}
-            disabled={!isEditing}
+            disabled={!isEditingAddress}
           />
         </FormFieldGroup>
 
@@ -355,7 +424,7 @@ export const BusinessSettingsTab = () => {
               value={formData.city}
               onChange={(e) => handleInputChange("city", e.target.value)}
               placeholder="Enter city"
-              disabled={!isEditing}
+              disabled={!isEditingAddress}
             />
           </FormFieldGroup>
           
@@ -364,7 +433,7 @@ export const BusinessSettingsTab = () => {
               value={formData.state}
               onChange={(e) => handleInputChange("state", e.target.value)}
               placeholder="Enter state"
-              disabled={!isEditing}
+              disabled={!isEditingAddress}
             />
           </FormFieldGroup>
           
@@ -373,7 +442,7 @@ export const BusinessSettingsTab = () => {
               value={formData.zip_code}
               onChange={(e) => handleInputChange("zip_code", e.target.value)}
               placeholder="Enter zip code"
-              disabled={!isEditing}
+              disabled={!isEditingAddress}
             />
           </FormFieldGroup>
         </div>
@@ -383,7 +452,7 @@ export const BusinessSettingsTab = () => {
             value={formData.country}
             onChange={(e) => handleInputChange("country", e.target.value)}
             placeholder="Enter country"
-            disabled={!isEditing}
+            disabled={!isEditingAddress}
           />
         </FormFieldGroup>
       </FormSection>
@@ -394,10 +463,12 @@ export const BusinessSettingsTab = () => {
           title="Advanced Settings"
           description="Admin-only settings for controlling app features"
           icon={<Shield className="h-5 w-5" />}
-          isEditing={isEditing}
-          onEdit={() => setIsEditing(true)}
-          onSave={handleSave}
-          onCancel={handleCancel}
+          isEditing={isEditingAdvanced}
+          onEdit={() => handleEditSection('advanced')}
+          onSave={() => handleSaveSection('advanced')}
+          onCancel={() => handleCancelSection('advanced')}
+          isSaving={createBusinessSettings.isPending || updateBusinessSettings.isPending}
+          savedSuccessfully={advancedSavedSuccessfully}
         >
           <FormFieldGroup 
             label="Allow In-App Template Editing"
@@ -421,7 +492,7 @@ export const BusinessSettingsTab = () => {
               <Switch
                 checked={formData.allow_in_app_template_editing}
                 onCheckedChange={(checked) => handleInputChange("allow_in_app_template_editing", checked)}
-                disabled={!isEditing}
+                disabled={!isEditingAdvanced}
               />
             </div>
           </FormFieldGroup>
