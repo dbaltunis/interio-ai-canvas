@@ -267,6 +267,7 @@ export const BusinessSettingsTab = () => {
     <div className="space-y-6 max-w-4xl">
       {/* Company Information */}
       <FormSection
+        key="company-section"
         title="Company Information"
         description="Manage your business details and company profile"
         icon={<Building2 className="h-5 w-5" />}
@@ -370,6 +371,7 @@ export const BusinessSettingsTab = () => {
 
       {/* Contact Information */}
       <FormSection
+        key="contact-section"
         title="Contact Information"
         description="Business contact details for customer communication"
         icon={<Mail className="h-5 w-5" />}
@@ -404,6 +406,7 @@ export const BusinessSettingsTab = () => {
 
       {/* Business Address */}
       <FormSection
+        key="address-section"
         title="Business Address"
         description="Your business location and address details"
         icon={<MapPin className="h-5 w-5" />}
@@ -466,6 +469,7 @@ export const BusinessSettingsTab = () => {
       {/* Advanced Settings - Admin Only */}
       {isAdmin && (
         <FormSection
+          key="advanced-section"
           title="Advanced Settings"
           description="Admin-only settings for controlling app features"
           icon={<Shield className="h-5 w-5" />}
