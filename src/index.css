@@ -2,6 +2,8 @@
 @import './styles/tokens.css';
 /* Import custom theme */
 @import './styles/theme.css';
+/* Import animations */
+@import './styles/animations.css';
 
 @tailwind base;
 @tailwind components;

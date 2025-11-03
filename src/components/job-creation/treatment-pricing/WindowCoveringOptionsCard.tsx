@@ -5,6 +5,7 @@ import { HierarchicalOption } from "@/hooks/useWindowCoveringOptions";
 import { TraditionalOptions } from "./window-covering-options/TraditionalOptions";
 import { HierarchicalOptions } from "./window-covering-options/HierarchicalOptions";
 import { useHierarchicalSelections } from "./window-covering-options/useHierarchicalSelections";
+import { OptionCardSkeleton } from "@/components/shared/SkeletonLoader";
 
 interface WindowCoveringOptionsCardProps {
   options: any[];
@@ -32,9 +33,14 @@ export const WindowCoveringOptionsCard = ({
 
   if (optionsLoading) {
     return (
-      <Card>
-        <CardContent className="p-4">
-          <div className="text-center py-4">Loading window covering options...</div>
+      <Card className="animate-fade-in">
+        <CardHeader>
+          <CardTitle>Window Covering Options</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {[...Array(3)].map((_, i) => (
+            <OptionCardSkeleton key={i} />
+          ))}
         </CardContent>
       </Card>
     );
@@ -52,10 +58,10 @@ export const WindowCoveringOptionsCard = ({
   }
 
   return (
-    <Card>
+    <Card className="animate-fade-in">
       <CardHeader>
         <CardTitle>Window Covering Options</CardTitle>
-        <p className="text-sm text-gray-600">Available options for {windowCovering?.name}</p>
+        <p className="text-sm text-muted-foreground">Available options for {windowCovering?.name}</p>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Traditional Options */}

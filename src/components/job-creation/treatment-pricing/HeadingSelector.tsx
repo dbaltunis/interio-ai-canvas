@@ -16,25 +16,26 @@ export const HeadingSelector = ({ selectedHeading, onHeadingChange }: HeadingSel
 
   if (isLoading) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-2 animate-pulse">
         <Label>Heading Type</Label>
-        <div className="text-sm text-muted-foreground">Loading heading options...</div>
+        <div className="h-10 bg-muted rounded-md" />
+        <div className="h-4 w-3/4 bg-muted rounded" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 animate-fade-in">
       <Label htmlFor="heading">Heading Type</Label>
       <Select value={selectedHeading} onValueChange={onHeadingChange}>
-        <SelectTrigger>
+        <SelectTrigger className="transition-all duration-200 hover:border-primary/50">
           <SelectValue placeholder="Select heading type" />
         </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="no-heading">No heading</SelectItem>
+        <SelectContent className="max-h-[300px]">
+          <SelectItem value="no-heading" className="hover:bg-accent/50 transition-colors">No heading</SelectItem>
           {headingOptions.map((heading) => (
-            <SelectItem key={heading.id} value={heading.id}>
-              <div className="flex items-center gap-3 w-full">
+            <SelectItem key={heading.id} value={heading.id} className="hover:bg-accent/50 transition-colors">
+              <div className="flex items-center gap-3 w-full py-1">
                 {heading.image_url && (
                   <img 
                     src={heading.image_url} 

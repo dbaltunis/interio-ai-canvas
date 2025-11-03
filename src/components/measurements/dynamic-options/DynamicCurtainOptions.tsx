@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { HeadingSelectorSkeleton, FabricSelectorSkeleton } from "@/components/shared/SkeletonLoader";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -197,7 +198,7 @@ export const DynamicCurtainOptions = ({
     : headingOptions;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       {/* Validation Alert */}
       {(validation.errors.length > 0 || validation.warnings.length > 0) && (
         <ValidationAlert 
@@ -208,27 +209,27 @@ export const DynamicCurtainOptions = ({
 
       {/* Heading Selection */}
       {availableHeadings.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-2 stagger-item">
           <Label className="text-sm font-medium flex items-center gap-2">
             Heading Type
-            <Badge variant="secondary" className="text-xs">Required</Badge>
+            <Badge variant="destructive" className="text-xs">Required</Badge>
           </Label>
           <Select
             value={measurements.selected_heading || ''}
             onValueChange={handleHeadingChange}
             disabled={readOnly}
           >
-            <SelectTrigger className="bg-background border-input">
+            <SelectTrigger className="bg-background border-input transition-all duration-200 hover:border-primary/50">
               <SelectValue placeholder="Select heading type" />
             </SelectTrigger>
             <SelectContent 
-              className="bg-popover border-border z-50"
+              className="bg-popover border-border z-50 max-h-[300px]"
               position="popper"
               sideOffset={5}
             >
               {availableHeadings.map(heading => (
-                <SelectItem key={heading.id} value={heading.id}>
-                  <div className="flex items-center gap-3 w-full">
+                <SelectItem key={heading.id} value={heading.id} className="hover:bg-accent/50 transition-colors">
+                  <div className="flex items-center gap-3 w-full py-1">
                     {heading.image_url && (
                       <img 
                         src={heading.image_url} 
