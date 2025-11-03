@@ -270,10 +270,12 @@ export const VisualMeasurementSheet = ({
       const pooling = parseFloat(measurements.pooling_amount || "0");
       const fabricWidthCm = selectedFabricItem.fabric_width || 137;
       
-      const headerHem = selectedTemplate.header_allowance || 8;
-      const bottomHem = selectedTemplate.bottom_hem || 8;
-      const sideHems = selectedTemplate.side_hems || 0;
-      const seamHems = selectedTemplate.seam_hems || 0;
+      // ✅ FIX: Read hems from measurements (which get initialized from template)
+      const headerHem = parseFloat(enrichedMeasurements.header_hem as any) || 8;
+      const bottomHem = parseFloat(enrichedMeasurements.bottom_hem as any) || 8;
+      const sideHems = parseFloat(enrichedMeasurements.side_hem as any) || 0;
+      const seamHems = parseFloat(enrichedMeasurements.seam_hem as any) || 0;
+      // ✅ Returns should come from template (user confirmed this is correct)
       const returnLeft = selectedTemplate.return_left || 0;
       const returnRight = selectedTemplate.return_right || 0;
       
@@ -311,7 +313,8 @@ export const VisualMeasurementSheet = ({
         pricePerMeter: pricePerMeter,
         widthsRequired: result.widthsRequired || 1,
         railWidth: width,
-        fullnessRatio: selectedTemplate.fullness_ratio,
+        // ✅ FIX: Use dynamic heading_fullness from measurements instead of static template value
+        fullnessRatio: parseFloat(enrichedMeasurements.heading_fullness as any) || selectedTemplate.fullness_ratio || 2.0,
         drop: height,
         headerHem: headerHem,
         bottomHem: bottomHem,
