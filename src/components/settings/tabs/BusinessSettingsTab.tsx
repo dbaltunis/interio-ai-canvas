@@ -26,6 +26,9 @@ export const BusinessSettingsTab = () => {
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [isEditingAdvanced, setIsEditingAdvanced] = useState(false);
   
+  // Track which section is currently saving
+  const [savingSection, setSavingSection] = useState<'company' | 'contact' | 'address' | 'advanced' | null>(null);
+  
   // Separate saved successfully states for each section
   const [companySavedSuccessfully, setCompanySavedSuccessfully] = useState(false);
   const [contactSavedSuccessfully, setContactSavedSuccessfully] = useState(false);
@@ -130,6 +133,7 @@ export const BusinessSettingsTab = () => {
   };
 
   const handleSaveSection = async (sectionName: 'company' | 'contact' | 'address' | 'advanced') => {
+    setSavingSection(sectionName);
     try {
       let savedData;
       if (businessSettings?.id) {
@@ -193,6 +197,8 @@ export const BusinessSettingsTab = () => {
         description: "Failed to save business settings",
         variant: "destructive",
       });
+    } finally {
+      setSavingSection(null);
     }
   };
 
@@ -268,7 +274,7 @@ export const BusinessSettingsTab = () => {
         onEdit={() => handleEditSection('company')}
         onSave={() => handleSaveSection('company')}
         onCancel={() => handleCancelSection('company')}
-        isSaving={createBusinessSettings.isPending || updateBusinessSettings.isPending}
+        isSaving={savingSection === 'company'}
         savedSuccessfully={companySavedSuccessfully}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -371,7 +377,7 @@ export const BusinessSettingsTab = () => {
         onEdit={() => handleEditSection('contact')}
         onSave={() => handleSaveSection('contact')}
         onCancel={() => handleCancelSection('contact')}
-        isSaving={createBusinessSettings.isPending || updateBusinessSettings.isPending}
+        isSaving={savingSection === 'contact'}
         savedSuccessfully={contactSavedSuccessfully}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -405,7 +411,7 @@ export const BusinessSettingsTab = () => {
         onEdit={() => handleEditSection('address')}
         onSave={() => handleSaveSection('address')}
         onCancel={() => handleCancelSection('address')}
-        isSaving={createBusinessSettings.isPending || updateBusinessSettings.isPending}
+        isSaving={savingSection === 'address'}
         savedSuccessfully={addressSavedSuccessfully}
       >
         <FormFieldGroup label="Street Address">
@@ -467,7 +473,7 @@ export const BusinessSettingsTab = () => {
           onEdit={() => handleEditSection('advanced')}
           onSave={() => handleSaveSection('advanced')}
           onCancel={() => handleCancelSection('advanced')}
-          isSaving={createBusinessSettings.isPending || updateBusinessSettings.isPending}
+          isSaving={savingSection === 'advanced'}
           savedSuccessfully={advancedSavedSuccessfully}
         >
           <FormFieldGroup 
