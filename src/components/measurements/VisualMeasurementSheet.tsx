@@ -326,7 +326,23 @@ export const VisualMeasurementSheet = ({
       console.error('Error calculating fabric usage:', error);
     }
     return null;
-  }, [selectedFabric, measurements.rail_width, measurements.drop, measurements.curtain_type, measurements.fabric_rotated, selectedTemplate, inventory]);
+  }, [
+    selectedFabric, 
+    measurements.rail_width, 
+    measurements.drop, 
+    measurements.curtain_type, 
+    measurements.fabric_rotated,
+    measurements.selected_pricing_method, // ✅ ADD: Triggers recalc when pricing method changes
+    measurements.manufacturing_type, // ✅ ADD: Triggers recalc when manufacturing type changes
+    measurements.selected_heading, // ✅ ADD: Triggers recalc when heading changes
+    measurements.heading_fullness, // ✅ ADD: Triggers recalc when fullness changes
+    measurements.header_hem, // ✅ ADD: Triggers recalc when hems change
+    measurements.bottom_hem,
+    measurements.side_hem,
+    measurements.seam_hem,
+    selectedTemplate, 
+    inventory
+  ]);
 
   // Notify parent when fabric calculation changes
   useEffect(() => {

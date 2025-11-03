@@ -698,15 +698,61 @@ export const DynamicWindowWorksheet = forwardRef<{
             }
           }
 
-          // Calculate manufacturing cost (for curtains only - blinds already calculated)
+          // ✅ Calculate manufacturing cost dynamically using selected pricing method
           if (displayCategory === 'curtains' && selectedTemplate && fabricCalculation) {
-            const manufacturingType = selectedTemplate.manufacturing_type || 'machine';
-            const linearMetersForManufacturing = fabricCalculation.linearMeters || 0;
-            if (manufacturingType === 'machine') {
-              manufacturingCost = (selectedTemplate.machine_price_per_metre || 0) * linearMetersForManufacturing;
-            } else if (manufacturingType === 'hand') {
-              manufacturingCost = (selectedTemplate.hand_price_per_metre || 0) * linearMetersForManufacturing;
+            // Get the selected pricing method (from user's dropdown selection)
+            const selectedPricingMethod = measurements.selected_pricing_method 
+              ? selectedTemplate.pricing_methods?.find((m: any) => m.id === measurements.selected_pricing_method)
+              : selectedTemplate.pricing_methods?.[0]; // Default to first method
+            
+            const manufacturingType = measurements.manufacturing_type || selectedTemplate.manufacturing_type || 'machine';
+            const pricingType = selectedTemplate.pricing_type || selectedTemplate.makeup_pricing_method || 'per_metre';
+            
+            console.log('💰 [SAVE] Manufacturing cost calculation:', {
+              selectedPricingMethodId: measurements.selected_pricing_method,
+              selectedMethod: selectedPricingMethod?.name,
+              manufacturingType,
+              pricingType,
+              fabricCalc: {
+                linearMeters: fabricCalculation.linearMeters,
+                curtainCount: fabricCalculation.curtainCount,
+                widthsRequired: fabricCalculation.widthsRequired
+              }
+            });
+            
+            // Calculate using selected pricing method prices
+            let pricePerUnit = 0;
+            if (pricingType === 'per_panel') {
+              pricePerUnit = manufacturingType === 'hand' 
+                ? (selectedPricingMethod?.hand_price_per_panel ?? selectedTemplate.hand_price_per_panel ?? 0)
+                : (selectedPricingMethod?.machine_price_per_panel ?? selectedTemplate.machine_price_per_panel ?? 0);
+              manufacturingCost = pricePerUnit * (fabricCalculation.curtainCount || 1);
+            } else if (pricingType === 'per_drop') {
+              pricePerUnit = manufacturingType === 'hand'
+                ? (selectedPricingMethod?.hand_price_per_drop ?? selectedTemplate.hand_price_per_drop ?? 0)
+                : (selectedPricingMethod?.machine_price_per_drop ?? selectedTemplate.machine_price_per_drop ?? 0);
+              manufacturingCost = pricePerUnit * (fabricCalculation.widthsRequired || 1);
+            } else if (pricingType === 'per_metre') {
+              pricePerUnit = manufacturingType === 'hand'
+                ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
+                : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
+              manufacturingCost = pricePerUnit * (fabricCalculation.linearMeters || 0);
+            } else if (pricingType === 'height_based' && selectedPricingMethod?.height_price_ranges) {
+              const height = parseFloat(measurements.drop || '0');
+              const range = selectedPricingMethod.height_price_ranges.find((r: any) => 
+                height >= r.min_height && height <= r.max_height
+              );
+              if (range) {
+                pricePerUnit = manufacturingType === 'hand' ? range.hand_price : range.machine_price;
+                manufacturingCost = pricePerUnit * (fabricCalculation.curtainCount || fabricCalculation.widthsRequired || 1);
+              }
             }
+            
+            console.log('💰 [SAVE] Manufacturing cost result:', {
+              pricePerUnit,
+              quantity: pricingType === 'per_panel' ? fabricCalculation.curtainCount : pricingType === 'per_drop' ? fabricCalculation.widthsRequired : fabricCalculation.linearMeters,
+              manufacturingCost
+            });
           }
 
           // Calculate total cost 

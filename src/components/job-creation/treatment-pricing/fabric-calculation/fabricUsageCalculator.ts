@@ -41,6 +41,20 @@ export const calculateFabricUsage = (
   treatmentTypesData: any[],
   selectedFabricItem?: any
 ): FabricUsageResult => {
+  console.log('🔥 calculateFabricUsage CALLED with:', {
+    formData: {
+      rail_width: formData.rail_width,
+      drop: formData.drop,
+      selected_pricing_method: formData.selected_pricing_method,
+      manufacturing_type: formData.manufacturing_type,
+      fabric_rotated: formData.fabric_rotated,
+      heading_fullness: formData.heading_fullness,
+      selected_heading: formData.selected_heading
+    },
+    selectedFabricItem: selectedFabricItem?.name,
+    treatmentTemplatesCount: treatmentTypesData?.length
+  });
+  
   const railWidth = parseFloat(formData.rail_width) || 0;
   const drop = parseFloat(formData.drop) || 0;
   
