@@ -818,6 +818,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       selectedLining,
       unitsCurrency: units.currency,
       selectedOptions, // CRITICAL: Pass selectedOptions to calculate options cost
+      inventoryItems, // CRITICAL: Pass inventoryItems to look up heading prices
     });
     
     console.log('🔍 calculateTreatmentPricing returned (WHAT GETS SAVED):', {
@@ -1380,6 +1381,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                   selectedLining,
                   unitsCurrency: units.currency,
                   selectedOptions,
+                  inventoryItems, // CRITICAL: Pass inventoryItems to look up heading prices
                 });
 
                 console.log('💰 Passing calculated costs to display:', {

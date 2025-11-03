@@ -48,7 +48,9 @@ export const DynamicCurtainOptions = ({
   const handleHeadingChange = (headingId: string) => {
     const heading = headingOptions.find(h => h.id === headingId);
     if (heading && onOptionPriceChange) {
-      onOptionPriceChange('heading', heading.price_per_unit || 0, heading.name);
+      // Headings are stored in enhanced_inventory_items - use correct pricing fields
+      const headingPrice = heading.price_per_meter || heading.selling_price || 0;
+      onOptionPriceChange('heading', headingPrice, heading.name);
     }
     onChange('selected_heading', headingId);
   };
@@ -152,11 +154,11 @@ export const DynamicCurtainOptions = ({
                   <div className="flex items-center justify-between w-full gap-4">
                     <span>{heading.name}</span>
                     <div className="flex gap-2 text-xs text-muted-foreground">
-                      {(heading as any).fullness_multiplier && (
-                        <span>Fullness: {(heading as any).fullness_multiplier}x</span>
+                      {(heading as any).fullness_ratio && (
+                        <span>Fullness: {(heading as any).fullness_ratio}x</span>
                       )}
-                      {heading.price_per_unit > 0 && (
-                        <span>{formatCurrency(heading.price_per_unit)}</span>
+                      {(heading.price_per_meter || heading.selling_price) && (
+                        <span>{formatCurrency(heading.price_per_meter || heading.selling_price || 0)}</span>
                       )}
                     </div>
                   </div>

@@ -7,6 +7,7 @@ export interface TreatmentPricingInput {
   selectedLining?: string;
   unitsCurrency?: string; // e.g., 'GBP'
   selectedOptions?: Array<{ name: string; price: number }>; // CRITICAL: Add selected options
+  inventoryItems?: any[]; // CRITICAL: Add inventory items to look up heading prices
 }
 
 export interface TreatmentPricingResult {
@@ -31,7 +32,7 @@ export interface TreatmentPricingResult {
 }
 
 export const calculateTreatmentPricing = (input: TreatmentPricingInput): TreatmentPricingResult => {
-  const { template, measurements, fabricItem, selectedHeading, selectedLining, unitsCurrency, selectedOptions = [] } = input;
+  const { template, measurements, fabricItem, selectedHeading, selectedLining, unitsCurrency, selectedOptions = [], inventoryItems = [] } = input;
 
   console.log('🎯 calculateTreatmentPricing called with:', {
     template: template ? { id: template.id, name: template.name, pricing_type: template.pricing_type } : null,
@@ -183,14 +184,26 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   // Heading cost - calculate upcharge for heading
   let headingCost = 0;
   if (selectedHeading && selectedHeading !== 'none' && selectedHeading !== 'standard') {
-    // Template base heading upcharges
+    // First, try to get price from the heading item in inventory
+    const headingItem = inventoryItems.find(item => item.id === selectedHeading && item.category === 'heading');
+    if (headingItem) {
+      const headingPrice = headingItem.price_per_meter || headingItem.selling_price || 0;
+      if (headingPrice > 0) {
+        // Charge per meter of rail width
+        headingCost = headingPrice * (widthCm / 100); // Convert cm to m
+        console.log(`💰 Heading cost from inventory: ${headingPrice}/m × ${(widthCm / 100).toFixed(2)}m = ${headingCost.toFixed(2)}`);
+      }
+    }
+    
+    // Add template base heading upcharges if any
     if (template?.heading_upcharge_per_metre) {
       headingCost += template.heading_upcharge_per_metre * (widthCm / 100); // Convert cm to m
     }
     if (template?.heading_upcharge_per_curtain) {
       headingCost += template.heading_upcharge_per_curtain * curtainCount;
     }
-    console.log(`💰 Heading cost: ${headingCost.toFixed(2)}`);
+    
+    console.log(`💰 Total heading cost: ${headingCost.toFixed(2)}`);
   }
 
   const totalCost = fabricCost + liningCost + manufacturingCost + optionsCost + headingCost;
