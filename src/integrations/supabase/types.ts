@@ -6135,6 +6135,7 @@ export type Database = {
       }
       sms_campaigns: {
         Row: {
+          account_owner_id: string | null
           created_at: string
           failed_count: number | null
           id: string
@@ -6149,6 +6150,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_owner_id?: string | null
           created_at?: string
           failed_count?: number | null
           id?: string
@@ -6163,6 +6165,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_owner_id?: string | null
           created_at?: string
           failed_count?: number | null
           id?: string
@@ -6180,6 +6183,7 @@ export type Database = {
       }
       sms_contacts: {
         Row: {
+          account_owner_id: string | null
           client_id: string | null
           created_at: string
           id: string
@@ -6193,6 +6197,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_owner_id?: string | null
           client_id?: string | null
           created_at?: string
           id?: string
@@ -6206,6 +6211,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_owner_id?: string | null
           client_id?: string | null
           created_at?: string
           id?: string
@@ -6222,6 +6228,7 @@ export type Database = {
       }
       sms_delivery_logs: {
         Row: {
+          account_owner_id: string | null
           campaign_id: string | null
           contact_id: string | null
           created_at: string
@@ -6236,6 +6243,7 @@ export type Database = {
           template_id: string | null
         }
         Insert: {
+          account_owner_id?: string | null
           campaign_id?: string | null
           contact_id?: string | null
           created_at?: string
@@ -6250,6 +6258,7 @@ export type Database = {
           template_id?: string | null
         }
         Update: {
+          account_owner_id?: string | null
           campaign_id?: string | null
           contact_id?: string | null
           created_at?: string
@@ -6267,6 +6276,7 @@ export type Database = {
       }
       sms_templates: {
         Row: {
+          account_owner_id: string | null
           active: boolean | null
           created_at: string
           id: string
@@ -6278,6 +6288,7 @@ export type Database = {
           variables: Json | null
         }
         Insert: {
+          account_owner_id?: string | null
           active?: boolean | null
           created_at?: string
           id?: string
@@ -6289,6 +6300,7 @@ export type Database = {
           variables?: Json | null
         }
         Update: {
+          account_owner_id?: string | null
           active?: boolean | null
           created_at?: string
           id?: string
