@@ -68,7 +68,11 @@ export const DynamicCurtainOptions = ({
   };
 
   const handleHeadingChange = (headingId: string) => {
+    console.log('🔥🔥🔥 DROPDOWN FIRED: handleHeadingChange', { headingId });
+    
     const heading = headingOptions.find(h => h.id === headingId);
+    console.log('🔥🔥🔥 Found heading:', heading);
+    
     if (heading && onOptionPriceChange) {
       // Headings are stored in enhanced_inventory_items - use correct pricing fields
       const headingPrice = heading.price_per_meter || heading.selling_price || 0;
@@ -78,7 +82,7 @@ export const DynamicCurtainOptions = ({
     
     // ✅ FIX: Update heading fullness ratio when heading is selected
     if (heading && (heading as any).fullness_ratio) {
-      console.log('🎯 Setting heading fullness:', (heading as any).fullness_ratio);
+      console.log('🔥🔥🔥 Setting heading fullness:', (heading as any).fullness_ratio);
       onChange('heading_fullness', (heading as any).fullness_ratio);
     }
     
@@ -108,7 +112,11 @@ export const DynamicCurtainOptions = ({
   };
 
   const handleLiningChange = (liningType: string) => {
+    console.log('🔥🔥🔥 DROPDOWN FIRED: handleLiningChange', { liningType });
+    
     const lining = template?.lining_types?.find((l: any) => l.type === liningType);
+    console.log('🔥🔥🔥 Found lining:', lining);
+    
     if (lining && onOptionPriceChange) {
       const totalPrice = (lining.price_per_metre || 0) + (lining.labour_per_curtain || 0);
       onOptionPriceChange('lining', totalPrice, lining.type);
@@ -123,7 +131,11 @@ export const DynamicCurtainOptions = ({
   };
 
   const handlePricingMethodChange = (methodId: string) => {
+    console.log('🔥🔥🔥 DROPDOWN FIRED: handlePricingMethodChange', { methodId });
+    
     const method = template?.pricing_methods?.find((m: any) => m.id === methodId);
+    console.log('🔥🔥🔥 Found pricing method:', method);
+    
     if (method) {
       onChange('selected_pricing_method', methodId);
       // Update pricing type in measurements
@@ -132,6 +144,7 @@ export const DynamicCurtainOptions = ({
   };
 
   const handleManufacturingTypeChange = (type: 'machine' | 'hand') => {
+    console.log('🔥🔥🔥 DROPDOWN FIRED: handleManufacturingTypeChange', { type });
     onChange('manufacturing_type', type);
     console.log('🏭 Manufacturing type changed to:', type);
   };

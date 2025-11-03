@@ -1160,13 +1160,19 @@ export const DynamicWindowWorksheet = forwardRef<{
     }
   }));
   const handleMeasurementChange = (field: string, value: string) => {
+    console.log('🔥🔥🔥 LEVEL 1: handleMeasurementChange called:', { field, value });
+    
     // PHASE 4: Mark that user is actively editing to prevent data reloads
     isUserEditing.current = true;
     
-    setMeasurements(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setMeasurements(prev => {
+      const newMeasurements = {
+        ...prev,
+        [field]: value
+      };
+      console.log('🔥🔥🔥 LEVEL 2: State updated:', { field, oldValue: prev[field], newValue: value, fullState: newMeasurements });
+      return newMeasurements;
+    });
     
     // Reset the editing flag after a short delay (user stopped typing)
     setTimeout(() => {

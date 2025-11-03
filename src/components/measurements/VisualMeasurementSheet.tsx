@@ -95,8 +95,10 @@ export const VisualMeasurementSheet = ({
   }
   const handleInputChange = (field: string, value: string) => {
     if (!readOnly) {
-      console.log(`🔧 VisualMeasurementSheet: Changing ${field} to:`, value);
+      console.log(`🔥🔥🔥 LEVEL 0: VisualMeasurementSheet handleInputChange:`, { field, value });
       onMeasurementChange(field, value);
+    } else {
+      console.log(`⚠️ VisualMeasurementSheet: Ignored change (readOnly):`, { field, value });
     }
   };
 
@@ -181,7 +183,21 @@ export const VisualMeasurementSheet = ({
 
   // Calculate fabric usage when measurements and fabric change
   const fabricCalculation = useMemo(() => {
+    console.log('🔥🔥🔥 LEVEL 3: fabricCalculation useMemo TRIGGERED', {
+      selectedFabric,
+      rail_width: measurements.rail_width,
+      drop: measurements.drop,
+      curtain_type: measurements.curtain_type,
+      fabric_rotated: measurements.fabric_rotated,
+      selected_pricing_method: measurements.selected_pricing_method,
+      manufacturing_type: measurements.manufacturing_type,
+      selected_heading: measurements.selected_heading,
+      heading_fullness: measurements.heading_fullness,
+      selected_lining: measurements.selected_lining,
+    });
+    
     if (!selectedFabric || !measurements.rail_width || !measurements.drop || !selectedTemplate) {
+      console.log('⚠️ LEVEL 3: Missing required data for fabric calculation');
       return null;
     }
     const selectedFabricItem = inventory.find(item => item.id === selectedFabric);
