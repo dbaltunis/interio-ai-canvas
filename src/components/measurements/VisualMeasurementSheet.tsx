@@ -189,11 +189,63 @@ export const VisualMeasurementSheet = ({
       return null;
     }
     try {
+      // ✅ FIX: Enrich measurements with template settings and selected fabric data
+      const enrichedMeasurements = {
+        ...measurements,
+        treatment_type_id: selectedTemplate.id,
+        // Add template hems if not in measurements
+        header_hem: measurements.header_hem || selectedTemplate.header_allowance || selectedTemplate.header_hem,
+        bottom_hem: measurements.bottom_hem || selectedTemplate.bottom_hem || selectedTemplate.bottom_allowance,
+        side_hem: measurements.side_hem || selectedTemplate.side_hem || selectedTemplate.side_hems,
+        seam_hem: measurements.seam_hem || selectedTemplate.seam_allowance,
+        // Add fabric properties
+        fabric_width: selectedFabricItem.fabric_width,
+        // Add pattern repeats from selected fabric
+        pattern_repeat_vertical: selectedFabricItem.pattern_repeat_vertical,
+        pattern_repeat_horizontal: selectedFabricItem.pattern_repeat_horizontal,
+        // ✅ FIX: Add fullness from selected heading if available
+        heading_fullness: measurements.heading_fullness || selectedTemplate.default_fullness,
+        selected_heading: measurements.selected_heading,
+        // Fabric rotation setting
+        fabric_rotated: measurements.fabric_rotated === true || measurements.fabric_rotated === 'true',
+      };
+      
+      // ✅ FIX: Pass heading inventory so calculator can look up fullness_ratio
+      const headingInventory = inventory.filter(item => 
+        item.category === 'heading' || 
+        item.subcategory === 'heading' ||
+        item.category === 'hardware' // Some headings might be in hardware category
+      );
+      
+      const fabricItemWithHeadings = {
+        ...selectedFabricItem,
+        headingOptions: headingInventory
+      };
+      
+      console.log('🎯 Enriched measurements before calculation:', {
+        original: measurements,
+        enriched: enrichedMeasurements,
+        selectedFabric: selectedFabricItem.name,
+        selectedHeading: measurements.selected_heading,
+        headingInventoryCount: headingInventory.length,
+        headingSample: headingInventory[0],
+        templateHems: {
+          header: selectedTemplate.header_allowance,
+          bottom: selectedTemplate.bottom_hem,
+          side: selectedTemplate.side_hem
+        },
+        fabricWidth: selectedFabricItem.fabric_width,
+        patternRepeats: {
+          vertical: selectedFabricItem.pattern_repeat_vertical,
+          horizontal: selectedFabricItem.pattern_repeat_horizontal
+        }
+      });
+      
       // Use the unified calculateFabricUsage function that handles both curtains AND blinds
       const result = calculateFabricUsage(
-        measurements,
+        enrichedMeasurements,
         [selectedTemplate],
-        selectedFabricItem
+        fabricItemWithHeadings
       );
 
       // Transform the result to match the expected format for display

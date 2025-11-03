@@ -43,12 +43,48 @@ export const calculateFabricUsage = (
 ): FabricUsageResult => {
   const railWidth = parseFloat(formData.rail_width) || 0;
   const drop = parseFloat(formData.drop) || 0;
-  const fullness = parseFloat(formData.heading_fullness) || 2.5;
   
   // Get the treatment template
   const selectedTemplate = treatmentTypesData.find(
     (t) => t.id === formData.treatment_type_id
   );
+  
+  // ✅ FIX: Get fullness from selected heading or template, NOT hardcoded
+  let fullness = 2.5; // Default fallback only
+  
+  // Priority 1: Use heading's fullness ratio if selected
+  if (formData.selected_heading) {
+    // Check if headingOptions are passed via selectedFabricItem (from VisualMeasurementSheet)
+    if (selectedFabricItem?.headingOptions) {
+      const selectedHeading = selectedFabricItem.headingOptions.find((h: any) => h.id === formData.selected_heading);
+      // Check both fullness_ratio and fullness fields
+      const headingFullness = selectedHeading?.fullness_ratio || selectedHeading?.fullness;
+      if (headingFullness) {
+        fullness = parseFloat(headingFullness);
+      }
+    }
+  }
+  
+  // Priority 2: Use form data if provided
+  if (formData.heading_fullness && parseFloat(formData.heading_fullness) !== 2.5) {
+    fullness = parseFloat(formData.heading_fullness);
+  }
+  
+  // Priority 3: Use template's default fullness or fullness_ratio
+  if (selectedTemplate && fullness === 2.5) {
+    const templateFullness = selectedTemplate.default_fullness || selectedTemplate.fullness_ratio;
+    if (templateFullness) {
+      fullness = parseFloat(templateFullness);
+    }
+  }
+  
+  console.log('🎯 Fullness calculation:', {
+    formDataFullness: formData.heading_fullness,
+    selectedHeading: formData.selected_heading,
+    templateFullness: selectedTemplate?.default_fullness || selectedTemplate?.fullness_ratio,
+    headingOptionsAvailable: selectedFabricItem?.headingOptions?.length,
+    finalFullness: fullness
+  });
   
   // Check if this is a blind - use square meter calculation
   if (selectedTemplate && isBlind(selectedTemplate.treatment_category)) {
@@ -83,10 +119,18 @@ export const calculateFabricUsage = (
       widthsRequired: 1,
     };
   }
-  const fw1 = parseFloat(formData.fabric_width);
-  const fw2 = parseFloat(selectedFabricItem?.fabric_width);
-  const fw3 = parseFloat(selectedFabricItem?.fabric_width_cm);
-  const fabricWidth = Number.isFinite(fw1) && fw1 > 0 ? fw1 : Number.isFinite(fw2) && fw2 > 0 ? fw2 : Number.isFinite(fw3) && fw3 > 0 ? fw3 : 0;
+  // ✅ FIX: Get fabric width from selected fabric item FIRST, then form data
+  const selectedFabricWidth = selectedFabricItem?.fabric_width || selectedFabricItem?.fabric_width_cm || 0;
+  const formFabricWidth = parseFloat(formData.fabric_width) || 0;
+  const fabricWidth = selectedFabricWidth > 0 ? selectedFabricWidth : formFabricWidth;
+  
+  console.log('🎯 Fabric width calculation:', {
+    selectedFabricWidth,
+    formFabricWidth,
+    finalFabricWidth: fabricWidth,
+    selectedFabricItem: selectedFabricItem?.name
+  });
+  
   const quantity = formData.quantity || 1;
   const pooling = parseFloat(formData.pooling) || 0;
 
@@ -107,16 +151,50 @@ export const calculateFabricUsage = (
     fabricType.includes('paisley')
   );
 
-  const headerHem = parseFloat(formData.header_hem) || 15;
-  const bottomHem = parseFloat(formData.bottom_hem) || 10;
-  const sideHem = parseFloat(formData.side_hem) || 5;
-  const seamHem = parseFloat(formData.seam_hem) || 3;
-  const verticalPatternRepeatCm = parseFloat(
-    (formData.vertical_pattern_repeat_cm ?? formData.vertical_pattern_repeat ?? formData.pattern_repeat_vertical_cm ?? formData.pattern_repeat_vertical ?? formData.vertical_repeat_cm ?? formData.vertical_repeat) as any
-  ) || 0;
-  const horizontalPatternRepeatCm = parseFloat(
-    (formData.horizontal_pattern_repeat_cm ?? formData.horizontal_pattern_repeat ?? formData.pattern_repeat_horizontal_cm ?? formData.pattern_repeat_horizontal ?? formData.horizontal_repeat_cm ?? formData.horizontal_repeat) as any
-  ) || 0;
+  // ✅ FIX: Get hems from template FIRST, then form data, then fallback
+  const headerHem = parseFloat(formData.header_hem) || 
+                   parseFloat(selectedTemplate?.header_allowance) || 
+                   parseFloat(selectedTemplate?.header_hem) || 
+                   15; // Last resort fallback
+  
+  const bottomHem = parseFloat(formData.bottom_hem) || 
+                   parseFloat(selectedTemplate?.bottom_hem) || 
+                   parseFloat(selectedTemplate?.bottom_allowance) || 
+                   10; // Last resort fallback
+  
+  const sideHem = parseFloat(formData.side_hem) || 
+                 parseFloat(selectedTemplate?.side_hem) || 
+                 5; // Last resort fallback
+  
+  const seamHem = parseFloat(formData.seam_hem) || 
+                 parseFloat(selectedTemplate?.seam_allowance) || 
+                 3; // Last resort fallback
+  
+  console.log('🎯 Hem calculations:', {
+    headerHem: { form: formData.header_hem, template: selectedTemplate?.header_allowance, final: headerHem },
+    bottomHem: { form: formData.bottom_hem, template: selectedTemplate?.bottom_hem, final: bottomHem },
+    sideHem: { form: formData.side_hem, template: selectedTemplate?.side_hem, final: sideHem },
+    seamHem: { form: formData.seam_hem, template: selectedTemplate?.seam_allowance, final: seamHem }
+  });
+  
+  // ✅ FIX: Get pattern repeats from selected fabric FIRST, then form data
+  const verticalPatternRepeatCm = parseFloat(selectedFabricItem?.pattern_repeat_vertical) ||
+    parseFloat(formData.vertical_pattern_repeat_cm) || 
+    parseFloat(formData.pattern_repeat_vertical) || 
+    0;
+  
+  const horizontalPatternRepeatCm = parseFloat(selectedFabricItem?.pattern_repeat_horizontal) ||
+    parseFloat(formData.horizontal_pattern_repeat_cm) || 
+    parseFloat(formData.pattern_repeat_horizontal) || 
+    0;
+  
+  console.log('🎯 Pattern repeat calculations:', {
+    selectedFabricVertical: selectedFabricItem?.pattern_repeat_vertical,
+    selectedFabricHorizontal: selectedFabricItem?.pattern_repeat_horizontal,
+    finalVertical: verticalPatternRepeatCm,
+    finalHorizontal: horizontalPatternRepeatCm
+  });
+  
   const returnLeft = parseFloat(formData.return_left) || 0;
   const returnRight = parseFloat(formData.return_right) || 0;
 
@@ -175,8 +253,16 @@ export const calculateFabricUsage = (
   const horizontalCalc = calculateOrientation('horizontal', params, fabricCostPerYard, laborRate);
   const verticalCalc = calculateOrientation('vertical', params, fabricCostPerYard, laborRate);
 
-  // Smart roll direction selection
-  let rollDirection = formData.roll_direction || 'auto';
+  // Smart roll direction selection based on user selection or auto-detect
+  let rollDirection = formData.roll_direction || formData.fabric_rotated || 'auto';
+  
+  // ✅ FIX: Handle fabric_rotated boolean/string properly
+  if (formData.fabric_rotated === true || formData.fabric_rotated === 'true') {
+    rollDirection = 'horizontal';
+  } else if (formData.fabric_rotated === false || formData.fabric_rotated === 'false') {
+    rollDirection = 'vertical';
+  }
+  
   if (rollDirection === 'auto') {
     // Auto-suggest based on fabric properties
     const isNarrowFabric = fabricWidth <= 200;
@@ -191,6 +277,14 @@ export const calculateFabricUsage = (
       rollDirection = 'horizontal'; // Standard for wide fabrics
     }
   }
+  
+  console.log('🎯 Fabric rotation/roll direction:', {
+    formDataRotated: formData.fabric_rotated,
+    formDataRollDirection: formData.roll_direction,
+    finalRollDirection: rollDirection,
+    fabricWidth,
+    drop
+  });
   
   // Use the determined or selected orientation
   const currentOrientation = rollDirection === 'vertical' ? 'vertical' : 'horizontal';
