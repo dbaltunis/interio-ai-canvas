@@ -1214,6 +1214,26 @@ export const DynamicWindowWorksheet = forwardRef<{
     const category = template?.treatment_category || 'curtains';
     setSelectedTreatmentType(category === 'wallpaper' ? 'wallpaper' : category);
     setTreatmentCategory(category);
+    
+    // ✅ FIX: Initialize measurements with template defaults (hem allowances, fullness, etc.)
+    setMeasurements(prev => ({
+      ...prev,
+      // Only set if not already set by user
+      header_hem: prev.header_hem || template.header_allowance || template.header_hem || 8,
+      bottom_hem: prev.bottom_hem || template.bottom_hem || template.bottom_allowance || 15,
+      side_hem: prev.side_hem || template.side_hem || template.side_hems || 7.5,
+      seam_hem: prev.seam_hem || template.seam_allowance || template.seam_hems || 1.5,
+      heading_fullness: prev.heading_fullness || template.default_fullness || template.fullness_ratio || 2.0,
+    }));
+    
+    console.log('🎯 Template selected - initialized defaults:', {
+      template: template.name,
+      header_hem: template.header_allowance || template.header_hem,
+      bottom_hem: template.bottom_hem || template.bottom_allowance,
+      side_hem: template.side_hem || template.side_hems,
+      seam_hem: template.seam_allowance || template.seam_hems,
+      fullness: template.default_fullness || template.fullness_ratio
+    });
   };
   const canProceedToMeasurements = selectedWindowType && (selectedTemplate || selectedTreatmentType);
   const canShowPreview = canProceedToMeasurements && Object.keys(measurements).length > 0;

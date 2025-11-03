@@ -76,6 +76,12 @@ export const DynamicCurtainOptions = ({
     }
     onChange('selected_heading', headingId);
     
+    // ✅ FIX: Update heading fullness ratio when heading is selected
+    if (heading && (heading as any).fullness_ratio) {
+      console.log('🎯 Setting heading fullness:', (heading as any).fullness_ratio);
+      onChange('heading_fullness', (heading as any).fullness_ratio);
+    }
+    
     // Check for eyelet rings
     if (heading && heading.metadata) {
       const metadata = heading.metadata as any;
@@ -108,6 +114,12 @@ export const DynamicCurtainOptions = ({
       onOptionPriceChange('lining', totalPrice, lining.type);
     }
     onChange('selected_lining', liningType);
+    
+    console.log('🧵 Lining changed:', {
+      type: liningType,
+      found: !!lining,
+      price: lining ? (lining.price_per_metre || 0) + (lining.labour_per_curtain || 0) : 0
+    });
   };
 
   const handlePricingMethodChange = (methodId: string) => {

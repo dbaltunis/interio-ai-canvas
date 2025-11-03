@@ -336,6 +336,7 @@ export const VisualMeasurementSheet = ({
     measurements.manufacturing_type, // ✅ ADD: Triggers recalc when manufacturing type changes
     measurements.selected_heading, // ✅ ADD: Triggers recalc when heading changes
     measurements.heading_fullness, // ✅ ADD: Triggers recalc when fullness changes
+    measurements.selected_lining, // ✅ ADD: Triggers recalc when lining changes
     measurements.header_hem, // ✅ ADD: Triggers recalc when hems change
     measurements.bottom_hem,
     measurements.side_hem,
