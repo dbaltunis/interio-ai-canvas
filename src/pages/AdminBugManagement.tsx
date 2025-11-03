@@ -44,7 +44,6 @@ interface BugReport {
   updated_at: string;
   profiles?: {
     email: string;
-    full_name: string | null;
   };
 }
 
@@ -94,14 +93,14 @@ export default function AdminBugManagement() {
       const userIds = [...new Set(bugsData?.map(b => b.user_id))];
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, email, full_name")
+        .select("id, email")
         .in("id", userIds);
 
       const profileMap = new Map(profiles?.map(p => [p.id, p]));
 
       return bugsData?.map(bug => ({
         ...bug,
-        profiles: profileMap.get(bug.user_id) || { email: "Unknown", full_name: null }
+        profiles: profileMap.get(bug.user_id) || { email: "Unknown" }
       })) as BugReport[];
     },
   });
