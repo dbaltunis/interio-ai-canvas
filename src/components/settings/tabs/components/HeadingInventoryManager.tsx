@@ -187,7 +187,7 @@ export const HeadingInventoryManager = () => {
         labor_hours: formData.extra_fabric,
         price_per_meter: formData.price_per_linear_unit,
         image_url: formData.image_url,
-        description: JSON.stringify(advancedSettings), // Store advanced settings in description as JSON
+        metadata: advancedSettings, // Store advanced settings in metadata field
         category: 'heading' as const,
         treatment_type: formData.treatment_type,
         quantity: 1,
@@ -221,13 +221,28 @@ export const HeadingInventoryManager = () => {
   };
 
   const handleEdit = (heading: HeadingItem) => {
-    // Parse advanced settings from description
+    // Parse advanced settings from metadata field
     let advancedSettings = {
       heading_type: 'standard' as 'standard' | 'wave' | 'eyelet',
       spacing: 10,
       eyelet_diameter: 8,
       eyelet_color: 'antique-brass',
       use_multiple_ratios: false,
+      multiple_fullness_ratios: [heading.fullness_ratio || 2.5]
+    };
+
+    // Try to parse from metadata field first, then fall back to description for legacy data
+    try {
+      if (heading.metadata && typeof heading.metadata === 'object' && Object.keys(heading.metadata).length > 0) {
+        advancedSettings = { ...advancedSettings, ...(heading.metadata as any) };
+      } else if (heading.description && heading.description.startsWith('{')) {
+        // Legacy: parse from description field
+        const parsed = JSON.parse(heading.description);
+        advancedSettings = { ...advancedSettings, ...parsed };
+      }
+    } catch (e) {
+      console.error('Failed to parse advanced settings:', e);
+    }
       multiple_fullness_ratios: [heading.fullness_ratio || 2.5]
     };
 

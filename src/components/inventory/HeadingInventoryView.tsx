@@ -105,7 +105,7 @@ export const HeadingInventoryView = ({ searchQuery, viewMode }: HeadingInventory
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <CardTitle className="text-base">{item.name || 'Unnamed Heading'}</CardTitle>
-                    {item.description && (
+                    {item.description && !item.description.startsWith('{') && (
                       <CardDescription className="text-xs mt-1 line-clamp-2">
                         {item.description}
                       </CardDescription>
