@@ -128,10 +128,10 @@ const App = () => {
               <ThemeDarkSync />
               <InteractionUnlockGuard />
               <Toaster />
-              <BugReportDialog />
               <BrowserRouter>
                 <NavObserver />
                 <AuthProvider>
+                  <BugReportDialog />
                   <Routes>
                 {/* Public booking routes */}
                 <Route path="/book/:slug" element={
