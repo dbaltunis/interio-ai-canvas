@@ -1,4 +1,5 @@
 import { useUserRole } from "@/hooks/useUserRole";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Shield, CreditCard, Package, TrendingUp } from "lucide-react";
@@ -6,8 +7,11 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
 export const Billing = () => {
-  const { data: userRole, isLoading } = useUserRole();
+  const { data: userRole, isLoading: roleLoading } = useUserRole();
+  const hasBillingPermission = useHasPermission('view_billing');
   const navigate = useNavigate();
+  
+  const isLoading = roleLoading || hasBillingPermission === undefined;
 
   if (isLoading) {
     return (
@@ -17,23 +21,23 @@ export const Billing = () => {
     );
   }
 
-  if (!userRole?.isOwner) {
+  if (!hasBillingPermission) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="max-w-md">
           <CardHeader>
             <div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-500 mb-2">
               <Shield className="h-5 w-5" />
-              <CardTitle>Owner Access Required</CardTitle>
+              <CardTitle>Access Restricted</CardTitle>
             </div>
             <CardDescription>
-              Only the account owner can access billing settings
+              Only account owners and authorized administrators can access billing settings
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Alert>
               <AlertDescription>
-                If you need to update billing information or manage subscriptions, please contact your account owner.
+                If you need to view billing information or manage subscriptions, please contact your account owner to grant you the appropriate permissions.
               </AlertDescription>
             </Alert>
             <Button onClick={() => navigate(-1)} className="w-full">
