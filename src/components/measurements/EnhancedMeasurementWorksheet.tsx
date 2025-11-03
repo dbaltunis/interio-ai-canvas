@@ -215,6 +215,9 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     safeExistingMeasurement?.measurements?.selected_fabric || 
     ""
   );
+  const [selectedEyeletRing, setSelectedEyeletRing] = useState(() => 
+    safeExistingTreatments?.[0]?.selected_eyelet_ring || ""
+  );
   
   // Track selected options with prices from window covering settings - load from saved data if available
   const [selectedOptions, setSelectedOptions] = useState<Array<{ name: string; price: number }>>(() => {
@@ -1298,6 +1301,11 @@ export const EnhancedMeasurementWorksheet = forwardRef<
             onHeadingChange={(headingId) => {
               setSelectedHeading(headingId);
               handleMeasurementChange('selected_heading', headingId);
+            }}
+            selectedEyeletRing={selectedEyeletRing}
+            onEyeletRingChange={(ringId) => {
+              setSelectedEyeletRing(ringId);
+              handleMeasurementChange('selected_eyelet_ring', ringId);
             }}
             selectedOptions={selectedOptions}
             onSelectedOptionsChange={setSelectedOptions}

@@ -36,6 +36,8 @@ interface VisualMeasurementSheetProps {
   onLiningChange?: (liningType: string) => void;
   selectedHeading?: string;
   onHeadingChange?: (headingId: string) => void;
+  selectedEyeletRing?: string;
+  onEyeletRingChange?: (ringId: string) => void;
   onFabricCalculationChange?: (calculation: any) => void;
   treatmentCategory?: import("@/utils/treatmentTypeDetection").TreatmentCategory;
   selectedOptions?: Array<{
@@ -59,6 +61,8 @@ export const VisualMeasurementSheet = ({
   onLiningChange,
   selectedHeading,
   onHeadingChange,
+  selectedEyeletRing,
+  onEyeletRingChange,
   onFabricCalculationChange,
   treatmentCategory = 'curtains' as import("@/utils/treatmentTypeDetection").TreatmentCategory,
   selectedOptions = [],

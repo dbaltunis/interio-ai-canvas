@@ -10,6 +10,8 @@ import { useEnhancedInventoryByCategory, useCreateEnhancedInventoryItem, useUpda
 import type { EnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { EyeletRingSelector, type EyeletRing } from "@/components/inventory/EyeletRingSelector";
+import { useEyeletRings } from "@/hooks/useEyeletRings";
 
 // Extended type to include image_url and advanced settings
 interface HeadingItem extends EnhancedInventoryItem {
@@ -26,6 +28,7 @@ interface HeadingItem extends EnhancedInventoryItem {
 
 export const HeadingInventoryManager = () => {
   const { data: headingsData = [], isLoading } = useEnhancedInventoryByCategory('heading');
+  const { data: allEyeletRings = [] } = useEyeletRings();
   const createItem = useCreateEnhancedInventoryItem();
   const updateItem = useUpdateEnhancedInventoryItem();
   const deleteItem = useDeleteEnhancedInventoryItem();
@@ -38,6 +41,7 @@ export const HeadingInventoryManager = () => {
   const [editingHeading, setEditingHeading] = useState<HeadingItem | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [eyeletRings, setEyeletRings] = useState<EyeletRing[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     fullness_ratio: 2.5,
@@ -69,6 +73,7 @@ export const HeadingInventoryManager = () => {
       use_multiple_ratios: false,
       multiple_fullness_ratios: [2.5],
     });
+    setEyeletRings([]);
     setShowAdvanced(false);
   };
 
@@ -187,12 +192,16 @@ export const HeadingInventoryManager = () => {
         labor_hours: formData.extra_fabric,
         price_per_meter: formData.price_per_linear_unit,
         image_url: formData.image_url,
-        metadata: advancedSettings, // Store advanced settings in metadata field
+        metadata: {
+          ...advancedSettings,
+          eyelet_rings: eyeletRings // Save full ring objects in metadata
+        },
+        eyelet_ring_ids: eyeletRings.map(r => r.id), // Save ring IDs for querying
         category: 'heading' as const,
         treatment_type: formData.treatment_type,
         quantity: 1,
         active: true
-      };
+      } as any;
 
       if (editingHeading) {
         await updateItem.mutateAsync({ id: editingHeading.id, ...itemData });
@@ -235,6 +244,17 @@ export const HeadingInventoryManager = () => {
     try {
       if (heading.metadata && typeof heading.metadata === 'object' && Object.keys(heading.metadata).length > 0) {
         advancedSettings = { ...advancedSettings, ...(heading.metadata as any) };
+        
+        // Load eyelet rings if present in metadata
+        if ((heading.metadata as any).eyelet_rings) {
+          setEyeletRings((heading.metadata as any).eyelet_rings);
+        } else if ((heading as any).eyelet_ring_ids && Array.isArray((heading as any).eyelet_ring_ids)) {
+          // Convert IDs to full objects
+          const ringObjects = allEyeletRings.filter(ring => 
+            (heading as any).eyelet_ring_ids.includes(ring.id)
+          );
+          setEyeletRings(ringObjects);
+        }
       } else if (heading.description && heading.description.startsWith('{')) {
         // Legacy: parse from description field
         const parsed = JSON.parse(heading.description);
@@ -533,6 +553,18 @@ export const HeadingInventoryManager = () => {
                               <SelectItem value="bronze">Bronze</SelectItem>
                             </SelectContent>
                           </Select>
+                        </div>
+
+                        {/* Eyelet Rings Section */}
+                        <div className="col-span-2">
+                          <Label>Eyelet Rings</Label>
+                          <EyeletRingSelector
+                            selectedRings={eyeletRings}
+                            onRingsChange={setEyeletRings}
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Select the eyelet ring options available for this heading
+                          </p>
                         </div>
                       </>
                     )}
