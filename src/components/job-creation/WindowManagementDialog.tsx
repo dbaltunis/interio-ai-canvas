@@ -589,7 +589,7 @@ export const WindowManagementDialog = ({
             </div>
           </DialogHeader>
 
-          <div className="flex-1 min-h-0 overflow-y-auto bg-background/50 rounded-md p-1 sm:p-2">
+          <div className="flex-1 min-h-0 overflow-y-auto bg-background/50 rounded-md p-1 sm:p-2 pointer-events-auto">
             <MeasurementBridge key={surface?.id} // Stable key for consistent state
           ref={worksheetRef} mode="dynamic" // Always use dynamic mode
           clientId={clientId || ""} projectId={projectId} surfaceId={surface?.id} surfaceData={surface} currentRoomId={surface?.room_id} visualKey={windowTypeData?.visual_key} existingMeasurement={existingMeasurement} existingTreatments={existingTreatments} onSave={handleSaveData} onSaveTreatment={handleTreatmentSave} onClose={() => handleDialogClose(false)} // Ensure dialog closes after save
