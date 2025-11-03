@@ -395,12 +395,28 @@ export const AdaptiveFabricPricingDisplay = ({
         <div className="container-level-3 rounded-md p-3 bg-primary/5">
           <div className="text-xs space-y-2">
             {(() => {
-              // Determine pricing unit dynamically from template
-              const pricingMethod = template?.makeup_pricing_method || template?.pricing_method || 'per_metre';
+              // ✅ FIX: Get pricing method from selected pricing method in measurements
+              const selectedPricingMethod = measurements.selected_pricing_method 
+                ? template?.pricing_methods?.find((m: any) => m.id === measurements.selected_pricing_method)
+                : null;
+              
+              // Determine pricing unit dynamically - prioritize selected method, then template
+              const pricingMethod = selectedPricingMethod?.pricing_type 
+                || template?.makeup_pricing_method 
+                || template?.pricing_method 
+                || 'per_metre';
+              
               const isByDrop = pricingMethod === 'per_drop';
               const isByPanel = pricingMethod === 'per_panel';
               const isBySqm = pricingMethod === 'per_sqm' || template?.pricing_type === 'per_sqm';
               const isByMetre = pricingMethod === 'per_metre' || !pricingMethod;
+              
+              console.log('💰 AdaptiveFabricPricingDisplay - Pricing method:', {
+                selectedPricingMethodId: measurements.selected_pricing_method,
+                selectedPricingMethod: selectedPricingMethod?.name,
+                pricingType: pricingMethod,
+                templateDefault: template?.makeup_pricing_method || template?.pricing_method
+              });
               
               // Calculate appropriate quantity based on method
               let quantity = 0;
@@ -491,6 +507,16 @@ export const AdaptiveFabricPricingDisplay = ({
               
               return (
                 <>
+                  {/* Show selected pricing method name if available */}
+                  {selectedPricingMethod && (
+                    <div className="flex justify-between items-start pb-2 border-b border-border/50">
+                      <span className="text-muted-foreground">Selected Method:</span>
+                      <span className="text-foreground text-right font-medium">
+                        {selectedPricingMethod.name}
+                      </span>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between items-start">
                     <span className="font-medium">Pricing Method:</span>
                     <span className="text-foreground text-right font-semibold">
