@@ -25,6 +25,7 @@ import { convertLength } from "@/hooks/useBusinessSettings";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { detectTreatmentType, getTreatmentConfig, TreatmentCategory } from "@/utils/treatmentTypeDetection";
 import { calculateWallpaperCost } from "@/utils/wallpaperCalculations";
+import { MeasurementWorksheetSkeleton } from "./skeleton/MeasurementWorksheetSkeleton";
 
 interface DynamicWindowWorksheetProps {
   clientId?: string;
@@ -92,20 +93,26 @@ export const DynamicWindowWorksheet = forwardRef<{
   // PHASE 4: Track user editing to prevent data reload during typing
   const isUserEditing = useRef(false);
 
-  // Hooks
+  // Hooks with loading states
   const {
-    data: windowCoverings = []
+    data: windowCoverings = [],
+    isLoading: windowCoveringsLoading
   } = useWindowCoverings();
   const {
     units
   } = useMeasurementUnits();
   const {
-    data: headingInventory = []
+    data: headingInventory = [],
+    isLoading: headingInventoryLoading
   } = useHeadingInventory();
   const {
-    data: headingOptionsFromSettings = []
+    data: headingOptionsFromSettings = [],
+    isLoading: headingOptionsLoading
   } = useHeadingOptions();
   const queryClient = useQueryClient();
+
+  // Combined loading state
+  const isInitialLoading = windowCoveringsLoading || headingInventoryLoading || headingOptionsLoading;
 
   // Helper function to get heading name from ID
   const getHeadingName = (headingId: string) => {
@@ -1243,7 +1250,17 @@ export const DynamicWindowWorksheet = forwardRef<{
   };
   const canProceedToMeasurements = selectedWindowType && (selectedTemplate || selectedTreatmentType);
   const canShowPreview = canProceedToMeasurements && Object.keys(measurements).length > 0;
-  return <div className="space-y-2">
+  
+  // Show loading state while initial data loads
+  if (isInitialLoading) {
+    return (
+      <div className="animate-fade-in">
+        <MeasurementWorksheetSkeleton />
+      </div>
+    );
+  }
+  
+  return <div className="space-y-2 animate-scale-in">
       {/* Enhanced Progress indicator with clickable navigation - Compact */}
       <div className="hidden sm:flex items-center justify-center space-x-2 py-1">
         {["window-type", "treatment", "inventory", "measurements"].map((step, index) => {

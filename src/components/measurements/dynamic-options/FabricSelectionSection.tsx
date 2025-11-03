@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FabricSelectionSkeleton } from "../skeleton/FabricSelectionSkeleton";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -71,8 +72,13 @@ export const FabricSelectionSection = ({
     return `${symbol}${price.toFixed(2)}`;
   };
 
+  // Show skeleton while loading
+  if (isLoading) {
+    return <FabricSelectionSkeleton />;
+  }
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 animate-fade-in">
       {/* Compact Fabric Selection */}
       <div>
         <Label className="text-xs font-medium">Choose Fabric</Label>

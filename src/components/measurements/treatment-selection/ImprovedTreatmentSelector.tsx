@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Search, Loader2, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TreatmentTypeGrid } from "./TreatmentTypeGrid";
+import { TreatmentSelectionSkeleton } from "../skeleton/TreatmentSelectionSkeleton";
 import { useCurtainTemplates, type CurtainTemplate } from "@/hooks/useCurtainTemplates";
 interface ImprovedTreatmentSelectorProps {
   selectedCoveringId?: string;
@@ -86,14 +87,11 @@ export const ImprovedTreatmentSelector = ({
 
       <ScrollArea className="h-[400px]">
         {isLoading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="flex flex-col items-center gap-2">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground">Loading treatments...</p>
-            </div>
+          <div className="animate-fade-in">
+            <TreatmentSelectionSkeleton />
           </div>
         ) : isError ? (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex items-center justify-center h-full animate-scale-in">
             <div className="flex flex-col items-center gap-2 text-destructive">
               <p className="text-sm">Failed to load treatments</p>
               <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
@@ -102,11 +100,11 @@ export const ImprovedTreatmentSelector = ({
             </div>
           </div>
         ) : filteredTemplates.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex items-center justify-center h-full animate-fade-in">
             <p className="text-sm text-muted-foreground">No treatments available</p>
           </div>
         ) : (
-          <div className="pr-3">
+          <div className="pr-3 animate-slide-up">
             <TreatmentTypeGrid treatments={filteredTemplates} selectedId={selectedCoveringId} onSelect={handleTreatmentSelect} searchQuery={searchQuery} />
           </div>
         )}
