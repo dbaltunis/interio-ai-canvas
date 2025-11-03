@@ -203,6 +203,14 @@ export const BusinessSettingsTab = () => {
   };
 
   const handleEditSection = (sectionName: 'company' | 'contact' | 'address' | 'advanced') => {
+    console.log('🔥 handleEditSection called with:', sectionName);
+    console.log('🔥 Current editing states BEFORE:', {
+      isEditingCompany,
+      isEditingContact,
+      isEditingAddress,
+      isEditingAdvanced
+    });
+    
     switch (sectionName) {
       case 'company':
         setIsEditingCompany(true);
@@ -221,6 +229,8 @@ export const BusinessSettingsTab = () => {
         setAdvancedSavedSuccessfully(false);
         break;
     }
+    
+    console.log('🔥 handleEditSection completed for:', sectionName);
   };
 
   const handleCancelSection = (sectionName: 'company' | 'contact' | 'address' | 'advanced') => {
@@ -262,6 +272,13 @@ export const BusinessSettingsTab = () => {
   if (isLoading) {
     return <LoadingFallback title="Loading business settings..." rows={4} />;
   }
+
+  console.log('🔥 Rendering BusinessSettingsTab with editing states:', {
+    isEditingCompany,
+    isEditingContact,
+    isEditingAddress,
+    isEditingAdvanced
+  });
 
   return (
     <div className="space-y-6 max-w-4xl">
