@@ -1413,17 +1413,64 @@ export const DynamicWindowWorksheet = forwardRef<{
                       liningCost = (fabricCalculation.linearMeters || 0) * liningPrice;
                     }
 
-                    // Calculate manufacturing/labor cost
+                    // ✅ FIX: Get the selected pricing method (from user's dropdown selection)
+                    const selectedPricingMethod = measurements.selected_pricing_method 
+                      ? selectedTemplate.pricing_methods?.find((m: any) => m.id === measurements.selected_pricing_method)
+                      : selectedTemplate.pricing_methods?.[0]; // Default to first method
+                    
+                    console.log('💰 Manufacturing cost calculation using:', {
+                      selectedPricingMethodId: measurements.selected_pricing_method,
+                      selectedMethod: selectedPricingMethod?.name,
+                      manufacturing_type: measurements.manufacturing_type || 'machine',
+                      pricing_type: selectedTemplate.pricing_type,
+                      methodPrices: selectedPricingMethod,
+                      templatePrices: {
+                        machine_price_per_metre: selectedTemplate.machine_price_per_metre,
+                        machine_price_per_panel: selectedTemplate.machine_price_per_panel,
+                      }
+                    });
+
+                    // ✅ FIX: Calculate manufacturing/labor cost using selected pricing method prices
                     let manufacturingCost = 0;
-                    const pricingMethod = selectedTemplate.makeup_pricing_method || selectedTemplate.pricing_method || 'per_metre';
-                    if (pricingMethod === 'per_panel') {
-                      manufacturingCost = (selectedTemplate.machine_price_per_panel || 0) * (fabricCalculation.curtainCount || 1);
-                    } else if (pricingMethod === 'per_drop') {
-                      manufacturingCost = (selectedTemplate.machine_price_per_metre || 0) * (fabricCalculation.widthsRequired || 1);
-                    } else {
-                      // per_metre
-                      manufacturingCost = (selectedTemplate.machine_price_per_metre || 0) * (fabricCalculation.linearMeters || 0);
+                    const manufacturingType = measurements.manufacturing_type || 'machine'; // 'machine' or 'hand'
+                    const pricingType = selectedTemplate.pricing_type || selectedTemplate.makeup_pricing_method || selectedTemplate.pricing_method || 'per_metre';
+                    
+                    // Determine which price to use based on manufacturing type and pricing method
+                    let pricePerUnit = 0;
+                    if (pricingType === 'per_panel') {
+                      pricePerUnit = manufacturingType === 'hand' 
+                        ? (selectedPricingMethod?.hand_price_per_panel ?? selectedTemplate.hand_price_per_panel ?? 0)
+                        : (selectedPricingMethod?.machine_price_per_panel ?? selectedTemplate.machine_price_per_panel ?? 0);
+                      manufacturingCost = pricePerUnit * (fabricCalculation.curtainCount || 1);
+                    } else if (pricingType === 'per_drop') {
+                      pricePerUnit = manufacturingType === 'hand'
+                        ? (selectedPricingMethod?.hand_price_per_drop ?? selectedTemplate.hand_price_per_drop ?? 0)
+                        : (selectedPricingMethod?.machine_price_per_drop ?? selectedTemplate.machine_price_per_drop ?? 0);
+                      manufacturingCost = pricePerUnit * (fabricCalculation.widthsRequired || 1);
+                    } else if (pricingType === 'per_metre') {
+                      pricePerUnit = manufacturingType === 'hand'
+                        ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
+                        : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
+                      manufacturingCost = pricePerUnit * (fabricCalculation.linearMeters || 0);
+                    } else if (pricingType === 'height_based' && selectedPricingMethod?.height_price_ranges) {
+                      // Height-based pricing from pricing method
+                      const height = parseFloat(measurements.drop || '0');
+                      const range = selectedPricingMethod.height_price_ranges.find((r: any) => 
+                        height >= r.min_height && height <= r.max_height
+                      );
+                      if (range) {
+                        pricePerUnit = manufacturingType === 'hand' ? range.hand_price : range.machine_price;
+                        manufacturingCost = pricePerUnit * (fabricCalculation.curtainCount || fabricCalculation.widthsRequired || 1);
+                      }
                     }
+
+                    console.log('💰 Manufacturing cost calculated:', {
+                      pricingType,
+                      manufacturingType,
+                      pricePerUnit,
+                      quantity: pricingType === 'per_panel' ? fabricCalculation.curtainCount : pricingType === 'per_drop' ? fabricCalculation.widthsRequired : fabricCalculation.linearMeters,
+                      manufacturingCost
+                    });
 
                     // Calculate heading cost
                     let headingCost = 0;
