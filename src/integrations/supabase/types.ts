@@ -211,6 +211,45 @@ export type Database = {
         }
         Relationships: []
       }
+      app_versions: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_current: boolean | null
+          is_published: boolean | null
+          release_date: string | null
+          release_notes: Json
+          updated_at: string | null
+          version: string
+          version_number: number
+          version_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_current?: boolean | null
+          is_published?: boolean | null
+          release_date?: string | null
+          release_notes: Json
+          updated_at?: string | null
+          version: string
+          version_number: number
+          version_type: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_current?: boolean | null
+          is_published?: boolean | null
+          release_date?: string | null
+          release_notes?: Json
+          updated_at?: string | null
+          version?: string
+          version_number?: number
+          version_type?: string
+        }
+        Relationships: []
+      }
       appointment_notifications: {
         Row: {
           appointment_id: string
@@ -1022,6 +1061,113 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      bug_report_comments: {
+        Row: {
+          bug_report_id: string | null
+          comment: string
+          created_at: string | null
+          id: string
+          is_internal: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          bug_report_id?: string | null
+          comment: string
+          created_at?: string | null
+          id?: string
+          is_internal?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          bug_report_id?: string | null
+          comment?: string
+          created_at?: string | null
+          id?: string
+          is_internal?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bug_report_comments_bug_report_id_fkey"
+            columns: ["bug_report_id"]
+            isOneToOne: false
+            referencedRelation: "bug_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bug_reports: {
+        Row: {
+          actual_behavior: string | null
+          app_version: string | null
+          assigned_to: string | null
+          attachments: Json | null
+          browser_info: Json | null
+          created_at: string | null
+          description: string
+          expected_behavior: string | null
+          id: string
+          priority: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          route: string | null
+          screenshot_url: string | null
+          status: string | null
+          steps_to_reproduce: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          actual_behavior?: string | null
+          app_version?: string | null
+          assigned_to?: string | null
+          attachments?: Json | null
+          browser_info?: Json | null
+          created_at?: string | null
+          description: string
+          expected_behavior?: string | null
+          id?: string
+          priority?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          route?: string | null
+          screenshot_url?: string | null
+          status?: string | null
+          steps_to_reproduce?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          actual_behavior?: string | null
+          app_version?: string | null
+          assigned_to?: string | null
+          attachments?: Json | null
+          browser_info?: Json | null
+          created_at?: string | null
+          description?: string
+          expected_behavior?: string | null
+          id?: string
+          priority?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          route?: string | null
+          screenshot_url?: string | null
+          status?: string | null
+          steps_to_reproduce?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       business_settings: {
         Row: {
@@ -3974,6 +4120,42 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_progress: {
+        Row: {
+          company_info: Json | null
+          completed_steps: string[] | null
+          created_at: string | null
+          current_step: number | null
+          has_completed_welcome: boolean | null
+          has_seen_product_tour: boolean | null
+          preferences: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          company_info?: Json | null
+          completed_steps?: string[] | null
+          created_at?: string | null
+          current_step?: number | null
+          has_completed_welcome?: boolean | null
+          has_seen_product_tour?: boolean | null
+          preferences?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          company_info?: Json | null
+          completed_steps?: string[] | null
+          created_at?: string | null
+          current_step?: number | null
+          has_completed_welcome?: boolean | null
+          has_seen_product_tour?: boolean | null
+          preferences?: Json | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       option_categories: {
         Row: {
           active: boolean | null
@@ -5375,6 +5557,7 @@ export type Database = {
           is_default: boolean | null
           name: string
           preview_image_url: string | null
+          settings: Json | null
           template_style: string
           updated_at: string
           user_id: string
@@ -5389,6 +5572,7 @@ export type Database = {
           is_default?: boolean | null
           name: string
           preview_image_url?: string | null
+          settings?: Json | null
           template_style?: string
           updated_at?: string
           user_id: string
@@ -5403,6 +5587,7 @@ export type Database = {
           is_default?: boolean | null
           name?: string
           preview_image_url?: string | null
+          settings?: Json | null
           template_style?: string
           updated_at?: string
           user_id?: string
@@ -7457,6 +7642,32 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_version_views: {
+        Row: {
+          user_id: string
+          version_id: string
+          viewed_at: string | null
+        }
+        Insert: {
+          user_id: string
+          version_id: string
+          viewed_at?: string | null
+        }
+        Update: {
+          user_id?: string
+          version_id?: string
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_version_views_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "app_versions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vendors: {
         Row: {

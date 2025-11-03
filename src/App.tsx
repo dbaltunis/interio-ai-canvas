@@ -12,6 +12,7 @@ import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { AuthPage } from "./components/auth/AuthPage";
 import { ErrorBoundary } from "./components/performance/ErrorBoundary";
 import { EmailRealtimeProvider } from "./contexts/EmailRealtimeContext";
+import { BugReportDialog } from "@/components/bug-report/BugReportDialog";
 // CalendarSyncProvider removed - using Google Calendar OAuth only
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
@@ -127,6 +128,7 @@ const App = () => {
               <ThemeDarkSync />
               <InteractionUnlockGuard />
               <Toaster />
+              <BugReportDialog />
               <BrowserRouter>
                 <NavObserver />
                 <AuthProvider>
