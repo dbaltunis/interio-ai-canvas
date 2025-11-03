@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import { AdminRoute } from "./components/auth/AdminRoute";
 import { AuthPage } from "./components/auth/AuthPage";
 import { ErrorBoundary } from "./components/performance/ErrorBoundary";
 import { EmailRealtimeProvider } from "./contexts/EmailRealtimeContext";
@@ -191,11 +192,11 @@ const App = () => {
 
                 {/* Admin Bug Management - admin only */}
                 <Route path="/admin/bugs" element={
-                  <ProtectedRoute>
+                  <AdminRoute>
                     <ErrorBoundary>
                       <AdminBugManagement />
                     </ErrorBoundary>
-                  </ProtectedRoute>
+                  </AdminRoute>
                 } />
 
                 {/* Test pages for Phase 1 features */}
