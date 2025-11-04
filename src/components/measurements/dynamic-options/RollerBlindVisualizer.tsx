@@ -18,10 +18,24 @@ export const RollerBlindVisualizer = ({
   const width = parseFloat(measurements.rail_width || measurements.measurement_a || '150');
   const height = parseFloat(measurements.drop || measurements.measurement_b || '200');
   
+  const fabricImage = selectedFabric?.image_url;
+  
   const transparencyStyles = {
     blackout: 'from-gray-800 to-gray-900',
     light_filtering: 'from-gray-400 to-gray-500',
     sheer: 'from-gray-100 to-gray-200 opacity-70'
+  };
+
+  const getFabricStyle = () => {
+    if (fabricImage) {
+      return {
+        backgroundImage: `url(${fabricImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'repeat',
+      };
+    }
+    return {};
   };
   
   return (
@@ -41,10 +55,11 @@ export const RollerBlindVisualizer = ({
       
       {/* Fabric Panel */}
       <div 
-        className={`absolute ${mountingType === 'inside' ? 'top-14' : 'top-10'} left-14 right-14 bg-gradient-to-b ${transparencyStyles[transparency]} rounded-sm shadow-xl transition-all`}
+        className={`absolute ${mountingType === 'inside' ? 'top-14' : 'top-10'} left-14 right-14 ${!fabricImage ? `bg-gradient-to-b ${transparencyStyles[transparency]}` : ''} rounded-sm shadow-xl transition-all`}
         style={{ 
           height: `${Math.min(height * 0.7, 250)}px`,
-          maxHeight: '250px'
+          maxHeight: '250px',
+          ...getFabricStyle()
         }}
       >
         {/* Fabric texture lines */}

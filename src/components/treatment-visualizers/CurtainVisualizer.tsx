@@ -28,6 +28,21 @@ export const CurtainVisualizer = ({
     return "hsl(var(--primary))";
   };
 
+  const getFabricStyle = () => {
+    // Prioritize fabric image for curtains
+    if (fabric?.image_url) {
+      return {
+        backgroundImage: `url(${fabric.image_url})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'repeat',
+      };
+    }
+    return {
+      backgroundColor: getCurtainColor(),
+    };
+  };
+
   const renderTrack = () => (
     <div className="absolute top-4 left-8 right-8 h-3 bg-muted-foreground relative">
       <div className="absolute -left-1 -top-0.5 w-2 h-4 bg-foreground"></div>
@@ -52,7 +67,7 @@ export const CurtainVisualizer = ({
         className={`absolute ${topPosition} ${leftPosition} ${bottomPosition}`}
         style={{
           width: `${width}px`,
-          backgroundColor: getCurtainColor(),
+          ...getFabricStyle(),
           transform: side === 'center' ? 'translateX(-50%)' : undefined
         }}
       >
@@ -76,7 +91,7 @@ export const CurtainVisualizer = ({
             className="absolute -bottom-4 left-0 w-full rounded-b-lg"
             style={{
               height: `${Math.min(poolingAmount / 2, 16)}px`,
-              backgroundColor: getCurtainColor(),
+              ...getFabricStyle(),
               opacity: 0.6
             }}
           />

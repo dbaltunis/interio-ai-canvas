@@ -6943,6 +6943,7 @@ export type Database = {
           category: Database["public"]["Enums"]["treatment_category"]
           created_at: string | null
           id: string
+          image_url: string | null
           mount_types: string[] | null
           name: string
           unit_system: Database["public"]["Enums"]["unit_system"] | null
@@ -6953,6 +6954,7 @@ export type Database = {
           category: Database["public"]["Enums"]["treatment_category"]
           created_at?: string | null
           id?: string
+          image_url?: string | null
           mount_types?: string[] | null
           name: string
           unit_system?: Database["public"]["Enums"]["unit_system"] | null
@@ -6963,6 +6965,7 @@ export type Database = {
           category?: Database["public"]["Enums"]["treatment_category"]
           created_at?: string | null
           id?: string
+          image_url?: string | null
           mount_types?: string[] | null
           name?: string
           unit_system?: Database["public"]["Enums"]["unit_system"] | null

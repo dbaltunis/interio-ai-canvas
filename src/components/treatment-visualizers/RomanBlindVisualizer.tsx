@@ -24,17 +24,24 @@ export const RomanBlindVisualizer = ({
     const width = measurements?.rail_width || measurements?.window_width || 200;
     const height = measurements?.drop || measurements?.window_height || 150;
     const fabricColor = material?.color || "#E8E2D4";
+    const fabricImage = material?.image_url || null;
     const foldCount = Math.floor(height / 25); // Fold every 25cm approximately
     
     return (
       <svg viewBox="0 0 400 300" className="w-full h-full">
         <defs>
-          {/* Fabric texture gradient */}
-          <linearGradient id="fabricGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={fabricColor} />
-            <stop offset="50%" stopColor={`${fabricColor}CC`} />
-            <stop offset="100%" stopColor={fabricColor} />
-          </linearGradient>
+          {/* Fabric image pattern or gradient */}
+          {fabricImage ? (
+            <pattern id="fabricPattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+              <image href={fabricImage} x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid slice" />
+            </pattern>
+          ) : (
+            <linearGradient id="fabricGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor={fabricColor} />
+              <stop offset="50%" stopColor={`${fabricColor}CC`} />
+              <stop offset="100%" stopColor={fabricColor} />
+            </linearGradient>
+          )}
           
           {/* Shadow for depth */}
           <linearGradient id="blindShadow" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -79,9 +86,9 @@ export const RomanBlindVisualizer = ({
         )}
         
         {/* Roman blind fabric with realistic folds */}
-        {foldStyle === 'classic' && renderClassicFolds(width, height, foldCount, fabricColor)}
-        {foldStyle === 'relaxed' && renderRelaxedFolds(width, height, foldCount, fabricColor)}
-        {foldStyle === 'hobbled' && renderHobbledFolds(width, height, foldCount, fabricColor)}
+        {foldStyle === 'classic' && renderClassicFolds(width, height, foldCount, fabricImage ? 'url(#fabricPattern)' : fabricColor, fabricImage)}
+        {foldStyle === 'relaxed' && renderRelaxedFolds(width, height, foldCount, fabricImage ? 'url(#fabricPattern)' : fabricColor, fabricImage)}
+        {foldStyle === 'hobbled' && renderHobbledFolds(width, height, foldCount, fabricImage ? 'url(#fabricPattern)' : fabricColor, fabricImage)}
         
         {/* Control cord */}
         <line 
@@ -119,7 +126,7 @@ export const RomanBlindVisualizer = ({
 };
 
 // Classic Roman blind with clean horizontal folds
-const renderClassicFolds = (width: number, height: number, foldCount: number, fabricColor: string) => {
+const renderClassicFolds = (width: number, height: number, foldCount: number, fabricColor: string, hasFabricImage?: boolean) => {
   const folds = [];
   const foldHeight = (height * 0.7) / foldCount;
   
@@ -173,7 +180,7 @@ const renderClassicFolds = (width: number, height: number, foldCount: number, fa
 };
 
 // Relaxed Roman blind with soft, curved folds
-const renderRelaxedFolds = (width: number, height: number, foldCount: number, fabricColor: string) => {
+const renderRelaxedFolds = (width: number, height: number, foldCount: number, fabricColor: string, hasFabricImage?: boolean) => {
   const folds = [];
   const foldHeight = (height * 0.7) / foldCount;
   
@@ -212,7 +219,7 @@ const renderRelaxedFolds = (width: number, height: number, foldCount: number, fa
 };
 
 // Hobbled Roman blind with permanent horizontal folds
-const renderHobbledFolds = (width: number, height: number, foldCount: number, fabricColor: string) => {
+const renderHobbledFolds = (width: number, height: number, foldCount: number, fabricColor: string, hasFabricImage?: boolean) => {
   const folds = [];
   const foldHeight = (height * 0.7) / (foldCount + 2); // Smaller sections for hobbled
   

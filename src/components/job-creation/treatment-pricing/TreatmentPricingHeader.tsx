@@ -1,19 +1,25 @@
 
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { useTemplateDisplayImage } from "@/hooks/useTreatmentCategoryImages";
 
 interface TreatmentPricingHeaderProps {
   productName: string;
   onNameChange: (name: string) => void;
   windowCovering?: any;
+  template?: any;
 }
 
 export const TreatmentPricingHeader = ({ 
   productName, 
   onNameChange, 
-  windowCovering 
+  windowCovering,
+  template
 }: TreatmentPricingHeaderProps) => {
   const [isEditingName, setIsEditingName] = useState(false);
+  
+  // Get the appropriate display image: template custom image > category default
+  const displayImage = useTemplateDisplayImage(template);
 
   const handleNameSave = () => {
     setIsEditingName(false);
@@ -41,11 +47,12 @@ export const TreatmentPricingHeader = ({
         </h3>
       )}
       
-      {windowCovering?.image_url && (
+      {/* Display template image (custom or category default) or window covering image */}
+      {(displayImage || windowCovering?.image_url) && (
         <div className="flex justify-center">
           <img 
-            src={windowCovering.image_url} 
-            alt={windowCovering.name}
+            src={displayImage || windowCovering.image_url} 
+            alt={template?.name || windowCovering?.name || productName}
             className="w-24 h-24 object-cover rounded-lg border shadow-sm"
           />
         </div>

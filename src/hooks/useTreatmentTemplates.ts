@@ -8,6 +8,7 @@ export interface TreatmentTemplate {
   active: boolean;
   created_at: string;
   updated_at: string;
+  image_url?: string; // Category-level default image
 }
 
 export const useTreatmentTemplates = () => {

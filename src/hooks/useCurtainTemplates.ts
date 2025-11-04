@@ -8,6 +8,8 @@ export interface CurtainTemplate {
   name: string;
   description?: string;
   treatment_category?: 'curtains' | 'roller_blinds' | 'roman_blinds' | 'venetian_blinds' | 'vertical_blinds' | 'cellular_shades' | 'plantation_shutters' | 'shutters' | 'panel_glide' | 'awning';
+  image_url?: string; // Custom template image
+  display_image_url?: string; // Display image for quotes/worksheets
   
   // Curtain Type
   curtain_type: string;
