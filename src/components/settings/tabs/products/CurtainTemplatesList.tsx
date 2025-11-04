@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Edit, Trash2, Copy } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +20,7 @@ export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
   const { data: headingStyles = [] } = useHeadingInventory();
   const deleteTemplate = useDeleteCurtainTemplate();
   const createTemplate = useCreateCurtainTemplate();
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const handleDelete = async (templateId: string) => {
     try {
@@ -55,6 +58,38 @@ export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
     }
   };
 
+  const handleBulkDelete = async () => {
+    try {
+      await Promise.all(selectedIds.map(id => deleteTemplate.mutateAsync(id)));
+      setSelectedIds([]);
+      toast({
+        title: "Templates Deleted",
+        description: `Successfully deleted ${selectedIds.length} template(s)`
+      });
+    } catch (error) {
+      console.error("Error deleting templates:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete some templates. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === templates.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(templates.map(t => t.id));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -82,13 +117,59 @@ export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
 
   return (
     <div className="space-y-4">
+      {templates.length > 0 && (
+        <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+          <div className="flex items-center gap-3">
+            <Checkbox
+              checked={selectedIds.length === templates.length}
+              onCheckedChange={toggleSelectAll}
+              id="select-all"
+            />
+            <label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
+              Select All ({selectedIds.length}/{templates.length})
+            </label>
+          </div>
+          {selectedIds.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Selected ({selectedIds.length})
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete {selectedIds.length} Template(s)</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete {selectedIds.length} template(s)? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleBulkDelete}>
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
+      )}
+
       {templates.map((template) => (
         <Card key={template.id}>
           <CardHeader>
             <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-lg">{template.name}</CardTitle>
-                <CardDescription>{template.description}</CardDescription>
+              <div className="flex items-start gap-3 flex-1">
+                <Checkbox
+                  checked={selectedIds.includes(template.id)}
+                  onCheckedChange={() => toggleSelect(template.id)}
+                  className="mt-1"
+                />
+                <div>
+                  <CardTitle className="text-lg">{template.name}</CardTitle>
+                  <CardDescription>{template.description}</CardDescription>
+                </div>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => handleDuplicate(template)}>
