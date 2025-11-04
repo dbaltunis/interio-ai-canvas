@@ -123,10 +123,12 @@ export const useCurtainTemplates = () => {
       console.log("✅ [useCurtainTemplates] User authenticated:", user.id);
 
       // RLS policies will filter by account owner automatically
+      // Filter out system templates - those appear in Template Library
       const { data, error } = await supabase
         .from("curtain_templates" as any)
         .select("*")
         .eq("active", true)
+        .eq("is_system_default", false)
         .order("name");
 
       const endTime = performance.now();
