@@ -5,8 +5,7 @@ import { WindowTreatmentOptionsManager } from "./components/WindowTreatmentOptio
 import { ManufacturingDefaults } from "./products/ManufacturingDefaults";
 import { CurtainTemplatesManager } from "./products/CurtainTemplatesManager";
 import { SystemTemplatesLibrary } from "./components/SystemTemplatesLibrary";
-import { PricingGridManager } from "../pricing-grids/PricingGridManager";
-import { PricingGridRulesManager } from "../pricing-grids/PricingGridRulesManager";
+import { PricingGridWizard } from "../pricing-grids/PricingGridWizard";
 import { GridResolutionTester } from "../pricing-grids/GridResolutionTester";
 import { Layers, Settings, Sliders, Library, Grid3x3, Route } from "lucide-react";
 export const WindowCoveringsTab = () => {
@@ -18,7 +17,7 @@ export const WindowCoveringsTab = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="templates" className="w-full">
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="templates" className="flex items-center gap-2">
                 <Layers className="h-4 w-4" />
                 My Templates
@@ -39,13 +38,9 @@ export const WindowCoveringsTab = () => {
                 <Settings className="h-4 w-4" />
                 Defaults
               </TabsTrigger>
-              <TabsTrigger value="pricing-grids" className="flex items-center gap-2">
+              <TabsTrigger value="pricing" className="flex items-center gap-2">
                 <Grid3x3 className="h-4 w-4" />
-                Pricing Grids
-              </TabsTrigger>
-              <TabsTrigger value="grid-rules" className="flex items-center gap-2">
-                <Route className="h-4 w-4" />
-                Grid Rules
+                Price Lists
               </TabsTrigger>
             </TabsList>
 
@@ -69,13 +64,12 @@ export const WindowCoveringsTab = () => {
               <ManufacturingDefaults />
             </TabsContent>
 
-            <TabsContent value="pricing-grids" className="space-y-6">
-              <PricingGridManager />
-            </TabsContent>
-
-            <TabsContent value="grid-rules" className="space-y-6">
-              <GridResolutionTester />
-              <PricingGridRulesManager />
+            <TabsContent value="pricing" className="space-y-6">
+              <PricingGridWizard />
+              <div className="mt-8 pt-8 border-t">
+                <h3 className="text-lg font-semibold mb-4">Test Pricing Resolution</h3>
+                <GridResolutionTester />
+              </div>
             </TabsContent>
           </Tabs>
         </CardContent>
