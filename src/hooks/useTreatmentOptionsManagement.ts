@@ -55,6 +55,7 @@ export const useCreateOptionValue = () => {
       label: string;
       order_index?: number;
       extra_data?: any;
+      inventory_item_id?: string | null; // NEW: Link to inventory
     }) => {
       const { data: value, error } = await supabase
         .from('option_values')

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +16,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useOptionTypeCategories, useCreateOptionTypeCategory } from "@/hooks/useOptionTypeCategories";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TREATMENT_CATEGORIES, TreatmentCategoryDbValue } from "@/types/treatmentCategories";
+import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
+import { InventoryStockBadge } from "./InventoryStockBadge";
 
 export const WindowTreatmentOptionsManager = () => {
   const queryClient = useQueryClient();
@@ -50,6 +52,10 @@ export const WindowTreatmentOptionsManager = () => {
   const deleteOptionValue = useDeleteOptionValue();
   const createOptionTypeCategory = useCreateOptionTypeCategory();
   const { toast } = useToast();
+  
+  // Fetch inventory items for linking
+  const { data: inventoryItems = [] } = useEnhancedInventory();
+  
   const [isCreating, setIsCreating] = useState(false);
   const [editingValue, setEditingValue] = useState<OptionValue | null>(null);
   const [showCreateOptionTypeDialog, setShowCreateOptionTypeDialog] = useState(false);
@@ -58,6 +64,7 @@ export const WindowTreatmentOptionsManager = () => {
     name: '',
     value: '',
     price: 0 as number,
+    inventory_item_id: null as string | null,
   });
 
   // Set first option type when categories load
@@ -72,6 +79,7 @@ export const WindowTreatmentOptionsManager = () => {
       name: '',
       value: '',
       price: 0,
+      inventory_item_id: null,
     });
   };
 
@@ -120,6 +128,7 @@ export const WindowTreatmentOptionsManager = () => {
               code: formData.value.trim().toLowerCase().replace(/\s+/g, '_'),
               label: formData.name.trim(),
               extra_data: { price: Number(formData.price) || 0 },
+              inventory_item_id: formData.inventory_item_id || null,
             }
           });
         }
@@ -187,6 +196,7 @@ export const WindowTreatmentOptionsManager = () => {
           label: formData.name.trim(),
           order_index: uniqueOptionValues.length,
           extra_data: { price: Number(formData.price) || 0 },
+          inventory_item_id: formData.inventory_item_id || null,
         });
 
         // Invalidate queries to refetch the updated data
@@ -216,6 +226,7 @@ export const WindowTreatmentOptionsManager = () => {
       name: value.label,
       value: value.code,
       price: Number(value.extra_data?.price) || 0,
+      inventory_item_id: value.inventory_item_id || null,
     });
     setEditingValue(value);
     setIsCreating(false);
@@ -514,6 +525,29 @@ export const WindowTreatmentOptionsManager = () => {
                         placeholder="0.00"
                       />
                     </div>
+
+                    <div className="col-span-2">
+                      <Label htmlFor="inventory">Link to Inventory (Optional)</Label>
+                      <Select
+                        value={formData.inventory_item_id || ''}
+                        onValueChange={(value) => setFormData({ ...formData, inventory_item_id: value || null })}
+                      >
+                        <SelectTrigger id="inventory">
+                          <SelectValue placeholder="Select inventory item..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">None (No inventory tracking)</SelectItem>
+                          {inventoryItems.filter(item => item.active).map((item) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {item.name} - Stock: {item.quantity} {item.unit}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Link this option to inventory for automatic stock tracking
+                      </p>
+                    </div>
                   </div>
 
                   <div className="flex gap-2 mt-4">
@@ -545,12 +579,21 @@ export const WindowTreatmentOptionsManager = () => {
                               +${value.extra_data.price.toFixed(2)}
                             </Badge>
                           )}
+                          {value.inventory_item_id && (
+                            <Badge variant="outline" className="flex items-center gap-1 text-xs">
+                              <Package className="h-3 w-3" />
+                              Linked
+                            </Badge>
+                          )}
                         </div>
                         <div className="text-sm text-muted-foreground">
                           Value: {value.code}
                           {value.extra_data?.price !== undefined && ` • ${value.extra_data.price === 0 ? 'Included' : `+$${value.extra_data.price.toFixed(2)}`}`}
                         </div>
                       </div>
+                      {value.inventory_item_id && (
+                        <InventoryStockBadge itemId={value.inventory_item_id} />
+                      )}
                       <div className="flex gap-2">
                         <Button
                           variant="ghost"

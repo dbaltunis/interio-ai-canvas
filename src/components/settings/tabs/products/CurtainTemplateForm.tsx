@@ -21,7 +21,6 @@ import { PricingGridUploader } from "./PricingGridUploader";
 import { HardwareCompatibilityManager } from "./HardwareCompatibilityManager";
 import { useHeadingInventory } from "@/hooks/useHeadingInventory";
 import { useEnhancedInventoryByCategory } from "@/hooks/useEnhancedInventory";
-import { useOptionCategories } from "@/hooks/useOptionCategories";
 import { useTreatmentOptions, useUpdateTreatmentOption } from "@/hooks/useTreatmentOptions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCreateTreatmentOption, useCreateOptionValue, useDeleteOptionValue } from "@/hooks/useTreatmentOptionsManagement";
@@ -53,7 +52,6 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   const updateTemplate = useUpdateCurtainTemplate();
   const { data: headingStyles = [] } = useHeadingInventory();
   const { data: topSystems = [] } = useEnhancedInventoryByCategory('top_system');
-  const { data: optionCategories = [] } = useOptionCategories();
   const queryClient = useQueryClient();
   const { units } = useMeasurementUnits();
   
@@ -194,10 +192,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     blind_header_hem_cm: (template as any)?.blind_header_hem_cm?.toString() || "8",
     blind_bottom_hem_cm: (template as any)?.blind_bottom_hem_cm?.toString() || "8",
     blind_side_hem_cm: (template as any)?.blind_side_hem_cm?.toString() || "0",
-    machine_price_per_sqm: (template as any)?.machine_price_per_sqm?.toString() || "",
-    
-    // Option Categories Integration
-    selected_option_categories: template?.compatible_hardware || []  // Temporarily use this field
+    machine_price_per_sqm: (template as any)?.machine_price_per_sqm?.toString() || ""
   });
   
   // Map curtain_type to treatment_category - make it reactive with useMemo
@@ -476,7 +471,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         side_hems: parseFloat(formData.side_hems.toString()) || 7.5,
         seam_hems: parseFloat(formData.seam_hems.toString()) || 1.5,
         lining_types: formData.lining_types,
-        compatible_hardware: formData.selected_option_categories, // Store option categories here for now
+        compatible_hardware: [], // Legacy field - not used with new Options system
         pricing_type: formData.pricing_type as 'per_metre' | 'per_drop' | 'per_panel' | 'pricing_grid',
         offers_hand_finished: formData.offers_hand_finished,
         machine_price_per_metre: formData.machine_price_per_metre ? parseFloat(formData.machine_price_per_metre.toString()) : undefined,
@@ -672,67 +667,6 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                   Go to the Options tab in Settings → Window Coverings to manage available options.
                 </CardDescription>
               </CardHeader>
-            </Card>
-
-            {/* Option Categories Integration */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Hierarchical Option Categories</CardTitle>
-                <CardDescription>
-                  Select which option categories customers can choose from (advanced multi-level options)
-                  {formData.curtain_type && formData.curtain_type !== 'custom' && (
-                    <span className="block mt-1 text-xs">
-                      Showing only categories for: <strong>{formData.curtain_type.replace('_', ' ')}</strong>
-                    </span>
-                  )}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {optionCategories.filter(category => 
-                    !category.treatment_type || 
-                    category.treatment_type === formData.curtain_type ||
-                    formData.curtain_type === 'custom'
-                  ).length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      No option categories found for {formData.curtain_type}. Create option categories in the "Option Categories" tab, or set their treatment type to "{formData.curtain_type}".
-                    </p>
-                  ) : (
-                    optionCategories
-                      .filter(category => 
-                        !category.treatment_type || 
-                        category.treatment_type === formData.curtain_type ||
-                        formData.curtain_type === 'custom'
-                      )
-                      .map((category) => (
-                      <div key={category.id} className="flex items-center space-x-3 p-3 border rounded-lg">
-                        <Checkbox
-                          id={`option-category-${category.id}`}
-                          checked={formData.selected_option_categories.includes(category.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              handleInputChange("selected_option_categories", [...formData.selected_option_categories, category.id]);
-                            } else {
-                              handleInputChange("selected_option_categories", formData.selected_option_categories.filter(id => id !== category.id));
-                            }
-                          }}
-                        />
-                        <div className="flex-1">
-                          <Label htmlFor={`option-category-${category.id}`} className="font-medium cursor-pointer">
-                            {category.name}
-                          </Label>
-                          <div className="text-sm text-muted-foreground">
-                            {category.description || "No description"}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            Type: {category.category_type} | Subcategories: {category.subcategories?.length || 0}
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
             </Card>
           </TabsContent>
 

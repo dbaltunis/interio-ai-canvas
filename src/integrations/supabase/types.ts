@@ -14,6 +14,246 @@ export type Database = {
   }
   public: {
     Tables: {
+      _legacy_option_categories: {
+        Row: {
+          active: boolean | null
+          affects_fabric_calculation: boolean | null
+          affects_labor_calculation: boolean | null
+          calculation_method: string | null
+          category_type: string
+          created_at: string
+          description: string | null
+          fullness_ratio: number | null
+          has_fullness_ratio: boolean | null
+          id: string
+          image_url: string | null
+          is_required: boolean | null
+          name: string
+          sort_order: number | null
+          treatment_type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          affects_fabric_calculation?: boolean | null
+          affects_labor_calculation?: boolean | null
+          calculation_method?: string | null
+          category_type?: string
+          created_at?: string
+          description?: string | null
+          fullness_ratio?: number | null
+          has_fullness_ratio?: boolean | null
+          id?: string
+          image_url?: string | null
+          is_required?: boolean | null
+          name: string
+          sort_order?: number | null
+          treatment_type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          affects_fabric_calculation?: boolean | null
+          affects_labor_calculation?: boolean | null
+          calculation_method?: string | null
+          category_type?: string
+          created_at?: string
+          description?: string | null
+          fullness_ratio?: number | null
+          has_fullness_ratio?: boolean | null
+          id?: string
+          image_url?: string | null
+          is_required?: boolean | null
+          name?: string
+          sort_order?: number | null
+          treatment_type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      _legacy_option_extras: {
+        Row: {
+          active: boolean | null
+          base_price: number | null
+          calculation_method: string | null
+          created_at: string
+          description: string | null
+          fullness_ratio: number | null
+          id: string
+          image_url: string | null
+          is_default: boolean | null
+          is_required: boolean | null
+          name: string
+          pricing_method: string
+          sort_order: number | null
+          sub_subcategory_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          base_price?: number | null
+          calculation_method?: string | null
+          created_at?: string
+          description?: string | null
+          fullness_ratio?: number | null
+          id?: string
+          image_url?: string | null
+          is_default?: boolean | null
+          is_required?: boolean | null
+          name: string
+          pricing_method?: string
+          sort_order?: number | null
+          sub_subcategory_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          base_price?: number | null
+          calculation_method?: string | null
+          created_at?: string
+          description?: string | null
+          fullness_ratio?: number | null
+          id?: string
+          image_url?: string | null
+          is_default?: boolean | null
+          is_required?: boolean | null
+          name?: string
+          pricing_method?: string
+          sort_order?: number | null
+          sub_subcategory_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "option_extras_sub_subcategory_id_fkey"
+            columns: ["sub_subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "_legacy_option_sub_subcategories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      _legacy_option_sub_subcategories: {
+        Row: {
+          active: boolean | null
+          base_price: number | null
+          calculation_method: string | null
+          created_at: string
+          description: string | null
+          extra_fabric_percentage: number | null
+          fullness_ratio: number | null
+          id: string
+          image_url: string | null
+          name: string
+          pricing_method: string
+          sort_order: number | null
+          subcategory_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          base_price?: number | null
+          calculation_method?: string | null
+          created_at?: string
+          description?: string | null
+          extra_fabric_percentage?: number | null
+          fullness_ratio?: number | null
+          id?: string
+          image_url?: string | null
+          name: string
+          pricing_method?: string
+          sort_order?: number | null
+          subcategory_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          base_price?: number | null
+          calculation_method?: string | null
+          created_at?: string
+          description?: string | null
+          extra_fabric_percentage?: number | null
+          fullness_ratio?: number | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          pricing_method?: string
+          sort_order?: number | null
+          subcategory_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "option_sub_subcategories_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "_legacy_option_subcategories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      _legacy_option_subcategories: {
+        Row: {
+          active: boolean | null
+          base_price: number | null
+          calculation_method: string | null
+          category_id: string
+          created_at: string
+          description: string | null
+          extra_fabric_percentage: number | null
+          fullness_ratio: number | null
+          id: string
+          image_url: string | null
+          name: string
+          pricing_method: string
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          base_price?: number | null
+          calculation_method?: string | null
+          category_id: string
+          created_at?: string
+          description?: string | null
+          extra_fabric_percentage?: number | null
+          fullness_ratio?: number | null
+          id?: string
+          image_url?: string | null
+          name: string
+          pricing_method?: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          base_price?: number | null
+          calculation_method?: string | null
+          category_id?: string
+          created_at?: string
+          description?: string | null
+          extra_fabric_percentage?: number | null
+          fullness_ratio?: number | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          pricing_method?: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "option_subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "_legacy_option_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       access_requests: {
         Row: {
           approver_id: string
@@ -3567,7 +3807,7 @@ export type Database = {
             foreignKeyName: "making_cost_option_mappings_option_category_id_fkey"
             columns: ["option_category_id"]
             isOneToOne: false
-            referencedRelation: "option_categories"
+            referencedRelation: "_legacy_option_categories"
             referencedColumns: ["id"]
           },
         ]
@@ -4156,128 +4396,6 @@ export type Database = {
         }
         Relationships: []
       }
-      option_categories: {
-        Row: {
-          active: boolean | null
-          affects_fabric_calculation: boolean | null
-          affects_labor_calculation: boolean | null
-          calculation_method: string | null
-          category_type: string
-          created_at: string
-          description: string | null
-          fullness_ratio: number | null
-          has_fullness_ratio: boolean | null
-          id: string
-          image_url: string | null
-          is_required: boolean | null
-          name: string
-          sort_order: number | null
-          treatment_type: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          active?: boolean | null
-          affects_fabric_calculation?: boolean | null
-          affects_labor_calculation?: boolean | null
-          calculation_method?: string | null
-          category_type?: string
-          created_at?: string
-          description?: string | null
-          fullness_ratio?: number | null
-          has_fullness_ratio?: boolean | null
-          id?: string
-          image_url?: string | null
-          is_required?: boolean | null
-          name: string
-          sort_order?: number | null
-          treatment_type?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          active?: boolean | null
-          affects_fabric_calculation?: boolean | null
-          affects_labor_calculation?: boolean | null
-          calculation_method?: string | null
-          category_type?: string
-          created_at?: string
-          description?: string | null
-          fullness_ratio?: number | null
-          has_fullness_ratio?: boolean | null
-          id?: string
-          image_url?: string | null
-          is_required?: boolean | null
-          name?: string
-          sort_order?: number | null
-          treatment_type?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      option_extras: {
-        Row: {
-          active: boolean | null
-          base_price: number | null
-          calculation_method: string | null
-          created_at: string
-          description: string | null
-          fullness_ratio: number | null
-          id: string
-          image_url: string | null
-          is_default: boolean | null
-          is_required: boolean | null
-          name: string
-          pricing_method: string
-          sort_order: number | null
-          sub_subcategory_id: string
-          updated_at: string
-        }
-        Insert: {
-          active?: boolean | null
-          base_price?: number | null
-          calculation_method?: string | null
-          created_at?: string
-          description?: string | null
-          fullness_ratio?: number | null
-          id?: string
-          image_url?: string | null
-          is_default?: boolean | null
-          is_required?: boolean | null
-          name: string
-          pricing_method?: string
-          sort_order?: number | null
-          sub_subcategory_id: string
-          updated_at?: string
-        }
-        Update: {
-          active?: boolean | null
-          base_price?: number | null
-          calculation_method?: string | null
-          created_at?: string
-          description?: string | null
-          fullness_ratio?: number | null
-          id?: string
-          image_url?: string | null
-          is_default?: boolean | null
-          is_required?: boolean | null
-          name?: string
-          pricing_method?: string
-          sort_order?: number | null
-          sub_subcategory_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "option_extras_sub_subcategory_id_fkey"
-            columns: ["sub_subcategory_id"]
-            isOneToOne: false
-            referencedRelation: "option_sub_subcategories"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       option_rules: {
         Row: {
           active: boolean | null
@@ -4315,124 +4433,6 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "curtain_templates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      option_sub_subcategories: {
-        Row: {
-          active: boolean | null
-          base_price: number | null
-          calculation_method: string | null
-          created_at: string
-          description: string | null
-          extra_fabric_percentage: number | null
-          fullness_ratio: number | null
-          id: string
-          image_url: string | null
-          name: string
-          pricing_method: string
-          sort_order: number | null
-          subcategory_id: string
-          updated_at: string
-        }
-        Insert: {
-          active?: boolean | null
-          base_price?: number | null
-          calculation_method?: string | null
-          created_at?: string
-          description?: string | null
-          extra_fabric_percentage?: number | null
-          fullness_ratio?: number | null
-          id?: string
-          image_url?: string | null
-          name: string
-          pricing_method?: string
-          sort_order?: number | null
-          subcategory_id: string
-          updated_at?: string
-        }
-        Update: {
-          active?: boolean | null
-          base_price?: number | null
-          calculation_method?: string | null
-          created_at?: string
-          description?: string | null
-          extra_fabric_percentage?: number | null
-          fullness_ratio?: number | null
-          id?: string
-          image_url?: string | null
-          name?: string
-          pricing_method?: string
-          sort_order?: number | null
-          subcategory_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "option_sub_subcategories_subcategory_id_fkey"
-            columns: ["subcategory_id"]
-            isOneToOne: false
-            referencedRelation: "option_subcategories"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      option_subcategories: {
-        Row: {
-          active: boolean | null
-          base_price: number | null
-          calculation_method: string | null
-          category_id: string
-          created_at: string
-          description: string | null
-          extra_fabric_percentage: number | null
-          fullness_ratio: number | null
-          id: string
-          image_url: string | null
-          name: string
-          pricing_method: string
-          sort_order: number | null
-          updated_at: string
-        }
-        Insert: {
-          active?: boolean | null
-          base_price?: number | null
-          calculation_method?: string | null
-          category_id: string
-          created_at?: string
-          description?: string | null
-          extra_fabric_percentage?: number | null
-          fullness_ratio?: number | null
-          id?: string
-          image_url?: string | null
-          name: string
-          pricing_method?: string
-          sort_order?: number | null
-          updated_at?: string
-        }
-        Update: {
-          active?: boolean | null
-          base_price?: number | null
-          calculation_method?: string | null
-          category_id?: string
-          created_at?: string
-          description?: string | null
-          extra_fabric_percentage?: number | null
-          fullness_ratio?: number | null
-          id?: string
-          image_url?: string | null
-          name?: string
-          pricing_method?: string
-          sort_order?: number | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "option_subcategories_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "option_categories"
             referencedColumns: ["id"]
           },
         ]
@@ -4479,6 +4479,7 @@ export type Database = {
           created_at: string | null
           extra_data: Json | null
           id: string
+          inventory_item_id: string | null
           is_system_default: boolean | null
           label: string
           option_id: string
@@ -4489,6 +4490,7 @@ export type Database = {
           created_at?: string | null
           extra_data?: Json | null
           id?: string
+          inventory_item_id?: string | null
           is_system_default?: boolean | null
           label: string
           option_id: string
@@ -4499,12 +4501,20 @@ export type Database = {
           created_at?: string | null
           extra_data?: Json | null
           id?: string
+          inventory_item_id?: string | null
           is_system_default?: boolean | null
           label?: string
           option_id?: string
           order_index?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "option_values_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_inventory_items"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "option_values_option_id_fkey"
             columns: ["option_id"]
@@ -6876,6 +6886,7 @@ export type Database = {
           order_index: number | null
           required: boolean | null
           template_id: string | null
+          tracks_inventory: boolean | null
           treatment_category: string | null
           treatment_id: string | null
           updated_at: string | null
@@ -6892,6 +6903,7 @@ export type Database = {
           order_index?: number | null
           required?: boolean | null
           template_id?: string | null
+          tracks_inventory?: boolean | null
           treatment_category?: string | null
           treatment_id?: string | null
           updated_at?: string | null
@@ -6908,6 +6920,7 @@ export type Database = {
           order_index?: number | null
           required?: boolean | null
           template_id?: string | null
+          tracks_inventory?: boolean | null
           treatment_category?: string | null
           treatment_id?: string | null
           updated_at?: string | null

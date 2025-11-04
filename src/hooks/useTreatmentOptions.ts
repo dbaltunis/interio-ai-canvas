@@ -8,6 +8,7 @@ export interface OptionValue {
   label: string;
   order_index: number;
   extra_data?: any;
+  inventory_item_id?: string | null; // Link to enhanced_inventory_items
 }
 
 export interface TreatmentOption {
@@ -20,6 +21,7 @@ export interface TreatmentOption {
   visible: boolean;
   order_index: number;
   validation?: any;
+  tracks_inventory?: boolean; // Whether this option type should link to inventory
   option_values?: OptionValue[];
 }
 

@@ -2,11 +2,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HeadingInventoryManager } from "./components/HeadingInventoryManager";
 import { WindowTreatmentOptionsManager } from "./components/WindowTreatmentOptionsManager";
-import { OptionCategoriesManager } from "./products/OptionCategoriesManager";
 import { ManufacturingDefaults } from "./products/ManufacturingDefaults";
 import { CurtainTemplatesManager } from "./products/CurtainTemplatesManager";
 import { SystemTemplatesLibrary } from "./components/SystemTemplatesLibrary";
-import { Layers, Tags, Settings, Sliders, Library } from "lucide-react";
+import { Layers, Settings, Sliders, Library } from "lucide-react";
 export const WindowCoveringsTab = () => {
   return <div className="space-y-6">
       <Card>
@@ -16,7 +15,7 @@ export const WindowCoveringsTab = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="templates" className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="templates" className="flex items-center gap-2">
                 <Layers className="h-4 w-4" />
                 My Templates
@@ -32,10 +31,6 @@ export const WindowCoveringsTab = () => {
               <TabsTrigger value="treatment-options" className="flex items-center gap-2">
                 <Sliders className="h-4 w-4" />
                 Options
-              </TabsTrigger>
-              <TabsTrigger value="options" className="flex items-center gap-2">
-                <Tags className="h-4 w-4" />
-                Categories
               </TabsTrigger>
               <TabsTrigger value="defaults" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
@@ -57,10 +52,6 @@ export const WindowCoveringsTab = () => {
 
             <TabsContent value="treatment-options" className="space-y-6">
               <WindowTreatmentOptionsManager />
-            </TabsContent>
-
-            <TabsContent value="options" className="space-y-6">
-              <OptionCategoriesManager />
             </TabsContent>
 
             <TabsContent value="defaults" className="space-y-6">
