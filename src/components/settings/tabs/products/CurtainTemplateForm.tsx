@@ -148,6 +148,10 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     maximum_height: (template as any)?.maximum_height?.toString() || "300",
     stack_allowance: (template as any)?.stack_allowance?.toString() || "0",
     
+    // Pricing Grid Configuration (IMPORTANT: Used for grid routing)
+    system_type: (template as any)?.system_type || "",
+    price_group: (template as any)?.price_group || "",
+    
     // Lining Selection - Pre-created with pricing (for curtains)
     lining_types: template?.lining_types || [
       { type: "Standard", price_per_metre: 15, labour_per_curtain: 25 },
@@ -515,6 +519,10 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         minimum_height: formData.minimum_height ? parseFloat(formData.minimum_height.toString()) : undefined,
         maximum_height: formData.maximum_height ? parseFloat(formData.maximum_height.toString()) : undefined,
         stack_allowance: formData.stack_allowance ? parseFloat(formData.stack_allowance.toString()) : undefined,
+        
+        // Pricing Grid Configuration
+        system_type: formData.system_type || null,
+        price_group: formData.price_group || null,
         
         active: true
       };
@@ -1410,6 +1418,109 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                     <p className="text-xs text-muted-foreground">
                       These values are added to the blind dimensions for fabric calculation
                     </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Pricing Grid Configuration (For Blinds) */}
+            {formData.curtain_type !== 'curtain' && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Workflow className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base">Pricing Grid Configuration</CardTitle>
+                  </div>
+                  <CardDescription>
+                    Configure system type and price group for automatic grid selection
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Explanation Card */}
+                  <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start gap-3">
+                        <Info className="h-5 w-5 text-purple-600 mt-0.5" />
+                        <div className="flex-1">
+                          <CardTitle className="text-sm text-purple-900">How Pricing Grids Work</CardTitle>
+                          <CardDescription className="text-xs text-purple-700 mt-1">
+                            Grids are resolved by: Product Type + System Type + Fabric Price Group
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3 text-xs">
+                      <div className="space-y-2">
+                        <p className="text-purple-800 font-medium">System Type examples:</p>
+                        <ul className="list-disc list-inside space-y-1 text-purple-700 ml-2">
+                          <li>Roller: <code className="text-xs bg-white px-1 py-0.5 rounded">open</code>, <code className="text-xs bg-white px-1 py-0.5 rounded">cassette</code>, <code className="text-xs bg-white px-1 py-0.5 rounded">heavy_duty</code></li>
+                          <li>Venetian: <code className="text-xs bg-white px-1 py-0.5 rounded">25mm</code>, <code className="text-xs bg-white px-1 py-0.5 rounded">50mm</code>, <code className="text-xs bg-white px-1 py-0.5 rounded">faux_wood</code></li>
+                        </ul>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-purple-800 font-medium">Price Group examples:</p>
+                        <p className="text-purple-700 ml-2">Fabrics are assigned to groups: <code className="text-xs bg-white px-1 py-0.5 rounded">A</code>, <code className="text-xs bg-white px-1 py-0.5 rounded">B</code>, <code className="text-xs bg-white px-1 py-0.5 rounded">C</code>, <code className="text-xs bg-white px-1 py-0.5 rounded">D</code></p>
+                      </div>
+                      <Separator className="my-2" />
+                      <div className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded">
+                        <Info className="h-4 w-4 text-blue-600 shrink-0" />
+                        <p className="text-blue-800 font-medium">
+                          Set these values here, then create routing rules in Settings → Pricing Grids → Grid Rules
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* System Type Field */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="system_type" className="font-medium">System Type</Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>The hardware/mechanism type (e.g., open, cassette, 25mm, 50mm)</p>
+                          <p className="text-xs mt-1 opacity-80">Used with fabric price group to select the correct pricing grid</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <Input
+                      id="system_type"
+                      type="text"
+                      value={formData.system_type}
+                      onChange={(e) => handleInputChange("system_type", e.target.value)}
+                      placeholder="e.g., open, cassette, 25mm, 50mm"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Examples: <span className="font-mono">open</span>, <span className="font-mono">cassette</span>, <span className="font-mono">heavy_duty</span>, <span className="font-mono">25mm</span>, <span className="font-mono">50mm</span>
+                    </p>
+                  </div>
+
+                  <Separator />
+
+                  {/* Price Group Field - Note about fabric */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Label className="font-medium">Fabric Price Group</Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Price groups are set on individual fabrics in Settings → Inventory</p>
+                          <p className="text-xs mt-1 opacity-80">This template field is not used - fabrics carry their own price_group (A/B/C/D)</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-sm text-muted-foreground">
+                        ℹ️ Price groups (A, B, C, D) are assigned to individual fabrics in the Inventory section, not on templates.
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        The system will automatically use the fabric's price group + this template's system type to find the correct pricing grid.
+                      </p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

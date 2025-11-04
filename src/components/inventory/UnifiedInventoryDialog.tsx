@@ -147,6 +147,7 @@ export const UnifiedInventoryDialog = ({
     hardware_finish: "",
     hardware_material: "",
     weight: 0,
+    price_group: "", // For pricing grid routing (A, B, C, D)
     wallpaper_roll_width: 0,
     wallpaper_roll_length: 0,
     wallpaper_sold_by: "per_roll",
@@ -218,6 +219,7 @@ export const UnifiedInventoryDialog = ({
         hardware_finish: item.hardware_finish || "",
         hardware_material: item.hardware_material || "",
         weight: item.weight || 0,
+        price_group: item.price_group || "",
         wallpaper_roll_width: item.wallpaper_roll_width || 0,
         wallpaper_roll_length: item.wallpaper_roll_length || 0,
         wallpaper_sold_by: item.wallpaper_sold_by || "per_roll",
@@ -461,6 +463,7 @@ export const UnifiedInventoryDialog = ({
           hardware_finish: "",
           hardware_material: "",
           weight: 0,
+          price_group: "",
           wallpaper_roll_width: 0,
           wallpaper_roll_length: 0,
           wallpaper_sold_by: "per_roll",
@@ -831,6 +834,30 @@ export const UnifiedInventoryDialog = ({
                       </div>
 
                       <div>
+                        <Label htmlFor="price_group">
+                          Price Group <Badge variant="outline" className="ml-2">For Grid Pricing</Badge>
+                        </Label>
+                        <Select
+                          value={formData.price_group}
+                          onValueChange={(value) => setFormData({ ...formData, price_group: value })}
+                        >
+                          <SelectTrigger id="price_group">
+                            <SelectValue placeholder="Select group" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="A">A (Economy)</SelectItem>
+                            <SelectItem value="B">B (Standard)</SelectItem>
+                            <SelectItem value="C">C (Premium)</SelectItem>
+                            <SelectItem value="D">D (Luxury)</SelectItem>
+                            <SelectItem value="E">E (Designer)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Used with template system type to select pricing grid
+                        </p>
+                      </div>
+
+                      <div>
                         <Label htmlFor="color">Color</Label>
                         <Input
                           id="color"
@@ -940,6 +967,30 @@ export const UnifiedInventoryDialog = ({
                           onChange={(e) => setFormData({ ...formData, fabric_composition: e.target.value })}
                           placeholder="e.g., 100% Cotton"
                         />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="price_group">
+                          Price Group <Badge variant="outline" className="ml-2">For Grid Pricing</Badge>
+                        </Label>
+                        <Select
+                          value={formData.price_group}
+                          onValueChange={(value) => setFormData({ ...formData, price_group: value })}
+                        >
+                          <SelectTrigger id="price_group">
+                            <SelectValue placeholder="Select group" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="A">A (Economy)</SelectItem>
+                            <SelectItem value="B">B (Standard)</SelectItem>
+                            <SelectItem value="C">C (Premium)</SelectItem>
+                            <SelectItem value="D">D (Luxury)</SelectItem>
+                            <SelectItem value="E">E (Designer)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Used with template system type to select pricing grid
+                        </p>
                       </div>
 
                       <div>
