@@ -18,6 +18,7 @@ import { CurtainTemplate, useCreateCurtainTemplate, useUpdateCurtainTemplate } f
 import { EyeletRingManager } from "./EyeletRingManager";
 import { LiningTypeManager } from "./LiningTypeManager";
 import { PricingGridUploader } from "./PricingGridUploader";
+import { TemplateGridManager } from "./TemplateGridManager";
 import { HardwareCompatibilityManager } from "./HardwareCompatibilityManager";
 import { useHeadingInventory } from "@/hooks/useHeadingInventory";
 import { useEnhancedInventoryByCategory } from "@/hooks/useEnhancedInventory";
@@ -1888,6 +1889,27 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                       />
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Pricing Grid Management - For Blinds */}
+            {formData.curtain_type !== 'curtain' && formData.system_type && (
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <GitBranch className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base">Manage Pricing Grids</CardTitle>
+                  </div>
+                  <CardDescription>
+                    Upload CSV pricing grids for different fabric price tiers
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TemplateGridManager 
+                    productType={mapCurtainTypeToCategory(formData.curtain_type)}
+                    systemType={formData.system_type}
+                  />
                 </CardContent>
               </Card>
             )}

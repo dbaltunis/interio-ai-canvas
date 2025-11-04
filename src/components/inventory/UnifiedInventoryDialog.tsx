@@ -969,27 +969,27 @@ export const UnifiedInventoryDialog = ({
                         />
                       </div>
 
-                      <div>
+                       <div>
                         <Label htmlFor="price_group">
-                          Price Group <Badge variant="outline" className="ml-2">For Grid Pricing</Badge>
+                          Pricing Tier <Badge variant="secondary" className="ml-2">Recommended</Badge>
                         </Label>
                         <Select
                           value={formData.price_group}
                           onValueChange={(value) => setFormData({ ...formData, price_group: value })}
                         >
                           <SelectTrigger id="price_group">
-                            <SelectValue placeholder="Select group" />
+                            <SelectValue placeholder="Select pricing tier" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="A">A (Economy)</SelectItem>
-                            <SelectItem value="B">B (Standard)</SelectItem>
-                            <SelectItem value="C">C (Premium)</SelectItem>
-                            <SelectItem value="D">D (Luxury)</SelectItem>
-                            <SelectItem value="E">E (Designer)</SelectItem>
+                            <SelectItem value="A">A - Economy</SelectItem>
+                            <SelectItem value="B">B - Standard</SelectItem>
+                            <SelectItem value="C">C - Premium</SelectItem>
+                            <SelectItem value="D">D - Luxury</SelectItem>
+                            <SelectItem value="E">E - Designer</SelectItem>
                           </SelectContent>
                         </Select>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Used with template system type to select pricing grid
+                          Select the pricing tier for this fabric. This is used with template settings to automatically find the correct pricing grid.
                         </p>
                       </div>
 
