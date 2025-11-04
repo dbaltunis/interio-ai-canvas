@@ -43,7 +43,7 @@ export const calculateBlindCosts = (
   // Calculate manufacturing cost (could be from grid or template)
   let manufacturingCost = 0;
   if (template?.pricing_type === 'pricing_grid' && template?.pricing_grid_data) {
-    // Grid pricing takes precedence
+    // Grid pricing takes precedence - grid data should be pre-loaded in template
     const { getPriceFromGrid } = require('@/hooks/usePricingGrids');
     manufacturingCost = getPriceFromGrid(template.pricing_grid_data, widthCm, heightCm);
   } else if (template?.machine_price_per_panel) {

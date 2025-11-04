@@ -60,7 +60,7 @@ export const calculateBlindCost = (
   let manufacturingCost = 0;
   
   if (template?.pricing_type === 'pricing_grid') {
-    console.log('💡 Using PRICING GRID - calculating from grid data');
+    console.log('💡 Using PRICING GRID - grid data should be pre-loaded in template');
     
     const gridData = template?.pricing_grid_data;
     
