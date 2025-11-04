@@ -5,7 +5,8 @@ import { WindowTreatmentOptionsManager } from "./components/WindowTreatmentOptio
 import { ManufacturingDefaults } from "./products/ManufacturingDefaults";
 import { CurtainTemplatesManager } from "./products/CurtainTemplatesManager";
 import { SystemTemplatesLibrary } from "./components/SystemTemplatesLibrary";
-import { Layers, Settings, Sliders, Library } from "lucide-react";
+import { PricingGridTest } from "../PricingGridTest";
+import { Layers, Settings, Sliders, Library, FlaskConical } from "lucide-react";
 export const WindowCoveringsTab = () => {
   return <div className="space-y-6">
       <Card>
@@ -15,7 +16,7 @@ export const WindowCoveringsTab = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="templates" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="templates" className="flex items-center gap-2">
                 <Layers className="h-4 w-4" />
                 My Templates
@@ -35,6 +36,10 @@ export const WindowCoveringsTab = () => {
               <TabsTrigger value="defaults" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
                 Defaults
+              </TabsTrigger>
+              <TabsTrigger value="testing" className="flex items-center gap-2">
+                <FlaskConical className="h-4 w-4" />
+                Testing
               </TabsTrigger>
             </TabsList>
 
@@ -56,6 +61,10 @@ export const WindowCoveringsTab = () => {
 
             <TabsContent value="defaults" className="space-y-6">
               <ManufacturingDefaults />
+            </TabsContent>
+
+            <TabsContent value="testing" className="space-y-6">
+              <PricingGridTest />
             </TabsContent>
           </Tabs>
         </CardContent>
