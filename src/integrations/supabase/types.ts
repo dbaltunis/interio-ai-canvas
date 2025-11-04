@@ -1941,6 +1941,7 @@ export type Database = {
           overlap: number | null
           panel_configuration: string | null
           price_above_breakpoint_multiplier: number | null
+          price_group: string | null
           price_rules: Json | null
           pricing_grid_data: Json | null
           pricing_methods: Json | null
@@ -2015,6 +2016,7 @@ export type Database = {
           overlap?: number | null
           panel_configuration?: string | null
           price_above_breakpoint_multiplier?: number | null
+          price_group?: string | null
           price_rules?: Json | null
           pricing_grid_data?: Json | null
           pricing_methods?: Json | null
@@ -2089,6 +2091,7 @@ export type Database = {
           overlap?: number | null
           panel_configuration?: string | null
           price_above_breakpoint_multiplier?: number | null
+          price_group?: string | null
           price_rules?: Json | null
           pricing_grid_data?: Json | null
           pricing_methods?: Json | null
@@ -2678,6 +2681,7 @@ export type Database = {
           specifications: Json | null
           subcategory: string | null
           supplier: string | null
+          system_type: string | null
           treatment_type: string | null
           unit: string | null
           updated_at: string
@@ -2754,6 +2758,7 @@ export type Database = {
           specifications?: Json | null
           subcategory?: string | null
           supplier?: string | null
+          system_type?: string | null
           treatment_type?: string | null
           unit?: string | null
           updated_at?: string
@@ -2830,6 +2835,7 @@ export type Database = {
           specifications?: Json | null
           subcategory?: string | null
           supplier?: string | null
+          system_type?: string | null
           treatment_type?: string | null
           unit?: string | null
           updated_at?: string
