@@ -7,6 +7,7 @@ import { CurtainTemplatesManager } from "./products/CurtainTemplatesManager";
 import { SystemTemplatesLibrary } from "./components/SystemTemplatesLibrary";
 import { PricingGridManager } from "../pricing-grids/PricingGridManager";
 import { PricingGridRulesManager } from "../pricing-grids/PricingGridRulesManager";
+import { GridResolutionTester } from "../pricing-grids/GridResolutionTester";
 import { Layers, Settings, Sliders, Library, Grid3x3, Route } from "lucide-react";
 export const WindowCoveringsTab = () => {
   return <div className="space-y-6">
@@ -73,6 +74,7 @@ export const WindowCoveringsTab = () => {
             </TabsContent>
 
             <TabsContent value="grid-rules" className="space-y-6">
+              <GridResolutionTester />
               <PricingGridRulesManager />
             </TabsContent>
           </Tabs>

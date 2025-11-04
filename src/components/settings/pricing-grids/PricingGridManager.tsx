@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus, Upload, Trash2, Grid3x3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { SampleDataHelper } from './SampleDataHelper';
 
 export const PricingGridManager = () => {
   const [newGridName, setNewGridName] = useState('');
@@ -138,6 +139,9 @@ export const PricingGridManager = () => {
 
   return (
     <div className="space-y-6">
+      {/* Sample CSV Helper */}
+      <SampleDataHelper />
+
       {/* Create New Grid */}
       <Card>
         <CardHeader>
