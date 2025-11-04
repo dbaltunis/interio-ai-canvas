@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Upload, File, Image, Trash2, Download, Eye } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Upload, File, Image, Trash2, Download, Eye, Sparkles } from "lucide-react";
 import { useProjectFiles, useUploadFile, useDeleteFile, useGetFileUrl } from "@/hooks/useFileStorage";
+import { EnhancedImageUpload } from "./EnhancedImageUpload";
 
 interface FileUploadProps {
   projectId: string;
@@ -80,8 +82,18 @@ export const FileUpload = ({ projectId }: FileUploadProps) => {
 
   return (
     <div className="space-y-6">
-      {/* Upload Section */}
-      <Card>
+      <Tabs defaultValue="basic" className="w-full">
+        <TabsList>
+          <TabsTrigger value="basic">Basic Upload</TabsTrigger>
+          <TabsTrigger value="enhanced" className="gap-2">
+            <Sparkles className="h-4 w-4" />
+            Enhanced Upload
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="basic" className="space-y-6">
+          {/* Basic Upload Section */}
+          <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
             <Upload className="mr-2 h-5 w-5" />
@@ -124,10 +136,10 @@ export const FileUpload = ({ projectId }: FileUploadProps) => {
             {uploadFile.isPending ? 'Uploading...' : 'Upload Files'}
           </Button>
         </CardContent>
-      </Card>
+          </Card>
 
-      {/* Files List */}
-      <Card>
+          {/* Files List */}
+          <Card>
         <CardHeader>
           <CardTitle>Project Files</CardTitle>
           <CardDescription>Manage uploaded documents and images</CardDescription>
@@ -189,8 +201,19 @@ export const FileUpload = ({ projectId }: FileUploadProps) => {
               </TableBody>
             </Table>
           )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="enhanced">
+          <EnhancedImageUpload
+            projectId={projectId}
+            maxFiles={10}
+            maxSizeMB={5}
+            showPreview={true}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
