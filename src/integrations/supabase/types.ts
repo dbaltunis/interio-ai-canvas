@@ -1951,6 +1951,7 @@ export type Database = {
           selected_heading_ids: string[] | null
           side_hems: number
           stack_allowance: number | null
+          system_type: string | null
           treatment_category: string | null
           unit_price: number | null
           updated_at: string
@@ -2024,6 +2025,7 @@ export type Database = {
           selected_heading_ids?: string[] | null
           side_hems?: number
           stack_allowance?: number | null
+          system_type?: string | null
           treatment_category?: string | null
           unit_price?: number | null
           updated_at?: string
@@ -2097,6 +2099,7 @@ export type Database = {
           selected_heading_ids?: string[] | null
           side_hems?: number
           stack_allowance?: number | null
+          system_type?: string | null
           treatment_category?: string | null
           unit_price?: number | null
           updated_at?: string
@@ -2657,6 +2660,7 @@ export type Database = {
           pattern_repeat_cm: number | null
           pattern_repeat_horizontal: number | null
           pattern_repeat_vertical: number | null
+          price_group: string | null
           price_per_meter: number | null
           price_per_unit: number | null
           price_per_yard: number | null
@@ -2732,6 +2736,7 @@ export type Database = {
           pattern_repeat_cm?: number | null
           pattern_repeat_horizontal?: number | null
           pattern_repeat_vertical?: number | null
+          price_group?: string | null
           price_per_meter?: number | null
           price_per_unit?: number | null
           price_per_yard?: number | null
@@ -2807,6 +2812,7 @@ export type Database = {
           pattern_repeat_cm?: number | null
           pattern_repeat_horizontal?: number | null
           pattern_repeat_vertical?: number | null
+          price_group?: string | null
           price_per_meter?: number | null
           price_per_unit?: number | null
           price_per_yard?: number | null
@@ -4897,6 +4903,106 @@ export type Database = {
             columns: ["price_list_id"]
             isOneToOne: false
             referencedRelation: "retailer_price_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pricing_grid_rules: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          grid_id: string
+          id: string
+          option_conditions: Json | null
+          price_group: string
+          priority: number | null
+          product_type: string
+          system_type: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          grid_id: string
+          id?: string
+          option_conditions?: Json | null
+          price_group: string
+          priority?: number | null
+          product_type: string
+          system_type?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          grid_id?: string
+          id?: string
+          option_conditions?: Json | null
+          price_group?: string
+          priority?: number | null
+          product_type?: string
+          system_type?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_grid_rules_grid_id_fkey"
+            columns: ["grid_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_grids"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pricing_grids: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          description: string | null
+          grid_code: string
+          grid_data: Json
+          id: string
+          name: string
+          replaced_by_grid_id: string | null
+          updated_at: string | null
+          user_id: string
+          version: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          grid_code: string
+          grid_data?: Json
+          id?: string
+          name: string
+          replaced_by_grid_id?: string | null
+          updated_at?: string | null
+          user_id: string
+          version?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          grid_code?: string
+          grid_data?: Json
+          id?: string
+          name?: string
+          replaced_by_grid_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_grids_replaced_by_grid_id_fkey"
+            columns: ["replaced_by_grid_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_grids"
             referencedColumns: ["id"]
           },
         ]
