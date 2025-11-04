@@ -17,24 +17,26 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 
-// Hook to get option count for a template
-const useTemplateOptionCount = (templateId: string) => {
+// Hook to get option count for a template's category
+const useTemplateOptionCount = (treatmentCategory: string) => {
   return useQuery({
-    queryKey: ['template-option-count', templateId],
+    queryKey: ['template-option-count', treatmentCategory],
     queryFn: async () => {
       const { count, error } = await supabase
         .from('treatment_options')
         .select('*', { count: 'exact', head: true })
-        .eq('treatment_id', templateId);
+        .eq('treatment_category', treatmentCategory)
+        .is('template_id', null); // Category-based options only
       
       if (error) throw error;
       return count || 0;
     },
+    enabled: !!treatmentCategory,
   });
 };
 
 const TemplateCard = ({ template }: { template: any }) => {
-  const { data: optionCount } = useTemplateOptionCount(template.id);
+  const { data: optionCount } = useTemplateOptionCount(template.treatment_category);
   const cloneTemplate = useCloneSystemTemplate();
   const [showDialog, setShowDialog] = useState(false);
   const [customPrice, setCustomPrice] = useState<number>(template.unit_price || 0);
