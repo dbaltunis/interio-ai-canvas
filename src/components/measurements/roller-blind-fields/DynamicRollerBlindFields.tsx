@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTreatmentOptions } from "@/hooks/useTreatmentOptions";
 import { useConditionalOptions } from "@/hooks/useConditionalOptions";
+import { getPriceFromGrid } from "@/hooks/usePricingGrids";
 import { Loader2, Info, Sparkles, ChevronDown } from "lucide-react";
 import { useEffect } from "react";
 
@@ -84,6 +85,29 @@ export const DynamicRollerBlindFields = ({
       }));
   };
 
+  // Helper to calculate price (handles pricing-grid method)
+  const calculateOptionPrice = (basePrice: number, pricingMethod: string, pricingGridData: any): number => {
+    if (pricingMethod === 'pricing-grid' && pricingGridData) {
+      // Check if it's a simple width-only array format
+      if (Array.isArray(pricingGridData) && pricingGridData.length > 0 && 'width' in pricingGridData[0]) {
+        // Simple width-based pricing
+        const widthCm = measurements.rail_width || 0;
+        const widthValues = pricingGridData.map((entry: any) => parseInt(entry.width));
+        const closestWidth = widthValues.reduce((prev: number, curr: number) => {
+          return Math.abs(curr - widthCm) < Math.abs(prev - widthCm) ? curr : prev;
+        });
+        const matchingEntry = pricingGridData.find((entry: any) => parseInt(entry.width) === closestWidth);
+        return matchingEntry ? parseFloat(matchingEntry.price) : 0;
+      } else {
+        // Full 2D pricing grid with width and drop
+        const widthCm = measurements.rail_width || 0;
+        const heightCm = measurements.drop || 0;
+        return getPriceFromGrid(pricingGridData, widthCm, heightCm);
+      }
+    }
+    return basePrice;
+  };
+
   // Helper to handle option change and notify parent of price
   const handleOptionChange = (key: string, value: string | boolean, optionValues: any[], selectedValue?: any) => {
     onChange(key, String(value));
@@ -94,7 +118,19 @@ export const DynamicRollerBlindFields = ({
         // Include pricing method and grid data from extra_data
         const pricingMethod = selectedValue?.extra_data?.pricing_method || 'fixed';
         const pricingGridData = selectedValue?.extra_data?.pricing_grid_data;
-        onOptionPriceChange(key, selectedOption.price, selectedOption.label, pricingMethod, pricingGridData);
+        
+        // Calculate actual price (handles pricing-grid method)
+        const actualPrice = calculateOptionPrice(selectedOption.price, pricingMethod, pricingGridData);
+        
+        if (pricingMethod === 'pricing-grid' && pricingGridData) {
+          console.log(`💰 Calculated pricing-grid price for "${key}":`, {
+            method: Array.isArray(pricingGridData) && 'width' in pricingGridData[0] ? 'width-based' : '2D grid',
+            dimensions: `${measurements.rail_width || 0}cm × ${measurements.drop || 0}cm`,
+            calculatedPrice: actualPrice
+          });
+        }
+        
+        onOptionPriceChange(key, actualPrice, selectedOption.label, pricingMethod, pricingGridData);
       }
     }
   };
@@ -124,7 +160,8 @@ export const DynamicRollerBlindFields = ({
           const firstOptionValue = option.option_values?.[0];
           const pricingMethod = firstOptionValue?.extra_data?.pricing_method || 'fixed';
           const pricingGridData = firstOptionValue?.extra_data?.pricing_grid_data;
-          onOptionPriceChange(option.key, defaultValue.price, defaultValue.label, pricingMethod, pricingGridData);
+          const actualPrice = calculateOptionPrice(defaultValue.price, pricingMethod, pricingGridData);
+          onOptionPriceChange(option.key, actualPrice, defaultValue.label, pricingMethod, pricingGridData);
         }
       } else if (currentValue && onOptionPriceChange) {
         // If value exists, ensure it's in the cost summary
@@ -135,8 +172,9 @@ export const DynamicRollerBlindFields = ({
           if (selectedOption && selectedValue) {
             const pricingMethod = selectedValue?.extra_data?.pricing_method || 'fixed';
             const pricingGridData = selectedValue?.extra_data?.pricing_grid_data;
+            const actualPrice = calculateOptionPrice(selectedOption.price, pricingMethod, pricingGridData);
             console.log(`  Re-adding existing ${option.key} = ${currentValue} to cost summary`);
-            onOptionPriceChange(option.key, selectedOption.price, selectedOption.label, pricingMethod, pricingGridData);
+            onOptionPriceChange(option.key, actualPrice, selectedOption.label, pricingMethod, pricingGridData);
           }
         }
       }
