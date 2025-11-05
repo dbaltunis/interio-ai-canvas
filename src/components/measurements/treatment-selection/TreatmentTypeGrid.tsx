@@ -10,6 +10,7 @@ interface TreatmentType {
   pricing_type: string;
   heading_name?: string;
   created_at: string;
+  image_url?: string;
 }
 
 interface TreatmentTypeGridProps {
@@ -87,9 +88,17 @@ export const TreatmentTypeGrid = ({
                 >
                   <CardContent className="p-4">
                     <div className="flex flex-col items-center space-y-3">
-                      {/* Preview placeholder */}
-                      <div className="h-20 w-full flex items-center justify-center bg-gray-50 border-2 border-gray-200 rounded-md overflow-hidden">
-                        <div className="text-gray-400 text-xs">No preview</div>
+                      {/* Image preview or placeholder */}
+                      <div className="h-20 w-full flex items-center justify-center bg-muted border-2 border-border rounded-md overflow-hidden">
+                        {treatment.image_url ? (
+                          <img 
+                            src={treatment.image_url} 
+                            alt={treatment.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="text-muted-foreground text-xs">No preview</div>
+                        )}
                       </div>
                       
                       <div className="text-center w-full">
