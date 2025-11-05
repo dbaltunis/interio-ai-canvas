@@ -85,7 +85,10 @@ export const calculateBlindCosts = (
   console.log('💰 Calculating options cost, selectedOptions:', selectedOptions);
   
   const optionsCost = selectedOptions
-    .filter(opt => opt.price && opt.price > 0)
+    .filter(opt => {
+      // Include options with price > 0 OR pricing-grid method (grid price calculated separately)
+      return (opt.price && opt.price > 0) || (opt.pricingMethod === 'pricing-grid' && opt.pricingGridData);
+    })
     .reduce((sum, opt) => {
       const basePrice = opt.price || 0;
       
@@ -112,14 +115,33 @@ export const calculateBlindCosts = (
         });
         return sum + priceForArea;
       } else if (opt.pricingMethod === 'pricing-grid' && opt.pricingGridData) {
-        // Use pricing grid to calculate cost based on dimensions
-        const gridPrice = getPriceFromGrid(opt.pricingGridData, widthCm, heightCm);
-        console.log(`💰 Option "${opt.name}" pricing:`, {
-          method: 'pricing-grid',
-          dimensions: `${widthCm}cm × ${heightCm}cm`,
-          gridPrice: gridPrice.toFixed(2)
-        });
-        return sum + gridPrice;
+        // Check if it's a simple width-only array format
+        if (Array.isArray(opt.pricingGridData) && opt.pricingGridData.length > 0 && 'width' in opt.pricingGridData[0]) {
+          // Simple width-based pricing: [{ width: 60, price: 300 }, ...]
+          const widthValues = opt.pricingGridData.map((entry: any) => parseInt(entry.width));
+          const closestWidth = widthValues.reduce((prev: number, curr: number) => {
+            return Math.abs(curr - widthCm) < Math.abs(prev - widthCm) ? curr : prev;
+          });
+          const matchingEntry = opt.pricingGridData.find((entry: any) => parseInt(entry.width) === closestWidth);
+          const gridPrice = matchingEntry ? parseFloat(matchingEntry.price) : 0;
+          
+          console.log(`💰 Option "${opt.name}" pricing:`, {
+            method: 'pricing-grid (width-based)',
+            requestedWidth: widthCm + 'cm',
+            closestWidth: closestWidth + 'cm',
+            gridPrice: gridPrice.toFixed(2)
+          });
+          return sum + gridPrice;
+        } else {
+          // Full 2D pricing grid with width and drop
+          const gridPrice = getPriceFromGrid(opt.pricingGridData, widthCm, heightCm);
+          console.log(`💰 Option "${opt.name}" pricing:`, {
+            method: 'pricing-grid (2D)',
+            dimensions: `${widthCm}cm × ${heightCm}cm`,
+            gridPrice: gridPrice.toFixed(2)
+          });
+          return sum + gridPrice;
+        }
       } else {
         // Fixed price (default)
         console.log(`💰 Option "${opt.name}" pricing:`, {

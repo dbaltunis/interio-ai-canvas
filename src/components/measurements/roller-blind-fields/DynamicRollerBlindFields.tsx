@@ -119,16 +119,22 @@ export const DynamicRollerBlindFields = ({
         
         // Also notify parent of the price for cost summary
         if (onOptionPriceChange) {
-          onOptionPriceChange(option.key, defaultValue.price, defaultValue.label);
+          const firstOptionValue = option.option_values?.[0];
+          const pricingMethod = firstOptionValue?.extra_data?.pricing_method || 'fixed';
+          const pricingGridData = firstOptionValue?.extra_data?.pricing_grid_data;
+          onOptionPriceChange(option.key, defaultValue.price, defaultValue.label, pricingMethod, pricingGridData);
         }
       } else if (currentValue && onOptionPriceChange) {
         // If value exists, ensure it's in the cost summary
         const alreadySelected = selectedOptions.some(opt => opt.name.startsWith(option.key + ':'));
         if (!alreadySelected) {
           const selectedOption = optionValues.find(opt => opt.value === currentValue);
-          if (selectedOption) {
+          const selectedValue = option.option_values?.find((v: any) => v.code === currentValue || v.id === currentValue);
+          if (selectedOption && selectedValue) {
+            const pricingMethod = selectedValue?.extra_data?.pricing_method || 'fixed';
+            const pricingGridData = selectedValue?.extra_data?.pricing_grid_data;
             console.log(`  Re-adding existing ${option.key} = ${currentValue} to cost summary`);
-            onOptionPriceChange(option.key, selectedOption.price, selectedOption.label);
+            onOptionPriceChange(option.key, selectedOption.price, selectedOption.label, pricingMethod, pricingGridData);
           }
         }
       }
