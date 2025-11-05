@@ -636,19 +636,34 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
       
       setIsDeleting(true);
 
-      // Delete associated rooms and treatments (cascade should handle this, but being explicit)
-      const { data: rooms } = await supabase
-        .from('rooms')
+      // STEP 1: Delete quotes and quote_items first (prevents FK constraint violations)
+      const { data: quotes, error: quotesError } = await supabase
+        .from('quotes')
         .select('id')
         .eq('project_id', jobId);
-
-      if (rooms && rooms.length > 0) {
-        const roomIds = rooms.map(r => r.id);
-        await supabase.from('treatments').delete().in('room_id', roomIds);
-        await supabase.from('rooms').delete().in('id', roomIds);
+      
+      if (quotes && quotes.length > 0) {
+        // Delete quote_items first
+        for (const quote of quotes) {
+          await supabase.from('quote_items').delete().eq('quote_id', quote.id);
+        }
+        // Then delete quotes
+        await supabase.from('quotes').delete().eq('project_id', jobId);
       }
 
-      // Delete the project
+      // STEP 2: Delete workshop_items associated with this project
+      await supabase.from('workshop_items').delete().eq('project_id', jobId);
+
+      // STEP 3: Delete treatments (including orphaned ones with null room_id)
+      await supabase.from('treatments').delete().eq('project_id', jobId);
+
+      // STEP 4: Delete surfaces
+      await supabase.from('surfaces').delete().eq('project_id', jobId);
+
+      // STEP 5: Delete rooms
+      await supabase.from('rooms').delete().eq('project_id', jobId);
+
+      // STEP 6: Finally delete the project itself
       const { error } = await supabase
         .from('projects')
         .delete()

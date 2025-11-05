@@ -1,5 +1,6 @@
 
 import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { EnhancedRoomView } from "@/components/room-management/EnhancedRoomView";
 import { useProjects } from "@/hooks/useProjects";
 import { useTreatments } from "@/hooks/useTreatments";
@@ -17,6 +18,7 @@ interface RoomsTabProps {
 }
 
 export const RoomsTab = ({ projectId }: RoomsTabProps) => {
+  const queryClient = useQueryClient();
   const { data: projects } = useProjects();
   const { data: treatments } = useTreatments(projectId);
   const { data: rooms } = useRooms(projectId);
@@ -26,29 +28,36 @@ export const RoomsTab = ({ projectId }: RoomsTabProps) => {
   const createRoom = useCreateRoom();
   const project = projects?.find(p => p.id === projectId);
 
-  // Auto-cleanup: Remove orphaned treatments and surfaces (those with no parent room)
+  // Auto-cleanup: Remove orphaned treatments and surfaces (those with no/invalid parent room)
   useEffect(() => {
     const cleanupOrphanedData = async () => {
       if (!rooms || !treatments || !surfaces || !projectId) return;
       
       const roomIds = new Set(rooms.map(r => r.id));
       
-      // Find and delete orphaned surfaces
-      const orphanedSurfaces = surfaces.filter(s => s.room_id && !roomIds.has(s.room_id));
+      // Find and delete orphaned surfaces (no room_id OR invalid room_id)
+      const orphanedSurfaces = surfaces.filter(s => !s.room_id || !roomIds.has(s.room_id));
       if (orphanedSurfaces.length > 0) {
         console.log('Cleaning up orphaned surfaces:', orphanedSurfaces.length);
         for (const surface of orphanedSurfaces) {
           await supabase.from('surfaces').delete().eq('id', surface.id);
         }
+        // Force refresh queries after cleanup
+        queryClient.invalidateQueries({ queryKey: ["surfaces"] });
+        queryClient.invalidateQueries({ queryKey: ["treatments"] });
+        queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
       }
       
-      // Find and delete orphaned treatments
-      const orphanedTreatments = treatments.filter(t => t.room_id && !roomIds.has(t.room_id));
+      // Find and delete orphaned treatments (no room_id OR invalid room_id)
+      const orphanedTreatments = treatments.filter(t => !t.room_id || !roomIds.has(t.room_id));
       if (orphanedTreatments.length > 0) {
         console.log('Cleaning up orphaned treatments:', orphanedTreatments.length);
         for (const treatment of orphanedTreatments) {
           await supabase.from('treatments').delete().eq('id', treatment.id);
         }
+        // Force refresh queries after cleanup
+        queryClient.invalidateQueries({ queryKey: ["treatments"] });
+        queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
       }
     };
     

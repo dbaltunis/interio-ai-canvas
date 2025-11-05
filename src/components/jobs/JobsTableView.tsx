@@ -393,15 +393,34 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
     try {
       const projectId = quote.id; // This is actually the project ID
       
-      // Delete quotes first to avoid foreign key constraint
-      const { error: quotesError } = await supabase
+      // STEP 1: Delete quotes and quote_items first (prevents FK constraint violations)
+      const { data: quotes, error: quotesListError } = await supabase
         .from('quotes')
-        .delete()
+        .select('id')
         .eq('project_id', projectId);
       
-      if (quotesError) throw quotesError;
-      
-      // Then delete the project (which cascades to rooms, surfaces, treatments)
+      if (quotes && quotes.length > 0) {
+        // Delete quote_items first
+        for (const q of quotes) {
+          await supabase.from('quote_items').delete().eq('quote_id', q.id);
+        }
+        // Then delete quotes
+        await supabase.from('quotes').delete().eq('project_id', projectId);
+      }
+
+      // STEP 2: Delete workshop_items associated with this project
+      await supabase.from('workshop_items').delete().eq('project_id', projectId);
+
+      // STEP 3: Delete treatments (including orphaned ones with null room_id)
+      await supabase.from('treatments').delete().eq('project_id', projectId);
+
+      // STEP 4: Delete surfaces
+      await supabase.from('surfaces').delete().eq('project_id', projectId);
+
+      // STEP 5: Delete rooms
+      await supabase.from('rooms').delete().eq('project_id', projectId);
+
+      // STEP 6: Finally delete the project itself
       const { error: projectError } = await supabase
         .from('projects')
         .delete()
@@ -412,6 +431,10 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
       // Invalidate and refetch both quotes and projects
       await queryClient.invalidateQueries({ queryKey: ["projects"] });
       await queryClient.invalidateQueries({ queryKey: ["quotes"] });
+      await queryClient.invalidateQueries({ queryKey: ["treatments"] });
+      await queryClient.invalidateQueries({ queryKey: ["surfaces"] });
+      await queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      await queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
       await refetch();
       
       toast({
