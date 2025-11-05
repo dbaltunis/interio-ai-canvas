@@ -837,21 +837,12 @@ export const UnifiedInventoryDialog = ({
                         <Label htmlFor="price_group">
                           Price Group <Badge variant="outline" className="ml-2">For Grid Pricing</Badge>
                         </Label>
-                        <Select
+                        <Input
+                          id="price_group"
                           value={formData.price_group}
-                          onValueChange={(value) => setFormData({ ...formData, price_group: value })}
-                        >
-                          <SelectTrigger id="price_group">
-                            <SelectValue placeholder="Select group" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="A">A (Economy)</SelectItem>
-                            <SelectItem value="B">B (Standard)</SelectItem>
-                            <SelectItem value="C">C (Premium)</SelectItem>
-                            <SelectItem value="D">D (Luxury)</SelectItem>
-                            <SelectItem value="E">E (Designer)</SelectItem>
-                          </SelectContent>
-                        </Select>
+                          onChange={(e) => setFormData({ ...formData, price_group: e.target.value })}
+                          placeholder="e.g., A, B, Premium, Economy, Custom1"
+                        />
                         <p className="text-xs text-muted-foreground mt-1">
                           Used with template system type to select pricing grid
                         </p>
