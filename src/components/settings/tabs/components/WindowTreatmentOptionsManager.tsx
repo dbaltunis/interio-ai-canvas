@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight, ChevronDown, Package, Upload, Download, Search } from "lucide-react";
+import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight, ChevronDown, Package, Upload, Download, Search, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -1054,6 +1054,20 @@ export const WindowTreatmentOptionsManager = () => {
                                 </Button>
                               )}
                               <div className="font-medium uppercase">{value.label}</div>
+                              
+                              {/* Visibility Indicator */}
+                              {value.extra_data?.visible === false ? (
+                                <Badge variant="outline" className="flex items-center gap-1 text-xs bg-muted text-muted-foreground">
+                                  <EyeOff className="h-3 w-3" />
+                                  Hidden
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="flex items-center gap-1 text-xs bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">
+                                  <Eye className="h-3 w-3" />
+                                  Visible
+                                </Badge>
+                              )}
+                              
                               {value.extra_data?.pricing_method === 'pricing-grid' ? (
                             <Badge variant="secondary" className="text-xs">
                               Price Table
