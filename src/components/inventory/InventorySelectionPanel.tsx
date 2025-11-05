@@ -290,6 +290,14 @@ export const InventorySelectionPanel = ({
                   {item.fabric_width > 0 && <div className="flex items-center gap-1">
                       <span>📏 {item.fabric_width}cm wide</span>
                     </div>}
+                  {item.price_group && <div className="flex items-center gap-1">
+                      <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">
+                        Grid: {item.price_group}
+                      </Badge>
+                    </div>}
+                  {item.product_category && <div className="text-[9px]">
+                      For: {item.product_category.replace(/_/g, ' ')}
+                    </div>}
                   {item.composition && <div className="truncate">Comp: {item.composition}</div>}
                   {(item.pattern_repeat_vertical > 0 || item.pattern_repeat_horizontal > 0) && <div>
                       Repeat: {item.pattern_repeat_vertical || 0}×{item.pattern_repeat_horizontal || 0}cm
