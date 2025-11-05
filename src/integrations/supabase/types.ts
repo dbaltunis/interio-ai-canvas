@@ -2667,6 +2667,7 @@ export type Database = {
           price_per_meter: number | null
           price_per_unit: number | null
           price_per_yard: number | null
+          product_category: string | null
           profit_margin_percentage: number | null
           profit_per_unit: number | null
           quantity: number | null
@@ -2744,6 +2745,7 @@ export type Database = {
           price_per_meter?: number | null
           price_per_unit?: number | null
           price_per_yard?: number | null
+          product_category?: string | null
           profit_margin_percentage?: number | null
           profit_per_unit?: number | null
           quantity?: number | null
@@ -2821,6 +2823,7 @@ export type Database = {
           price_per_meter?: number | null
           price_per_unit?: number | null
           price_per_yard?: number | null
+          product_category?: string | null
           profit_margin_percentage?: number | null
           profit_per_unit?: number | null
           quantity?: number | null
