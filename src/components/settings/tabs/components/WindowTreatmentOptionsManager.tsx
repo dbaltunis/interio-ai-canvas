@@ -529,14 +529,14 @@ export const WindowTreatmentOptionsManager = () => {
                     <div className="col-span-2">
                       <Label htmlFor="inventory">Link to Inventory (Optional)</Label>
                       <Select
-                        value={formData.inventory_item_id || ''}
-                        onValueChange={(value) => setFormData({ ...formData, inventory_item_id: value || null })}
+                        value={formData.inventory_item_id || 'none'}
+                        onValueChange={(value) => setFormData({ ...formData, inventory_item_id: value === 'none' ? null : value })}
                       >
                         <SelectTrigger id="inventory">
                           <SelectValue placeholder="Select inventory item..." />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">None (No inventory tracking)</SelectItem>
+                          <SelectItem value="none">None (No inventory tracking)</SelectItem>
                           {inventoryItems.filter(item => item.active).map((item) => (
                             <SelectItem key={item.id} value={item.id}>
                               {item.name} - Stock: {item.quantity} {item.unit}
