@@ -55,24 +55,37 @@ export const calculateBlindCost = (
   const squareMeters = squareMetersRaw * wasteMultiplier; // Apply waste
   const linearMeters = heightM; // For blinds, linear meters typically = height
   
-  // PRICING GRID: If using pricing grid, the grid price IS the total cost (includes everything)
+  // PRICING GRID: Check fabric item FIRST, then template
   let fabricCost = 0;
   let manufacturingCost = 0;
   
-  if (template?.pricing_type === 'pricing_grid') {
-    console.log('💡 Using PRICING GRID - grid data should be pre-loaded in template');
+  // PRIORITY 1: Check if fabric has pricing grid data
+  const hasFabricGrid = fabricItem?.pricing_grid_data && (fabricItem?.price_group || fabricItem?.product_category);
+  const hasTemplateGrid = template?.pricing_type === 'pricing_grid' && template?.pricing_grid_data;
+  
+  if (hasFabricGrid || hasTemplateGrid) {
+    console.log('💡 Using PRICING GRID:', {
+      source: hasFabricGrid ? 'fabric' : 'template',
+      fabricName: fabricItem?.name,
+      priceGroup: fabricItem?.price_group,
+      productCategory: fabricItem?.product_category
+    });
     
-    const gridData = template?.pricing_grid_data;
+    const gridData = hasFabricGrid ? fabricItem.pricing_grid_data : template.pricing_grid_data;
     
     if (gridData) {
       const gridPrice = getPriceFromGrid(gridData, width, height);
       
-      console.log('💰 Grid price calculated:', gridPrice, 'for', width, 'x', height);
+      console.log('💰 Grid price calculated:', {
+        gridPrice,
+        dimensions: `${width}cm × ${height}cm`,
+        source: hasFabricGrid ? 'fabric' : 'template'
+      });
       
       // Grid price IS the total - it includes everything
-      // Put it in manufacturingCost to keep fabricCost at 0
-      fabricCost = 0;
-      manufacturingCost = gridPrice;
+      // Split between fabric and manufacturing for display purposes
+      fabricCost = gridPrice * 0.4; // 40% fabric
+      manufacturingCost = gridPrice * 0.6; // 60% manufacturing
     } else if (template?.unit_price) {
       // Fallback to unit price if no grid data
       console.log('⚠️ No grid data, using template unit_price as fallback');
