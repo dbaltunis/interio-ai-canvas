@@ -1294,11 +1294,22 @@ export const DynamicWindowWorksheet = forwardRef<{
               return false;
           }
         })();
-        return <div key={step} className="flex items-center">
-              <button onClick={() => setActiveTab(step)} disabled={readOnly} className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold transition-all ${activeTab === step ? 'bg-primary text-primary-foreground ring-2 ring-primary/20' : isCompleted ? 'bg-green-500/10 text-green-700 hover:bg-green-500/20' : 'bg-muted text-muted-foreground hover:bg-muted/80'} ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`} title={stepNames[index]}>
-                {isCompleted ? <span>✓</span> : index + 1}
+        return <div key={step} className="flex items-center gap-2">
+              <button 
+                onClick={() => setActiveTab(step)} 
+                disabled={readOnly} 
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                  activeTab === step 
+                    ? 'bg-primary text-primary-foreground' 
+                    : isCompleted 
+                    ? 'bg-green-500/10 text-green-700 hover:bg-green-500/20' 
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                } ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`}
+              >
+                {isCompleted && <span className="mr-1">✓</span>}
+                {stepNames[index]}
               </button>
-              {index < 3 && <div className="w-4 h-[1px] bg-border" />}
+              {index < 3 && <div className="w-2 h-[1px] bg-border" />}
             </div>;
       })}
       </div>
