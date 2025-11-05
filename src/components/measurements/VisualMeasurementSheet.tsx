@@ -1005,8 +1005,8 @@ export const VisualMeasurementSheet = ({
                 treatmentType === 'plantation_shutters' ||
                 treatmentType === 'shutters' ||
                 treatmentType === 'awning') && (
-                <div className="space-y-3">
-                  <DynamicRollerBlindFields 
+                <div className="space-y-3 px-3">
+                  <DynamicRollerBlindFields
                     measurements={measurements} 
                     onChange={handleInputChange} 
                     templateId={selectedTemplate?.id} 
