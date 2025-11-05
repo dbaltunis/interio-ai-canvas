@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight, Package, Upload, Download, Search } from "lucide-react";
+import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight, ChevronDown, Package, Upload, Download, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -69,11 +69,18 @@ export const WindowTreatmentOptionsManager = () => {
     inventory_item_id: null as string | null,
     pricing_method: 'fixed' as string,
     pricing_grid_data: [] as Array<{ width: number; price: number }>,
+    sub_options: [] as Array<{
+      id: string;
+      label: string;
+      key: string;
+      choices: Array<{ id: string; label: string; value: string; price: number }>;
+    }>
   });
   const [showInventoryDialog, setShowInventoryDialog] = useState(false);
   const [inventorySearchQuery, setInventorySearchQuery] = useState('');
   const [selectedInventoryCategoryId, setSelectedInventoryCategoryId] = useState<string | null>(null);
   const [showCreateInventoryForm, setShowCreateInventoryForm] = useState(false);
+  const [expandedOptions, setExpandedOptions] = useState<Set<string>>(new Set());
   const [newInventoryItem, setNewInventoryItem] = useState({
     name: '',
     description: '',
@@ -98,6 +105,7 @@ export const WindowTreatmentOptionsManager = () => {
       inventory_item_id: null,
       pricing_method: 'fixed',
       pricing_grid_data: [],
+      sub_options: []
     });
   };
 
@@ -149,6 +157,7 @@ export const WindowTreatmentOptionsManager = () => {
                 price: Number(formData.price) || 0,
                 pricing_method: formData.pricing_method,
                 pricing_grid_data: formData.pricing_grid_data,
+                sub_options: formData.sub_options
               },
               inventory_item_id: formData.inventory_item_id || null,
             }
@@ -221,6 +230,7 @@ export const WindowTreatmentOptionsManager = () => {
             price: Number(formData.price) || 0,
             pricing_method: formData.pricing_method,
             pricing_grid_data: formData.pricing_grid_data,
+            sub_options: formData.sub_options
           },
           inventory_item_id: formData.inventory_item_id || null,
         });
@@ -255,6 +265,7 @@ export const WindowTreatmentOptionsManager = () => {
       inventory_item_id: value.inventory_item_id || null,
       pricing_method: value.extra_data?.pricing_method || 'fixed',
       pricing_grid_data: value.extra_data?.pricing_grid_data || [],
+      sub_options: value.extra_data?.sub_options || []
     });
     setEditingValue(value);
     setIsCreating(false);
@@ -871,6 +882,129 @@ export const WindowTreatmentOptionsManager = () => {
                         Link this option to inventory for automatic stock tracking
                       </p>
                     </div>
+
+                    {/* Sub-Categories Section */}
+                    <div className="col-span-2 space-y-3 pt-4 border-t">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Sub-Categories</Label>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Add additional choices that appear when this option is selected
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setFormData({
+                              ...formData,
+                              sub_options: [
+                                ...formData.sub_options,
+                                {
+                                  id: crypto.randomUUID(),
+                                  label: '',
+                                  key: '',
+                                  choices: []
+                                }
+                              ]
+                            });
+                          }}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Sub-Category
+                        </Button>
+                      </div>
+
+                      {formData.sub_options.map((subOption, subIdx) => (
+                        <div key={subOption.id} className="p-3 border rounded-lg bg-background space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Input
+                              placeholder="Sub-category name (e.g. Color)"
+                              value={subOption.label}
+                              onChange={(e) => {
+                                const newSubOptions = [...formData.sub_options];
+                                newSubOptions[subIdx].label = e.target.value;
+                                newSubOptions[subIdx].key = e.target.value.toLowerCase().replace(/\s+/g, '_');
+                                setFormData({ ...formData, sub_options: newSubOptions });
+                              }}
+                              className="flex-1"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const newSubOptions = formData.sub_options.filter((_, i) => i !== subIdx);
+                                setFormData({ ...formData, sub_options: newSubOptions });
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+
+                          {/* Choices for this sub-category */}
+                          <div className="ml-4 space-y-2">
+                            <Label className="text-xs text-muted-foreground">Choices</Label>
+                            {subOption.choices.map((choice, choiceIdx) => (
+                              <div key={choice.id} className="grid grid-cols-[1fr,1fr,auto,auto] gap-2">
+                                <Input
+                                  placeholder="Label (e.g. Red)"
+                                  value={choice.label}
+                                  onChange={(e) => {
+                                    const newSubOptions = [...formData.sub_options];
+                                    newSubOptions[subIdx].choices[choiceIdx].label = e.target.value;
+                                    newSubOptions[subIdx].choices[choiceIdx].value = e.target.value.toLowerCase().replace(/\s+/g, '_');
+                                    setFormData({ ...formData, sub_options: newSubOptions });
+                                  }}
+                                />
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="Extra price"
+                                  value={choice.price}
+                                  onChange={(e) => {
+                                    const newSubOptions = [...formData.sub_options];
+                                    newSubOptions[subIdx].choices[choiceIdx].price = parseFloat(e.target.value) || 0;
+                                    setFormData({ ...formData, sub_options: newSubOptions });
+                                  }}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    const newSubOptions = [...formData.sub_options];
+                                    newSubOptions[subIdx].choices = newSubOptions[subIdx].choices.filter((_, i) => i !== choiceIdx);
+                                    setFormData({ ...formData, sub_options: newSubOptions });
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            ))}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const newSubOptions = [...formData.sub_options];
+                                newSubOptions[subIdx].choices.push({
+                                  id: crypto.randomUUID(),
+                                  label: '',
+                                  value: '',
+                                  price: 0
+                                });
+                                setFormData({ ...formData, sub_options: newSubOptions });
+                              }}
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add Choice
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="flex gap-2 mt-4">
@@ -892,12 +1026,35 @@ export const WindowTreatmentOptionsManager = () => {
                     <p className="text-xs mt-1">Click "Add Option" to create one</p>
                   </div>
                 ) : (
-                  uniqueOptionValues.map((value) => (
-                    <div key={value.code} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <div className="font-medium uppercase">{value.label}</div>
-                          {value.extra_data?.pricing_method === 'pricing-grid' ? (
+                  uniqueOptionValues.map((value) => {
+                    const hasSubOptions = value.extra_data?.sub_options?.length > 0;
+                    const isExpanded = expandedOptions.has(value.id);
+                    
+                    return (
+                      <div key={value.code} className="border rounded-lg">
+                        <div className="flex items-center justify-between p-3 hover:bg-muted/50">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              {hasSubOptions && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => {
+                                    const newExpanded = new Set(expandedOptions);
+                                    if (isExpanded) {
+                                      newExpanded.delete(value.id);
+                                    } else {
+                                      newExpanded.add(value.id);
+                                    }
+                                    setExpandedOptions(newExpanded);
+                                  }}
+                                >
+                                  {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                </Button>
+                              )}
+                              <div className="font-medium uppercase">{value.label}</div>
+                              {value.extra_data?.pricing_method === 'pricing-grid' ? (
                             <Badge variant="secondary" className="text-xs">
                               Price Table
                             </Badge>
@@ -926,40 +1083,62 @@ export const WindowTreatmentOptionsManager = () => {
                               Linked
                             </Badge>
                           )}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              Value: {value.code}
+                              {value.extra_data?.pricing_method === 'pricing-grid' 
+                                ? ` • ${value.extra_data.pricing_grid_data?.length || 0} price tiers`
+                                : value.extra_data?.price !== undefined 
+                                  ? ` • ${value.extra_data.price === 0 ? 'Included' : 
+                                      value.extra_data?.pricing_method === 'percentage' 
+                                        ? `${value.extra_data.price}%`
+                                        : `+$${value.extra_data.price.toFixed(2)}`}`
+                                  : ''}
+                              {hasSubOptions && ` • ${value.extra_data.sub_options.length} sub-categories`}
+                            </div>
+                          </div>
+                          {value.inventory_item_id && (
+                            <InventoryStockBadge itemId={value.inventory_item_id} />
+                          )}
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(value)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(value.code)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          Value: {value.code}
-                          {value.extra_data?.pricing_method === 'pricing-grid' 
-                            ? ` • ${value.extra_data.pricing_grid_data?.length || 0} price tiers`
-                            : value.extra_data?.price !== undefined 
-                              ? ` • ${value.extra_data.price === 0 ? 'Included' : 
-                                  value.extra_data?.pricing_method === 'percentage' 
-                                    ? `${value.extra_data.price}%`
-                                    : `+$${value.extra_data.price.toFixed(2)}`}`
-                              : ''}
-                        </div>
+                        
+                        {/* Sub-Options Display */}
+                        {isExpanded && hasSubOptions && (
+                          <div className="px-3 pb-3 pt-0 space-y-2 border-t bg-muted/20">
+                            {value.extra_data.sub_options.map((subOption: any) => (
+                              <div key={subOption.id} className="p-2 bg-background rounded border">
+                                <div className="font-medium text-sm mb-1">{subOption.label}</div>
+                                <div className="flex flex-wrap gap-1">
+                                  {subOption.choices?.map((choice: any) => (
+                                    <Badge key={choice.id} variant="outline" className="text-xs">
+                                      {choice.label}
+                                      {choice.price > 0 && ` +$${choice.price.toFixed(2)}`}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      {value.inventory_item_id && (
-                        <InventoryStockBadge itemId={value.inventory_item_id} />
-                      )}
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(value)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(value.code)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </TabsContent>
