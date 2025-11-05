@@ -359,6 +359,7 @@ export const useDeleteTreatment = () => {
       console.log("Delete treatment success, invalidating queries");
       // Invalidate all treatment queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["treatments"] });
+      queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
       queryClient.refetchQueries({ queryKey: ["treatments"] });
       toast({
         title: "Success",

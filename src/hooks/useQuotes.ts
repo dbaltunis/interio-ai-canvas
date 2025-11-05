@@ -337,6 +337,7 @@ export const useDeleteQuote = () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["treatments"] });
       queryClient.invalidateQueries({ queryKey: ["surfaces"] });
+      queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
       
       toast({
         title: "Success",

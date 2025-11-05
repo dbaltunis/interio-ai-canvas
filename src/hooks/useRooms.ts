@@ -147,6 +147,7 @@ export const useDeleteRoom = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
       toast({
         title: "Success",
         description: "Room deleted successfully",

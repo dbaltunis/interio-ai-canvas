@@ -140,6 +140,7 @@ export const useDeleteSurface = () => {
     },
     onSuccess: (deletedId) => {
       queryClient.invalidateQueries({ queryKey: ["surfaces"] });
+      queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
       
       toast({
         title: "Success",
