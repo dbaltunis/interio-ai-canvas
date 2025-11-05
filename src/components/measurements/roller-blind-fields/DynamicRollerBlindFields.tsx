@@ -79,7 +79,8 @@ export const DynamicRollerBlindFields = ({
         value: val.code,
         label: val.label,
         id: val.id,
-        price: val.extra_data?.price || 0
+        price: val.extra_data?.price || 0,
+        pricingMethod: val.extra_data?.pricing_method || 'fixed'
       }));
   };
 
@@ -251,13 +252,22 @@ export const DynamicRollerBlindFields = ({
                 <SelectContent>
                   {optionValues.map(opt => (
                     <SelectItem key={opt.id} value={opt.value}>
-                      <div className="flex items-center justify-between w-full">
-                        <span>{opt.label}</span>
-                        {opt.price > 0 && (
-                          <span className="text-xs text-muted-foreground ml-2">
-                            +${opt.price.toFixed(2)}
-                          </span>
-                        )}
+                      <div className="flex items-center justify-between w-full gap-2">
+                        <span className="flex-1">{opt.label}</span>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {opt.pricingMethod && opt.pricingMethod !== 'fixed' && (
+                            <Badge variant="outline" className="text-xs px-1.5 py-0.5 h-5">
+                              {opt.pricingMethod === 'per-meter' ? 'per m' : 
+                               opt.pricingMethod === 'per-sqm' ? 'per m²' : 
+                               opt.pricingMethod === 'pricing-grid' ? 'grid' : opt.pricingMethod}
+                            </Badge>
+                          )}
+                          {opt.price > 0 && (
+                            <span className="text-xs text-muted-foreground">
+                              +${opt.price.toFixed(2)}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </SelectItem>
                   ))}
@@ -346,18 +356,35 @@ export const DynamicRollerBlindFields = ({
                             <SelectValue placeholder={`Select ${subOption.label.toLowerCase()}`} />
                           </SelectTrigger>
                           <SelectContent className="bg-popover border-border z-50">
-                            {subOption.choices?.map((choice: any) => (
-                              <SelectItem key={choice.id} value={choice.value}>
-                                <div className="flex items-center justify-between gap-4 w-full">
-                                  <span>{choice.label}</span>
-                                  {choice.price > 0 && (
-                                    <Badge variant="outline" className="text-xs">
-                                      +${choice.price.toFixed(2)}
-                                    </Badge>
-                                  )}
-                                </div>
-                              </SelectItem>
-                            ))}
+                            {subOption.choices?.map((choice: any) => {
+                              // Get parent pricing method for sub-options
+                              const parentValue = option.option_values?.find((v: any) => 
+                                v.code === (currentValue || defaultValue) || v.id === (currentValue || defaultValue)
+                              );
+                              const pricingMethod = parentValue?.extra_data?.pricing_method || 'fixed';
+                              
+                              return (
+                                <SelectItem key={choice.id} value={choice.value}>
+                                  <div className="flex items-center justify-between gap-2 w-full">
+                                    <span className="flex-1">{choice.label}</span>
+                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                      {pricingMethod && pricingMethod !== 'fixed' && (
+                                        <Badge variant="outline" className="text-xs px-1.5 py-0.5 h-5">
+                                          {pricingMethod === 'per-meter' ? 'per m' : 
+                                           pricingMethod === 'per-sqm' ? 'per m²' : 
+                                           pricingMethod === 'pricing-grid' ? 'grid' : pricingMethod}
+                                        </Badge>
+                                      )}
+                                      {choice.price > 0 && (
+                                        <Badge variant="outline" className="text-xs">
+                                          +${choice.price.toFixed(2)}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                </SelectItem>
+                              );
+                            })}
                           </SelectContent>
                         </Select>
                       </div>
