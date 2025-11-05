@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { OptionCategoryCard } from "./OptionCategoryCard";
 import type { OptionCategory } from "@/hooks/types/windowCoveringTypes";
+import { useUserCurrency, formatCurrency as formatCurrencyWithSymbol } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
 
 interface OptionsHierarchyDisplayProps {
   categories: OptionCategory[];
@@ -19,6 +20,7 @@ export const OptionsHierarchyDisplay = ({ categories, windowCoveringId }: Option
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [isAttaching, setIsAttaching] = useState(false);
   const { toast } = useToast();
+  const userCurrency = useUserCurrency();
 
   const toggleExpanded = (id: string, type: 'category' | 'subcategory' | 'subsubcategory') => {
     const setterMap = {
@@ -84,7 +86,7 @@ export const OptionsHierarchyDisplay = ({ categories, windowCoveringId }: Option
   };
 
   const formatCurrency = (amount: number) => {
-    return `$${amount.toFixed(2)}`;
+    return formatCurrencyWithSymbol(amount, userCurrency);
   };
 
   const getPricingLabel = (method: string) => {

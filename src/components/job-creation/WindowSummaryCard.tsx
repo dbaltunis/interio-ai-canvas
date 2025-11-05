@@ -115,7 +115,8 @@ export function WindowSummaryCard({
       manufacturing_cost: summary.manufacturing_cost,
       options_cost: summary.options_cost,
       total_cost: summary.total_cost,
-      cost_breakdown: summary.cost_breakdown
+      cost_breakdown: summary.cost_breakdown,
+      userCurrency // CRITICAL: Log the currency being used
     });
 
     const raw = Array.isArray(summary.cost_breakdown) ? summary.cost_breakdown : [];
