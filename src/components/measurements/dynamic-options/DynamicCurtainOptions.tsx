@@ -518,6 +518,15 @@ export const DynamicCurtainOptions = ({
                   const selectedValue = option.option_values.find(v => v.id === selectedValueId);
                   const subOptions = selectedValue?.extra_data?.sub_options;
                   
+                  // Debug logging
+                  console.log('🔍 Sub-options check:', {
+                    optionKey: option.key,
+                    selectedValueId,
+                    selectedValue,
+                    subOptions,
+                    extra_data: selectedValue?.extra_data
+                  });
+                  
                   if (!subOptions || subOptions.length === 0) return null;
                   
                   return (
