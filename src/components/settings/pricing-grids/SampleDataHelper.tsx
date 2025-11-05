@@ -43,6 +43,17 @@ export const SampleDataHelper = () => {
             250,75,85,95,105
           </p>
         </div>
+
+        <Alert className="mt-4">
+          <AlertDescription>
+            <strong>Inventory CSV Import:</strong>
+            <p className="mt-2 text-sm">
+              To assign this pricing grid to products during CSV import, include these columns:<br/>
+              • <code className="bg-background px-1 py-0.5 rounded">price_group</code> - The grid code (e.g., GRID001)<br/>
+              • <code className="bg-background px-1 py-0.5 rounded">product_category</code> - The category (e.g., roller_blind)
+            </p>
+          </AlertDescription>
+        </Alert>
       </CardContent>
     </Card>
   );
