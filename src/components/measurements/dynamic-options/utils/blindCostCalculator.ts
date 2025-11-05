@@ -3,6 +3,8 @@
  * Calculates costs for blinds with proper sqm calculations including hems and waste
  */
 
+import { getPriceFromGrid } from '@/hooks/usePricingGrids';
+
 interface BlindCalculationResult {
   squareMeters: number;
   fabricCost: number;
@@ -44,7 +46,6 @@ export const calculateBlindCosts = (
   let manufacturingCost = 0;
   if (template?.pricing_type === 'pricing_grid' && template?.pricing_grid_data) {
     // Grid pricing takes precedence - grid data should be pre-loaded in template
-    const { getPriceFromGrid } = require('@/hooks/usePricingGrids');
     manufacturingCost = getPriceFromGrid(template.pricing_grid_data, widthCm, heightCm);
   } else if (template?.machine_price_per_panel) {
     manufacturingCost = template.machine_price_per_panel;
