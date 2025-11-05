@@ -82,6 +82,8 @@ export const calculateBlindCosts = (
   }
   
   // Calculate options cost - consider pricing method for each option
+  console.log('💰 Calculating options cost, selectedOptions:', selectedOptions);
+  
   const optionsCost = selectedOptions
     .filter(opt => opt.price && opt.price > 0)
     .reduce((sum, opt) => {
@@ -95,6 +97,7 @@ export const calculateBlindCosts = (
           method: 'per-meter',
           basePrice,
           widthCm,
+          widthMeters: (widthCm / 100).toFixed(2),
           calculatedPrice: priceForWidth.toFixed(2)
         });
         return sum + priceForWidth;
@@ -111,7 +114,7 @@ export const calculateBlindCosts = (
       } else {
         // Fixed price (default)
         console.log(`💰 Option "${opt.name}" pricing:`, {
-          method: 'fixed',
+          method: opt.pricingMethod || 'fixed (default)',
           price: basePrice
         });
         return sum + basePrice;

@@ -219,9 +219,17 @@ export const CostCalculationSummary = ({
   // BLINDS: Use clean calculator (check both category and template name)
   if (isBlindCategory(treatmentCategory, template.name) && width > 0 && height > 0) {
     try {
-      const blindCosts = calculateBlindCosts(width, height, template, fabricToUse, selectedOptions);
+      console.log('🔧 Calculating blind costs with:', {
+        width,
+        height,
+        selectedOptions,
+        hasTemplate: !!template,
+        hasFabric: !!fabricToUse
+      });
       
-      console.log('✅ Using blind calculator, costs:', blindCosts);
+      const blindCosts = calculateBlindCosts(width, height, template, fabricToUse, selectedOptions, measurements);
+      
+      console.log('✅ Blind calculator results:', blindCosts);
 
     return (
       <div className="bg-card border border-border rounded-lg p-3 space-y-3">
