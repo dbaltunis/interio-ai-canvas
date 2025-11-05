@@ -280,7 +280,7 @@ export function WindowSummaryCard({
       
       if (Array.isArray(optionsDetails) && optionsDetails.length > 0) {
         optionsDescription = optionsDetails
-          .map((opt: any) => `${opt.name}${opt.price > 0 ? ` (+${formatCurrency(opt.price)})` : ''}`)
+          .map((opt: any) => `${opt.name}${opt.price > 0 ? ` (+${formatCurrency(opt.price, userCurrency)})` : ''}`)
           .filter(Boolean)
           .join(' • ');
       }
