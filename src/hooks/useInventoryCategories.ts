@@ -1,19 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import type { Database } from '@/integrations/supabase/types';
 
-export interface InventoryCategory {
-  id: string;
-  user_id: string;
-  name: string;
-  description?: string | null;
-  parent_category_id?: string | null;
-  sort_order: number;
-  color?: string | null;
-  icon?: string | null;
-  active: boolean;
-  created_at: string;
-  updated_at: string;
+type InventoryCategoryRow = Database['public']['Tables']['inventory_categories']['Row'];
+type InventoryCategoryInsert = Database['public']['Tables']['inventory_categories']['Insert'];
+type InventoryCategoryUpdate = Database['public']['Tables']['inventory_categories']['Update'];
+
+export interface InventoryCategory extends InventoryCategoryRow {
   children?: InventoryCategory[];
 }
 
@@ -30,7 +24,6 @@ export const useInventoryCategories = () => {
         .from('inventory_categories')
         .select('*')
         .eq('user_id', user.user.id)
-        .eq('active', true)
         .order('sort_order');
 
       if (error) throw error;
@@ -38,8 +31,48 @@ export const useInventoryCategories = () => {
     },
   });
 
-  const createCategory = useMutation({
-    mutationFn: async (category: Omit<InventoryCategory, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'children'>) => {
+  // Build hierarchical structure
+  const buildHierarchy = (categories: InventoryCategory[]): InventoryCategory[] => {
+    const categoryMap = new Map<string, InventoryCategory>();
+    const rootCategories: InventoryCategory[] = [];
+
+    categories.forEach(category => {
+      categoryMap.set(category.id, { ...category, children: [] });
+    });
+
+    categories.forEach(category => {
+      const cat = categoryMap.get(category.id)!;
+      if (category.parent_category_id) {
+        const parent = categoryMap.get(category.parent_category_id);
+        if (parent) {
+          parent.children = parent.children || [];
+          parent.children.push(cat);
+        } else {
+          rootCategories.push(cat);
+        }
+      } else {
+        rootCategories.push(cat);
+      }
+    });
+
+    return rootCategories;
+  };
+
+  const hierarchicalCategories = buildHierarchy(categories);
+
+  return {
+    data: categories,
+    categories,
+    hierarchicalCategories,
+    isLoading,
+  };
+};
+
+export const useCreateCategory = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (category: Omit<InventoryCategoryInsert, 'user_id'>) => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error('Not authenticated');
 
@@ -63,9 +96,13 @@ export const useInventoryCategories = () => {
       toast.error(error.message || 'Failed to create category');
     },
   });
+};
 
-  const updateCategory = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<InventoryCategory> & { id: string }) => {
+export const useUpdateCategory = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<InventoryCategoryUpdate> & { id: string }) => {
       const { data, error } = await supabase
         .from('inventory_categories')
         .update(updates)
@@ -84,12 +121,16 @@ export const useInventoryCategories = () => {
       toast.error(error.message || 'Failed to update category');
     },
   });
+};
 
-  const deleteCategory = useMutation({
+export const useDeleteCategory = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('inventory_categories')
-        .update({ active: false })
+        .delete()
         .eq('id', id);
 
       if (error) throw error;
@@ -103,44 +144,4 @@ export const useInventoryCategories = () => {
       toast.error(error.message || 'Failed to delete category');
     },
   });
-
-  // Build hierarchical structure
-  const buildHierarchy = (categories: InventoryCategory[]): InventoryCategory[] => {
-    const categoryMap = new Map<string, InventoryCategory>();
-    const rootCategories: InventoryCategory[] = [];
-
-    // First pass: create map of all categories
-    categories.forEach(category => {
-      categoryMap.set(category.id, { ...category, children: [] });
-    });
-
-    // Second pass: build hierarchy
-    categories.forEach(category => {
-      const cat = categoryMap.get(category.id)!;
-      if (category.parent_category_id) {
-        const parent = categoryMap.get(category.parent_category_id);
-        if (parent) {
-          parent.children = parent.children || [];
-          parent.children.push(cat);
-        } else {
-          rootCategories.push(cat);
-        }
-      } else {
-        rootCategories.push(cat);
-      }
-    });
-
-    return rootCategories;
-  };
-
-  const hierarchicalCategories = buildHierarchy(categories);
-
-  return {
-    categories,
-    hierarchicalCategories,
-    isLoading,
-    createCategory: createCategory.mutateAsync,
-    updateCategory: updateCategory.mutateAsync,
-    deleteCategory: deleteCategory.mutateAsync,
-  };
 };

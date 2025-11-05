@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Edit, Trash2, FolderTree, Folder, Tag } from 'lucide-react';
-import { useInventoryCategories, type InventoryCategory } from '@/hooks/useInventoryCategories';
+import { useInventoryCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, type InventoryCategory } from '@/hooks/useInventoryCategories';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 
@@ -30,7 +30,10 @@ const CATEGORY_COLORS = [
 ];
 
 export const InventoryCategoriesManager = () => {
-  const { hierarchicalCategories, categories, isLoading, createCategory, updateCategory, deleteCategory } = useInventoryCategories();
+  const { hierarchicalCategories, categories, isLoading } = useInventoryCategories();
+  const createCategory = useCreateCategory();
+  const updateCategory = useUpdateCategory();
+  const deleteCategory = useDeleteCategory();
   const [showDialog, setShowDialog] = useState(false);
   const [editingCategory, setEditingCategory] = useState<InventoryCategory | null>(null);
   const [formData, setFormData] = useState({
@@ -61,7 +64,7 @@ export const InventoryCategoriesManager = () => {
       parent_category_id: category.parent_category_id || '',
       color: category.color || '#3b82f6',
       icon: category.icon || 'folder',
-      sort_order: category.sort_order,
+      sort_order: category.sort_order || 0,
     });
     setEditingCategory(category);
     setShowDialog(true);
@@ -74,16 +77,17 @@ export const InventoryCategoriesManager = () => {
 
     try {
       if (editingCategory) {
-        await updateCategory({
+        await updateCategory.mutateAsync({
           id: editingCategory.id,
           ...formData,
           parent_category_id: formData.parent_category_id || null,
         });
       } else {
-        await createCategory({
+        await createCategory.mutateAsync({
           ...formData,
           parent_category_id: formData.parent_category_id || null,
           active: true,
+          category_type: 'product',
         });
       }
       setShowDialog(false);
@@ -95,7 +99,7 @@ export const InventoryCategoriesManager = () => {
 
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this category? Items will be unassigned.')) {
-      await deleteCategory(id);
+      await deleteCategory.mutateAsync(id);
     }
   };
 

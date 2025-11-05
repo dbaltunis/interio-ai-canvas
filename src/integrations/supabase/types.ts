@@ -3348,8 +3348,10 @@ export type Database = {
         Row: {
           active: boolean | null
           category_type: string
+          color: string | null
           created_at: string
           description: string | null
+          icon: string | null
           id: string
           name: string
           parent_category_id: string | null
@@ -3360,8 +3362,10 @@ export type Database = {
         Insert: {
           active?: boolean | null
           category_type: string
+          color?: string | null
           created_at?: string
           description?: string | null
+          icon?: string | null
           id?: string
           name: string
           parent_category_id?: string | null
@@ -3372,8 +3376,10 @@ export type Database = {
         Update: {
           active?: boolean | null
           category_type?: string
+          color?: string | null
           created_at?: string
           description?: string | null
+          icon?: string | null
           id?: string
           name?: string
           parent_category_id?: string | null
