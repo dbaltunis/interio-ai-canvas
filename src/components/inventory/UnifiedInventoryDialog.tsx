@@ -868,14 +868,14 @@ export const UnifiedInventoryDialog = ({
                             Pricing Grid <Badge variant="outline" className="ml-2">Select pricing grid for this fabric</Badge>
                           </Label>
                           <Select
-                            value={formData.price_group}
-                            onValueChange={(value) => setFormData({ ...formData, price_group: value })}
+                            value={formData.price_group || undefined}
+                            onValueChange={(value) => setFormData({ ...formData, price_group: value === 'none' ? '' : value })}
                           >
                             <SelectTrigger id="price_group">
-                              <SelectValue placeholder="Select a pricing grid" />
+                              <SelectValue placeholder="Select a pricing grid (optional)" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">None - Use other pricing methods</SelectItem>
+                              <SelectItem value="none">None - Use other pricing methods</SelectItem>
                               {pricingGrids.map(grid => (
                                 <SelectItem key={grid.id} value={grid.grid_code || grid.id}>
                                   {grid.grid_code || 'Unnamed'} - {grid.name}
