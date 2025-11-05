@@ -406,13 +406,14 @@ export const UnifiedInventoryDialog = ({
         if (file.type.startsWith('image/')) {
           const compressedBlob = await compressImage(file);
           fileToUpload = compressedBlob;
-          fileName = `inventory-${user.id}-${Date.now()}.jpg`;
+          // FIX: Use folder structure that matches storage policies
+          fileName = `${user.id}/inventory-${Date.now()}.jpg`;
         } else {
-          fileName = `inventory-${user.id}-${Date.now()}.${file.name.split('.').pop()}`;
+          fileName = `${user.id}/inventory-${Date.now()}.${file.name.split('.').pop()}`;
         }
       } catch (compressionError) {
         console.warn('Compression failed, uploading original:', compressionError);
-        fileName = `inventory-${user.id}-${Date.now()}.${file.name.split('.').pop()}`;
+        fileName = `${user.id}/inventory-${Date.now()}.${file.name.split('.').pop()}`;
         fileToUpload = file;
       }
       
@@ -421,9 +422,11 @@ export const UnifiedInventoryDialog = ({
         .upload(fileName, fileToUpload, {
           contentType: file.type.startsWith('image/') ? 'image/jpeg' : file.type,
           cacheControl: '3600',
+          upsert: false
         });
 
       if (uploadError) {
+        console.error('Storage upload error:', uploadError);
         throw uploadError;
       }
 
@@ -437,13 +440,16 @@ export const UnifiedInventoryDialog = ({
         description: fileToUpload !== file ? "Image compressed and uploaded." : "Image uploaded.",
       });
     } catch (error: any) {
+      console.error('Upload error details:', error);
       toast({
         title: "Upload failed",
-        description: "Failed to upload image. Please try again.",
+        description: error.message || "Failed to upload image. Please try again.",
         variant: "destructive"
       });
     } finally {
       setUploadingImage(false);
+      // Reset input so same file can be uploaded again
+      if (event.target) event.target.value = '';
     }
   };
 

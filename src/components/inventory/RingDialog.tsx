@@ -118,15 +118,21 @@ export const RingDialog = ({ open, onOpenChange, ring, onSave }: RingDialogProps
 
     setUploading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('You must be logged in to upload images');
+      }
+
       let fileToUpload: File | Blob = file;
       let fileName = '';
       
       if (file.type.startsWith('image/')) {
         const compressedBlob = await compressImage(file);
         fileToUpload = compressedBlob;
-        fileName = `${Date.now()}.jpg`;
+        // FIX: Use folder structure that matches storage policies
+        fileName = `${user.id}/ring-${Date.now()}.jpg`;
       } else {
-        fileName = `${Date.now()}-${file.name}`;
+        fileName = `${user.id}/ring-${Date.now()}-${file.name}`;
       }
       
       const { data, error } = await supabase.storage
@@ -134,9 +140,13 @@ export const RingDialog = ({ open, onOpenChange, ring, onSave }: RingDialogProps
         .upload(fileName, fileToUpload, {
           contentType: 'image/jpeg',
           cacheControl: '3600',
+          upsert: false
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Storage upload error:', error);
+        throw error;
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('eyelet-ring-images')
@@ -144,11 +154,13 @@ export const RingDialog = ({ open, onOpenChange, ring, onSave }: RingDialogProps
 
       setFormData({ ...formData, image_url: publicUrl });
       toast.success("Image uploaded successfully");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error uploading image:", error);
-      toast.error("Failed to upload image");
+      toast.error(error.message || "Failed to upload image");
     } finally {
       setUploading(false);
+      // Reset input
+      if (e.target) e.target.value = '';
     }
   };
 
