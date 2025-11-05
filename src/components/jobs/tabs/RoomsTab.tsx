@@ -20,10 +20,10 @@ interface RoomsTabProps {
 export const RoomsTab = ({ projectId }: RoomsTabProps) => {
   const queryClient = useQueryClient();
   const { data: projects } = useProjects();
-  const { data: treatments } = useTreatments(projectId);
+  const { data: treatments, refetch: refetchTreatments } = useTreatments(projectId);
   const { data: rooms } = useRooms(projectId);
-  const { data: surfaces } = useSurfaces(projectId);
-  const { data: projectSummaries } = useProjectWindowSummaries(projectId);
+  const { data: surfaces, refetch: refetchSurfaces } = useSurfaces(projectId);
+  const { data: projectSummaries, refetch: refetchSummaries } = useProjectWindowSummaries(projectId);
   const { data: businessSettings } = useBusinessSettings();
   const createRoom = useCreateRoom();
   const project = projects?.find(p => p.id === projectId);
@@ -32,6 +32,12 @@ export const RoomsTab = ({ projectId }: RoomsTabProps) => {
   useEffect(() => {
     const cleanupOrphanedData = async () => {
       if (!rooms || !treatments || !surfaces || !projectId) return;
+      
+      console.log('RoomsTab: Checking for orphaned data...', {
+        rooms: rooms.length,
+        treatments: treatments.length,
+        surfaces: surfaces.length
+      });
       
       const roomIds = new Set(rooms.map(r => r.id));
       
@@ -42,10 +48,9 @@ export const RoomsTab = ({ projectId }: RoomsTabProps) => {
         for (const surface of orphanedSurfaces) {
           await supabase.from('surfaces').delete().eq('id', surface.id);
         }
-        // Force refresh queries after cleanup
-        queryClient.invalidateQueries({ queryKey: ["surfaces"] });
-        queryClient.invalidateQueries({ queryKey: ["treatments"] });
-        queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
+        // Force refetch after cleanup
+        await refetchSurfaces();
+        await refetchSummaries();
       }
       
       // Find and delete orphaned treatments (no room_id OR invalid room_id)
@@ -55,14 +60,25 @@ export const RoomsTab = ({ projectId }: RoomsTabProps) => {
         for (const treatment of orphanedTreatments) {
           await supabase.from('treatments').delete().eq('id', treatment.id);
         }
-        // Force refresh queries after cleanup
-        queryClient.invalidateQueries({ queryKey: ["treatments"] });
-        queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
+        // Force refetch after cleanup
+        await refetchTreatments();
+        await refetchSummaries();
+      }
+      
+      // If no rooms but we have data showing, force a complete cache clear
+      if (rooms.length === 0 && (treatments.length > 0 || surfaces.length > 0)) {
+        console.log('No rooms but data exists - forcing cache clear');
+        queryClient.removeQueries({ queryKey: ["treatments", projectId] });
+        queryClient.removeQueries({ queryKey: ["surfaces", projectId] });
+        queryClient.removeQueries({ queryKey: ["project-window-summaries", projectId] });
+        await refetchTreatments();
+        await refetchSurfaces();
+        await refetchSummaries();
       }
     };
     
     cleanupOrphanedData();
-  }, [rooms, treatments, surfaces, projectId]);
+  }, [rooms, treatments, surfaces, projectId, refetchTreatments, refetchSurfaces, refetchSummaries, queryClient]);
 
   // Auto-sync room and treatment data to quotations and workroom
   const quotationSync = useQuotationSync({
