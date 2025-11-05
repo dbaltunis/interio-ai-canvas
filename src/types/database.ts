@@ -7,6 +7,7 @@ export interface PricingGrid {
   name: string;
   description?: string;
   grid_data: any;
+  markup_percentage?: number;
   active: boolean;
   created_at: string;
   updated_at: string;

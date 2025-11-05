@@ -817,6 +817,7 @@ export const UnifiedInventoryDialog = ({
                             {pricingGrids.map(grid => (
                               <SelectItem key={grid.id} value={grid.grid_code || grid.id}>
                                 {grid.grid_code || 'Unnamed'} - {grid.name}
+                                {grid.markup_percentage ? ` (${grid.markup_percentage}% markup)` : ''}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -826,6 +827,23 @@ export const UnifiedInventoryDialog = ({
                             ? `${pricingGrids.length} pricing grid${pricingGrids.length > 1 ? 's' : ''} available` 
                             : 'No pricing grids found. Create one in Settings → Pricing Grids'}
                         </p>
+                        {formData.price_group && pricingGrids.find(g => (g.grid_code || g.id) === formData.price_group) && (
+                          <div className="mt-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-md">
+                            <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                              Selected Grid: {pricingGrids.find(g => (g.grid_code || g.id) === formData.price_group)?.name}
+                            </p>
+                            {pricingGrids.find(g => (g.grid_code || g.id) === formData.price_group)?.markup_percentage ? (
+                              <p className="text-xs text-green-700 dark:text-green-300 mt-1">
+                                Profit Markup: <strong>{pricingGrids.find(g => (g.grid_code || g.id) === formData.price_group)?.markup_percentage}%</strong>
+                                {' '}(Cost × {(1 + (pricingGrids.find(g => (g.grid_code || g.id) === formData.price_group)?.markup_percentage || 0) / 100).toFixed(2)} = Selling Price)
+                              </p>
+                            ) : (
+                              <p className="text-xs text-green-700 dark:text-green-300 mt-1">
+                                No markup % set for this grid
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>

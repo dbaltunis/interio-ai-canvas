@@ -4980,6 +4980,7 @@ export type Database = {
           grid_code: string
           grid_data: Json
           id: string
+          markup_percentage: number | null
           name: string
           replaced_by_grid_id: string | null
           updated_at: string | null
@@ -4993,6 +4994,7 @@ export type Database = {
           grid_code: string
           grid_data?: Json
           id?: string
+          markup_percentage?: number | null
           name: string
           replaced_by_grid_id?: string | null
           updated_at?: string | null
@@ -5006,6 +5008,7 @@ export type Database = {
           grid_code?: string
           grid_data?: Json
           id?: string
+          markup_percentage?: number | null
           name?: string
           replaced_by_grid_id?: string | null
           updated_at?: string | null
