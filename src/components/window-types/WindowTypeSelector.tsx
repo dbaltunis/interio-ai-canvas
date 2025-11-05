@@ -158,96 +158,88 @@ export const WindowTypeSelector = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
         {filteredWindowTypes.map(windowType => <Card key={windowType.id} className={`cursor-pointer transition-all duration-200 hover:shadow-sm ${selectedWindowType?.id === windowType.id ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/30'} ${readOnly ? 'opacity-60 cursor-not-allowed' : ''}`} onClick={() => !readOnly && onWindowTypeChange(windowType)}>
             <CardContent className="p-2">
-              <div className="flex flex-col items-center space-y-1.5">
-                {/* Enhanced visual preview with larger size and visible graphics */}
-                <div className="h-20 w-full flex items-center justify-center bg-gray-50 border-2 border-gray-200 rounded-md overflow-hidden">
-                  {windowType.visual_key === 'standard' ?
-              // Standard Window Visual
-              <div className="w-16 h-12 border-2 border-gray-600 bg-blue-100 relative">
-                      <div className="grid grid-cols-2 grid-rows-2 h-full gap-0.5 p-0.5">
-                        {Array.from({
-                    length: 4
-                  }).map((_, i) => <div key={i} className="bg-blue-200 border border-gray-500"></div>)}
+              <div className="flex flex-col items-center space-y-2">
+                {/* Square visual preview with enhanced graphics */}
+                <div className="aspect-square w-full flex items-center justify-center bg-muted border border-border rounded overflow-hidden relative">
+                  {windowType.visual_key === 'standard' ? (
+                    // Standard Window Visual - Enhanced
+                    <div className="w-20 h-20 border-2 border-gray-600 bg-gradient-to-br from-blue-50 to-blue-100 relative shadow-inner">
+                      <div className="grid grid-cols-2 grid-rows-2 h-full gap-1 p-1">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                          <div key={i} className="bg-blue-100/50 border border-gray-400 backdrop-blur-sm"></div>
+                        ))}
                       </div>
                       <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gray-600 transform -translate-y-1/2"></div>
                       <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-gray-600 transform -translate-x-1/2"></div>
-                    </div> : windowType.visual_key === 'bay' ?
-              // Bay Window Visual
-              <div className="relative w-20 h-12">
-                      <div className="absolute left-0 top-0 w-6 h-12 border-2 border-gray-600 bg-blue-100 transform -rotate-12 origin-bottom-right">
+                    </div>
+                  ) : windowType.visual_key === 'bay' ? (
+                    // Bay Window Visual - Enhanced
+                    <div className="relative w-24 h-20">
+                      <div className="absolute left-0 top-1 w-7 h-16 border-2 border-gray-600 bg-gradient-to-br from-blue-50 to-blue-100 transform -rotate-12 origin-bottom-right shadow-lg">
                         <div className="grid grid-rows-3 h-full gap-0.5 p-0.5">
-                          {Array.from({
-                      length: 3
-                    }).map((_, i) => <div key={i} className="bg-blue-200 border border-gray-500"></div>)}
+                          {Array.from({ length: 3 }).map((_, i) => (
+                            <div key={i} className="bg-blue-100/50 border border-gray-400"></div>
+                          ))}
                         </div>
                       </div>
-                      <div className="absolute left-5 top-0 w-10 h-12 border-2 border-gray-600 bg-blue-100">
+                      <div className="absolute left-5 top-0 w-12 h-18 border-2 border-gray-600 bg-gradient-to-br from-blue-50 to-blue-100 shadow-lg">
                         <div className="grid grid-cols-2 grid-rows-3 h-full gap-0.5 p-0.5">
-                          {Array.from({
-                      length: 6
-                    }).map((_, i) => <div key={i} className="bg-blue-200 border border-gray-500"></div>)}
+                          {Array.from({ length: 6 }).map((_, i) => (
+                            <div key={i} className="bg-blue-100/50 border border-gray-400"></div>
+                          ))}
                         </div>
                         <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-gray-600 transform -translate-x-1/2"></div>
                       </div>
-                      <div className="absolute right-0 top-0 w-6 h-12 border-2 border-gray-600 bg-blue-100 transform rotate-12 origin-bottom-left">
+                      <div className="absolute right-0 top-1 w-7 h-16 border-2 border-gray-600 bg-gradient-to-br from-blue-50 to-blue-100 transform rotate-12 origin-bottom-left shadow-lg">
                         <div className="grid grid-rows-3 h-full gap-0.5 p-0.5">
-                          {Array.from({
-                      length: 3
-                    }).map((_, i) => <div key={i} className="bg-blue-200 border border-gray-500"></div>)}
+                          {Array.from({ length: 3 }).map((_, i) => (
+                            <div key={i} className="bg-blue-100/50 border border-gray-400"></div>
+                          ))}
                         </div>
                       </div>
-                    </div> : windowType.visual_key === 'room_wall' ?
-              // Room Wall Visual - Brick Wall Pattern
-              <div className="w-18 h-14 relative">
-                      {/* Wall with brick pattern */}
-                      <div className="w-full h-full bg-gradient-to-br from-orange-200 via-orange-300 to-orange-400 border-2 border-gray-700 relative overflow-hidden">
-                        {/* Brick pattern */}
+                    </div>
+                  ) : windowType.visual_key === 'room_wall' ? (
+                    // Room Wall Visual - Enhanced Brick Pattern
+                    <div className="w-20 h-20 relative">
+                      <div className="w-full h-full bg-gradient-to-br from-red-300 via-red-400 to-red-500 border-2 border-gray-700 relative overflow-hidden shadow-lg">
+                        {/* Enhanced brick pattern with depth */}
                         <div className="absolute inset-0">
-                          {/* Row 1 */}
-                          <div className="absolute top-0 left-0 right-0 h-3 flex gap-px">
-                            {Array.from({
-                        length: 8
-                      }).map((_, i) => <div key={`r1-${i}`} className="flex-1 bg-red-400 border border-red-600/30" />)}
-                          </div>
-                          {/* Row 2 - offset */}
-                          <div className="absolute top-3 left-0 right-0 h-3 flex gap-px" style={{
-                      marginLeft: '-0.5rem'
-                    }}>
-                            {Array.from({
-                        length: 9
-                      }).map((_, i) => <div key={`r2-${i}`} className="flex-1 bg-red-500 border border-red-700/30" />)}
-                          </div>
-                          {/* Row 3 */}
-                          <div className="absolute top-6 left-0 right-0 h-3 flex gap-px">
-                            {Array.from({
-                        length: 8
-                      }).map((_, i) => <div key={`r3-${i}`} className="flex-1 bg-red-400 border border-red-600/30" />)}
-                          </div>
-                          {/* Row 4 - offset */}
-                          <div className="absolute top-9 left-0 right-0 h-3 flex gap-px" style={{
-                      marginLeft: '-0.5rem'
-                    }}>
-                            {Array.from({
-                        length: 9
-                      }).map((_, i) => <div key={`r4-${i}`} className="flex-1 bg-red-500 border border-red-700/30" />)}
-                          </div>
+                          {[0, 1, 2, 3, 4].map((row) => (
+                            <div 
+                              key={row} 
+                              className="absolute left-0 right-0 h-4 flex gap-px" 
+                              style={{ 
+                                top: `${row * 4 * 4}px`,
+                                marginLeft: row % 2 === 1 ? '-0.5rem' : '0'
+                              }}
+                            >
+                              {Array.from({ length: row % 2 === 1 ? 9 : 8 }).map((_, i) => (
+                                <div 
+                                  key={`r${row}-${i}`} 
+                                  className={`flex-1 border border-red-700/40 ${
+                                    row % 2 === 0 ? 'bg-red-400' : 'bg-red-500'
+                                  }`}
+                                  style={{
+                                    boxShadow: 'inset 1px 1px 2px rgba(0,0,0,0.2)'
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          ))}
                         </div>
-                        {/* Shadow/depth effect */}
-                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/10" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/15" />
                       </div>
-                    </div> :
-              // Fallback for other window types
-              <div className="text-gray-400 text-xs">No preview</div>}
+                    </div>
+                  ) : (
+                    <div className="text-muted-foreground text-xs">No preview</div>
+                  )}
                 </div>
                 
                 <div className="text-center w-full">
-                  <div className="flex items-center justify-center gap-2 mb-1">
+                  <div className="flex items-center justify-center gap-2">
                     <h4 className="text-sm font-semibold truncate">{windowType.name}</h4>
                     {selectedWindowType?.id === windowType.id && <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />}
                   </div>
-                  <Badge variant="outline" className="text-xs h-5 px-2">
-                    {windowType.key}
-                  </Badge>
                 </div>
               </div>
             </CardContent>
