@@ -149,8 +149,8 @@ export const UnifiedInventoryDialog = ({
     hardware_finish: "",
     hardware_material: "",
     weight: 0,
-    product_category: "", // What product this fabric is for (roller_blinds, curtains, etc)
-    price_group: "", // For pricing grid routing (A, B, C, D)
+    product_category: null,
+    price_group: null,
     wallpaper_roll_width: 0,
     wallpaper_roll_length: 0,
     wallpaper_sold_by: "per_roll",
@@ -222,8 +222,8 @@ export const UnifiedInventoryDialog = ({
         hardware_finish: item.hardware_finish || "",
         hardware_material: item.hardware_material || "",
         weight: item.weight || 0,
-        product_category: item.product_category || "",
-        price_group: item.price_group || "",
+        product_category: item.product_category || null,
+        price_group: item.price_group || null,
         wallpaper_roll_width: item.wallpaper_roll_width || 0,
         wallpaper_roll_length: item.wallpaper_roll_length || 0,
         wallpaper_sold_by: item.wallpaper_sold_by || "per_roll",
@@ -422,13 +422,15 @@ export const UnifiedInventoryDialog = ({
         };
       }
       
-      // Remove empty fields (but keep explicit null for price_group to clear it)
+      // Remove empty fields (keeping null for optional fields like price_group and product_category)
       Object.keys(cleanData).forEach(key => {
+        // Remove empty strings and undefined
         if (cleanData[key] === "" || cleanData[key] === undefined) {
           delete cleanData[key];
         }
-        // Don't delete null price_group - it's intentional to clear the value
-        if (cleanData[key] === null && key !== 'price_group') {
+        // Keep null values for price_group and product_category (they're optional fields)
+        // Remove null for other fields
+        if (cleanData[key] === null && key !== 'price_group' && key !== 'product_category') {
           delete cleanData[key];
         }
       });
@@ -471,8 +473,8 @@ export const UnifiedInventoryDialog = ({
           hardware_finish: "",
           hardware_material: "",
           weight: 0,
-          product_category: "",
-          price_group: "",
+          product_category: null,
+          price_group: null,
           wallpaper_roll_width: 0,
           wallpaper_roll_length: 0,
           wallpaper_sold_by: "per_roll",
