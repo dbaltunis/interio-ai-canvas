@@ -10,7 +10,10 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Save, X, Info, Plus, Trash2, Upload, Download, Loader2, Link2, GitBranch, Workflow } from "lucide-react";
+import { Save, X, Info, Plus, Trash2, Upload, Download, Loader2, Link2, GitBranch, Workflow, GripVertical } from "lucide-react";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -46,6 +49,48 @@ interface CurtainTemplateFormProps {
   template?: CurtainTemplate;
   onClose: () => void;
 }
+
+const SortableOptionValue = ({ value, isEnabled, onToggle, formatPrice }: any) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: value.id });
+  
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  
+  const isValueVisible = value.extra_data?.visible !== false;
+  
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center space-x-2 p-3 border rounded bg-background hover:bg-muted/50"
+    >
+      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <Checkbox
+        checked={isValueVisible && isEnabled}
+        disabled={!isEnabled}
+        onCheckedChange={(checked) => onToggle(!!checked)}
+      />
+      <div className="flex-1 flex items-center justify-between">
+        <span className="font-medium text-sm">{value.label}</span>
+        <Badge variant={value.extra_data?.price === 0 ? "secondary" : "outline"} className="text-xs ml-2">
+          {formatPrice(value.extra_data?.price)}
+        </Badge>
+      </div>
+    </div>
+  );
+};
 
 export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormProps) => {
   const { toast } = useToast();
@@ -106,6 +151,14 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   ]);
 
   const [isSaving, setIsSaving] = useState(false);
+  const [optionDisplayOrder, setOptionDisplayOrder] = useState<Record<string, number>>({});
+  
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const [formData, setFormData] = useState({
     // Basic Information
@@ -321,13 +374,89 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   };
   
   // NOTE: Option values are managed globally in Settings → Options
-  // This function is no longer used - checkboxes are now read-only
-  const handleToggleOptionValue = (optionKey: string, optionLabel: string, valueCode: string, valueLabel: string, enabled: boolean, extraData?: any) => {
-    toast({
-      title: "Options are managed globally",
-      description: "To add or remove option values, go to Settings → Products → Options tab. Option values are shared across all templates.",
-      variant: "default"
-    });
+  // This function now handles toggling individual option values
+  const handleToggleOptionValue = async (optionKey: string, valueId: string, enabled: boolean) => {
+    try {
+      const categoryOption = allAvailableOptions.find(opt => opt.key === optionKey);
+      if (!categoryOption) return;
+      
+      // Update the option value extra_data to store visibility
+      const { data: currentValue, error: fetchError } = await supabase
+        .from('option_values')
+        .select('extra_data')
+        .eq('id', valueId)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      
+      const currentExtra = (currentValue?.extra_data as any) || {};
+      const updatedExtraData = {
+        ...currentExtra,
+        visible: enabled
+      };
+      
+      const { error } = await supabase
+        .from('option_values')
+        .update({ extra_data: updatedExtraData as any })
+        .eq('id', valueId);
+      
+      if (error) throw error;
+      
+      await queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
+      await queryClient.invalidateQueries({ queryKey: ['available-treatment-options-from-manager'] });
+      
+      toast({
+        title: enabled ? "Option value enabled" : "Option value disabled",
+        description: `Option value has been ${enabled ? 'enabled' : 'disabled'}.`,
+      });
+    } catch (error) {
+      console.error('Error toggling option value:', error);
+      toast({
+        title: "Error",
+        description: "Failed to toggle option value.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleDragEnd = async (event: any, optionKey: string) => {
+    const { active, over } = event;
+    
+    if (!over || active.id === over.id) return;
+    
+    const categoryOption = allAvailableOptions.find(opt => opt.key === optionKey);
+    if (!categoryOption?.option_values) return;
+    
+    const oldIndex = categoryOption.option_values.findIndex((v: any) => v.id === active.id);
+    const newIndex = categoryOption.option_values.findIndex((v: any) => v.id === over.id);
+    
+    const reorderedValues = arrayMove(categoryOption.option_values, oldIndex, newIndex);
+    
+    // Update order_index for all values
+    try {
+      const updates = reorderedValues.map((value: any, index: number) => 
+        supabase
+          .from('option_values')
+          .update({ order_index: index })
+          .eq('id', value.id)
+      );
+      
+      await Promise.all(updates);
+      await queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
+      await queryClient.invalidateQueries({ queryKey: ['available-treatment-options-from-manager'] });
+      
+      toast({
+        title: "Order updated",
+        description: "Option values have been reordered.",
+      });
+    } catch (error) {
+      console.error('Error reordering options:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reorder options.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleInputChange = (field: string, value: string | any) => {
@@ -887,23 +1016,30 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                               </p>
                             </div>
                             <p className="text-sm text-muted-foreground mb-3">
-                              {isEnabled ? 'Available options for this treatment:' : 'Toggle the switch above to enable these options'}
+                              {isEnabled ? 'Toggle individual options and drag to reorder:' : 'Toggle the switch above to enable these options'}
                             </p>
-                            <div className="grid grid-cols-2 gap-2">
-                              {allAvailableValues.map((value: any) => (
-                                <div key={value.code} className="flex items-center space-x-2 p-3 border rounded bg-muted/30">
-                                  <div className="h-4 w-4 rounded border-2 border-primary bg-primary flex items-center justify-center">
-                                    <span className="text-primary-foreground text-xs">✓</span>
-                                  </div>
-                                  <div className="flex-1 flex items-center justify-between">
-                                    <span className="font-medium text-sm">{value.label}</span>
-                                    <Badge variant={value.extra_data?.price === 0 ? "secondary" : "outline"} className="text-xs ml-2">
-                                      {formatOptionPrice(value.extra_data?.price)}
-                                    </Badge>
-                                  </div>
+                            <DndContext 
+                              sensors={sensors}
+                              collisionDetection={closestCenter}
+                              onDragEnd={(event) => handleDragEnd(event, group.type)}
+                            >
+                              <SortableContext 
+                                items={allAvailableValues.map((v: any) => v.id)}
+                                strategy={verticalListSortingStrategy}
+                              >
+                                <div className="space-y-2">
+                                  {allAvailableValues.map((value: any) => (
+                                    <SortableOptionValue
+                                      key={value.id}
+                                      value={value}
+                                      isEnabled={isEnabled}
+                                      onToggle={(enabled) => handleToggleOptionValue(group.type, value.id, enabled)}
+                                      formatPrice={formatOptionPrice}
+                                    />
+                                  ))}
                                 </div>
-                              ))}
-                            </div>
+                              </SortableContext>
+                            </DndContext>
                           </div>
                         )}
                       </CardContent>
