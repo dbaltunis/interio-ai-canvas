@@ -422,9 +422,13 @@ export const UnifiedInventoryDialog = ({
         };
       }
       
-      // Remove empty fields
+      // Remove empty fields (but keep explicit null for price_group to clear it)
       Object.keys(cleanData).forEach(key => {
-        if (cleanData[key] === "" || cleanData[key] === undefined || cleanData[key] === null) {
+        if (cleanData[key] === "" || cleanData[key] === undefined) {
+          delete cleanData[key];
+        }
+        // Don't delete null price_group - it's intentional to clear the value
+        if (cleanData[key] === null && key !== 'price_group') {
           delete cleanData[key];
         }
       });
@@ -807,7 +811,7 @@ export const UnifiedInventoryDialog = ({
                         </Label>
                         <Select
                           value={formData.price_group || undefined}
-                          onValueChange={(value) => setFormData({ ...formData, price_group: value === 'none' ? '' : value })}
+                          onValueChange={(value) => setFormData({ ...formData, price_group: value === 'none' ? null : value })}
                         >
                           <SelectTrigger id="price_group">
                             <SelectValue placeholder="Select a pricing grid (optional)" />
