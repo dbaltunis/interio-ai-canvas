@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
 
+// Inventory Categories Management Hooks
 type InventoryCategoryRow = Database['public']['Tables']['inventory_categories']['Row'];
 type InventoryCategoryInsert = Database['public']['Tables']['inventory_categories']['Insert'];
 type InventoryCategoryUpdate = Database['public']['Tables']['inventory_categories']['Update'];
