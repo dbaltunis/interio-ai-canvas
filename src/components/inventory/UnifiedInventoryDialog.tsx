@@ -1473,115 +1473,140 @@ export const UnifiedInventoryDialog = ({
                       </Alert>
                     )}
                     
-                    {/* Show simple pricing for non-track/rod items */}
-                    {formData.subcategory !== "track" && formData.subcategory !== "rod" && (
+                    {/* If pricing grid is selected for fabrics, show info message instead of manual pricing */}
+                    {isFabric && formData.price_group ? (
+                      <Alert className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900">
+                        <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        <AlertDescription className="space-y-2">
+                          <div>
+                            <strong className="text-green-900 dark:text-green-100">Pricing Grid Active</strong>
+                          </div>
+                          <p className="text-sm text-green-700 dark:text-green-300">
+                            This fabric is using the <strong>{pricingGrids.find(g => (g.grid_code || g.id) === formData.price_group)?.name || formData.price_group}</strong> pricing grid for automatic cost calculations.
+                          </p>
+                          {pricingGrids.find(g => (g.grid_code || g.id) === formData.price_group)?.markup_percentage && (
+                            <p className="text-sm text-green-700 dark:text-green-300">
+                              <strong>Markup:</strong> {pricingGrids.find(g => (g.grid_code || g.id) === formData.price_group)?.markup_percentage}% profit margin will be automatically applied to grid prices.
+                            </p>
+                          )}
+                          <p className="text-xs text-green-600 dark:text-green-400 mt-2">
+                            💡 Manual pricing fields are hidden because this fabric uses pricing grid calculations. To enter manual prices, remove the pricing grid in the Specifications tab.
+                          </p>
+                        </AlertDescription>
+                      </Alert>
+                    ) : (
                       <>
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <div>
-                            <Label htmlFor="unit">Unit</Label>
-                            <Select 
-                              value={formData.unit} 
-                              onValueChange={(value) => setFormData({ ...formData, unit: value })}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="meters">Meters</SelectItem>
-                                <SelectItem value="yards">Yards</SelectItem>
-                                <SelectItem value="sqm">Square Meters</SelectItem>
-                                <SelectItem value="pieces">Pieces</SelectItem>
-                                <SelectItem value="rolls">Rolls</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
+                        {/* Show simple pricing for non-track/rod items */}
+                        {formData.subcategory !== "track" && formData.subcategory !== "rod" && (
+                          <>
+                            <div className="grid gap-4 md:grid-cols-2">
+                              <div>
+                                <Label htmlFor="unit">Unit</Label>
+                                <Select 
+                                  value={formData.unit} 
+                                  onValueChange={(value) => setFormData({ ...formData, unit: value })}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="meters">Meters</SelectItem>
+                                    <SelectItem value="yards">Yards</SelectItem>
+                                    <SelectItem value="sqm">Square Meters</SelectItem>
+                                    <SelectItem value="pieces">Pieces</SelectItem>
+                                    <SelectItem value="rolls">Rolls</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
 
-                          <div>
-                            <Label htmlFor="cost_price">
-                              Cost Price (Buying) per {formData.unit} ({currencySymbol})
-                            </Label>
-                            <Input
-                              id="cost_price"
-                              type="number"
-                              step="0.01"
-                              value={formData.cost_price || ""}
-                              onChange={(e) => setFormData({ ...formData, cost_price: parseFloat(e.target.value) || 0 })}
-                              placeholder="20.00"
-                              required
-                            />
-                            <p className="text-xs text-muted-foreground mt-1">What you pay to supplier</p>
-                          </div>
-
-                          <div>
-                            <Label htmlFor="selling_price">
-                              Selling Price (Retail) per {formData.unit} ({currencySymbol})
-                            </Label>
-                            <Input
-                              id="selling_price"
-                              type="number"
-                              step="0.01"
-                              value={formData.selling_price || ""}
-                              onChange={(e) => setFormData({ ...formData, selling_price: parseFloat(e.target.value) || 0 })}
-                              placeholder="40.00"
-                              required
-                            />
-                              <p className="text-xs text-muted-foreground mt-1">What customer pays</p>
-                            </div>
-                          </div>
-
-                          {/* Display in Client Quotes Toggle */}
-                          <Card className="bg-muted/30">
-                            <CardContent className="pt-6">
-                              <div className="flex items-center justify-between">
-                                <div className="space-y-0.5">
-                                  <Label className="text-base">Display Pricing in Client Quotes</Label>
-                                  <p className="text-sm text-muted-foreground">
-                                    When enabled, this item's pricing will be visible to clients in quotes
-                                  </p>
-                                </div>
-                                <Switch
-                                  checked={(item as any)?.show_in_quote !== false}
-                                  onCheckedChange={(checked) => {
-                                    // Store in item if editing
-                                    if (mode === "edit" && item) {
-                                      (item as any).show_in_quote = checked;
-                                    }
-                                  }}
+                              <div>
+                                <Label htmlFor="cost_price">
+                                  Cost Price (Buying) per {formData.unit} ({currencySymbol})
+                                </Label>
+                                <Input
+                                  id="cost_price"
+                                  type="number"
+                                  step="0.01"
+                                  value={formData.cost_price || ""}
+                                  onChange={(e) => setFormData({ ...formData, cost_price: parseFloat(e.target.value) || 0 })}
+                                  placeholder="20.00"
+                                  required
                                 />
+                                <p className="text-xs text-muted-foreground mt-1">What you pay to supplier</p>
                               </div>
-                            </CardContent>
-                          </Card>
 
-                          {/* Profit Analysis - Admin Only */}
-                        {canViewMarkup && formData.cost_price > 0 && formData.selling_price > 0 && (
-                          <Card className="bg-muted/50">
-                            <CardHeader>
-                              <CardTitle className="text-base flex items-center gap-2">
-                                <TrendingUp className="h-4 w-4" />
-                                Profit Analysis
-                              </CardTitle>
-                              <CardDescription>Calculated automatically based on your pricing</CardDescription>
-                            </CardHeader>
-                            <CardContent className="grid gap-3 md:grid-cols-3">
                               <div>
-                                <Label className="text-xs text-muted-foreground">Profit per Unit</Label>
-                                <p className="text-xl font-bold">${profitPerUnit.toFixed(2)}</p>
+                                <Label htmlFor="selling_price">
+                                  Selling Price (Retail) per {formData.unit} ({currencySymbol})
+                                </Label>
+                                <Input
+                                  id="selling_price"
+                                  type="number"
+                                  step="0.01"
+                                  value={formData.selling_price || ""}
+                                  onChange={(e) => setFormData({ ...formData, selling_price: parseFloat(e.target.value) || 0 })}
+                                  placeholder="40.00"
+                                  required
+                                />
+                                <p className="text-xs text-muted-foreground mt-1">What customer pays</p>
                               </div>
-                              <div>
-                                <Label className="text-xs text-muted-foreground">Markup %</Label>
-                                <p className="text-xl font-bold">{markupPercentage.toFixed(1)}%</p>
-                              </div>
-                              <div>
-                                <Label className="text-xs text-muted-foreground">Profit Margin %</Label>
-                                <p className={`text-xl font-bold ${getMarginColor()}`}>
-                                  {marginPercentage.toFixed(1)}%
-                                  {marginPercentage >= 30 && " 🟢"}
-                                  {marginPercentage >= 15 && marginPercentage < 30 && " 🟡"}
-                                  {marginPercentage < 15 && " 🔴"}
-                                </p>
-                              </div>
-                            </CardContent>
-                          </Card>
+                            </div>
+
+                            {/* Display in Client Quotes Toggle */}
+                            <Card className="bg-muted/30">
+                              <CardContent className="pt-6">
+                                <div className="flex items-center justify-between">
+                                  <div className="space-y-0.5">
+                                    <Label className="text-base">Display Pricing in Client Quotes</Label>
+                                    <p className="text-sm text-muted-foreground">
+                                      When enabled, this item's pricing will be visible to clients in quotes
+                                    </p>
+                                  </div>
+                                  <Switch
+                                    checked={(item as any)?.show_in_quote !== false}
+                                    onCheckedChange={(checked) => {
+                                      // Store in item if editing
+                                      if (mode === "edit" && item) {
+                                        (item as any).show_in_quote = checked;
+                                      }
+                                    }}
+                                  />
+                                </div>
+                              </CardContent>
+                            </Card>
+
+                            {/* Profit Analysis - Admin Only */}
+                            {canViewMarkup && formData.cost_price > 0 && formData.selling_price > 0 && (
+                              <Card className="bg-muted/50">
+                                <CardHeader>
+                                  <CardTitle className="text-base flex items-center gap-2">
+                                    <TrendingUp className="h-4 w-4" />
+                                    Profit Analysis
+                                  </CardTitle>
+                                  <CardDescription>Calculated automatically based on your pricing</CardDescription>
+                                </CardHeader>
+                                <CardContent className="grid gap-3 md:grid-cols-3">
+                                  <div>
+                                    <Label className="text-xs text-muted-foreground">Profit per Unit</Label>
+                                    <p className="text-xl font-bold">${profitPerUnit.toFixed(2)}</p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs text-muted-foreground">Markup %</Label>
+                                    <p className="text-xl font-bold">{markupPercentage.toFixed(1)}%</p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs text-muted-foreground">Profit Margin %</Label>
+                                    <p className={`text-xl font-bold ${getMarginColor()}`}>
+                                      {marginPercentage.toFixed(1)}%
+                                      {marginPercentage >= 30 && " 🟢"}
+                                      {marginPercentage >= 15 && marginPercentage < 30 && " 🟡"}
+                                      {marginPercentage < 15 && " 🔴"}
+                                    </p>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            )}
+                          </>
                         )}
                       </>
                     )}
