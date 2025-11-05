@@ -280,11 +280,6 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
     );
   }
 
-  const priceGroups = ['A', 'B', 'C', 'D', 'E'];
-  const gridsByGroup = priceGroups.map(group => ({
-    group,
-    grid: grids.find(g => g.price_group === group),
-  }));
 
   return (
     <div className="space-y-6">
@@ -292,8 +287,8 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
       <Alert>
         <Info className="h-4 w-4" />
         <AlertDescription>
-          <strong>How it works:</strong> Upload CSV pricing grids for each fabric price group (A/B/C/D/E). 
-          When creating a job, select a fabric with a price group, and the system will automatically use the matching grid.
+          <strong>How it works:</strong> Upload CSV pricing grids with custom names. 
+          When creating a job, select a fabric with a matching grid name, and the system will automatically use that pricing grid.
         </AlertDescription>
       </Alert>
 
@@ -324,9 +319,9 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Pricing Grids by Price Group</CardTitle>
+              <CardTitle>Your Pricing Grids</CardTitle>
               <CardDescription>
-                Upload grids for each fabric price tier
+                Grids uploaded for {productType} - {systemType}
               </CardDescription>
             </div>
             {!showUploadForm && (
@@ -340,57 +335,53 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
         <CardContent>
           {loading ? (
             <p className="text-muted-foreground text-center py-4">Loading grids...</p>
+          ) : grids.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-4">No pricing grids uploaded yet</p>
+              <Button onClick={() => setShowUploadForm(true)} size="sm">
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Your First Grid
+              </Button>
+            </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Price Group</TableHead>
+                  <TableHead>Grid Code</TableHead>
                   <TableHead>Grid Name</TableHead>
+                  <TableHead>Description</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {gridsByGroup.map(({ group, grid }) => (
-                  <TableRow key={group}>
+                {grids.map((grid) => (
+                  <TableRow key={grid.id}>
                     <TableCell>
-                      <Badge variant="outline">Group {group}</Badge>
+                      <Badge variant="outline">{grid.grid_code}</Badge>
                     </TableCell>
                     <TableCell>
-                      {grid ? (
-                        <div>
-                          <div className="font-medium">{grid.name}</div>
-                          {grid.description && (
-                            <div className="text-xs text-muted-foreground">{grid.description}</div>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">Not configured</span>
-                      )}
+                      <div className="font-medium">{grid.name}</div>
                     </TableCell>
                     <TableCell>
-                      {grid ? (
-                        <Badge variant="default" className="gap-1">
-                          <CheckCircle2 className="h-3 w-3" />
-                          Active
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="gap-1">
-                          <AlertCircle className="h-3 w-3" />
-                          Missing
-                        </Badge>
-                      )}
+                      <div className="text-sm text-muted-foreground">
+                        {grid.description || '-'}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="default" className="gap-1">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Active
+                      </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      {grid && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteGrid(grid.id, group)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteGrid(grid.id, grid.price_group)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
