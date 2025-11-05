@@ -112,9 +112,11 @@ export const DynamicRollerBlindFields = ({
       const currentValue = measurements[option.key];
       const defaultValue = optionValues[0];
       
-      // If no value is set, auto-select the first option
-      if (!currentValue && defaultValue) {
-        console.log(`  Setting default ${option.key} = ${defaultValue.value}`);
+      // Auto-select first option if: no value is set OR only one option available
+      const shouldAutoSelect = !currentValue || optionValues.length === 1;
+      
+      if (shouldAutoSelect && defaultValue) {
+        console.log(`  Auto-selecting ${option.key} = ${defaultValue.value} (only one option: ${optionValues.length === 1})`);
         onChange(option.key, defaultValue.value);
         
         // Also notify parent of the price for cost summary
