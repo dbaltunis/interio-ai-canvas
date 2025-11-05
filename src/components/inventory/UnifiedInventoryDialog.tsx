@@ -378,9 +378,10 @@ export const UnifiedInventoryDialog = ({
         img.src = readerEvent.target.result as string;
       };
       
-      reader.onerror = (error) => {
+      reader.onerror = () => {
+        const error = reader.error || new Error('Failed to read file');
         console.error('FileReader error:', error);
-        reject(new Error('Failed to read file'));
+        reject(error);
       };
       
       reader.readAsDataURL(file);
@@ -391,12 +392,15 @@ export const UnifiedInventoryDialog = ({
     const file = event.target.files?.[0];
     if (!file) return;
 
+    console.log('Starting upload for file:', file.name, file.type, file.size);
     setUploadingImage(true);
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('You must be logged in to upload images');
       }
+      console.log('User authenticated:', user.id);
 
       let fileToUpload: File | Blob = file;
       let fileName = '';
@@ -404,7 +408,9 @@ export const UnifiedInventoryDialog = ({
       // Try to compress image, but fallback to original if it fails
       try {
         if (file.type.startsWith('image/')) {
+          console.log('Compressing image...');
           const compressedBlob = await compressImage(file);
+          console.log('Compression successful. Size:', compressedBlob.size);
           fileToUpload = compressedBlob;
           // FIX: Use folder structure that matches storage policies
           fileName = `${user.id}/inventory-${Date.now()}.jpg`;
@@ -412,12 +418,13 @@ export const UnifiedInventoryDialog = ({
           fileName = `${user.id}/inventory-${Date.now()}.${file.name.split('.').pop()}`;
         }
       } catch (compressionError) {
-        console.warn('Compression failed, uploading original:', compressionError);
+        console.error('Compression failed:', compressionError);
         fileName = `${user.id}/inventory-${Date.now()}.${file.name.split('.').pop()}`;
         fileToUpload = file;
       }
       
-      const { error: uploadError } = await supabase.storage
+      console.log('Uploading to storage. Bucket: project-images, Path:', fileName);
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('project-images')
         .upload(fileName, fileToUpload, {
           contentType: file.type.startsWith('image/') ? 'image/jpeg' : file.type,
@@ -430,10 +437,12 @@ export const UnifiedInventoryDialog = ({
         throw uploadError;
       }
 
+      console.log('Upload successful:', uploadData);
       const { data: { publicUrl } } = supabase.storage
         .from('project-images')
         .getPublicUrl(fileName);
 
+      console.log('Public URL:', publicUrl);
       setFormData({ ...formData, image_url: publicUrl });
       toast({
         title: "Image uploaded",

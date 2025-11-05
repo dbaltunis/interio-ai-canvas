@@ -82,7 +82,11 @@ export const ImageUploadCard = ({ images, onImageUpload, onRemoveImage }: ImageU
         img.src = readerEvent.target.result as string;
       };
       
-      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.onerror = () => {
+        const error = reader.error || new Error('Failed to read file');
+        console.error('FileReader error:', error);
+        reject(error);
+      };
       reader.readAsDataURL(file);
     });
   };
