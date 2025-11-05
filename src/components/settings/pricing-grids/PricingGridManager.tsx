@@ -10,6 +10,7 @@ import { Plus, Upload, Trash2, Grid3x3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { SampleDataHelper } from './SampleDataHelper';
+import { PricingGridExplainer } from './PricingGridExplainer';
 
 export const PricingGridManager = () => {
   const [newGridName, setNewGridName] = useState('');
@@ -139,6 +140,12 @@ export const PricingGridManager = () => {
 
   return (
     <div className="space-y-6">
+      {/* Help Section */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Global Pricing Grids</h2>
+        <PricingGridExplainer />
+      </div>
+
       {/* Sample CSV Helper */}
       <SampleDataHelper />
 
