@@ -315,9 +315,9 @@ export const UnifiedInventoryDialog = ({
               return;
             }
             
-            // Aggressive compression - max 800px for faster loading
-            const MAX_WIDTH = 800;
-            const MAX_HEIGHT = 800;
+            // Very aggressive compression - max 600px for faster loading
+            const MAX_WIDTH = 600;
+            const MAX_HEIGHT = 600;
             let width = img.width;
             let height = img.height;
             
@@ -338,7 +338,7 @@ export const UnifiedInventoryDialog = ({
             canvas.height = height;
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             
-            // Aggressive compression with 60% quality for smaller file size
+            // Very aggressive compression with 40% quality for minimal file size
             canvas.toBlob(
               (blob) => {
                 if (blob) {
@@ -348,7 +348,7 @@ export const UnifiedInventoryDialog = ({
                 }
               },
               'image/jpeg',
-              0.6
+              0.4
             );
           } catch (error) {
             reject(error);

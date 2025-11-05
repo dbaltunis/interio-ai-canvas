@@ -53,8 +53,8 @@ export const RingDialog = ({ open, onOpenChange, ring, onSave }: RingDialogProps
               return;
             }
             
-            const MAX_WIDTH = 800;
-            const MAX_HEIGHT = 800;
+            const MAX_WIDTH = 600;
+            const MAX_HEIGHT = 600;
             let width = img.width;
             let height = img.height;
             
@@ -83,7 +83,7 @@ export const RingDialog = ({ open, onOpenChange, ring, onSave }: RingDialogProps
                 }
               },
               'image/jpeg',
-              0.6
+              0.4
             );
           } catch (error) {
             reject(error);
