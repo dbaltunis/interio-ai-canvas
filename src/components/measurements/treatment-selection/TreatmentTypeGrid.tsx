@@ -86,15 +86,15 @@ export const TreatmentTypeGrid = ({
                   }`}
                   onClick={() => onSelect(treatment)}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex flex-col items-center space-y-3">
+                  <CardContent className="p-2">
+                    <div className="flex flex-col items-center space-y-2">
                       {/* Image preview or placeholder */}
-                      <div className="h-20 w-full flex items-center justify-center bg-muted border-2 border-border rounded-md overflow-hidden">
+                      <div className="aspect-square w-full flex items-center justify-center bg-muted border border-border rounded overflow-hidden">
                         {treatment.image_url ? (
                           <img 
                             src={treatment.image_url} 
                             alt={treatment.name}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain"
                           />
                         ) : (
                           <div className="text-muted-foreground text-xs">No preview</div>
