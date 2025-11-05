@@ -308,11 +308,11 @@ export const CostCalculationSummary = ({
                         });
                         const matchingEntry = option.pricingGridData.find((entry: any) => parseInt(entry.width) === closestWidth);
                         displayPrice = matchingEntry ? parseFloat(matchingEntry.price) : 0;
-                        pricingDetails = ` (Grid: ${width}cm → ${closestWidth}cm)`;
+                        pricingDetails = ` (Grid: ${width}cm → ${formatPrice(displayPrice)})`;
                       } else {
                         // Full 2D grid
                         displayPrice = getPriceFromGrid(option.pricingGridData, width, height);
-                        pricingDetails = ` (Grid: ${width}cm × ${height}cm)`;
+                        pricingDetails = ` (Grid: ${width}cm × ${height}cm → ${formatPrice(displayPrice)})`;
                       }
                     } else if (option.pricingMethod === 'fixed' || !option.pricingMethod) {
                       pricingDetails = ' (Fixed)';
