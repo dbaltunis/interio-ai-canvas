@@ -70,6 +70,10 @@ export interface EnhancedInventoryItem {
   metadata?: Json;
   show_in_quote?: boolean;
   
+  // Pricing grid
+  price_group?: string | null;
+  product_category?: string | null;
+  
   // Timestamps
   created_at: string;
   updated_at: string;

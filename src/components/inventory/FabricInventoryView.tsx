@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +33,23 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
   const [activeCategory, setActiveCategory] = useState("all");
   const [localSearch, setLocalSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [pricingGrids, setPricingGrids] = useState<Array<{ id: string; grid_code: string | null; name: string }>>([]);
+
+  // Fetch pricing grids for displaying grid names
+  useEffect(() => {
+    const fetchPricingGrids = async () => {
+      const { data } = await supabase
+        .from('pricing_grids')
+        .select('id, grid_code, name')
+        .eq('active', true);
+      
+      if (data) {
+        setPricingGrids(data);
+      }
+    };
+    
+    fetchPricingGrids();
+  }, []);
 
   const fabricItems = inventory?.filter(item => 
     item.category === 'fabric'
@@ -216,9 +233,15 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
                           </div>
                         )}
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Price:</span>
+                          <span className="text-muted-foreground">
+                            {item.price_group ? 'Pricing Grid:' : 'Price:'}
+                          </span>
                           <span className="font-bold text-primary">
-                            {formatPrice(item.price_per_meter || item.selling_price || 0)}/m
+                            {item.price_group ? (
+                              pricingGrids.find(g => g.grid_code === item.price_group || g.id === item.price_group)?.name || item.price_group
+                            ) : (
+                              `${formatPrice(item.price_per_meter || item.selling_price || 0)}/m`
+                            )}
                           </span>
                         </div>
                       </div>
