@@ -282,12 +282,12 @@ export const InventorySelectionPanel = ({
     >
         <CardContent className="p-2">
           <div className="flex flex-col space-y-2">
-            {/* Image - Larger for fabric */}
-            <div className={`w-full bg-gray-50 border border-gray-200 rounded overflow-hidden relative ${category === 'fabric' ? 'h-24' : 'h-16'}`}>
-              {imageUrl ? <img src={imageUrl} alt={item.name} className="w-full h-full object-cover" onError={e => {
+            {/* Image - Square for all categories */}
+            <div className="aspect-square w-full bg-muted border border-border rounded overflow-hidden relative">
+              {imageUrl ? <img src={imageUrl} alt={item.name} className="w-full h-full object-contain" onError={e => {
               console.error('Image failed to load:', imageUrl);
               e.currentTarget.style.display = 'none';
-            }} /> : <div className="flex items-center justify-center h-full text-gray-400 text-[10px]">
+            }} /> : <div className="flex items-center justify-center h-full text-muted-foreground text-[10px]">
                   No image
                 </div>}
               {isSelected && <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />}
