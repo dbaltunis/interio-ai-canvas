@@ -275,31 +275,14 @@ export function WindowSummaryCard({
     if (Number(summary.options_cost) > 0 || (summary.selected_options && (summary.selected_options as any[]).length > 0)) {
       const optionsDetails = summary.selected_options || [];
       
-      // Build a more detailed description from the actual option data
+      // Build detailed description from measurements_details which contains the actual option selections
       let optionsDescription = 'Selected options';
       
       if (Array.isArray(optionsDetails) && optionsDetails.length > 0) {
-        // Check if we have treatment_configuration with hierarchical data
-        const treatmentConfig = (summary as any).treatment_configuration || {};
-        const detailedOptions: string[] = [];
-        
-        // Map the saved option keys to their display values
-        Object.entries(treatmentConfig).forEach(([key, value]) => {
-          if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-            // Format the key nicely (e.g., "motor_type" -> "Motor Type")
-            const formattedKey = key.split('_').map(word => 
-              word.charAt(0).toUpperCase() + word.slice(1)
-            ).join(' ');
-            detailedOptions.push(`${formattedKey}: ${value}`);
-          }
-        });
-        
-        if (detailedOptions.length > 0) {
-          optionsDescription = detailedOptions.join(' • ');
-        } else {
-          // Fallback to old format
-          optionsDescription = optionsDetails.map((opt: any) => opt.name || opt.label).filter(Boolean).join(', ');
-        }
+        optionsDescription = optionsDetails
+          .map((opt: any) => `${opt.name}${opt.price > 0 ? ` (+${formatCurrency(opt.price)})` : ''}`)
+          .filter(Boolean)
+          .join(' • ');
       }
       
       items.push({
@@ -309,8 +292,7 @@ export function WindowSummaryCard({
         total_cost: Number(summary.options_cost) || 0,
         category: 'options',
         details: { 
-          selected_options: optionsDetails,
-          treatment_configuration: (summary as any).treatment_configuration 
+          selected_options: optionsDetails
         },
       });
     }
