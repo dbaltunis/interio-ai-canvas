@@ -1072,10 +1072,16 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
             )}
             
             {(() => {
-              // Use dynamic option type categories from database instead of hardcoded
-              const currentGroups = optionTypeCategories.map(cat => ({
-                type: cat.type_key,
-                label: cat.type_label
+              // Sort allAvailableOptions by order_index first
+              const sortedOptions = [...allAvailableOptions].sort((a: any, b: any) => 
+                (a.order_index || 0) - (b.order_index || 0)
+              );
+              
+              // Use sorted options to determine rendering order
+              const currentGroups = sortedOptions.map(opt => ({
+                type: opt.key,
+                label: opt.label,
+                id: opt.id
               }));
               
               if (categoriesLoading) {
@@ -1109,7 +1115,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                   onDragEnd={handleDragEndOptions}
                 >
                   <SortableContext
-                    items={allAvailableOptions.map((opt: any) => opt.id)}
+                    items={currentGroups.map((g: any) => g.id)}
                     strategy={verticalListSortingStrategy}
                   >
                     <div className="space-y-4">
@@ -1122,7 +1128,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                         
                         return (
                           <SortableOptionCard
-                            key={group.type}
+                            key={group.id}
                             option={matchingOption}
                             group={group}
                             isEnabled={isEnabled}
