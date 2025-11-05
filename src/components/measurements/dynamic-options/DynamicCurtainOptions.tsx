@@ -509,6 +509,55 @@ export const DynamicCurtainOptions = ({
                     })}
                   </SelectContent>
                 </Select>
+
+                {/* CRITICAL: Render sub-options when a value is selected */}
+                {(() => {
+                  const selectedValueId = treatmentOptionSelections[option.key] || measurements[`treatment_option_${option.key}`];
+                  if (!selectedValueId) return null;
+                  
+                  const selectedValue = option.option_values.find(v => v.id === selectedValueId);
+                  const subOptions = selectedValue?.extra_data?.sub_options;
+                  
+                  if (!subOptions || subOptions.length === 0) return null;
+                  
+                  return (
+                    <div className="ml-4 mt-3 space-y-3 pl-4 border-l-2 border-muted">
+                      {subOptions.map((subOption: any) => (
+                        <div key={subOption.id} className="space-y-2">
+                          <Label className="text-sm font-medium text-muted-foreground">
+                            {subOption.label}
+                          </Label>
+                          <Select
+                            value={treatmentOptionSelections[`${option.key}_${subOption.key}`] || ''}
+                            onValueChange={(choiceValue) => {
+                              // Save sub-option selection
+                              handleTreatmentOptionChange(`${option.key}_${subOption.key}`, choiceValue);
+                            }}
+                            disabled={readOnly}
+                          >
+                            <SelectTrigger className="bg-background border-input">
+                              <SelectValue placeholder={`Select ${subOption.label.toLowerCase()}`} />
+                            </SelectTrigger>
+                            <SelectContent className="bg-popover border-border z-50">
+                              {subOption.choices.map((choice: any) => (
+                                <SelectItem key={choice.id} value={choice.value}>
+                                  <div className="flex items-center justify-between gap-4 w-full">
+                                    <span>{choice.label}</span>
+                                    {choice.price > 0 && (
+                                      <Badge variant="outline" className="text-xs">
+                                        +{formatCurrency(choice.price)}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}
