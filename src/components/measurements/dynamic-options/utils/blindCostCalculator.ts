@@ -19,7 +19,8 @@ export const calculateBlindCosts = (
   heightCm: number,
   template: any,
   fabricItem: any,
-  selectedOptions: Array<{ name: string; price?: number }> = []
+  selectedOptions: Array<{ name: string; price?: number; pricingMethod?: string; optionKey?: string }> = [],
+  measurements?: Record<string, any>
 ): BlindCalculationResult => {
   
   // Get hem values
@@ -80,10 +81,42 @@ export const calculateBlindCosts = (
     manufacturingCost = squareMeters * template.unit_price * 0.5; // 50% for labor
   }
   
-  // Calculate options cost (only count options with price > 0)
+  // Calculate options cost - consider pricing method for each option
   const optionsCost = selectedOptions
     .filter(opt => opt.price && opt.price > 0)
-    .reduce((sum, opt) => sum + (opt.price || 0), 0);
+    .reduce((sum, opt) => {
+      const basePrice = opt.price || 0;
+      
+      // Check pricing method
+      if (opt.pricingMethod === 'per-meter') {
+        // Price per meter of width
+        const priceForWidth = basePrice * (widthCm / 100);
+        console.log(`💰 Option "${opt.name}" pricing:`, {
+          method: 'per-meter',
+          basePrice,
+          widthCm,
+          calculatedPrice: priceForWidth.toFixed(2)
+        });
+        return sum + priceForWidth;
+      } else if (opt.pricingMethod === 'per-sqm') {
+        // Price per square meter
+        const priceForArea = basePrice * squareMeters;
+        console.log(`💰 Option "${opt.name}" pricing:`, {
+          method: 'per-sqm',
+          basePrice,
+          squareMeters: squareMeters.toFixed(2),
+          calculatedPrice: priceForArea.toFixed(2)
+        });
+        return sum + priceForArea;
+      } else {
+        // Fixed price (default)
+        console.log(`💰 Option "${opt.name}" pricing:`, {
+          method: 'fixed',
+          price: basePrice
+        });
+        return sum + basePrice;
+      }
+    }, 0);
   
   // Total cost
   const totalCost = fabricCost + manufacturingCost + optionsCost;

@@ -16,7 +16,7 @@ interface DynamicRollerBlindFieldsProps {
   templateId?: string;
   treatmentCategory?: string;
   readOnly?: boolean;
-  onOptionPriceChange?: (optionKey: string, price: number, label: string) => void;
+  onOptionPriceChange?: (optionKey: string, price: number, label: string, pricingMethod?: string) => void;
   selectedOptions?: Array<{ name: string; price: number }>;
 }
 
@@ -84,13 +84,15 @@ export const DynamicRollerBlindFields = ({
   };
 
   // Helper to handle option change and notify parent of price
-  const handleOptionChange = (key: string, value: string | boolean, optionValues: any[]) => {
+  const handleOptionChange = (key: string, value: string | boolean, optionValues: any[], selectedValue?: any) => {
     onChange(key, String(value));
     
     if (onOptionPriceChange && typeof value === 'string') {
       const selectedOption = optionValues.find(opt => opt.value === value);
       if (selectedOption) {
-        onOptionPriceChange(key, selectedOption.price, selectedOption.label);
+        // Include pricing method from extra_data
+        const pricingMethod = selectedValue?.extra_data?.pricing_method || 'fixed';
+        onOptionPriceChange(key, selectedOption.price, selectedOption.label, pricingMethod);
       }
     }
   };
@@ -235,11 +237,14 @@ export const DynamicRollerBlindFields = ({
                   </Badge>
                 )}
               </div>
-              <Select
-                value={currentValue || defaultValue}
-                onValueChange={(value) => handleOptionChange(option.key, value, optionValues)}
-                disabled={readOnly}
-              >
+                <Select
+                  value={currentValue || defaultValue}
+                  onValueChange={(value) => {
+                    const selectedValue = option.option_values?.find((v: any) => v.code === value || v.id === value);
+                    handleOptionChange(option.key, value, optionValues, selectedValue);
+                  }}
+                  disabled={readOnly}
+                >
                 <SelectTrigger id={option.key} className={isConditional ? "border-purple-200 focus:ring-purple-500" : ""}>
                   <SelectValue placeholder={`Select ${option.label.toLowerCase()}`} />
                 </SelectTrigger>
@@ -304,7 +309,12 @@ export const DynamicRollerBlindFields = ({
                               if (choice) {
                                 // Use a clear label showing parent option + sub-option
                                 const displayLabel = `${option.label} - ${subOption.label}: ${choice.label}`;
-                                onOptionPriceChange(`${option.key}_${subOption.key}`, choice.price || 0, displayLabel);
+                                // Sub-options inherit pricing method from parent option
+                                const parentValue = option.option_values?.find((v: any) => 
+                                  v.code === (currentValue || defaultValue) || v.id === (currentValue || defaultValue)
+                                );
+                                const pricingMethod = parentValue?.extra_data?.pricing_method || 'fixed';
+                                onOptionPriceChange(`${option.key}_${subOption.key}`, choice.price || 0, displayLabel, pricingMethod);
                               }
                             }
                           }}
