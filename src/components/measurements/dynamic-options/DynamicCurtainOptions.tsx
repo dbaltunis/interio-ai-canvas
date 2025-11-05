@@ -452,6 +452,14 @@ export const DynamicCurtainOptions = ({
       {treatmentOptions.length > 0 && (
         <div className="space-y-4 pt-2 border-t border-border">
           {treatmentOptions.map(option => {
+            console.log('🎯 RENDERING OPTION:', {
+              key: option.key,
+              label: option.label,
+              hasValues: !!option.option_values,
+              valueCount: option.option_values?.length,
+              firstValue: option.option_values?.[0]
+            });
+            
             if (!option.visible || !option.option_values || option.option_values.length === 0) {
               return null;
             }
@@ -513,19 +521,32 @@ export const DynamicCurtainOptions = ({
                 {/* CRITICAL: Render sub-options when a value is selected */}
                 {(() => {
                   const selectedValueId = treatmentOptionSelections[option.key] || measurements[`treatment_option_${option.key}`];
-                  if (!selectedValueId) return null;
+                  
+                  console.log('🔍🔍🔍 SUB-OPTIONS CHECK:', {
+                    optionKey: option.key,
+                    optionLabel: option.label,
+                    selectedValueId,
+                    treatmentOptionSelections,
+                    measurements: measurements[`treatment_option_${option.key}`]
+                  });
+                  
+                  if (!selectedValueId) {
+                    console.log('❌ No selected value ID for', option.key);
+                    return null;
+                  }
                   
                   const selectedValue = option.option_values.find(v => v.id === selectedValueId);
-                  const subOptions = selectedValue?.extra_data?.sub_options;
+                  console.log('🎯 Found selected value:', selectedValue);
                   
-                  // Debug logging
-                  console.log('🔍 Sub-options check:', {
-                    optionKey: option.key,
-                    selectedValueId,
-                    selectedValue,
-                    subOptions,
-                    extra_data: selectedValue?.extra_data
-                  });
+                  const subOptions = selectedValue?.extra_data?.sub_options;
+                  console.log('📦 Sub-options:', subOptions);
+                  
+                  if (!subOptions || subOptions.length === 0) {
+                    console.log('❌ No sub-options or empty array');
+                    return null;
+                  }
+                  
+                  console.log('✅✅✅ RENDERING SUB-OPTIONS:', subOptions);
                   
                   if (!subOptions || subOptions.length === 0) return null;
                   
