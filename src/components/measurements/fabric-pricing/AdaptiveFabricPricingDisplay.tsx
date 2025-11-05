@@ -3,6 +3,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Ruler, Calculator } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { getPriceFromGrid } from "@/hooks/usePricingGrids";
+import { useFabricEnrichment } from "@/hooks/pricing/useFabricEnrichment";
 
 interface AdaptiveFabricPricingDisplayProps {
   selectedFabricItem: any;
@@ -20,6 +21,15 @@ export const AdaptiveFabricPricingDisplay = ({
   treatmentCategory
 }: AdaptiveFabricPricingDisplayProps) => {
   const { units, getLengthUnitLabel, getFabricUnitLabel } = useMeasurementUnits();
+  
+  // Enrich fabric with pricing grid data if applicable
+  const { enrichedFabric, isLoading: isEnrichingFabric, hasGrid: fabricHasGrid } = useFabricEnrichment({
+    fabricItem: selectedFabricItem,
+    formData: measurements
+  });
+  
+  // Use enriched fabric for all calculations
+  const fabricToUse = enrichedFabric || selectedFabricItem;
 
   const formatPrice = (price: number) => {
     const currencySymbols: Record<string, string> = {
@@ -38,7 +48,7 @@ export const AdaptiveFabricPricingDisplay = ({
   const usesPricingGrid = template?.pricing_type === 'pricing_grid' && template?.pricing_grid_data;
   
   // Check if fabric is sold per sqm
-  const isFabricPerSqm = selectedFabricItem?.price_per_unit === 'sqm';
+  const isFabricPerSqm = fabricToUse?.price_per_unit === 'sqm';
   
   // Determine if this is a curtain-type treatment
   const isCurtainType = treatmentCategory === 'curtains' || 
@@ -74,16 +84,22 @@ export const AdaptiveFabricPricingDisplay = ({
         <div className="text-xs space-y-1 text-muted-foreground">
           <div className="flex justify-between">
             <span>Fabric:</span>
-            <span className="font-medium text-foreground">{selectedFabricItem.name}</span>
+            <span className="font-medium text-foreground">{fabricToUse.name}</span>
           </div>
           <div className="flex justify-between">
             <span>Width:</span>
-            <span className="font-medium text-foreground">{selectedFabricItem.fabric_width || 300}cm</span>
+            <span className="font-medium text-foreground">{fabricToUse.fabric_width || 300}cm</span>
           </div>
-          {selectedFabricItem.price_per_meter && (
+          {fabricToUse.price_per_meter && (
             <div className="flex justify-between">
               <span>Price/{isFabricPerSqm ? 'sqm' : 'meter'}:</span>
-              <span className="font-medium text-foreground">{formatPrice(selectedFabricItem.price_per_meter)}</span>
+              <span className="font-medium text-foreground">{formatPrice(fabricToUse.price_per_meter)}</span>
+            </div>
+          )}
+          {fabricHasGrid && fabricToUse.resolved_grid_name && (
+            <div className="flex justify-between">
+              <span>Pricing Grid:</span>
+              <span className="font-medium text-foreground text-green-600">{fabricToUse.resolved_grid_name}</span>
             </div>
           )}
         </div>
@@ -120,11 +136,11 @@ export const AdaptiveFabricPricingDisplay = ({
             <div className="flex justify-between">
               <span>Fabric Cost:</span>
               <span className="font-medium text-foreground">
-                {formatPrice(calculateSquareMeters() * (selectedFabricItem.price_per_meter || 0))}
+                {formatPrice(calculateSquareMeters() * (fabricToUse.price_per_meter || 0))}
               </span>
             </div>
             <div className="text-xs text-muted-foreground mt-1">
-              Calculation: {calculateSquareMeters().toFixed(2)} sqm × {formatPrice(selectedFabricItem.price_per_meter || 0)}/sqm
+              Calculation: {calculateSquareMeters().toFixed(2)} sqm × {formatPrice(fabricToUse.price_per_meter || 0)}/sqm
             </div>
           </div>
         </div>
@@ -149,16 +165,22 @@ export const AdaptiveFabricPricingDisplay = ({
         <div className="text-xs space-y-1 text-muted-foreground">
           <div className="flex justify-between">
             <span>Fabric:</span>
-            <span className="font-medium text-foreground">{selectedFabricItem.name}</span>
+            <span className="font-medium text-foreground">{fabricToUse.name}</span>
           </div>
           <div className="flex justify-between">
             <span>Width:</span>
-            <span className="font-medium text-foreground">{selectedFabricItem.fabric_width || 300}cm</span>
+            <span className="font-medium text-foreground">{fabricToUse.fabric_width || 300}cm</span>
           </div>
           <div className="flex justify-between">
             <span>Price/{isFabricPerSqm ? 'sqm' : 'meter'}:</span>
-            <span className="font-medium text-foreground">{formatPrice(selectedFabricItem.price_per_meter || 0)}</span>
+            <span className="font-medium text-foreground">{formatPrice(fabricToUse.price_per_meter || 0)}</span>
           </div>
+          {fabricHasGrid && fabricToUse.resolved_grid_name && (
+            <div className="flex justify-between">
+              <span>Pricing Grid:</span>
+              <span className="font-medium text-foreground text-green-600">{fabricToUse.resolved_grid_name}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -183,7 +205,7 @@ export const AdaptiveFabricPricingDisplay = ({
               <div className="flex justify-between">
                 <span>Fabric Cost:</span>
                 <span className="font-medium text-foreground">
-                  {formatPrice(calculateSquareMeters() * (selectedFabricItem.price_per_meter || 0))}
+                  {formatPrice(calculateSquareMeters() * (fabricToUse.price_per_meter || 0))}
                 </span>
               </div>
             </>
@@ -198,7 +220,7 @@ export const AdaptiveFabricPricingDisplay = ({
               <div className="flex justify-between">
                 <span>Fabric Cost:</span>
                 <span className="font-medium text-foreground">
-                  {formatPrice(((parseFloat(measurements.drop || 0) / 100) * 1.05) * (selectedFabricItem.price_per_meter || 0))}
+                  {formatPrice(((parseFloat(measurements.drop || 0) / 100) * 1.05) * (fabricToUse.price_per_meter || 0))}
                 </span>
               </div>
             </>

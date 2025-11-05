@@ -4,3 +4,6 @@ export { calculatePrice, resolvePricingMethod, type PricingMethod, type PricingC
 export { calculateLabor, type LaborCalculationParams, type LaborResult } from './laborCalculator';
 export { resolveGridForProduct, fetchPricingGridById, hasValidPricingGrid, type GridResolutionParams, type GridResolutionResult } from './gridResolver';
 export { enrichTemplateWithGrid, enrichTemplatesWithGrids } from './templateEnricher';
+
+// Re-export fabric enrichment from hooks (for convenience)
+export { useFabricEnrichment } from '@/hooks/pricing/useFabricEnrichment';
