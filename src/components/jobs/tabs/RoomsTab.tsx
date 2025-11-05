@@ -1,4 +1,5 @@
 
+import { useEffect } from "react";
 import { EnhancedRoomView } from "@/components/room-management/EnhancedRoomView";
 import { useProjects } from "@/hooks/useProjects";
 import { useTreatments } from "@/hooks/useTreatments";
@@ -9,6 +10,7 @@ import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
 import { useWorkroomSync } from "@/hooks/useWorkroomSync";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { supabase } from "@/integrations/supabase/client";
 
 interface RoomsTabProps {
   projectId: string;
@@ -23,6 +25,35 @@ export const RoomsTab = ({ projectId }: RoomsTabProps) => {
   const { data: businessSettings } = useBusinessSettings();
   const createRoom = useCreateRoom();
   const project = projects?.find(p => p.id === projectId);
+
+  // Auto-cleanup: Remove orphaned treatments and surfaces (those with no parent room)
+  useEffect(() => {
+    const cleanupOrphanedData = async () => {
+      if (!rooms || !treatments || !surfaces || !projectId) return;
+      
+      const roomIds = new Set(rooms.map(r => r.id));
+      
+      // Find and delete orphaned surfaces
+      const orphanedSurfaces = surfaces.filter(s => s.room_id && !roomIds.has(s.room_id));
+      if (orphanedSurfaces.length > 0) {
+        console.log('Cleaning up orphaned surfaces:', orphanedSurfaces.length);
+        for (const surface of orphanedSurfaces) {
+          await supabase.from('surfaces').delete().eq('id', surface.id);
+        }
+      }
+      
+      // Find and delete orphaned treatments
+      const orphanedTreatments = treatments.filter(t => t.room_id && !roomIds.has(t.room_id));
+      if (orphanedTreatments.length > 0) {
+        console.log('Cleaning up orphaned treatments:', orphanedTreatments.length);
+        for (const treatment of orphanedTreatments) {
+          await supabase.from('treatments').delete().eq('id', treatment.id);
+        }
+      }
+    };
+    
+    cleanupOrphanedData();
+  }, [rooms, treatments, surfaces, projectId]);
 
   // Auto-sync room and treatment data to quotations and workroom
   const quotationSync = useQuotationSync({

@@ -137,6 +137,31 @@ export const useDeleteRoom = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // CASCADE DELETE: Delete child records first
+      
+      // Step 1: Delete treatments for this room
+      const { error: treatmentsError } = await supabase
+        .from("treatments")
+        .delete()
+        .eq("room_id", id);
+      
+      if (treatmentsError) {
+        console.warn("Error deleting room treatments:", treatmentsError);
+        // Continue even if this fails
+      }
+      
+      // Step 2: Delete surfaces for this room
+      const { error: surfacesError } = await supabase
+        .from("surfaces")
+        .delete()
+        .eq("room_id", id);
+      
+      if (surfacesError) {
+        console.warn("Error deleting room surfaces:", surfacesError);
+        // Continue even if this fails
+      }
+      
+      // Step 3: Finally delete the room itself
       const { error } = await supabase
         .from("rooms")
         .delete()
@@ -147,6 +172,9 @@ export const useDeleteRoom = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["surfaces"] });
+      queryClient.invalidateQueries({ queryKey: ["treatments"] });
+      queryClient.invalidateQueries({ queryKey: ["quotes"] });
       queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
       toast({
         title: "Success",
