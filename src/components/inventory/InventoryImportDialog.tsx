@@ -32,7 +32,8 @@ export const InventoryImportDialog: React.FC = () => {
       "hardware_finish","hardware_material","hardware_dimensions","hardware_weight","hardware_mounting_type","hardware_load_capacity",
       "price_per_yard","price_per_meter","price_per_unit","markup_percentage",
       "width","height","depth","weight","color","finish","collection_name","image_url",
-      "labor_hours","fullness_ratio","service_rate"
+      "labor_hours","fullness_ratio","service_rate",
+      "price_group","product_category"
     ],
     []
   );
@@ -153,11 +154,12 @@ export const InventoryImportDialog: React.FC = () => {
 
   const downloadSample = () => {
     const headers = [
-      "name","sku","category","quantity","unit","cost_price","selling_price","unit_price","supplier","location","reorder_point"
+      "name","sku","category","quantity","unit","cost_price","selling_price","unit_price","supplier","location","reorder_point","price_group","product_category"
     ];
     const sample = [
-      ["Wave Track - 2.4m","WT-2400","hardware","10","pcs","35","59","59","DrapeCo","A1","2"],
-      ["Linen Fabric - White","LINEN-WHITE","fabric","120","m","12","22","22","Textiles Ltd","Rack B","20"],
+      ["Wave Track - 2.4m","WT-2400","hardware","10","pcs","35","59","59","DrapeCo","A1","2","",""],
+      ["Linen Fabric - White","LINEN-WHITE","fabric","120","m","12","22","22","Textiles Ltd","Rack B","20","GRID001","roller_blind"],
+      ["Sheer Fabric - Ivory","SHEER-IVY","fabric","85","m","","","","Fabrics Inc","Rack C","15","GRID002","roller_blind"],
     ];
     const csv = [headers.join(","), ...sample.map((r) => r.map((v) => `"${v}"`).join(","))].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -222,7 +224,10 @@ export const InventoryImportDialog: React.FC = () => {
           <Separator />
           <div>
             <p className="text-sm font-medium mb-1">Column tips</p>
-            <p className="text-xs text-muted-foreground">Whitelisted columns only are imported. Recommended minimal fields: name, sku, category, quantity, unit_price.</p>
+            <p className="text-xs text-muted-foreground">
+              Whitelisted columns only are imported. Recommended minimal fields: name, sku, category, quantity, unit_price.<br/>
+              <strong>Pricing Grid columns:</strong> price_group (grid code/ID), product_category (e.g., roller_blind)
+            </p>
           </div>
         </div>
       </DialogContent>
