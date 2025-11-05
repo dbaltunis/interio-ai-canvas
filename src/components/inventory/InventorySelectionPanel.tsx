@@ -52,7 +52,6 @@ export const InventorySelectionPanel = ({
   treatmentCategory = 'curtains'
 }: InventorySelectionPanelProps) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [showSearch, setShowSearch] = useState(false);
   const [activeCategory, setActiveCategory] = useState("fabric");
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [manualEntry, setManualEntry] = useState({
@@ -398,20 +397,28 @@ export const InventorySelectionPanel = ({
   };
   const availableTabs = getTabsForTreatment();
   return <div className={`space-y-3 ${className}`}>
-      <div className="flex items-center justify-between">
-        <h3 className="text-base font-medium">Select Materials & Hardware</h3>
-        <div className="flex gap-2">
-          <Dialog open={showManualEntry} onOpenChange={setShowManualEntry}>
-            <DialogTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="h-8 px-2"
-              >
-                <Edit3 className="h-4 w-4 mr-1" />
-                Manual Entry
-              </Button>
-            </DialogTrigger>
+      <div className="relative animate-fade-in">
+        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground transition-transform" />
+        <Input 
+          placeholder="Search inventory: fabrics, hardware, materials..." 
+          value={searchTerm} 
+          onChange={e => setSearchTerm(e.target.value)} 
+          className="pl-12 h-12 text-base transition-all duration-200 focus:scale-[1.02]"
+        />
+      </div>
+
+      <div className="flex justify-end">
+        <Dialog open={showManualEntry} onOpenChange={setShowManualEntry}>
+          <DialogTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="h-8"
+            >
+              <Edit3 className="h-4 w-4 mr-1" />
+              Manual Entry
+            </Button>
+          </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Add Manual Entry</DialogTitle>
@@ -514,29 +521,7 @@ export const InventorySelectionPanel = ({
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => setShowSearch(!showSearch)}
-            className="h-8 px-2"
-          >
-            <Search className="h-4 w-4" />
-          </Button>
-        </div>
       </div>
-
-      {/* Search */}
-      {showSearch && <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input 
-          placeholder="Search inventory..." 
-          value={searchTerm} 
-          onChange={e => setSearchTerm(e.target.value)} 
-          className="pl-10 h-9"
-          autoFocus
-        />
-      </div>}
 
       {/* Category tabs */}
       <Tabs value={activeCategory} onValueChange={setActiveCategory}>

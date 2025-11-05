@@ -25,7 +25,6 @@ export const WindowTypeSelector = ({
   const [windowTypes, setWindowTypes] = useState<SimpleWindowType[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showSearch, setShowSearch] = useState(false);
 
   // Set default selection to standard window after loading
   useEffect(() => {
@@ -145,29 +144,16 @@ export const WindowTypeSelector = ({
     wt.key.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  return <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <h3 className="text-base font-medium">Select Window Type</h3>
-        <Button 
-          variant="ghost" 
-          size="sm"
-          onClick={() => setShowSearch(!showSearch)}
-          className="h-8 px-2"
-        >
-          <Search className="h-4 w-4" />
-        </Button>
-      </div>
-
-      {showSearch && <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+  return <div className="space-y-3">
+      <div className="relative animate-fade-in">
+        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground transition-transform" />
         <Input 
-          placeholder="Search window types..." 
+          placeholder="Search window types: standard, bay window..." 
           value={searchQuery} 
           onChange={e => setSearchQuery(e.target.value)} 
-          className="pl-10 h-9"
-          autoFocus
+          className="pl-12 h-12 text-base transition-all duration-200 focus:scale-[1.02]"
         />
-      </div>}
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
         {filteredWindowTypes.map(windowType => <Card key={windowType.id} className={`cursor-pointer transition-all duration-200 hover:shadow-sm ${selectedWindowType?.id === windowType.id ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/30'} ${readOnly ? 'opacity-60 cursor-not-allowed' : ''}`} onClick={() => !readOnly && onWindowTypeChange(windowType)}>
