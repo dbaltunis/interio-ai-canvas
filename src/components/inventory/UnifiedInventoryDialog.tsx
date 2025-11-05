@@ -557,83 +557,82 @@ export const UnifiedInventoryDialog = ({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Product Type Selection - Only for Create */}
-          {mode === "create" && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Product Type</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+          {/* Product Type Selection - Show for both Create and Edit */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Product Type</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="category">Main Category</Label>
+                <Select 
+                  value={formData.category} 
+                  onValueChange={(value) => setFormData({ ...formData, category: value, subcategory: "" })}
+                >
+                  <SelectTrigger className="bg-background">
+                    <SelectValue placeholder="Select main category" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border border-border" position="popper" sideOffset={4}>
+                    <SelectItem value="fabric">Fabrics</SelectItem>
+                    <SelectItem value="hardware">Hardware</SelectItem>
+                    <SelectItem value="wallcovering">Wallcoverings</SelectItem>
+                    <SelectItem value="heading">Heading Tapes & Pleats</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {formData.category && (
                 <div>
-                  <Label htmlFor="category">Main Category</Label>
+                  <Label htmlFor="subcategory">Subcategory</Label>
                   <Select 
-                    value={formData.category} 
-                    onValueChange={(value) => setFormData({ ...formData, category: value, subcategory: "" })}
+                    value={formData.subcategory} 
+                    onValueChange={(value) => setFormData({ ...formData, subcategory: value })}
                   >
                     <SelectTrigger className="bg-background">
-                      <SelectValue placeholder="Select main category" />
+                      <SelectValue placeholder="Select subcategory" />
                     </SelectTrigger>
-                    <SelectContent className="bg-popover border border-border" position="popper" sideOffset={4}>
-                      <SelectItem value="fabric">Fabrics</SelectItem>
-                      <SelectItem value="hardware">Hardware</SelectItem>
-                      <SelectItem value="wallcovering">Wallcoverings</SelectItem>
-                      <SelectItem value="heading">Heading Tapes & Pleats</SelectItem>
+                    <SelectContent className="bg-popover border border-border max-h-[300px]" position="popper" sideOffset={4}>
+                      {formData.category === "fabric" && (
+                        <>
+                          <SelectItem value="curtain_fabric">Curtain Fabric</SelectItem>
+                          <SelectItem value="roller_fabric">Roller Blind Fabric</SelectItem>
+                          <SelectItem value="blind_fabric">Roman Blind Fabric</SelectItem>
+                          <SelectItem value="furniture_fabric">Furniture Fabric</SelectItem>
+                          <SelectItem value="sheer_fabric">Sheer Fabric</SelectItem>
+                        </>
+                      )}
+                      {formData.category === "hardware" && (
+                        <>
+                          <SelectItem value="track">Track System</SelectItem>
+                          <SelectItem value="rod">Rod System</SelectItem>
+                          <SelectItem value="bracket">Bracket</SelectItem>
+                          <SelectItem value="motor">Motor</SelectItem>
+                          <SelectItem value="accessory">Accessory</SelectItem>
+                        </>
+                      )}
+                      {formData.category === "wallcovering" && (
+                        <>
+                          <SelectItem value="plain_wallpaper">Plain Wallpaper</SelectItem>
+                          <SelectItem value="patterned_wallpaper">Patterned Wallpaper</SelectItem>
+                          <SelectItem value="wall_panels_murals">Wall Panels / Murals</SelectItem>
+                        </>
+                      )}
+                      {formData.category === "heading" && (
+                        <>
+                          <SelectItem value="pencil_pleat">Pencil Pleat Tape</SelectItem>
+                          <SelectItem value="eyelet_pleat">Eyelet Pleat Tape</SelectItem>
+                          <SelectItem value="pinch_pleat">Pinch Pleat Tape</SelectItem>
+                          <SelectItem value="wave_tape">Wave Tape</SelectItem>
+                          <SelectItem value="tab_top">Tab Top</SelectItem>
+                          <SelectItem value="rod_pocket">Rod Pocket</SelectItem>
+                          <SelectItem value="grommet">Grommet/Eyelet</SelectItem>
+                          <SelectItem value="custom_heading">Custom Heading</SelectItem>
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
-
-                {formData.category && (
-                  <div>
-                    <Label htmlFor="subcategory">Subcategory</Label>
-                    <Select 
-                      value={formData.subcategory} 
-                      onValueChange={(value) => setFormData({ ...formData, subcategory: value })}
-                    >
-                      <SelectTrigger className="bg-background">
-                        <SelectValue placeholder="Select subcategory" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover border border-border max-h-[300px]" position="popper" sideOffset={4}>
-                        {formData.category === "fabric" && (
-                          <>
-                            <SelectItem value="curtain_fabric">Curtain Fabric</SelectItem>
-                            <SelectItem value="roller_fabric">Roller Blind Fabric</SelectItem>
-                            <SelectItem value="blind_fabric">Roman Blind Fabric</SelectItem>
-                            <SelectItem value="furniture_fabric">Furniture Fabric</SelectItem>
-                            <SelectItem value="sheer_fabric">Sheer Fabric</SelectItem>
-                          </>
-                        )}
-                        {formData.category === "hardware" && (
-                          <>
-                            <SelectItem value="track">Track System</SelectItem>
-                            <SelectItem value="rod">Rod System</SelectItem>
-                            <SelectItem value="bracket">Bracket</SelectItem>
-                            <SelectItem value="motor">Motor</SelectItem>
-                            <SelectItem value="accessory">Accessory</SelectItem>
-                          </>
-                        )}
-                        {formData.category === "wallcovering" && (
-                          <>
-                            <SelectItem value="plain_wallpaper">Plain Wallpaper</SelectItem>
-                            <SelectItem value="patterned_wallpaper">Patterned Wallpaper</SelectItem>
-                            <SelectItem value="wall_panels_murals">Wall Panels / Murals</SelectItem>
-                          </>
-                        )}
-                        {formData.category === "heading" && (
-                          <>
-                            <SelectItem value="pencil_pleat">Pencil Pleat Tape</SelectItem>
-                            <SelectItem value="eyelet_pleat">Eyelet Pleat Tape</SelectItem>
-                            <SelectItem value="pinch_pleat">Pinch Pleat Tape</SelectItem>
-                            <SelectItem value="wave_tape">Wave Tape</SelectItem>
-                            <SelectItem value="tab_top">Tab Top</SelectItem>
-                            <SelectItem value="rod_pocket">Rod Pocket</SelectItem>
-                          <SelectItem value="grommet">Grommet/Eyelet</SelectItem>
-                            <SelectItem value="custom_heading">Custom Heading</SelectItem>
-                          </>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+              )}
 
                 {/* Heading-Specific Fields */}
                 {formData.category === "heading" && (
@@ -697,7 +696,6 @@ export const UnifiedInventoryDialog = ({
                 )}
               </CardContent>
             </Card>
-          )}
 
           {formData.subcategory && (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -745,49 +743,6 @@ export const UnifiedInventoryDialog = ({
                       />
                     </div>
 
-                    {/* Category selection - only show in edit mode */}
-                    {mode === "edit" && (
-                      <div>
-                        <div className="flex items-center gap-1 mb-2">
-                          <Label htmlFor="category">Category</Label>
-                          <FieldHelp content="Choose the specific fabric or hardware type for better organization" />
-                        </div>
-                        <Select
-                          value={formData.category}
-                          onValueChange={(value) => setFormData({ ...formData, category: value })}
-                        >
-                          <SelectTrigger id="category" className="bg-background hover:bg-accent cursor-pointer">
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-popover border border-border max-h-[300px]" position="popper" sideOffset={4}>
-                            <SelectItem value="fabric">Fabric (General)</SelectItem>
-                            <SelectItem value="curtain_fabric">Curtain Fabrics</SelectItem>
-                            <SelectItem value="roller_fabric">Roller Fabrics</SelectItem>
-                            <SelectItem value="furniture_fabric">Furniture Fabrics</SelectItem>
-                            <SelectItem value="sheer_fabric">Sheer Fabrics</SelectItem>
-                            <SelectItem value="blind_fabric">Blind Fabric</SelectItem>
-                            <SelectItem value="upholstery_fabric">Upholstery Fabric</SelectItem>
-                            <SelectItem value="lining">Lining/Interlining</SelectItem>
-                            <SelectItem value="trimming">Trimming/Passementerie</SelectItem>
-                            <SelectItem value="hardware">Hardware (General)</SelectItem>
-                            <SelectItem value="track_system">Track System</SelectItem>
-                            <SelectItem value="rod_system">Rod System</SelectItem>
-                            <SelectItem value="bracket">Bracket/Mounting</SelectItem>
-                            <SelectItem value="motor">Motorization</SelectItem>
-                            <SelectItem value="chain">Chain/Cord</SelectItem>
-                            <SelectItem value="venetian_slats">Venetian Slats</SelectItem>
-                            <SelectItem value="shutter_panels">Shutter Panels</SelectItem>
-                            <SelectItem value="wallcovering">Wallcovering (General)</SelectItem>
-                            <SelectItem value="wallpaper">Wallpaper</SelectItem>
-                            <SelectItem value="accessory">Accessory</SelectItem>
-                            <SelectItem value="service">Service/Labor</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Choose the specific fabric or hardware type for better organization
-                        </p>
-                      </div>
-                    )}
 
                     {/* Shopify-compatible Product Type */}
 
@@ -806,6 +761,76 @@ export const UnifiedInventoryDialog = ({
 
               {/* SPECIFICATIONS TAB */}
               <TabsContent value="specifications" className="space-y-4">
+                {/* Universal Pricing Grid Fields - Show for ALL fabrics */}
+                {isFabric && (
+                  <Card className="bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <DollarSign className="h-5 w-5" />
+                        Pricing Grid Configuration
+                      </CardTitle>
+                      <CardDescription>
+                        Configure product category and pricing grid for automatic price calculations
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label htmlFor="product_category">
+                          Product Category <Badge variant="outline" className="ml-2">What product is this fabric for?</Badge>
+                        </Label>
+                        <Select
+                          value={formData.product_category || ''}
+                          onValueChange={(value) => setFormData({ ...formData, product_category: value })}
+                        >
+                          <SelectTrigger id="product_category">
+                            <SelectValue placeholder="Select product type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="roller_blinds">Roller Blinds</SelectItem>
+                            <SelectItem value="venetian_blinds">Venetian Blinds</SelectItem>
+                            <SelectItem value="vertical_blinds">Vertical Blinds</SelectItem>
+                            <SelectItem value="roman_blinds">Roman Blinds</SelectItem>
+                            <SelectItem value="curtains">Curtains</SelectItem>
+                            <SelectItem value="shutters">Shutters</SelectItem>
+                            <SelectItem value="panel_blinds">Panel Blinds</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Select which type of product this fabric is designed for
+                        </p>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="price_group">
+                          Pricing Grid <Badge variant="outline" className="ml-2">Select pricing grid for this fabric</Badge>
+                        </Label>
+                        <Select
+                          value={formData.price_group || undefined}
+                          onValueChange={(value) => setFormData({ ...formData, price_group: value === 'none' ? '' : value })}
+                        >
+                          <SelectTrigger id="price_group">
+                            <SelectValue placeholder="Select a pricing grid (optional)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None - Use other pricing methods</SelectItem>
+                            {pricingGrids.map(grid => (
+                              <SelectItem key={grid.id} value={grid.grid_code || grid.id}>
+                                {grid.grid_code || 'Unnamed'} - {grid.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {pricingGrids.length > 0 
+                            ? `${pricingGrids.length} pricing grid${pricingGrids.length > 1 ? 's' : ''} available` 
+                            : 'No pricing grids found. Create one in Settings → Pricing Grids'}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Roller Blind Fabric Specifications */}
                 {isRollerBlindFabric && (
                   <Card>
@@ -836,59 +861,6 @@ export const UnifiedInventoryDialog = ({
                           onChange={(e) => setFormData({ ...formData, fabric_composition: e.target.value })}
                           placeholder="e.g., 100% Polyester"
                         />
-                      </div>
-
-                      <div className="space-y-3">
-                        <div>
-                          <Label htmlFor="product_category">
-                            Product Category <Badge variant="outline" className="ml-2">What product is this fabric for?</Badge>
-                          </Label>
-                          <Select
-                            value={formData.product_category || ''}
-                            onValueChange={(value) => setFormData({ ...formData, product_category: value })}
-                          >
-                            <SelectTrigger id="product_category">
-                              <SelectValue placeholder="Select product type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="roller_blinds">Roller Blinds</SelectItem>
-                              <SelectItem value="venetian_blinds">Venetian Blinds</SelectItem>
-                              <SelectItem value="vertical_blinds">Vertical Blinds</SelectItem>
-                              <SelectItem value="roman_blinds">Roman Blinds</SelectItem>
-                              <SelectItem value="curtains">Curtains</SelectItem>
-                              <SelectItem value="shutters">Shutters</SelectItem>
-                              <SelectItem value="panel_blinds">Panel Blinds</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div>
-                          <Label htmlFor="price_group">
-                            Pricing Grid <Badge variant="outline" className="ml-2">Select pricing grid for this fabric</Badge>
-                          </Label>
-                          <Select
-                            value={formData.price_group || undefined}
-                            onValueChange={(value) => setFormData({ ...formData, price_group: value === 'none' ? '' : value })}
-                          >
-                            <SelectTrigger id="price_group">
-                              <SelectValue placeholder="Select a pricing grid (optional)" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">None - Use other pricing methods</SelectItem>
-                              {pricingGrids.map(grid => (
-                                <SelectItem key={grid.id} value={grid.grid_code || grid.id}>
-                                  {grid.grid_code || 'Unnamed'} - {grid.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {pricingGrids.length > 0 
-                              ? `${pricingGrids.length} pricing grid${pricingGrids.length > 1 ? 's' : ''} available` 
-                              : 'No pricing grids found. Create one in Settings → Pricing Grids'}
-                          </p>
-                        </div>
                       </div>
 
                       <div>
