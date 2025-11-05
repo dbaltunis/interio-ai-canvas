@@ -1336,14 +1336,11 @@ export const DynamicWindowWorksheet = forwardRef<{
               
               <div className="mt-auto space-y-3">
                 {selectedWindowType && (
-                  <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 animate-fade-in">
+                  <div className="p-2 bg-primary/5 rounded-lg border border-primary/20 animate-fade-in">
                     <h4 className="font-medium text-sm flex items-center gap-2">
                       <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                       Selected: {selectedWindowType.name}
                     </h4>
-                    <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                      <span className="animate-pulse">→</span> Click "Treatment" above to continue
-                    </p>
                   </div>
                 )}
               </div>
@@ -1399,14 +1396,11 @@ export const DynamicWindowWorksheet = forwardRef<{
               
               <div className="mt-auto space-y-3">
                 {selectedTemplate && (
-                  <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 animate-fade-in">
+                  <div className="p-2 bg-primary/5 rounded-lg border border-primary/20 animate-fade-in">
                     <h4 className="font-medium text-sm flex items-center gap-2">
                       <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                       Selected: {selectedTemplate.name}
                     </h4>
-                    <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                      <span className="animate-pulse">→</span> Click "Inventory" above to continue
-                    </p>
                   </div>
                 )}
               </div>
@@ -1422,8 +1416,8 @@ export const DynamicWindowWorksheet = forwardRef<{
               
               <div className="mt-auto space-y-3">
                 {Object.values(selectedItems).some(item => item) && (
-                  <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 animate-fade-in">
-                    <div className="flex flex-wrap items-center gap-2">
+                  <div className="p-2 bg-primary/5 rounded-lg border border-primary/20 animate-fade-in">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
                       <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                       {Object.entries(selectedItems).map(([category, item]) => item && (
                         <span key={category} className="text-xs">
@@ -1431,28 +1425,22 @@ export const DynamicWindowWorksheet = forwardRef<{
                         </span>
                       )).filter(Boolean).reduce((prev, curr) => [prev, ' • ', curr] as any)}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                      <span className="animate-pulse">→</span> Click "Measurements" above to continue
-                    </p>
                   </div>
                 )}
                 
                 {!Object.values(selectedItems).some(item => item) && (
                   // Only show "no selection required" for treatments that truly don't need fabric
                   (treatmentCategory === 'wallpaper' || treatmentCategory.includes('blind') || treatmentCategory.includes('shutter')) ? (
-                    <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 animate-fade-in">
+                    <div className="p-2 bg-primary/5 rounded-lg border border-primary/20 animate-fade-in">
                       <p className="text-xs text-muted-foreground flex items-center gap-2">
                         <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                        {treatmentCategory === 'wallpaper' ? 'Select wallpaper, then proceed to measurements' : 'No inventory required'}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                        <span className="animate-pulse">→</span> Click "Measurements" above to continue
+                        {treatmentCategory === 'wallpaper' ? 'Select wallpaper' : 'No inventory required'}
                       </p>
                     </div>
                   ) : (
-                    <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <div className="p-2 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
                       <p className="text-xs text-amber-700 dark:text-amber-300">
-                        Please select fabric to continue
+                        Please select fabric
                       </p>
                     </div>
                   )
