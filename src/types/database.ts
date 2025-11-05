@@ -3,17 +3,15 @@
 export interface PricingGrid {
   id: string;
   user_id: string;
+  grid_code: string;
   name: string;
-  grid_data: {
-    widthColumns?: string[];
-    dropRows?: Array<{
-      drop: string;
-      prices: number[];
-    }>;
-  };
+  description?: string;
+  grid_data: any;
   active: boolean;
   created_at: string;
   updated_at: string;
+  version?: number;
+  replaced_by_grid_id?: string;
 }
 
 export interface WindowCoveringOptionCategory {

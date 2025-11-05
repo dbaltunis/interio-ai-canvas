@@ -24,8 +24,14 @@ export const usePricingGrids = () => {
   return useQuery({
     queryKey: ["pricing-grids"],
     queryFn: async (): Promise<PricingGrid[]> => {
-      // Mock data since table doesn't exist yet
-      return [];
+      const { data, error } = await supabase
+        .from('pricing_grids')
+        .select('*')
+        .eq('active', true)
+        .order('name');
+      
+      if (error) throw error;
+      return data || [];
     },
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
@@ -49,11 +55,12 @@ export const useCreatePricingGrid = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (gridData: { name: string; grid_data: any }): Promise<PricingGrid> => {
-      // Mock creation since table doesn't exist yet
+    mutationFn: async (gridData: { name: string; grid_data: any; grid_code?: string }): Promise<PricingGrid> => {
+      // Mock creation since we're not using this for actual creation anymore
       const mockGrid: PricingGrid = {
         id: 'mock-id',
         user_id: 'mock-user',
+        grid_code: gridData.grid_code || 'MOCK',
         name: gridData.name,
         grid_data: gridData.grid_data,
         active: true,

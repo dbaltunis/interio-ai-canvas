@@ -25,6 +25,7 @@ import { Check } from "lucide-react";
 import { InventoryMultiSelect } from "./InventoryMultiSelect";
 import { EyeletRingSelector, type EyeletRing } from "./EyeletRingSelector";
 import { useEyeletRings } from "@/hooks/useEyeletRings";
+import { usePricingGrids } from "@/hooks/usePricingGrids";
 
 const STORAGE_KEY = "inventory_draft_data";
 
@@ -61,6 +62,7 @@ export const UnifiedInventoryDialog = ({
   const { data: userPreferences } = useUserPreferences();
   const { data: allInventory = [] } = useEnhancedInventory();
   const { data: allEyeletRings = [] } = useEyeletRings();
+  const { data: pricingGrids = [] } = usePricingGrids();
 
   // Get user's measurement units and currency
   const measurementUnits = businessSettings?.measurement_units 
@@ -863,16 +865,28 @@ export const UnifiedInventoryDialog = ({
 
                         <div>
                           <Label htmlFor="price_group">
-                            Pricing Group <Badge variant="outline" className="ml-2">Select from available grids</Badge>
+                            Pricing Grid <Badge variant="outline" className="ml-2">Select pricing grid for this fabric</Badge>
                           </Label>
-                          <Input
-                            id="price_group"
+                          <Select
                             value={formData.price_group}
-                            onChange={(e) => setFormData({ ...formData, price_group: e.target.value })}
-                            placeholder="e.g., A, B, Premium, Economy"
-                          />
+                            onValueChange={(value) => setFormData({ ...formData, price_group: value })}
+                          >
+                            <SelectTrigger id="price_group">
+                              <SelectValue placeholder="Select a pricing grid" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">None - Use other pricing methods</SelectItem>
+                              {pricingGrids.map(grid => (
+                                <SelectItem key={grid.id} value={grid.grid_code || grid.id}>
+                                  {grid.grid_code || 'Unnamed'} - {grid.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <p className="text-xs text-muted-foreground mt-1">
-                            Links this fabric to pricing grids. View available grids in Settings → Pricing Grids
+                            {pricingGrids.length > 0 
+                              ? `${pricingGrids.length} pricing grid${pricingGrids.length > 1 ? 's' : ''} available` 
+                              : 'No pricing grids found. Create one in Settings → Pricing Grids'}
                           </p>
                         </div>
                       </div>
