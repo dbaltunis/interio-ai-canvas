@@ -92,6 +92,169 @@ const SortableOptionValue = ({ value, isEnabled, onToggle, formatPrice }: any) =
   );
 };
 
+const SortableOptionCard = ({ option, group, isEnabled, allAvailableValues, hasOptionsAvailable, formatPrice, onToggle, onValueToggle, onDragEnd, isUsedInRuleCondition, isControlledByRule, getRulesForOption }: any) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: option?.id || group.type });
+  
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+  
+  return (
+    <Card ref={setNodeRef} style={style}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 flex-1">
+            <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+              <GripVertical className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-base">{group.label}</CardTitle>
+                {isUsedInRuleCondition(group.type) && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="default" className="text-xs gap-1 bg-blue-500 hover:bg-blue-600">
+                          <Workflow className="h-3 w-3" />
+                          Condition
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs">
+                        <p className="font-semibold mb-1">Used in Rule Condition</p>
+                        <p className="text-xs">This option triggers rules when selected</p>
+                        {getRulesForOption(group.type).filter((r: any) => r.condition.option_key === group.type).map((rule: any) => (
+                          <p key={rule.id} className="text-xs mt-1 opacity-90">
+                            • {rule.description || `When "${rule.condition.value}" is selected`}
+                          </p>
+                        ))}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                {isControlledByRule(group.type) && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="secondary" className="text-xs gap-1 bg-purple-100 hover:bg-purple-200 text-purple-800">
+                          <GitBranch className="h-3 w-3" />
+                          Controlled
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs">
+                        <p className="font-semibold mb-1">Controlled by Rules</p>
+                        <p className="text-xs">This option's visibility is controlled by rules</p>
+                        {getRulesForOption(group.type).filter((r: any) => r.effect.target_option_key === group.type).map((rule: any) => (
+                          <p key={rule.id} className="text-xs mt-1 opacity-90">
+                            • {rule.description || `Shown when condition is met`}
+                          </p>
+                        ))}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+              <CardDescription>
+                Select which {group.label.toLowerCase()} to enable for this template
+              </CardDescription>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            {isControlledByRule(group.type) ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center space-x-2 opacity-60 cursor-not-allowed">
+                      <Switch checked={isEnabled} disabled={true} />
+                      <Label className="text-sm font-medium">
+                        {isEnabled ? 'Enabled' : 'Disabled'}
+                      </Label>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="max-w-xs">
+                    <p className="font-semibold mb-1">Cannot Toggle Manually</p>
+                    <p className="text-xs">This option is controlled by rules. Edit the rules in the "Rules" tab to change its behavior.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <>
+                <Switch
+                  checked={isEnabled}
+                  onCheckedChange={(checked) => onToggle(group.type, group.label, checked)}
+                />
+                <Label className="text-sm font-medium">
+                  {isEnabled ? 'Enabled' : 'Disabled'}
+                </Label>
+              </>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {!hasOptionsAvailable ? (
+          <div className="text-sm text-muted-foreground p-4 border border-dashed rounded-lg bg-muted/30">
+            <p className="font-medium">No {group.label.toLowerCase()} available.</p>
+            <p className="text-xs mt-1">
+              Go to Settings → Window Coverings → Options tab, select the treatment type, 
+              then add options under the "{group.label}" section.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg border border-blue-200 dark:border-blue-800 mb-3">
+              <p className="text-xs text-blue-800 dark:text-blue-200">
+                💡 <strong>Note:</strong> Options shown here are globally available for all templates using this treatment type. 
+                To add, edit, or remove options, go to <strong>Settings → Products → Options</strong> tab.
+              </p>
+            </div>
+            <p className="text-sm text-muted-foreground mb-3">
+              {isEnabled ? 'Toggle individual options and drag to reorder:' : 'Toggle the switch above to enable these options'}
+            </p>
+            <DndContext 
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={(event) => onDragEnd(event, group.type)}
+            >
+              <SortableContext 
+                items={allAvailableValues.map((v: any) => v.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-2">
+                  {allAvailableValues.map((value: any) => (
+                    <SortableOptionValue
+                      key={value.id}
+                      value={value}
+                      isEnabled={isEnabled}
+                      onToggle={(enabled: boolean) => onValueToggle(group.type, value.id, enabled)}
+                      formatPrice={formatPrice}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
 export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormProps) => {
   const { toast } = useToast();
   const createTemplate = useCreateCurtainTemplate();
@@ -460,6 +623,45 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       toast({
         title: "Error",
         description: "Failed to reorder options.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleDragEndOptions = async (event: any) => {
+    const { active, over } = event;
+    
+    if (!over || active.id === over.id) return;
+    
+    const oldIndex = allAvailableOptions.findIndex((opt: any) => opt.id === active.id);
+    const newIndex = allAvailableOptions.findIndex((opt: any) => opt.id === over.id);
+    
+    if (oldIndex === -1 || newIndex === -1) return;
+    
+    const reorderedOptions = arrayMove(allAvailableOptions, oldIndex, newIndex);
+    
+    // Update order_index for all options
+    try {
+      const updates = reorderedOptions.map((option: any, index: number) => 
+        supabase
+          .from('treatment_options')
+          .update({ order_index: index })
+          .eq('id', option.id)
+      );
+      
+      await Promise.all(updates);
+      await queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
+      await queryClient.invalidateQueries({ queryKey: ['available-treatment-options-from-manager'] });
+      
+      toast({
+        title: "Order updated",
+        description: "Option categories have been reordered.",
+      });
+    } catch (error) {
+      console.error('Error reordering option categories:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reorder option categories.",
         variant: "destructive"
       });
     }
@@ -901,158 +1103,45 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                   </CardContent>
                 </Card>
               ) : (
-                currentGroups.map((group) => {
-                  // Check if this option exists in the category-based options
-                  const matchingOption = allAvailableOptions.find(opt => opt.key === group.type);
-                  const isEnabled = matchingOption?.visible || false;
-                  const enabledValues = matchingOption?.option_values || [];
-                  
-                  // Get all available values for this option type from other templates
-                  const availableInOtherTemplates = allAvailableOptions.find(opt => opt.key === group.type);
-                  const allAvailableValues = availableInOtherTemplates?.option_values || [];
-                  const hasOptionsAvailable = allAvailableValues.length > 0;
-                  
-                  return (
-                     <Card key={group.type}>
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <CardTitle className="text-base">{group.label}</CardTitle>
-                              {isUsedInRuleCondition(group.type) && (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Badge variant="default" className="text-xs gap-1 bg-blue-500 hover:bg-blue-600">
-                                        <Workflow className="h-3 w-3" />
-                                        Condition
-                                      </Badge>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="top" className="max-w-xs">
-                                      <p className="font-semibold mb-1">Used in Rule Condition</p>
-                                      <p className="text-xs">This option triggers rules when selected</p>
-                                      {getRulesForOption(group.type).filter(r => r.condition.option_key === group.type).map(rule => (
-                                        <p key={rule.id} className="text-xs mt-1 opacity-90">
-                                          • {rule.description || `When "${rule.condition.value}" is selected`}
-                                        </p>
-                                      ))}
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
-                              {isControlledByRule(group.type) && (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Badge variant="secondary" className="text-xs gap-1 bg-purple-100 hover:bg-purple-200 text-purple-800">
-                                        <GitBranch className="h-3 w-3" />
-                                        Controlled
-                                      </Badge>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="top" className="max-w-xs">
-                                      <p className="font-semibold mb-1">Controlled by Rules</p>
-                                      <p className="text-xs">This option's visibility is controlled by rules</p>
-                                      {getRulesForOption(group.type).filter(r => r.effect.target_option_key === group.type).map(rule => (
-                                        <p key={rule.id} className="text-xs mt-1 opacity-90">
-                                          • {rule.description || `Shown when condition is met`}
-                                        </p>
-                                      ))}
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
-                            </div>
-                            <CardDescription>
-                              Select which {group.label.toLowerCase()} to enable for this template
-                            </CardDescription>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            {isControlledByRule(group.type) ? (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div className="flex items-center space-x-2 opacity-60 cursor-not-allowed">
-                                      <Switch
-                                        checked={isEnabled}
-                                        disabled={true}
-                                      />
-                                      <Label className="text-sm font-medium">
-                                        {isEnabled ? 'Enabled' : 'Disabled'}
-                                      </Label>
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="left" className="max-w-xs">
-                                    <p className="font-semibold mb-1">Cannot Toggle Manually</p>
-                                    <p className="text-xs">This option is controlled by rules. Edit the rules in the "Rules" tab to change its behavior.</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            ) : (
-                              <>
-                                <Switch
-                                  checked={isEnabled}
-                                  onCheckedChange={(checked) => handleToggleOption(group.type, group.label, checked)}
-                                />
-                                <Label className="text-sm font-medium">
-                                  {isEnabled ? 'Enabled' : 'Disabled'}
-                                </Label>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </CardHeader>
-                       <CardContent>
-                        {!hasOptionsAvailable ? (
-                          <div className="text-sm text-muted-foreground p-4 border border-dashed rounded-lg bg-muted/30">
-                            <p className="font-medium">No {group.label.toLowerCase()} available.</p>
-                            <p className="text-xs mt-1">
-                              Go to Settings → Window Coverings → Options tab, select "{curtainType}", 
-                              then add options under the "{group.label}" section.
-                            </p>
-                            <p className="text-xs mt-2 font-medium">
-                              Current treatment category: <code className="bg-muted px-1 rounded">{curtainType}</code>
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg border border-blue-200 dark:border-blue-800 mb-3">
-                              <p className="text-xs text-blue-800 dark:text-blue-200">
-                                💡 <strong>Note:</strong> Options shown here are globally available for all templates using this treatment type. 
-                                To add, edit, or remove options, go to <strong>Settings → Products → Options</strong> tab.
-                              </p>
-                            </div>
-                            <p className="text-sm text-muted-foreground mb-3">
-                              {isEnabled ? 'Toggle individual options and drag to reorder:' : 'Toggle the switch above to enable these options'}
-                            </p>
-                            <DndContext 
-                              sensors={sensors}
-                              collisionDetection={closestCenter}
-                              onDragEnd={(event) => handleDragEnd(event, group.type)}
-                            >
-                              <SortableContext 
-                                items={allAvailableValues.map((v: any) => v.id)}
-                                strategy={verticalListSortingStrategy}
-                              >
-                                <div className="space-y-2">
-                                  {allAvailableValues.map((value: any) => (
-                                    <SortableOptionValue
-                                      key={value.id}
-                                      value={value}
-                                      isEnabled={isEnabled}
-                                      onToggle={(enabled) => handleToggleOptionValue(group.type, value.id, enabled)}
-                                      formatPrice={formatOptionPrice}
-                                    />
-                                  ))}
-                                </div>
-                              </SortableContext>
-                            </DndContext>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })
-              );
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEndOptions}
+                >
+                  <SortableContext
+                    items={allAvailableOptions.map((opt: any) => opt.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-4">
+                      {currentGroups.map((group) => {
+                        const matchingOption = allAvailableOptions.find(opt => opt.key === group.type);
+                        const isEnabled = matchingOption?.visible || false;
+                        const availableInOtherTemplates = allAvailableOptions.find(opt => opt.key === group.type);
+                        const allAvailableValues = availableInOtherTemplates?.option_values || [];
+                        const hasOptionsAvailable = allAvailableValues.length > 0;
+                        
+                        return (
+                          <SortableOptionCard
+                            key={group.type}
+                            option={matchingOption}
+                            group={group}
+                            isEnabled={isEnabled}
+                            allAvailableValues={allAvailableValues}
+                            hasOptionsAvailable={hasOptionsAvailable}
+                            formatPrice={formatOptionPrice}
+                            onToggle={handleToggleOption}
+                            onValueToggle={handleToggleOptionValue}
+                            onDragEnd={handleDragEnd}
+                            isUsedInRuleCondition={isUsedInRuleCondition}
+                            isControlledByRule={isControlledByRule}
+                            getRulesForOption={getRulesForOption}
+                          />
+                        );
+                      })}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              )
             })()}
           </TabsContent>
 
