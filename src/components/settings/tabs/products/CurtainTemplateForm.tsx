@@ -557,9 +557,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   return (
     <TooltipProvider>
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="basic">Basic</TabsTrigger>
-          <TabsTrigger value="options">Options</TabsTrigger>
           {formData.curtain_type === 'curtain' ? (
             <TabsTrigger value="heading">Heading</TabsTrigger>
           ) : (
@@ -664,18 +663,6 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                   <p className="text-xs text-muted-foreground mt-1">Users will choose single or pair when creating quotes</p>
                 )}
               </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="options" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Treatment Configuration</CardTitle>
-                <CardDescription>
-                  Treatment-specific options are now configured in the "Treatment Settings" tab above.
-                  Go to the Options tab in Settings → Window Coverings to manage available options.
-                </CardDescription>
-              </CardHeader>
             </Card>
           </TabsContent>
 
