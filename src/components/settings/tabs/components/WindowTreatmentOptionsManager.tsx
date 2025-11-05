@@ -65,6 +65,8 @@ export const WindowTreatmentOptionsManager = () => {
     value: '',
     price: 0 as number,
     inventory_item_id: null as string | null,
+    pricing_method: 'fixed' as string,
+    pricing_grid_data: [] as Array<{ width: number; price: number }>,
   });
 
   // Set first option type when categories load
@@ -80,6 +82,8 @@ export const WindowTreatmentOptionsManager = () => {
       value: '',
       price: 0,
       inventory_item_id: null,
+      pricing_method: 'fixed',
+      pricing_grid_data: [],
     });
   };
 
@@ -127,7 +131,11 @@ export const WindowTreatmentOptionsManager = () => {
             updates: {
               code: formData.value.trim().toLowerCase().replace(/\s+/g, '_'),
               label: formData.name.trim(),
-              extra_data: { price: Number(formData.price) || 0 },
+              extra_data: { 
+                price: Number(formData.price) || 0,
+                pricing_method: formData.pricing_method,
+                pricing_grid_data: formData.pricing_grid_data,
+              },
               inventory_item_id: formData.inventory_item_id || null,
             }
           });
@@ -195,7 +203,11 @@ export const WindowTreatmentOptionsManager = () => {
           code: valueCode,
           label: formData.name.trim(),
           order_index: uniqueOptionValues.length,
-          extra_data: { price: Number(formData.price) || 0 },
+          extra_data: { 
+            price: Number(formData.price) || 0,
+            pricing_method: formData.pricing_method,
+            pricing_grid_data: formData.pricing_grid_data,
+          },
           inventory_item_id: formData.inventory_item_id || null,
         });
 
@@ -227,6 +239,8 @@ export const WindowTreatmentOptionsManager = () => {
       value: value.code,
       price: Number(value.extra_data?.price) || 0,
       inventory_item_id: value.inventory_item_id || null,
+      pricing_method: value.extra_data?.pricing_method || 'fixed',
+      pricing_grid_data: value.extra_data?.pricing_grid_data || [],
     });
     setEditingValue(value);
     setIsCreating(false);
@@ -515,16 +529,116 @@ export const WindowTreatmentOptionsManager = () => {
                     </div>
 
                     <div className="col-span-2">
-                      <Label htmlFor="price">Additional Price (Optional)</Label>
-                      <Input
-                        id="price"
-                        type="number"
-                        step="0.01"
-                        value={formData.price}
-                        onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-                        placeholder="0.00"
-                      />
+                      <Label htmlFor="pricing_method">Pricing Method</Label>
+                      <Select
+                        value={formData.pricing_method}
+                        onValueChange={(value) => setFormData({ ...formData, pricing_method: value })}
+                      >
+                        <SelectTrigger id="pricing_method">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fixed">Fixed Price</SelectItem>
+                          <SelectItem value="per-unit">Per Unit</SelectItem>
+                          <SelectItem value="per-meter">Per Meter</SelectItem>
+                          <SelectItem value="per-sqm">Per Square Meter</SelectItem>
+                          <SelectItem value="per-panel">Per Panel</SelectItem>
+                          <SelectItem value="per-drop">Per Drop</SelectItem>
+                          <SelectItem value="percentage">Percentage</SelectItem>
+                          <SelectItem value="pricing-grid">Price Table (Entered Width)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        How this option's price is calculated
+                      </p>
                     </div>
+
+                    {formData.pricing_method !== 'pricing-grid' ? (
+                      <div className="col-span-2">
+                        <Label htmlFor="price">
+                          {formData.pricing_method === 'percentage' ? 'Percentage (%)' : 'Additional Price'}
+                        </Label>
+                        <Input
+                          id="price"
+                          type="number"
+                          step="0.01"
+                          value={formData.price}
+                          onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                          placeholder={formData.pricing_method === 'percentage' ? '10' : '0.00'}
+                        />
+                      </div>
+                    ) : (
+                      <div className="col-span-2 space-y-3">
+                        <Label>Price Table</Label>
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-[1fr,1fr,auto] gap-2 text-sm font-medium">
+                            <div>Max width (cm)</div>
+                            <div>Price</div>
+                            <div className="w-10"></div>
+                          </div>
+                          {formData.pricing_grid_data.map((row, idx) => (
+                            <div key={idx} className="grid grid-cols-[1fr,1fr,auto] gap-2">
+                              <Input
+                                type="number"
+                                value={row.width}
+                                onChange={(e) => {
+                                  const newData = [...formData.pricing_grid_data];
+                                  newData[idx].width = parseFloat(e.target.value) || 0;
+                                  setFormData({ ...formData, pricing_grid_data: newData });
+                                }}
+                                placeholder="60"
+                              />
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={row.price}
+                                onChange={(e) => {
+                                  const newData = [...formData.pricing_grid_data];
+                                  newData[idx].price = parseFloat(e.target.value) || 0;
+                                  setFormData({ ...formData, pricing_grid_data: newData });
+                                }}
+                                placeholder="300"
+                              />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const newData = formData.pricing_grid_data.filter((_, i) => i !== idx);
+                                  setFormData({ ...formData, pricing_grid_data: newData });
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          ))}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            onClick={() => {
+                              setFormData({
+                                ...formData,
+                                pricing_grid_data: [...formData.pricing_grid_data, { width: 0, price: 0 }]
+                              });
+                            }}
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add pricing
+                          </Button>
+                        </div>
+                        <div className="bg-muted/50 border rounded-lg p-3">
+                          <div className="flex items-start gap-2 text-sm">
+                            <div className="text-muted-foreground mt-0.5">ℹ️</div>
+                            <div>
+                              <div className="font-medium mb-1">CSV Import Instructions</div>
+                              <div className="text-xs text-muted-foreground">
+                                When setting up the CSV pricing, make sure the width measurement uses the same unit as your settings (cm for metric, in for imperial).
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="col-span-2">
                       <Label htmlFor="inventory">Link to Inventory (Optional)</Label>
@@ -574,9 +688,27 @@ export const WindowTreatmentOptionsManager = () => {
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <div className="font-medium uppercase">{value.label}</div>
-                          {value.extra_data?.price && value.extra_data.price > 0 && (
+                          {value.extra_data?.pricing_method === 'pricing-grid' ? (
                             <Badge variant="secondary" className="text-xs">
-                              +${value.extra_data.price.toFixed(2)}
+                              Price Table
+                            </Badge>
+                          ) : value.extra_data?.price && value.extra_data.price > 0 ? (
+                            <Badge variant="secondary" className="text-xs">
+                              {value.extra_data?.pricing_method === 'percentage' 
+                                ? `${value.extra_data.price}%`
+                                : `+$${value.extra_data.price.toFixed(2)}`}
+                            </Badge>
+                          ) : null}
+                          {value.extra_data?.pricing_method && value.extra_data.pricing_method !== 'fixed' && (
+                            <Badge variant="outline" className="text-xs">
+                              {value.extra_data.pricing_method === 'per-unit' ? 'Per Unit' :
+                               value.extra_data.pricing_method === 'per-meter' ? 'Per Meter' :
+                               value.extra_data.pricing_method === 'per-sqm' ? 'Per m²' :
+                               value.extra_data.pricing_method === 'per-panel' ? 'Per Panel' :
+                               value.extra_data.pricing_method === 'per-drop' ? 'Per Drop' :
+                               value.extra_data.pricing_method === 'percentage' ? 'Percentage' :
+                               value.extra_data.pricing_method === 'pricing-grid' ? 'Price Table' :
+                               value.extra_data.pricing_method}
                             </Badge>
                           )}
                           {value.inventory_item_id && (
@@ -588,7 +720,14 @@ export const WindowTreatmentOptionsManager = () => {
                         </div>
                         <div className="text-sm text-muted-foreground">
                           Value: {value.code}
-                          {value.extra_data?.price !== undefined && ` • ${value.extra_data.price === 0 ? 'Included' : `+$${value.extra_data.price.toFixed(2)}`}`}
+                          {value.extra_data?.pricing_method === 'pricing-grid' 
+                            ? ` • ${value.extra_data.pricing_grid_data?.length || 0} price tiers`
+                            : value.extra_data?.price !== undefined 
+                              ? ` • ${value.extra_data.price === 0 ? 'Included' : 
+                                  value.extra_data?.pricing_method === 'percentage' 
+                                    ? `${value.extra_data.price}%`
+                                    : `+$${value.extra_data.price.toFixed(2)}`}`
+                              : ''}
                         </div>
                       </div>
                       {value.inventory_item_id && (
