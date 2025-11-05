@@ -311,15 +311,30 @@ export const UnifiedInventoryDialog = ({
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
           
-          // Resize to max 800px width while maintaining aspect ratio
-          const maxWidth = 800;
-          const scale = Math.min(1, maxWidth / img.width);
-          canvas.width = img.width * scale;
-          canvas.height = img.height * scale;
+          // Aggressive compression - max 800px for faster loading
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          let width = img.width;
+          let height = img.height;
           
+          // Calculate new dimensions maintaining aspect ratio
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
           ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
           
-          // Convert to blob with 70% quality
+          // Aggressive compression with 60% quality for smaller file size
           canvas.toBlob(
             (blob) => {
               if (blob) {
@@ -329,7 +344,7 @@ export const UnifiedInventoryDialog = ({
               }
             },
             'image/jpeg',
-            0.7
+            0.6
           );
         };
         img.onerror = reject;
