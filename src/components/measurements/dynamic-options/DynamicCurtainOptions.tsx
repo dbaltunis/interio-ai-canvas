@@ -562,6 +562,15 @@ export const DynamicCurtainOptions = ({
                             onValueChange={(choiceValue) => {
                               // Save sub-option selection
                               handleTreatmentOptionChange(`${option.key}_${subOption.key}`, choiceValue);
+                              
+                              // Also track pricing in the summary
+                              if (onOptionPriceChange) {
+                                const choice = subOption.choices?.find((c: any) => c.value === choiceValue);
+                                if (choice) {
+                                  const displayLabel = `${option.label} - ${subOption.label}: ${choice.label}`;
+                                  onOptionPriceChange(`${option.key}_${subOption.key}`, choice.price || 0, displayLabel);
+                                }
+                              }
                             }}
                             disabled={readOnly}
                           >

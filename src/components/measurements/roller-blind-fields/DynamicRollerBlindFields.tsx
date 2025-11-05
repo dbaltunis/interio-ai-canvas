@@ -292,8 +292,10 @@ export const DynamicRollerBlindFields = ({
                             // Also track pricing if available
                             if (onOptionPriceChange) {
                               const choice = subOption.choices?.find((c: any) => c.value === choiceValue);
-                              if (choice && choice.price > 0) {
-                                onOptionPriceChange(`${option.key}_${subOption.key}`, choice.price, `${option.label} - ${choice.label}`);
+                              if (choice) {
+                                // Use a clear label showing parent option + sub-option
+                                const displayLabel = `${option.label} - ${subOption.label}: ${choice.label}`;
+                                onOptionPriceChange(`${option.key}_${subOption.key}`, choice.price || 0, displayLabel);
                               }
                             }
                           }}
