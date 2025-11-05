@@ -299,6 +299,45 @@ export const UnifiedInventoryDialog = ({
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [saveDraft]);
 
+  // Compress image before upload to improve performance
+  const compressImage = async (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          // Resize to max 800px width while maintaining aspect ratio
+          const maxWidth = 800;
+          const scale = Math.min(1, maxWidth / img.width);
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          
+          ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+          
+          // Convert to blob with 70% quality
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                resolve(blob);
+              } else {
+                reject(new Error('Failed to compress image'));
+              }
+            },
+            'image/jpeg',
+            0.7
+          );
+        };
+        img.onerror = reject;
+      };
+      reader.onerror = reject;
+    });
+  };
+
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -310,12 +349,16 @@ export const UnifiedInventoryDialog = ({
         throw new Error('You must be logged in to upload images');
       }
 
-      const fileExt = file.name.split('.').pop();
-      const fileName = `inventory-${user.id}-${Date.now()}.${fileExt}`;
+      // Compress image before uploading
+      const compressedBlob = await compressImage(file);
+      const fileName = `inventory-${user.id}-${Date.now()}.jpg`;
       
       const { error: uploadError } = await supabase.storage
         .from('project-images')
-        .upload(fileName, file);
+        .upload(fileName, compressedBlob, {
+          contentType: 'image/jpeg',
+          cacheControl: '3600',
+        });
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
@@ -329,7 +372,7 @@ export const UnifiedInventoryDialog = ({
       setFormData({ ...formData, image_url: publicUrl });
       toast({
         title: "Image uploaded successfully",
-        description: "The product image has been uploaded.",
+        description: "Image compressed and uploaded.",
       });
     } catch (error) {
       console.error('Error uploading image:', error);
