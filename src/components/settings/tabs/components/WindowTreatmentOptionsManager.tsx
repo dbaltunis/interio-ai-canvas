@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight, Package, Upload, Download } from "lucide-react";
+import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight, Package, Upload, Download, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -67,6 +67,17 @@ export const WindowTreatmentOptionsManager = () => {
     inventory_item_id: null as string | null,
     pricing_method: 'fixed' as string,
     pricing_grid_data: [] as Array<{ width: number; price: number }>,
+  });
+  const [showInventoryDialog, setShowInventoryDialog] = useState(false);
+  const [inventorySearchQuery, setInventorySearchQuery] = useState('');
+  const [showCreateInventoryForm, setShowCreateInventoryForm] = useState(false);
+  const [newInventoryItem, setNewInventoryItem] = useState({
+    name: '',
+    description: '',
+    category: '',
+    quantity: 0,
+    unit: 'units',
+    cost_price: 0,
   });
 
   // Set first option type when categories load
@@ -370,6 +381,93 @@ export const WindowTreatmentOptionsManager = () => {
     
     // Reset input so the same file can be imported again
     event.target.value = '';
+  };
+
+  // Filter inventory items based on search query
+  const filteredInventoryItems = useMemo(() => {
+    if (!inventorySearchQuery.trim()) {
+      return inventoryItems.filter(item => item.active);
+    }
+    
+    const query = inventorySearchQuery.toLowerCase();
+    return inventoryItems
+      .filter(item => item.active)
+      .filter(item => 
+        item.name.toLowerCase().includes(query) ||
+        item.description?.toLowerCase().includes(query) ||
+        item.category?.toLowerCase().includes(query)
+      );
+  }, [inventoryItems, inventorySearchQuery]);
+
+  const selectedInventoryItem = inventoryItems.find(item => item.id === formData.inventory_item_id);
+
+  const handleSelectInventoryItem = (itemId: string | null) => {
+    setFormData({ ...formData, inventory_item_id: itemId });
+    setShowInventoryDialog(false);
+    setInventorySearchQuery('');
+  };
+
+  const handleCreateInventoryItem = async () => {
+    if (!newInventoryItem.name.trim()) {
+      toast({
+        title: "Required field",
+        description: "Please enter an item name.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('enhanced_inventory_items')
+        .insert({
+          user_id: user.user.id,
+          name: newInventoryItem.name.trim(),
+          description: newInventoryItem.description.trim() || null,
+          category: newInventoryItem.category.trim() || null,
+          quantity: newInventoryItem.quantity,
+          unit: newInventoryItem.unit,
+          cost_price: newInventoryItem.cost_price,
+          active: true,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Refresh inventory items
+      queryClient.invalidateQueries({ queryKey: ['enhanced-inventory'] });
+
+      // Select the newly created item
+      setFormData({ ...formData, inventory_item_id: data.id });
+      
+      // Reset and close
+      setNewInventoryItem({
+        name: '',
+        description: '',
+        category: '',
+        quantity: 0,
+        unit: 'units',
+        cost_price: 0,
+      });
+      setShowCreateInventoryForm(false);
+      setShowInventoryDialog(false);
+
+      toast({
+        title: "Inventory item created",
+        description: "The item has been added to your inventory and linked to this option.",
+      });
+    } catch (error: any) {
+      console.error('Error creating inventory item:', error);
+      toast({
+        title: "Create failed",
+        description: error?.message || "Failed to create inventory item.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleDownloadCSVTemplate = () => {
@@ -740,22 +838,22 @@ export const WindowTreatmentOptionsManager = () => {
 
                     <div className="col-span-2">
                       <Label htmlFor="inventory">Link to Inventory (Optional)</Label>
-                      <Select
-                        value={formData.inventory_item_id || 'none'}
-                        onValueChange={(value) => setFormData({ ...formData, inventory_item_id: value === 'none' ? null : value })}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full justify-between"
+                        onClick={() => setShowInventoryDialog(true)}
                       >
-                        <SelectTrigger id="inventory">
-                          <SelectValue placeholder="Select inventory item..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">None (No inventory tracking)</SelectItem>
-                          {inventoryItems.filter(item => item.active).map((item) => (
-                            <SelectItem key={item.id} value={item.id}>
-                              {item.name} - Stock: {item.quantity} {item.unit}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <span className="flex items-center gap-2">
+                          <Package className="h-4 w-4" />
+                          {selectedInventoryItem ? (
+                            <span>{selectedInventoryItem.name}</span>
+                          ) : (
+                            <span className="text-muted-foreground">Select inventory item...</span>
+                          )}
+                        </span>
+                        <Search className="h-4 w-4 text-muted-foreground" />
+                      </Button>
                       <p className="text-xs text-muted-foreground mt-1">
                         Link this option to inventory for automatic stock tracking
                       </p>
@@ -903,6 +1001,211 @@ export const WindowTreatmentOptionsManager = () => {
                 Create Option Type
               </Button>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Inventory Selection Dialog */}
+        <Dialog open={showInventoryDialog} onOpenChange={setShowInventoryDialog}>
+          <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+            <DialogHeader>
+              <DialogTitle>Select Inventory Item</DialogTitle>
+              <DialogDescription>
+                Search and select an inventory item to link, or create a new one
+              </DialogDescription>
+            </DialogHeader>
+            
+            {!showCreateInventoryForm ? (
+              <>
+                {/* Search Input */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by name, description, or category..."
+                    value={inventorySearchQuery}
+                    onChange={(e) => setInventorySearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+
+                {/* Inventory Items List */}
+                <ScrollArea className="flex-1 -mx-6 px-6">
+                  <div className="space-y-2 py-2">
+                    {/* None Option */}
+                    <div
+                      className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors ${
+                        !formData.inventory_item_id ? 'bg-muted border-primary' : ''
+                      }`}
+                      onClick={() => handleSelectInventoryItem(null)}
+                    >
+                      <div className="h-12 w-12 rounded-md bg-muted flex items-center justify-center">
+                        <X className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-medium">None (No inventory tracking)</div>
+                        <div className="text-sm text-muted-foreground">Don't link to inventory</div>
+                      </div>
+                    </div>
+
+                    {/* Inventory Items */}
+                    {filteredInventoryItems.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                        <p className="font-medium">No items found</p>
+                        <p className="text-sm mt-1">Try a different search or create a new item</p>
+                      </div>
+                    ) : (
+                      filteredInventoryItems.map((item) => (
+                        <div
+                          key={item.id}
+                          className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors ${
+                            formData.inventory_item_id === item.id ? 'bg-muted border-primary' : ''
+                          }`}
+                          onClick={() => handleSelectInventoryItem(item.id)}
+                        >
+                          {item.image_url ? (
+                            <img
+                              src={item.image_url}
+                              alt={item.name}
+                              className="h-12 w-12 rounded-md object-cover"
+                            />
+                          ) : (
+                            <div className="h-12 w-12 rounded-md bg-muted flex items-center justify-center">
+                              <Package className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate">{item.name}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {item.category && <span className="mr-2">• {item.category}</span>}
+                              Stock: {item.quantity} {item.unit}
+                              {item.cost_price > 0 && <span className="ml-2">• ${item.cost_price.toFixed(2)}</span>}
+                            </div>
+                            {item.description && (
+                              <div className="text-xs text-muted-foreground truncate mt-1">
+                                {item.description}
+                              </div>
+                            )}
+                          </div>
+                          {item.quantity <= 10 && (
+                            <Badge variant="destructive" className="text-xs">
+                              Low Stock
+                            </Badge>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </ScrollArea>
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setShowInventoryDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={() => setShowCreateInventoryForm(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create New Item
+                  </Button>
+                </DialogFooter>
+              </>
+            ) : (
+              <>
+                {/* Create Inventory Form */}
+                <div className="space-y-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2">
+                      <Label htmlFor="new_item_name">Item Name *</Label>
+                      <Input
+                        id="new_item_name"
+                        value={newInventoryItem.name}
+                        onChange={(e) => setNewInventoryItem({ ...newInventoryItem, name: e.target.value })}
+                        placeholder="e.g. Premium Motor XL"
+                      />
+                    </div>
+
+                    <div className="col-span-2">
+                      <Label htmlFor="new_item_description">Description</Label>
+                      <Input
+                        id="new_item_description"
+                        value={newInventoryItem.description}
+                        onChange={(e) => setNewInventoryItem({ ...newInventoryItem, description: e.target.value })}
+                        placeholder="Brief description of the item"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="new_item_category">Category</Label>
+                      <Input
+                        id="new_item_category"
+                        value={newInventoryItem.category}
+                        onChange={(e) => setNewInventoryItem({ ...newInventoryItem, category: e.target.value })}
+                        placeholder="e.g. Motors"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="new_item_unit">Unit</Label>
+                      <Select
+                        value={newInventoryItem.unit}
+                        onValueChange={(value) => setNewInventoryItem({ ...newInventoryItem, unit: value })}
+                      >
+                        <SelectTrigger id="new_item_unit">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="units">Units</SelectItem>
+                          <SelectItem value="meters">Meters</SelectItem>
+                          <SelectItem value="pieces">Pieces</SelectItem>
+                          <SelectItem value="rolls">Rolls</SelectItem>
+                          <SelectItem value="boxes">Boxes</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="new_item_quantity">Initial Quantity</Label>
+                      <Input
+                        id="new_item_quantity"
+                        type="number"
+                        value={newInventoryItem.quantity}
+                        onChange={(e) => setNewInventoryItem({ ...newInventoryItem, quantity: parseFloat(e.target.value) || 0 })}
+                        placeholder="0"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="new_item_cost">Cost Price</Label>
+                      <Input
+                        id="new_item_cost"
+                        type="number"
+                        step="0.01"
+                        value={newInventoryItem.cost_price}
+                        onChange={(e) => setNewInventoryItem({ ...newInventoryItem, cost_price: parseFloat(e.target.value) || 0 })}
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => {
+                    setShowCreateInventoryForm(false);
+                    setNewInventoryItem({
+                      name: '',
+                      description: '',
+                      category: '',
+                      quantity: 0,
+                      unit: 'units',
+                      cost_price: 0,
+                    });
+                  }}>
+                    Back to Search
+                  </Button>
+                  <Button onClick={handleCreateInventoryItem}>
+                    Create & Link Item
+                  </Button>
+                </DialogFooter>
+              </>
+            )}
           </DialogContent>
         </Dialog>
       </CardContent>
