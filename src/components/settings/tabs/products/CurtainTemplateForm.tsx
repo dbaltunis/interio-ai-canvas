@@ -320,6 +320,10 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       const uniqueOptions = data?.reduce((acc: any[], opt: any) => {
         const existing = acc.find((o: any) => o.key === opt.key);
         if (!existing) {
+          // Sort option_values by order_index
+          if (opt.option_values) {
+            opt.option_values.sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0));
+          }
           acc.push(opt);
         } else {
           // Merge option values from multiple templates
@@ -330,6 +334,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
               existingValues.push(newVal);
             }
           });
+          // Sort after merging
+          existingValues.sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0));
           existing.option_values = existingValues;
         }
         return acc;
