@@ -1005,22 +1005,17 @@ export const VisualMeasurementSheet = ({
                 treatmentType === 'plantation_shutters' ||
                 treatmentType === 'shutters' ||
                 treatmentType === 'awning') && (
-                <Card className="border-primary/20 bg-primary/5">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Treatment Configuration</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3 pt-2">
-                    <DynamicRollerBlindFields 
-                      measurements={measurements} 
-                      onChange={handleInputChange} 
-                      templateId={selectedTemplate?.id} 
-                      treatmentCategory={treatmentType} 
-                      readOnly={readOnly} 
-                      onOptionPriceChange={handleOptionPriceChange} 
-                      selectedOptions={selectedOptions} 
-                    />
-                  </CardContent>
-                </Card>
+                <div className="space-y-3">
+                  <DynamicRollerBlindFields 
+                    measurements={measurements} 
+                    onChange={handleInputChange} 
+                    templateId={selectedTemplate?.id} 
+                    treatmentCategory={treatmentType} 
+                    readOnly={readOnly} 
+                    onOptionPriceChange={handleOptionPriceChange} 
+                    selectedOptions={selectedOptions} 
+                  />
+                </div>
               )}
 
               {/* Additional Measurements for Curtain Makers - ONLY show for curtains */}

@@ -312,7 +312,7 @@ export const DynamicRollerBlindFields = ({
                 console.log('✅✅✅ RENDERING SUB-OPTIONS:', subOptions);
                 
                 return (
-                  <div className="ml-4 mt-3 space-y-3 pl-4 border-l-2 border-muted bg-white rounded-md p-3">
+                  <div className="ml-4 mt-2 space-y-2 pl-3 border-l-2 border-muted">
                     {subOptions.map((subOption: any) => {
                       // Auto-select sub-option if only one choice or no current value
                       const subOptionKey = `${option.key}_${subOption.key}`;
@@ -340,7 +340,7 @@ export const DynamicRollerBlindFields = ({
                       }
                       
                       return (
-                      <div key={subOption.id} className="space-y-2 bg-white p-2 rounded">
+                      <div key={subOption.id} className="space-y-1.5">
                         <Label className="text-sm font-medium text-foreground">
                           {subOption.label}
                         </Label>
