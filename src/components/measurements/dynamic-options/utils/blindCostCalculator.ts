@@ -36,17 +36,44 @@ export const calculateBlindCosts = (
   const sqmRaw = (effectiveWidth * effectiveHeight) / 10000;
   const squareMeters = sqmRaw * (1 + wastePercent / 100);
   
-  // Get fabric price per sqm
-  const fabricPricePerSqm = fabricItem?.selling_price || fabricItem?.price_per_meter || fabricItem?.unit_price || 0;
+  // Get fabric price per sqm - check if fabric has a pricing grid first
+  let fabricPricePerSqm = 0;
+  let fabricCost = 0;
   
-  // Calculate fabric cost
-  const fabricCost = squareMeters * fabricPricePerSqm;
+  // PRIORITY 1: Check if fabric has pricing grid attached (for fabric cost)
+  if (fabricItem?.pricing_grid_data && fabricItem?.resolved_grid_name) {
+    // Fabric has a pricing grid - use it to calculate fabric cost
+    const gridPrice = getPriceFromGrid(fabricItem.pricing_grid_data, widthCm, heightCm);
+    fabricCost = gridPrice; // Grid returns total price for this size
+    fabricPricePerSqm = squareMeters > 0 ? gridPrice / squareMeters : 0;
+    
+    console.log('✅ Using fabric pricing grid:', {
+      gridName: fabricItem.resolved_grid_name,
+      gridCode: fabricItem.resolved_grid_code,
+      dimensions: `${widthCm}cm × ${heightCm}cm`,
+      gridPrice,
+      fabricCost
+    });
+  } else {
+    // PRIORITY 2: Use per-unit pricing for fabric
+    fabricPricePerSqm = fabricItem?.selling_price || fabricItem?.price_per_meter || fabricItem?.unit_price || 0;
+    fabricCost = squareMeters * fabricPricePerSqm;
+    
+    console.log('ℹ️ Using per-unit fabric pricing:', {
+      fabricPricePerSqm,
+      squareMeters: squareMeters.toFixed(2),
+      fabricCost: fabricCost.toFixed(2)
+    });
+  }
   
-  // Calculate manufacturing cost (could be from grid or template)
+  // Calculate manufacturing cost (from template grid or template pricing)
   let manufacturingCost = 0;
   if (template?.pricing_type === 'pricing_grid' && template?.pricing_grid_data) {
-    // Grid pricing takes precedence - grid data should be pre-loaded in template
+    // Template has manufacturing grid
     manufacturingCost = getPriceFromGrid(template.pricing_grid_data, widthCm, heightCm);
+    console.log('✅ Using template manufacturing grid:', {
+      manufacturingCost
+    });
   } else if (template?.machine_price_per_panel) {
     manufacturingCost = template.machine_price_per_panel;
   } else if (template?.unit_price) {

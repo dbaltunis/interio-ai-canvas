@@ -8,6 +8,7 @@ import { detectTreatmentType } from "@/utils/treatmentTypeDetection";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 import { safeParseFloat } from "@/utils/costCalculationErrors";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useFabricEnrichment } from "@/hooks/pricing/useFabricEnrichment";
 
 // Simple SVG icons
 const FabricSwatchIcon = ({ className }: { className?: string }) => (
@@ -69,6 +70,15 @@ export const CostCalculationSummary = ({
 }: CostCalculationSummaryProps) => {
   const { units } = useMeasurementUnits();
   const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
+  
+  // Enrich fabric with pricing grid data if applicable
+  const { enrichedFabric } = useFabricEnrichment({
+    fabricItem: selectedFabric,
+    formData: measurements
+  });
+  
+  // Use enriched fabric for all calculations
+  const fabricToUse = enrichedFabric || selectedFabric;
 
   if (!template) {
     return (
@@ -123,7 +133,7 @@ export const CostCalculationSummary = ({
   }
 
   // WALLPAPER: Add before blind check
-  if (treatmentCategory === 'wallpaper' && measurements.wall_width && measurements.wall_height && selectedFabric) {
+  if (treatmentCategory === 'wallpaper' && measurements.wall_width && measurements.wall_height && fabricToUse) {
     const wallWidth = safeParseFloat(measurements.wall_width, 0);
     const wallHeight = safeParseFloat(measurements.wall_height, 0);
     
@@ -139,7 +149,7 @@ export const CostCalculationSummary = ({
       );
     }
     
-    const wallpaperCalc = calculateWallpaperCost(wallWidth, wallHeight, selectedFabric);
+    const wallpaperCalc = calculateWallpaperCost(wallWidth, wallHeight, fabricToUse);
     
     if (!wallpaperCalc) {
       return (
@@ -168,7 +178,7 @@ export const CostCalculationSummary = ({
               <div className="flex flex-col min-w-0">
                 <span className="text-card-foreground font-medium">Wallpaper Material</span>
                 <span className="text-xs text-muted-foreground truncate">
-                  {selectedFabric.name} - {wallpaperCalc.quantity.toFixed(2)} {wallpaperCalc.unitLabel}{wallpaperCalc.quantity > 1 && wallpaperCalc.unitLabel !== 'm²' ? 's' : ''}
+                  {fabricToUse.name} - {wallpaperCalc.quantity.toFixed(2)} {wallpaperCalc.unitLabel}{wallpaperCalc.quantity > 1 && wallpaperCalc.unitLabel !== 'm²' ? 's' : ''}
                 </span>
               </div>
             </div>
@@ -193,7 +203,7 @@ export const CostCalculationSummary = ({
           </summary>
           <div className="space-y-2 mt-3 pl-4 border-l-2 border-primary/20">
             <div className="space-y-0.5">
-              <div className="text-card-foreground font-medium">Wallpaper: {selectedFabric.name}</div>
+              <div className="text-card-foreground font-medium">Wallpaper: {fabricToUse.name}</div>
               <div>Wall Area: {wallpaperCalc.squareMeters.toFixed(2)} m²</div>
               <div>Strips Required: {wallpaperCalc.stripsNeeded}</div>
               <div>Total Length: {wallpaperCalc.totalMeters.toFixed(2)}m</div>
@@ -209,7 +219,7 @@ export const CostCalculationSummary = ({
   // BLINDS: Use clean calculator (check both category and template name)
   if (isBlindCategory(treatmentCategory, template.name) && width > 0 && height > 0) {
     try {
-      const blindCosts = calculateBlindCosts(width, height, template, selectedFabric, selectedOptions);
+      const blindCosts = calculateBlindCosts(width, height, template, fabricToUse, selectedOptions);
       
       console.log('✅ Using blind calculator, costs:', blindCosts);
 
