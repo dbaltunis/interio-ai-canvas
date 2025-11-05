@@ -320,53 +320,14 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     }
   };
   
-  const handleToggleOptionValue = async (optionKey: string, optionLabel: string, valueCode: string, valueLabel: string, enabled: boolean, extraData?: any) => {
-    try {
-      // Find the category-based option (not template-specific)
-      let existingOption = allAvailableOptions.find(opt => opt.key === optionKey);
-      
-      if (!existingOption) {
-        console.error('Category-based option not found:', optionKey);
-        toast({
-          title: "Error",
-          description: "This option type doesn't exist yet. Please go to Settings → Window Coverings → Options and create it first.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      const existingValue = existingOption.option_values?.find((v: any) => v.code === valueCode);
-      
-      if (enabled && !existingValue) {
-        // Add this value
-        await createOptionValue.mutateAsync({
-          option_id: existingOption.id,
-          code: valueCode,
-          label: valueLabel,
-          order_index: existingOption.option_values?.length || 0,
-          extra_data: extraData,
-        });
-      } else if (!enabled && existingValue) {
-        // Remove this value
-        await deleteOptionValue.mutateAsync(existingValue.id);
-      }
-      
-      // Force refetch
-      await queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
-      await queryClient.invalidateQueries({ queryKey: ['available-treatment-options-from-manager'] });
-      
-      toast({
-        title: enabled ? "Option added" : "Option removed",
-        description: `${valueLabel} has been ${enabled ? 'added to' : 'removed from'} ${optionLabel}.`,
-      });
-    } catch (error: any) {
-      console.error('Error toggling option value:', error);
-      toast({
-        title: "Error",
-        description: error?.message || "Failed to toggle option value.",
-        variant: "destructive"
-      });
-    }
+  // NOTE: Option values are managed globally in Settings → Options
+  // This function is no longer used - checkboxes are now read-only
+  const handleToggleOptionValue = (optionKey: string, optionLabel: string, valueCode: string, valueLabel: string, enabled: boolean, extraData?: any) => {
+    toast({
+      title: "Options are managed globally",
+      description: "To add or remove option values, go to Settings → Products → Options tab. Option values are shared across all templates.",
+      variant: "default"
+    });
   };
 
   const handleInputChange = (field: string, value: string | any) => {
@@ -919,42 +880,29 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                           </div>
                         ) : (
                           <div className="space-y-2">
+                            <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg border border-blue-200 dark:border-blue-800 mb-3">
+                              <p className="text-xs text-blue-800 dark:text-blue-200">
+                                💡 <strong>Note:</strong> Options shown here are globally available for all templates using this treatment type. 
+                                To add, edit, or remove options, go to <strong>Settings → Products → Options</strong> tab.
+                              </p>
+                            </div>
                             <p className="text-sm text-muted-foreground mb-3">
-                              {isEnabled ? 'Select which options to include:' : 'Available options (enable to activate):'}
+                              {isEnabled ? 'Available options for this treatment:' : 'Toggle the switch above to enable these options'}
                             </p>
                             <div className="grid grid-cols-2 gap-2">
-                              {allAvailableValues.map((value: any) => {
-                                const isValueEnabled = enabledValues.some((ev: any) => ev.code === value.code);
-                                
-                                return (
-                                  <div key={value.code} className="flex items-center space-x-2 p-3 border rounded hover:bg-accent/20 transition-colors">
-                                    <Checkbox
-                                      id={`${group.type}-${value.code}`}
-                                      checked={isValueEnabled}
-                                      disabled={!isEnabled || !template?.id}
-                                      onCheckedChange={(checked) => 
-                                        handleToggleOptionValue(
-                                          group.type, 
-                                          group.label, 
-                                          value.code, 
-                                          value.label, 
-                                          checked as boolean,
-                                          value.extra_data
-                                        )
-                                      }
-                                    />
-                                    <Label 
-                                      htmlFor={`${group.type}-${value.code}`}
-                                      className="flex-1 cursor-pointer flex items-center justify-between"
-                                    >
-                                      <span className="font-medium text-sm">{value.label}</span>
-                                      <Badge variant={value.extra_data?.price === 0 ? "secondary" : "outline"} className="text-xs ml-2">
-                                        {formatOptionPrice(value.extra_data?.price)}
-                                      </Badge>
-                                    </Label>
+                              {allAvailableValues.map((value: any) => (
+                                <div key={value.code} className="flex items-center space-x-2 p-3 border rounded bg-muted/30">
+                                  <div className="h-4 w-4 rounded border-2 border-primary bg-primary flex items-center justify-center">
+                                    <span className="text-primary-foreground text-xs">✓</span>
                                   </div>
-                                );
-                              })}
+                                  <div className="flex-1 flex items-center justify-between">
+                                    <span className="font-medium text-sm">{value.label}</span>
+                                    <Badge variant={value.extra_data?.price === 0 ? "secondary" : "outline"} className="text-xs ml-2">
+                                      {formatOptionPrice(value.extra_data?.price)}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           </div>
                         )}
