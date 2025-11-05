@@ -76,12 +76,20 @@ export const TreatmentPricingForm = ({
       
       const allOptions = [...selectedOpts, ...traditionalOpts];
       
-      // Create a fabric item from formData
-      const fabricItem = {
+      // Create a fabric item from formData or use window covering fabric with pricing grid
+      const fabricItem = windowCovering?.fabric_details || {
         name: formData.fabric_type || 'Material',
         unit_price: parseFloat(formData.fabric_cost_per_yard) || 0,
         selling_price: parseFloat(formData.fabric_cost_per_yard) || 0,
-        fabric_width_cm: parseFloat(formData.fabric_width) || 0
+        price_per_meter: parseFloat(formData.fabric_cost_per_yard) || 0,
+        fabric_width_cm: parseFloat(formData.fabric_width) || 0,
+        // Preserve pricing grid data if it exists
+        pricing_grid_data: windowCovering?.fabric_details?.pricing_grid_data,
+        resolved_grid_name: windowCovering?.fabric_details?.resolved_grid_name,
+        resolved_grid_code: windowCovering?.fabric_details?.resolved_grid_code,
+        resolved_grid_id: windowCovering?.fabric_details?.resolved_grid_id,
+        price_group: windowCovering?.fabric_details?.price_group,
+        product_category: windowCovering?.fabric_details?.product_category
       };
       
       // Calculate based on blind/shutter type
@@ -222,7 +230,14 @@ export const TreatmentPricingForm = ({
         fabric_cost_per_yard: formData.fabric_cost_per_yard,
         fabric_width: formData.fabric_width,
         roll_direction: formData.roll_direction,
-        heading_fullness: formData.heading_fullness
+        heading_fullness: formData.heading_fullness,
+        // CRITICAL: Save pricing grid data
+        pricing_grid_data: windowCovering?.fabric_details?.pricing_grid_data,
+        resolved_grid_name: windowCovering?.fabric_details?.resolved_grid_name,
+        resolved_grid_code: windowCovering?.fabric_details?.resolved_grid_code,
+        resolved_grid_id: windowCovering?.fabric_details?.resolved_grid_id,
+        price_group: windowCovering?.fabric_details?.price_group,
+        product_category: windowCovering?.fabric_details?.product_category
       },
       selected_options: formData.selected_options,
       notes: formData.notes,

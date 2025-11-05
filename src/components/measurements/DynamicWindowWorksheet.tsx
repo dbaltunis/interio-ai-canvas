@@ -602,8 +602,8 @@ export const DynamicWindowWorksheet = forwardRef<{
             // Import blind calculation utility
             const { calculateBlindCost, calculateShutterCost } = await import('@/utils/blindCostCalculations');
             
-            // Use material or template for pricing
-            const materialForCalc = selectedItems.material || (selectedTemplate ? {
+            // CRITICAL: Use fabric first (with pricing grid data), then fall back to material or template
+            const materialForCalc = selectedItems.fabric || selectedItems.material || (selectedTemplate ? {
               unit_price: selectedTemplate.unit_price || 0,
               selling_price: selectedTemplate.unit_price || 0
             } : null);
@@ -615,6 +615,7 @@ export const DynamicWindowWorksheet = forwardRef<{
               templateMachinePrice: selectedTemplate?.machine_price_per_metre,
               templateUnitPrice: selectedTemplate?.unit_price,
               material: materialForCalc,
+              hasPricingGrid: !!(materialForCalc?.pricing_grid_data),
               category: displayCategory,
               selectedOptions
             });
@@ -898,7 +899,14 @@ export const DynamicWindowWorksheet = forwardRef<{
               fabric_width: selectedItems.fabric.fabric_width || selectedItems.fabric.wallpaper_roll_width || 140,
               selling_price: selectedItems.fabric.selling_price || selectedItems.fabric.unit_price,
               category: selectedItems.fabric.category,
-              image_url: selectedItems.fabric.image_url
+              image_url: selectedItems.fabric.image_url,
+              // CRITICAL: Preserve pricing grid data for reloading
+              pricing_grid_data: selectedItems.fabric.pricing_grid_data,
+              resolved_grid_name: selectedItems.fabric.resolved_grid_name,
+              resolved_grid_code: selectedItems.fabric.resolved_grid_code,
+              resolved_grid_id: selectedItems.fabric.resolved_grid_id,
+              price_group: selectedItems.fabric.price_group,
+              product_category: selectedItems.fabric.product_category
             } : null,
             selected_fabric_id: selectedItems.fabric?.id || null,
             selected_hardware_id: selectedItems.hardware?.id || null,
@@ -1095,7 +1103,14 @@ export const DynamicWindowWorksheet = forwardRef<{
                 fabric_id: selectedItems.fabric.id,
                 name: selectedItems.fabric.name,
                 fabric_width: selectedItems.fabric.fabric_width,
-                selling_price: selectedItems.fabric.selling_price || selectedItems.fabric.unit_price
+                selling_price: selectedItems.fabric.selling_price || selectedItems.fabric.unit_price,
+                // CRITICAL: Preserve pricing grid data
+                pricing_grid_data: selectedItems.fabric.pricing_grid_data,
+                resolved_grid_name: selectedItems.fabric.resolved_grid_name,
+                resolved_grid_code: selectedItems.fabric.resolved_grid_code,
+                resolved_grid_id: selectedItems.fabric.resolved_grid_id,
+                price_group: selectedItems.fabric.price_group,
+                product_category: selectedItems.fabric.product_category
               } : null,
               calculation_details: {
                 fabricMeters: linearMeters,
