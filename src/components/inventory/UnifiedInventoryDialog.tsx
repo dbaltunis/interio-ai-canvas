@@ -302,9 +302,22 @@ export const UnifiedInventoryDialog = ({
   // Compress image before upload to improve performance
   const compressImage = async (file: File): Promise<Blob> => {
     return new Promise((resolve, reject) => {
+      // Validate file before processing
+      if (!file || !file.type.startsWith('image/')) {
+        reject(new Error('Invalid image file'));
+        return;
+      }
+
       const reader = new FileReader();
-      reader.onload = (event) => {
+      
+      reader.onload = (readerEvent) => {
+        if (!readerEvent.target?.result) {
+          reject(new Error('Failed to read file data'));
+          return;
+        }
+
         const img = new Image();
+        
         img.onload = () => {
           try {
             const canvas = document.createElement('canvas');
@@ -342,6 +355,7 @@ export const UnifiedInventoryDialog = ({
             canvas.toBlob(
               (blob) => {
                 if (blob) {
+                  console.log(`Image compressed: ${(file.size / 1024).toFixed(0)}KB → ${(blob.size / 1024).toFixed(0)}KB`);
                   resolve(blob);
                 } else {
                   reject(new Error('Failed to create compressed blob'));
@@ -351,13 +365,24 @@ export const UnifiedInventoryDialog = ({
               0.4
             );
           } catch (error) {
+            console.error('Canvas processing error:', error);
             reject(error);
           }
         };
-        img.onerror = () => reject(new Error('Failed to load image'));
-        img.src = event.target?.result as string;
+        
+        img.onerror = () => {
+          console.error('Image load error');
+          reject(new Error('Failed to load image'));
+        };
+        
+        img.src = readerEvent.target.result as string;
       };
-      reader.onerror = () => reject(new Error('Failed to read file'));
+      
+      reader.onerror = (error) => {
+        console.error('FileReader error:', error);
+        reject(new Error('Failed to read file'));
+      };
+      
       reader.readAsDataURL(file);
     });
   };

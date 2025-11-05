@@ -11,9 +11,22 @@ interface ImageUploadCardProps {
 export const ImageUploadCard = ({ images, onImageUpload, onRemoveImage }: ImageUploadCardProps) => {
   const compressImage = (file: File): Promise<File> => {
     return new Promise((resolve, reject) => {
+      // Validate file before processing
+      if (!file || !file.type.startsWith('image/')) {
+        reject(new Error('Invalid image file'));
+        return;
+      }
+
       const reader = new FileReader();
-      reader.onload = (e) => {
+      
+      reader.onload = (readerEvent) => {
+        if (!readerEvent.target?.result) {
+          reject(new Error('Failed to read file data'));
+          return;
+        }
+
         const img = new Image();
+        
         img.onload = () => {
           try {
             const canvas = document.createElement('canvas');
@@ -64,9 +77,11 @@ export const ImageUploadCard = ({ images, onImageUpload, onRemoveImage }: ImageU
             reject(error);
           }
         };
+        
         img.onerror = () => reject(new Error('Failed to load image'));
-        img.src = e.target?.result as string;
+        img.src = readerEvent.target.result as string;
       };
+      
       reader.onerror = () => reject(new Error('Failed to read file'));
       reader.readAsDataURL(file);
     });
