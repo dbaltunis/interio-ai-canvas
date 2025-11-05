@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight, Package } from "lucide-react";
+import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight, Package, Upload, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -317,6 +317,79 @@ export const WindowTreatmentOptionsManager = () => {
     }
   };
 
+  const handleCSVImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result as string;
+        const lines = text.split('\n').filter(line => line.trim());
+        
+        // Skip header row if it exists
+        const dataLines = lines[0].toLowerCase().includes('width') || lines[0].toLowerCase().includes('price')
+          ? lines.slice(1)
+          : lines;
+        
+        const pricingData = dataLines
+          .map(line => {
+            const [width, price] = line.split(',').map(v => v.trim());
+            return {
+              width: parseFloat(width),
+              price: parseFloat(price)
+            };
+          })
+          .filter(item => !isNaN(item.width) && !isNaN(item.price))
+          .sort((a, b) => a.width - b.width); // Sort by width ascending
+
+        if (pricingData.length === 0) {
+          toast({
+            title: "Import failed",
+            description: "No valid pricing data found in CSV. Expected format: width,price",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        setFormData({ ...formData, pricing_grid_data: pricingData });
+        toast({
+          title: "Import successful",
+          description: `Imported ${pricingData.length} pricing tiers`,
+        });
+      } catch (error) {
+        console.error('CSV parsing error:', error);
+        toast({
+          title: "Import failed",
+          description: "Failed to parse CSV file. Please check the format.",
+          variant: "destructive"
+        });
+      }
+    };
+    reader.readAsText(file);
+    
+    // Reset input so the same file can be imported again
+    event.target.value = '';
+  };
+
+  const handleDownloadCSVTemplate = () => {
+    const csvContent = "width,price\n60,300\n200,400\n300,450";
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'pricing_template.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Template downloaded",
+      description: "Use this CSV template to format your pricing data",
+    });
+  };
+
   const getTreatmentLabel = (category: TreatmentCategoryDbValue) => {
     const labels: Record<TreatmentCategoryDbValue, string> = {
       roller_blinds: 'Roller Blinds',
@@ -611,29 +684,54 @@ export const WindowTreatmentOptionsManager = () => {
                               </Button>
                             </div>
                           ))}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full"
-                            onClick={() => {
-                              setFormData({
-                                ...formData,
-                                pricing_grid_data: [...formData.pricing_grid_data, { width: 0, price: 0 }]
-                              });
-                            }}
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add pricing
-                          </Button>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setFormData({
+                                  ...formData,
+                                  pricing_grid_data: [...formData.pricing_grid_data, { width: 0, price: 0 }]
+                                });
+                              }}
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add pricing
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => document.getElementById('csv-upload')?.click()}
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              Import CSV
+                            </Button>
+                          </div>
+                          <input
+                            id="csv-upload"
+                            type="file"
+                            accept=".csv"
+                            onChange={handleCSVImport}
+                            className="hidden"
+                          />
                         </div>
                         <div className="bg-muted/50 border rounded-lg p-3">
                           <div className="flex items-start gap-2 text-sm">
                             <div className="text-muted-foreground mt-0.5">ℹ️</div>
-                            <div>
+                            <div className="flex-1">
                               <div className="font-medium mb-1">CSV Import Instructions</div>
-                              <div className="text-xs text-muted-foreground">
-                                When setting up the CSV pricing, make sure the width measurement uses the same unit as your settings (cm for metric, in for imperial).
+                              <div className="text-xs text-muted-foreground mb-2">
+                                CSV format: width,price (one per line). Make sure width uses the same unit as your settings (cm for metric, in for imperial).
                               </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleDownloadCSVTemplate}
+                                className="h-7 text-xs"
+                              >
+                                <Download className="h-3 w-3 mr-1" />
+                                Download CSV template
+                              </Button>
                             </div>
                           </div>
                         </div>
