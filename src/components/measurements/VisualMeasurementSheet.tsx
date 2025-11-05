@@ -768,18 +768,6 @@ export const VisualMeasurementSheet = ({
                 </div>}
               </div>)}
               {/* End of curtain visual conditional */}
-
-              {/* Measurement Guide */}
-              <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
-                <h5 className="font-medium text-primary mb-2 text-sm">What to Measure</h5>
-                <div className="text-sm text-foreground space-y-1">
-                  <p><strong>Width (W):</strong> {hardwareType === "track" ? "Track" : "Rail"} width - how wide your curtain needs to be</p>
-                  <p><strong>Drop (H):</strong> Height from {hardwareType === "track" ? "track" : "rod"} to where curtain should end</p>
-                  {hasValue(measurements.rail_width) && hasValue(measurements.drop) && <div className="mt-2 p-2 bg-secondary/20 border border-secondary/30 rounded text-foreground">
-                      ✓ Great! These measurements will update the visual above as you type
-                    </div>}
-                </div>
-              </div>
               
               {/* Fabric & Pricing Calculations Section - Below Visual */}
               {selectedFabricItem && selectedTemplate && <AdaptiveFabricPricingDisplay selectedFabricItem={selectedFabricItem} fabricCalculation={fabricCalculation} template={selectedTemplate} measurements={measurements} treatmentCategory={treatmentCategory} />}
