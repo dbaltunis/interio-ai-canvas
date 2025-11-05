@@ -1005,7 +1005,7 @@ export const VisualMeasurementSheet = ({
                 treatmentType === 'plantation_shutters' ||
                 treatmentType === 'shutters' ||
                 treatmentType === 'awning') && (
-                <Card className="bg-background border-2 border-primary/40 shadow-sm">
+                <Card className="border-primary/20 bg-primary/5">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm">Treatment Configuration</CardTitle>
                   </CardHeader>
