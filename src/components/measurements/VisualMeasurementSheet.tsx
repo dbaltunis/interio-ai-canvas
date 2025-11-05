@@ -796,15 +796,14 @@ export const VisualMeasurementSheet = ({
                     </svg>
                   </div>
                   <div>
-                    <h4 className="text-base font-bold text-card-foreground">Essential Measurements</h4>
-                    <p className="text-xs text-card-foreground/70">Required for accurate calculations</p>
+                    <h4 className="text-base font-bold text-card-foreground">Enter measurements</h4>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="w-7 h-7 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-xs">W</span>
+                      <span className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-xs">W</span>
                       <Label htmlFor="rail_width" className="text-sm font-bold text-card-foreground">
                         {hardwareType === "track" ? "Track" : "Rail"} Width
                       </Label>
@@ -823,12 +822,11 @@ export const VisualMeasurementSheet = ({
                          {units.length}
                       </span>
                     </div>
-                    <p className="text-xs text-card-foreground/70">Total {hardwareType === "track" ? "track" : "rail"} length</p>
                   </div>
 
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="w-7 h-7 bg-secondary rounded-full flex items-center justify-center text-secondary-foreground font-bold text-xs">H</span>
+                      <span className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-xs">H</span>
                       <Label htmlFor="drop" className="text-sm font-bold text-card-foreground">
                         Curtain Drop
                       </Label>
@@ -847,7 +845,6 @@ export const VisualMeasurementSheet = ({
                         {units.length}
                       </span>
                     </div>
-                    <p className="text-xs text-card-foreground/70">Length to curtain bottom</p>
                   </div>
                 </div>
               </div>}
