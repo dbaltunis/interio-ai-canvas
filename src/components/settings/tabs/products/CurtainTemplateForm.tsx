@@ -1072,14 +1072,9 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
             )}
             
             {(() => {
-              // Sort and filter allAvailableOptions - only show visible ones or those with option values
+              // Sort and filter allAvailableOptions - ONLY show visible ones
               const sortedOptions = [...allAvailableOptions]
-                .filter((opt: any) => {
-                  // Show if visible is true OR if it has option values (actual content)
-                  // Hide test options that have no values and are disabled
-                  const hasValues = opt.option_values && opt.option_values.length > 0;
-                  return opt.visible === true || hasValues;
-                })
+                .filter((opt: any) => opt.visible === true)
                 .sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0));
               
               // Use sorted options to determine rendering order
