@@ -43,7 +43,6 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [gridName, setGridName] = useState('');
   const [gridDescription, setGridDescription] = useState('');
-  const [selectedPriceGroup, setSelectedPriceGroup] = useState('');
   const [csvFile, setCsvFile] = useState<File | null>(null);
 
   useEffect(() => {
@@ -139,10 +138,10 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
   };
 
   const handleUploadGrid = async () => {
-    if (!gridName || !selectedPriceGroup || !csvFile) {
+    if (!gridName || !csvFile) {
       toast({
         title: 'Missing Information',
-        description: 'Please provide grid name, price group, and CSV file',
+        description: 'Please provide a grid name and CSV file',
         variant: 'destructive',
       });
       return;
@@ -158,8 +157,8 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Generate grid code
-      const gridCode = `${productType}_${systemType}_${selectedPriceGroup}`.toUpperCase();
+      // Generate grid code from grid name (sanitize for use as code)
+      const gridCode = gridName.trim().replace(/\s+/g, '_').toUpperCase();
 
       // Create the grid
       const { data: newGrid, error: gridError } = await supabase
@@ -168,7 +167,7 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
           user_id: user.id,
           name: gridName,
           grid_code: gridCode,
-          description: gridDescription || `${productType} ${systemType} - Price Group ${selectedPriceGroup}`,
+          description: gridDescription || `${productType} ${systemType} - ${gridName}`,
           grid_data: gridData,
           active: true,
         }])
@@ -185,7 +184,7 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
           grid_id: newGrid.id,
           product_type: productType,
           system_type: systemType,
-          price_group: selectedPriceGroup,
+          price_group: gridCode, // Use the grid code as the price group
           active: true,
           priority: 100,
         }]);
@@ -201,7 +200,6 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
       setShowUploadForm(false);
       setGridName('');
       setGridDescription('');
-      setSelectedPriceGroup('');
       setCsvFile(null);
 
       // Reload grids
@@ -415,31 +413,18 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4">
               <div>
-                <Label htmlFor="grid_name">Grid Name *</Label>
+                <Label htmlFor="grid_name">Grid Name / Code *</Label>
                 <Input
                   id="grid_name"
                   value={gridName}
                   onChange={(e) => setGridName(e.target.value)}
-                  placeholder="e.g., Roller Cassette Premium"
+                  placeholder="e.g., RollerCassettePremium or A-Premium"
                 />
-              </div>
-
-              <div>
-                <Label htmlFor="price_group">Price Group *</Label>
-                <Select value={selectedPriceGroup} onValueChange={setSelectedPriceGroup}>
-                  <SelectTrigger id="price_group">
-                    <SelectValue placeholder="Select group" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="A">A - Economy</SelectItem>
-                    <SelectItem value="B">B - Standard</SelectItem>
-                    <SelectItem value="C">C - Premium</SelectItem>
-                    <SelectItem value="D">D - Luxury</SelectItem>
-                    <SelectItem value="E">E - Designer</SelectItem>
-                  </SelectContent>
-                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Enter a unique name or code to identify this pricing grid (e.g., "A", "Premium", "RC-Luxury")
+                </p>
               </div>
             </div>
 
@@ -486,7 +471,6 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
                   setShowUploadForm(false);
                   setGridName('');
                   setGridDescription('');
-                  setSelectedPriceGroup('');
                   setCsvFile(null);
                 }}
               >
