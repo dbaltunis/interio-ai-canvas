@@ -19,7 +19,7 @@ export const calculateBlindCosts = (
   heightCm: number,
   template: any,
   fabricItem: any,
-  selectedOptions: Array<{ name: string; price?: number; pricingMethod?: string; optionKey?: string }> = [],
+  selectedOptions: Array<{ name: string; price?: number; pricingMethod?: string; optionKey?: string; pricingGridData?: any }> = [],
   measurements?: Record<string, any>
 ): BlindCalculationResult => {
   
@@ -111,6 +111,15 @@ export const calculateBlindCosts = (
           calculatedPrice: priceForArea.toFixed(2)
         });
         return sum + priceForArea;
+      } else if (opt.pricingMethod === 'pricing-grid' && opt.pricingGridData) {
+        // Use pricing grid to calculate cost based on dimensions
+        const gridPrice = getPriceFromGrid(opt.pricingGridData, widthCm, heightCm);
+        console.log(`💰 Option "${opt.name}" pricing:`, {
+          method: 'pricing-grid',
+          dimensions: `${widthCm}cm × ${heightCm}cm`,
+          gridPrice: gridPrice.toFixed(2)
+        });
+        return sum + gridPrice;
       } else {
         // Fixed price (default)
         console.log(`💰 Option "${opt.name}" pricing:`, {

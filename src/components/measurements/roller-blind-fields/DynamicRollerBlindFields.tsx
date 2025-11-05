@@ -16,7 +16,7 @@ interface DynamicRollerBlindFieldsProps {
   templateId?: string;
   treatmentCategory?: string;
   readOnly?: boolean;
-  onOptionPriceChange?: (optionKey: string, price: number, label: string, pricingMethod?: string) => void;
+  onOptionPriceChange?: (optionKey: string, price: number, label: string, pricingMethod?: string, pricingGridData?: any) => void;
   selectedOptions?: Array<{ name: string; price: number }>;
 }
 
@@ -91,9 +91,10 @@ export const DynamicRollerBlindFields = ({
     if (onOptionPriceChange && typeof value === 'string') {
       const selectedOption = optionValues.find(opt => opt.value === value);
       if (selectedOption) {
-        // Include pricing method from extra_data
+        // Include pricing method and grid data from extra_data
         const pricingMethod = selectedValue?.extra_data?.pricing_method || 'fixed';
-        onOptionPriceChange(key, selectedOption.price, selectedOption.label, pricingMethod);
+        const pricingGridData = selectedValue?.extra_data?.pricing_grid_data;
+        onOptionPriceChange(key, selectedOption.price, selectedOption.label, pricingMethod, pricingGridData);
       }
     }
   };
@@ -334,15 +335,17 @@ export const DynamicRollerBlindFields = ({
                                   v.code === (currentValue || defaultValue) || v.id === (currentValue || defaultValue)
                                 );
                                 const pricingMethod = parentValue?.extra_data?.pricing_method || 'fixed';
+                                const pricingGridData = parentValue?.extra_data?.pricing_grid_data;
                                 
                                 console.log('🎨 Calling onOptionPriceChange:', {
                                   key: `${option.key}_${subOption.key}`,
                                   price: choice.price || 0,
                                   displayLabel,
-                                  pricingMethod
+                                  pricingMethod,
+                                  hasPricingGridData: !!pricingGridData
                                 });
                                 
-                                onOptionPriceChange(`${option.key}_${subOption.key}`, choice.price || 0, displayLabel, pricingMethod);
+                                onOptionPriceChange(`${option.key}_${subOption.key}`, choice.price || 0, displayLabel, pricingMethod, pricingGridData);
                               } else {
                                 console.log('❌ No choice found for value:', choiceValue);
                               }

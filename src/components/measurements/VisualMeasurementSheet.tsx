@@ -103,7 +103,7 @@ export const VisualMeasurementSheet = ({
   };
 
   // Handle option price changes from dynamic fields
-  const handleOptionPriceChange = (optionKey: string, price: number, label: string, pricingMethod?: string) => {
+  const handleOptionPriceChange = (optionKey: string, price: number, label: string, pricingMethod?: string, pricingGridData?: any) => {
     if (onSelectedOptionsChange) {
       // Use ref to get current state, update it, and set new state
       const currentOptions = selectedOptionsRef.current;
@@ -112,13 +112,15 @@ export const VisualMeasurementSheet = ({
         name: `${optionKey}: ${label}`,
         price,
         pricingMethod: pricingMethod || 'fixed',
-        optionKey
+        optionKey,
+        pricingGridData
       };
       const updatedOptions = [...filteredOptions, newOption];
       console.log(`🎯 handleOptionPriceChange - ${optionKey}:`, {
         currentOptions,
         newOption,
         pricingMethod,
+        hasPricingGridData: !!pricingGridData,
         updatedOptions
       });
 
