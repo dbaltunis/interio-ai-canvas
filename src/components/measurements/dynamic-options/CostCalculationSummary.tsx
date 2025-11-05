@@ -9,6 +9,7 @@ import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 import { safeParseFloat } from "@/utils/costCalculationErrors";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useFabricEnrichment } from "@/hooks/pricing/useFabricEnrichment";
+import { getPriceFromGrid } from "@/hooks/usePricingGrids";
 
 // Simple SVG icons
 const FabricSwatchIcon = ({ className }: { className?: string }) => (
@@ -44,7 +45,13 @@ interface CostCalculationSummaryProps {
   selectedHeading?: string;
   inventory: any[];
   fabricCalculation?: any;
-  selectedOptions?: Array<{ name: string; price?: number }>;
+  selectedOptions?: Array<{ 
+    name: string; 
+    price?: number; 
+    pricingMethod?: string; 
+    optionKey?: string; 
+    pricingGridData?: any;
+  }>;
   calculatedFabricCost?: number;
   calculatedLiningCost?: number;
   calculatedManufacturingCost?: number;
@@ -277,13 +284,56 @@ export const CostCalculationSummary = ({
                 </div>
                 <span className="font-semibold text-card-foreground">{formatPrice(blindCosts.optionsCost)}</span>
               </div>
-              <div className="pl-6 space-y-1">
-                {selectedOptions.filter(opt => opt.price && opt.price > 0).map((option, index) => (
-                  <div key={index} className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>• {option.name}</span>
-                    <span className="font-medium">{formatPrice(option.price || 0)}</span>
-                  </div>
-                ))}
+              <div className="pl-6 space-y-1.5">
+                {selectedOptions
+                  .filter(opt => (opt.price && opt.price > 0) || (opt.pricingMethod === 'pricing-grid' && opt.pricingGridData))
+                  .map((option, index) => {
+                    // Calculate actual price for this option based on method
+                    let displayPrice = option.price || 0;
+                    let pricingDetails = '';
+                    
+                    if (option.pricingMethod === 'per-meter') {
+                      displayPrice = (option.price || 0) * (width / 100);
+                      pricingDetails = ` (${(option.price || 0).toFixed(2)}/m × ${(width / 100).toFixed(2)}m)`;
+                    } else if (option.pricingMethod === 'per-sqm') {
+                      const sqm = blindCosts.squareMeters;
+                      displayPrice = (option.price || 0) * sqm;
+                      pricingDetails = ` (${(option.price || 0).toFixed(2)}/sqm × ${sqm.toFixed(2)}sqm)`;
+                    } else if (option.pricingMethod === 'pricing-grid' && option.pricingGridData) {
+                      // Check if it's width-only grid
+                      if (Array.isArray(option.pricingGridData) && option.pricingGridData.length > 0 && 'width' in option.pricingGridData[0]) {
+                        const widthValues = option.pricingGridData.map((entry: any) => parseInt(entry.width));
+                        const closestWidth = widthValues.reduce((prev: number, curr: number) => {
+                          return Math.abs(curr - width) < Math.abs(prev - width) ? curr : prev;
+                        });
+                        const matchingEntry = option.pricingGridData.find((entry: any) => parseInt(entry.width) === closestWidth);
+                        displayPrice = matchingEntry ? parseFloat(matchingEntry.price) : 0;
+                        pricingDetails = ` (Grid: ${width}cm → ${closestWidth}cm)`;
+                      } else {
+                        // Full 2D grid
+                        displayPrice = getPriceFromGrid(option.pricingGridData, width, height);
+                        pricingDetails = ` (Grid: ${width}cm × ${height}cm)`;
+                      }
+                    } else if (option.pricingMethod === 'fixed' || !option.pricingMethod) {
+                      pricingDetails = ' (Fixed)';
+                    }
+                    
+                    return (
+                      <div key={index} className="flex items-start justify-between text-xs">
+                        <div className="flex-1 min-w-0 mr-2">
+                          <div className="text-muted-foreground">• {option.name}</div>
+                          {pricingDetails && (
+                            <div className="text-[10px] text-muted-foreground/70 ml-2 mt-0.5">
+                              {pricingDetails}
+                            </div>
+                          )}
+                        </div>
+                        <span className="font-medium text-card-foreground whitespace-nowrap">
+                          {formatPrice(displayPrice)}
+                        </span>
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           )}
