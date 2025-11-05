@@ -1283,6 +1283,7 @@ export const DynamicWindowWorksheet = forwardRef<{
           const stepNames = ["Select Type", "Treatment", "Inventory", "Measurements"];
           const stepIcons = [Ruler, Package, Package, Ruler];
           const StepIcon = stepIcons[index];
+          const allSteps = ["window-type", "treatment", "inventory", "measurements"];
           
           const isCompleted = (() => {
             switch (step) {
@@ -1298,6 +1299,9 @@ export const DynamicWindowWorksheet = forwardRef<{
                 return false;
             }
           })();
+          
+          const isNextStep = !isCompleted && index === (allSteps.findIndex(s => s === activeTab) + 1);
+          
           return <div key={step} className="flex items-center gap-1 sm:gap-2">
                 <button 
                   onClick={() => setActiveTab(step)} 
@@ -1307,6 +1311,8 @@ export const DynamicWindowWorksheet = forwardRef<{
                       ? 'bg-primary text-primary-foreground' 
                       : isCompleted 
                       ? 'bg-green-500/10 text-green-700 hover:bg-green-500/20' 
+                      : isNextStep
+                      ? 'bg-muted text-muted-foreground hover:bg-muted/80 animate-pulse' 
                       : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   } ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`}
                 >
@@ -1329,16 +1335,17 @@ export const DynamicWindowWorksheet = forwardRef<{
               <WindowTypeSelector selectedWindowType={selectedWindowType} onWindowTypeChange={setSelectedWindowType} readOnly={readOnly} />
               
               <div className="mt-auto space-y-3">
-                {selectedWindowType && <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 animate-fade-in">
-                  <h4 className="font-medium text-sm flex items-center gap-2">
-                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                    Selected: {selectedWindowType.name}
-                  </h4>
-                </div>}
-                
-                <Button className="w-full" onClick={() => setActiveTab("treatment")} disabled={!selectedWindowType}>
-                  Continue to Treatment Selection
-                </Button>
+                {selectedWindowType && (
+                  <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 animate-fade-in">
+                    <h4 className="font-medium text-sm flex items-center gap-2">
+                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                      Selected: {selectedWindowType.name}
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                      <span className="animate-pulse">→</span> Click "Treatment" above to continue
+                    </p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -1391,16 +1398,17 @@ export const DynamicWindowWorksheet = forwardRef<{
               />
               
               <div className="mt-auto space-y-3">
-                {selectedTemplate && <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 animate-fade-in">
-                  <h4 className="font-medium text-sm flex items-center gap-2">
-                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                    Selected: {selectedTemplate.name}
-                  </h4>
-                </div>}
-                
-                <Button onClick={() => setActiveTab("inventory")} disabled={!selectedTemplate} className="w-full">
-                  Continue to Inventory Selection
-                </Button>
+                {selectedTemplate && (
+                  <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 animate-fade-in">
+                    <h4 className="font-medium text-sm flex items-center gap-2">
+                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                      Selected: {selectedTemplate.name}
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                      <span className="animate-pulse">→</span> Click "Inventory" above to continue
+                    </p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -1413,23 +1421,32 @@ export const DynamicWindowWorksheet = forwardRef<{
               <InventorySelectionPanel treatmentType={selectedTreatmentType} selectedItems={selectedItems} onItemSelect={handleItemSelect} onItemDeselect={handleItemDeselect} measurements={measurements} treatmentCategory={treatmentCategory} />
               
               <div className="mt-auto space-y-3">
-                {Object.values(selectedItems).some(item => item) && <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 animate-fade-in">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                    {Object.entries(selectedItems).map(([category, item]) => item && (
-                      <span key={category} className="text-xs">
-                        <span className="font-medium capitalize">{category}:</span> {item.name}
-                      </span>
-                    )).filter(Boolean).reduce((prev, curr) => [prev, ' • ', curr] as any)}
+                {Object.values(selectedItems).some(item => item) && (
+                  <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 animate-fade-in">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                      {Object.entries(selectedItems).map(([category, item]) => item && (
+                        <span key={category} className="text-xs">
+                          <span className="font-medium capitalize">{category}:</span> {item.name}
+                        </span>
+                      )).filter(Boolean).reduce((prev, curr) => [prev, ' • ', curr] as any)}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                      <span className="animate-pulse">→</span> Click "Measurements" above to continue
+                    </p>
                   </div>
-                </div>}
+                )}
                 
                 {!Object.values(selectedItems).some(item => item) && (
                   // Only show "no selection required" for treatments that truly don't need fabric
                   (treatmentCategory === 'wallpaper' || treatmentCategory.includes('blind') || treatmentCategory.includes('shutter')) ? (
-                    <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <p className="text-xs text-blue-700 dark:text-blue-300">
-                        {treatmentCategory === 'wallpaper' ? 'Select wallpaper to continue' : 'No additional inventory selection required. Click continue to proceed to measurements.'}
+                    <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 animate-fade-in">
+                      <p className="text-xs text-muted-foreground flex items-center gap-2">
+                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                        {treatmentCategory === 'wallpaper' ? 'Select wallpaper, then proceed to measurements' : 'No inventory required'}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                        <span className="animate-pulse">→</span> Click "Measurements" above to continue
                       </p>
                     </div>
                   ) : (
@@ -1440,16 +1457,6 @@ export const DynamicWindowWorksheet = forwardRef<{
                     </div>
                   )
                 )}
-                
-                <Button 
-                  onClick={() => {
-                    console.log("📍 Navigating to measurements tab with items:", selectedItems);
-                    setActiveTab("measurements");
-                  }} 
-                  className="w-full"
-                >
-                  Continue to Measurements
-                </Button>
               </div>
             </CardContent>
           </Card>
@@ -1607,9 +1614,6 @@ export const DynamicWindowWorksheet = forwardRef<{
                   <Button onClick={async () => {
                   setIsSaving(true);
                   
-                  // Close dialog immediately for better UX
-                  onClose?.();
-                  
                   try {
                     console.log("DynamicWorksheet: Starting save from measurements tab...");
                     const currentRef = ref as React.MutableRefObject<{
@@ -1618,12 +1622,16 @@ export const DynamicWindowWorksheet = forwardRef<{
                     if (currentRef?.current) {
                       await currentRef.current.autoSave();
                     }
+                    
+                    // Close dialog after successful save
+                    onClose?.();
+                    
                     const {
                       toast
                     } = await import("@/hooks/use-toast");
                     toast({
-                      title: "✅ Configuration Saved",
-                      description: "Your window configuration has been saved successfully"
+                      title: "✅ Saved",
+                      description: "Configuration saved successfully"
                     });
                   } catch (error) {
                     console.error("Save failed:", error);
@@ -1654,7 +1662,8 @@ export const DynamicWindowWorksheet = forwardRef<{
                     ) : (
                       <>
                         <Save className="h-4 w-4 mr-2" />
-                        Save Configuration
+                        <span className="hidden sm:inline">Save & Close</span>
+                        <span className="sm:hidden">Save</span>
                       </>
                     )}
                   </Button>
