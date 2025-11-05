@@ -313,7 +313,38 @@ export const DynamicRollerBlindFields = ({
                 
                 return (
                   <div className="ml-4 mt-3 space-y-3 pl-4 border-l-2 border-muted">
-                    {subOptions.map((subOption: any) => (
+                    {subOptions.map((subOption: any) => {
+                      // Auto-select sub-option if only one choice or no current value
+                      const subOptionKey = `${option.key}_${subOption.key}`;
+                      const currentSubValue = measurements[subOptionKey];
+                      const shouldAutoSelectSub = !currentSubValue || (subOption.choices && subOption.choices.length === 1);
+                      
+                      if (shouldAutoSelectSub && subOption.choices && subOption.choices.length > 0) {
+                        const firstChoice = subOption.choices[0];
+                        
+                        // Only auto-select if not already set
+                        if (!currentSubValue) {
+                          console.log(`  🎯 Auto-selecting sub-option ${subOptionKey} = ${firstChoice.value} (only one: ${subOption.choices.length === 1})`);
+                          
+                          // Use setTimeout to avoid state updates during render
+                          setTimeout(() => {
+                            onChange(subOptionKey, firstChoice.value);
+                            
+                            if (onOptionPriceChange && firstChoice) {
+                              const displayLabel = `${option.label} - ${subOption.label}: ${firstChoice.label}`;
+                              const parentValue = option.option_values?.find((v: any) => 
+                                v.code === (currentValue || defaultValue) || v.id === (currentValue || defaultValue)
+                              );
+                              const pricingMethod = parentValue?.extra_data?.pricing_method || 'fixed';
+                              const pricingGridData = parentValue?.extra_data?.pricing_grid_data;
+                              
+                              onOptionPriceChange(subOptionKey, firstChoice.price || 0, displayLabel, pricingMethod, pricingGridData);
+                            }
+                          }, 0);
+                        }
+                      }
+                      
+                      return (
                       <div key={subOption.id} className="space-y-2">
                         <Label className="text-sm font-medium text-muted-foreground">
                           {subOption.label}
@@ -399,7 +430,8 @@ export const DynamicRollerBlindFields = ({
                           </SelectContent>
                         </Select>
                       </div>
-                    ))}
+                    );
+                    })}
                   </div>
                 );
               })()}
