@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +38,7 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
   const [grids, setGrids] = useState<PricingGrid[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const uploadFormRef = useRef<HTMLDivElement>(null);
   
   // Upload form state
   const [showUploadForm, setShowUploadForm] = useState(false);
@@ -325,7 +326,10 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
               </CardDescription>
             </div>
             {!showUploadForm && (
-              <Button onClick={() => setShowUploadForm(true)} size="sm">
+              <Button onClick={() => {
+                setShowUploadForm(true);
+                setTimeout(() => uploadFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+              }} size="sm">
                 <Upload className="h-4 w-4 mr-2" />
                 Upload Grid
               </Button>
@@ -338,7 +342,10 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
           ) : grids.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground mb-4">No pricing grids uploaded yet</p>
-              <Button onClick={() => setShowUploadForm(true)} size="sm">
+              <Button onClick={() => {
+                setShowUploadForm(true);
+                setTimeout(() => uploadFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+              }} size="sm">
                 <Upload className="h-4 w-4 mr-2" />
                 Upload Your First Grid
               </Button>
@@ -393,7 +400,7 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
 
       {/* Upload Form */}
       {showUploadForm && (
-        <Card className="border-primary">
+        <Card ref={uploadFormRef} className="border-primary">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Upload className="h-5 w-5" />
