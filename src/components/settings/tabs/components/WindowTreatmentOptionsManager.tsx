@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { TREATMENT_CATEGORIES, TreatmentCategoryDbValue } from "@/types/treatmentCategories";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { InventoryStockBadge } from "./InventoryStockBadge";
+import { useInventoryCategories } from "@/hooks/useInventoryCategories";
 
 export const WindowTreatmentOptionsManager = () => {
   const queryClient = useQueryClient();
@@ -55,6 +56,7 @@ export const WindowTreatmentOptionsManager = () => {
   
   // Fetch inventory items for linking
   const { data: inventoryItems = [] } = useEnhancedInventory();
+  const { categories: inventoryCategories } = useInventoryCategories();
   
   const [isCreating, setIsCreating] = useState(false);
   const [editingValue, setEditingValue] = useState<OptionValue | null>(null);
@@ -70,6 +72,7 @@ export const WindowTreatmentOptionsManager = () => {
   });
   const [showInventoryDialog, setShowInventoryDialog] = useState(false);
   const [inventorySearchQuery, setInventorySearchQuery] = useState('');
+  const [selectedInventoryCategoryId, setSelectedInventoryCategoryId] = useState<string | null>(null);
   const [showCreateInventoryForm, setShowCreateInventoryForm] = useState(false);
   const [newInventoryItem, setNewInventoryItem] = useState({
     name: '',
@@ -383,21 +386,30 @@ export const WindowTreatmentOptionsManager = () => {
     event.target.value = '';
   };
 
-  // Filter inventory items based on search query
+  // Filter inventory items based on search query and category
   const filteredInventoryItems = useMemo(() => {
-    if (!inventorySearchQuery.trim()) {
-      return inventoryItems.filter(item => item.active);
+    let filtered = inventoryItems.filter(item => item.active);
+    
+    // Filter by category if selected
+    if (selectedInventoryCategoryId) {
+      const selectedCategory = inventoryCategories.find(cat => cat.id === selectedInventoryCategoryId);
+      if (selectedCategory) {
+        filtered = filtered.filter(item => item.category === selectedCategory.name);
+      }
     }
     
-    const query = inventorySearchQuery.toLowerCase();
-    return inventoryItems
-      .filter(item => item.active)
-      .filter(item => 
+    // Filter by search query
+    if (inventorySearchQuery.trim()) {
+      const query = inventorySearchQuery.toLowerCase();
+      filtered = filtered.filter(item => 
         item.name.toLowerCase().includes(query) ||
         item.description?.toLowerCase().includes(query) ||
         item.category?.toLowerCase().includes(query)
       );
-  }, [inventoryItems, inventorySearchQuery]);
+    }
+    
+    return filtered;
+  }, [inventoryItems, inventorySearchQuery, selectedInventoryCategoryId, inventoryCategories]);
 
   const selectedInventoryItem = inventoryItems.find(item => item.id === formData.inventory_item_id);
 
@@ -405,6 +417,7 @@ export const WindowTreatmentOptionsManager = () => {
     setFormData({ ...formData, inventory_item_id: itemId });
     setShowInventoryDialog(false);
     setInventorySearchQuery('');
+    setSelectedInventoryCategoryId(null);
   };
 
   const handleCreateInventoryItem = async () => {
@@ -1027,8 +1040,33 @@ export const WindowTreatmentOptionsManager = () => {
                   />
                 </div>
 
+                {/* Category Filter */}
+                {inventoryCategories.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant={!selectedInventoryCategoryId ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedInventoryCategoryId(null)}
+                    >
+                      All
+                    </Button>
+                    {inventoryCategories.map((category) => (
+                      <Button
+                        key={category.id}
+                        variant={selectedInventoryCategoryId === category.id ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSelectedInventoryCategoryId(category.id)}
+                        className="gap-2"
+                      >
+                        {category.icon && <span>{category.icon}</span>}
+                        {category.name}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+
                 {/* Inventory Items List */}
-                <ScrollArea className="flex-1 -mx-6 px-6">
+                <ScrollArea className="h-[400px] -mx-6 px-6">
                   <div className="space-y-2 py-2">
                     {/* None Option */}
                     <div
