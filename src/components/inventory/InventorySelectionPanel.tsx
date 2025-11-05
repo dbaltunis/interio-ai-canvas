@@ -270,8 +270,8 @@ export const InventorySelectionPanel = ({
     >
         <CardContent className="p-2">
           <div className="flex flex-col space-y-2">
-            {/* Image */}
-            <div className="h-16 w-full bg-gray-50 border border-gray-200 rounded overflow-hidden relative">
+            {/* Image - Larger for fabric */}
+            <div className={`w-full bg-gray-50 border border-gray-200 rounded overflow-hidden relative ${category === 'fabric' ? 'h-24' : 'h-16'}`}>
               {imageUrl ? <img src={imageUrl} alt={item.name} className="w-full h-full object-cover" onError={e => {
               console.error('Image failed to load:', imageUrl);
               e.currentTarget.style.display = 'none';
@@ -279,6 +279,15 @@ export const InventorySelectionPanel = ({
                   No image
                 </div>}
               {isSelected && <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />}
+              
+              {/* Pricing Grid Badge Overlay - Only for fabric */}
+              {category === 'fabric' && item.price_group && (
+                <div className="absolute bottom-1 left-1 right-1">
+                  <Badge variant="default" className="text-[9px] px-1.5 py-0.5 h-5 bg-green-600 hover:bg-green-700 text-white w-full justify-center">
+                    ✓ Grid: {item.price_group}
+                  </Badge>
+                </div>
+              )}
             </div>
             
             {/* Item details */}
@@ -289,11 +298,6 @@ export const InventorySelectionPanel = ({
               {category === "fabric" && <div className="space-y-0.5 text-[10px] text-muted-foreground">
                   {item.fabric_width > 0 && <div className="flex items-center gap-1">
                       <span>📏 {item.fabric_width}cm wide</span>
-                    </div>}
-                  {item.price_group && <div className="flex items-center gap-1">
-                      <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">
-                        Grid: {item.price_group}
-                      </Badge>
                     </div>}
                   {item.product_category && <div className="text-[9px]">
                       For: {item.product_category.replace(/_/g, ' ')}
