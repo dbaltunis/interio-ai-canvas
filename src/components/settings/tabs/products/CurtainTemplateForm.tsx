@@ -1553,43 +1553,76 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                     <div className="grid grid-cols-3 gap-3">
                       <div>
                         <Label htmlFor="blind_header_hem_cm">Header Hem (cm)</Label>
-                        <Input
-                          id="blind_header_hem_cm"
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          value={formData.blind_header_hem_cm || 8}
-                          onChange={(e) => handleInputChange("blind_header_hem_cm", e.target.value)}
-                          placeholder="8"
-                        />
+                        <div className="flex gap-2">
+                          <Input
+                            id="blind_header_hem_cm"
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            value={formData.blind_header_hem_cm || ""}
+                            onChange={(e) => handleInputChange("blind_header_hem_cm", e.target.value)}
+                            placeholder="0"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleInputChange("blind_header_hem_cm", "0")}
+                            className="px-3"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                       <div>
                         <Label htmlFor="blind_bottom_hem_cm">Bottom Hem (cm)</Label>
-                        <Input
-                          id="blind_bottom_hem_cm"
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          value={formData.blind_bottom_hem_cm || 8}
-                          onChange={(e) => handleInputChange("blind_bottom_hem_cm", e.target.value)}
-                          placeholder="8"
-                        />
+                        <div className="flex gap-2">
+                          <Input
+                            id="blind_bottom_hem_cm"
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            value={formData.blind_bottom_hem_cm || ""}
+                            onChange={(e) => handleInputChange("blind_bottom_hem_cm", e.target.value)}
+                            placeholder="0"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleInputChange("blind_bottom_hem_cm", "0")}
+                            className="px-3"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                       <div>
                         <Label htmlFor="blind_side_hem_cm">Side Hem per Side (cm)</Label>
-                        <Input
-                          id="blind_side_hem_cm"
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          value={formData.blind_side_hem_cm || 0}
-                          onChange={(e) => handleInputChange("blind_side_hem_cm", e.target.value)}
-                          placeholder="0"
-                        />
+                        <div className="flex gap-2">
+                          <Input
+                            id="blind_side_hem_cm"
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            value={formData.blind_side_hem_cm || ""}
+                            onChange={(e) => handleInputChange("blind_side_hem_cm", e.target.value)}
+                            placeholder="0"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleInputChange("blind_side_hem_cm", "0")}
+                            className="px-3"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      These values are added to the blind dimensions for fabric calculation
+                      These values are added to the blind dimensions for fabric calculation. Click X to remove a hem allowance.
                     </p>
                   </div>
                 </CardContent>
