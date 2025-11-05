@@ -233,8 +233,21 @@ export const InventorySelectionPanel = ({
     
     const price = item.selling_price || item.unit_price || item.price_per_meter || 0;
 
-    // Get the image URL - try multiple storage buckets
+    // Get the image URL - try multiple sources
     const getImageUrl = () => {
+      // Try image_url first (direct URL)
+      if (item.image_url) {
+        if (item.image_url.startsWith('http')) return item.image_url;
+        // Try as storage path
+        try {
+          const { data } = supabase.storage.from('business-assets').getPublicUrl(item.image_url);
+          if (data?.publicUrl) return data.publicUrl;
+        } catch (e) {
+          // Continue to images array
+        }
+      }
+      
+      // Try images array
       if (!item.images || item.images.length === 0) return null;
       const imagePath = item.images[0];
 
