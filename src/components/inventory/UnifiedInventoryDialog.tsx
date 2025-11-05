@@ -147,6 +147,7 @@ export const UnifiedInventoryDialog = ({
     hardware_finish: "",
     hardware_material: "",
     weight: 0,
+    product_category: "", // What product this fabric is for (roller_blinds, curtains, etc)
     price_group: "", // For pricing grid routing (A, B, C, D)
     wallpaper_roll_width: 0,
     wallpaper_roll_length: 0,
@@ -219,6 +220,7 @@ export const UnifiedInventoryDialog = ({
         hardware_finish: item.hardware_finish || "",
         hardware_material: item.hardware_material || "",
         weight: item.weight || 0,
+        product_category: item.product_category || "",
         price_group: item.price_group || "",
         wallpaper_roll_width: item.wallpaper_roll_width || 0,
         wallpaper_roll_length: item.wallpaper_roll_length || 0,
@@ -463,6 +465,7 @@ export const UnifiedInventoryDialog = ({
           hardware_finish: "",
           hardware_material: "",
           weight: 0,
+          product_category: "",
           price_group: "",
           wallpaper_roll_width: 0,
           wallpaper_roll_length: 0,
@@ -833,19 +836,45 @@ export const UnifiedInventoryDialog = ({
                         />
                       </div>
 
-                      <div>
-                        <Label htmlFor="price_group">
-                          Price Group <Badge variant="outline" className="ml-2">For Grid Pricing</Badge>
-                        </Label>
-                        <Input
-                          id="price_group"
-                          value={formData.price_group}
-                          onChange={(e) => setFormData({ ...formData, price_group: e.target.value })}
-                          placeholder="e.g., A, B, Premium, Economy, Custom1"
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Used with template system type to select pricing grid
-                        </p>
+                      <div className="space-y-3">
+                        <div>
+                          <Label htmlFor="product_category">
+                            Product Category <Badge variant="outline" className="ml-2">What product is this fabric for?</Badge>
+                          </Label>
+                          <Select
+                            value={formData.product_category || ''}
+                            onValueChange={(value) => setFormData({ ...formData, product_category: value })}
+                          >
+                            <SelectTrigger id="product_category">
+                              <SelectValue placeholder="Select product type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="roller_blinds">Roller Blinds</SelectItem>
+                              <SelectItem value="venetian_blinds">Venetian Blinds</SelectItem>
+                              <SelectItem value="vertical_blinds">Vertical Blinds</SelectItem>
+                              <SelectItem value="roman_blinds">Roman Blinds</SelectItem>
+                              <SelectItem value="curtains">Curtains</SelectItem>
+                              <SelectItem value="shutters">Shutters</SelectItem>
+                              <SelectItem value="panel_blinds">Panel Blinds</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="price_group">
+                            Pricing Group <Badge variant="outline" className="ml-2">Select from available grids</Badge>
+                          </Label>
+                          <Input
+                            id="price_group"
+                            value={formData.price_group}
+                            onChange={(e) => setFormData({ ...formData, price_group: e.target.value })}
+                            placeholder="e.g., A, B, Premium, Economy"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Links this fabric to pricing grids. View available grids in Settings → Pricing Grids
+                          </p>
+                        </div>
                       </div>
 
                       <div>
