@@ -255,6 +255,51 @@ export const useDeleteQuote = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // Get quote details first to know what to clean up
+      const { data: quote, error: quoteError } = await supabase
+        .from("quotes")
+        .select("project_id")
+        .eq("id", id)
+        .single();
+      
+      if (quoteError) throw quoteError;
+      
+      // STEP 1: Delete quote_items first (child records)
+      const { error: itemsError } = await supabase
+        .from("quote_items")
+        .delete()
+        .eq("quote_id", id);
+      
+      if (itemsError) {
+        console.error("Error deleting quote items:", itemsError);
+        // Continue even if this fails (items might not exist)
+      }
+      
+      // STEP 2: Delete treatments associated with the project
+      if (quote.project_id) {
+        const { error: treatmentsError } = await supabase
+          .from("treatments")
+          .delete()
+          .eq("project_id", quote.project_id);
+        
+        if (treatmentsError) {
+          console.error("Error deleting treatments:", treatmentsError);
+          // Continue even if this fails
+        }
+        
+        // STEP 3: Delete surfaces associated with the project
+        const { error: surfacesError } = await supabase
+          .from("surfaces")
+          .delete()
+          .eq("project_id", quote.project_id);
+        
+        if (surfacesError) {
+          console.error("Error deleting surfaces:", surfacesError);
+          // Continue even if this fails
+        }
+      }
+      
+      // STEP 4: Finally delete the quote
       const { error } = await supabase
         .from("quotes")
         .delete()
@@ -287,6 +332,12 @@ export const useDeleteQuote = () => {
       });
     },
     onSuccess: () => {
+      // Invalidate all related queries
+      queryClient.invalidateQueries({ queryKey: ["quotes"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["treatments"] });
+      queryClient.invalidateQueries({ queryKey: ["surfaces"] });
+      
       toast({
         title: "Success",
         description: "Quote deleted successfully",
