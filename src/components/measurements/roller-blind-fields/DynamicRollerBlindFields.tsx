@@ -332,13 +332,8 @@ export const DynamicRollerBlindFields = ({
                             
                             if (onOptionPriceChange && firstChoice) {
                               const displayLabel = `${option.label} - ${subOption.label}: ${firstChoice.label}`;
-                              const parentValue = option.option_values?.find((v: any) => 
-                                v.code === (currentValue || defaultValue) || v.id === (currentValue || defaultValue)
-                              );
-                              const pricingMethod = parentValue?.extra_data?.pricing_method || 'fixed';
-                              const pricingGridData = parentValue?.extra_data?.pricing_grid_data;
-                              
-                              onOptionPriceChange(subOptionKey, firstChoice.price || 0, displayLabel, pricingMethod, pricingGridData);
+                              // Sub-options use their own pricing (fixed) and do NOT inherit parent's pricing method/grid
+                              onOptionPriceChange(subOptionKey, firstChoice.price || 0, displayLabel, 'fixed', undefined);
                             }
                           }, 0);
                         }
@@ -369,22 +364,17 @@ export const DynamicRollerBlindFields = ({
                               if (choice) {
                                 // Use a clear label showing parent option + sub-option
                                 const displayLabel = `${option.label} - ${subOption.label}: ${choice.label}`;
-                                // Sub-options inherit pricing method from parent option
-                                const parentValue = option.option_values?.find((v: any) => 
-                                  v.code === (currentValue || defaultValue) || v.id === (currentValue || defaultValue)
-                                );
-                                const pricingMethod = parentValue?.extra_data?.pricing_method || 'fixed';
-                                const pricingGridData = parentValue?.extra_data?.pricing_grid_data;
+                                // Sub-options use their own pricing (fixed) and do NOT inherit parent's pricing method/grid
                                 
                                 console.log('🎨 Calling onOptionPriceChange:', {
                                   key: `${option.key}_${subOption.key}`,
                                   price: choice.price || 0,
                                   displayLabel,
-                                  pricingMethod,
-                                  hasPricingGridData: !!pricingGridData
+                                  pricingMethod: 'fixed',
+                                  hasPricingGridData: false
                                 });
                                 
-                                onOptionPriceChange(`${option.key}_${subOption.key}`, choice.price || 0, displayLabel, pricingMethod, pricingGridData);
+                                onOptionPriceChange(`${option.key}_${subOption.key}`, choice.price || 0, displayLabel, 'fixed', undefined);
                               } else {
                                 console.log('❌ No choice found for value:', choiceValue);
                               }
@@ -399,24 +389,14 @@ export const DynamicRollerBlindFields = ({
                           </SelectTrigger>
                           <SelectContent className="bg-popover border-border z-50">
                             {subOption.choices?.map((choice: any) => {
-                              // Get parent pricing method for sub-options
-                              const parentValue = option.option_values?.find((v: any) => 
-                                v.code === (currentValue || defaultValue) || v.id === (currentValue || defaultValue)
-                              );
-                              const pricingMethod = parentValue?.extra_data?.pricing_method || 'fixed';
+                              // Sub-options always use fixed pricing
+                              const pricingMethod = 'fixed';
                               
                               return (
                                 <SelectItem key={choice.id} value={choice.value}>
                                   <div className="flex items-center justify-between gap-2 w-full">
                                     <span className="flex-1">{choice.label}</span>
                                     <div className="flex items-center gap-2 flex-shrink-0">
-                                      {pricingMethod && pricingMethod !== 'fixed' && (
-                                        <Badge variant="outline" className="text-xs px-1.5 py-0.5 h-5">
-                                          {pricingMethod === 'per-meter' ? 'per m' : 
-                                           pricingMethod === 'per-sqm' ? 'per m²' : 
-                                           pricingMethod === 'pricing-grid' ? 'grid' : pricingMethod}
-                                        </Badge>
-                                      )}
                                       {choice.price > 0 && (
                                         <Badge variant="outline" className="text-xs">
                                           +${choice.price.toFixed(2)}
