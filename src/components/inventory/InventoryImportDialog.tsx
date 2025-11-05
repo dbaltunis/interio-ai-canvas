@@ -222,11 +222,46 @@ export const InventoryImportDialog: React.FC = () => {
           )}
 
           <Separator />
+          
           <div>
-            <p className="text-sm font-medium mb-1">Column tips</p>
-            <p className="text-xs text-muted-foreground">
-              Whitelisted columns only are imported. Recommended minimal fields: name, sku, category, quantity, unit_price.<br/>
-              <strong>Pricing Grid columns:</strong> price_group (grid code/ID), product_category (e.g., roller_blind)
+            <p className="text-sm font-medium mb-2">CSV Format Example - Copy this structure:</p>
+            <div className="bg-muted p-3 rounded-md overflow-x-auto">
+              <table className="text-xs font-mono w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left p-1">name</th>
+                    <th className="text-left p-1">sku</th>
+                    <th className="text-left p-1">category</th>
+                    <th className="text-left p-1">quantity</th>
+                    <th className="text-left p-1">unit_price</th>
+                    <th className="text-left p-1 text-primary font-bold">price_group</th>
+                    <th className="text-left p-1 text-primary font-bold">product_category</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-border/50">
+                    <td className="p-1">Fabric White</td>
+                    <td className="p-1">FAB-001</td>
+                    <td className="p-1">fabric</td>
+                    <td className="p-1">100</td>
+                    <td className="p-1">25</td>
+                    <td className="p-1 text-primary font-bold">GRID001</td>
+                    <td className="p-1 text-primary font-bold">roller_blind</td>
+                  </tr>
+                  <tr>
+                    <td className="p-1">Track 2.4m</td>
+                    <td className="p-1">TRK-2400</td>
+                    <td className="p-1">hardware</td>
+                    <td className="p-1">20</td>
+                    <td className="p-1">65</td>
+                    <td className="p-1 text-muted-foreground">(empty)</td>
+                    <td className="p-1 text-muted-foreground">(empty)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              <strong>Pricing Grid columns:</strong> Use <code className="bg-background px-1 rounded">price_group</code> for grid code and <code className="bg-background px-1 rounded">product_category</code> for category (e.g., roller_blind). Leave empty if no grid.
             </p>
           </div>
         </div>
