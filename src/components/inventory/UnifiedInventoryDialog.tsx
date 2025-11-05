@@ -349,19 +349,32 @@ export const UnifiedInventoryDialog = ({
         throw new Error('You must be logged in to upload images');
       }
 
-      // Compress image before uploading
-      const compressedBlob = await compressImage(file);
-      const fileName = `inventory-${user.id}-${Date.now()}.jpg`;
+      let fileToUpload: File | Blob = file;
+      let fileName = '';
+      
+      // Try to compress image, but fallback to original if it fails
+      try {
+        if (file.type.startsWith('image/')) {
+          const compressedBlob = await compressImage(file);
+          fileToUpload = compressedBlob;
+          fileName = `inventory-${user.id}-${Date.now()}.jpg`;
+        } else {
+          fileName = `inventory-${user.id}-${Date.now()}.${file.name.split('.').pop()}`;
+        }
+      } catch (compressionError) {
+        console.warn('Compression failed, uploading original:', compressionError);
+        fileName = `inventory-${user.id}-${Date.now()}.${file.name.split('.').pop()}`;
+        fileToUpload = file;
+      }
       
       const { error: uploadError } = await supabase.storage
         .from('project-images')
-        .upload(fileName, compressedBlob, {
-          contentType: 'image/jpeg',
+        .upload(fileName, fileToUpload, {
+          contentType: file.type.startsWith('image/') ? 'image/jpeg' : file.type,
           cacheControl: '3600',
         });
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
         throw uploadError;
       }
 
@@ -371,11 +384,10 @@ export const UnifiedInventoryDialog = ({
 
       setFormData({ ...formData, image_url: publicUrl });
       toast({
-        title: "Image uploaded successfully",
-        description: "Image compressed and uploaded.",
+        title: "Image uploaded",
+        description: fileToUpload !== file ? "Image compressed and uploaded." : "Image uploaded.",
       });
-    } catch (error) {
-      console.error('Error uploading image:', error);
+    } catch (error: any) {
       toast({
         title: "Upload failed",
         description: "Failed to upload image. Please try again.",
