@@ -50,7 +50,20 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
       const { data, error } = await query;
       
       if (error) throw error;
-      return data as TreatmentOption[];
+      
+      // CRITICAL: Filter out ghost/test options (visible=false with no option_values)
+      const filteredData = (data as TreatmentOption[]).filter(option => {
+        // Always include visible options
+        if (option.visible === true) return true;
+        // If not visible, only include if it has option_values (legitimate hidden options)
+        if (!option.visible && (!option.option_values || option.option_values.length === 0)) {
+          console.warn(`🚫 Filtering out ghost option: ${option.key} (${option.id}) - visible=false with no values`);
+          return false;
+        }
+        return true;
+      });
+      
+      return filteredData;
     },
     enabled: !!templateIdOrCategory,
   });
