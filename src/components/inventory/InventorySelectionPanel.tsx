@@ -397,25 +397,24 @@ export const InventorySelectionPanel = ({
   };
   const availableTabs = getTabsForTreatment();
   return <div className={`space-y-3 ${className}`}>
-      <div className="relative animate-fade-in">
-        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground transition-transform" />
-        <Input 
-          placeholder="Search inventory: fabrics, hardware, materials..." 
-          value={searchTerm} 
-          onChange={e => setSearchTerm(e.target.value)} 
-          className="pl-12 h-12 text-base transition-all duration-200 focus:scale-[1.02]"
-        />
-      </div>
-
-      <div className="flex justify-end">
+      <div className="flex gap-2 items-center animate-fade-in">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground transition-transform" />
+          <Input 
+            placeholder="Search inventory: fabrics, hardware, materials..." 
+            value={searchTerm} 
+            onChange={e => setSearchTerm(e.target.value)} 
+            className="pl-12 h-12 text-base transition-all duration-200 focus:scale-[1.02]"
+          />
+        </div>
+        
         <Dialog open={showManualEntry} onOpenChange={setShowManualEntry}>
           <DialogTrigger asChild>
             <Button 
               variant="outline" 
-              size="sm"
-              className="h-8"
+              className="h-12 px-4"
             >
-              <Edit3 className="h-4 w-4 mr-1" />
+              <Edit3 className="h-4 w-4 mr-2" />
               Manual Entry
             </Button>
           </DialogTrigger>
@@ -518,9 +517,9 @@ export const InventorySelectionPanel = ({
                 <Button onClick={handleManualEntrySubmit} disabled={createInventoryItem.isPending}>
                   {createInventoryItem.isPending ? "Adding..." : "Add Item"}
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </div>
 
       {/* Category tabs */}
