@@ -302,10 +302,20 @@ export const DynamicRollerBlindFields = ({
                         <Select
                           value={measurements[`${option.key}_${subOption.key}`] || ''}
                           onValueChange={(choiceValue) => {
+                            console.log('🎨🎨🎨 SUB-OPTION SELECTED:', {
+                              optionKey: option.key,
+                              subOptionKey: subOption.key,
+                              choiceValue,
+                              hasOnOptionPriceChange: !!onOptionPriceChange
+                            });
+                            
                             onChange(`${option.key}_${subOption.key}`, choiceValue);
+                            
                             // Also track pricing if available
                             if (onOptionPriceChange) {
                               const choice = subOption.choices?.find((c: any) => c.value === choiceValue);
+                              console.log('🎨 Found choice:', choice);
+                              
                               if (choice) {
                                 // Use a clear label showing parent option + sub-option
                                 const displayLabel = `${option.label} - ${subOption.label}: ${choice.label}`;
@@ -314,8 +324,20 @@ export const DynamicRollerBlindFields = ({
                                   v.code === (currentValue || defaultValue) || v.id === (currentValue || defaultValue)
                                 );
                                 const pricingMethod = parentValue?.extra_data?.pricing_method || 'fixed';
+                                
+                                console.log('🎨 Calling onOptionPriceChange:', {
+                                  key: `${option.key}_${subOption.key}`,
+                                  price: choice.price || 0,
+                                  displayLabel,
+                                  pricingMethod
+                                });
+                                
                                 onOptionPriceChange(`${option.key}_${subOption.key}`, choice.price || 0, displayLabel, pricingMethod);
+                              } else {
+                                console.log('❌ No choice found for value:', choiceValue);
                               }
+                            } else {
+                              console.log('❌ onOptionPriceChange is not defined');
                             }
                           }}
                           disabled={readOnly}
