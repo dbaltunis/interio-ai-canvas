@@ -31,6 +31,7 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
   const materialDetails = isBlindsOrShutters ? (summary.material_details || summary.fabric_details) : summary.fabric_details;
   
   const fabricCost = Number(summary.fabric_cost) || 0;
+  const manufacturingCost = Number(summary.manufacturing_cost) || 0;
   const linearMeters = Number(summary.linear_meters) || 0;
   const pricePerMeter = Number(
     summary.price_per_meter ?? 
@@ -38,17 +39,20 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
     materialDetails?.unit_price
   ) || 0;
   
-  if (fabricCost > 0 || linearMeters > 0) {
+  // For blinds/shutters using pricing grids, combine fabric + manufacturing into single "Fabric Material" line
+  const usePricingGrid = isBlindsOrShutters && fabricCost > 0 && manufacturingCost > 0;
+  const combinedMaterialCost = usePricingGrid ? fabricCost + manufacturingCost : fabricCost;
+  
+  if (combinedMaterialCost > 0 || linearMeters > 0) {
+    const sqm = linearMeters * (Number(summary.widths_required) || 1) / 10000; // Convert cm to sqm
     items.push({
       id: 'fabric',
-      name: materialDetails?.name || summary.fabric_details?.name || 'Fabric Material',
-      description: materialDetails?.name
-        ? `${materialDetails.name} • ${linearMeters.toFixed(2)}m • ${summary.widths_required || 1} width(s)`
-        : `${linearMeters.toFixed(2)}m • ${summary.widths_required || 1} width(s)`,
-      quantity: linearMeters,
-      unit: 'm',
-      unit_price: pricePerMeter,
-      total_cost: fabricCost,
+      name: 'Fabric Material',
+      description: `${sqm.toFixed(2)} sqm × ${(combinedMaterialCost / sqm).toFixed(2)}/sqm`,
+      quantity: sqm,
+      unit: 'sqm',
+      unit_price: combinedMaterialCost / sqm,
+      total_cost: combinedMaterialCost,
       image_url: materialDetails?.image_url || summary.fabric_details?.image_url || null,
       category: 'fabric',
       details: {
@@ -108,18 +112,16 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
     });
   }
 
-  // Manufacturing/Assembly
-  const manufacturingCost = Number(summary.manufacturing_cost) || 0;
-  const manufacturingType = summary.manufacturing_type || 'machine';
-  
-  if (manufacturingCost > 0) {
+  // Manufacturing/Assembly - only show separately if NOT using pricing grid
+  // (pricing grid combines fabric + manufacturing into single "Fabric Material" line)
+  if (!usePricingGrid && manufacturingCost > 0) {
     items.push({
       id: 'manufacturing',
       name: 'Manufacturing',
-      description: manufacturingType,
+      description: summary.manufacturing_type || 'machine',
       total_cost: manufacturingCost,
       category: 'manufacturing',
-      details: { type: manufacturingType },
+      details: { type: summary.manufacturing_type || 'machine' },
     });
   }
 

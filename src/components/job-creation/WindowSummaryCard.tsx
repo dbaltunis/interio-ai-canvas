@@ -155,11 +155,20 @@ export function WindowSummaryCard({
       });
     }
 
+    // Detect if using pricing grid (blinds/shutters with both fabric and manufacturing costs)
+    const manufacturingCost = Number(summary.manufacturing_cost) || 0;
+    const usePricingGrid = isBlindsOrShutters && actualFabricCost > 0 && manufacturingCost > 0;
+    
+    // For pricing grids, combine fabric + manufacturing into single line
+    const displayFabricCost = usePricingGrid ? actualFabricCost + manufacturingCost : actualFabricCost;
+    
     // FABRIC/MATERIAL: Always include with proper name display
-    const fabricName = summary.material_details?.name ||
-                       summary.fabric_details?.name || 
-                       summary.fabric_details?.fabric_name ||  
-                       (isBlindsOrShutters ? 'Material' : treatmentType === 'wallpaper' ? 'Wallpaper Material' : 'Fabric');
+    const fabricName = usePricingGrid 
+      ? 'Fabric Material'
+      : (summary.material_details?.name ||
+         summary.fabric_details?.name || 
+         summary.fabric_details?.fabric_name ||  
+         (isBlindsOrShutters ? 'Material' : treatmentType === 'wallpaper' ? 'Wallpaper Material' : 'Fabric'));
     
     // Build description and pricing based on treatment type
     let fabricDescription = '';
@@ -182,6 +191,13 @@ export function WindowSummaryCard({
         const squareMeters = fabricQuantity * (summary.widths_required || 1) / 100;
         fabricDescription = `${fabricQuantity.toFixed(2)}m • ${squareMeters.toFixed(2)} m²`;
       }
+    } else if (usePricingGrid) {
+      // For pricing grids: show sqm calculation
+      const sqm = fabricQuantity * (Number(summary.widths_required) || 1) / 10000; // Convert cm to sqm
+      fabricQuantity = sqm;
+      fabricUnit = 'sqm';
+      fabricUnitPrice = displayFabricCost / sqm;
+      fabricDescription = `${sqm.toFixed(2)} sqm × ${fabricUnitPrice.toFixed(2)}/sqm`;
     } else {
       // For curtains/blinds: show linear meters and widths
       fabricDescription = `${fabricQuantity.toFixed(2)}m • ${summary.widths_required || 1} width(s)`;
@@ -194,7 +210,7 @@ export function WindowSummaryCard({
       quantity: fabricQuantity,
       unit: fabricUnit,
       unit_price: fabricUnitPrice,
-      total_cost: actualFabricCost,
+      total_cost: displayFabricCost,
       category: 'fabric',
       details: {
         widths_required: summary.widths_required,
@@ -237,13 +253,13 @@ export function WindowSummaryCard({
       }
     }
 
-    // Only add manufacturing cost for non-wallpaper treatments
-    if (treatmentType !== 'wallpaper') {
+    // Only add manufacturing cost separately if NOT using pricing grid (and not wallpaper)
+    if (treatmentType !== 'wallpaper' && !usePricingGrid && manufacturingCost > 0) {
       items.push({
         id: 'manufacturing',
         name: 'Manufacturing',
         description: summary.manufacturing_type || 'Assembly & Manufacturing',
-        total_cost: Number(summary.manufacturing_cost) || 0,
+        total_cost: manufacturingCost,
         category: 'manufacturing',
         details: { type: summary.manufacturing_type },
       });
