@@ -264,19 +264,28 @@ export const DynamicRollerBlindFields = ({
                 const selectedValueId = currentValue || defaultValue;
                 if (!selectedValueId) return null;
                 
-                const selectedOptionValue = option.option_values?.find((v: any) => v.code === selectedValueId || v.id === selectedValueId);
+                // Try to match by BOTH code and id since we store code but DB has both
+                const selectedOptionValue = option.option_values?.find((v: any) => 
+                  v.code === selectedValueId || v.id === selectedValueId
+                );
                 const subOptions = selectedOptionValue?.extra_data?.sub_options;
                 
-                console.log('🔍 SUB-OPTIONS CHECK (Roller):', {
+                console.log('🔍🔍🔍 SUB-OPTIONS CHECK (Roller):', {
                   optionKey: option.key,
+                  optionLabel: option.label,
                   selectedValueId,
+                  allOptionValues: option.option_values?.map((v: any) => ({ code: v.code, id: v.id, label: v.label })),
                   selectedOptionValue,
+                  hasSubOptions: !!subOptions,
                   subOptions
                 });
                 
-                if (!subOptions || subOptions.length === 0) return null;
+                if (!subOptions || subOptions.length === 0) {
+                  console.log('❌ No sub-options for', option.key);
+                  return null;
+                }
                 
-                console.log('✅ RENDERING SUB-OPTIONS:', subOptions);
+                console.log('✅✅✅ RENDERING SUB-OPTIONS:', subOptions);
                 
                 return (
                   <div className="ml-4 mt-3 space-y-3 pl-4 border-l-2 border-muted">
