@@ -1281,6 +1281,9 @@ export const DynamicWindowWorksheet = forwardRef<{
         <div className="flex items-center justify-center space-x-2">
           {["window-type", "treatment", "inventory", "measurements"].map((step, index) => {
           const stepNames = ["Select Type", "Treatment", "Inventory", "Measurements"];
+          const stepIcons = [Ruler, Package, Package, Ruler];
+          const StepIcon = stepIcons[index];
+          
           const isCompleted = (() => {
             switch (step) {
               case "window-type":
@@ -1295,11 +1298,11 @@ export const DynamicWindowWorksheet = forwardRef<{
                 return false;
             }
           })();
-          return <div key={step} className="flex items-center gap-2">
+          return <div key={step} className="flex items-center gap-1 sm:gap-2">
                 <button 
                   onClick={() => setActiveTab(step)} 
                   disabled={readOnly} 
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap ${
+                  className={`px-2 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1 ${
                     activeTab === step 
                       ? 'bg-primary text-primary-foreground' 
                       : isCompleted 
@@ -1307,10 +1310,11 @@ export const DynamicWindowWorksheet = forwardRef<{
                       : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   } ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`}
                 >
-                  {isCompleted && <span className="mr-1">✓</span>}
-                  {stepNames[index]}
+                  {isCompleted && <span className="text-xs">✓</span>}
+                  <StepIcon className="h-3.5 w-3.5 sm:hidden" />
+                  <span className="hidden sm:inline">{stepNames[index]}</span>
                 </button>
-                {index < 3 && <div className="w-2 h-[1px] bg-border" />}
+                {index < 3 && <div className="w-1 sm:w-2 h-[1px] bg-border" />}
               </div>;
         })}
         </div>
