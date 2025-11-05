@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { enrichTemplatesWithGrids } from "@/utils/pricing/templateEnricher";
 
 export interface CurtainTemplate {
   id: string;
@@ -142,7 +143,13 @@ export const useCurtainTemplates = () => {
         throw error;
       }
       
-      return (data as unknown) as CurtainTemplate[];
+      // Enrich templates with pricing grid data if applicable
+      const templates = (data as unknown) as CurtainTemplate[];
+      const enrichedTemplates = await enrichTemplatesWithGrids(templates);
+      
+      console.log(`🎯 [useCurtainTemplates] Enriched ${enrichedTemplates.filter(t => t.pricing_grid_data).length} templates with pricing grids`);
+      
+      return enrichedTemplates;
     },
   });
 };

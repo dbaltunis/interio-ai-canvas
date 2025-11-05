@@ -176,7 +176,7 @@ export const FixedWindowCoveringSelector = ({
                       {category}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {coverings.map((covering) => (
+                      {(coverings as CurtainTemplate[]).map((covering) => (
                         <Card
                           key={covering.id}
                           className={`cursor-pointer transition-all hover:shadow-md ${
