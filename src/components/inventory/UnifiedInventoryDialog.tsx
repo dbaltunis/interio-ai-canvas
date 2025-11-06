@@ -400,12 +400,19 @@ export const UnifiedInventoryDialog = ({
     setUploadSuccess('');
     setUploadProgress('');
 
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setUploadError(`Invalid file type! Only image files are allowed (JPG, PNG, WEBP, etc.). Your file: ${file.type || 'unknown'}`);
+      event.target.value = '';
+      return;
+    }
+
     // Check file size first (10MB hard limit)
     const maxSizeInMB = 10;
     const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
     
     if (file.size > maxSizeInBytes) {
-      setUploadError(`File too large! Image must be under ${maxSizeInMB}MB. Your file is ${(file.size / 1024 / 1024).toFixed(1)}MB.`);
+      setUploadError(`File too large! Maximum size is ${maxSizeInMB}MB. Your file: ${(file.size / 1024 / 1024).toFixed(1)}MB. Try compressing your image using online tools like TinyPNG.`);
       event.target.value = '';
       return;
     }
@@ -416,6 +423,7 @@ export const UnifiedInventoryDialog = ({
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
+        setUploadError('Authentication required! Please log in to upload images.');
         throw new Error('You must be logged in to upload images');
       }
 
@@ -431,9 +439,9 @@ export const UnifiedInventoryDialog = ({
           setUploadProgress(`Compressed ${compressionRatio}% • Uploading...`);
           fileToUpload = compressedBlob;
           fileName = `${user.id}/inventory-${Date.now()}.jpg`;
-        } catch (compressionError) {
+        } catch (compressionError: any) {
           console.warn('Compression failed, using original:', compressionError);
-          setUploadProgress('Uploading original image...');
+          setUploadProgress('Compression failed, uploading original...');
           fileName = `${user.id}/inventory-${Date.now()}.${file.name.split('.').pop()}`;
           fileToUpload = file;
         }
@@ -453,6 +461,20 @@ export const UnifiedInventoryDialog = ({
         });
 
       if (uploadError) {
+        // Handle specific storage errors
+        let errorMessage = 'Upload failed! ';
+        if (uploadError.message.includes('exceeded')) {
+          errorMessage += 'Storage quota exceeded. Please contact support or delete old images.';
+        } else if (uploadError.message.includes('duplicate')) {
+          errorMessage += 'This file already exists. Please wait a moment and try again.';
+        } else if (uploadError.message.includes('permission') || uploadError.message.includes('policy')) {
+          errorMessage += 'Permission denied. Check your account permissions or contact support.';
+        } else if (uploadError.message.includes('network') || uploadError.message.includes('timeout')) {
+          errorMessage += 'Network error. Check your internet connection and try again.';
+        } else {
+          errorMessage += `${uploadError.message}. Try again or contact support if the issue persists.`;
+        }
+        setUploadError(errorMessage);
         throw uploadError;
       }
 
@@ -461,14 +483,27 @@ export const UnifiedInventoryDialog = ({
         .getPublicUrl(fileName);
 
       setFormData({ ...formData, image_url: publicUrl });
-      setUploadSuccess(fileToUpload !== file ? `Image compressed and uploaded successfully!` : `Image uploaded successfully!`);
+      setUploadSuccess(fileToUpload !== file ? `✓ Image compressed and uploaded successfully!` : `✓ Image uploaded successfully!`);
       setUploadProgress('');
       
       // Clear success message after 5 seconds
       setTimeout(() => setUploadSuccess(''), 5000);
     } catch (error: any) {
-      console.error('Upload error:', error);
-      setUploadError(error.message || "Failed to upload image. Please try again.");
+      console.error('Upload error details:', error);
+      // If error message hasn't been set yet (by storage error handler above), set it now
+      setUploadError(prev => {
+        if (prev) return prev; // Keep existing error message
+        
+        let errorMessage = 'Upload failed! ';
+        if (error.message?.includes('fetch')) {
+          errorMessage += 'Network error. Check your internet connection and try again.';
+        } else if (error.message?.includes('login') || error.message?.includes('auth')) {
+          errorMessage += 'Please log in and try again.';
+        } else {
+          errorMessage += `${error.message || 'Unknown error'}. Try again or contact support.`;
+        }
+        return errorMessage;
+      });
       setUploadProgress('');
     } finally {
       setUploadingImage(false);
