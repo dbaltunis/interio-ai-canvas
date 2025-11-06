@@ -170,7 +170,14 @@ export const useCreateEnhancedInventoryItem = () => {
       return data;
     },
     onSuccess: () => {
+      // Invalidate ALL fabric-related queries to ensure data consistency across the app
       queryClient.invalidateQueries({ queryKey: ['enhanced-inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['treatment-specific-fabrics'] });
+      queryClient.invalidateQueries({ queryKey: ['fabrics'] });
+      queryClient.invalidateQueries({ queryKey: ['fabric-library'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['window-summaries'] });
       toast.success('Item created successfully');
     },
     onError: (error) => {
@@ -195,7 +202,14 @@ export const useUpdateEnhancedInventoryItem = () => {
       return data;
     },
     onSuccess: () => {
+      // Invalidate ALL fabric-related queries to ensure data consistency across the app
       queryClient.invalidateQueries({ queryKey: ["enhanced-inventory"] });
+      queryClient.invalidateQueries({ queryKey: ['treatment-specific-fabrics'] });
+      queryClient.invalidateQueries({ queryKey: ['fabrics'] });
+      queryClient.invalidateQueries({ queryKey: ['fabric-library'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['window-summaries'] });
       toast.success('Item updated successfully');
     },
     onError: (error) => {
@@ -218,7 +232,14 @@ export const useDeleteEnhancedInventoryItem = () => {
       return id;
     },
     onSuccess: () => {
+      // Invalidate ALL fabric-related queries to ensure data consistency across the app
       queryClient.invalidateQueries({ queryKey: ["enhanced-inventory"] });
+      queryClient.invalidateQueries({ queryKey: ['treatment-specific-fabrics'] });
+      queryClient.invalidateQueries({ queryKey: ['fabrics'] });
+      queryClient.invalidateQueries({ queryKey: ['fabric-library'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['window-summaries'] });
       toast.success('Item deleted successfully');
     },
     onError: (error) => {

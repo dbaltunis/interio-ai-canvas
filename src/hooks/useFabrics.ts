@@ -97,7 +97,14 @@ export const useFabrics = () => {
       return newFabric;
     },
     onSuccess: () => {
+      // Invalidate ALL fabric-related queries to ensure data consistency across the app
       queryClient.invalidateQueries({ queryKey: ['fabrics'] });
+      queryClient.invalidateQueries({ queryKey: ['enhanced-inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['treatment-specific-fabrics'] });
+      queryClient.invalidateQueries({ queryKey: ['fabric-library'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['window-summaries'] });
     },
     onError: (error) => {
       toast.error('Failed to create fabric');
@@ -122,7 +129,14 @@ export const useFabrics = () => {
       throw new Error("Fabric not found");
     },
     onSuccess: () => {
+      // Invalidate ALL fabric-related queries to ensure data consistency across the app
       queryClient.invalidateQueries({ queryKey: ['fabrics'] });
+      queryClient.invalidateQueries({ queryKey: ['enhanced-inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['treatment-specific-fabrics'] });
+      queryClient.invalidateQueries({ queryKey: ['fabric-library'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['window-summaries'] });
     },
     onError: (error) => {
       toast.error('Failed to update fabric');
@@ -142,7 +156,14 @@ export const useFabrics = () => {
       }
     },
     onSuccess: () => {
+      // Invalidate ALL fabric-related queries to ensure data consistency across the app
       queryClient.invalidateQueries({ queryKey: ['fabrics'] });
+      queryClient.invalidateQueries({ queryKey: ['enhanced-inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['treatment-specific-fabrics'] });
+      queryClient.invalidateQueries({ queryKey: ['fabric-library'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['window-summaries'] });
     },
     onError: (error) => {
       toast.error('Failed to delete fabric');

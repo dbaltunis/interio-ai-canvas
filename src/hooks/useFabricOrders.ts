@@ -73,7 +73,14 @@ export const useCreateFabricOrder = () => {
       return newOrder;
     },
     onSuccess: () => {
+      // Invalidate ALL fabric-related queries to ensure data consistency across the app
       queryClient.invalidateQueries({ queryKey: ["fabric-orders"] });
+      queryClient.invalidateQueries({ queryKey: ['enhanced-inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['treatment-specific-fabrics'] });
+      queryClient.invalidateQueries({ queryKey: ['fabrics'] });
+      queryClient.invalidateQueries({ queryKey: ['fabric-library'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
     },
   });
 };
@@ -98,7 +105,14 @@ export const useUpdateFabricOrder = () => {
       throw new Error("Order not found");
     },
     onSuccess: () => {
+      // Invalidate ALL fabric-related queries to ensure data consistency across the app
       queryClient.invalidateQueries({ queryKey: ["fabric-orders"] });
+      queryClient.invalidateQueries({ queryKey: ['enhanced-inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['treatment-specific-fabrics'] });
+      queryClient.invalidateQueries({ queryKey: ['fabrics'] });
+      queryClient.invalidateQueries({ queryKey: ['fabric-library'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
     },
   });
 };
