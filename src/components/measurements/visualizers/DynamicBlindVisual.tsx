@@ -65,7 +65,7 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
           {/* Fabric image if available */}
           {material?.image_url ? (
             <div 
-              className="absolute inset-0 bg-cover bg-center"
+              className="absolute inset-0 bg-cover bg-center opacity-40"
               style={{
                 backgroundImage: `url(${material.image_url})`,
                 backgroundSize: 'cover',
@@ -222,7 +222,7 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
             >
               {material?.image_url && (
                 <div 
-                  className="absolute inset-0 bg-cover bg-center opacity-80"
+                  className="absolute inset-0 bg-cover bg-center opacity-40"
                   style={{
                     backgroundImage: `url(${material.image_url})`,
                     backgroundSize: 'cover',
@@ -276,7 +276,7 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
           {/* Fabric image if available */}
           {material?.image_url && (
             <div 
-              className="absolute inset-0 bg-cover bg-center opacity-90"
+              className="absolute inset-0 bg-cover bg-center opacity-50"
               style={{
                 backgroundImage: `url(${material.image_url})`,
                 backgroundSize: 'cover',
@@ -344,7 +344,7 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
           {/* Fabric image background if available */}
           {material?.image_url && (
             <div 
-              className="absolute inset-0 bg-cover bg-center opacity-60"
+              className="absolute inset-0 bg-cover bg-center opacity-30"
               style={{
                 backgroundImage: `url(${material.image_url})`,
                 backgroundSize: 'cover',
