@@ -30,6 +30,16 @@ export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps
   const handleSave = async () => {
     if (!user) return;
 
+    // Prevent demoting Owner to a non-Owner role
+    if (user.role === 'Owner' && role !== 'Owner') {
+      toast({
+        title: "Cannot demote Owner",
+        description: "Owners cannot be changed to other roles. Transfer ownership first or delete the user.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       await updateUser.mutateAsync({
         userId: user.id,
@@ -45,11 +55,14 @@ export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps
       });
       
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating user:', error);
+      
+      // Show specific error message from database
+      const errorMessage = error?.message || "Failed to update user. Please try again.";
       toast({
         title: "Update failed",
-        description: "Failed to update user. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -110,7 +123,7 @@ export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps
           
           <div className="grid gap-2">
             <Label htmlFor="role">Role</Label>
-            <Select value={role} onValueChange={setRole}>
+            <Select value={role} onValueChange={setRole} disabled={user?.role === 'Owner'}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
@@ -122,6 +135,11 @@ export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps
                 <SelectItem value="User">User</SelectItem>
               </SelectContent>
             </Select>
+            {user?.role === 'Owner' && (
+              <p className="text-xs text-muted-foreground">
+                Owner role cannot be changed. Transfer ownership or delete this user first.
+              </p>
+            )}
           </div>
           
           <div className="grid gap-2">
