@@ -142,21 +142,30 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'online': return 'text-green-400';
-      case 'away': return 'text-yellow-400';
-      case 'busy': return 'text-red-400';
-      case 'never_logged_in': return 'text-gray-500';
-      default: return 'text-gray-400';
+      case 'online': return 'text-green-500 dark:text-green-400';
+      case 'away': return 'text-yellow-500 dark:text-yellow-400';
+      case 'busy': return 'text-red-500 dark:text-red-400';
+      case 'never_logged_in': return 'text-muted-foreground';
+      default: return 'text-muted-foreground';
     }
   };
 
   const getStatusBgColor = (status: string) => {
     switch (status) {
-      case 'online': return 'from-green-400 to-emerald-500';
-      case 'away': return 'from-yellow-400 to-orange-500';
-      case 'busy': return 'from-red-400 to-red-600';
-      case 'never_logged_in': return 'from-gray-300 to-gray-500';
-      default: return 'from-gray-300 to-gray-400';
+      case 'online': return 'from-green-500 to-emerald-500 dark:from-green-400 dark:to-emerald-400';
+      case 'away': return 'from-yellow-500 to-orange-500 dark:from-yellow-400 dark:to-orange-400';
+      case 'busy': return 'from-red-500 to-red-600 dark:from-red-400 dark:to-red-500';
+      case 'never_logged_in': return 'from-muted to-muted-foreground/50';
+      default: return 'from-muted to-muted-foreground/50';
+    }
+  };
+  
+  const getStatusDotColor = (status: string) => {
+    switch (status) {
+      case 'online': return 'bg-green-500';
+      case 'away': return 'bg-yellow-500';
+      case 'busy': return 'bg-red-500';
+      default: return 'bg-muted-foreground';
     }
   };
 
@@ -230,12 +239,14 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                             </AvatarFallback>
                           </Avatar>
                           
-                          {/* Online indicator */}
+                          {/* Online indicator with pulse animation */}
                           <motion.div
                             animate={{ scale: [1, 1.2, 1] }}
                             transition={{ duration: 2, repeat: Infinity }}
-                            className="absolute -bottom-1 -right-1 h-4 w-4 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full border-2 border-white/30"
-                          />
+                            className="absolute -bottom-1 -right-1 h-4 w-4 bg-green-500 rounded-full border-2 border-background shadow-lg"
+                          >
+                            <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-75" />
+                          </motion.div>
                         </div>
                         
                         <div className="flex-1 min-w-0">
@@ -435,12 +446,22 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                           </AvatarFallback>
                                         </Avatar>
                                         
-                                        {/* Enhanced animated status dot with glow */}
+                                        {/* Enhanced animated status dot with pulse */}
                                         <motion.div
-                                          animate={{ scale: [1, 1.2, 1] }}
-                                          transition={{ duration: 2, repeat: Infinity }}
-                                          className={`absolute -bottom-1 -right-1 h-5 w-5 bg-gradient-to-r ${getStatusBgColor(user.status)} rounded-full border-2 border-white/30 shadow-lg`}
-                                        />
+                                          className="absolute -bottom-1 -right-1"
+                                          initial={{ scale: 0 }}
+                                          animate={{ scale: 1 }}
+                                          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                        >
+                                          <div className="relative">
+                                            <div className={`h-5 w-5 rounded-full border-2 border-background shadow-lg bg-gradient-to-r ${getStatusBgColor(user.status)}`} />
+                                            <motion.span
+                                              animate={{ scale: [1, 1.5, 1], opacity: [1, 0, 1] }}
+                                              transition={{ duration: 2, repeat: Infinity }}
+                                              className={`absolute inset-0 rounded-full ${getStatusDotColor(user.status)} opacity-75`}
+                                            />
+                                          </div>
+                                        </motion.div>
                                       </div>
                                       
                                        <div className="flex-1 min-w-0">
@@ -518,11 +539,11 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                         </AvatarFallback>
                                       </Avatar>
                                       <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                          <p className="text-sm text-foreground truncate">
+                                        <div className="flex items-start justify-between gap-2 mb-1">
+                                          <p className="text-sm text-foreground truncate font-medium">
                                             {formatDisplayName(user.user_profile?.display_name || '')}
                                           </p>
-                                          <Badge variant="outline" className="text-xs text-muted-foreground border-border">
+                                          <Badge variant="outline" className="text-xs shrink-0">
                                             {user.user_profile?.role}
                                           </Badge>
                                          </div>
@@ -533,17 +554,17 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                             </p>
                                           )}
 
-                                          <p className="text-xs text-muted-foreground capitalize">
+                                          <p className="text-xs text-muted-foreground capitalize flex items-center gap-1">
+                                            <Circle className={`h-2 w-2 fill-current ${getStatusColor(user.status)} shrink-0`} />
                                             {user.status === 'never_logged_in' ? 'Never signed up' : 
                                              user.status === 'away' ? 'Away' : 'Offline'}
                                             {user.last_seen && user.status !== 'never_logged_in' && (
-                                              <span className="ml-2">
+                                              <span className="ml-1">
                                                 • {formatLastSeen(user.last_seen)}
                                               </span>
                                             )}
                                           </p>
                                       </div>
-                                      <Circle className={`h-3 w-3 fill-current ${getStatusColor(user.status)} opacity-70`} />
                                     </div>
                                   ))}
                                 </div>
@@ -633,8 +654,14 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                           </AvatarFallback>
                                         </Avatar>
                                         
-                                        {/* Status indicator */}
-                                        <Circle className={`absolute -bottom-1 -right-1 h-4 w-4 fill-current ${getStatusColor(conversation.user_profile?.status || 'offline')} border-2 border-white/30 rounded-full`} />
+                                        {/* Status indicator with animation */}
+                                        <motion.div
+                                          className="absolute -bottom-1 -right-1"
+                                          initial={{ scale: 0 }}
+                                          animate={{ scale: 1 }}
+                                        >
+                                          <Circle className={`h-4 w-4 fill-current ${getStatusColor(conversation.user_profile?.status || 'offline')} border-2 border-background rounded-full shadow-sm`} />
+                                        </motion.div>
                                         
                                         {/* Enhanced unread count badge */}
                                         {conversation.unread_count > 0 && (

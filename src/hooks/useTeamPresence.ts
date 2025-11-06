@@ -25,7 +25,8 @@ export const useTeamPresence = (search?: string) => {
       return (data as TeamMemberPresence[]) || [];
     },
     refetchOnWindowFocus: true,
-    staleTime: 30_000,
+    refetchInterval: 10_000, // Refetch every 10 seconds for real-time updates
+    staleTime: 5_000, // Consider data stale after 5 seconds
   });
 
   useEffect(() => {
