@@ -8,7 +8,7 @@ import type {
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 3000 // 3 seconds for success toasts
-const ERROR_TOAST_REMOVE_DELAY = Infinity // Error toasts persist until manually closed
+const ERROR_TOAST_REMOVE_DELAY = 7000 // 7 seconds for error toasts
 
 type ToasterToast = ToastProps & {
   id: string
