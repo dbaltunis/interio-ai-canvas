@@ -41,7 +41,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'team' | 'messages'>('team');
   const [messageInput, setMessageInput] = useState('');
-  const [showAccountUsers, setShowAccountUsers] = useState(false);
+  const [showAccountUsers, setShowAccountUsers] = useState(true);
   const { data: teamMembers = [] } = useTeamMembers();
   const { data: currentUserProfile } = useCurrentUserProfile();
   const updateUserProfile = useUpdateUserProfile();
@@ -109,7 +109,10 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
   const otherUsers = activeUsers.filter(u => u.user_id !== user?.id);
   const onlineUsers = otherUsers.filter(u => u.status === 'online');
   const offlineUsers = otherUsers.filter(u => u.status !== 'online');
-  const totalUsers = activeUsers.length;
+  const totalUsers = otherUsers.length; // Don't include current user in count
+  
+  // Filter team members to exclude current user
+  const otherTeamMembers = teamMembers.filter(m => m.id !== user?.id);
 
   // Initialize status message from user profile
   useEffect(() => {
@@ -200,7 +203,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                         Team Hub
                       </h2>
                       <p className="text-muted-foreground text-sm">
-                        {onlineUsers.length} of {totalUsers} online
+                        {onlineUsers.length} of {totalUsers} {totalUsers === 1 ? 'teammate' : 'teammates'} online
                       </p>
                     </div>
                     {!messageDialogOpen && (
@@ -548,17 +551,18 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                             </motion.div>
                           )}
 
-                          {/* Account Users - manage status (collapsed by default) */}
-                          <div className="pt-4 border-t border-border">
-                            <div className="flex items-center justify-between mb-3">
-                              <p className="text-muted-foreground text-sm font-medium">Manage users</p>
-                              <Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:text-foreground" onClick={() => setShowAccountUsers((s) => !s)}>
-                                {showAccountUsers ? 'Hide' : 'Open'}
-                              </Button>
-                            </div>
-                            {showAccountUsers && (
-                              <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                                {teamMembers.map((m) => (
+                          {/* Account Users - manage status */}
+                          {otherTeamMembers.length > 0 && (
+                            <div className="pt-4 border-t border-border">
+                              <div className="flex items-center justify-between mb-3">
+                                <p className="text-muted-foreground text-sm font-medium">Team Management</p>
+                                <Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:text-foreground" onClick={() => setShowAccountUsers((s) => !s)}>
+                                  {showAccountUsers ? 'Hide' : 'Show'}
+                                </Button>
+                              </div>
+                              {showAccountUsers && (
+                                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                                  {otherTeamMembers.map((m) => (
                                   <div key={m.id} className="flex items-center justify-between p-3 rounded-lg glass-morphism border border-border">
                                     <div className="flex items-center gap-3 min-w-0">
                                       <Avatar className="h-8 w-8">
@@ -583,13 +587,14 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                       />
                                     </div>
                                   </div>
-                                ))}
-                                {teamMembers.length === 0 && (
-                                  <p className="text-xs text-muted-foreground">No users found.</p>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                                  ))}
+                                  {otherTeamMembers.length === 0 && (
+                                    <p className="text-xs text-muted-foreground">No other team members found.</p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
                           </div>
                         </ScrollArea>
                       </div>
