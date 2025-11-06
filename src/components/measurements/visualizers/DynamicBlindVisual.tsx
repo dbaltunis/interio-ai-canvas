@@ -57,16 +57,28 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
         </div>
 
         {/* Roller Blind Fabric - Semi-transparent */}
-        <div className={`absolute ${blindWidth} bg-primary/30 backdrop-blur-[1px] shadow-lg`}
+        <div className={`absolute ${blindWidth} bg-primary/30 backdrop-blur-[1px] shadow-lg overflow-hidden`}
              style={{
                top: `calc(${blindTop.includes('24') ? '6rem' : '5rem'} + 1rem)`,
                bottom: hasValue(measurements.drop) ? '4rem' : '8rem'
              }}>
-          {/* Fabric texture effect */}
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-primary/5"></div>
+          {/* Fabric image if available */}
+          {material?.image_url ? (
+            <div 
+              className="absolute inset-0 bg-cover bg-center"
+              style={{
+                backgroundImage: `url(${material.image_url})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            />
+          ) : (
+            /* Fabric texture effect fallback */
+            <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-primary/5"></div>
+          )}
           
           {/* Bottom bar/hembar */}
-          <div className="absolute -bottom-1 left-0 right-0 h-2 bg-gradient-to-b from-muted-foreground/60 to-muted-foreground/80 rounded-sm shadow-md"></div>
+          <div className="absolute -bottom-1 left-0 right-0 h-2 bg-gradient-to-b from-muted-foreground/60 to-muted-foreground/80 rounded-sm shadow-md z-10"></div>
         </div>
       </>
     );
@@ -201,13 +213,24 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
           {Array.from({ length: vaneCount }).map((_, i) => (
             <div
               key={i}
-              className="h-full bg-primary/35 border-l border-r border-primary/20 shadow-md"
+              className="h-full bg-primary/35 border-l border-r border-primary/20 shadow-md overflow-hidden relative"
               style={{ 
                 width: `calc(100% / ${vaneCount} - 2px)`,
                 transform: 'rotateY(30deg)',
                 transformOrigin: 'top center'
               }}
-            />
+            >
+              {material?.image_url && (
+                <div 
+                  className="absolute inset-0 bg-cover bg-center opacity-80"
+                  style={{
+                    backgroundImage: `url(${material.image_url})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                  }}
+                />
+              )}
+            </div>
           ))}
         </div>
       </>
@@ -313,11 +336,23 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
         </div>
 
         {/* Cellular honeycomb structure */}
-        <div className={`absolute ${blindWidth} bg-primary/25 backdrop-blur-[1px] shadow-lg`}
+        <div className={`absolute ${blindWidth} bg-primary/25 backdrop-blur-[1px] shadow-lg overflow-hidden`}
              style={{
                top: `calc(${blindTop.includes('24') ? '6rem' : '5rem'} + 0.75rem)`,
                bottom: '4rem'
              }}>
+          {/* Fabric image background if available */}
+          {material?.image_url && (
+            <div 
+              className="absolute inset-0 bg-cover bg-center opacity-60"
+              style={{
+                backgroundImage: `url(${material.image_url})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            />
+          )}
+          
           {/* Honeycomb cells */}
           {Array.from({ length: cellCount }).map((_, i) => (
             <div
@@ -337,7 +372,7 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
           ))}
           
           {/* Bottom bar */}
-          <div className="absolute -bottom-1 left-0 right-0 h-2 bg-gradient-to-b from-muted-foreground/60 to-muted-foreground/80 rounded-sm shadow-md"></div>
+          <div className="absolute -bottom-1 left-0 right-0 h-2 bg-gradient-to-b from-muted-foreground/60 to-muted-foreground/80 rounded-sm shadow-md z-10"></div>
         </div>
       </>
     );
