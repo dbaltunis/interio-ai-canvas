@@ -28,14 +28,33 @@ const DialogOverlay = React.forwardRef<
 ))
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
+interface DialogContentProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
+  onCloseWithSave?: () => Promise<void>;
+}
+
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, style, ...props }, ref) => {
+  DialogContentProps
+>(({ className, children, style, onCloseWithSave, ...props }, ref) => {
+  const [isSaving, setIsSaving] = React.useState(false);
+  
   const contentStyle = {
     backgroundColor: 'white',
     color: '#111827',
     ...style
+  };
+
+  const handleClose = async () => {
+    if (onCloseWithSave) {
+      setIsSaving(true);
+      try {
+        await onCloseWithSave();
+      } catch (error) {
+        console.error('Error saving on close:', error);
+      } finally {
+        setIsSaving(false);
+      }
+    }
   };
 
   return (
@@ -54,9 +73,11 @@ const DialogContent = React.forwardRef<
         <DialogPrimitive.Close 
           className="absolute right-3 top-3 md:right-4 md:top-4 z-10 rounded-md p-1.5 md:p-2 hover:bg-gray-100 border border-gray-200 opacity-90 transition-all hover:opacity-100 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:pointer-events-none"
           style={{ backgroundColor: 'white' }}
+          onClick={handleClose}
+          disabled={isSaving}
         >
           <X className="h-4 w-4 md:h-5 md:w-5" style={{ color: '#111827' }} />
-          <span className="sr-only">Close</span>
+          <span className="sr-only">{onCloseWithSave ? 'Save and Close' : 'Close'}</span>
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
     </DialogPortal>

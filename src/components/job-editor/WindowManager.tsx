@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -18,6 +18,7 @@ interface WindowManagerProps {
 export const WindowManager = ({ projectId, activeRoomId, selectedWindowId, onWindowSelect }: WindowManagerProps) => {
   const [showMeasurementDialog, setShowMeasurementDialog] = useState(false);
   const [selectedSurface, setSelectedSurface] = useState<any>(null);
+  const measurementWorksheetRef = useRef<{ autoSave: () => Promise<void> }>(null);
   const { data: rooms } = useRooms(projectId);
   const { data: surfaces } = useSurfaces(projectId);
   const createSurface = useCreateSurface();
@@ -132,7 +133,14 @@ export const WindowManager = ({ projectId, activeRoomId, selectedWindowId, onWin
 
       {/* Measurement Dialog */}
       <Dialog open={showMeasurementDialog} onOpenChange={setShowMeasurementDialog}>
-        <DialogContent className="max-w-6xl max-h-[95vh] md:max-h-[90vh] overflow-y-auto p-0 md:p-4 gap-0 md:gap-3 w-full md:w-[calc(100%-2rem)]">
+        <DialogContent 
+          className="max-w-6xl max-h-[95vh] md:max-h-[90vh] overflow-y-auto p-0 md:p-4 gap-0 md:gap-3 w-full md:w-[calc(100%-2rem)]"
+          onCloseWithSave={async () => {
+            if (measurementWorksheetRef.current) {
+              await measurementWorksheetRef.current.autoSave();
+            }
+          }}
+        >
           <DialogHeader className="px-2 pt-11 pb-2 md:px-0 md:pt-0 md:pb-0">
             <DialogTitle className="text-sm md:text-lg">
               {selectedSurface?.name} ({currentRoom?.name})
@@ -140,6 +148,7 @@ export const WindowManager = ({ projectId, activeRoomId, selectedWindowId, onWin
           </DialogHeader>
           {selectedSurface && (
             <EnhancedMeasurementWorksheet
+              ref={measurementWorksheetRef}
               key={selectedSurface.id} // CRITICAL: Add key to force proper remounting
               clientId={undefined} // No client required - measurements can exist independently
               projectId={projectId}
