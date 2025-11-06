@@ -392,7 +392,20 @@ export const UnifiedInventoryDialog = ({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    console.log('Starting upload for file:', file.name, file.type, file.size);
+    // Check file size first (10MB hard limit)
+    const maxSizeInMB = 10;
+    const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
+    
+    if (file.size > maxSizeInBytes) {
+      toast({
+        title: "File too large",
+        description: `Image must be under ${maxSizeInMB}MB. Your file is ${(file.size / 1024 / 1024).toFixed(1)}MB.`,
+        variant: "destructive",
+      });
+      event.target.value = '';
+      return;
+    }
+
     setUploadingImage(true);
     
     try {
@@ -400,31 +413,28 @@ export const UnifiedInventoryDialog = ({
       if (!user) {
         throw new Error('You must be logged in to upload images');
       }
-      console.log('User authenticated:', user.id);
 
       let fileToUpload: File | Blob = file;
       let fileName = '';
       
-      // Try to compress image, but fallback to original if it fails
-      try {
-        if (file.type.startsWith('image/')) {
-          console.log('Compressing image...');
+      // Only compress images over 1MB
+      if (file.type.startsWith('image/') && file.size > 1024 * 1024) {
+        try {
           const compressedBlob = await compressImage(file);
-          console.log('Compression successful. Size:', compressedBlob.size);
           fileToUpload = compressedBlob;
-          // FIX: Use folder structure that matches storage policies
           fileName = `${user.id}/inventory-${Date.now()}.jpg`;
-        } else {
+        } catch (compressionError) {
+          console.warn('Compression failed, using original:', compressionError);
           fileName = `${user.id}/inventory-${Date.now()}.${file.name.split('.').pop()}`;
+          fileToUpload = file;
         }
-      } catch (compressionError) {
-        console.error('Compression failed:', compressionError);
-        fileName = `${user.id}/inventory-${Date.now()}.${file.name.split('.').pop()}`;
-        fileToUpload = file;
+      } else {
+        fileName = file.type.startsWith('image/') 
+          ? `${user.id}/inventory-${Date.now()}.jpg`
+          : `${user.id}/inventory-${Date.now()}.${file.name.split('.').pop()}`;
       }
       
-      console.log('Uploading to storage. Bucket: project-images, Path:', fileName);
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('project-images')
         .upload(fileName, fileToUpload, {
           contentType: file.type.startsWith('image/') ? 'image/jpeg' : file.type,
@@ -433,23 +443,20 @@ export const UnifiedInventoryDialog = ({
         });
 
       if (uploadError) {
-        console.error('Storage upload error:', uploadError);
         throw uploadError;
       }
 
-      console.log('Upload successful:', uploadData);
       const { data: { publicUrl } } = supabase.storage
         .from('project-images')
         .getPublicUrl(fileName);
 
-      console.log('Public URL:', publicUrl);
       setFormData({ ...formData, image_url: publicUrl });
       toast({
         title: "Image uploaded",
-        description: fileToUpload !== file ? "Image compressed and uploaded." : "Image uploaded.",
+        description: fileToUpload !== file ? "Image compressed and uploaded successfully" : "Image uploaded successfully",
       });
     } catch (error: any) {
-      console.error('Upload error details:', error);
+      console.error('Upload error:', error);
       toast({
         title: "Upload failed",
         description: error.message || "Failed to upload image. Please try again.",
@@ -457,7 +464,6 @@ export const UnifiedInventoryDialog = ({
       });
     } finally {
       setUploadingImage(false);
-      // Reset input so same file can be uploaded again
       if (event.target) event.target.value = '';
     }
   };
