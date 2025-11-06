@@ -51,6 +51,9 @@ export const UnifiedInventoryDialog = ({
   const [activeTab, setActiveTab] = useState("basic");
   const [trackInventory, setTrackInventory] = useState(mode === "edit" ? (item?.quantity > 0) : false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string>('');
+  const [uploadError, setUploadError] = useState<string>('');
+  const [uploadSuccess, setUploadSuccess] = useState<string>('');
   const { toast } = useToast();
   const createMutation = useCreateEnhancedInventoryItem();
   const updateMutation = useUpdateEnhancedInventoryItem();
@@ -392,21 +395,23 @@ export const UnifiedInventoryDialog = ({
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Clear previous messages
+    setUploadError('');
+    setUploadSuccess('');
+    setUploadProgress('');
+
     // Check file size first (10MB hard limit)
     const maxSizeInMB = 10;
     const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
     
     if (file.size > maxSizeInBytes) {
-      toast({
-        title: "File too large",
-        description: `Image must be under ${maxSizeInMB}MB. Your file is ${(file.size / 1024 / 1024).toFixed(1)}MB.`,
-        variant: "destructive",
-      });
+      setUploadError(`File too large! Image must be under ${maxSizeInMB}MB. Your file is ${(file.size / 1024 / 1024).toFixed(1)}MB.`);
       event.target.value = '';
       return;
     }
 
     setUploadingImage(true);
+    setUploadProgress('Preparing upload...');
     
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -420,15 +425,20 @@ export const UnifiedInventoryDialog = ({
       // Only compress images over 1MB
       if (file.type.startsWith('image/') && file.size > 1024 * 1024) {
         try {
+          setUploadProgress(`Compressing image (${(file.size / 1024 / 1024).toFixed(1)}MB)...`);
           const compressedBlob = await compressImage(file);
+          const compressionRatio = ((1 - (compressedBlob.size / file.size)) * 100).toFixed(0);
+          setUploadProgress(`Compressed ${compressionRatio}% • Uploading...`);
           fileToUpload = compressedBlob;
           fileName = `${user.id}/inventory-${Date.now()}.jpg`;
         } catch (compressionError) {
           console.warn('Compression failed, using original:', compressionError);
+          setUploadProgress('Uploading original image...');
           fileName = `${user.id}/inventory-${Date.now()}.${file.name.split('.').pop()}`;
           fileToUpload = file;
         }
       } else {
+        setUploadProgress('Uploading...');
         fileName = file.type.startsWith('image/') 
           ? `${user.id}/inventory-${Date.now()}.jpg`
           : `${user.id}/inventory-${Date.now()}.${file.name.split('.').pop()}`;
@@ -451,17 +461,15 @@ export const UnifiedInventoryDialog = ({
         .getPublicUrl(fileName);
 
       setFormData({ ...formData, image_url: publicUrl });
-      toast({
-        title: "Image uploaded",
-        description: fileToUpload !== file ? "Image compressed and uploaded successfully" : "Image uploaded successfully",
-      });
+      setUploadSuccess(fileToUpload !== file ? `Image compressed and uploaded successfully!` : `Image uploaded successfully!`);
+      setUploadProgress('');
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => setUploadSuccess(''), 5000);
     } catch (error: any) {
       console.error('Upload error:', error);
-      toast({
-        title: "Upload failed",
-        description: error.message || "Failed to upload image. Please try again.",
-        variant: "destructive"
-      });
+      setUploadError(error.message || "Failed to upload image. Please try again.");
+      setUploadProgress('');
     } finally {
       setUploadingImage(false);
       if (event.target) event.target.value = '';
@@ -1056,24 +1064,45 @@ export const UnifiedInventoryDialog = ({
                             </Button>
                           </div>
                         ) : (
-                          <div className="flex gap-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => document.getElementById('image-upload-input')?.click()}
-                              disabled={uploadingImage}
-                              className="flex-1"
-                            >
-                              <Upload className="h-4 w-4 mr-2" />
-                              {uploadingImage ? 'Uploading...' : 'Upload Image'}
-                            </Button>
-                            <input
-                              id="image-upload-input"
-                              type="file"
-                              accept="image/*"
-                              onChange={handleImageUpload}
-                              className="hidden"
-                            />
+                          <div className="space-y-2">
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => document.getElementById('image-upload-input')?.click()}
+                                disabled={uploadingImage}
+                                className="flex-1"
+                              >
+                                <Upload className="h-4 w-4 mr-2" />
+                                {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                              </Button>
+                              <input
+                                id="image-upload-input"
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                                className="hidden"
+                              />
+                            </div>
+                            
+                            {/* Upload status messages */}
+                            {uploadProgress && (
+                              <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
+                                <AlertDescription className="text-xs">{uploadProgress}</AlertDescription>
+                              </Alert>
+                            )}
+                            
+                            {uploadError && (
+                              <Alert variant="destructive">
+                                <AlertDescription className="text-xs">{uploadError}</AlertDescription>
+                              </Alert>
+                            )}
+                            
+                            {uploadSuccess && (
+                              <Alert className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900">
+                                <AlertDescription className="text-xs text-green-700 dark:text-green-300">{uploadSuccess}</AlertDescription>
+                              </Alert>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1216,24 +1245,45 @@ export const UnifiedInventoryDialog = ({
                             </Button>
                           </div>
                         ) : (
-                          <div className="flex gap-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => document.getElementById('image-upload-input-hardware')?.click()}
-                              disabled={uploadingImage}
-                              className="flex-1"
-                            >
-                              <Upload className="h-4 w-4 mr-2" />
-                              {uploadingImage ? 'Uploading...' : 'Upload Image'}
-                            </Button>
-                            <input
-                              id="image-upload-input-hardware"
-                              type="file"
-                              accept="image/*"
-                              onChange={handleImageUpload}
-                              className="hidden"
-                            />
+                          <div className="space-y-2">
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => document.getElementById('image-upload-input-hardware')?.click()}
+                                disabled={uploadingImage}
+                                className="flex-1"
+                              >
+                                <Upload className="h-4 w-4 mr-2" />
+                                {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                              </Button>
+                              <input
+                                id="image-upload-input-hardware"
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                                className="hidden"
+                              />
+                            </div>
+                            
+                            {/* Upload status messages */}
+                            {uploadProgress && (
+                              <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
+                                <AlertDescription className="text-xs">{uploadProgress}</AlertDescription>
+                              </Alert>
+                            )}
+                            
+                            {uploadError && (
+                              <Alert variant="destructive">
+                                <AlertDescription className="text-xs">{uploadError}</AlertDescription>
+                              </Alert>
+                            )}
+                            
+                            {uploadSuccess && (
+                              <Alert className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900">
+                                <AlertDescription className="text-xs text-green-700 dark:text-green-300">{uploadSuccess}</AlertDescription>
+                              </Alert>
+                            )}
                           </div>
                         )}
                       </div>
