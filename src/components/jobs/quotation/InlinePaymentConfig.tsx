@@ -89,17 +89,6 @@ export const InlinePaymentConfig = ({
     setHasChanges(false);
   };
 
-  const handlePayNow = async () => {
-    if (hasChanges) {
-      await handleSaveConfig();
-    }
-    await createPayment.mutateAsync({ quoteId });
-  };
-
-  const handleVerify = async () => {
-    await verifyPayment.mutateAsync({ quoteId });
-  };
-
   const getStatusBadge = () => {
     if (!currentPayment?.status) return null;
     
