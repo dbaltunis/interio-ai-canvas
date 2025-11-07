@@ -153,6 +153,7 @@ const LivePreviewBlock = ({
       
       // Financial information with currency support
       currency: projectData?.currency || 'GBP',
+      currency_code: projectData?.currency || 'GBP',
       currency_symbol: (() => {
         const curr = projectData?.currency || 'GBP';
         const symbols: Record<string, string> = {
@@ -1226,16 +1227,45 @@ const LivePreviewBlock = ({
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <div style={{ width: '256px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '4px', paddingBottom: '4px' }}>
-                  <span style={{ color: '#000' }}>Subtotal:</span>
-                  <span style={{ fontWeight: '500', color: '#000' }}>{renderTokenValue('subtotal')}</span>
+                  <span style={{ color: '#000' }}>Total:</span>
+                  <span style={{ fontWeight: '500', color: '#000' }}>{projectData?.subtotal?.toFixed(2) || '0.00'}{renderTokenValue('currency_code')}</span>
                 </div>
+                
+                {projectData?.discount && (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '4px', paddingBottom: '4px', fontStyle: 'italic', color: '#dc2626' }}>
+                      <span>
+                        Discount: {projectData.discount.type === 'percentage' ? `${projectData.discount.value}%` : `${projectData.discount.value}${renderTokenValue('currency_code')}`}
+                        {projectData.discount.scope === 'fabrics_only' && ' (Fabrics only)'}
+                        {projectData.discount.scope === 'selected_items' && ' (Selected items)'}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '4px', paddingBottom: '4px', color: '#dc2626' }}>
+                      <span>Discount</span>
+                      <span style={{ fontWeight: '500' }}>-{projectData.discount.amount.toFixed(2)}{renderTokenValue('currency_code')}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '4px', paddingBottom: '4px' }}>
+                      <span style={{ color: '#000' }}>Price after discount:</span>
+                      <span style={{ fontWeight: '500', color: '#000' }}>
+                        {((projectData.subtotal || 0) - projectData.discount.amount).toFixed(2)}{renderTokenValue('currency_code')}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '4px', paddingBottom: '4px' }}>
+                      <span style={{ color: '#000' }}>Price excl. GST:</span>
+                      <span style={{ fontWeight: '500', color: '#000' }}>
+                        {(((projectData.subtotal || 0) - projectData.discount.amount) / (1 + (projectData.taxRate || 0))).toFixed(2)}{renderTokenValue('currency_code')}
+                      </span>
+                    </div>
+                  </>
+                )}
+                
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '4px', paddingBottom: '4px' }}>
-                  <span style={{ color: '#000' }}>Tax ({renderTokenValue('tax_rate')}):</span>
-                  <span style={{ fontWeight: '500', color: '#000' }}>{renderTokenValue('tax_amount')}</span>
+                  <span style={{ color: '#000' }}>GST ({projectData?.taxRate ? `${(projectData.taxRate * 100).toFixed(1)}%` : '0%'}):</span>
+                  <span style={{ fontWeight: '500', color: '#000' }}>{projectData?.taxAmount?.toFixed(2) || '0.00'}{renderTokenValue('currency_code')}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', paddingBottom: '8px', borderTop: '1px solid #d1d5db', fontWeight: 'bold', fontSize: '18px' }}>
-                  <span style={{ color: '#000' }}>Total:</span>
-                  <span style={{ color: '#000' }}>{renderTokenValue('total')}</span>
+                  <span style={{ color: '#000' }}>Grand total:</span>
+                  <span style={{ color: '#000' }}>{projectData?.total?.toFixed(2) || '0.00'}{renderTokenValue('currency_code')}</span>
                 </div>
               </div>
             </div>
