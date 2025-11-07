@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Check } from "lucide-react";
+import { useTemplateImageResolver } from "@/hooks/useTemplateImageResolver";
 
 interface TreatmentType {
   id: string;
@@ -20,6 +21,59 @@ interface TreatmentTypeGridProps {
   onSelect: (treatment: TreatmentType) => void;
   searchQuery?: string;
 }
+
+const TreatmentCard = ({ treatment, isSelected, selectedCardRef }: { 
+  treatment: TreatmentType; 
+  isSelected: boolean;
+  selectedCardRef: React.RefObject<HTMLDivElement>;
+}) => {
+  const { imageUrl } = useTemplateImageResolver({
+    templateId: treatment.id,
+    treatmentCategory: treatment.curtain_type,
+    templateImageUrl: treatment.image_url,
+    displayImageUrl: treatment.display_image_url
+  });
+  
+  return (
+    <Card
+      ref={isSelected ? selectedCardRef : null}
+      className={`cursor-pointer transition-all duration-200 hover:shadow-sm ${
+        isSelected 
+          ? 'border-primary bg-primary/5 shadow-sm' 
+          : 'border-border hover:border-primary/30'
+      }`}
+    >
+      <CardContent className="p-2">
+        <div className="flex flex-col items-center space-y-2">
+          {/* Image preview with resolved image from multiple sources */}
+          <div className="aspect-square w-full flex items-center justify-center bg-muted border border-border rounded overflow-hidden">
+            {imageUrl ? (
+              <img 
+                src={imageUrl} 
+                alt={treatment.name}
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            ) : (
+              <div className="text-muted-foreground text-xs">No preview</div>
+            )}
+          </div>
+          
+          <div className="text-center w-full">
+            <div className="flex items-center justify-center gap-2">
+              <h4 className="text-sm font-semibold truncate">{treatment.name}</h4>
+              {isSelected && (
+                <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+              )}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 export const TreatmentTypeGrid = ({
   treatments,
@@ -77,45 +131,13 @@ export const TreatmentTypeGrid = ({
               const isSelected = selectedId === treatment.id;
               
               return (
-                <Card
-                  key={treatment.id}
-                  ref={isSelected ? selectedCardRef : null}
-                  className={`cursor-pointer transition-all duration-200 hover:shadow-sm ${
-                    isSelected 
-                      ? 'border-primary bg-primary/5 shadow-sm' 
-                      : 'border-border hover:border-primary/30'
-                  }`}
-                  onClick={() => onSelect(treatment)}
-                >
-                  <CardContent className="p-2">
-                    <div className="flex flex-col items-center space-y-2">
-                      {/* Image preview or placeholder */}
-                      <div className="aspect-square w-full flex items-center justify-center bg-muted border border-border rounded overflow-hidden">
-                        {treatment.image_url || treatment.display_image_url ? (
-                          <img 
-                            src={treatment.display_image_url || treatment.image_url} 
-                            alt={treatment.name}
-                            className="w-full h-full object-contain"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        ) : (
-                          <div className="text-muted-foreground text-xs">No preview</div>
-                        )}
-                      </div>
-                      
-                      <div className="text-center w-full">
-                        <div className="flex items-center justify-center gap-2">
-                          <h4 className="text-sm font-semibold truncate">{treatment.name}</h4>
-                          {isSelected && (
-                            <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div key={treatment.id} onClick={() => onSelect(treatment)}>
+                  <TreatmentCard 
+                    treatment={treatment} 
+                    isSelected={isSelected}
+                    selectedCardRef={selectedCardRef}
+                  />
+                </div>
               );
             })}
           </div>
