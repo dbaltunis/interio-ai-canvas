@@ -136,8 +136,8 @@ export const CreateActionDialog = ({
             variant="outline"
             className="h-14 justify-start gap-4 text-left"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10">
-              <MessageCircle className="h-4 w-4 text-blue-600" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary/10">
+              <MessageCircle className="h-4 w-4 text-secondary-foreground" />
             </div>
             <div>
               <div className="font-medium">Team & Messages</div>
@@ -150,8 +150,8 @@ export const CreateActionDialog = ({
             variant="outline"
             className="h-14 justify-start gap-4 text-left"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-500/10">
-              <Settings className="h-4 w-4 text-gray-600" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+              <Settings className="h-4 w-4 text-muted-foreground" />
             </div>
             <div>
               <div className="font-medium">Settings</div>

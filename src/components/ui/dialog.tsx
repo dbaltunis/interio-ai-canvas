@@ -37,12 +37,6 @@ const DialogContent = React.forwardRef<
   DialogContentProps
 >(({ className, children, style, onCloseWithSave, ...props }, ref) => {
   const [isSaving, setIsSaving] = React.useState(false);
-  
-  const contentStyle = {
-    backgroundColor: 'white',
-    color: '#111827',
-    ...style
-  };
 
   const handleClose = async () => {
     if (onCloseWithSave) {
@@ -62,21 +56,20 @@ const DialogContent = React.forwardRef<
       <DialogOverlay />
       <DialogPrimitive.Content
         ref={ref}
-        style={contentStyle}
+        style={style}
         className={cn(
-          "fixed left-[50%] top-[50%] z-[9999] flex flex-col w-[calc(100%-2rem)] max-w-[95vw] md:max-w-4xl lg:max-w-5xl xl:max-w-6xl translate-x-[-50%] translate-y-[-50%] gap-3 md:gap-4 lg:gap-6 border-2 border-gray-200 p-4 md:p-6 lg:p-8 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-98 data-[state=open]:zoom-in-98 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-lg md:rounded-xl will-change-transform max-h-[85vh] md:max-h-[90vh] overflow-y-auto pointer-events-auto",
+          "fixed left-[50%] top-[50%] z-[9999] flex flex-col w-[calc(100%-2rem)] max-w-[95vw] md:max-w-4xl lg:max-w-5xl xl:max-w-6xl translate-x-[-50%] translate-y-[-50%] gap-3 md:gap-4 lg:gap-6 border-2 bg-card text-card-foreground border-border p-4 md:p-6 lg:p-8 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-98 data-[state=open]:zoom-in-98 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-lg md:rounded-xl will-change-transform max-h-[85vh] md:max-h-[90vh] overflow-y-auto pointer-events-auto",
           className
         )}
         {...props}
       >
         {children}
         <DialogPrimitive.Close 
-          className="absolute right-3 top-3 md:right-4 md:top-4 z-10 rounded-md p-1.5 md:p-2 hover:bg-gray-100 border border-gray-200 opacity-90 transition-all hover:opacity-100 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:pointer-events-none"
-          style={{ backgroundColor: 'white' }}
+          className="absolute right-3 top-3 md:right-4 md:top-4 z-10 rounded-md p-1.5 md:p-2 bg-background hover:bg-accent text-foreground border border-border opacity-90 transition-all hover:opacity-100 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-ring disabled:pointer-events-none"
           onClick={handleClose}
           disabled={isSaving}
         >
-          <X className="h-4 w-4 md:h-5 md:w-5" style={{ color: '#111827' }} />
+          <X className="h-4 w-4 md:h-5 md:w-5" />
           <span className="sr-only">{onCloseWithSave ? 'Save and Close' : 'Close'}</span>
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
@@ -119,9 +112,9 @@ const DialogTitle = React.forwardRef<
 >(({ className, style, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    style={{ color: '#111827', ...style }}
+    style={style}
     className={cn(
-      "text-lg font-semibold leading-none tracking-tight",
+      "text-lg font-semibold leading-none tracking-tight text-foreground",
       className
     )}
     {...props}
