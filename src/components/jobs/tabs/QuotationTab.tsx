@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useQuotes, useCreateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Mail, MoreVertical, Percent, FileText, DollarSign, ImageIcon as ImageIconLucide, Printer, FileCheck } from "lucide-react";
+import { Download, Mail, MoreVertical, Percent, FileText, DollarSign, ImageIcon as ImageIconLucide, Printer, FileCheck, CreditCard } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
@@ -25,6 +25,8 @@ import { QuotationSkeleton } from "@/components/jobs/quotation/QuotationSkeleton
 import { EmptyQuoteVersionState } from "@/components/jobs/EmptyQuoteVersionState";
 import { useQuoteVersions } from "@/hooks/useQuoteVersions";
 import { generateQuotePDF, generateQuotePDFBlob } from '@/utils/generateQuotePDF';
+import { QuoteDiscountDialog } from "@/components/jobs/quotation/QuoteDiscountDialog";
+import { QuotePaymentDialog } from "@/components/jobs/quotation/QuotePaymentDialog";
 
 interface QuotationTabProps {
   projectId: string;
@@ -50,6 +52,8 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [showQuotationItems, setShowQuotationItems] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
   const { data: projects } = useProjects();
   const { data: treatments } = useTreatments(projectId, quoteId);
@@ -409,15 +413,31 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   };
 
   const handleAddDiscount = () => {
-    toast({ title: "Add Discount", description: "Discount functionality would be implemented here" });
+    if (!quoteId) {
+      toast({
+        title: "No quote selected",
+        description: "Please create or select a quote version first",
+        variant: "destructive"
+      });
+      return;
+    }
+    setIsDiscountDialogOpen(true);
   };
 
   const handleAddTerms = () => {
     toast({ title: "Add Terms & Conditions", description: "Terms & Conditions functionality would be implemented here" });
   };
 
-  const handleAddDeposit = () => {
-    toast({ title: "Add Deposit", description: "Deposit functionality would be implemented here" });
+  const handlePayment = () => {
+    if (!quoteId) {
+      toast({
+        title: "No quote selected",
+        description: "Please create or select a quote version first",
+        variant: "destructive"
+      });
+      return;
+    }
+    setIsPaymentDialogOpen(true);
   };
 
   if (!project) {
@@ -495,6 +515,30 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
               Email
             </Button>
 
+            {/* Discount Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAddDiscount}
+              disabled={!quoteId}
+              className="h-9 px-4"
+            >
+              <Percent className="h-4 w-4 mr-2" />
+              Discount
+            </Button>
+
+            {/* Payment Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePayment}
+              disabled={!quoteId}
+              className="h-9 px-4"
+            >
+              <CreditCard className="h-4 w-4 mr-2" />
+              Payment
+            </Button>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-9 px-3">
@@ -502,17 +546,9 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleAddDiscount}>
-                  <Percent className="h-4 w-4 mr-2" />
-                  Add Discount
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleAddTerms}>
                   <FileText className="h-4 w-4 mr-2" />
                   Add Terms & Conditions
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleAddDeposit}>
-                  <DollarSign className="h-4 w-4 mr-2" />
-                  Add Deposit
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handlePrint}>
                   <Printer className="h-4 w-4 mr-2" />
@@ -637,6 +673,43 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
           />
         }
       />
+
+      {/* Discount Dialog */}
+      {quoteId && (
+        <QuoteDiscountDialog
+          open={isDiscountDialogOpen}
+          onOpenChange={setIsDiscountDialogOpen}
+          quoteId={quoteId}
+          items={quotationData.items || []}
+          subtotal={subtotal}
+          taxRate={taxRate * 100}
+          currency={projectData.currency}
+          currentDiscount={currentQuote?.discount_amount ? {
+            type: currentQuote.discount_type as 'percentage' | 'fixed',
+            value: currentQuote.discount_value || 0,
+            scope: currentQuote.discount_scope as 'all' | 'fabrics_only' | 'selected_items',
+            amount: currentQuote.discount_amount || 0,
+            selectedItems: currentQuote.selected_discount_items as string[] || undefined,
+          } : undefined}
+        />
+      )}
+
+      {/* Payment Dialog */}
+      {quoteId && (
+        <QuotePaymentDialog
+          open={isPaymentDialogOpen}
+          onOpenChange={setIsPaymentDialogOpen}
+          quoteId={quoteId}
+          total={total}
+          currency={projectData.currency}
+          currentPayment={currentQuote?.payment_amount ? {
+            type: currentQuote.payment_type as 'full' | 'deposit',
+            percentage: currentQuote.payment_percentage || undefined,
+            amount: currentQuote.payment_amount || 0,
+            status: currentQuote.payment_status as 'pending' | 'paid' | 'failed' | 'deposit_paid' || 'pending',
+          } : undefined}
+        />
+      )}
     </div>
   );
 };

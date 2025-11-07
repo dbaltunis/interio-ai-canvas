@@ -5732,13 +5732,23 @@ export type Database = {
         Row: {
           client_id: string | null
           created_at: string
+          discount_amount: number | null
+          discount_scope: string | null
+          discount_type: string | null
+          discount_value: number | null
           id: string
           materials_status: string | null
           notes: string | null
+          payment_amount: number | null
+          payment_percentage: number | null
+          payment_status: string | null
+          payment_type: string | null
           project_id: string | null
           quote_number: string | null
+          selected_discount_items: Json | null
           status: string | null
           status_id: string | null
+          stripe_payment_intent_id: string | null
           subtotal: number | null
           tax_amount: number | null
           tax_rate: number | null
@@ -5751,13 +5761,23 @@ export type Database = {
         Insert: {
           client_id?: string | null
           created_at?: string
+          discount_amount?: number | null
+          discount_scope?: string | null
+          discount_type?: string | null
+          discount_value?: number | null
           id?: string
           materials_status?: string | null
           notes?: string | null
+          payment_amount?: number | null
+          payment_percentage?: number | null
+          payment_status?: string | null
+          payment_type?: string | null
           project_id?: string | null
           quote_number?: string | null
+          selected_discount_items?: Json | null
           status?: string | null
           status_id?: string | null
+          stripe_payment_intent_id?: string | null
           subtotal?: number | null
           tax_amount?: number | null
           tax_rate?: number | null
@@ -5770,13 +5790,23 @@ export type Database = {
         Update: {
           client_id?: string | null
           created_at?: string
+          discount_amount?: number | null
+          discount_scope?: string | null
+          discount_type?: string | null
+          discount_value?: number | null
           id?: string
           materials_status?: string | null
           notes?: string | null
+          payment_amount?: number | null
+          payment_percentage?: number | null
+          payment_status?: string | null
+          payment_type?: string | null
           project_id?: string | null
           quote_number?: string | null
+          selected_discount_items?: Json | null
           status?: string | null
           status_id?: string | null
+          stripe_payment_intent_id?: string | null
           subtotal?: number | null
           tax_amount?: number | null
           tax_rate?: number | null

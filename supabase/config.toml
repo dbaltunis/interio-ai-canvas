@@ -69,4 +69,10 @@ verify_jwt = true
 [functions.send-appointment-reminder]
 verify_jwt = false
 
+[functions.create-quote-payment]
+verify_jwt = true
+
+[functions.verify-quote-payment]
+verify_jwt = true
+
 
