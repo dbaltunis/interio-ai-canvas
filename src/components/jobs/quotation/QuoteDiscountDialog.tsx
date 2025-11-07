@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +52,17 @@ export const QuoteDiscountDialog = ({
     new Set(currentDiscount?.selectedItems || [])
   );
 
+  // Update state when currentDiscount changes (e.g., after page refresh)
+  React.useEffect(() => {
+    if (currentDiscount) {
+      setDiscountType(currentDiscount.type);
+      setDiscountValue(currentDiscount.value);
+      setDiscountScope(currentDiscount.scope);
+      setSelectedItems(new Set(currentDiscount.selectedItems || []));
+    }
+  }, [currentDiscount, open]);
+
+
   const config: DiscountConfig = {
     type: discountType,
     value: discountValue,
@@ -64,13 +76,18 @@ export const QuoteDiscountDialog = ({
   const total = subtotalAfterDiscount + taxAmount;
 
   const handleApply = async () => {
-    await applyDiscount.mutateAsync({
-      quoteId,
-      config,
-      items,
-      subtotal,
-    });
-    onOpenChange(false);
+    try {
+      await applyDiscount.mutateAsync({
+        quoteId,
+        config,
+        items,
+        subtotal,
+      });
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error applying discount:', error);
+      // Error toast is already handled in the mutation
+    }
   };
 
   const handleRemove = async () => {

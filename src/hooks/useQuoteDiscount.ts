@@ -86,6 +86,7 @@ export const useQuoteDiscount = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
+      queryClient.invalidateQueries({ queryKey: ["quote-versions"] });
       queryClient.invalidateQueries({ queryKey: ["quote-items"] });
       toast.success("Discount applied successfully");
     },
@@ -115,6 +116,7 @@ export const useQuoteDiscount = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
+      queryClient.invalidateQueries({ queryKey: ["quote-versions"] });
       queryClient.invalidateQueries({ queryKey: ["quote-items"] });
       toast.success("Discount removed");
     },

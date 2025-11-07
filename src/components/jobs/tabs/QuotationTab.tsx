@@ -744,7 +744,7 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
         subtotal={subtotal}
         taxRate={taxRate * 100}
         currency={projectData.currency}
-        currentDiscount={currentQuote?.discount_amount ? {
+        currentDiscount={currentQuote?.discount_type ? {
           type: currentQuote.discount_type as 'percentage' | 'fixed',
           value: currentQuote.discount_value || 0,
           scope: currentQuote.discount_scope as 'all' | 'fabrics_only' | 'selected_items',
