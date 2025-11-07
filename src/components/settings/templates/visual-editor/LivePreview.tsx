@@ -26,7 +26,8 @@ import {
   Plus,
   Space,
   Info,
-  CreditCard
+  CreditCard,
+  CheckCircle2
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SignatureCanvas } from './SignatureCanvas';
@@ -1020,28 +1021,47 @@ const LivePreviewBlock = ({
                 </div>
               </div>
               
-              {/* Payment Button - Shows when payment is configured */}
-              {projectData?.payment && projectData.payment.amount > 0 && !isPrintMode && (
-                <div className="flex justify-end mt-4 no-print">
-                  <Button
-                    size="lg"
-                    className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
-                    onClick={async () => {
-                      if (projectData?.quoteId) {
-                        const { supabase } = await import("@/integrations/supabase/client");
-                        const { data, error } = await supabase.functions.invoke("create-quote-payment", {
-                          body: { quote_id: projectData.quoteId },
-                        });
-                        if (data?.url) window.open(data.url, "_blank");
-                      }
-                    }}
-                  >
-                    <CreditCard className="h-5 w-5" />
-                    {projectData.payment.type === 'deposit' 
-                      ? `Pay Deposit - ${renderTokenValue('currency_symbol')}${projectData.payment.amount.toFixed(2)}`
-                      : `Pay Now - ${renderTokenValue('total')}`
-                    }
-                  </Button>
+              {/* Payment Button - Always visible when quote exists, shows config prompt if not set up */}
+              {!isPrintMode && projectData?.quoteId && (
+                <div className="flex justify-end mt-6 no-print">
+                  <div className="w-full max-w-md space-y-3">
+                    {projectData.payment?.status === 'paid' || projectData.payment?.status === 'deposit_paid' ? (
+                      <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                        <p className="font-medium text-green-800">Payment Complete</p>
+                        <p className="text-sm text-green-600">Thank you for your payment!</p>
+                      </div>
+                    ) : projectData.payment && projectData.payment.amount > 0 ? (
+                      <Button
+                        size="lg"
+                        className="w-full gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
+                        onClick={async () => {
+                          const { supabase } = await import("@/integrations/supabase/client");
+                          const { data, error } = await supabase.functions.invoke("create-quote-payment", {
+                            body: { quote_id: projectData.quoteId },
+                          });
+                          if (error) {
+                            const { toast } = await import("sonner");
+                            toast.error(`Payment failed: ${error.message}`);
+                          } else if (data?.url) {
+                            window.open(data.url, "_blank");
+                          }
+                        }}
+                      >
+                        <CreditCard className="h-5 w-5" />
+                        {projectData.payment.type === 'deposit' 
+                          ? `Pay Deposit (${projectData.payment.percentage || 50}%) - ${renderTokenValue('currency_symbol')}${projectData.payment.amount.toFixed(2)}`
+                          : `Pay Full Amount - ${renderTokenValue('total')}`
+                        }
+                      </Button>
+                    ) : (
+                      <div className="text-center p-4 bg-muted border border-border rounded-lg">
+                        <CreditCard className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                        <p className="font-medium text-sm">Payment Not Configured</p>
+                        <p className="text-xs text-muted-foreground">Configure payment options below to enable payments</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

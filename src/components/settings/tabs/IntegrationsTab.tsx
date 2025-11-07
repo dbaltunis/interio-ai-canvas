@@ -12,6 +12,7 @@ import { TwilioIntegrationTab } from "@/components/integrations/TwilioIntegratio
 import { WebsiteAPIIntegrationTab } from "@/components/integrations/WebsiteAPIIntegrationTab";
 import { ShopifySetupTab } from "@/components/library/shopify/ShopifySetupTab";
 import { ShopifyStatusManagementTab } from "./ShopifyStatusManagementTab";
+import { StripeIntegrationTab } from "./StripeIntegrationTab";
 import { useIntegrations } from "@/hooks/useIntegrations";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -137,20 +138,7 @@ export const IntegrationsTab = () => {
         </TabsContent>
 
         <TabsContent value="payments">
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment Integrations</CardTitle>
-              <CardDescription>
-                Connect with Stripe, PayPal, and other payment processors
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <CreditCard className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-500">Payment integrations coming soon</p>
-              </div>
-            </CardContent>
-          </Card>
+          <StripeIntegrationTab />
         </TabsContent>
 
         <TabsContent value="communication">
