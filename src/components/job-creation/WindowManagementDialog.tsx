@@ -332,7 +332,7 @@ export const WindowManagementDialog = ({
   const currentTreatment = existingTreatments?.[0];
   
   // Fetch treatment data from windows_summary if existingTreatments is empty
-  const { data: windowSummary } = useQuery({
+  const { data: windowSummary, refetch: refetchWindowSummary } = useQuery({
     queryKey: ['window-summary-treatment', surface?.id],
     queryFn: async () => {
       if (!surface?.id) return null;
@@ -343,10 +343,11 @@ export const WindowManagementDialog = ({
         .maybeSingle();
       return data;
     },
-    enabled: !!surface?.id && !currentTreatment,
+    enabled: !!surface?.id,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
-    staleTime: 0
+    staleTime: 0,
+    refetchInterval: 1000 // Poll every second when dialog is open
   });
   
   // Track the template ID to detect when it changes
@@ -390,7 +391,14 @@ export const WindowManagementDialog = ({
       setTreatmentDescription('');
       setEditDescriptionValue('');
     }
-  }, [currentTemplateId, currentTreatment?.treatment_name, windowSummary?.template_name, windowSummary?.description_text]);
+  }, [currentTemplateId, currentTreatment?.treatment_name, currentTreatment?.description, windowSummary?.template_name, windowSummary?.description_text, windowSummary?.updated_at]);
+
+  // Refetch when dialog opens to ensure fresh data
+  useEffect(() => {
+    if (isOpen) {
+      refetchWindowSummary();
+    }
+  }, [isOpen, refetchWindowSummary]);
 
   const handleTreatmentNameUpdate = async (newName: string) => {
     if (!newName.trim() || !surface?.id) return;
