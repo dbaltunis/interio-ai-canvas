@@ -14,6 +14,7 @@ interface QuoteDiscountDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   quoteId: string;
+  projectId: string;
   items: any[];
   subtotal: number;
   taxRate: number;
@@ -31,13 +32,14 @@ export const QuoteDiscountDialog = ({
   open,
   onOpenChange,
   quoteId,
+  projectId,
   items,
   subtotal,
   taxRate,
   currency = 'USD',
   currentDiscount,
 }: QuoteDiscountDialogProps) => {
-  const { applyDiscount, removeDiscount, calculateDiscountAmount, getItemPrice } = useQuoteDiscount();
+  const { applyDiscount, removeDiscount, calculateDiscountAmount, getItemPrice } = useQuoteDiscount(projectId);
 
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>(
     currentDiscount?.type || 'percentage'

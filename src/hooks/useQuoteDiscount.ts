@@ -9,7 +9,7 @@ export interface DiscountConfig {
   selectedItems?: string[];
 }
 
-export const useQuoteDiscount = () => {
+export const useQuoteDiscount = (projectId?: string) => {
   const queryClient = useQueryClient();
 
   const getItemPrice = (item: any): number => {
@@ -92,7 +92,11 @@ export const useQuoteDiscount = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
-      queryClient.invalidateQueries({ queryKey: ["quote-versions"] });
+      if (projectId) {
+        queryClient.invalidateQueries({ queryKey: ["quote-versions", projectId] });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["quote-versions"] });
+      }
       queryClient.invalidateQueries({ queryKey: ["quote-items"] });
       toast.success("Discount applied successfully");
     },
@@ -122,7 +126,11 @@ export const useQuoteDiscount = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
-      queryClient.invalidateQueries({ queryKey: ["quote-versions"] });
+      if (projectId) {
+        queryClient.invalidateQueries({ queryKey: ["quote-versions", projectId] });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["quote-versions"] });
+      }
       queryClient.invalidateQueries({ queryKey: ["quote-items"] });
       toast.success("Discount removed");
     },

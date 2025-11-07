@@ -26,6 +26,7 @@ import { EmptyQuoteVersionState } from "@/components/jobs/EmptyQuoteVersionState
 import { useQuoteVersions } from "@/hooks/useQuoteVersions";
 import { generateQuotePDF, generateQuotePDFBlob } from '@/utils/generateQuotePDF';
 import { QuoteDiscountDialog } from "@/components/jobs/quotation/QuoteDiscountDialog";
+import { useQuoteDiscount } from "@/hooks/useQuoteDiscount";
 import { QuotePaymentDialog } from "@/components/jobs/quotation/QuotePaymentDialog";
 
 interface QuotationTabProps {
@@ -743,6 +744,7 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
         open={isDiscountDialogOpen}
         onOpenChange={setIsDiscountDialogOpen}
         quoteId={quoteId || quoteVersions?.[0]?.id || ''}
+        projectId={projectId}
         items={quotationData.items || []}
         subtotal={subtotal}
         taxRate={taxRate * 100}
