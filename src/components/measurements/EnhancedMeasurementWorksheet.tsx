@@ -1290,9 +1290,46 @@ export const EnhancedMeasurementWorksheet = forwardRef<
             selectedTemplate={selectedCovering}
             treatmentCategory={detectTreatmentType(selectedCovering)}
             selectedFabric={selectedFabric}
-            onFabricChange={(fabricId) => {
+            onFabricChange={async (fabricId) => {
               setSelectedFabric(fabricId);
               handleMeasurementChange('selected_fabric', fabricId);
+              
+              // ✅ IMMEDIATE SAVE: Save fabric selection to windows_summary for real-time header updates
+              if (surfaceId && fabricId) {
+                try {
+                  const fabricItem: any = inventoryItems.find(item => item.id === fabricId);
+                  if (fabricItem) {
+                    const { error } = await supabase
+                      .from('windows_summary')
+                      .upsert({
+                        window_id: surfaceId,
+                        user_id: (await supabase.auth.getUser()).data.user?.id,
+                        fabric_type: fabricItem.name,
+                        fabric_details: {
+                          id: fabricItem.id,
+                          fabric_id: fabricItem.id,
+                          name: fabricItem.name,
+                          fabric_type: fabricItem.name,
+                          fabric_width: fabricItem.fabric_width || fabricItem.wallpaper_roll_width,
+                          selling_price: fabricItem.selling_price || fabricItem.unit_price,
+                          category: fabricItem.category,
+                          image_url: fabricItem.image_url,
+                        } as any
+                      }, { onConflict: 'window_id' });
+                      
+                    if (!error) {
+                      console.log('✅ Fabric name saved to windows_summary:', fabricItem.name);
+                      // Invalidate queries to update the header description field
+                      queryClient.invalidateQueries({ queryKey: ['window-summary-treatment', surfaceId] });
+                      queryClient.invalidateQueries({ queryKey: ['window-summary', surfaceId] });
+                    } else {
+                      console.error('❌ Failed to save fabric name:', error);
+                    }
+                  }
+                } catch (error) {
+                  console.error('❌ Error saving fabric name:', error);
+                }
+              }
             }}
             selectedLining={selectedLining}
             onLiningChange={(liningType) => {

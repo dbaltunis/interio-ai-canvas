@@ -1211,7 +1211,7 @@ export const DynamicWindowWorksheet = forwardRef<{
       isUserEditing.current = false;
     }, 1000);
   };
-  const handleItemSelect = (category: string, item: any) => {
+  const handleItemSelect = async (category: string, item: any) => {
     // For fabric, ensure BOTH id and fabric_id are set for persistence
     let processedItem = item;
     if (category === 'fabric') {
@@ -1237,6 +1237,40 @@ export const DynamicWindowWorksheet = forwardRef<{
       } else if (fabricCat.includes('blind')) {
         setSelectedTreatmentType('blinds');
         setTreatmentCategory('roller_blinds');
+      }
+    }
+    
+    // ✅ IMMEDIATE SAVE: Save fabric/inventory selection to windows_summary for real-time header updates
+    if (category === 'fabric' && surfaceId && item) {
+      try {
+        const { error } = await supabase
+          .from('windows_summary')
+          .upsert({
+            window_id: surfaceId,
+            user_id: (await supabase.auth.getUser()).data.user?.id,
+            fabric_type: item.name,
+            fabric_details: {
+              id: item.id,
+              fabric_id: item.id,
+              name: item.name,
+              fabric_type: item.name,
+              fabric_width: item.fabric_width || item.wallpaper_roll_width,
+              selling_price: item.selling_price || item.unit_price,
+              category: item.category,
+              image_url: item.image_url,
+            } as any
+          }, { onConflict: 'window_id' });
+          
+        if (!error) {
+          console.log('✅ Fabric name saved to windows_summary:', item.name);
+          // Invalidate queries to update the header description field
+          queryClient.invalidateQueries({ queryKey: ['window-summary-treatment', surfaceId] });
+          queryClient.invalidateQueries({ queryKey: ['window-summary', surfaceId] });
+        } else {
+          console.error('❌ Failed to save fabric name:', error);
+        }
+      } catch (error) {
+        console.error('❌ Error saving fabric name:', error);
       }
     }
   };
