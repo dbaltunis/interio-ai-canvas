@@ -1577,7 +1577,13 @@ export const LivePreview = ({
             
             {/* Payment Configuration Section - shown after all blocks */}
             {projectData?.quoteId && (
-              <div className="mt-8 no-print">
+              <div 
+                id="payment-section" 
+                className="mt-8 mb-8 transition-all duration-300"
+                style={{
+                  scrollMarginTop: '100px'
+                }}
+              >
                 <InlinePaymentConfig
                   quoteId={projectData.quoteId}
                   total={projectData.total || 0}

@@ -27,6 +27,17 @@ export const InlinePaymentConfig = ({
   currency = 'USD',
   currentPayment,
 }: InlinePaymentConfigProps) => {
+  // Validate quoteId
+  if (!quoteId) {
+    return (
+      <Card className="p-6 bg-muted/30 border-dashed">
+        <p className="text-center text-muted-foreground">
+          Save the quote first to configure payment options
+        </p>
+      </Card>
+    );
+  }
+
   const { createPayment, verifyPayment, updatePaymentConfig } = useQuotePayment();
   
   const [paymentType, setPaymentType] = useState<'full' | 'deposit'>('full');

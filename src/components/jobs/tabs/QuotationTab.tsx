@@ -27,7 +27,6 @@ import { useQuoteVersions } from "@/hooks/useQuoteVersions";
 import { generateQuotePDF, generateQuotePDFBlob } from '@/utils/generateQuotePDF';
 import { QuoteDiscountDialog } from "@/components/jobs/quotation/QuoteDiscountDialog";
 import { useQuoteDiscount } from "@/hooks/useQuoteDiscount";
-import { QuotePaymentDialog } from "@/components/jobs/quotation/QuotePaymentDialog";
 
 interface QuotationTabProps {
   projectId: string;
@@ -489,8 +488,22 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
     toast({ title: "Add Terms & Conditions", description: "Terms & Conditions functionality would be implemented here" });
   };
 
-  const handlePayment = async () => {
-    toast({ title: "Payment", description: "Scroll to payment section in quote preview" });
+  const handlePayment = () => {
+    const paymentSection = document.getElementById('payment-section');
+    if (paymentSection) {
+      paymentSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Add a subtle highlight animation
+      paymentSection.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+      setTimeout(() => {
+        paymentSection.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
+      }, 2000);
+    } else {
+      toast({ 
+        title: "Payment Section", 
+        description: "Please save the quote first to configure payment options",
+        variant: "destructive"
+      });
+    }
   };
 
   if (!project) {
