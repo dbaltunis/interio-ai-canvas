@@ -254,7 +254,7 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
     const totalAfterDiscount = subtotalAfterDiscount + taxAmountAfterDiscount;
     
     
-    const result = {
+    return {
       project: { ...project, client },
       client,
       businessSettings,
@@ -277,8 +277,6 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
         scope: currentQuote.discount_scope
       } : undefined
     };
-    console.log('🎯 FINAL projectData:', { hasDiscount, discount: result.discount, quote: currentQuote?.id });
-    return result;
   }, [project, client, businessSettings, sourceTreatments, workshopItems, rooms, surfaces, subtotal, taxRate, taxAmount, total, markupPercentage, currentQuote]);
 
   // Download PDF
