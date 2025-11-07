@@ -890,10 +890,10 @@ const LivePreviewBlock = ({
                               {item.quantity || 1}
                             </td>
                             <td style={{ padding: '5px 6px', fontSize: '14px', fontWeight: '400', color: '#000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
-                              {breakdown.length > 0 && showDetailedProducts ? '' : `${renderTokenValue('currency_symbol')}${((item.unit_price || item.total_cost || item.total || 0)).toFixed(2)}`}
+                              {`${renderTokenValue('currency_symbol')}${((item.unit_price || item.total_cost || item.total || 0) / (item.quantity || 1)).toFixed(2)}`}
                             </td>
                             <td style={{ padding: '5px 6px', fontSize: '14px', fontWeight: '500', color: '#000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
-                              {breakdown.length > 0 && showDetailedProducts ? '' : `${renderTokenValue('currency_symbol')}${((item.total_cost || item.total || 0)).toFixed(2)}`}
+                              {`${renderTokenValue('currency_symbol')}${((item.total_cost || item.total || 0)).toFixed(2)}`}
                             </td>
                           </tr>
                           
