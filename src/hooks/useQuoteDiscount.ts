@@ -12,6 +12,12 @@ export interface DiscountConfig {
 export const useQuoteDiscount = () => {
   const queryClient = useQueryClient();
 
+  const getItemPrice = (item: any): number => {
+    // Try different possible price fields
+    return item.total_price || item.total || item.total_cost || 
+           (item.unit_price && item.quantity ? item.unit_price * item.quantity : 0) || 0;
+  };
+
   const calculateDiscountAmount = (
     items: any[],
     config: DiscountConfig,
@@ -22,17 +28,26 @@ export const useQuoteDiscount = () => {
     if (config.scope === 'all') {
       discountableAmount = subtotal;
     } else if (config.scope === 'fabrics_only') {
-      // Filter items that contain fabric-related categories
-      const fabricItems = items.filter(item => 
-        item.name?.toLowerCase().includes('fabric') ||
-        item.category?.toLowerCase().includes('fabric') ||
-        item.description?.toLowerCase().includes('fabric')
-      );
-      discountableAmount = fabricItems.reduce((sum, item) => sum + (item.total_price || 0), 0);
+      // Filter items that contain fabric-related keywords
+      const fabricItems = items.filter(item => {
+        const searchText = [
+          item.name,
+          item.category,
+          item.description,
+          item.type
+        ].join(' ').toLowerCase();
+        
+        return searchText.includes('fabric') || 
+               searchText.includes('material') ||
+               searchText.includes('textile') ||
+               searchText.includes('curtain') ||
+               searchText.includes('drape');
+      });
+      discountableAmount = fabricItems.reduce((sum, item) => sum + getItemPrice(item), 0);
     } else if (config.scope === 'selected_items' && config.selectedItems) {
       const selectedItemsSet = new Set(config.selectedItems);
       const selectedItemsList = items.filter(item => selectedItemsSet.has(item.id));
-      discountableAmount = selectedItemsList.reduce((sum, item) => sum + (item.total_price || 0), 0);
+      discountableAmount = selectedItemsList.reduce((sum, item) => sum + getItemPrice(item), 0);
     }
 
     if (config.type === 'percentage') {
@@ -111,5 +126,6 @@ export const useQuoteDiscount = () => {
     applyDiscount,
     removeDiscount,
     calculateDiscountAmount,
+    getItemPrice,
   };
 };

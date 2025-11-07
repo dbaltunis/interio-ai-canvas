@@ -36,7 +36,7 @@ export const QuoteDiscountDialog = ({
   currency = 'USD',
   currentDiscount,
 }: QuoteDiscountDialogProps) => {
-  const { applyDiscount, removeDiscount, calculateDiscountAmount } = useQuoteDiscount();
+  const { applyDiscount, removeDiscount, calculateDiscountAmount, getItemPrice } = useQuoteDiscount();
 
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>(
     currentDiscount?.type || 'percentage'
@@ -159,18 +159,21 @@ export const QuoteDiscountDialog = ({
           {discountScope === 'selected_items' && (
             <div className="space-y-2 border rounded-lg p-4 max-h-48 overflow-y-auto">
               <Label className="text-sm font-medium">Select Items</Label>
-              {items.map((item) => (
-                <div key={item.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`item-${item.id}`}
-                    checked={selectedItems.has(item.id)}
-                    onCheckedChange={() => toggleItemSelection(item.id)}
-                  />
-                  <Label htmlFor={`item-${item.id}`} className="cursor-pointer flex-1">
-                    {item.name} - {formatCurrency(item.total_price || 0, currency)}
-                  </Label>
-                </div>
-              ))}
+              {items.map((item) => {
+                const itemPrice = getItemPrice(item);
+                return (
+                  <div key={item.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`item-${item.id}`}
+                      checked={selectedItems.has(item.id)}
+                      onCheckedChange={() => toggleItemSelection(item.id)}
+                    />
+                    <Label htmlFor={`item-${item.id}`} className="cursor-pointer flex-1">
+                      {item.name} - {formatCurrency(itemPrice, currency)}
+                    </Label>
+                  </div>
+                );
+              })}
             </div>
           )}
 
