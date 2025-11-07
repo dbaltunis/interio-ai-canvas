@@ -54,15 +54,15 @@ export const QuoteDiscountDialog = ({
     new Set(currentDiscount?.selectedItems || [])
   );
 
-  // Reset state when dialog opens or currentDiscount changes
+  // Update state when currentDiscount changes and has data
   React.useEffect(() => {
-    if (open) {
-      setDiscountType(currentDiscount?.type || 'percentage');
-      setDiscountValue(currentDiscount?.value || 0);
-      setDiscountScope(currentDiscount?.scope || 'all');
-      setSelectedItems(new Set(currentDiscount?.selectedItems || []));
+    if (currentDiscount) {
+      setDiscountType(currentDiscount.type);
+      setDiscountValue(currentDiscount.value);
+      setDiscountScope(currentDiscount.scope);
+      setSelectedItems(new Set(currentDiscount.selectedItems || []));
     }
-  }, [open, currentDiscount]);
+  }, [currentDiscount]);
 
 
   const config: DiscountConfig = {
