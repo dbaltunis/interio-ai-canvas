@@ -362,26 +362,33 @@ export const WindowManagementDialog = ({
   useEffect(() => {
     console.log('🔄 Treatment data changed:', { currentTreatment, windowSummary, templateId: currentTemplateId });
     
-    // ALWAYS overwrite fields when template changes - this is the key fix
+    // Treatment field shows the template name (step 2 selection)
+    // Description field shows the inventory item name (step 3 selection)
     if (currentTreatment) {
-      // Priority: treatment_name > product_name > template name
+      // Treatment name: use template name
       const name = cleanValue(currentTreatment.treatment_name) || 
                    cleanValue(currentTreatment.product_name) || 
                    cleanValue(currentTreatment.treatment_type);
       setTreatmentName(name);
       setEditProductValue(name);
-      // Only use actual description field, not fallbacks
-      const desc = cleanValue(currentTreatment.description);
+      
+      // Description: use inventory item name from fabric_details
+      const fabricDetails = currentTreatment.fabric_details as any;
+      const desc = cleanValue(fabricDetails?.fabric_type) || 
+                   cleanValue(currentTreatment.description);
       setTreatmentDescription(desc);
       setEditDescriptionValue(desc);
     } else if (windowSummary) {
-      // Fallback to windows_summary data
+      // Treatment name: use template name from windows_summary
       const name = cleanValue(windowSummary.template_name) || 
                    cleanValue(windowSummary.treatment_type);
-      // Only use description_text field, empty if not set
-      const desc = cleanValue(windowSummary.description_text);
       setTreatmentName(name);
       setEditProductValue(name);
+      
+      // Description: use inventory item name from fabric_details
+      const fabricDetails = windowSummary.fabric_details as any;
+      const desc = cleanValue(fabricDetails?.fabric_type) || 
+                   cleanValue(windowSummary.description_text);
       setTreatmentDescription(desc);
       setEditDescriptionValue(desc);
     } else {
@@ -391,7 +398,7 @@ export const WindowManagementDialog = ({
       setTreatmentDescription('');
       setEditDescriptionValue('');
     }
-  }, [currentTemplateId, currentTreatment?.treatment_name, currentTreatment?.description, windowSummary?.template_name, windowSummary?.description_text, windowSummary?.updated_at]);
+  }, [currentTemplateId, currentTreatment?.treatment_name, currentTreatment?.fabric_details, windowSummary?.template_name, windowSummary?.fabric_details, windowSummary?.updated_at]);
 
   // Refetch when dialog opens to ensure fresh data
   useEffect(() => {
@@ -477,7 +484,7 @@ export const WindowManagementDialog = ({
                 </div>
                 
                 <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md min-w-[280px] max-w-[320px] h-[32px]">
-                  <span className="text-xs font-medium text-muted-foreground shrink-0">Product:</span>
+                  <span className="text-xs font-medium text-muted-foreground shrink-0">Treatment:</span>
                   {isEditingProduct ? (
                     <>
                       <Input
