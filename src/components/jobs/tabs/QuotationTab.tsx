@@ -412,32 +412,61 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
     }
   };
 
-  const handleAddDiscount = () => {
-    if (!quoteId) {
+  const getOrCreateQuoteId = async (): Promise<string | null> => {
+    // If we already have a quoteId, use it
+    if (quoteId) return quoteId;
+    
+    // If there's an existing quote for this project, use the first one
+    if (quoteVersions && quoteVersions.length > 0) {
+      return quoteVersions[0].id;
+    }
+    
+    // Otherwise, create a new quote
+    try {
+      const newQuote = await createQuote.mutateAsync({
+        project_id: projectId,
+        client_id: project?.client_id,
+        status: 'draft',
+        version: 1,
+      });
+      return newQuote.id;
+    } catch (error) {
+      console.error('Failed to create quote:', error);
       toast({
-        title: "No quote selected",
-        description: "Please create or select a quote version first",
+        title: "Error",
+        description: "Failed to create quote. Please try again.",
         variant: "destructive"
       });
-      return;
+      return null;
     }
-    setIsDiscountDialogOpen(true);
+  };
+
+  const handleAddDiscount = async () => {
+    const effectiveQuoteId = await getOrCreateQuoteId();
+    if (!effectiveQuoteId) return;
+    
+    // If we created a new quote, we need to wait a moment for it to be available
+    if (effectiveQuoteId !== quoteId) {
+      setTimeout(() => setIsDiscountDialogOpen(true), 500);
+    } else {
+      setIsDiscountDialogOpen(true);
+    }
   };
 
   const handleAddTerms = () => {
     toast({ title: "Add Terms & Conditions", description: "Terms & Conditions functionality would be implemented here" });
   };
 
-  const handlePayment = () => {
-    if (!quoteId) {
-      toast({
-        title: "No quote selected",
-        description: "Please create or select a quote version first",
-        variant: "destructive"
-      });
-      return;
+  const handlePayment = async () => {
+    const effectiveQuoteId = await getOrCreateQuoteId();
+    if (!effectiveQuoteId) return;
+    
+    // If we created a new quote, we need to wait a moment for it to be available
+    if (effectiveQuoteId !== quoteId) {
+      setTimeout(() => setIsPaymentDialogOpen(true), 500);
+    } else {
+      setIsPaymentDialogOpen(true);
     }
-    setIsPaymentDialogOpen(true);
   };
 
   if (!project) {
@@ -520,7 +549,7 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
               variant="outline"
               size="sm"
               onClick={handleAddDiscount}
-              disabled={!quoteId}
+              disabled={createQuote.isPending}
               className="h-9 px-4"
             >
               <Percent className="h-4 w-4 mr-2" />
@@ -532,7 +561,7 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
               variant="outline"
               size="sm"
               onClick={handlePayment}
-              disabled={!quoteId}
+              disabled={createQuote.isPending}
               className="h-9 px-4"
             >
               <CreditCard className="h-4 w-4 mr-2" />
@@ -675,41 +704,37 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
       />
 
       {/* Discount Dialog */}
-      {quoteId && (
-        <QuoteDiscountDialog
-          open={isDiscountDialogOpen}
-          onOpenChange={setIsDiscountDialogOpen}
-          quoteId={quoteId}
-          items={quotationData.items || []}
-          subtotal={subtotal}
-          taxRate={taxRate * 100}
-          currency={projectData.currency}
-          currentDiscount={currentQuote?.discount_amount ? {
-            type: currentQuote.discount_type as 'percentage' | 'fixed',
-            value: currentQuote.discount_value || 0,
-            scope: currentQuote.discount_scope as 'all' | 'fabrics_only' | 'selected_items',
-            amount: currentQuote.discount_amount || 0,
-            selectedItems: currentQuote.selected_discount_items as string[] || undefined,
-          } : undefined}
-        />
-      )}
+      <QuoteDiscountDialog
+        open={isDiscountDialogOpen}
+        onOpenChange={setIsDiscountDialogOpen}
+        quoteId={quoteId || quoteVersions?.[0]?.id || ''}
+        items={quotationData.items || []}
+        subtotal={subtotal}
+        taxRate={taxRate * 100}
+        currency={projectData.currency}
+        currentDiscount={currentQuote?.discount_amount ? {
+          type: currentQuote.discount_type as 'percentage' | 'fixed',
+          value: currentQuote.discount_value || 0,
+          scope: currentQuote.discount_scope as 'all' | 'fabrics_only' | 'selected_items',
+          amount: currentQuote.discount_amount || 0,
+          selectedItems: currentQuote.selected_discount_items as string[] || undefined,
+        } : undefined}
+      />
 
       {/* Payment Dialog */}
-      {quoteId && (
-        <QuotePaymentDialog
-          open={isPaymentDialogOpen}
-          onOpenChange={setIsPaymentDialogOpen}
-          quoteId={quoteId}
-          total={total}
-          currency={projectData.currency}
-          currentPayment={currentQuote?.payment_amount ? {
-            type: currentQuote.payment_type as 'full' | 'deposit',
-            percentage: currentQuote.payment_percentage || undefined,
-            amount: currentQuote.payment_amount || 0,
-            status: currentQuote.payment_status as 'pending' | 'paid' | 'failed' | 'deposit_paid' || 'pending',
-          } : undefined}
-        />
-      )}
+      <QuotePaymentDialog
+        open={isPaymentDialogOpen}
+        onOpenChange={setIsPaymentDialogOpen}
+        quoteId={quoteId || quoteVersions?.[0]?.id || ''}
+        total={total}
+        currency={projectData.currency}
+        currentPayment={currentQuote?.payment_amount ? {
+          type: currentQuote.payment_type as 'full' | 'deposit',
+          percentage: currentQuote.payment_percentage || undefined,
+          amount: currentQuote.payment_amount || 0,
+          status: currentQuote.payment_status as 'pending' | 'paid' | 'failed' | 'deposit_paid' || 'pending',
+        } : undefined}
+      />
     </div>
   );
 };
