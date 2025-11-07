@@ -253,14 +253,15 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
     const taxAmountAfterDiscount = subtotalAfterDiscount * taxRate;
     const totalAfterDiscount = subtotalAfterDiscount + taxAmountAfterDiscount;
     
-    console.log('📊 Discount calculation:', {
+    console.log('📊 QuotationTab - Discount calculation:', {
       currentQuoteId: currentQuote?.id,
       hasDiscount,
       discountType: currentQuote?.discount_type,
       discountValue: currentQuote?.discount_value,
       discountAmount,
       subtotal,
-      subtotalAfterDiscount
+      subtotalAfterDiscount,
+      fullCurrentQuote: currentQuote
     });
     
     
@@ -285,7 +286,8 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
         value: currentQuote.discount_value,
         amount: discountAmount,
         scope: currentQuote.discount_scope
-      } : undefined
+      } : undefined,
+      _debug_discount: { hasDiscount, discountAmount, currentQuoteId: currentQuote?.id }
     };
   }, [project, client, businessSettings, sourceTreatments, workshopItems, rooms, surfaces, subtotal, taxRate, taxAmount, total, markupPercentage, currentQuote]);
 

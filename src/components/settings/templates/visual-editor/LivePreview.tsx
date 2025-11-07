@@ -988,15 +988,22 @@ const LivePreviewBlock = ({
               )}
               
               {/* Discount (if applicable) */}
-              {projectData?.discount?.amount > 0 && (
-                <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
-                  <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
-                    <span style={{ fontSize: '14px', color: '#dc2626 !important' }}>
-                      Discount ({projectData.discount.type === 'percentage' ? `${projectData.discount.value}%` : 'Fixed'}): -{renderTokenValue('discount')}
-                    </span>
+              {(() => {
+                console.log('🎨 LivePreview - Discount check:', {
+                  hasDiscount: projectData?.discount?.amount > 0,
+                  discount: projectData?.discount,
+                  _debug: (projectData as any)?._debug_discount
+                });
+                return projectData?.discount?.amount > 0 ? (
+                  <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
+                    <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
+                      <span style={{ fontSize: '14px', color: '#dc2626 !important' }}>
+                        Discount ({projectData.discount.type === 'percentage' ? `${projectData.discount.value}%` : 'Fixed'}): -{renderTokenValue('discount')}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              )}
+                ) : null;
+              })()}
               
               {/* GST/Tax */}
               {content.showTax && (
