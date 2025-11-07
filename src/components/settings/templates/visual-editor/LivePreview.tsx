@@ -166,57 +166,25 @@ const LivePreviewBlock = ({
         return symbols[curr] || '£';
       })(),
       subtotal: (() => {
-        if (!projectData?.subtotal) return '£0.00';
+        if (!projectData?.subtotal) return '0.00';
         const curr = projectData?.currency || 'GBP';
-        const symbols: Record<string, string> = {
-          'GBP': '£',
-          'EUR': '€',
-          'AUD': 'A$',
-          'NZD': 'NZ$',
-          'USD': '$',
-          'ZAR': 'R'
-        };
-        return `${symbols[curr] || '£'}${projectData.subtotal.toFixed(2)}`;
+        return `${projectData.subtotal.toFixed(2)}${curr}`;
       })(),
       discount: (() => {
-        if (!projectData?.discount?.amount) return '£0.00';
+        if (!projectData?.discount?.amount) return '0.00';
         const curr = projectData?.currency || 'GBP';
-        const symbols: Record<string, string> = {
-          'GBP': '£',
-          'EUR': '€',
-          'AUD': 'A$',
-          'NZD': 'NZ$',
-          'USD': '$',
-          'ZAR': 'R'
-        };
-        return `${symbols[curr] || '£'}${projectData.discount.amount.toFixed(2)}`;
+        return `${projectData.discount.amount.toFixed(2)}${curr}`;
       })(),
       tax_amount: (() => {
-        if (!projectData?.taxAmount) return '£0.00';
+        if (!projectData?.taxAmount) return '0.00';
         const curr = projectData?.currency || 'GBP';
-        const symbols: Record<string, string> = {
-          'GBP': '£',
-          'EUR': '€',
-          'AUD': 'A$',
-          'NZD': 'NZ$',
-          'USD': '$',
-          'ZAR': 'R'
-        };
-        return `${symbols[curr] || '£'}${projectData.taxAmount.toFixed(2)}`;
+        return `${projectData.taxAmount.toFixed(2)}${curr}`;
       })(),
       tax_rate: projectData?.taxRate ? `${(projectData.taxRate * 100).toFixed(1)}%` : '0%',
       total: (() => {
-        if (!projectData?.total) return '£0.00';
+        if (!projectData?.total) return '0.00';
         const curr = projectData?.currency || 'GBP';
-        const symbols: Record<string, string> = {
-          'GBP': '£',
-          'EUR': '€',
-          'AUD': 'A$',
-          'NZD': 'NZ$',
-          'USD': '$',
-          'ZAR': 'R'
-        };
-        return `${symbols[curr] || '£'}${projectData.total.toFixed(2)}`;
+        return `${projectData.total.toFixed(2)}${curr}`;
       })(),
       
       // Additional project details
@@ -987,32 +955,88 @@ const LivePreviewBlock = ({
                 color: '#000 !important'
               }}
             >
-              {/* Price excl. GST/Tax (Base Subtotal) */}
+              {/* Total before discount */}
               {content.showSubtotal !== false && (
                 <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
-                  <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
-                    <span style={{ fontSize: '14px', color: '#111827 !important' }}>
-                      Subtotal: {renderTokenValue('subtotal')}
+                  <div className="text-right" style={{ minWidth: '240px', backgroundColor: '#ffffff !important' }}>
+                    <span style={{ fontSize: '14px', color: '#111827 !important', fontWeight: '500' }}>
+                      Total: {renderTokenValue('subtotal')}
                     </span>
                   </div>
                 </div>
               )}
               
-              {/* Discount (if applicable) */}
-              {projectData?.discount?.amount > 0 && (
-                <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
-                  <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
-                    <span style={{ fontSize: '14px', color: '#dc2626 !important' }}>
-                      Discount ({projectData.discount.type === 'percentage' ? `${projectData.discount.value}%` : 'Fixed'}): -{renderTokenValue('discount')}
-                    </span>
+              {/* Discount Section (if applicable) */}
+              {projectData?.discount && (
+                <>
+                  {/* Discount Header */}
+                  <div className="flex justify-end py-1 mt-2" style={{ backgroundColor: '#ffffff !important' }}>
+                    <div className="text-right" style={{ minWidth: '240px', backgroundColor: '#ffffff !important' }}>
+                      <span style={{ fontSize: '14px', color: '#dc2626 !important', fontWeight: '600' }}>
+                        Discount: {projectData.discount.type === 'percentage' ? `${projectData.discount.value}%` : `${renderTokenValue('discount')}`}
+                        {projectData.discount.scope === 'fabrics_only' && ' (Fabrics only)'}
+                      </span>
+                    </div>
                   </div>
-                </div>
+                  
+                  {/* Show fabric price breakdown for fabric-only discounts */}
+                  {projectData.discount.scope === 'fabrics_only' && (
+                    <>
+                      <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
+                        <div className="text-right" style={{ minWidth: '240px', backgroundColor: '#ffffff !important' }}>
+                          <span style={{ fontSize: '13px', color: '#6b7280 !important' }}>
+                            Fabric price: {renderTokenValue('discount')}
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  
+                  {/* Discount amount */}
+                  <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
+                    <div className="text-right" style={{ minWidth: '240px', backgroundColor: '#ffffff !important' }}>
+                      <span style={{ fontSize: '13px', color: '#6b7280 !important' }}>
+                        Discount: {renderTokenValue('discount')}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Price after discount */}
+                  <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
+                    <div className="text-right" style={{ minWidth: '240px', backgroundColor: '#ffffff !important' }}>
+                      <span style={{ fontSize: '14px', color: '#111827 !important' }}>
+                        Price after discount: {(() => {
+                          const curr = projectData?.currency || 'GBP';
+                          const subtotalAfterDiscount = (projectData.subtotal || 0) - (projectData.discount?.amount || 0);
+                          return `${subtotalAfterDiscount.toFixed(2)}${curr}`;
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                </>
               )}
               
-              {/* GST/Tax */}
+              {/* Price excl. GST/Tax (shows after discount is applied) */}
               {content.showTax && (
                 <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
-                  <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
+                  <div className="text-right" style={{ minWidth: '240px', backgroundColor: '#ffffff !important' }}>
+                    <span style={{ fontSize: '14px', color: '#111827 !important' }}>
+                      Price excl. {userBusinessSettings?.tax_type && userBusinessSettings.tax_type !== 'none' 
+                        ? userBusinessSettings.tax_type.toUpperCase() 
+                        : 'Tax'}: {(() => {
+                          const curr = projectData?.currency || 'GBP';
+                          const discountedSubtotal = (projectData.subtotal || 0) - (projectData.discount?.amount || 0);
+                          return `${discountedSubtotal.toFixed(2)}${curr}`;
+                        })()}
+                    </span>
+                  </div>
+                </div>
+              )}
+              
+              {/* GST/Tax amount */}
+              {content.showTax && (
+                <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
+                  <div className="text-right" style={{ minWidth: '240px', backgroundColor: '#ffffff !important' }}>
                     <span style={{ fontSize: '14px', color: '#111827 !important' }}>
                       {userBusinessSettings?.tax_type && userBusinessSettings.tax_type !== 'none' 
                         ? userBusinessSettings.tax_type.toUpperCase() 
@@ -1024,8 +1048,8 @@ const LivePreviewBlock = ({
               
               {/* Grand total */}
               <div className="flex justify-end py-3 mt-2 border-t" style={{ backgroundColor: '#ffffff !important', borderColor: '#e5e7eb !important' }}>
-                <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
-                  <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#111827 !important' }}>Total: {renderTokenValue('total')}</span>
+                <div className="text-right" style={{ minWidth: '240px', backgroundColor: '#ffffff !important' }}>
+                  <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#111827 !important' }}>Grand total: {renderTokenValue('total')}</span>
                 </div>
               </div>
             </div>
