@@ -341,13 +341,15 @@ export const WindowManagementDialog = ({
         .select('*')
         .eq('window_id', surface.id)
         .maybeSingle();
+      console.log('🔄 Fetched window summary:', data);
       return data;
     },
-    enabled: !!surface?.id,
+    enabled: !!surface?.id && isOpen,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
     staleTime: 0,
-    refetchInterval: 1000 // Poll every second when dialog is open
+    gcTime: 0, // Don't cache at all
+    refetchInterval: 100 // Poll every 100ms for instant updates
   });
   
   // Track the template ID to detect when it changes
@@ -398,7 +400,7 @@ export const WindowManagementDialog = ({
       setTreatmentDescription('');
       setEditDescriptionValue('');
     }
-  }, [currentTemplateId, currentTreatment?.treatment_name, currentTreatment?.fabric_details, windowSummary?.template_name, windowSummary?.fabric_details, windowSummary?.updated_at]);
+  }, [currentTemplateId, currentTreatment?.treatment_name, currentTreatment?.fabric_details, currentTreatment, windowSummary, windowSummary?.template_name, windowSummary?.fabric_details, windowSummary?.updated_at]);
 
   // Refetch when dialog opens to ensure fresh data
   useEffect(() => {
