@@ -344,7 +344,9 @@ export const WindowManagementDialog = ({
       return data;
     },
     enabled: !!surface?.id && !currentTreatment,
-    refetchOnMount: 'always'
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    staleTime: 0
   });
   
   // Track the template ID to detect when it changes

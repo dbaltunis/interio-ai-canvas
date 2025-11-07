@@ -436,7 +436,53 @@ export const InventorySelectionPanel = ({
                   />
                 </div>
 
-                {activeCategory === "fabric" && (
+                {activeCategory === "fabric" && treatmentCategory === "wallpaper" ? (
+                  // Wallpaper-specific fields
+                  <>
+                    <div className="grid gap-2">
+                      <Label htmlFor="wallpaper_roll_width">Roll Width (cm)</Label>
+                      <Input
+                        id="wallpaper_roll_width"
+                        type="number"
+                        step="0.1"
+                        value={manualEntry.fabric_width}
+                        onChange={(e) => setManualEntry({ ...manualEntry, fabric_width: e.target.value })}
+                        placeholder="e.g., 53, 70, 106"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Standard rolls are typically 53cm wide
+                      </p>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="wallpaper_roll_length">Roll Length (meters)</Label>
+                      <Input
+                        id="wallpaper_roll_length"
+                        type="number"
+                        step="0.1"
+                        value={manualEntry.pattern_repeat_vertical}
+                        onChange={(e) => setManualEntry({ ...manualEntry, pattern_repeat_vertical: e.target.value })}
+                        placeholder="e.g., 10, 15"
+                      />
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="pattern_repeat">Pattern Repeat (cm)</Label>
+                      <Input
+                        id="pattern_repeat"
+                        type="number"
+                        step="0.1"
+                        value={manualEntry.pattern_repeat_horizontal}
+                        onChange={(e) => setManualEntry({ ...manualEntry, pattern_repeat_horizontal: e.target.value })}
+                        placeholder="e.g., 64, 0 for plain"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Enter 0 for no pattern repeat
+                      </p>
+                    </div>
+                  </>
+                ) : activeCategory === "fabric" ? (
+                  // Curtain/Blind fabric fields
                   <>
                     <div className="grid gap-2">
                       <Label htmlFor="fabric_width">Fabric Width (cm)</Label>
@@ -478,7 +524,7 @@ export const InventorySelectionPanel = ({
                       </div>
                     </div>
                   </>
-                )}
+                ) : null}
 
                 <div className="grid gap-2">
                   <Label htmlFor="price">Price per Unit</Label>
