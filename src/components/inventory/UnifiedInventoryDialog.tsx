@@ -1559,6 +1559,219 @@ export const UnifiedInventoryDialog = ({
                   </Card>
                 )}
 
+                {/* Wallpaper Specifications */}
+                {isWallcovering && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Ruler className="h-5 w-5" />
+                        Wallpaper Specifications
+                      </CardTitle>
+                      <CardDescription>
+                        Configure wallpaper dimensions and pattern details
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <Label htmlFor="wallpaper_roll_width_spec">Roll Width</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="wallpaper_roll_width_spec"
+                            type="number"
+                            step="0.1"
+                            value={formData.wallpaper_roll_width || ""}
+                            onChange={(e) => setFormData({ ...formData, wallpaper_roll_width: parseFloat(e.target.value) || 0 })}
+                            placeholder="53"
+                          />
+                          <Select
+                            value={formData.wallpaper_unit_of_measure || 'cm'}
+                            onValueChange={(value) => setFormData({ ...formData, wallpaper_unit_of_measure: value })}
+                          >
+                            <SelectTrigger className="w-24">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="cm">cm</SelectItem>
+                              <SelectItem value="inch">inch</SelectItem>
+                              <SelectItem value="mm">mm</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Standard rolls are typically 53cm wide
+                        </p>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="wallpaper_roll_length_spec">Roll Length (meters)</Label>
+                        <Input
+                          id="wallpaper_roll_length_spec"
+                          type="number"
+                          step="0.1"
+                          value={formData.wallpaper_roll_length || ""}
+                          onChange={(e) => setFormData({ ...formData, wallpaper_roll_length: parseFloat(e.target.value) || 0 })}
+                          placeholder="10"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Standard rolls are typically 10m long
+                        </p>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="pattern_repeat_vertical_spec">Pattern Repeat (cm)</Label>
+                        <Input
+                          id="pattern_repeat_vertical_spec"
+                          type="number"
+                          step="0.1"
+                          value={formData.pattern_repeat_vertical || ""}
+                          onChange={(e) => setFormData({ ...formData, pattern_repeat_vertical: parseFloat(e.target.value) || 0 })}
+                          placeholder="64"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Enter 0 for no pattern repeat
+                        </p>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="wallpaper_match_type_spec">Pattern Match Type</Label>
+                        <Select
+                          value={formData.wallpaper_match_type || 'straight'}
+                          onValueChange={(value) => setFormData({ ...formData, wallpaper_match_type: value })}
+                        >
+                          <SelectTrigger id="wallpaper_match_type_spec">
+                            <SelectValue placeholder="Select match type..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="straight">Straight Match</SelectItem>
+                            <SelectItem value="drop">Drop Match (Half Drop)</SelectItem>
+                            <SelectItem value="offset">Offset Match</SelectItem>
+                            <SelectItem value="random">Random Match</SelectItem>
+                            <SelectItem value="none">No Pattern</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="wallpaper_waste_factor_spec">Waste Factor (%)</Label>
+                        <Input
+                          id="wallpaper_waste_factor_spec"
+                          type="number"
+                          step="1"
+                          value={formData.wallpaper_waste_factor || ""}
+                          onChange={(e) => setFormData({ ...formData, wallpaper_waste_factor: parseFloat(e.target.value) || 0 })}
+                          placeholder="10"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Typical waste factor is 10-15%
+                        </p>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="color_spec">Color</Label>
+                        <Input
+                          id="color_spec"
+                          value={formData.color || ''}
+                          onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                          placeholder="e.g., Soft Grey"
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <Label htmlFor="collection_name_spec">Collection</Label>
+                        <Input
+                          id="collection_name_spec"
+                          value={formData.collection_name || ''}
+                          onChange={(e) => setFormData({ ...formData, collection_name: e.target.value })}
+                          placeholder="e.g., Modern Textures"
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <div className="flex items-center gap-2 mb-2">
+                          <ImageIcon className="h-4 w-4" />
+                          <Label>Product Image</Label>
+                        </div>
+                        
+                        {formData.image_url ? (
+                          <div className="relative">
+                            <img 
+                              src={formData.image_url} 
+                              alt="Wallpaper preview" 
+                              className="w-full h-32 object-cover rounded-md border"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-2 right-2"
+                              onClick={removeImage}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => document.getElementById('wallpaper-image-upload')?.click()}
+                              disabled={uploadingImage}
+                              className="w-full"
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                            </Button>
+                            <input
+                              id="wallpaper-image-upload"
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageUpload}
+                              className="hidden"
+                            />
+                            
+                            {uploadProgress && (
+                              <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
+                                <AlertDescription className="text-xs">{uploadProgress}</AlertDescription>
+                              </Alert>
+                            )}
+                            
+                            {uploadError && (
+                              <Alert variant="destructive">
+                                <AlertDescription className="text-xs">{uploadError}</AlertDescription>
+                              </Alert>
+                            )}
+                            
+                            {uploadSuccess && (
+                              <Alert className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900">
+                                <AlertDescription className="text-xs text-green-700 dark:text-green-300">{uploadSuccess}</AlertDescription>
+                              </Alert>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Coverage Calculator */}
+                      {formData.wallpaper_roll_width > 0 && formData.wallpaper_roll_length > 0 && (
+                        <div className="md:col-span-2 p-4 bg-muted rounded-lg">
+                          <h5 className="font-medium mb-2">Roll Coverage</h5>
+                          <p className="text-sm text-muted-foreground">
+                            Each roll covers approximately{" "}
+                            <strong>
+                              {((formData.wallpaper_roll_width / 100) * formData.wallpaper_roll_length).toFixed(2)} m²
+                            </strong>
+                            {" "}(based on {formData.wallpaper_roll_width}cm × {formData.wallpaper_roll_length}m)
+                          </p>
+                          {formData.pattern_repeat_vertical > 0 && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              With {formData.pattern_repeat_vertical}cm pattern repeat, actual coverage may be reduced
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Hardware Specifications */}
                 {isHardware && (
                   <Card>
