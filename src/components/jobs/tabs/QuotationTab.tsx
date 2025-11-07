@@ -71,6 +71,16 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   const currentVersion = currentQuote?.version || 1;
   const isEmptyVersion = (rooms?.length || 0) === 0 && quoteId;
 
+  // Debug: Log discount data
+  console.log('🔍 [QuotationTab] Current Quote Discount:', {
+    quoteId,
+    hasCurrentQuote: !!currentQuote,
+    discount_amount: currentQuote?.discount_amount,
+    discount_type: currentQuote?.discount_type,
+    discount_value: currentQuote?.discount_value,
+    discount_scope: currentQuote?.discount_scope
+  });
+
   // Fetch client data
   const { data: client } = useQuery({
     queryKey: ["project-client", projectId],
@@ -249,6 +259,16 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
     const subtotalAfterDiscount = subtotal - discountAmount;
     const taxAmountAfterDiscount = subtotalAfterDiscount * taxRate;
     const totalAfterDiscount = subtotalAfterDiscount + taxAmountAfterDiscount;
+    
+    // Debug: Log discount calculations
+    console.log('💰 [QuotationTab] Discount Calculations:', {
+      discountAmount,
+      subtotal,
+      subtotalAfterDiscount,
+      taxAmountAfterDiscount,
+      totalAfterDiscount,
+      hasDiscount: discountAmount > 0
+    });
     
     return {
       project: { ...project, client },
