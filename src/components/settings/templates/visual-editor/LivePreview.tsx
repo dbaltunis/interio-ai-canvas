@@ -165,6 +165,19 @@ const LivePreviewBlock = ({
         };
         return `${symbols[curr] || '£'}${projectData.subtotal.toFixed(2)}`;
       })(),
+      discount: (() => {
+        if (!projectData?.discount?.amount) return '£0.00';
+        const curr = projectData?.currency || 'GBP';
+        const symbols: Record<string, string> = {
+          'GBP': '£',
+          'EUR': '€',
+          'AUD': 'A$',
+          'NZD': 'NZ$',
+          'USD': '$',
+          'ZAR': 'R'
+        };
+        return `${symbols[curr] || '£'}${projectData.discount.amount.toFixed(2)}`;
+      })(),
       tax_amount: (() => {
         if (!projectData?.taxAmount) return '£0.00';
         const curr = projectData?.currency || 'GBP';
@@ -961,21 +974,23 @@ const LivePreviewBlock = ({
                 color: '#000 !important'
               }}
             >
-              {/* Total (including tax) */}
-              <div className="flex justify-end py-2" style={{ backgroundColor: '#ffffff !important' }}>
-                <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#111827 !important' }}>Total: {renderTokenValue('total')}</span>
-                </div>
-              </div>
-              
-              {/* Price excl. GST (Subtotal) */}
+              {/* Price excl. GST/Tax (Base Subtotal) */}
               {content.showSubtotal !== false && (
                 <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
                   <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
                     <span style={{ fontSize: '14px', color: '#111827 !important' }}>
-                      Price excl. {userBusinessSettings?.tax_type && userBusinessSettings.tax_type !== 'none' 
-                        ? userBusinessSettings.tax_type.toUpperCase() 
-                        : 'Tax'}: {renderTokenValue('subtotal')}
+                      Subtotal: {renderTokenValue('subtotal')}
+                    </span>
+                  </div>
+                </div>
+              )}
+              
+              {/* Discount (if applicable) */}
+              {projectData?.discount?.amount > 0 && (
+                <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
+                  <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
+                    <span style={{ fontSize: '14px', color: '#dc2626 !important' }}>
+                      Discount ({projectData.discount.type === 'percentage' ? `${projectData.discount.value}%` : 'Fixed'}): -{renderTokenValue('discount')}
                     </span>
                   </div>
                 </div>
@@ -995,9 +1010,9 @@ const LivePreviewBlock = ({
               )}
               
               {/* Grand total */}
-              <div className="flex justify-end py-3 mt-2" style={{ backgroundColor: '#ffffff !important' }}>
+              <div className="flex justify-end py-3 mt-2 border-t" style={{ backgroundColor: '#ffffff !important', borderColor: '#e5e7eb !important' }}>
                 <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
-                  <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#111827 !important' }}>Grand total: {renderTokenValue('total')}</span>
+                  <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#111827 !important' }}>Total: {renderTokenValue('total')}</span>
                 </div>
               </div>
             </div>

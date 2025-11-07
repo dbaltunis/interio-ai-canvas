@@ -244,6 +244,12 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
       currency = 'GBP';
     }
     
+    // Calculate discount if applicable
+    const discountAmount = currentQuote?.discount_amount || 0;
+    const subtotalAfterDiscount = subtotal - discountAmount;
+    const taxAmountAfterDiscount = subtotalAfterDiscount * taxRate;
+    const totalAfterDiscount = subtotalAfterDiscount + taxAmountAfterDiscount;
+    
     return {
       project: { ...project, client },
       client,
@@ -255,13 +261,19 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
       surfaces: surfaces || [],
       subtotal,
       taxRate,
-      taxAmount,
-      total,
+      taxAmount: discountAmount > 0 ? taxAmountAfterDiscount : taxAmount,
+      total: discountAmount > 0 ? totalAfterDiscount : total,
       currency,
       markupPercentage,
-      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      discount: discountAmount > 0 ? {
+        type: currentQuote.discount_type,
+        value: currentQuote.discount_value,
+        amount: discountAmount,
+        scope: currentQuote.discount_scope
+      } : undefined
     };
-  }, [project, client, businessSettings, sourceTreatments, workshopItems, rooms, surfaces, subtotal, taxRate, taxAmount, total, markupPercentage]);
+  }, [project, client, businessSettings, sourceTreatments, workshopItems, rooms, surfaces, subtotal, taxRate, taxAmount, total, markupPercentage, currentQuote]);
 
   // Download PDF
   const handleDownloadPDF = async () => {
