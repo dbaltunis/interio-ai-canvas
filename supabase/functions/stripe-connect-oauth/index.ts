@@ -41,18 +41,27 @@ serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const origin = req.headers.get("origin") || Deno.env.get("SITE_URL") || "http://localhost:5173";
+    
+    // Get Stripe client ID from environment
+    const stripeClientId = Deno.env.get("STRIPE_CLIENT_ID");
+    if (!stripeClientId) {
+      throw new Error("STRIPE_CLIENT_ID is not configured. Please add it in your Stripe Dashboard under Connect settings.");
+    }
 
-    // Create Stripe Connect account link
-    const accountLink = await stripe.accountLinks.create({
-      type: "account_onboarding",
-      account: "", // Will be created on first connection
-      refresh_url: `${origin}/settings?stripe_connect=refresh`,
-      return_url: `${origin}/settings?stripe_connect=success`,
-    });
+    // Create Stripe Connect OAuth URL for Standard Connect
+    const state = crypto.randomUUID(); // Generate state for CSRF protection
+    const redirectUri = `${origin}/settings?stripe_callback=true`;
+    
+    const oauthUrl = `https://connect.stripe.com/oauth/authorize?` +
+      `response_type=code&` +
+      `client_id=${stripeClientId}&` +
+      `scope=read_write&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `state=${state}`;
 
-    logStep("Account link created", { url: accountLink.url });
+    logStep("OAuth URL created", { redirectUri, state });
 
-    return new Response(JSON.stringify({ url: accountLink.url }), {
+    return new Response(JSON.stringify({ url: oauthUrl, state }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

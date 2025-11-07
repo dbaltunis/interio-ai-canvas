@@ -1,92 +1,41 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle2, CreditCard, ExternalLink, Loader2, AlertCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useStripeConnect } from "@/hooks/useStripeConnect";
 
 export const StripeIntegrationTab = () => {
-  const [isConfigured, setIsConfigured] = useState<boolean>(false);
-  const [isChecking, setIsChecking] = useState(true);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [connectedAccount, setConnectedAccount] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const {
+    isConnected,
+    isChecking,
+    isConnecting,
+    connectedAccountId,
+    initiateConnection,
+    handleCallback,
+    disconnect,
+  } = useStripeConnect();
 
+  // Handle OAuth callback
   useEffect(() => {
-    checkStripeConfiguration();
-  }, []);
-
-  const checkStripeConfiguration = async () => {
-    setIsChecking(true);
-    try {
-      // Check if user has a connected Stripe account
-      const { data: connection, error: connectionError } = await supabase
-        .from('payment_provider_connections')
-        .select('stripe_account_id, is_active')
-        .eq('provider', 'stripe')
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (connectionError && connectionError.code !== 'PGRST116') {
-        throw connectionError;
-      }
-
-      if (connection?.stripe_account_id) {
-        setConnectedAccount(connection.stripe_account_id);
-        setIsConfigured(true);
-      } else {
-        setIsConfigured(false);
-      }
-    } catch (error) {
-      console.error('Error checking Stripe configuration:', error);
-      setIsConfigured(false);
-    } finally {
-      setIsChecking(false);
-    }
-  };
-
-  const handleConnectStripe = async () => {
-    try {
-      setIsConnecting(true);
+    const code = searchParams.get('code');
+    const stripeCallback = searchParams.get('stripe_callback');
+    
+    if (code && stripeCallback === 'true') {
+      // Clean up URL
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('code');
+      newParams.delete('state');
+      newParams.delete('stripe_callback');
+      setSearchParams(newParams, { replace: true });
       
-      toast.info("Opening Stripe Connect...", {
-        description: "You'll be redirected to Stripe to connect your account"
-      });
-
-      // For now, direct users to Stripe Dashboard to get started
-      // In production, you'd implement the full OAuth flow
-      window.open('https://dashboard.stripe.com/register', '_blank');
-      
-      toast.info("After setting up Stripe", {
-        description: "Come back here and we'll connect your account"
-      });
-    } catch (error: any) {
-      console.error('Error connecting Stripe:', error);
-      toast.error(`Failed to initiate Stripe Connect: ${error.message}`);
-    } finally {
-      setIsConnecting(false);
+      // Handle the callback
+      handleCallback(code);
     }
-  };
-
-  const handleDisconnect = async () => {
-    try {
-      const { error } = await supabase
-        .from('payment_provider_connections')
-        .update({ is_active: false })
-        .eq('provider', 'stripe');
-
-      if (error) throw error;
-      
-      setIsConfigured(false);
-      setConnectedAccount(null);
-      toast.success("Stripe account disconnected");
-      await checkStripeConfiguration();
-    } catch (error: any) {
-      console.error('Error disconnecting Stripe:', error);
-      toast.error(`Failed to disconnect: ${error.message}`);
-    }
-  };
+  }, [searchParams, setSearchParams, handleCallback]);
 
   return (
     <Card>
@@ -102,8 +51,8 @@ export const StripeIntegrationTab = () => {
             </CardDescription>
           </div>
           {!isChecking && (
-            <Badge variant={isConfigured ? "default" : "secondary"}>
-              {isConfigured ? (
+            <Badge variant={isConnected ? "default" : "secondary"}>
+              {isConnected ? (
                 <>
                   <CheckCircle2 className="h-3 w-3 mr-1" />
                   Connected
@@ -121,14 +70,14 @@ export const StripeIntegrationTab = () => {
             <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
             <p className="text-muted-foreground">Checking connection status...</p>
           </div>
-        ) : isConfigured ? (
+        ) : isConnected ? (
           <>
             <Alert className="bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800">
               <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
               <AlertDescription className="text-green-800 dark:text-green-200">
                 <div className="font-semibold">Stripe Connected Successfully!</div>
-                {connectedAccount && (
-                  <div className="text-sm mt-1">Account ID: {connectedAccount}</div>
+                {connectedAccountId && (
+                  <div className="text-sm mt-1">Account ID: {connectedAccountId}</div>
                 )}
                 <div className="text-sm mt-1">Your clients can now pay you directly through Stripe</div>
               </AlertDescription>
@@ -181,7 +130,7 @@ export const StripeIntegrationTab = () => {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={handleDisconnect}
+                  onClick={disconnect}
                   className="flex-1"
                 >
                   Disconnect
@@ -233,7 +182,7 @@ export const StripeIntegrationTab = () => {
               </div>
 
               <Button
-                onClick={handleConnectStripe}
+                onClick={initiateConnection}
                 disabled={isConnecting}
                 className="w-full"
                 size="lg"
