@@ -8288,6 +8288,20 @@ export type Database = {
         Args: { invitation_token_param: string; user_id_param: string }
         Returns: Json
       }
+      audit_user_data: {
+        Args: never
+        Returns: {
+          email: string
+          has_slot_numbers: boolean
+          has_user_role: boolean
+          issues: string[]
+          parent_account_id: string
+          permission_count: number
+          profile_role: string
+          status_count: number
+          user_id: string
+        }[]
+      }
       calculate_lead_score: {
         Args: { client_id_param: string }
         Returns: number
@@ -8311,6 +8325,10 @@ export type Database = {
       }
       cleanup_duplicate_invitations: { Args: never; Returns: undefined }
       cleanup_expired_sessions: { Args: never; Returns: undefined }
+      copy_job_statuses_to_team_member: {
+        Args: { owner_id: string; team_member_id: string }
+        Returns: Json
+      }
       create_comprehensive_blind_templates: { Args: never; Returns: undefined }
       create_system_blind_templates: { Args: never; Returns: undefined }
       current_user_has_permission: {
@@ -8325,6 +8343,7 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: undefined
       }
+      fix_broken_user_data: { Args: { target_user_id: string }; Returns: Json }
       fix_pending_invitations: { Args: never; Returns: Json }
       fix_user_permissions_for_role: {
         Args: { target_user_id: string }

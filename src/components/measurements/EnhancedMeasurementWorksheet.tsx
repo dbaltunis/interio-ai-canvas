@@ -1201,6 +1201,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
               <Label htmlFor="windowCovering">Window Covering</Label>
               <ImprovedTreatmentSelector
                 selectedCoveringId={selectedWindowCovering !== "no_covering" ? selectedWindowCovering : undefined}
+                visualKey={surfaceData?.surface_type === 'room_wall' || surfaceData?.type === 'wall' ? 'room_wall' : undefined}
                 onCoveringSelect={(covering) => {
                   const newCoveringId = covering?.id || "no_covering";
                   console.log("🎯 USER SELECT: WindowCovering selected:", covering?.name, "ID:", newCoveringId);
