@@ -54,7 +54,6 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   const [showQuotationItems, setShowQuotationItems] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
-  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
   const { data: projects } = useProjects();
   const { data: treatments } = useTreatments(projectId, quoteId);
@@ -260,12 +259,12 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
       discountValue: currentQuote?.discount_value,
       discountAmount,
       subtotal,
-      subtotalAfterDiscount,
-      fullCurrentQuote: currentQuote
+      subtotalAfterDiscount
     });
     
     
     return {
+      quoteId: currentQuote?.id,
       project: { ...project, client },
       client,
       businessSettings,
@@ -287,7 +286,12 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
         amount: discountAmount,
         scope: currentQuote.discount_scope
       } : undefined,
-      _debug_discount: { hasDiscount, discountAmount, currentQuoteId: currentQuote?.id }
+      payment: currentQuote ? {
+        type: currentQuote.payment_type || 'full',
+        percentage: currentQuote.payment_percentage,
+        amount: currentQuote.payment_amount || total,
+        status: currentQuote.payment_status
+      } : undefined
     };
   }, [project, client, businessSettings, sourceTreatments, workshopItems, rooms, surfaces, subtotal, taxRate, taxAmount, total, markupPercentage, currentQuote]);
 
@@ -486,15 +490,7 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   };
 
   const handlePayment = async () => {
-    const effectiveQuoteId = await getOrCreateQuoteId();
-    if (!effectiveQuoteId) return;
-    
-    // If we created a new quote, we need to wait a moment for it to be available
-    if (effectiveQuoteId !== quoteId) {
-      setTimeout(() => setIsPaymentDialogOpen(true), 500);
-    } else {
-      setIsPaymentDialogOpen(true);
-    }
+    toast({ title: "Payment", description: "Scroll to payment section in quote preview" });
   };
 
   if (!project) {
@@ -753,20 +749,6 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
         } : undefined}
       />
 
-      {/* Payment Dialog */}
-      <QuotePaymentDialog
-        open={isPaymentDialogOpen}
-        onOpenChange={setIsPaymentDialogOpen}
-        quoteId={quoteId || quoteVersions?.[0]?.id || ''}
-        total={total}
-        currency={projectData.currency}
-        currentPayment={currentQuote?.payment_amount ? {
-          type: currentQuote.payment_type as 'full' | 'deposit',
-          percentage: currentQuote.payment_percentage || undefined,
-          amount: currentQuote.payment_amount || 0,
-          status: currentQuote.payment_status as 'pending' | 'paid' | 'failed' | 'deposit_paid' || 'pending',
-        } : undefined}
-      />
     </div>
   );
 };

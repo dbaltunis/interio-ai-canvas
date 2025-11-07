@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
+import { InlinePaymentConfig } from "@/components/jobs/quotation/InlinePaymentConfig";
+import {
   Building2,
   MapPin,
   Phone,
@@ -988,22 +989,15 @@ const LivePreviewBlock = ({
               )}
               
               {/* Discount (if applicable) */}
-              {(() => {
-                console.log('🎨 LivePreview - Discount check:', {
-                  hasDiscount: projectData?.discount?.amount > 0,
-                  discount: projectData?.discount,
-                  _debug: (projectData as any)?._debug_discount
-                });
-                return projectData?.discount?.amount > 0 ? (
-                  <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
-                    <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
-                      <span style={{ fontSize: '14px', color: '#dc2626 !important' }}>
-                        Discount ({projectData.discount.type === 'percentage' ? `${projectData.discount.value}%` : 'Fixed'}): -{renderTokenValue('discount')}
-                      </span>
-                    </div>
+              {projectData?.discount && projectData.discount.amount > 0 && (
+                <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
+                  <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
+                    <span style={{ fontSize: '14px', color: '#dc2626 !important' }}>
+                      Discount ({projectData.discount.type === 'percentage' ? `${projectData.discount.value}%` : 'Fixed'}): -{renderTokenValue('discount')}
+                    </span>
                   </div>
-                ) : null;
-              })()}
+                </div>
+              )}
               
               {/* GST/Tax */}
               {content.showTax && (
@@ -1580,6 +1574,18 @@ export const LivePreview = ({
                 onSettingsChange={onSettingsChange}
               />
             ))}
+            
+            {/* Payment Configuration Section - shown after all blocks */}
+            {projectData?.quoteId && (
+              <div className="mt-8 no-print">
+                <InlinePaymentConfig
+                  quoteId={projectData.quoteId}
+                  total={projectData.total || 0}
+                  currency={projectData.currency || 'USD'}
+                  currentPayment={projectData.payment}
+                />
+              </div>
+            )}
           </div>
           
           {/* Page break indicator every 297mm - subtle */}
