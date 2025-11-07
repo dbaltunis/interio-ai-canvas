@@ -4687,6 +4687,51 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_provider_connections: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          metadata: Json | null
+          paypal_merchant_id: string | null
+          provider: string
+          stripe_access_token: string | null
+          stripe_account_id: string | null
+          stripe_refresh_token: string | null
+          stripe_scope: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          paypal_merchant_id?: string | null
+          provider: string
+          stripe_access_token?: string | null
+          stripe_account_id?: string | null
+          stripe_refresh_token?: string | null
+          stripe_scope?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          paypal_merchant_id?: string | null
+          provider?: string
+          stripe_access_token?: string | null
+          stripe_account_id?: string | null
+          stripe_refresh_token?: string | null
+          stripe_scope?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       permission_audit_log: {
         Row: {
           action: string

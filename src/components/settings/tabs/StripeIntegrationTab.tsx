@@ -3,13 +3,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle2, CreditCard, ExternalLink, Info, Key } from "lucide-react";
+import { CheckCircle2, CreditCard, ExternalLink, Loader2, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export const StripeIntegrationTab = () => {
   const [isConfigured, setIsConfigured] = useState<boolean>(false);
   const [isChecking, setIsChecking] = useState(true);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [connectedAccount, setConnectedAccount] = useState<string | null>(null);
 
   useEffect(() => {
     checkStripeConfiguration();
@@ -18,36 +20,72 @@ export const StripeIntegrationTab = () => {
   const checkStripeConfiguration = async () => {
     setIsChecking(true);
     try {
-      // Try to call an edge function to verify Stripe is configured
-      const { error } = await supabase.functions.invoke('verify-quote-payment', {
-        body: { quote_id: 'test' }
-      });
-      
-      // If we get a specific error about missing quote, Stripe is configured
-      // If we get an error about STRIPE_SECRET_KEY, it's not configured
-      if (error) {
-        const errorMsg = error.message || '';
-        setIsConfigured(!errorMsg.includes('STRIPE_SECRET_KEY'));
-      } else {
+      // Check if user has a connected Stripe account
+      const { data: connection, error: connectionError } = await supabase
+        .from('payment_provider_connections')
+        .select('stripe_account_id, is_active')
+        .eq('provider', 'stripe')
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (connectionError && connectionError.code !== 'PGRST116') {
+        throw connectionError;
+      }
+
+      if (connection?.stripe_account_id) {
+        setConnectedAccount(connection.stripe_account_id);
         setIsConfigured(true);
+      } else {
+        setIsConfigured(false);
       }
     } catch (error) {
-      console.error('Error checking Stripe config:', error);
+      console.error('Error checking Stripe configuration:', error);
       setIsConfigured(false);
     } finally {
       setIsChecking(false);
     }
   };
 
-  const handleConfigureStripe = () => {
-    toast.info("Opening Stripe configuration...", {
-      description: "You'll need to add your STRIPE_SECRET_KEY in Supabase secrets"
-    });
-    // Open Supabase secrets page
-    window.open(
-      'https://supabase.com/dashboard/project/ldgrcodffsalkevafbkb/settings/functions',
-      '_blank'
-    );
+  const handleConnectStripe = async () => {
+    try {
+      setIsConnecting(true);
+      
+      toast.info("Opening Stripe Connect...", {
+        description: "You'll be redirected to Stripe to connect your account"
+      });
+
+      // For now, direct users to Stripe Dashboard to get started
+      // In production, you'd implement the full OAuth flow
+      window.open('https://dashboard.stripe.com/register', '_blank');
+      
+      toast.info("After setting up Stripe", {
+        description: "Come back here and we'll connect your account"
+      });
+    } catch (error: any) {
+      console.error('Error connecting Stripe:', error);
+      toast.error(`Failed to initiate Stripe Connect: ${error.message}`);
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    try {
+      const { error } = await supabase
+        .from('payment_provider_connections')
+        .update({ is_active: false })
+        .eq('provider', 'stripe');
+
+      if (error) throw error;
+      
+      setIsConfigured(false);
+      setConnectedAccount(null);
+      toast.success("Stripe account disconnected");
+      await checkStripeConfiguration();
+    } catch (error: any) {
+      console.error('Error disconnecting Stripe:', error);
+      toast.error(`Failed to disconnect: ${error.message}`);
+    }
   };
 
   return (
@@ -60,7 +98,7 @@ export const StripeIntegrationTab = () => {
               Stripe Payment Integration
             </CardTitle>
             <CardDescription>
-              Accept payments for quotes and invoices via Stripe
+              Connect your Stripe account to receive payments directly from your clients
             </CardDescription>
           </div>
           {!isChecking && (
@@ -71,7 +109,7 @@ export const StripeIntegrationTab = () => {
                   Connected
                 </>
               ) : (
-                "Not Configured"
+                "Not Connected"
               )}
             </Badge>
           )}
@@ -80,112 +118,146 @@ export const StripeIntegrationTab = () => {
       <CardContent className="space-y-6">
         {isChecking ? (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">Checking Stripe configuration...</p>
+            <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+            <p className="text-muted-foreground">Checking connection status...</p>
           </div>
         ) : isConfigured ? (
           <>
-            <Alert className="bg-green-50 border-green-200">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800">
-                <strong>Stripe is configured!</strong> You can now accept payments for quotes.
+            <Alert className="bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800">
+              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <AlertDescription className="text-green-800 dark:text-green-200">
+                <div className="font-semibold">Stripe Connected Successfully!</div>
+                {connectedAccount && (
+                  <div className="text-sm mt-1">Account ID: {connectedAccount}</div>
+                )}
+                <div className="text-sm mt-1">Your clients can now pay you directly through Stripe</div>
               </AlertDescription>
             </Alert>
 
             <div className="space-y-4">
               <div>
-                <h4 className="text-sm font-medium mb-2">Features Available</h4>
+                <h4 className="text-sm font-medium mb-3">How It Works:</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Accept full payments and deposits via Stripe Checkout</span>
+                    <span>Your clients pay directly to <strong>your Stripe account</strong></span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Automatic payment verification and status updates</span>
+                    <span>Funds are deposited to <strong>your bank account</strong> automatically</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Configurable deposit percentages or fixed amounts</span>
+                    <span>Configure full payments or deposit percentages on each quote</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Secure payment processing with Stripe's infrastructure</span>
+                    <span>Payment status automatically tracked in the system</span>
                   </li>
                 </ul>
               </div>
 
               <div className="pt-4 border-t">
-                <h4 className="text-sm font-medium mb-3">How to Use</h4>
+                <h4 className="text-sm font-medium mb-3">How to Use:</h4>
                 <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
-                  <li>Create or open a quote in the Quotes tab</li>
-                  <li>Configure payment options (full payment or deposit)</li>
+                  <li>Create or open a quote</li>
+                  <li>In the Payment Configuration section, choose full payment or deposit</li>
+                  <li>Set the deposit percentage if needed</li>
+                  <li>Save configuration - the "Pay Now" button will appear</li>
                   <li>Share the quote with your client</li>
-                  <li>Client clicks "Pay Now" button to complete payment via Stripe</li>
+                  <li>Client clicks "Pay Now" and pays via Stripe</li>
+                  <li>Funds go directly to your bank account!</li>
                 </ol>
               </div>
 
-              <Button
-                variant="outline"
-                onClick={() => window.open('https://dashboard.stripe.com', '_blank')}
-                className="w-full"
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Open Stripe Dashboard
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => window.open('https://dashboard.stripe.com', '_blank')}
+                  className="flex-1"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  View Stripe Dashboard
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleDisconnect}
+                  className="flex-1"
+                >
+                  Disconnect
+                </Button>
+              </div>
             </div>
           </>
         ) : (
           <>
             <Alert>
-              <Info className="h-4 w-4" />
+              <CreditCard className="h-4 w-4" />
               <AlertDescription>
-                To enable Stripe payments, you need to configure your Stripe API key in Supabase.
+                Connect your Stripe account to start receiving payments directly from your clients.
+                Payments go straight to your bank account.
               </AlertDescription>
             </Alert>
 
             <div className="space-y-4">
               <div>
-                <h4 className="text-sm font-medium mb-2">Setup Steps</h4>
-                <ol className="space-y-3 text-sm text-muted-foreground list-decimal list-inside">
-                  <li>
-                    Get your Stripe Secret Key from{" "}
-                    <a
-                      href="https://dashboard.stripe.com/apikeys"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline inline-flex items-center gap-1"
-                    >
-                      Stripe Dashboard
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
+                <h4 className="text-sm font-medium mb-3">Why Connect Stripe?</h4>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span><strong>Get paid faster</strong> - Clients pay instantly online</span>
                   </li>
-                  <li>
-                    Add the key as <code className="bg-muted px-1 py-0.5 rounded">STRIPE_SECRET_KEY</code> in Supabase Edge Function Secrets
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span><strong>Your money, your account</strong> - Funds go directly to your bank</span>
                   </li>
-                  <li>
-                    Refresh this page to verify the configuration
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span><strong>Secure payments</strong> - Stripe handles all payment security</span>
                   </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span><strong>Accept cards & more</strong> - Credit cards, debit cards, and digital wallets</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="pt-4 border-t">
+                <h4 className="text-sm font-medium mb-3">Setup Steps:</h4>
+                <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
+                  <li>Click "Connect Stripe Account" below</li>
+                  <li>Create a Stripe account or sign in to your existing one</li>
+                  <li>Complete the verification process (bank account, business details)</li>
+                  <li>Return here and your account will be connected!</li>
                 </ol>
               </div>
 
-              <div className="flex gap-2">
-                <Button onClick={handleConfigureStripe} className="flex-1">
-                  <Key className="h-4 w-4 mr-2" />
-                  Configure Stripe Key
-                </Button>
-                <Button variant="outline" onClick={checkStripeConfiguration}>
-                  Check Status
-                </Button>
-              </div>
-            </div>
+              <Button
+                onClick={handleConnectStripe}
+                disabled={isConnecting}
+                className="w-full"
+                size="lg"
+              >
+                {isConnecting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Connect Your Stripe Account
+                  </>
+                )}
+              </Button>
 
-            <Alert className="bg-yellow-50 border-yellow-200">
-              <Info className="h-4 w-4 text-yellow-600" />
-              <AlertDescription className="text-yellow-800 text-xs">
-                <strong>Important:</strong> Use your Stripe <strong>Secret Key</strong>, not the Publishable Key.
-                The secret key starts with <code className="bg-yellow-100 px-1 py-0.5 rounded">sk_</code>
-              </AlertDescription>
-            </Alert>
+              <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800">
+                <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <AlertDescription className="text-blue-800 dark:text-blue-200 text-xs">
+                  <strong>Free to get started:</strong> Stripe is free to sign up. You only pay a small fee when you receive payments (typically ~2.9% + 30¢ per transaction).
+                </AlertDescription>
+              </Alert>
+            </div>
           </>
         )}
       </CardContent>
