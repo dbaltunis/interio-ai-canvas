@@ -75,11 +75,15 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   // Debug: Log discount data
   console.log('🔍 [QuotationTab] Current Quote Discount:', {
     quoteId,
+    quoteVersionsLength: quoteVersions?.length,
+    quoteVersionsIds: quoteVersions?.map(q => q.id),
     hasCurrentQuote: !!currentQuote,
+    currentQuoteId: currentQuote?.id,
     discount_amount: currentQuote?.discount_amount,
     discount_type: currentQuote?.discount_type,
     discount_value: currentQuote?.discount_value,
-    discount_scope: currentQuote?.discount_scope
+    discount_scope: currentQuote?.discount_scope,
+    fullCurrentQuote: currentQuote
   });
 
   // Fetch client data
@@ -268,10 +272,17 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
       discountAmount,
       discountType: currentQuote?.discount_type,
       discountValue: currentQuote?.discount_value,
+      discountScope: currentQuote?.discount_scope,
       subtotal,
       subtotalAfterDiscount,
       taxAmountAfterDiscount,
-      totalAfterDiscount
+      totalAfterDiscount,
+      projectDataDiscount: {
+        type: currentQuote?.discount_type,
+        value: currentQuote?.discount_value,
+        amount: discountAmount,
+        scope: currentQuote?.discount_scope
+      }
     });
     
     return {
