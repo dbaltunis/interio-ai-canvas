@@ -65,7 +65,9 @@ export const useQuoteDiscount = () => {
       items: any[];
       subtotal: number;
     }) => {
+      console.log('💾 Applying discount:', { quoteId, config, itemsCount: items.length, subtotal });
       const discountAmount = calculateDiscountAmount(items, config, subtotal);
+      console.log('💰 Calculated discount amount:', discountAmount);
 
       const { data, error } = await supabase
         .from("quotes")
@@ -81,7 +83,11 @@ export const useQuoteDiscount = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error applying discount:', error);
+        throw error;
+      }
+      console.log('✅ Discount applied successfully:', data);
       return data;
     },
     onSuccess: () => {

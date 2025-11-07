@@ -254,7 +254,8 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
       currency = 'GBP';
     }
     
-    // Calculate discount if applicable
+    // Calculate discount if applicable - check for discount_type, not just amount
+    const hasDiscount = !!currentQuote?.discount_type;
     const discountAmount = currentQuote?.discount_amount || 0;
     const subtotalAfterDiscount = subtotal - discountAmount;
     const taxAmountAfterDiscount = subtotalAfterDiscount * taxRate;
@@ -262,31 +263,33 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
     
     // Debug: Log discount calculations
     console.log('💰 [QuotationTab] Discount Calculations:', {
+      hasDiscount,
       discountAmount,
+      discountType: currentQuote?.discount_type,
+      discountValue: currentQuote?.discount_value,
       subtotal,
       subtotalAfterDiscount,
       taxAmountAfterDiscount,
-      totalAfterDiscount,
-      hasDiscount: discountAmount > 0
+      totalAfterDiscount
     });
     
     return {
       project: { ...project, client },
       client,
       businessSettings,
-      items: sourceTreatments, // Changed from 'treatments' to 'items' to match LivePreview expectation
-      treatments: sourceTreatments, // Keep for backward compatibility
+      items: sourceTreatments,
+      treatments: sourceTreatments,
       workshopItems: workshopItems || [],
       rooms: rooms || [],
       surfaces: surfaces || [],
       subtotal,
       taxRate,
-      taxAmount: discountAmount > 0 ? taxAmountAfterDiscount : taxAmount,
-      total: discountAmount > 0 ? totalAfterDiscount : total,
+      taxAmount: hasDiscount ? taxAmountAfterDiscount : taxAmount,
+      total: hasDiscount ? totalAfterDiscount : total,
       currency,
       markupPercentage,
       validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      discount: discountAmount > 0 ? {
+      discount: hasDiscount ? {
         type: currentQuote.discount_type,
         value: currentQuote.discount_value,
         amount: discountAmount,
@@ -749,7 +752,7 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
           value: currentQuote.discount_value || 0,
           scope: currentQuote.discount_scope as 'all' | 'fabrics_only' | 'selected_items',
           amount: currentQuote.discount_amount || 0,
-          selectedItems: currentQuote.selected_discount_items as string[] || undefined,
+          selectedItems: (currentQuote.selected_discount_items as string[]) || undefined,
         } : undefined}
       />
 
