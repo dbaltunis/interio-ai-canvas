@@ -524,6 +524,7 @@ export const WindowTreatmentOptionsManager = () => {
       cellular_blinds: 'Cellular Shades',
       curtains: 'Curtains',
       panel_glide: 'Panel Glides',
+      wallpaper: 'Wallpaper',
     };
     return labels[category];
   };
