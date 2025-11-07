@@ -51,6 +51,11 @@ export const TREATMENT_CATEGORIES = {
     db_value: 'awning',
     display_name: 'Awnings',
     singular: 'awning'
+  },
+  WALLPAPER: {
+    db_value: 'wallpaper',
+    display_name: 'Wallpaper',
+    singular: 'wallpaper'
   }
 } as const;
 
