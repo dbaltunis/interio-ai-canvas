@@ -585,14 +585,14 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                 <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
                                   {otherTeamMembers.map((m) => (
                                   <div key={m.id} className="flex items-center justify-between p-3 rounded-lg glass-morphism border border-border">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                      <Avatar className="h-8 w-8">
+                                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                                      <Avatar className="h-8 w-8 shrink-0">
                                         <AvatarImage src={m.avatar_url} />
                                         <AvatarFallback className="bg-muted text-foreground text-xs">
                                           {m.name?.charAt(0) || 'U'}
                                         </AvatarFallback>
                                       </Avatar>
-                                      <div className="min-w-0">
+                                      <div className="min-w-0 flex-1">
                                         <p className="text-sm font-medium text-foreground truncate">{m.name}</p>
                                         <p className="text-xs text-muted-foreground truncate">{m.role}</p>
                                       </div>

@@ -60,6 +60,16 @@ export const DynamicWindowWorksheet = forwardRef<{
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [selectedTreatmentType, setSelectedTreatmentType] = useState("curtains");
   const [treatmentCategory, setTreatmentCategory] = useState<TreatmentCategory>('curtains');
+  
+  // Clear treatment selection when window type changes
+  useEffect(() => {
+    if (selectedWindowType?.visualKey && selectedWindowType.visualKey !== visualKey) {
+      console.log('🔄 Window type changed, clearing treatment selection');
+      setSelectedTemplate(null);
+      setTreatmentCategory('curtains');
+      setSelectedTreatmentType('curtains');
+    }
+  }, [selectedWindowType, visualKey]);
   const [measurements, setMeasurements] = useState<Record<string, any>>({});
   const [selectedItems, setSelectedItems] = useState<{
     fabric?: any;
