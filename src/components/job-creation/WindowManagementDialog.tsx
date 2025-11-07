@@ -487,7 +487,9 @@ export const WindowManagementDialog = ({
                         }}
                         className="h-4 text-xs font-semibold border-0 bg-transparent px-0 focus-visible:ring-0"
                         autoFocus
+                        maxLength={100}
                       />
+                      <span className="text-[10px] text-muted-foreground shrink-0">{editProductValue.length}/100</span>
                       <Button 
                         variant="ghost" 
                         size="sm" 
@@ -550,7 +552,9 @@ export const WindowManagementDialog = ({
                         }}
                         className="h-4 text-xs border-0 bg-transparent px-0 focus-visible:ring-0"
                         autoFocus
+                        maxLength={200}
                       />
+                      <span className="text-[10px] text-muted-foreground shrink-0">{editDescriptionValue.length}/200</span>
                       <Button 
                         variant="ghost" 
                         size="sm" 

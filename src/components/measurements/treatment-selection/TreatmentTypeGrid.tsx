@@ -11,6 +11,7 @@ interface TreatmentType {
   heading_name?: string;
   created_at: string;
   image_url?: string;
+  display_image_url?: string;
 }
 
 interface TreatmentTypeGridProps {
@@ -90,11 +91,14 @@ export const TreatmentTypeGrid = ({
                     <div className="flex flex-col items-center space-y-2">
                       {/* Image preview or placeholder */}
                       <div className="aspect-square w-full flex items-center justify-center bg-muted border border-border rounded overflow-hidden">
-                        {treatment.image_url ? (
+                        {treatment.image_url || treatment.display_image_url ? (
                           <img 
-                            src={treatment.image_url} 
+                            src={treatment.display_image_url || treatment.image_url} 
                             alt={treatment.name}
                             className="w-full h-full object-contain"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
                           />
                         ) : (
                           <div className="text-muted-foreground text-xs">No preview</div>

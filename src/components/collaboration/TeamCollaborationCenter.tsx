@@ -285,6 +285,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                     onChange={(e) => setStatusMessage(e.target.value)}
                                     placeholder="Custom status..."
                                     className="h-6 text-xs flex-1"
+                                    maxLength={100}
                                     onKeyDown={(e) => {
                                       if (e.key === 'Enter') {
                                         handleStatusMessageSave();
@@ -302,6 +303,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                   >
                                     <Check className="h-3 w-3" />
                                   </Button>
+                                  <span className="text-[10px] text-muted-foreground shrink-0">{statusMessage.length}/100</span>
                                 </div>
                               </div>
                             ) : (
