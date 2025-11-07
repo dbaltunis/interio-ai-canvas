@@ -253,6 +253,16 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
     const taxAmountAfterDiscount = subtotalAfterDiscount * taxRate;
     const totalAfterDiscount = subtotalAfterDiscount + taxAmountAfterDiscount;
     
+    console.log('📊 Discount calculation:', {
+      currentQuoteId: currentQuote?.id,
+      hasDiscount,
+      discountType: currentQuote?.discount_type,
+      discountValue: currentQuote?.discount_value,
+      discountAmount,
+      subtotal,
+      subtotalAfterDiscount
+    });
+    
     
     return {
       project: { ...project, client },
@@ -722,7 +732,10 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
       {/* Discount Dialog */}
       <QuoteDiscountDialog
         open={isDiscountDialogOpen}
-        onOpenChange={setIsDiscountDialogOpen}
+        onOpenChange={(open) => {
+          console.log('🚪 Dialog state changing to:', open, 'currentQuote:', currentQuote?.id, 'discount:', currentQuote?.discount_type);
+          setIsDiscountDialogOpen(open);
+        }}
         quoteId={quoteId || quoteVersions?.[0]?.id || ''}
         projectId={projectId}
         items={quotationData.items || []}

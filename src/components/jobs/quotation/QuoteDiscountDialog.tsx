@@ -41,28 +41,29 @@ export const QuoteDiscountDialog = ({
 }: QuoteDiscountDialogProps) => {
   const { applyDiscount, removeDiscount, calculateDiscountAmount, getItemPrice } = useQuoteDiscount(projectId);
 
-  const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>(
-    currentDiscount?.type || 'percentage'
-  );
-  const [discountValue, setDiscountValue] = useState<number>(
-    currentDiscount?.value || 0
-  );
-  const [discountScope, setDiscountScope] = useState<'all' | 'fabrics_only' | 'selected_items'>(
-    currentDiscount?.scope || 'all'
-  );
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(
-    new Set(currentDiscount?.selectedItems || [])
-  );
+  const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage');
+  const [discountValue, setDiscountValue] = useState<number>(0);
+  const [discountScope, setDiscountScope] = useState<'all' | 'fabrics_only' | 'selected_items'>('all');
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
 
-  // Update state when currentDiscount changes and has data
+  // Load saved discount values when dialog opens
   React.useEffect(() => {
-    if (currentDiscount) {
-      setDiscountType(currentDiscount.type);
-      setDiscountValue(currentDiscount.value);
-      setDiscountScope(currentDiscount.scope);
-      setSelectedItems(new Set(currentDiscount.selectedItems || []));
+    if (open) {
+      console.log('💾 Dialog opening with currentDiscount:', currentDiscount);
+      if (currentDiscount) {
+        setDiscountType(currentDiscount.type);
+        setDiscountValue(currentDiscount.value);
+        setDiscountScope(currentDiscount.scope);
+        setSelectedItems(new Set(currentDiscount.selectedItems || []));
+      } else {
+        // Reset to defaults if no discount
+        setDiscountType('percentage');
+        setDiscountValue(0);
+        setDiscountScope('all');
+        setSelectedItems(new Set());
+      }
     }
-  }, [currentDiscount]);
+  }, [open, currentDiscount]);
 
 
   const config: DiscountConfig = {
