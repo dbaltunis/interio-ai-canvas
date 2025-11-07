@@ -19,6 +19,15 @@ interface MobileClientViewProps {
 export const MobileClientView = ({ onClientClick }: MobileClientViewProps) => {
   const { data: clients = [], isLoading } = useClients();
   const [showFilters, setShowFilters] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+
+  // Filter clients based on selected filters
+  const filteredClients = clients.filter(client => {
+    const statusMatch = statusFilter === 'all' || client.funnel_stage === statusFilter;
+    const typeMatch = typeFilter === 'all' || client.client_type === typeFilter;
+    return statusMatch && typeMatch;
+  });
 
   const getClientAvatarColor = (clientName: string) => {
     const colors = [
@@ -90,7 +99,7 @@ export const MobileClientView = ({ onClientClick }: MobileClientViewProps) => {
           
           <Button 
             onClick={() => setShowFilters(!showFilters)}
-            variant="outline"
+            variant={showFilters ? "default" : "outline"}
             size="sm"
             className="h-9"
           >
@@ -98,9 +107,62 @@ export const MobileClientView = ({ onClientClick }: MobileClientViewProps) => {
           </Button>
         </div>
 
+        {/* Filters Panel */}
+        {showFilters && (
+          <Card className="p-4 space-y-4 border-primary/20 bg-card animate-fade-in">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Status</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full p-2 rounded-lg border bg-background text-sm"
+              >
+                <option value="all">All Statuses</option>
+                <option value="lead">Lead</option>
+                <option value="contacted">Contacted</option>
+                <option value="qualified">Qualified</option>
+                <option value="proposal">Proposal</option>
+                <option value="negotiation">Negotiation</option>
+                <option value="approved">Approved</option>
+                <option value="client">Client</option>
+                <option value="lost">Lost</option>
+              </select>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Client Type</label>
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="w-full p-2 rounded-lg border bg-background text-sm"
+              >
+                <option value="all">All Types</option>
+                <option value="B2C">B2C (Individual)</option>
+                <option value="B2B">B2B (Business)</option>
+              </select>
+            </div>
+
+            <div className="flex justify-between items-center pt-2 border-t">
+              <span className="text-sm text-muted-foreground">
+                {filteredClients.length} of {clients.length} clients
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setStatusFilter('all');
+                  setTypeFilter('all');
+                }}
+              >
+                Clear
+              </Button>
+            </div>
+          </Card>
+        )}
+
         {/* Clients List */}
         <div className="space-y-3 pb-20" data-create-client>
-          {clients.map((client) => {
+          {filteredClients.map((client) => {
             const displayName = client.client_type === 'B2B' ? client.company_name : client.name;
             const initials = (displayName || 'U').substring(0, 2).toUpperCase();
             const avatarColor = getClientAvatarColor(displayName || 'Unknown');
