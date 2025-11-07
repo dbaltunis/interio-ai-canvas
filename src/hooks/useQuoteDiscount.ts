@@ -31,17 +31,18 @@ export const useQuoteDiscount = () => {
       // Filter items that contain fabric-related keywords
       const fabricItems = items.filter(item => {
         const searchText = [
-          item.name,
-          item.category,
-          item.description,
-          item.type
-        ].join(' ').toLowerCase();
+          item.name || '',
+          item.description || ''
+        ].filter(Boolean).join(' ').toLowerCase();
         
         return searchText.includes('fabric') || 
                searchText.includes('material') ||
                searchText.includes('textile') ||
                searchText.includes('curtain') ||
-               searchText.includes('drape');
+               searchText.includes('drape') ||
+               searchText.includes('blind') ||
+               searchText.includes('roman') ||
+               searchText.includes('roller');
       });
       discountableAmount = fabricItems.reduce((sum, item) => sum + getItemPrice(item), 0);
     } else if (config.scope === 'selected_items' && config.selectedItems) {
