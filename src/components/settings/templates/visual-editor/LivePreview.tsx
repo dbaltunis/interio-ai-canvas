@@ -25,7 +25,8 @@ import {
   Minus,
   Plus,
   Space,
-  Info
+  Info,
+  CreditCard
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SignatureCanvas } from './SignatureCanvas';
@@ -1018,6 +1019,31 @@ const LivePreviewBlock = ({
                   <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#111827 !important' }}>Total: {renderTokenValue('total')}</span>
                 </div>
               </div>
+              
+              {/* Payment Button - Shows when payment is configured */}
+              {projectData?.payment && projectData.payment.amount > 0 && !isPrintMode && (
+                <div className="flex justify-end mt-4 no-print">
+                  <Button
+                    size="lg"
+                    className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
+                    onClick={async () => {
+                      if (projectData?.quoteId) {
+                        const { supabase } = await import("@/integrations/supabase/client");
+                        const { data, error } = await supabase.functions.invoke("create-quote-payment", {
+                          body: { quote_id: projectData.quoteId },
+                        });
+                        if (data?.url) window.open(data.url, "_blank");
+                      }
+                    }}
+                  >
+                    <CreditCard className="h-5 w-5" />
+                    {projectData.payment.type === 'deposit' 
+                      ? `Pay Deposit - ${renderTokenValue('currency_symbol')}${projectData.payment.amount.toFixed(2)}`
+                      : `Pay Now - ${renderTokenValue('total')}`
+                    }
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>

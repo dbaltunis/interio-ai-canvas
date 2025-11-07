@@ -123,39 +123,58 @@ export const InlinePaymentConfig = ({
   };
 
   return (
-    <Card className="p-6 space-y-6 bg-muted/50">
+    <Card className="p-8 space-y-6 bg-card border-2">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Payment Configuration</h3>
+        <div className="space-y-1">
+          <h3 className="text-2xl font-semibold">Configure Payment</h3>
+          <p className="text-sm text-muted-foreground">Set up how you want to receive payment for this quote</p>
+        </div>
         {getStatusBadge()}
       </div>
 
       {!isPaid && (
         <>
-          {/* Payment Type Selection */}
-          <div className="space-y-3">
-            <Label>Payment Type</Label>
+          {/* Payment Type Selection - Focused Group */}
+          <div className="space-y-4 p-6 border rounded-lg bg-muted/30">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-primary" />
+              <Label className="text-base font-medium">Payment Type</Label>
+            </div>
             <RadioGroup value={paymentType} onValueChange={(v: 'full' | 'deposit') => setPaymentType(v)}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="full" id="full" disabled={isPaid} />
-                <Label htmlFor="full" className="cursor-pointer">Full Payment</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="deposit" id="deposit" disabled={isPaid} />
-                <Label htmlFor="deposit" className="cursor-pointer">Deposit Payment</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className={`flex items-center space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${paymentType === 'full' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}>
+                  <RadioGroupItem value="full" id="full" disabled={isPaid} />
+                  <Label htmlFor="full" className="cursor-pointer flex-1">
+                    <div className="font-medium">Full Payment</div>
+                    <div className="text-xs text-muted-foreground">Receive entire amount upfront</div>
+                  </Label>
+                </div>
+                <div className={`flex items-center space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${paymentType === 'deposit' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}>
+                  <RadioGroupItem value="deposit" id="deposit" disabled={isPaid} />
+                  <Label htmlFor="deposit" className="cursor-pointer flex-1">
+                    <div className="font-medium">Deposit Payment</div>
+                    <div className="text-xs text-muted-foreground">Partial payment now, rest later</div>
+                  </Label>
+                </div>
               </div>
             </RadioGroup>
           </div>
 
           {/* Deposit Configuration */}
           {paymentType === 'deposit' && (
-            <div className="space-y-3 pl-6 border-l-2 border-primary/20">
+            <div className="space-y-4 p-6 border rounded-lg bg-accent/30 animate-in fade-in-50 slide-in-from-top-2">
+              <div className="flex items-center gap-2">
+                <Percent className="h-5 w-5 text-primary" />
+                <Label className="text-base font-medium">Deposit Amount</Label>
+              </div>
+              
               <div className="flex items-center gap-4">
                 <Button
                   type="button"
                   variant={!useFixedAmount ? "default" : "outline"}
-                  size="sm"
+                  size="lg"
                   onClick={() => setUseFixedAmount(false)}
-                  className="gap-2"
+                  className="gap-2 flex-1"
                 >
                   <Percent className="h-4 w-4" />
                   Percentage
@@ -163,9 +182,9 @@ export const InlinePaymentConfig = ({
                 <Button
                   type="button"
                   variant={useFixedAmount ? "default" : "outline"}
-                  size="sm"
+                  size="lg"
                   onClick={() => setUseFixedAmount(true)}
-                  className="gap-2"
+                  className="gap-2 flex-1"
                 >
                   <DollarSign className="h-4 w-4" />
                   Fixed Amount
@@ -173,8 +192,21 @@ export const InlinePaymentConfig = ({
               </div>
 
               {!useFixedAmount ? (
-                <div className="space-y-2">
-                  <Label>Deposit Percentage</Label>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm">Deposit Percentage</Label>
+                    <span className="text-2xl font-bold text-primary">{depositPercentage}%</span>
+                  </div>
+                  <Input
+                    type="range"
+                    min="10"
+                    max="90"
+                    step="5"
+                    value={depositPercentage}
+                    onChange={(e) => setDepositPercentage(parseInt(e.target.value))}
+                    disabled={isPaid}
+                    className="w-full"
+                  />
                   <div className="flex items-center gap-2">
                     <Input
                       type="number"
@@ -189,9 +221,10 @@ export const InlinePaymentConfig = ({
                   </div>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label>Fixed Deposit Amount</Label>
                   <div className="flex items-center gap-2">
+                    <span className="text-lg font-medium">{currency}</span>
                     <Input
                       type="number"
                       min="0"
@@ -199,10 +232,9 @@ export const InlinePaymentConfig = ({
                       step="0.01"
                       value={fixedAmount}
                       onChange={(e) => setFixedAmount(parseFloat(e.target.value) || 0)}
-                      className="w-32"
+                      className="text-lg font-semibold"
                       disabled={isPaid}
                     />
-                    <span className="text-sm text-muted-foreground">{currency}</span>
                   </div>
                 </div>
               )}
@@ -211,61 +243,46 @@ export const InlinePaymentConfig = ({
         </>
       )}
 
-      {/* Payment Summary */}
-      <div className="bg-background rounded-lg p-4 space-y-2 border">
+      {/* Payment Summary - Enhanced */}
+      <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-6 space-y-3 border-2 border-primary/20">
+        <h4 className="font-semibold text-base mb-4">Payment Summary</h4>
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Total Amount:</span>
+          <span className="text-muted-foreground">Quote Total:</span>
           <span className="font-medium">{formatCurrency(total, currency)}</span>
         </div>
-        <div className="flex justify-between font-semibold text-lg border-t pt-2">
+        <div className="flex justify-between font-semibold text-xl border-t-2 pt-3 mt-2">
           <span>Payment Required:</span>
           <span className="text-primary">{formatCurrency(paymentAmount, currency)}</span>
         </div>
         {paymentType === 'deposit' && !isPaid && (
-          <p className="text-xs text-muted-foreground">
-            Remaining balance: {formatCurrency(total - paymentAmount, currency)}
-          </p>
+          <div className="text-sm pt-2 border-t">
+            <div className="flex justify-between text-muted-foreground">
+              <span>Remaining balance:</span>
+              <span>{formatCurrency(total - paymentAmount, currency)}</span>
+            </div>
+          </div>
         )}
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-3">
+      <div className="flex gap-3 pt-2">
         {hasChanges && !isPaid && (
           <Button
             onClick={handleSaveConfig}
             variant="outline"
+            size="lg"
             disabled={updatePaymentConfig.isPending}
+            className="flex-1"
           >
             {updatePaymentConfig.isPending ? "Saving..." : "Save Configuration"}
-          </Button>
-        )}
-        
-        {!isPaid && (
-          <Button
-            onClick={handlePayNow}
-            disabled={createPayment.isPending || updatePaymentConfig.isPending}
-            className="gap-2 flex-1"
-          >
-            <CreditCard className="h-4 w-4" />
-            {createPayment.isPending ? "Processing..." : "Pay Now with Stripe"}
-          </Button>
-        )}
-        
-        {currentPayment?.status === 'pending' && (
-          <Button
-            onClick={handleVerify}
-            variant="secondary"
-            disabled={verifyPayment.isPending}
-          >
-            {verifyPayment.isPending ? "Verifying..." : "Verify Payment"}
           </Button>
         )}
       </div>
 
       {isPaid && (
-        <div className="text-center py-4 text-muted-foreground">
-          <CheckCircle2 className="h-12 w-12 mx-auto mb-2 text-green-600" />
-          <p className="font-medium">Payment Complete</p>
+        <div className="text-center py-6 text-muted-foreground animate-in fade-in-50 zoom-in-95">
+          <CheckCircle2 className="h-16 w-16 mx-auto mb-3 text-green-600" />
+          <p className="font-semibold text-lg">Payment Complete</p>
           <p className="text-sm">Thank you for your payment!</p>
         </div>
       )}
