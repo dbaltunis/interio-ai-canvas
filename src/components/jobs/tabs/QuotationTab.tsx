@@ -72,19 +72,6 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   const currentVersion = currentQuote?.version || 1;
   const isEmptyVersion = (rooms?.length || 0) === 0 && quoteId;
 
-  // Debug: Log discount data
-  console.log('🔍 [QuotationTab] Current Quote Discount:', {
-    quoteId,
-    quoteVersionsLength: quoteVersions?.length,
-    quoteVersionsIds: quoteVersions?.map(q => q.id),
-    hasCurrentQuote: !!currentQuote,
-    currentQuoteId: currentQuote?.id,
-    discount_amount: currentQuote?.discount_amount,
-    discount_type: currentQuote?.discount_type,
-    discount_value: currentQuote?.discount_value,
-    discount_scope: currentQuote?.discount_scope,
-    fullCurrentQuote: currentQuote
-  });
 
   // Fetch client data
   const { data: client } = useQuery({
@@ -266,26 +253,8 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
     const taxAmountAfterDiscount = subtotalAfterDiscount * taxRate;
     const totalAfterDiscount = subtotalAfterDiscount + taxAmountAfterDiscount;
     
-    // Debug: Log discount calculations
-    console.log('💰 [QuotationTab] Discount Calculations:', {
-      hasDiscount,
-      discountAmount,
-      discountType: currentQuote?.discount_type,
-      discountValue: currentQuote?.discount_value,
-      discountScope: currentQuote?.discount_scope,
-      subtotal,
-      subtotalAfterDiscount,
-      taxAmountAfterDiscount,
-      totalAfterDiscount,
-      projectDataDiscount: {
-        type: currentQuote?.discount_type,
-        value: currentQuote?.discount_value,
-        amount: discountAmount,
-        scope: currentQuote?.discount_scope
-      }
-    });
     
-    return {
+    const result = {
       project: { ...project, client },
       client,
       businessSettings,
@@ -308,6 +277,8 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
         scope: currentQuote.discount_scope
       } : undefined
     };
+    console.log('🎯 FINAL projectData:', { hasDiscount, discount: result.discount, quote: currentQuote?.id });
+    return result;
   }, [project, client, businessSettings, sourceTreatments, workshopItems, rooms, surfaces, subtotal, taxRate, taxAmount, total, markupPercentage, currentQuote]);
 
   // Download PDF

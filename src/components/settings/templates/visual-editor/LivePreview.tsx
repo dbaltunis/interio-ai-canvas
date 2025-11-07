@@ -83,18 +83,6 @@ const LivePreviewBlock = ({
     blockData: block 
   });
 
-  // Debug: Log discount data received
-  React.useEffect(() => {
-    if (blockType === 'totals') {
-      console.log('💰 [LivePreview Totals Block] Discount Data:', {
-        hasDiscount: !!projectData?.discount,
-        discount: projectData?.discount,
-        subtotal: projectData?.subtotal,
-        total: projectData?.total,
-        taxAmount: projectData?.taxAmount
-      });
-    }
-  }, [blockType, projectData?.discount, projectData?.subtotal, projectData?.total]);
 
   const renderTokenValue = (token: string) => {
     // Use real project data or fallback to defaults
