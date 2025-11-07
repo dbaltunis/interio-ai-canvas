@@ -595,8 +595,8 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                         </AvatarFallback>
                                       </Avatar>
                                       <div className="min-w-0 flex-1">
-                                        <p className="text-sm font-medium text-foreground truncate">{m.name}</p>
-                                        <p className="text-xs text-muted-foreground truncate">{m.role}</p>
+                                        <p className="text-sm font-medium text-foreground truncate max-w-[180px]">{m.name}</p>
+                                        <p className="text-xs text-muted-foreground truncate max-w-[180px]">{m.role}</p>
                                       </div>
                                     </div>
                                     <div className="flex items-center gap-2">
