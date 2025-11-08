@@ -74,9 +74,10 @@ export const VisualQuoteDesigner = () => {
     const text = new IText('Click to edit text', {
       left: 100,
       top: 100,
-      fontSize: 20,
-      fontFamily: 'Arial',
-      fill: '#000000',
+      fontSize: 24,
+      fontFamily: 'Inter',
+      fill: '#1f2937', // Modern dark gray
+      fontWeight: '500',
     });
 
     fabricCanvas.add(text);
@@ -92,22 +93,25 @@ export const VisualQuoteDesigner = () => {
     const rect = new Rect({
       left: 100,
       top: 100,
-      width: 200,
-      height: 150,
-      fill: '#f0f0f0',
-      stroke: '#999999',
+      width: 250,
+      height: 180,
+      fill: '#f3f4f6', // Modern light gray
+      stroke: '#9ca3af', // Modern gray
       strokeWidth: 2,
-      strokeDashArray: [5, 5],
+      strokeDashArray: [8, 4],
+      rx: 8,
+      ry: 8,
     });
 
     const text = new IText('Image\nPlaceholder', {
-      left: 140,
-      top: 130,
+      left: 160,
+      top: 145,
       fontSize: 16,
-      fill: '#666666',
-      fontFamily: 'Arial',
+      fill: '#6b7280', // Modern muted gray
+      fontFamily: 'Inter',
       textAlign: 'center',
       selectable: false,
+      fontWeight: '500',
     });
 
     fabricCanvas.add(rect);
@@ -124,11 +128,13 @@ export const VisualQuoteDesigner = () => {
     const rect = new Rect({
       left: 100,
       top: 100,
-      width: 150,
-      height: 100,
-      fill: '#3b82f6',
-      stroke: '#1e40af',
+      width: 200,
+      height: 120,
+      fill: '#66b2c9', // Modern cyan-blue from design system
+      stroke: '#37445c', // Deep navy-blue
       strokeWidth: 2,
+      rx: 8, // Rounded corners
+      ry: 8,
     });
 
     fabricCanvas.add(rect);
@@ -144,9 +150,9 @@ export const VisualQuoteDesigner = () => {
     const circle = new Circle({
       left: 100,
       top: 100,
-      radius: 50,
-      fill: '#10b981',
-      stroke: '#059669',
+      radius: 60,
+      fill: '#66b2c9', // Modern cyan-blue
+      stroke: '#37445c', // Deep navy-blue
       strokeWidth: 2,
     });
 
@@ -222,42 +228,57 @@ export const VisualQuoteDesigner = () => {
   };
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg">
-        <div className="flex items-center gap-3">
-          <Input
-            value={templateName}
-            onChange={(e) => setTemplateName(e.target.value)}
-            className="w-64 font-semibold"
-            placeholder="Template name..."
-          />
-          <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">
-            Beta
-          </span>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={saveTemplate} disabled={createTemplate.isPending || updateTemplate.isPending}>
-            <Save className="h-4 w-4 mr-2" />
-            Save Template
-          </Button>
-          <Button variant="outline" onClick={exportPDF}>
-            <Download className="h-4 w-4 mr-2" />
-            Export PDF
-          </Button>
+    <div className="space-y-6 p-6 min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      {/* Modern Header */}
+      <div className="modern-card p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Input
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                className="w-80 text-lg font-semibold bg-background/50 border-border/50 focus:border-primary"
+                placeholder="Template name..."
+              />
+            </div>
+            <span className="px-3 py-1 text-xs font-medium bg-gradient-to-r from-primary/10 to-accent/10 text-primary rounded-full border border-primary/20">
+              Visual Editor
+            </span>
+          </div>
+          <div className="flex gap-3">
+            <Button 
+              onClick={saveTemplate} 
+              disabled={createTemplate.isPending || updateTemplate.isPending}
+              className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 shadow-lg shadow-primary/20"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save Template
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={exportPDF}
+              className="border-border/50 hover:border-primary/50 hover:bg-primary/5"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export PDF
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-4">
-        {/* Left Toolbar */}
+      <div className="grid grid-cols-12 gap-6">
+        {/* Modern Left Toolbar */}
         <div className="col-span-2">
-          <div className="space-y-2 p-3 bg-card border border-border rounded-lg">
-            <h3 className="text-sm font-semibold mb-3">Tools</h3>
+          <div className="modern-card p-4 space-y-3 sticky top-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="h-8 w-1 bg-gradient-to-b from-primary to-accent rounded-full" />
+              <h3 className="text-sm font-bold text-foreground">Design Tools</h3>
+            </div>
             
             <Button
-              variant={activeTool === 'select' ? 'default' : 'outline'}
+              variant={activeTool === 'select' ? 'default' : 'ghost'}
               size="sm"
-              className="w-full justify-start"
+              className="w-full justify-start hover:bg-accent/10 transition-all"
               onClick={() => setActiveTool('select')}
             >
               <MousePointer className="h-4 w-4 mr-2" />
@@ -265,9 +286,9 @@ export const VisualQuoteDesigner = () => {
             </Button>
 
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="w-full justify-start"
+              className="w-full justify-start hover:bg-primary/10 hover:text-primary transition-all"
               onClick={addText}
             >
               <Type className="h-4 w-4 mr-2" />
@@ -275,43 +296,47 @@ export const VisualQuoteDesigner = () => {
             </Button>
 
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="w-full justify-start"
+              className="w-full justify-start hover:bg-primary/10 hover:text-primary transition-all"
               onClick={addImagePlaceholder}
             >
               <ImageIcon className="h-4 w-4 mr-2" />
               Add Image
             </Button>
 
-            <Separator className="my-2" />
+            <Separator className="my-3" />
+
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground px-2 mb-2">Shapes</p>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start hover:bg-accent/10 hover:text-accent transition-all"
+                onClick={addRectangle}
+              >
+                <Square className="h-4 w-4 mr-2" />
+                Rectangle
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start hover:bg-accent/10 hover:text-accent transition-all"
+                onClick={addCircle}
+              >
+                <CircleIcon className="h-4 w-4 mr-2" />
+                Circle
+              </Button>
+            </div>
+
+            <Separator className="my-3" />
 
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="w-full justify-start"
-              onClick={addRectangle}
-            >
-              <Square className="h-4 w-4 mr-2" />
-              Rectangle
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full justify-start"
-              onClick={addCircle}
-            >
-              <CircleIcon className="h-4 w-4 mr-2" />
-              Circle
-            </Button>
-
-            <Separator className="my-2" />
-
-            <Button
-              variant="destructive"
-              size="sm"
-              className="w-full justify-start"
+              className="w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive transition-all"
               onClick={deleteSelected}
               disabled={!selectedObject}
             >
@@ -321,64 +346,78 @@ export const VisualQuoteDesigner = () => {
           </div>
         </div>
 
-        {/* Canvas Area */}
+        {/* Modern Canvas Area */}
         <div className="col-span-7">
-          <ScrollArea className="h-[calc(100vh-280px)] border border-border rounded-lg bg-gray-50 p-8">
-            <div className="inline-block shadow-2xl">
-              <canvas ref={canvasRef} className="border border-gray-300" />
-            </div>
-          </ScrollArea>
+          <div className="modern-card-elevated p-8 bg-gradient-to-br from-muted/30 to-muted/10">
+            <ScrollArea className="h-[calc(100vh-200px)]">
+              <div className="inline-block">
+                <div className="relative group">
+                  <canvas 
+                    ref={canvasRef} 
+                    className="shadow-2xl shadow-primary/10 border-2 border-border/50 rounded-lg transition-all group-hover:shadow-primary/20" 
+                  />
+                  <div className="absolute -top-3 -right-3 px-3 py-1 bg-gradient-to-r from-primary to-accent text-primary-foreground text-xs font-semibold rounded-full shadow-lg">
+                    A4 Format
+                  </div>
+                </div>
+              </div>
+            </ScrollArea>
+          </div>
         </div>
 
-        {/* Right Properties Panel */}
+        {/* Modern Right Properties Panel */}
         <div className="col-span-3">
-          <div className="p-4 bg-card border border-border rounded-lg">
-            <h3 className="text-sm font-semibold mb-4">Properties</h3>
+          <div className="modern-card p-5 sticky top-6">
+            <div className="flex items-center gap-2 mb-5">
+              <div className="h-8 w-1 bg-gradient-to-b from-accent to-primary rounded-full" />
+              <h3 className="text-sm font-bold text-foreground">Properties</h3>
+            </div>
             
             {selectedObject ? (
-              <ScrollArea className="h-[calc(100vh-320px)]">
-                <div className="space-y-4">
+              <ScrollArea className="h-[calc(100vh-240px)]">
+                <div className="space-y-5 pr-4">
                   {/* Text properties */}
                   {selectedObject.type === 'i-text' && (
                     <>
                       <div className="space-y-2">
-                        <Label className="text-xs">Font Size</Label>
+                        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Font Size</Label>
                         <Input
                           type="number"
                           value={selectedObject.fontSize || 20}
                           onChange={(e) => updateObjectProperty('fontSize', parseInt(e.target.value))}
-                          className="h-8"
+                          className="h-10 bg-background/50 border-border/50 focus:border-primary"
                         />
                       </div>
                       
                       <div className="space-y-2">
-                        <Label className="text-xs">Font Family</Label>
+                        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Font Family</Label>
                         <select
                           value={selectedObject.fontFamily || 'Arial'}
                           onChange={(e) => updateObjectProperty('fontFamily', e.target.value)}
-                          className="w-full h-8 px-3 rounded-md border border-input bg-background text-sm"
+                          className="w-full h-10 px-3 rounded-lg border border-border/50 bg-background/50 text-sm hover:border-primary/50 focus:border-primary transition-colors"
                         >
                           <option value="Arial">Arial</option>
                           <option value="Times New Roman">Times New Roman</option>
                           <option value="Courier New">Courier New</option>
                           <option value="Georgia">Georgia</option>
                           <option value="Verdana">Verdana</option>
+                          <option value="Inter">Inter</option>
                         </select>
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-xs">Text Color</Label>
+                        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Text Color</Label>
                         <div className="flex gap-2">
                           <Input
                             type="color"
                             value={selectedObject.fill || '#000000'}
                             onChange={(e) => updateObjectProperty('fill', e.target.value)}
-                            className="h-8 w-12 p-1"
+                            className="h-10 w-14 p-1 cursor-pointer border-border/50"
                           />
                           <Input
                             value={selectedObject.fill || '#000000'}
                             onChange={(e) => updateObjectProperty('fill', e.target.value)}
-                            className="h-8 flex-1"
+                            className="h-10 flex-1 bg-background/50 border-border/50 focus:border-primary font-mono text-sm"
                           />
                         </div>
                       </div>
@@ -389,71 +428,79 @@ export const VisualQuoteDesigner = () => {
                   {(selectedObject.type === 'rect' || selectedObject.type === 'circle') && (
                     <>
                       <div className="space-y-2">
-                        <Label className="text-xs">Fill Color</Label>
+                        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Fill Color</Label>
                         <div className="flex gap-2">
                           <Input
                             type="color"
                             value={selectedObject.fill || '#3b82f6'}
                             onChange={(e) => updateObjectProperty('fill', e.target.value)}
-                            className="h-8 w-12 p-1"
+                            className="h-10 w-14 p-1 cursor-pointer border-border/50"
                           />
                           <Input
                             value={selectedObject.fill || '#3b82f6'}
                             onChange={(e) => updateObjectProperty('fill', e.target.value)}
-                            className="h-8 flex-1"
+                            className="h-10 flex-1 bg-background/50 border-border/50 focus:border-primary font-mono text-sm"
                           />
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-xs">Border Color</Label>
+                        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Border Color</Label>
                         <div className="flex gap-2">
                           <Input
                             type="color"
                             value={selectedObject.stroke || '#000000'}
                             onChange={(e) => updateObjectProperty('stroke', e.target.value)}
-                            className="h-8 w-12 p-1"
+                            className="h-10 w-14 p-1 cursor-pointer border-border/50"
                           />
                           <Input
                             value={selectedObject.stroke || '#000000'}
                             onChange={(e) => updateObjectProperty('stroke', e.target.value)}
-                            className="h-8 flex-1"
+                            className="h-10 flex-1 bg-background/50 border-border/50 focus:border-primary font-mono text-sm"
                           />
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-xs">Border Width</Label>
+                        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Border Width</Label>
                         <Input
                           type="number"
                           value={selectedObject.strokeWidth || 2}
                           onChange={(e) => updateObjectProperty('strokeWidth', parseInt(e.target.value))}
-                          className="h-8"
+                          className="h-10 bg-background/50 border-border/50 focus:border-primary"
                         />
                       </div>
                     </>
                   )}
 
                   {/* Common properties */}
-                  <div className="space-y-2">
-                    <Label className="text-xs">Opacity</Label>
-                    <Input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={selectedObject.opacity || 1}
-                      onChange={(e) => updateObjectProperty('opacity', parseFloat(e.target.value))}
-                      className="h-8"
-                    />
+                  <div className="space-y-3">
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Opacity</Label>
+                    <div className="flex items-center gap-3">
+                      <Input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={selectedObject.opacity || 1}
+                        onChange={(e) => updateObjectProperty('opacity', parseFloat(e.target.value))}
+                        className="flex-1 h-2 accent-primary"
+                      />
+                      <span className="text-xs font-mono text-muted-foreground w-8">
+                        {Math.round((selectedObject.opacity || 1) * 100)}%
+                      </span>
+                    </div>
                   </div>
                 </div>
               </ScrollArea>
             ) : (
-              <div className="text-center py-12">
-                <MousePointer className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  Select an element to edit its properties
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="relative mb-4">
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 blur-xl rounded-full" />
+                  <MousePointer className="relative h-16 w-16 text-muted-foreground/40" />
+                </div>
+                <p className="text-sm text-muted-foreground/70 max-w-[180px]">
+                  Select an element to customize its properties
                 </p>
               </div>
             )}
