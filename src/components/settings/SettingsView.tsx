@@ -42,33 +42,39 @@ export const SettingsView = () => {
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Enhanced Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-primary/10 rounded-xl">
-            <Settings className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <h2 className="text-3xl font-bold text-foreground">Settings</h2>
-            <p className="text-muted-foreground text-lg">
-              Configure your personal preferences and business settings
-            </p>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-primary/10 rounded-xl shrink-0">
+              <Settings className="h-6 w-6 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Settings</h2>
+              <p className="text-muted-foreground text-sm sm:text-lg">
+                Configure your personal preferences and business settings
+              </p>
+            </div>
           </div>
         </div>
-        <div className="flex gap-3">
+        
+        {/* Action Buttons - Stack on mobile */}
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           <Button 
             onClick={() => setShowInteractiveDemo(true)}
             variant="outline"
-            className="hover-lift interactive-bounce"
+            size="sm"
+            className="hover-lift interactive-bounce flex-1 sm:flex-initial"
           >
             <Play className="h-4 w-4 mr-2" />
-            Interactive Demo
+            <span className="text-xs sm:text-sm">Interactive Demo</span>
           </Button>
           <Button 
             onClick={() => setShowTutorial(true)}
-            className="hover-lift interactive-bounce shadow-lg"
+            size="sm"
+            className="hover-lift interactive-bounce shadow-lg flex-1 sm:flex-initial"
           >
             <Zap className="h-4 w-4 mr-2" />
-            Setup Guide
+            <span className="text-xs sm:text-sm">Setup Guide</span>
           </Button>
         </div>
       </div>
