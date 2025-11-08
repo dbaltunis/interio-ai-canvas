@@ -19,7 +19,7 @@ import { InteractiveOnboarding } from "./InteractiveOnboarding";
 import { NotificationManagementTab } from "./tabs/NotificationManagementTab";
 import { EnhancedPersonalizationTab } from "./tabs/EnhancedPersonalizationTab";
 import { SecurityPrivacyTab } from "./tabs/SecurityPrivacyTab";
-import { DocumentBuilderTab } from "../document-builder/DocumentBuilderTab";
+import { VisualQuoteDesigner } from "../document-builder/VisualQuoteDesigner";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useHasPermission } from "@/hooks/usePermissions";
@@ -244,7 +244,7 @@ export const SettingsView = () => {
           <TabsContent value="document-builder" className="animate-fade-in">
             <Card className="hover:shadow-md transition-all duration-300">
               <CardContent className="p-6">
-                <DocumentBuilderTab />
+                <VisualQuoteDesigner />
               </CardContent>
             </Card>
           </TabsContent>
