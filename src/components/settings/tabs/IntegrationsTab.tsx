@@ -55,7 +55,7 @@ export const IntegrationsTab = () => {
       </Alert>
 
       <Tabs defaultValue="email" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-10">
+        <TabsList className="flex flex-wrap gap-1 w-full">
           <TabsTrigger value="email" className="flex items-center gap-2">
             <Mail className="h-4 w-4" />
             Email

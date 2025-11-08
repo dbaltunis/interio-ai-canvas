@@ -85,7 +85,8 @@ export const JobsTable = ({
   }
 
   return (
-    <div className="bg-white rounded-lg border">
+    <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="bg-white rounded-lg border min-w-[900px]">
       {/* Table Header */}
       <div className="grid grid-cols-9 gap-4 p-4 border-b bg-gray-50 text-sm font-medium text-gray-700">
         <div>Job No.</div>
@@ -171,6 +172,7 @@ export const JobsTable = ({
           )
         })}
       </div>
+    </div>
     </div>
   );
 };
