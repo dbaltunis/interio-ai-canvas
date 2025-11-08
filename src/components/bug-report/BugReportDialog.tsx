@@ -22,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "react-router-dom";
+import { WhatsNewDialog } from "@/components/version/WhatsNewDialog";
 
 interface BugReportDialogProps {
   className?: string;
@@ -29,6 +30,7 @@ interface BugReportDialogProps {
 
 export const BugReportDialog = ({ className }: BugReportDialogProps) => {
   const [open, setOpen] = useState(false);
+  const [showWhatsNew, setShowWhatsNew] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -82,7 +84,7 @@ export const BugReportDialog = ({ className }: BugReportDialogProps) => {
         route: location.pathname,
         user_agent: navigator.userAgent,
         browser_info: browserInfo,
-        app_version: "BETA v0.1.0",
+        app_version: "beta v0.1.1",
       });
 
       if (error) throw error;
@@ -112,18 +114,31 @@ export const BugReportDialog = ({ className }: BugReportDialogProps) => {
     }
   };
 
+  const version = "beta v0.1.1";
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="destructive"
-          size="icon"
-          className={`fixed bottom-20 md:bottom-6 right-6 z-40 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 ${className}`}
-          title="Report a Bug (BETA)"
-        >
-          <Bug className="h-5 w-5" />
-        </Button>
-      </DialogTrigger>
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <div className={`fixed bottom-20 md:bottom-6 right-6 z-40 ${className}`}>
+            <Button
+              variant="destructive"
+              className="h-auto px-3 py-2 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 flex flex-col items-center gap-0.5"
+              title="Report a Bug or View Updates"
+            >
+              <Bug className="h-5 w-5" />
+              <span 
+                className="text-[10px] font-normal opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowWhatsNew(true);
+                }}
+              >
+                {version}
+              </span>
+            </Button>
+          </div>
+        </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Report a Bug</DialogTitle>
@@ -216,5 +231,7 @@ export const BugReportDialog = ({ className }: BugReportDialogProps) => {
         </form>
       </DialogContent>
     </Dialog>
+    <WhatsNewDialog open={showWhatsNew} onOpenChange={setShowWhatsNew} />
+    </>
   );
 };
