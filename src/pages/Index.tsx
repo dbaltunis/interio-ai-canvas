@@ -8,8 +8,6 @@ import { AIBackground } from "@/components/common/AIBackground";
 import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { OrderingHubPage } from "@/components/ordering/OrderingHubPage";
-import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 
 // Lazy load heavy components with proper error handling
@@ -60,37 +58,9 @@ const Index = () => {
     return tab;
   });
   const { signOut, user } = useAuth();
-  const isMobile = useIsMobile();
   
   // Enable session timeout tracking
   useSessionTimeout();
-
-  // Tab order for swipe navigation
-  const mobileTabOrder = ["dashboard", "projects", "clients", "calendar"];
-
-  // Swipe navigation handlers
-  const handleSwipeLeft = () => {
-    if (!isMobile) return;
-    const currentIndex = mobileTabOrder.indexOf(activeTab);
-    if (currentIndex < mobileTabOrder.length - 1) {
-      handleTabChange(mobileTabOrder[currentIndex + 1]);
-    }
-  };
-
-  const handleSwipeRight = () => {
-    if (!isMobile) return;
-    const currentIndex = mobileTabOrder.indexOf(activeTab);
-    if (currentIndex > 0) {
-      handleTabChange(mobileTabOrder[currentIndex - 1]);
-    }
-  };
-
-  // Enable swipe navigation on mobile
-  useSwipeNavigation({
-    onSwipeLeft: handleSwipeLeft,
-    onSwipeRight: handleSwipeRight,
-    threshold: 50
-  });
 
   console.log('Index: Rendering with activeTab =', activeTab, 'user =', user?.email || 'no user');
   console.log('Index: Render time =', new Date().toISOString());

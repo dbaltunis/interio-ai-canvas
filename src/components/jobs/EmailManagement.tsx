@@ -19,29 +19,15 @@ import { HelpDrawer } from "@/components/ui/help-drawer";
 import { HelpIcon } from "@/components/ui/help-icon";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { Shield } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { usePullToRefresh } from "@/hooks/usePullToRefresh";
-import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh-indicator";
 
 export const EmailManagement = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const canAccessEmails = useHasPermission('view_jobs'); // Email access tied to jobs permission
   const [showFilters, setShowFilters] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const isMobile = useIsMobile();
   const { hasSendGridIntegration, isLoading: integrationLoading } = useIntegrationStatus();
   const { data: emailSettings } = useEmailSettings();
-  const { data: emails = [], refetch: refetchEmails } = useEmails();
-
-  // Pull-to-refresh for mobile
-  const handleRefresh = async () => {
-    await refetchEmails();
-  };
-
-  const { isPulling, isRefreshing, pullDistance, progress } = usePullToRefresh({
-    onRefresh: handleRefresh,
-    enabled: isMobile
-  });
+  const { data: emails = [] } = useEmails();
 
   // Check permissions
   if (canAccessEmails === undefined) {
@@ -249,14 +235,7 @@ export const EmailManagement = () => {
   };
 
   return (
-    <>
-      <PullToRefreshIndicator
-        isPulling={isPulling}
-        isRefreshing={isRefreshing}
-        progress={progress}
-        pullDistance={pullDistance}
-      />
-      <div className="w-full bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="w-full bg-gradient-to-br from-background via-background to-muted/20">
       <div className="w-full px-6 py-6 space-y-8">
         {renderHeader()}
         {renderContent()}
@@ -287,7 +266,6 @@ export const EmailManagement = () => {
         }}
       />
     </div>
-    </>
   );
 };
 

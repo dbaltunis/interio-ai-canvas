@@ -27,8 +27,6 @@ import { WeeklyCalendarView } from "./WeeklyCalendarView";
 import { DailyCalendarView } from "./DailyCalendarView";
 import { AppointmentSchedulerSlider } from "./AppointmentSchedulerSlider";
 import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
-import { usePullToRefresh } from "@/hooks/usePullToRefresh";
-import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh-indicator";
 
 import { DurationPicker } from "./TimePicker";
 // CalDAV imports removed - using Google Calendar OAuth only
@@ -103,8 +101,8 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   // Enable real-time updates
   useRealtimeBookings();
   
-  const { data: appointments, isLoading: appointmentsLoading, refetch: refetchAppointments } = useAppointments();
-  const { data: schedulers, refetch: refetchSchedulers } = useAppointmentSchedulers();
+  const { data: appointments, isLoading: appointmentsLoading } = useAppointments();
+  const { data: schedulers } = useAppointmentSchedulers();
   const { data: teamMembers } = useTeamMembers();
   const { data: clients } = useClients();
   const { getColorForSource, getVisibilityForSource, addCalendarSource } = useCalendarColors();
@@ -112,16 +110,6 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const { toast } = useToast();
   const { userTimezone, isTimezoneDifferent } = useTimezone();
   const { data: preferences } = useCalendarPreferences();
-  
-  // Pull-to-refresh for mobile
-  const handleRefresh = async () => {
-    await Promise.all([refetchAppointments(), refetchSchedulers()]);
-  };
-
-  const { isPulling, isRefreshing, pullDistance, progress } = usePullToRefresh({
-    onRefresh: handleRefresh,
-    enabled: isMobile
-  });
   
   // Get current user ID for visibility filtering
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -440,14 +428,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   };
 
   return (
-    <>
-      <PullToRefreshIndicator
-        isPulling={isPulling}
-        isRefreshing={isRefreshing}
-        progress={progress}
-        pullDistance={pullDistance}
-      />
-      <div className="h-screen flex overflow-hidden">
+    <div className="h-screen flex overflow-hidden">
       {/* Collapsible Sidebar - Hidden on desktop and tablets */}
       {!isDesktop && !isTablet && (
         <CalendarSidebar 
@@ -582,7 +563,6 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
 
       <OfflineIndicator />
     </div>
-    </>
   );
 };
 

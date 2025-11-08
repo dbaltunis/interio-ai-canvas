@@ -20,8 +20,6 @@ import { HelpIcon } from "@/components/ui/help-icon";
 import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileClientView } from "./MobileClientView";
-import { usePullToRefresh } from "@/hooks/usePullToRefresh";
-import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh-indicator";
 
 interface ClientManagementPageProps {
   onTabChange?: (tab: string) => void;
@@ -54,18 +52,8 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
   const canCreateClients = useHasPermission('create_clients');
   const canDeleteClients = useHasPermission('delete_clients');
 
-  const { data: clients, isLoading, refetch: refetchClients } = useClients();
-  const { data: clientStats, isLoading: isLoadingStats, refetch: refetchStats } = useClientStats();
-
-  // Pull-to-refresh for mobile
-  const handleRefresh = async () => {
-    await Promise.all([refetchClients(), refetchStats()]);
-  };
-
-  const { isPulling, isRefreshing, pullDistance, progress } = usePullToRefresh({
-    onRefresh: handleRefresh,
-    enabled: isMobile && !showClientProfile // Only enable when viewing list
-  });
+  const { data: clients, isLoading } = useClients();
+  const { data: clientStats, isLoading: isLoadingStats } = useClientStats();
 
   // Handle permission loading and preserve navigation state
   if (canViewClients === undefined) {
@@ -220,14 +208,7 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
   }
 
   return (
-    <>
-      <PullToRefreshIndicator
-        isPulling={isPulling}
-        isRefreshing={isRefreshing}
-        progress={progress}
-        pullDistance={pullDistance}
-      />
-      <div className="bg-background min-h-screen animate-fade-in">
+    <div className="bg-background min-h-screen animate-fade-in">
       <div className="space-y-6 p-6">
         {/* Header - matching Projects page style */}
         <div className="flex items-center justify-between">
@@ -339,6 +320,5 @@ export const ClientManagementPage = ({ onTabChange }: ClientManagementPageProps 
       />
       </div>
     </div>
-    </>
   );
 };

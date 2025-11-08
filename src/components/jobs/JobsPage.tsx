@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -17,8 +18,6 @@ import { JobsFocusHandler } from "./JobsFocusHandler";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ColumnCustomizationModal } from "./ColumnCustomizationModal";
 import { useColumnPreferences } from "@/hooks/useColumnPreferences";
-import { usePullToRefresh } from "@/hooks/usePullToRefresh";
-import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh-indicator";
 
 const JobsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -46,16 +45,6 @@ const JobsPage = () => {
   const createQuote = useCreateQuote();
   const updateQuote = useUpdateQuote();
   const { toast } = useToast();
-
-  // Pull-to-refresh for mobile
-  const handleRefresh = async () => {
-    await refetchQuotes();
-  };
-
-  const { isPulling, isRefreshing, pullDistance, progress } = usePullToRefresh({
-    onRefresh: handleRefresh,
-    enabled: isMobile && !selectedJobId // Only enable when viewing list, not detail
-  });
 
   // Debug logging for component lifecycle
   useEffect(() => {
@@ -239,12 +228,6 @@ const JobsPage = () => {
 
   return (
     <>
-      <PullToRefreshIndicator
-        isPulling={isPulling}
-        isRefreshing={isRefreshing}
-        progress={progress}
-        pullDistance={pullDistance}
-      />
       <JobsFocusHandler />
       <div className="bg-background/50 min-h-screen animate-fade-in">
       <div className="space-y-4 p-4 lg:p-6">
