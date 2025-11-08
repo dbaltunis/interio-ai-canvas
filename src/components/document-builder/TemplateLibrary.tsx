@@ -128,7 +128,7 @@ export const TemplateLibrary = ({ onTemplateSelect, selectedTemplateId }: Templa
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm truncate">{template.name}</div>
                     <div className="text-xs text-muted-foreground capitalize">
-                      {template.document_type.replace('-', ' ')}
+                      {template.document_type?.replace('-', ' ') || 'Document'}
                     </div>
                   </div>
                 </div>
