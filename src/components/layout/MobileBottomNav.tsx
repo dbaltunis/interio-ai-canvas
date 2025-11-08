@@ -49,7 +49,8 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
   const visibleNavItems = navItems.filter(item => {
     if (!item.permission) return true;
     
-    if (item.permission === 'view_dashboard') return canViewDashboard !== false;
+    // Dashboard/Home should always be visible for authenticated users
+    if (item.permission === 'view_dashboard') return true;
     if (item.permission === 'view_jobs') return canViewJobs === true;
     if (item.permission === 'view_clients') return canViewClients === true;
     if (item.permission === 'view_calendar') return canViewCalendar === true;
