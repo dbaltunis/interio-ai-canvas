@@ -2,6 +2,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { DocumentBlock } from './DocumentBuilderTab';
 import { GripVertical, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { HeaderBlock, TextBlock, ImageBlock, ProductImageBlock, TableBlock } from './blocks';
 
 interface DocumentCanvasProps {
   blocks: DocumentBlock[];
@@ -71,44 +72,15 @@ export const DocumentCanvas = ({
                   {/* Block Content */}
                   <div className="text-gray-900">
                     <div className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
-                      {block.type}
+                      {block.type.replace('-', ' ')}
                     </div>
                     <div className="text-sm">
-                      {block.type === 'header' && (
-                        <div>
-                          <h1 className="text-2xl font-bold mb-2">Company Name</h1>
-                          <p className="text-sm text-gray-600">Address, City, State, ZIP</p>
-                        </div>
-                      )}
-                      {block.type === 'text' && (
-                        <p>Sample text content. Click to edit.</p>
-                      )}
-                      {block.type === 'image' && (
-                        <div className="w-32 h-32 bg-muted rounded flex items-center justify-center">
-                          <span className="text-xs text-muted-foreground">Image Placeholder</span>
-                        </div>
-                      )}
-                      {block.type === 'table' && (
-                        <div className="border border-gray-200 rounded overflow-hidden">
-                          <table className="w-full text-sm">
-                            <thead className="bg-gray-50">
-                              <tr>
-                                <th className="px-4 py-2 text-left">Item</th>
-                                <th className="px-4 py-2 text-right">Qty</th>
-                                <th className="px-4 py-2 text-right">Price</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <tr>
-                                <td className="px-4 py-2 border-t">Sample Item</td>
-                                <td className="px-4 py-2 border-t text-right">1</td>
-                                <td className="px-4 py-2 border-t text-right">$0.00</td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                      {!['header', 'text', 'image', 'table'].includes(block.type) && (
+                      {block.type === 'header' && <HeaderBlock block={block} />}
+                      {block.type === 'text' && <TextBlock block={block} />}
+                      {block.type === 'image' && <ImageBlock block={block} />}
+                      {block.type === 'product-image' && <ProductImageBlock block={block} />}
+                      {block.type === 'table' && <TableBlock block={block} />}
+                      {!['header', 'text', 'image', 'product-image', 'table'].includes(block.type) && (
                         <p className="text-muted-foreground">Block type: {block.type}</p>
                       )}
                     </div>

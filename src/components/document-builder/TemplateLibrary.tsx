@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Plus, FileText, Receipt, ClipboardList, Package, Truck, FileCheck } from 'lucide-react';
 import { DocumentTemplate } from './DocumentBuilderTab';
+import { useDocumentTemplates } from '@/hooks/useDocumentTemplates';
 
 interface TemplateLibraryProps {
   onTemplateSelect: (template: DocumentTemplate) => void;
@@ -37,11 +38,16 @@ const SAMPLE_TEMPLATES: DocumentTemplate[] = [
 export const TemplateLibrary = ({ onTemplateSelect, selectedTemplateId }: TemplateLibraryProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const { data: dbTemplates = [], isLoading } = useDocumentTemplates();
 
-  const filteredTemplates = SAMPLE_TEMPLATES.filter(template => {
+  // Combine database templates with sample templates
+  const allTemplates = [...SAMPLE_TEMPLATES, ...dbTemplates];
+
+  const filteredTemplates = allTemplates.filter(template => {
     const matchesSearch = template.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = !selectedType || template.document_type === selectedType;
-    return matchesSearch && matchesType;
+    const isActive = !template.status || template.status === 'active' || template.status === 'draft';
+    return matchesSearch && matchesType && isActive;
   });
 
   return (

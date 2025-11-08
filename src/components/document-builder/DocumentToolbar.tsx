@@ -28,8 +28,9 @@ interface DocumentToolbarProps {
 
 const BLOCK_TYPES = [
   { id: 'header', label: 'Header', icon: FileText },
-  { id: 'text', label: 'Text', icon: Type },
+  { id: 'text', label: 'Text Block', icon: Type },
   { id: 'image', label: 'Image', icon: Image },
+  { id: 'product-image', label: 'Product Images', icon: Image },
   { id: 'table', label: 'Table', icon: Table },
 ];
 

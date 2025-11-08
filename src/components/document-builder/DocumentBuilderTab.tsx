@@ -4,6 +4,7 @@ import { DocumentCanvas } from './DocumentCanvas';
 import { PropertiesPanel } from './PropertiesPanel';
 import { DocumentToolbar } from './DocumentToolbar';
 import { FileText } from 'lucide-react';
+import { useCreateDocumentTemplate, useUpdateDocumentTemplate, DocumentTemplate as DBTemplate } from '@/hooks/useDocumentTemplates';
 
 export interface DocumentBlock {
   id: string;
@@ -20,12 +21,17 @@ export interface DocumentTemplate {
   blocks: DocumentBlock[];
   image_settings?: any;
   layout_settings?: any;
+  visibility_rules?: any;
+  status?: 'active' | 'draft' | 'archived';
 }
 
 export const DocumentBuilderTab = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<DocumentTemplate | null>(null);
   const [selectedBlock, setSelectedBlock] = useState<DocumentBlock | null>(null);
   const [blocks, setBlocks] = useState<DocumentBlock[]>([]);
+  
+  const createTemplate = useCreateDocumentTemplate();
+  const updateTemplate = useUpdateDocumentTemplate();
 
   const handleTemplateSelect = (template: DocumentTemplate) => {
     setSelectedTemplate(template);
@@ -61,6 +67,36 @@ export const DocumentBuilderTab = () => {
     }
   };
 
+  const handleSave = async () => {
+    if (!selectedTemplate) return;
+
+    const templateData = {
+      name: selectedTemplate.name,
+      document_type: selectedTemplate.document_type,
+      blocks,
+      image_settings: selectedTemplate.image_settings,
+      layout_settings: selectedTemplate.layout_settings,
+      visibility_rules: selectedTemplate.visibility_rules,
+    };
+
+    if (selectedTemplate.id && !selectedTemplate.id.startsWith('sample-')) {
+      // Update existing template
+      await updateTemplate.mutateAsync({
+        id: selectedTemplate.id,
+        updates: templateData,
+      });
+    } else {
+      // Create new template
+      const result = await createTemplate.mutateAsync({
+        ...templateData,
+        status: 'draft',
+      });
+      if (result) {
+        setSelectedTemplate({ ...selectedTemplate, id: result.id });
+      }
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Beta Badge */}
@@ -86,7 +122,7 @@ export const DocumentBuilderTab = () => {
         selectedTemplate={selectedTemplate}
         onAddBlock={handleAddBlock}
         blocks={blocks}
-        onSave={() => {/* TODO: Implement save */}}
+        onSave={handleSave}
       />
 
       {/* Three-Panel Layout */}
