@@ -26,23 +26,11 @@ export const useUserPermissions = () => {
         console.error('[useUserPermissions] Error fetching custom permissions:', customError);
       }
 
-      // Check if custom permissions have been explicitly set (even if empty)
-      // Look for ANY record in user_permissions for this user
-      const { data: anyPermissionRecord } = await supabase
-        .from('user_permissions')
-        .select('user_id')
-        .eq('user_id', user.id)
-        .limit(1);
-
-      // If user has ANY permission record, use custom permissions ONLY (even if empty)
-      // This means "custom permissions have been configured, even if all toggles are OFF"
-      const hasCustomPermissionsConfigured = anyPermissionRecord && anyPermissionRecord.length > 0;
-      
-      if (hasCustomPermissionsConfigured) {
-        const permissionsList = customPermissions ? customPermissions.map(p => p.permission_name) : [];
+      // If custom permissions exist, use them exclusively
+      if (customPermissions && customPermissions.length > 0) {
+        const permissionsList = customPermissions.map(p => p.permission_name);
         console.log('🔥🔥🔥 [PERMISSIONS] ✅ USING CUSTOM PERMISSIONS:', permissionsList);
-        // Return only the custom permissions (could be empty array if all toggles are OFF)
-        return customPermissions ? customPermissions.map(p => ({ permission_name: p.permission_name })) : [];
+        return customPermissions.map(p => ({ permission_name: p.permission_name }));
       }
 
       console.log('[useUserPermissions] No custom permissions configured, using role-based permissions');
@@ -55,11 +43,13 @@ export const useUserPermissions = () => {
         .single();
 
       if (profileError) {
-        console.error('[useUserPermissions] Error fetching user profile:', profileError);
-        // If no profile exists, try to create basic one
+        // Silently handle missing profile - this is expected for some users
         if (profileError.code === 'PGRST116') {
-          console.log('[useUserPermissions] No profile found, user needs to complete invitation process');
+          console.log('[useUserPermissions] No profile found, using default permissions');
+          // Return basic view permissions for users without profiles
+          return [{ permission_name: 'view_profile' }];
         }
+        console.error('[useUserPermissions] Profile fetch error:', profileError);
         return [];
       }
 
