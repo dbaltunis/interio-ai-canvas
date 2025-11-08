@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Package, Ruler, Zap, Layers, Play, Users, FileText, Globe, Shield, Bell, User, Building2, CreditCard, Calculator } from "lucide-react";
+import { Settings, Package, Ruler, Zap, Layers, Play, Users, FileText, Globe, Shield, Bell, User, Building2, CreditCard, Calculator, Sparkles } from "lucide-react";
 import { PersonalSettingsTab } from "./tabs/PersonalSettingsTab";
 import { BusinessSettingsTab } from "./tabs/BusinessSettingsTab";
 import { BillingTab } from "./tabs/BillingTab";
@@ -19,6 +19,7 @@ import { InteractiveOnboarding } from "./InteractiveOnboarding";
 import { NotificationManagementTab } from "./tabs/NotificationManagementTab";
 import { EnhancedPersonalizationTab } from "./tabs/EnhancedPersonalizationTab";
 import { SecurityPrivacyTab } from "./tabs/SecurityPrivacyTab";
+import { DocumentBuilderTab } from "../document-builder/DocumentBuilderTab";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useHasPermission } from "@/hooks/usePermissions";
@@ -135,6 +136,14 @@ export const SettingsView = () => {
           )}
           
           {canViewSettings && (
+            <TabsTrigger value="document-builder" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <Sparkles className="h-4 w-4" />
+              <span className="hidden sm:inline font-medium">Document Builder</span>
+              <span className="text-[10px] px-1.5 py-0.5 bg-primary/20 text-primary rounded-full font-medium">Beta</span>
+            </TabsTrigger>
+          )}
+          
+          {canViewSettings && (
             <TabsTrigger value="system" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
               <Globe className="h-4 w-4" />
               <span className="hidden sm:inline font-medium">System</span>
@@ -226,6 +235,16 @@ export const SettingsView = () => {
             <Card className="hover:shadow-md transition-all duration-300">
               <CardContent className="p-6">
                 <DocumentTemplatesTab />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+
+        {canViewSettings && (
+          <TabsContent value="document-builder" className="animate-fade-in">
+            <Card className="hover:shadow-md transition-all duration-300">
+              <CardContent className="p-6">
+                <DocumentBuilderTab />
               </CardContent>
             </Card>
           </TabsContent>
