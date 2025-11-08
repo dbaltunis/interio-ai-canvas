@@ -159,7 +159,7 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
             filteredUsers.map((user) => (
             <div
               key={user.id}
-              className={`flex items-center space-x-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors ${
+              className={`flex items-start gap-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors ${
                 selectedUsers.includes(user.id) ? 'bg-muted/30 border-primary/50' : ''
               }`}
             >
@@ -167,51 +167,51 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
                 checked={selectedUsers.includes(user.id)}
                 onCheckedChange={(checked) => selectUser(user.id, !!checked)}
                 disabled={user.id === currentUserId}
+                className="mt-1"
               />
-              <div className="flex items-center justify-between flex-1">
-                <div className="flex items-center space-x-3">
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className="text-sm font-medium">
-                    {user.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                  <div>
-                    <div className="font-medium">{user.name || 'Unknown User'}</div>
-                    <div className="text-sm text-muted-foreground flex items-center gap-1">
-                      <Mail className="h-3 w-3" />
-                      {user.email}
-                    </div>
-                    <div className="flex items-center gap-4 mt-1">
-                      {user.phone && (
-                        <span className="text-xs text-muted-foreground">{user.phone}</span>
-                      )}
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        <span>Last seen: Recently</span>
-                      </div>
-                    </div>
+              <Avatar className="h-10 w-10 shrink-0">
+                <AvatarFallback className="text-sm font-medium">
+                  {user.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0 space-y-2">
+                {/* User Info Section */}
+                <div className="space-y-1">
+                  <div className="font-medium truncate">{user.name || 'Unknown User'}</div>
+                  <div className="text-sm text-muted-foreground flex items-center gap-1 min-w-0">
+                    <Mail className="h-3 w-3 shrink-0" />
+                    <span className="truncate" title={user.email}>{user.email}</span>
+                  </div>
+                  {user.phone && (
+                    <div className="text-xs text-muted-foreground truncate">{user.phone}</div>
+                  )}
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3 shrink-0" />
+                    <span>Last seen: Recently</span>
                   </div>
                 </div>
                 
-                <div className="flex items-center space-x-2">
+                {/* Badges and Actions Section */}
+                <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant={user.role === 'Admin' ? 'default' : user.role === 'Manager' ? 'secondary' : 'outline'}>
                     {user.role}
                   </Badge>
                   <Badge variant={user.status === 'Active' ? 'default' : 'secondary'}>
                     {user.status}
                   </Badge>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEditUser(user);
-                  }}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="h-8 px-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditUser(user);
+                    }}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            </div>
             </div>
             ))
           )}
