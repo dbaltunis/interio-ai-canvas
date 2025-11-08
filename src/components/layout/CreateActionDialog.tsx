@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Users, FolderOpen, Calendar, Plus, Settings, MessageCircle, ShoppingCart } from "lucide-react";
+import { Users, FolderOpen, Calendar, Plus, Settings, MessageCircle, ShoppingCart, Package } from "lucide-react";
 
 interface CreateActionDialogProps {
   open: boolean;
@@ -43,6 +43,8 @@ export const CreateActionDialog = ({
         const createButton = document.querySelector('[data-create-event]') as HTMLElement;
         createButton?.click();
       }, 150);
+    } else if (action === "library") {
+      onTabChange("inventory");
     } else if (action === "purchasing") {
       onTabChange("ordering-hub");
     } else if (action === "settings") {
@@ -102,6 +104,20 @@ export const CreateActionDialog = ({
             <div>
               <div className="font-semibold">New Event</div>
               <div className="text-sm text-muted-foreground">Schedule a calendar event</div>
+            </div>
+          </Button>
+          
+          <Button
+            onClick={() => handleAction("library")}
+            variant="outline"
+            className="h-16 justify-start gap-4 text-left"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <Package className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <div className="font-semibold">Browse Library</div>
+              <div className="text-sm text-muted-foreground">View materials & inventory</div>
             </div>
           </Button>
           

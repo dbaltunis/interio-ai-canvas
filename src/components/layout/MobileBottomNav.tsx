@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   FolderOpen, 
   Users, 
-  Package, 
+  Home,
   Calendar,
   Plus,
   UserCircle,
@@ -25,10 +25,10 @@ interface MobileBottomNavProps {
 }
 
 const navItems = [
+  { id: "dashboard", label: "Home", icon: Home, permission: "view_dashboard" },
   { id: "projects", label: "Jobs", icon: FolderOpen, permission: "view_jobs" },
   { id: "clients", label: "Clients", icon: Users, permission: "view_clients" },
   { id: "calendar", label: "Calendar", icon: Calendar, permission: "view_calendar" },
-  { id: "inventory", label: "Library", icon: Package, permission: "view_inventory" },
 ];
 
 export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps) => {
@@ -40,19 +40,19 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
   const { data: queueCount } = useMaterialQueueCount();
   
   // Permission checks
+  const canViewDashboard = useHasPermission('view_dashboard');
   const canViewJobs = useHasPermission('view_jobs');
   const canViewClients = useHasPermission('view_clients');
   const canViewCalendar = useHasPermission('view_calendar');
-  const canViewInventory = useHasPermission('view_inventory');
   
   // Filter nav items based on permissions
   const visibleNavItems = navItems.filter(item => {
     if (!item.permission) return true;
     
+    if (item.permission === 'view_dashboard') return canViewDashboard !== false;
     if (item.permission === 'view_jobs') return canViewJobs === true;
     if (item.permission === 'view_clients') return canViewClients === true;
     if (item.permission === 'view_calendar') return canViewCalendar === true;
-    if (item.permission === 'view_inventory') return canViewInventory === true;
     
     return false;
   });

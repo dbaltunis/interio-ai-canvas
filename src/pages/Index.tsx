@@ -53,7 +53,7 @@ const Index = () => {
     // Check sessionStorage first for persistence across page focus/blur
     const savedTab = sessionStorage.getItem('active_tab');
     const urlTab = searchParams.get('tab');
-    const tab = savedTab || urlTab || "projects";
+    const tab = savedTab || urlTab || "dashboard";
     console.log('Index: Initial tab =', tab, 'savedTab =', savedTab, 'urlTab =', urlTab);
     return tab;
   });
@@ -67,7 +67,7 @@ const Index = () => {
 
   // Sync activeTab with URL (single source of truth)
   useEffect(() => {
-    const urlTab = searchParams.get('tab') || "projects";
+    const urlTab = searchParams.get('tab') || "dashboard";
     if (urlTab !== activeTab) {
       console.warn('[NAV] Index: Syncing activeTab from URL:', urlTab);
       setActiveTab(urlTab);
