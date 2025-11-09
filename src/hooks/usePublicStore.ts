@@ -13,12 +13,14 @@ export const usePublicStore = (storeSlug: string) => {
         `)
         .eq('store_slug', storeSlug)
         .eq('is_published', true)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) throw new Error('Store not found');
       return data;
     },
     enabled: !!storeSlug,
+    retry: false,
   });
 };
 
