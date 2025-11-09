@@ -261,7 +261,7 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
     const taxAmountAfterDiscount = subtotalAfterDiscount * taxRate;
     const totalAfterDiscount = subtotalAfterDiscount + taxAmountAfterDiscount;
     
-    console.log('📊 QuotationTab - Building projectData with discount:', {
+    console.log('📊 QuotationTab - projectData calculation:', {
       currentQuoteId: currentQuote?.id,
       hasDiscount,
       discountType: currentQuote?.discount_type,
@@ -270,8 +270,16 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
       discountAmount,
       originalSubtotal: subtotal,
       subtotalAfterDiscount,
+      originalTaxAmount: taxAmount,
+      taxAmountAfterDiscount,
       originalTotal: total,
-      totalAfterDiscount
+      totalAfterDiscount,
+      willPassToLivePreview: {
+        subtotal: subtotal,
+        taxAmount: hasDiscount ? taxAmountAfterDiscount : taxAmount,
+        total: hasDiscount ? totalAfterDiscount : total,
+        hasDiscountObject: hasDiscount
+      }
     });
     
     

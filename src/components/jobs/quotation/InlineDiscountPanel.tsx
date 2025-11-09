@@ -85,9 +85,14 @@ export const InlineDiscountPanel = ({
         subtotal,
       });
       
-      console.log('✅ Discount saved successfully:', result);
-      console.log('🔄 Quote should automatically refresh with new discount values');
-      // Panel stays open to show success state - user can see the saved discount persists
+      console.log('✅ Discount saved to database:', result);
+      console.log('💰 Saved discount data:', {
+        discount_type: result.discount_type,
+        discount_value: result.discount_value,
+        discount_amount: result.discount_amount,
+        discount_scope: result.discount_scope
+      });
+      // Success state will show - quote below will update automatically as queries refetch
     } catch (error) {
       console.error('❌ Error applying discount:', error);
     }
