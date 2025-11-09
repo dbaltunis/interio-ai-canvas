@@ -20,6 +20,7 @@ export const useQuoteVersions = (projectId: string) => {
       return data;
     },
     enabled: !!projectId,
+    staleTime: 0, // Always fetch fresh data, never use cached data
   });
 
   // Create a new quote version (duplicate current quote with rooms and treatments)

@@ -93,10 +93,10 @@ export const InlineDiscountPanel = ({
         discount_scope: result.discount_scope
       });
       
-      // Wait for queries to refetch, then close
+      // Wait longer for queries to refetch completely, then close
       setTimeout(() => {
         onClose();
-      }, 500);
+      }, 1500);
     } catch (error) {
       console.error('❌ Error applying discount:', error);
     }

@@ -16,6 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useQuotes, useCreateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
 import { Download, Mail, MoreVertical, Percent, FileText, DollarSign, ImageIcon as ImageIconLucide, Printer, FileCheck, CreditCard, Sparkles } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
@@ -47,6 +48,7 @@ const removeDuplicateProductsBlocks = (blocks: any[] = []) => {
 
 export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
@@ -293,7 +295,7 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
       workshopItems: workshopItems || [],
       rooms: rooms || [],
       surfaces: surfaces || [],
-      subtotal,
+      subtotal: hasDiscount ? subtotalAfterDiscount : subtotal,
       taxRate,
       taxAmount: hasDiscount ? taxAmountAfterDiscount : taxAmount,
       total: hasDiscount ? totalAfterDiscount : total,
@@ -499,6 +501,9 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
     
     // Toggle the inline discount panel
     setIsDiscountDialogOpen(!isDiscountDialogOpen);
+    
+    // Force refetch of quote versions when opening discount panel
+    await queryClient.invalidateQueries({ queryKey: ["quote-versions", projectId] });
   };
 
   const handleAddTerms = () => {
