@@ -92,7 +92,11 @@ export const InlineDiscountPanel = ({
         discount_amount: result.discount_amount,
         discount_scope: result.discount_scope
       });
-      // Success state will show - quote below will update automatically as queries refetch
+      
+      // Wait for queries to refetch, then close
+      setTimeout(() => {
+        onClose();
+      }, 500);
     } catch (error) {
       console.error('❌ Error applying discount:', error);
     }
@@ -252,8 +256,6 @@ export const InlineDiscountPanel = ({
                       <span className="animate-spin mr-2">⏳</span>
                       Saving...
                     </>
-                  ) : applyDiscount.isSuccess ? (
-                    <>✓ Saved</>
                   ) : (
                     "Apply & Save"
                   )}
@@ -291,11 +293,7 @@ export const InlineDiscountPanel = ({
                 <div className="mt-4 p-3 bg-muted/50 rounded-md border">
                   {applyDiscount.isPending ? (
                     <p className="text-xs text-primary text-center font-medium">
-                      <span className="animate-pulse">Saving discount...</span>
-                    </p>
-                  ) : applyDiscount.isSuccess ? (
-                    <p className="text-xs text-green-600 dark:text-green-500 text-center font-medium">
-                      ✓ Discount saved! The quote below now shows discounted prices.
+                      <span className="animate-pulse">Saving discount and updating quote...</span>
                     </p>
                   ) : discountValue > 0 ? (
                     <p className="text-xs text-muted-foreground text-center">

@@ -87,17 +87,28 @@ export const useQuoteDiscount = (projectId?: string) => {
         console.error('❌ Error applying discount:', error);
         throw error;
       }
-      console.log('✅ Discount applied successfully:', data);
+      console.log('✅ Discount saved to DB:', {
+        discount_type: data.discount_type,
+        discount_value: data.discount_value,
+        discount_amount: data.discount_amount,
+        discount_scope: data.discount_scope
+      });
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["quotes"] });
-      if (projectId) {
-        queryClient.invalidateQueries({ queryKey: ["quote-versions", projectId] });
-      } else {
-        queryClient.invalidateQueries({ queryKey: ["quote-versions"] });
-      }
-      queryClient.invalidateQueries({ queryKey: ["quote-items"] });
+    onSuccess: async () => {
+      // Aggressively invalidate ALL related queries
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["quotes"] }),
+        queryClient.invalidateQueries({ queryKey: ["quote-versions"] }),
+        projectId && queryClient.invalidateQueries({ queryKey: ["quote-versions", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["quote-items"] }),
+        queryClient.invalidateQueries({ queryKey: ["treatments"] }),
+      ].filter(Boolean));
+      
+      // Force refetch
+      await queryClient.refetchQueries({ queryKey: ["quote-versions", projectId] });
+      
+      console.log('🔄 All quote queries invalidated and refetched');
       toast.success("Discount applied successfully");
     },
     onError: (error: Error) => {
@@ -124,14 +135,20 @@ export const useQuoteDiscount = (projectId?: string) => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["quotes"] });
-      if (projectId) {
-        queryClient.invalidateQueries({ queryKey: ["quote-versions", projectId] });
-      } else {
-        queryClient.invalidateQueries({ queryKey: ["quote-versions"] });
-      }
-      queryClient.invalidateQueries({ queryKey: ["quote-items"] });
+    onSuccess: async () => {
+      // Aggressively invalidate ALL related queries
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["quotes"] }),
+        queryClient.invalidateQueries({ queryKey: ["quote-versions"] }),
+        projectId && queryClient.invalidateQueries({ queryKey: ["quote-versions", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["quote-items"] }),
+        queryClient.invalidateQueries({ queryKey: ["treatments"] }),
+      ].filter(Boolean));
+      
+      // Force refetch
+      await queryClient.refetchQueries({ queryKey: ["quote-versions", projectId] });
+      
+      console.log('🔄 Discount removed, all queries refetched');
       toast.success("Discount removed");
     },
     onError: (error: Error) => {
