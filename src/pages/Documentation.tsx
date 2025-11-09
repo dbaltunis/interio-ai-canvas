@@ -6,16 +6,25 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { ScreenshotUploader } from "@/components/documentation/ScreenshotUploader";
+import { ScreenshotDisplay } from "@/components/documentation/ScreenshotDisplay";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { 
   Search, BookOpen, Home, Briefcase, Users, Package, 
   Calendar, Settings, Shield, Zap, BarChart3, ShoppingCart,
   FileText, MessageSquare, Wrench, DollarSign, Globe,
-  ChevronRight, ExternalLink
+  ChevronRight, ExternalLink, Lock
 } from "lucide-react";
 
 export default function Documentation() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSection, setActiveSection] = useState("getting-started");
+  const [adminMode, setAdminMode] = useState(false);
+  
+  // Check if user is admin/owner for screenshot management
+  const isAdmin = useHasPermission('manage_settings');
 
   const sections = [
     {
@@ -187,9 +196,23 @@ export default function Documentation() {
                 <p className="text-sm text-white/60">Complete guide to using InteriorApp</p>
               </div>
             </div>
-            <Badge variant="outline" className="border-white/20 text-white">
-              v1.0
-            </Badge>
+            <div className="flex items-center gap-4">
+              <Badge variant="outline" className="border-white/20 text-white">
+                v1.0
+              </Badge>
+              {isAdmin && (
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="admin-mode" className="text-sm text-white/70">
+                    Edit Mode
+                  </Label>
+                  <Switch
+                    id="admin-mode"
+                    checked={adminMode}
+                    onCheckedChange={setAdminMode}
+                  />
+                </div>
+              )}
+            </div>
           </div>
           
           {/* Search */}
@@ -273,25 +296,33 @@ export default function Documentation() {
                   {currentSection.subsections.map((subsection, index) => (
                     <Card key={subsection.id} className="bg-white/[0.08] border-white/20 hover:bg-white/[0.12] transition-colors">
                       <CardHeader className="pb-4">
-                        <div className="flex items-start gap-3 flex-1">
-                          <div className="p-2 bg-primary/20 rounded-lg mt-1 flex-shrink-0">
-                            <ChevronRight className="h-5 w-5 text-primary" />
-                          </div>
-                          <div className="flex-1">
-                            <CardTitle className="text-white text-xl mb-3 font-semibold">{subsection.title}</CardTitle>
-                            <CardDescription className="text-white/80 whitespace-pre-line leading-relaxed text-base">
-                              {subsection.content}
-                            </CardDescription>
-                            
-                            {/* Placeholder for screenshot */}
-                            <div className="mt-6 p-12 bg-white/[0.03] border border-white/20 rounded-lg flex items-center justify-center">
-                              <div className="text-center text-white/50">
-                                <FileText className="h-16 w-16 mx-auto mb-3 opacity-60" />
-                                <p className="text-sm font-medium">Screenshot placeholder</p>
-                                <p className="text-xs mt-2 text-white/40">Screenshots will be added in future updates</p>
-                              </div>
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-start gap-3 flex-1">
+                            <div className="p-2 bg-primary/20 rounded-lg mt-1 flex-shrink-0">
+                              <ChevronRight className="h-5 w-5 text-primary" />
+                            </div>
+                            <div className="flex-1">
+                              <CardTitle className="text-white text-xl mb-3 font-semibold">{subsection.title}</CardTitle>
                             </div>
                           </div>
+                          {adminMode && isAdmin && (
+                            <ScreenshotUploader
+                              sectionId={currentSection.id}
+                              subsectionId={subsection.id}
+                            />
+                          )}
+                        </div>
+                        <div className="pl-14">
+                          <CardDescription className="text-white/80 whitespace-pre-line leading-relaxed text-base">
+                            {subsection.content}
+                          </CardDescription>
+                          
+                          {/* Screenshot Display */}
+                          <ScreenshotDisplay
+                            sectionId={currentSection.id}
+                            subsectionId={subsection.id}
+                            adminMode={adminMode && isAdmin === true}
+                          />
                         </div>
                       </CardHeader>
                     </Card>
