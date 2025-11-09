@@ -76,21 +76,19 @@ export const InlineDiscountPanel = ({
   const taxAmount = subtotalAfterDiscount * (taxRate / 100);
   const total = subtotalAfterDiscount + taxAmount;
 
-  // Auto-apply discount with debouncing
-  useEffect(() => {
-    if (!isOpen || discountValue <= 0 || !quoteId) return;
-    
-    const timeoutId = setTimeout(() => {
-      applyDiscount.mutate({
+  const handleApply = async () => {
+    try {
+      await applyDiscount.mutateAsync({
         quoteId,
         config,
         items,
         subtotal,
       });
-    }, 800);
-
-    return () => clearTimeout(timeoutId);
-  }, [discountValue, discountType, discountScope, JSON.stringify(Array.from(selectedItems)), isOpen, quoteId]);
+      onClose();
+    } catch (error) {
+      console.error('Error applying discount:', error);
+    }
+  };
 
   const handleRemove = async () => {
     await removeDiscount.mutateAsync(quoteId);
@@ -205,11 +203,17 @@ export const InlineDiscountPanel = ({
               )}
 
               {/* Action Buttons */}
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={onClose}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
                 {currentDiscount && (
                   <Button
                     variant="outline"
-                    size="sm"
                     onClick={handleRemove}
                     disabled={removeDiscount.isPending}
                     className="flex-1"
@@ -217,6 +221,13 @@ export const InlineDiscountPanel = ({
                     Remove Discount
                   </Button>
                 )}
+                <Button
+                  onClick={handleApply}
+                  disabled={applyDiscount.isPending || discountValue <= 0}
+                  className="flex-1"
+                >
+                  {applyDiscount.isPending ? "Applying..." : "Apply to Quote"}
+                </Button>
               </div>
             </div>
 
@@ -248,9 +259,11 @@ export const InlineDiscountPanel = ({
                 </div>
                 
                 {discountValue > 0 && (
-                  <p className="text-xs text-muted-foreground mt-3 text-center">
-                    Changes apply automatically
-                  </p>
+                  <div className="mt-4 p-3 bg-muted/50 rounded-md border">
+                    <p className="text-xs text-muted-foreground text-center">
+                      Click "Apply to Quote" to update the quote below
+                    </p>
+                  </div>
                 )}
               </div>
             </div>
