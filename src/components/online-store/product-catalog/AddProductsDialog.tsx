@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -15,7 +15,10 @@ import { Label } from "@/components/ui/label";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useStoreProductCatalog } from "@/hooks/useStoreProductCatalog";
 import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
-import { Search } from "lucide-react";
+import { useFabricCalculator } from "@/components/shared/measurement-visual/hooks/useFabricCalculator";
+import { formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
+import { Search, Calculator, Info } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface AddProductsDialogProps {
   open: boolean;
@@ -63,6 +66,101 @@ export const AddProductsDialog = ({ open, onOpenChange, storeId }: AddProductsDi
   const isFabricItem = (item: any) => {
     const category = item.category?.toLowerCase() || '';
     return category === 'fabric' || category.includes('fabric');
+  };
+
+  // Preview calculation for selected template + fabric
+  const TemplatePreview = ({ item, templateId }: { item: any; templateId: string }) => {
+    const template = templates.find(t => t.id === templateId);
+    
+    // Example measurements for preview
+    const exampleMeasurements = {
+      rail_width: "200",
+      drop: "220",
+      pooling_amount: "0",
+    };
+
+    const treatmentData = useMemo(() => {
+      if (!template) return undefined;
+      
+      return {
+        template: {
+          id: template.id,
+          name: template.name,
+          curtain_type: template.curtain_type,
+          fullness_ratio: template.fullness_ratio,
+          header_allowance: template.header_allowance,
+          bottom_hem: template.bottom_hem,
+          side_hems: template.side_hems,
+          seam_hems: template.seam_hems,
+          return_left: template.return_left,
+          return_right: template.return_right,
+          waste_percent: template.waste_percent,
+          compatible_hardware: template.compatible_hardware,
+        },
+        fabric: {
+          id: item.id,
+          name: item.name,
+          fabric_width: item.fabric_width || 137,
+          price_per_meter: item.selling_price || item.unit_price || 0,
+          unit_price: item.unit_price,
+          selling_price: item.selling_price,
+        }
+      };
+    }, [template, item]);
+
+    const calculation = useFabricCalculator({ 
+      measurements: exampleMeasurements, 
+      treatmentData 
+    });
+
+    if (!template || !calculation) return null;
+
+    return (
+      <Alert className="mt-2 bg-primary/5 border-primary/20">
+        <Calculator className="h-4 w-4" />
+        <AlertDescription>
+          <div className="space-y-2 mt-1">
+            <div className="flex items-start gap-2">
+              <Info className="h-3 w-3 mt-0.5 text-muted-foreground flex-shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                Preview based on example size: {exampleMeasurements.rail_width}cm wide × {exampleMeasurements.drop}cm drop
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Fullness:</span>
+                  <span className="font-medium">{calculation.fullnessRatio}x</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Fabric needed:</span>
+                  <span className="font-medium">{calculation.linearMeters.toFixed(2)}m</span>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Widths:</span>
+                  <span className="font-medium">{calculation.widthsRequired}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Est. price:</span>
+                  <span className="font-semibold text-primary">
+                    {formatCurrency(calculation.totalCost, 'NZD')}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-primary/10">
+              <p className="text-xs text-muted-foreground">
+                💡 Customers will see this as: <span className="font-medium text-foreground">"{template.name} - {item.name}"</span>
+              </p>
+            </div>
+          </div>
+        </AlertDescription>
+      </Alert>
+    );
   };
 
   return (
@@ -158,11 +256,14 @@ export const AddProductsDialog = ({ open, onOpenChange, storeId }: AddProductsDi
                               ))}
                             </SelectContent>
                           </Select>
+                          
                           {selectedTemplates[item.id] && (
-                            <p className="text-xs text-muted-foreground">
-                              Will display as: <span className="font-medium">
-                                {templates.find(t => t.id === selectedTemplates[item.id])?.name} - {item.name}
-                              </span>
+                            <TemplatePreview item={item} templateId={selectedTemplates[item.id]} />
+                          )}
+                          
+                          {categoryTemplates.length === 0 && (
+                            <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/20 p-2 rounded">
+                              ⚠️ No templates available for this fabric category. Create templates in Settings → Window Coverings.
                             </p>
                           )}
                         </div>
