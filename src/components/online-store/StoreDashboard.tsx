@@ -3,8 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { OnlineStore } from "@/types/online-store";
 import { useStoreStats } from "@/hooks/useStoreStats";
-import { ExternalLink, Edit, Package, MessageSquare, Globe, Settings } from "lucide-react";
+import { ExternalLink, Edit, Package, MessageSquare, Globe, Settings, Eye, EyeOff } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface StoreDashboardProps {
   store: OnlineStore;
@@ -15,10 +18,31 @@ interface StoreDashboardProps {
 
 export const StoreDashboard = ({ store, onEditPages, onManageProducts, onViewSettings }: StoreDashboardProps) => {
   const { data: stats } = useStoreStats(store.id);
+  const queryClient = useQueryClient();
 
   const storeUrl = store.custom_domain && store.domain_verified
     ? `https://${store.custom_domain}`
-    : `https://${store.store_slug}.interioapp.store`;
+    : `${window.location.origin}/store/${store.store_slug}`;
+
+  const togglePublish = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('online_stores')
+        .update({ is_published: !store.is_published })
+        .eq('id', store.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['online-store'] });
+      toast({
+        title: store.is_published ? "Store Unpublished" : "Store Published!",
+        description: store.is_published
+          ? "Your store is now hidden from the public"
+          : "Your store is now live and accessible to customers",
+      });
+    },
+  });
 
   return (
     <div className="space-y-6">
@@ -49,8 +73,19 @@ export const StoreDashboard = ({ store, onEditPages, onManageProducts, onViewSet
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-3">
-            <Button onClick={onEditPages}>
+          <div className="flex gap-3 flex-wrap">
+            <Button
+              onClick={() => togglePublish.mutate()}
+              disabled={togglePublish.isPending}
+              variant={store.is_published ? "outline" : "default"}
+            >
+              {store.is_published ? (
+                <><EyeOff className="h-4 w-4 mr-2" />Unpublish Store</>
+              ) : (
+                <><Eye className="h-4 w-4 mr-2" />Publish Store</>
+              )}
+            </Button>
+            <Button variant="outline" onClick={onEditPages}>
               <Edit className="h-4 w-4 mr-2" />
               Edit Pages
             </Button>
