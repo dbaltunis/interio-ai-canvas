@@ -56,6 +56,16 @@ export const useWorkshopData = (projectId?: string) => {
   const { convertToUserUnit, getLengthUnitLabel } = useMeasurementUnits();
 
   const workshopData: WorkshopData | undefined = useMemo(() => {
+    // Debug logging for data flow
+    console.log('🏭 [WORKROOM] Building workshop data:', {
+      projectId,
+      hasProject: !!project,
+      roomsCount: rooms?.length || 0,
+      surfacesCount: surfaces?.length || 0,
+      summariesCount: projectSummaries?.windows?.length || 0,
+      projectName: (project as any)?.name,
+    });
+
     // Build sections from rooms and surfaces
     const roomsMap = new Map<string, WorkshopRoomSection>();
 
@@ -126,7 +136,18 @@ export const useWorkshopData = (projectId?: string) => {
       .sort((a, b) => a.roomName.localeCompare(b.roomName))
       .map(({ key, ...rest }) => rest);
 
-    if (sections.length === 0) return undefined;
+    console.log('🏭 [WORKROOM] Built sections:', {
+      sectionsCount: sections.length,
+      sections: sections.map(s => ({
+        roomName: s.roomName,
+        itemsCount: s.items.length
+      }))
+    });
+
+    if (sections.length === 0) {
+      console.warn('⚠️ [WORKROOM] No sections created - returning undefined');
+      return undefined;
+    }
 
     return {
       header: {
