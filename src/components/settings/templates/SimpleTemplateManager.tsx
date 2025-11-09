@@ -14,7 +14,9 @@ import {
   Copy,
   Download,
   Sparkles,
-  Building2
+  Building2,
+  ToggleLeft,
+  ToggleRight
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,6 +32,7 @@ interface Template {
   blocks: any[];
   category: string;
   is_default?: boolean;
+  active?: boolean;
   created_at?: string;
 }
 
@@ -319,6 +322,7 @@ export const SimpleTemplateManager: React.FC = () => {
         description: template.description,
         blocks: Array.isArray(template.blocks) ? template.blocks : [],
         category: template.template_style || 'quote',
+        active: template.active ?? false,
         created_at: template.created_at,
         is_default: false // All templates from database are user-editable/deletable
       })) || [];
@@ -392,6 +396,29 @@ export const SimpleTemplateManager: React.FC = () => {
       toast.error('Failed to delete template');
     }
   };
+
+  const toggleActive = async (templateId: string, currentActive: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('quote_templates')
+        .update({ active: !currentActive })
+        .eq('id', templateId);
+
+      if (error) throw error;
+
+      // Invalidate React Query cache to update QuotationTab immediately
+      queryClient.invalidateQueries({ queryKey: ['quote-templates'] });
+      
+      setTemplates(prev => prev.map(t => 
+        t.id === templateId ? { ...t, active: !currentActive } : t
+      ));
+      toast.success(`Template ${!currentActive ? 'activated' : 'deactivated'}`);
+    } catch (error) {
+      console.error('Error toggling template active status:', error);
+      toast.error('Failed to update template');
+    }
+  };
+
 
   const duplicateTemplate = async (template: Template) => {
     try {
@@ -604,31 +631,54 @@ export const SimpleTemplateManager: React.FC = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openEditor(template)}
-                    className="flex-1"
-                  >
-                    <Edit3 className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => duplicateTemplate(template)}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => deleteTemplate(template.id)}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                <div className="flex flex-col gap-3">
+                  {/* Active Status Toggle */}
+                  <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md">
+                    <span className="text-sm font-medium">Active for Quotes</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleActive(template.id, template.active ?? false)}
+                      className="h-8"
+                    >
+                      {template.active ? (
+                        <ToggleRight className="h-5 w-5 text-primary" />
+                      ) : (
+                        <ToggleLeft className="h-5 w-5 text-muted-foreground" />
+                      )}
+                      <span className="ml-2 text-xs">
+                        {template.active ? 'Active' : 'Inactive'}
+                      </span>
+                    </Button>
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEditor(template)}
+                      className="flex-1"
+                    >
+                      <Edit3 className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => duplicateTemplate(template)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => deleteTemplate(template.id)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
