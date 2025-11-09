@@ -5,6 +5,8 @@ import { OnlineStore } from "@/types/online-store";
 import { StoreCreationFlow } from "./StoreCreationFlow";
 import { StoreDashboard } from "./StoreDashboard";
 import { StoreProductManager } from "./StoreProductManager";
+import { StorePageEditor } from "./StorePageEditor";
+import { StoreSettingsTab } from "./StoreSettingsTab";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Store, Sparkles } from "lucide-react";
@@ -123,43 +125,15 @@ export const OnlineStoreTab = () => {
           <StoreProductManager storeId={store.id} />
         </>
       ) : activeView === 'pages' ? (
-        <>
-          <Button variant="outline" onClick={() => setActiveView('dashboard')}>
-            ← Back to Dashboard
-          </Button>
-          <Card>
-            <CardHeader>
-              <CardTitle>Page Editor</CardTitle>
-              <CardDescription>
-                Edit your store pages (Coming in Phase 2)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                The visual page editor is coming soon. For now, you can visit your store to see how it looks.
-              </p>
-            </CardContent>
-          </Card>
-        </>
+        <StorePageEditor 
+          storeId={store.id} 
+          onBack={() => setActiveView('dashboard')} 
+        />
       ) : (
-        <>
-          <Button variant="outline" onClick={() => setActiveView('dashboard')}>
-            ← Back to Dashboard
-          </Button>
-          <Card>
-            <CardHeader>
-              <CardTitle>Store Settings</CardTitle>
-              <CardDescription>
-                Configure your store settings (Coming in Phase 2)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Store settings editor is coming soon. This will include domain setup, SEO, and branding options.
-              </p>
-            </CardContent>
-          </Card>
-        </>
+        <StoreSettingsTab 
+          store={store} 
+          onBack={() => setActiveView('dashboard')} 
+        />
       )}
     </div>
   );

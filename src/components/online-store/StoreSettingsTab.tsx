@@ -1,0 +1,357 @@
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { ArrowLeft, Save, Palette, Globe, CreditCard, Settings } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { OnlineStore } from "@/types/online-store";
+
+interface StoreSettingsTabProps {
+  store: OnlineStore;
+  onBack: () => void;
+}
+
+export const StoreSettingsTab = ({ store, onBack }: StoreSettingsTabProps) => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [settings, setSettings] = useState({
+    storeName: store.store_name,
+    storeSlug: store.store_slug,
+    seoTitle: store.seo_title || '',
+    seoDescription: store.seo_description || '',
+    primaryColor: store.primary_color,
+    secondaryColor: store.secondary_color,
+    accentColor: store.accent_color,
+    fontFamily: store.font_family,
+    customDomain: store.custom_domain || '',
+    googleAnalyticsId: store.google_analytics_id || '',
+    paymentProvider: store.payment_provider,
+  });
+
+  const saveSettings = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('online_stores')
+        .update({
+          store_name: settings.storeName,
+          store_slug: settings.storeSlug,
+          seo_title: settings.seoTitle,
+          seo_description: settings.seoDescription,
+          primary_color: settings.primaryColor,
+          secondary_color: settings.secondaryColor,
+          accent_color: settings.accentColor,
+          font_family: settings.fontFamily,
+          custom_domain: settings.customDomain,
+          google_analytics_id: settings.googleAnalyticsId,
+          payment_provider: settings.paymentProvider,
+        })
+        .eq('id', store.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['online-store'] });
+      toast({
+        title: "Settings saved",
+        description: "Your store settings have been updated.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to save settings",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const fontOptions = [
+    'Inter, sans-serif',
+    'Playfair Display, serif',
+    'Lato, sans-serif',
+    'Montserrat, sans-serif',
+    'Roboto, sans-serif',
+    'Open Sans, sans-serif',
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h2 className="text-2xl font-bold">Store Settings</h2>
+            <p className="text-muted-foreground">Manage your store configuration</p>
+          </div>
+        </div>
+        <Button onClick={() => saveSettings.mutate()} disabled={saveSettings.isPending}>
+          <Save className="h-4 w-4 mr-2" />
+          {saveSettings.isPending ? 'Saving...' : 'Save Changes'}
+        </Button>
+      </div>
+
+      <Tabs defaultValue="general" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="general">
+            <Settings className="h-4 w-4 mr-2" />
+            General
+          </TabsTrigger>
+          <TabsTrigger value="design">
+            <Palette className="h-4 w-4 mr-2" />
+            Design
+          </TabsTrigger>
+          <TabsTrigger value="seo">
+            <Globe className="h-4 w-4 mr-2" />
+            SEO & Domain
+          </TabsTrigger>
+          <TabsTrigger value="payments">
+            <CreditCard className="h-4 w-4 mr-2" />
+            Payments
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="general" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Store Information</CardTitle>
+              <CardDescription>Basic details about your store</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="store-name">Store Name</Label>
+                <Input
+                  id="store-name"
+                  value={settings.storeName}
+                  onChange={(e) => setSettings({ ...settings, storeName: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="store-slug">Store URL Slug</Label>
+                <div className="flex gap-2">
+                  <span className="flex items-center px-3 bg-muted rounded-md text-sm text-muted-foreground">
+                    /store/
+                  </span>
+                  <Input
+                    id="store-slug"
+                    value={settings.storeSlug}
+                    onChange={(e) => setSettings({ ...settings, storeSlug: e.target.value })}
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Your store will be available at: /store/{settings.storeSlug}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="design" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Brand Colors</CardTitle>
+              <CardDescription>Customize your store's color scheme</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="primary-color">Primary Color</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="primary-color"
+                      type="color"
+                      value={settings.primaryColor}
+                      onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
+                      className="w-16 h-10 p-1"
+                    />
+                    <Input
+                      value={settings.primaryColor}
+                      onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="secondary-color">Secondary Color</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="secondary-color"
+                      type="color"
+                      value={settings.secondaryColor}
+                      onChange={(e) => setSettings({ ...settings, secondaryColor: e.target.value })}
+                      className="w-16 h-10 p-1"
+                    />
+                    <Input
+                      value={settings.secondaryColor}
+                      onChange={(e) => setSettings({ ...settings, secondaryColor: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="accent-color">Accent Color</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="accent-color"
+                      type="color"
+                      value={settings.accentColor}
+                      onChange={(e) => setSettings({ ...settings, accentColor: e.target.value })}
+                      className="w-16 h-10 p-1"
+                    />
+                    <Input
+                      value={settings.accentColor}
+                      onChange={(e) => setSettings({ ...settings, accentColor: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Typography</CardTitle>
+              <CardDescription>Choose fonts for your store</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="font-family">Font Family</Label>
+                <Select
+                  value={settings.fontFamily}
+                  onValueChange={(value) => setSettings({ ...settings, fontFamily: value })}
+                >
+                  <SelectTrigger id="font-family">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {fontOptions.map((font) => (
+                      <SelectItem key={font} value={font}>
+                        <span style={{ fontFamily: font }}>{font.split(',')[0]}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="seo" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>SEO Settings</CardTitle>
+              <CardDescription>Optimize your store for search engines</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="seo-title">SEO Title</Label>
+                <Input
+                  id="seo-title"
+                  value={settings.seoTitle}
+                  onChange={(e) => setSettings({ ...settings, seoTitle: e.target.value })}
+                  placeholder="Your store name and what you sell"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Recommended: 50-60 characters
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="seo-description">SEO Description</Label>
+                <Textarea
+                  id="seo-description"
+                  value={settings.seoDescription}
+                  onChange={(e) => setSettings({ ...settings, seoDescription: e.target.value })}
+                  placeholder="Brief description of your store and products"
+                  rows={3}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Recommended: 150-160 characters
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Custom Domain</CardTitle>
+              <CardDescription>Connect your own domain name</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="custom-domain">Domain Name</Label>
+                <Input
+                  id="custom-domain"
+                  value={settings.customDomain}
+                  onChange={(e) => setSettings({ ...settings, customDomain: e.target.value })}
+                  placeholder="shop.yoursite.com"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Contact support to configure DNS settings
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Analytics</CardTitle>
+              <CardDescription>Track your store's performance</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="ga-id">Google Analytics ID</Label>
+                <Input
+                  id="ga-id"
+                  value={settings.googleAnalyticsId}
+                  onChange={(e) => setSettings({ ...settings, googleAnalyticsId: e.target.value })}
+                  placeholder="G-XXXXXXXXXX"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="payments" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Payment Provider</CardTitle>
+              <CardDescription>Choose how you'll accept payments</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="payment-provider">Provider</Label>
+                <Select
+                  value={settings.paymentProvider}
+                  onValueChange={(value: 'stripe' | 'paypal') => 
+                    setSettings({ ...settings, paymentProvider: value })
+                  }
+                >
+                  <SelectTrigger id="payment-provider">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="stripe">Stripe</SelectItem>
+                    <SelectItem value="paypal">PayPal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Separator />
+              <div className="p-4 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  Connect your {settings.paymentProvider} account in the Payments section
+                  of your main settings to start accepting payments.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
