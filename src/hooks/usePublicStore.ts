@@ -28,6 +28,16 @@ export const usePublicStoreProducts = (storeId: string) => {
   return useQuery({
     queryKey: ['public-store-products', storeId],
     queryFn: async () => {
+      // Get excluded categories
+      const { data: categorySettings } = await supabase
+        .from('store_category_settings')
+        .select('category')
+        .eq('store_id', storeId)
+        .eq('is_excluded', true);
+
+      const excludedCategories = categorySettings?.map(s => s.category) || [];
+
+      // Get products
       const { data, error } = await supabase
         .from('store_product_visibility')
         .select(`
@@ -40,7 +50,14 @@ export const usePublicStoreProducts = (storeId: string) => {
         .order('sort_order');
 
       if (error) throw error;
-      return data;
+
+      // Filter out excluded categories
+      const filteredData = data?.filter(product => {
+        const category = product.inventory_item?.category;
+        return !category || !excludedCategories.includes(category);
+      }) || [];
+
+      return filteredData;
     },
     enabled: !!storeId,
   });

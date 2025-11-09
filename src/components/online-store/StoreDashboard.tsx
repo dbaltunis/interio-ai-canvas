@@ -16,9 +16,10 @@ interface StoreDashboardProps {
   onEditPages: () => void;
   onManageProducts: () => void;
   onViewSettings: () => void;
+  onManageCategories?: () => void;
 }
 
-export const StoreDashboard = ({ store, onEditPages, onManageProducts, onViewSettings }: StoreDashboardProps) => {
+export const StoreDashboard = ({ store, onEditPages, onManageProducts, onViewSettings, onManageCategories }: StoreDashboardProps) => {
   const { data: stats } = useStoreStats(store.id);
   const queryClient = useQueryClient();
 
@@ -133,6 +134,12 @@ export const StoreDashboard = ({ store, onEditPages, onManageProducts, onViewSet
               <Package className="h-4 w-4 mr-2" />
               Manage Products
             </Button>
+            {onManageCategories && (
+              <Button variant="outline" onClick={onManageCategories}>
+                <Package className="h-4 w-4 mr-2" />
+                Category Settings
+              </Button>
+            )}
             <Button variant="outline" asChild>
               <Link to="/?tab=jobs">
                 <Briefcase className="h-4 w-4 mr-2" />

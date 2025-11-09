@@ -1924,6 +1924,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_railroadable: boolean | null
+          is_store_visible: boolean | null
           is_system_default: boolean | null
           lining_types: Json | null
           machine_drop_height_prices: Json | null
@@ -1999,6 +2000,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_railroadable?: boolean | null
+          is_store_visible?: boolean | null
           is_system_default?: boolean | null
           lining_types?: Json | null
           machine_drop_height_prices?: Json | null
@@ -2074,6 +2076,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_railroadable?: boolean | null
+          is_store_visible?: boolean | null
           is_system_default?: boolean | null
           lining_types?: Json | null
           machine_drop_height_prices?: Json | null
@@ -6602,6 +6605,41 @@ export type Database = {
         }
         Relationships: []
       }
+      store_category_settings: {
+        Row: {
+          category: string
+          created_at: string | null
+          id: string
+          is_excluded: boolean | null
+          store_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          id?: string
+          is_excluded?: boolean | null
+          store_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          id?: string
+          is_excluded?: boolean | null
+          store_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_category_settings_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "online_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_inquiries: {
         Row: {
           configuration_data: Json | null
@@ -6886,31 +6924,40 @@ export type Database = {
         Row: {
           category: string
           created_at: string
+          demo_url: string | null
           description: string | null
+          features: Json | null
           id: string
           is_default: boolean | null
           name: string
           preview_image_url: string | null
+          preview_images: Json | null
           template_config: Json
         }
         Insert: {
           category: string
           created_at?: string
+          demo_url?: string | null
           description?: string | null
+          features?: Json | null
           id: string
           is_default?: boolean | null
           name: string
           preview_image_url?: string | null
+          preview_images?: Json | null
           template_config?: Json
         }
         Update: {
           category?: string
           created_at?: string
+          demo_url?: string | null
           description?: string | null
+          features?: Json | null
           id?: string
           is_default?: boolean | null
           name?: string
           preview_image_url?: string | null
+          preview_images?: Json | null
           template_config?: Json
         }
         Relationships: []

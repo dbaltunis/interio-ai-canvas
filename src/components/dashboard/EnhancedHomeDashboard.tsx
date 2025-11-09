@@ -27,6 +27,7 @@ import { useEmailKPIs } from "@/hooks/useEmails";
 import { ShopifyIntegrationDialog } from "@/components/library/ShopifyIntegrationDialog";
 import { Users, FileText, Package, DollarSign, Mail, MousePointerClick, Clock, TrendingUp, Store, CalendarCheck } from "lucide-react";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { OnlineStoreCTAWidget } from "./OnlineStoreCTAWidget";
 
 export const EnhancedHomeDashboard = () => {
   const [showShopifyDialog, setShowShopifyDialog] = useState(false);
@@ -194,6 +195,9 @@ export const EnhancedHomeDashboard = () => {
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header Section */}
       <WelcomeHeader onCustomizeClick={() => setShowWidgetCustomizer(true)} />
+
+      {/* Online Store CTA Widget - Show if no store exists */}
+      <OnlineStoreCTAWidget />
 
       {/* Dynamic Widgets Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">

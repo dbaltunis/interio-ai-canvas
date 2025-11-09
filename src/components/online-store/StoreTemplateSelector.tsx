@@ -32,7 +32,7 @@ export const StoreTemplateSelector = ({ onSelectTemplate }: StoreTemplateSelecto
         .order('is_default', { ascending: false });
 
       if (error) throw error;
-      return data as StoreTemplate[];
+      return data as any as StoreTemplate[];
     },
   });
 

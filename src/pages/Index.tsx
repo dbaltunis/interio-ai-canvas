@@ -14,6 +14,9 @@ import { OrderingHubPage } from "@/components/ordering/OrderingHubPage";
 const Dashboard = lazy(() => 
   import("@/components/dashboard/Dashboard").catch(() => ({ default: () => <div>Error loading Dashboard</div> }))
 );
+const OnlineStorePage = lazy(() =>
+  import("@/pages/OnlineStore").catch(() => ({ default: () => <div>Error loading Online Store</div> }))
+);
 const JobsPage = lazy(() => 
   import("@/components/jobs/JobsPage").catch(() => ({ default: () => <div>Error loading Jobs</div> }))
 );
@@ -89,11 +92,19 @@ const Index = () => {
     );
 
     switch (activeTab) {
-      case "dashboard":
+    case "dashboard":
         return (
           <Suspense fallback={<DashboardSkeleton />}>
             <ComponentWrapper>
               <Dashboard />
+            </ComponentWrapper>
+          </Suspense>
+        );
+      case "online-store":
+        return (
+          <Suspense fallback={<div>Loading...</div>}>
+            <ComponentWrapper>
+              <OnlineStorePage />
             </ComponentWrapper>
           </Suspense>
         );

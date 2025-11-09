@@ -123,6 +123,24 @@ export const useStoreProductCatalog = (storeId?: string) => {
     },
   });
 
+  const bulkUpdateTemplates = useMutation({
+    mutationFn: async ({ productIds, templateId }: { productIds: string[]; templateId: string }) => {
+      const { error } = await supabase
+        .from('store_product_visibility')
+        .update({ template_id: templateId })
+        .in('id', productIds);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store-product-catalog', storeId] });
+      toast({
+        title: "Templates assigned",
+        description: "Templates have been assigned to selected products.",
+      });
+    },
+  });
+
   return {
     ...query,
     products: query.data || [],
@@ -130,5 +148,6 @@ export const useStoreProductCatalog = (storeId?: string) => {
     updateDescription,
     updateImages,
     bulkAddProducts,
+    bulkUpdateTemplates,
   };
 };

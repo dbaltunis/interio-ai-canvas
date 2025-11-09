@@ -12,7 +12,8 @@ export type FeatureKey =
   | 'window_treatments'
   | 'wallpapers'
   | 'shopify'
-  | 'erp_integrations';
+  | 'erp_integrations'
+  | 'online_store';
 
 interface FeatureAccess {
   [key: string]: boolean;
