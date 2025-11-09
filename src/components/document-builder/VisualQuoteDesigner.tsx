@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Type, 
   Image as ImageIcon, 
@@ -14,10 +15,15 @@ import {
   Download,
   Trash2,
   MousePointer,
-  Upload
+  Upload,
+  Settings as SettingsIcon,
+  Sparkles
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCreateDocumentTemplate, useUpdateDocumentTemplate } from '@/hooks/useDocumentTemplates';
+import { PlaceholderPanel } from './PlaceholderPanel';
+import { ProductTableTool } from './ProductTableTool';
+import { ImageUploadTool } from './ImageUploadTool';
 
 interface VisualQuoteDesignerProps {
   template?: any;
@@ -90,6 +96,111 @@ export const VisualQuoteDesigner = ({ template }: VisualQuoteDesignerProps) => {
       console.error('Error loading template:', error);
     }
   }, [fabricCanvas, template]);
+
+  // Insert placeholder text
+  const insertPlaceholder = (placeholder: string) => {
+    if (!fabricCanvas) return;
+
+    const text = new IText(placeholder, {
+      left: 100,
+      top: 100,
+      fontSize: 16,
+      fontFamily: 'Inter',
+      fill: '#1f2937',
+      fontWeight: '500',
+    });
+
+    fabricCanvas.add(text);
+    fabricCanvas.setActiveObject(text);
+    fabricCanvas.renderAll();
+    
+    toast({
+      title: 'Placeholder Added',
+      description: 'Edit the text to customize or move it around',
+    });
+  };
+
+  // Add product table placeholder
+  const addProductTable = () => {
+    if (!fabricCanvas) return;
+
+    // Create a visual placeholder for the product table
+    const tableRect = new Rect({
+      left: 50,
+      top: 400,
+      width: 694,  // Full width minus margins
+      height: 300,
+      fill: '#f9fafb',
+      stroke: '#d1d5db',
+      strokeWidth: 2,
+      strokeDashArray: [10, 5],
+      rx: 4,
+      ry: 4,
+    });
+
+    const tableText = new IText('{{PRODUCT_TABLE}}', {
+      left: 300,
+      top: 530,
+      fontSize: 20,
+      fill: '#6b7280',
+      fontFamily: 'Inter',
+      fontWeight: 'bold',
+      selectable: false,
+    });
+
+    const infoText = new IText('Line items will appear here\nwhen generating the quote', {
+      left: 260,
+      top: 560,
+      fontSize: 12,
+      fill: '#9ca3af',
+      fontFamily: 'Inter',
+      textAlign: 'center',
+      selectable: false,
+    });
+
+    fabricCanvas.add(tableRect);
+    fabricCanvas.add(tableText);
+    fabricCanvas.add(infoText);
+    fabricCanvas.setActiveObject(tableRect);
+    fabricCanvas.renderAll();
+    
+    toast({
+      title: 'Product Table Added',
+      description: 'This will be replaced with actual line items when generating quotes',
+    });
+  };
+
+  // Upload and add image to canvas
+  const handleImageUpload = (imageUrl: string) => {
+    if (!fabricCanvas) return;
+
+    FabricImage.fromURL(imageUrl, {
+      crossOrigin: 'anonymous',
+    }).then((img) => {
+      // Scale image to reasonable size
+      const maxWidth = 300;
+      const maxHeight = 300;
+      const scale = Math.min(maxWidth / (img.width || 1), maxHeight / (img.height || 1), 1);
+      
+      img.set({
+        left: 100,
+        top: 100,
+        scaleX: scale,
+        scaleY: scale,
+      });
+
+      fabricCanvas.add(img);
+      fabricCanvas.setActiveObject(img);
+      fabricCanvas.renderAll();
+    }).catch((error) => {
+      console.error('Error loading image:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load image',
+        variant: 'destructive',
+      });
+    });
+  };
 
   // Add text element
   const addText = () => {
@@ -389,13 +500,26 @@ export const VisualQuoteDesigner = ({ template }: VisualQuoteDesignerProps) => {
           </div>
         </div>
 
-        {/* Modern Right Properties Panel */}
+        {/* Modern Right Panel - Properties & Tools */}
         <div className="col-span-3">
           <div className="modern-card p-5 sticky top-6">
-            <div className="flex items-center gap-2 mb-5">
-              <div className="h-8 w-1 bg-gradient-to-b from-accent to-primary rounded-full" />
-              <h3 className="text-sm font-bold text-foreground">Properties</h3>
-            </div>
+            <Tabs defaultValue="properties" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="properties" className="text-xs">
+                  <SettingsIcon className="h-3 w-3 mr-1" />
+                  Properties
+                </TabsTrigger>
+                <TabsTrigger value="dynamic" className="text-xs">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  Dynamic
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="properties" className="mt-0">
+                <div className="flex items-center gap-2 mb-5">
+                  <div className="h-8 w-1 bg-gradient-to-b from-accent to-primary rounded-full" />
+                  <h3 className="text-sm font-bold text-foreground">Object Properties</h3>
+                </div>
             
             {selectedObject ? (
               <ScrollArea className="h-[calc(100vh-240px)]">
@@ -528,6 +652,18 @@ export const VisualQuoteDesigner = ({ template }: VisualQuoteDesignerProps) => {
                 </p>
               </div>
             )}
+              </TabsContent>
+
+              <TabsContent value="dynamic" className="mt-0">
+                <div className="space-y-4">
+                  <PlaceholderPanel onInsertPlaceholder={insertPlaceholder} />
+                  <Separator className="my-4" />
+                  <ProductTableTool onAddProductTable={addProductTable} />
+                  <Separator className="my-4" />
+                  <ImageUploadTool onImageUpload={handleImageUpload} />
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>

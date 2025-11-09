@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useQuotes, useCreateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Mail, MoreVertical, Percent, FileText, DollarSign, ImageIcon as ImageIconLucide, Printer, FileCheck, CreditCard } from "lucide-react";
+import { Download, Mail, MoreVertical, Percent, FileText, DollarSign, ImageIcon as ImageIconLucide, Printer, FileCheck, CreditCard, Sparkles } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
@@ -27,6 +27,7 @@ import { useQuoteVersions } from "@/hooks/useQuoteVersions";
 import { generateQuotePDF, generateQuotePDFBlob } from '@/utils/generateQuotePDF';
 import { QuoteDiscountDialog } from "@/components/jobs/quotation/QuoteDiscountDialog";
 import { useQuoteDiscount } from "@/hooks/useQuoteDiscount";
+import { QuoteGeneratorDialog } from "@/components/document-builder/QuoteGeneratorDialog";
 
 interface QuotationTabProps {
   projectId: string;
@@ -53,6 +54,7 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   const [showQuotationItems, setShowQuotationItems] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
+  const [isTemplateGeneratorOpen, setIsTemplateGeneratorOpen] = useState(false);
 
   const { data: projects } = useProjects();
   const { data: treatments } = useTreatments(projectId, quoteId);
@@ -558,9 +560,20 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
 
           {/* Action Buttons - Better organized */}
           <div className="flex flex-wrap items-center gap-2">
+            {/* NEW: Generate from Template */}
+            <Button
+              size="sm"
+              onClick={() => setIsTemplateGeneratorOpen(true)}
+              className="h-9 px-4 bg-gradient-to-r from-primary to-accent hover:opacity-90"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Generate from Template
+            </Button>
+
             {/* Primary Action */}
             <Button
               size="sm"
+              variant="outline"
               onClick={handleDownloadPDF}
               disabled={isGeneratingPDF || !selectedTemplate}
               className="h-9 px-4"
@@ -760,6 +773,45 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
           amount: currentQuote.discount_amount || 0,
           selectedItems: (currentQuote.selected_discount_items as string[]) || undefined,
         } : undefined}
+      />
+
+      {/* Template Generator Dialog */}
+      <QuoteGeneratorDialog
+        isOpen={isTemplateGeneratorOpen}
+        onClose={() => setIsTemplateGeneratorOpen(false)}
+        quoteData={{
+          client: client ? {
+            name: client.name || '',
+            email: client.email || '',
+            phone: client.phone || '',
+            address: client.address || '',
+            company_name: client.company_name || '',
+          } : undefined,
+          business: businessSettings ? {
+            name: businessSettings.company_name || '',
+            email: businessSettings.business_email || '',
+            phone: businessSettings.business_phone || '',
+            address: businessSettings.address || '',
+            abn: businessSettings.abn || '',
+          } : undefined,
+          quote: {
+            number: currentQuote?.quote_number || project?.job_number || 'DRAFT',
+            date: new Date().toISOString(),
+            validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            status: currentQuote?.status || 'draft',
+            subtotal: subtotal,
+            tax: taxAmount,
+            total: total,
+            deposit: currentQuote?.payment_amount || total * 0.3,
+          },
+          items: sourceTreatments.map(item => ({
+            name: item.name || '',
+            description: item.description || '',
+            quantity: item.quantity || 1,
+            price: item.price || 0,
+            total: (item.quantity || 1) * (item.price || 0),
+          })),
+        }}
       />
 
     </div>
