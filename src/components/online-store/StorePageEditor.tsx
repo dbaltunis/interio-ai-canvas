@@ -1,16 +1,14 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Save, Eye, Layout, Type, Image, Palette } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { PageEditorHeader } from "./page-editor/PageEditorHeader";
+import { SEOPanel } from "./page-editor/SEOPanel";
+import { BlockLibrary } from "./page-editor/BlockLibrary";
+import { BlockEditor } from "./page-editor/BlockEditor";
+import { Card } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ImageIcon } from "lucide-react";
 
 interface StorePageEditorProps {
   storeId: string;
@@ -26,51 +24,76 @@ interface PageSection {
 export const StorePageEditor = ({ storeId, onBack }: StorePageEditorProps) => {
   const { toast } = useToast();
   const [selectedPage, setSelectedPage] = useState<string>('home');
+  const [isSaving, setIsSaving] = useState(false);
   const [sections, setSections] = useState<PageSection[]>([
-    { type: 'hero', content: { headline: '', subheadline: '' }, order: 0 },
+    { 
+      type: 'hero', 
+      content: { 
+        headline: 'Welcome to Our Store',
+        subheadline: 'Discover quality products and exceptional service',
+        ctaText: 'Shop Now',
+        imageUrl: '',
+        imageAlt: ''
+      }, 
+      order: 0 
+    },
   ]);
   const [pageSettings, setPageSettings] = useState({
     title: 'Home',
     slug: 'home',
-    seoTitle: '',
-    seoDescription: '',
+    seoTitle: 'Premium Window Treatments | Custom Blinds & Shades',
+    seoDescription: 'Transform your space with our custom window treatments. Expert installation, quality materials, and personalized service. Get your free quote today!',
     isActive: true,
   });
 
-  const sectionTypes = [
-    { value: 'hero', label: 'Hero Banner', icon: Image },
-    { value: 'features', label: 'Features Grid', icon: Layout },
-    { value: 'products', label: 'Product Showcase', icon: Layout },
-    { value: 'testimonials', label: 'Testimonials', icon: Type },
-    { value: 'cta', label: 'Call to Action', icon: Type },
-    { value: 'text-image', label: 'Text + Image', icon: Image },
-    { value: 'contact', label: 'Contact Form', icon: Type },
-  ];
+  const addBlock = (type: string) => {
+    const defaultContent: Record<string, any> = {
+      hero: { headline: '', subheadline: '', ctaText: '', imageUrl: '', imageAlt: '' },
+      features: { heading: '', features: '' },
+      products: { heading: 'Our Products', displayType: 'featured' },
+      testimonials: { heading: 'What Our Customers Say', testimonials: '' },
+      cta: { headline: '', text: '', buttonText: '' },
+      text: { heading: '', text: '' },
+      faq: { heading: 'Frequently Asked Questions', items: '' },
+      contact: { heading: 'Get in Touch', fields: 'name,email,phone,message' },
+    };
 
-  const addSection = (type: PageSection['type']) => {
     const newSection: PageSection = {
-      type,
-      content: {},
+      type: type as any,
+      content: defaultContent[type] || {},
       order: sections.length,
     };
     setSections([...sections, newSection]);
   };
 
-  const removeSection = (index: number) => {
+  const updateBlock = (index: number, content: any) => {
+    const newSections = [...sections];
+    newSections[index].content = content;
+    setSections(newSections);
+  };
+
+  const removeBlock = (index: number) => {
     setSections(sections.filter((_, i) => i !== index));
   };
 
-  const moveSection = (index: number, direction: 'up' | 'down') => {
+  const moveBlockUp = (index: number) => {
+    if (index === 0) return;
     const newSections = [...sections];
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
-    if (newIndex >= 0 && newIndex < sections.length) {
-      [newSections[index], newSections[newIndex]] = [newSections[newIndex], newSections[index]];
-      newSections.forEach((section, i) => section.order = i);
-      setSections(newSections);
-    }
+    [newSections[index], newSections[index - 1]] = [newSections[index - 1], newSections[index]];
+    newSections.forEach((section, i) => section.order = i);
+    setSections(newSections);
   };
 
-  const savePage = async () => {
+  const moveBlockDown = (index: number) => {
+    if (index === sections.length - 1) return;
+    const newSections = [...sections];
+    [newSections[index], newSections[index + 1]] = [newSections[index + 1], newSections[index]];
+    newSections.forEach((section, i) => section.order = i);
+    setSections(newSections);
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
     try {
       // Check if page exists
       const { data: existingPage } = await supabase
@@ -116,8 +139,8 @@ export const StorePageEditor = ({ storeId, onBack }: StorePageEditorProps) => {
       }
 
       toast({
-        title: "Page saved",
-        description: "Your changes have been published.",
+        title: "Page saved & published!",
+        description: "Your SEO-optimized page is now live.",
       });
     } catch (error: any) {
       toast({
@@ -125,167 +148,104 @@ export const StorePageEditor = ({ storeId, onBack }: StorePageEditorProps) => {
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
+  const handlePreview = () => {
+    // Open preview in new tab (will need store slug)
+    toast({
+      title: "Preview coming soon",
+      description: "Live preview feature will be available shortly.",
+    });
+  };
+
+  const handleOptimizeSEO = () => {
+    toast({
+      title: "AI SEO Optimization",
+      description: "This feature will analyze and suggest improvements to your page content and structure for better search rankings.",
+    });
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={onBack}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h2 className="text-2xl font-bold">Page Editor</h2>
-            <p className="text-muted-foreground">Customize your store pages</p>
-          </div>
+    <div className="flex flex-col h-screen">
+      <PageEditorHeader
+        onBack={onBack}
+        onSave={handleSave}
+        onPreview={handlePreview}
+        onOptimizeSEO={handleOptimizeSEO}
+        isSaving={isSaving}
+      />
+
+      <Tabs value={selectedPage} onValueChange={setSelectedPage} className="flex-1 flex flex-col">
+        <div className="border-b px-6 py-3">
+          <TabsList>
+            <TabsTrigger value="home">Home</TabsTrigger>
+            <TabsTrigger value="products">Products</TabsTrigger>
+            <TabsTrigger value="about">About</TabsTrigger>
+            <TabsTrigger value="contact">Contact</TabsTrigger>
+          </TabsList>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => window.open(`/store/${storeId}`, '_blank')}>
-            <Eye className="h-4 w-4 mr-2" />
-            Preview
-          </Button>
-          <Button onClick={savePage}>
-            <Save className="h-4 w-4 mr-2" />
-            Save Changes
-          </Button>
-        </div>
-      </div>
 
-      <Tabs value={selectedPage} onValueChange={setSelectedPage}>
-        <TabsList>
-          <TabsTrigger value="home">Home</TabsTrigger>
-          <TabsTrigger value="products">Products</TabsTrigger>
-          <TabsTrigger value="about">About</TabsTrigger>
-          <TabsTrigger value="contact">Contact</TabsTrigger>
-        </TabsList>
+        <TabsContent value={selectedPage} className="flex-1 m-0">
+          <div className="grid grid-cols-1 lg:grid-cols-12 h-full">
+            {/* Left Sidebar - SEO & Settings */}
+            <div className="lg:col-span-3 border-r">
+              <ScrollArea className="h-full">
+                <div className="p-6 space-y-6">
+                  <SEOPanel
+                    seoTitle={pageSettings.seoTitle}
+                    seoDescription={pageSettings.seoDescription}
+                    slug={pageSettings.slug}
+                    onSEOTitleChange={(value) => setPageSettings({ ...pageSettings, seoTitle: value })}
+                    onSEODescriptionChange={(value) => setPageSettings({ ...pageSettings, seoDescription: value })}
+                    onSlugChange={(value) => setPageSettings({ ...pageSettings, slug: value })}
+                  />
 
-        <TabsContent value={selectedPage} className="space-y-6 mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Panel - Page Settings */}
-            <Card className="lg:col-span-1">
-              <CardHeader>
-                <CardTitle className="text-lg">Page Settings</CardTitle>
-                <CardDescription>Configure page details and SEO</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Page Title</Label>
-                  <Input
-                    value={pageSettings.title}
-                    onChange={(e) => setPageSettings({ ...pageSettings, title: e.target.value })}
-                  />
+                  <BlockLibrary onAddBlock={addBlock} />
                 </div>
-                <div className="space-y-2">
-                  <Label>URL Slug</Label>
-                  <Input
-                    value={pageSettings.slug}
-                    onChange={(e) => setPageSettings({ ...pageSettings, slug: e.target.value })}
-                  />
-                </div>
-                <Separator />
-                <div className="space-y-2">
-                  <Label>SEO Title</Label>
-                  <Input
-                    value={pageSettings.seoTitle}
-                    onChange={(e) => setPageSettings({ ...pageSettings, seoTitle: e.target.value })}
-                    placeholder="Optimized for search engines"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>SEO Description</Label>
-                  <Textarea
-                    value={pageSettings.seoDescription}
-                    onChange={(e) => setPageSettings({ ...pageSettings, seoDescription: e.target.value })}
-                    placeholder="Page description for search results"
-                    rows={3}
-                  />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <Label>Published</Label>
-                  <Switch
-                    checked={pageSettings.isActive}
-                    onCheckedChange={(checked) => setPageSettings({ ...pageSettings, isActive: checked })}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+              </ScrollArea>
+            </div>
 
-            {/* Right Panel - Sections Editor */}
-            <div className="lg:col-span-2 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Page Sections</CardTitle>
-                  <CardDescription>Add and arrange content sections</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Select onValueChange={(value) => addSection(value as PageSection['type'])}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Add a section" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sectionTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          <div className="flex items-center gap-2">
-                            <type.icon className="h-4 w-4" />
-                            {type.label}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <div className="space-y-3">
-                    {sections.map((section, index) => (
-                      <Card key={index} className="p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <Layout className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium capitalize">{section.type}</span>
-                          </div>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => moveSection(index, 'up')}
-                              disabled={index === 0}
-                            >
-                              ↑
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => moveSection(index, 'down')}
-                              disabled={index === sections.length - 1}
-                            >
-                              ↓
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeSection(index)}
-                            >
-                              ×
-                            </Button>
-                          </div>
+            {/* Center - Canvas/Editor */}
+            <div className="lg:col-span-9">
+              <ScrollArea className="h-full">
+                <div className="p-6 space-y-4">
+                  {sections.length === 0 ? (
+                    <Card className="p-12">
+                      <div className="text-center space-y-4">
+                        <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                          <ImageIcon className="h-8 w-8 text-primary" />
                         </div>
-
-                        {/* Section-specific content editors would go here */}
-                        <div className="text-sm text-muted-foreground">
-                          Section content editor (customize based on section type)
+                        <div>
+                          <h3 className="text-lg font-semibold mb-2">Start Building Your Page</h3>
+                          <p className="text-muted-foreground mb-4">
+                            Add blocks from the library to create your SEO-optimized page.
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Pro tip: Start with a Hero section, add content blocks, and finish with a CTA.
+                          </p>
                         </div>
-                      </Card>
-                    ))}
-
-                    {sections.length === 0 && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        No sections yet. Add your first section above.
                       </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                    </Card>
+                  ) : (
+                    sections.map((section, index) => (
+                      <BlockEditor
+                        key={index}
+                        block={section}
+                        index={index}
+                        onUpdate={updateBlock}
+                        onRemove={removeBlock}
+                        onMoveUp={moveBlockUp}
+                        onMoveDown={moveBlockDown}
+                        isFirst={index === 0}
+                        isLast={index === sections.length - 1}
+                      />
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
             </div>
           </div>
         </TabsContent>
