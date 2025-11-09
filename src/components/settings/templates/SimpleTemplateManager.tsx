@@ -278,12 +278,12 @@ export const SimpleTemplateManager: React.FC = () => {
       // Check if default templates already exist for this user
       const { data: existingTemplates } = await supabase
         .from('quote_templates')
-        .select('id, name')
+        .select('id, name, template_style')
         .eq('user_id', user.id);
 
       const existingNames = existingTemplates?.map(t => t.name) || [];
 
-      // Insert missing default templates
+      // Insert missing default templates with active=true
       for (const defaultTemplate of defaultTemplates) {
         if (!existingNames.includes(defaultTemplate.name)) {
           await supabase
@@ -293,8 +293,29 @@ export const SimpleTemplateManager: React.FC = () => {
               description: defaultTemplate.description,
               blocks: defaultTemplate.blocks,
               template_style: defaultTemplate.category,
+              active: true, // Set active by default
               user_id: user.id
             });
+        }
+      }
+      
+      // If there are no active templates for each category, activate the first one
+      const quoteTemplates = existingTemplates?.filter(t => t.template_style === 'quote') || [];
+      if (quoteTemplates.length > 0) {
+        const { data: activeQuotes } = await supabase
+          .from('quote_templates')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('template_style', 'quote')
+          .eq('active', true)
+          .limit(1);
+        
+        if (!activeQuotes || activeQuotes.length === 0) {
+          // Activate the first quote template
+          await supabase
+            .from('quote_templates')
+            .update({ active: true })
+            .eq('id', quoteTemplates[0].id);
         }
       }
     } catch (error) {
@@ -604,6 +625,21 @@ export const SimpleTemplateManager: React.FC = () => {
         </Select>
       </div>
 
+      {/* Warning banner if no active templates */}
+      {!loading && filteredTemplates.length > 0 && filteredTemplates.every(t => !t.active) && (
+        <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+          <div className="flex items-start gap-3">
+            <Sparkles className="h-5 w-5 text-yellow-600 dark:text-yellow-500 mt-0.5" />
+            <div>
+              <h4 className="font-medium text-yellow-900 dark:text-yellow-100">No Active Templates</h4>
+              <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                You need to activate at least one template to generate quotes. Click the <strong>"Click to Activate"</strong> button below to activate a template.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Templates Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (
@@ -648,27 +684,40 @@ export const SimpleTemplateManager: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col gap-3">
-                  {/* Active Status Toggle */}
-                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-md border border-border">
-                    <span className="text-sm font-medium">Active for {template.category === 'quote' ? 'Quotes' : 'Invoices'}</span>
-                    <Button
-                      variant={template.active ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => toggleActive(template.id, template.active ?? false)}
-                      className="h-9 px-4 gap-2"
-                    >
-                      {template.active ? (
-                        <>
-                          <ToggleRight className="h-5 w-5" />
-                          <span className="font-medium">Active</span>
-                        </>
-                      ) : (
-                        <>
-                          <ToggleLeft className="h-5 w-5" />
-                          <span>Inactive</span>
-                        </>
-                      )}
-                    </Button>
+                  {/* Active Status Toggle - PROMINENT */}
+                  <div className={`p-4 rounded-lg border-2 transition-all ${
+                    template.active 
+                      ? 'bg-primary/5 border-primary/20' 
+                      : 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-300 dark:border-yellow-700'
+                  }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <span className="text-sm font-semibold block">Template Status</span>
+                        <span className="text-xs text-muted-foreground">
+                          {template.active ? 'This template is active and ready to use' : 'Click to activate this template'}
+                        </span>
+                      </div>
+                      <Button
+                        variant={template.active ? "default" : "destructive"}
+                        size="lg"
+                        onClick={() => toggleActive(template.id, template.active ?? false)}
+                        className={`h-11 px-6 gap-2 font-semibold ${
+                          !template.active ? 'animate-pulse' : ''
+                        }`}
+                      >
+                        {template.active ? (
+                          <>
+                            <ToggleRight className="h-5 w-5" />
+                            <span>Active</span>
+                          </>
+                        ) : (
+                          <>
+                            <ToggleLeft className="h-5 w-5" />
+                            <span>Click to Activate</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                   
                   {/* Action Buttons */}
