@@ -19,7 +19,6 @@ import { InteractiveOnboarding } from "./InteractiveOnboarding";
 import { NotificationManagementTab } from "./tabs/NotificationManagementTab";
 import { EnhancedPersonalizationTab } from "./tabs/EnhancedPersonalizationTab";
 import { SecurityPrivacyTab } from "./tabs/SecurityPrivacyTab";
-import { DocumentBuilderContainer } from "../document-builder/DocumentBuilderContainer";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useHasPermission } from "@/hooks/usePermissions";
@@ -135,13 +134,6 @@ export const SettingsView = () => {
             </TabsTrigger>
           )}
           
-          {canViewSettings && (
-            <TabsTrigger value="document-builder" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              <Sparkles className="h-4 w-4" />
-              <span className="hidden sm:inline font-medium">Document Builder</span>
-              <span className="text-[10px] px-1.5 py-0.5 bg-primary/20 text-primary rounded-full font-medium">Beta</span>
-            </TabsTrigger>
-          )}
           
           {canViewSettings && (
             <TabsTrigger value="system" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
@@ -240,11 +232,6 @@ export const SettingsView = () => {
           </TabsContent>
         )}
 
-        {canViewSettings && (
-          <TabsContent value="document-builder" className="mt-0 h-[calc(100vh-12rem)]">
-            <DocumentBuilderContainer />
-          </TabsContent>
-        )}
 
         {canViewSettings && (
           <TabsContent value="system" className="animate-fade-in">
