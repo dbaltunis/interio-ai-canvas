@@ -78,19 +78,18 @@ export const InlineDiscountPanel = ({
 
   const handleApply = async () => {
     try {
-      await applyDiscount.mutateAsync({
+      const result = await applyDiscount.mutateAsync({
         quoteId,
         config,
         items,
         subtotal,
       });
       
-      // Give a moment for the queries to invalidate and refetch
-      setTimeout(() => {
-        onClose();
-      }, 300);
+      console.log('✅ Discount saved successfully:', result);
+      console.log('🔄 Quote should automatically refresh with new discount values');
+      // Panel stays open to show success state - user can see the saved discount persists
     } catch (error) {
-      console.error('Error applying discount:', error);
+      console.error('❌ Error applying discount:', error);
     }
   };
 
@@ -221,7 +220,7 @@ export const InlineDiscountPanel = ({
                   onClick={onClose}
                   className="flex-1"
                 >
-                  Cancel
+                  Close
                 </Button>
                 {currentDiscount && (
                   <Button
@@ -246,9 +245,13 @@ export const InlineDiscountPanel = ({
                   {applyDiscount.isPending ? (
                     <>
                       <span className="animate-spin mr-2">⏳</span>
-                      Applying...
+                      Saving...
                     </>
-                  ) : "Apply to Quote"}
+                  ) : applyDiscount.isSuccess ? (
+                    <>✓ Saved</>
+                  ) : (
+                    "Apply & Save"
+                  )}
                 </Button>
               </div>
             </div>
@@ -283,11 +286,15 @@ export const InlineDiscountPanel = ({
                 <div className="mt-4 p-3 bg-muted/50 rounded-md border">
                   {applyDiscount.isPending ? (
                     <p className="text-xs text-primary text-center font-medium">
-                      <span className="animate-pulse">Applying discount and updating quote...</span>
+                      <span className="animate-pulse">Saving discount...</span>
+                    </p>
+                  ) : applyDiscount.isSuccess ? (
+                    <p className="text-xs text-green-600 dark:text-green-500 text-center font-medium">
+                      ✓ Discount saved! The quote below now shows discounted prices.
                     </p>
                   ) : discountValue > 0 ? (
                     <p className="text-xs text-muted-foreground text-center">
-                      Click "Apply to Quote" to update the quote below with discounted prices
+                      Click "Apply & Save" to update the quote below with these discounted prices
                     </p>
                   ) : (
                     <p className="text-xs text-muted-foreground text-center">
