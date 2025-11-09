@@ -33,6 +33,7 @@ import { ManualQuoteTest } from "./pages/ManualQuoteTest";
 import Billing from "./pages/Billing";
 import Purchasing from "./pages/Purchasing";
 import AdminBugManagement from "./pages/AdminBugManagement";
+import Documentation from "./pages/Documentation";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -216,6 +217,15 @@ const App = () => {
                   </ProtectedRoute>
                 } />
                 
+                {/* Documentation page */}
+                <Route path="/documentation" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary>
+                      <Documentation />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+
                 {/* Main application - all functionality handled through tabs */}
                 <Route path="/" element={
                   <ProtectedRoute>
