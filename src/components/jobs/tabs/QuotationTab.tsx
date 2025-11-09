@@ -108,7 +108,7 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
     staleTime: 5 * 60 * 1000
   });
 
-  // Fetch active quote templates
+  // Fetch active quote templates - check if any valid templates exist
   const { data: activeTemplates, isLoading: templatesLoading, refetch: refetchTemplates } = useQuery({
     queryKey: ["quote-templates"],
     queryFn: async () => {
@@ -118,7 +118,17 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
         .eq("active", true)
         .order("updated_at", { ascending: false });
       if (error) throw error;
-      return data || [];
+      
+      // Filter out templates with invalid or missing blocks
+      const validTemplates = (data || []).filter(template => {
+        if (!template.blocks) return false;
+        if (typeof template.blocks === 'string') return false;
+        if (!Array.isArray(template.blocks)) return false;
+        if (template.blocks.length === 0) return false;
+        return true;
+      });
+      
+      return validTemplates;
     },
     staleTime: 5 * 60 * 1000
   });
@@ -688,6 +698,23 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
             if (roomsTab) roomsTab.click();
           }}
         />
+      ) : !selectedTemplate || !templateBlocks || templateBlocks.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <FileText className="h-16 w-16 text-muted-foreground/30 mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No Quote Template Found</h3>
+          <p className="text-sm text-muted-foreground max-w-md mb-4">
+            You need to create a quote template before you can generate quotes. Go to Settings → Documents to create your first template.
+          </p>
+          <Button
+            onClick={() => {
+              // Navigate to settings/documents tab
+              window.location.href = '/?settings=documents';
+            }}
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Create Template
+          </Button>
+        </div>
       ) : (
         <section className="mt-2 sm:mt-4" key={`preview-${selectedTemplate?.id}-${templateSettings.showDetailedBreakdown}-${templateSettings.showImages}-${templateSettings.groupByRoom}-${projectSummaries?.projectTotal}`}>
           {/* A4 Background Container - Gray background to simulate paper on desk */}
