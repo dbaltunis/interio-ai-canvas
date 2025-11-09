@@ -54,7 +54,10 @@ export const StoreProductsPage = ({ storeData }: StoreProductsPageProps) => {
                       {product.inventory_item?.name || 'Product'}
                     </h3>
                     <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                      {product.custom_description || product.inventory_item?.description || 'Custom made to order'}
+                      {product.custom_description || 
+                       (typeof product.inventory_item?.description === 'string' 
+                         ? product.inventory_item.description 
+                         : 'Custom made to your exact specifications')}
                     </p>
                     <span className="text-xs text-muted-foreground">
                       {product.inventory_item?.category || 'Window Treatment'}

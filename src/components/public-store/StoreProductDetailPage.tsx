@@ -127,8 +127,10 @@ export const StoreProductDetailPage = ({ storeData }: StoreProductDetailPageProp
                 {product.inventory_item?.name || 'Product'}
               </h1>
               <p className="text-lg text-muted-foreground">
-                {product.custom_description || product.inventory_item?.description || 
-                 'Premium bespoke window treatment, custom-made to your exact specifications.'}
+                {product.custom_description || 
+                 (typeof product.inventory_item?.description === 'string'
+                   ? product.inventory_item.description
+                   : 'Premium bespoke window treatment, custom-made to your exact specifications.')}
               </p>
             </div>
 

@@ -12,6 +12,8 @@ export const PublicStorePage = () => {
   const { storeSlug } = useParams<{ storeSlug: string }>();
   const { data: storeData, isLoading, error } = usePublicStore(storeSlug || '');
 
+  console.log('[PublicStorePage] Rendering:', { storeSlug, isLoading, error: error?.message, hasData: !!storeData });
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">

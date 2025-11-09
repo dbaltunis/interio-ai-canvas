@@ -122,7 +122,10 @@ export const StoreHomePage = ({ storeData }: StoreHomePageProps) => {
                           {product.inventory_item?.name || 'Product'}
                         </h3>
                         <p className="text-sm text-muted-foreground mb-4">
-                          {product.custom_description || product.inventory_item?.description || 'Custom made to your specifications'}
+                          {product.custom_description || 
+                           (typeof product.inventory_item?.description === 'string' 
+                             ? product.inventory_item.description 
+                             : 'Custom made to your specifications')}
                         </p>
                         <Button variant="outline" className="w-full">
                           Configure & Get Quote <ArrowRight className="ml-2 h-4 w-4" />
