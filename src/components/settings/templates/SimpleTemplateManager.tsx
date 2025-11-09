@@ -327,6 +327,22 @@ export const SimpleTemplateManager: React.FC = () => {
         is_default: false // All templates from database are user-editable/deletable
       })) || [];
 
+      // Auto-activate if no active templates exist for each category
+      const quoteTemplates = userTemplates.filter(t => t.category === 'quote');
+      const activeQuotes = quoteTemplates.filter(t => t.active);
+      
+      if (quoteTemplates.length > 0 && activeQuotes.length === 0) {
+        // Activate the first quote template automatically
+        const firstQuote = quoteTemplates[0];
+        await supabase
+          .from('quote_templates')
+          .update({ active: true })
+          .eq('id', firstQuote.id);
+        
+        firstQuote.active = true;
+        toast.success(`Activated "${firstQuote.name}" template for quotes`);
+      }
+
       setTemplates(userTemplates);
     } catch (error) {
       console.error('Error loading templates:', error);
@@ -633,22 +649,25 @@ export const SimpleTemplateManager: React.FC = () => {
               <CardContent>
                 <div className="flex flex-col gap-3">
                   {/* Active Status Toggle */}
-                  <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md">
-                    <span className="text-sm font-medium">Active for Quotes</span>
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-md border border-border">
+                    <span className="text-sm font-medium">Active for {template.category === 'quote' ? 'Quotes' : 'Invoices'}</span>
                     <Button
-                      variant="ghost"
+                      variant={template.active ? "default" : "outline"}
                       size="sm"
                       onClick={() => toggleActive(template.id, template.active ?? false)}
-                      className="h-8"
+                      className="h-9 px-4 gap-2"
                     >
                       {template.active ? (
-                        <ToggleRight className="h-5 w-5 text-primary" />
+                        <>
+                          <ToggleRight className="h-5 w-5" />
+                          <span className="font-medium">Active</span>
+                        </>
                       ) : (
-                        <ToggleLeft className="h-5 w-5 text-muted-foreground" />
+                        <>
+                          <ToggleLeft className="h-5 w-5" />
+                          <span>Inactive</span>
+                        </>
                       )}
-                      <span className="ml-2 text-xs">
-                        {template.active ? 'Active' : 'Inactive'}
-                      </span>
                     </Button>
                   </div>
                   
