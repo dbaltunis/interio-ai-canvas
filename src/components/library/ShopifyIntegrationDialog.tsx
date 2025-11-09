@@ -81,12 +81,11 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="guide">Guide</TabsTrigger>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="setup">Setup</TabsTrigger>
-            <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
             <TabsTrigger value="sync">Sync</TabsTrigger>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="status">Status</TabsTrigger>
           </TabsList>
 
@@ -128,10 +127,6 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
               integration={integration} 
               onSuccess={handleSetupSuccess}
             />
-          </TabsContent>
-
-          <TabsContent value="webhooks">
-            <ShopifyWebhookSetupTab integration={integration} />
           </TabsContent>
 
           <TabsContent value="sync">

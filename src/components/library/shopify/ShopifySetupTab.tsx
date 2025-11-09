@@ -311,10 +311,10 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
     }
   };
 
+  const isDisconnected = integration?.shop_domain && !integration?.is_connected;
+
   return (
     <div className="space-y-6">
-      <ShopifyOAuthGuide />
-      
       {integration?.is_connected && (
         <Card className="border-green-200 bg-green-50">
           <CardContent className="pt-6">
@@ -322,8 +322,11 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
               <div className="flex items-start gap-3 flex-1">
                 <CheckCircle2 className="h-6 w-6 text-green-600 mt-1" />
                 <div>
-                  <p className="font-semibold text-green-900 mb-1">Store Connected</p>
+                  <p className="font-semibold text-green-900 mb-1">✅ Store Connected</p>
                   <p className="text-sm text-green-800">{integration.shop_domain}</p>
+                  <p className="text-xs text-green-700 mt-1">
+                    Last synced: {integration.last_sync_at ? new Date(integration.last_sync_at).toLocaleString() : 'Never'}
+                  </p>
                 </div>
               </div>
               <div className="flex flex-col gap-2">
@@ -333,7 +336,7 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
                   onClick={handleSwitchStore}
                   className="w-full"
                 >
-                  Switch Store
+                  Change Store
                 </Button>
                 <Button 
                   variant="destructive" 
@@ -350,31 +353,51 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
           </CardContent>
         </Card>
       )}
+
+      {isDisconnected && (
+        <Alert className="border-yellow-200 bg-yellow-50">
+          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+          <AlertDescription>
+            <p className="font-semibold text-yellow-900 mb-1">Store Disconnected</p>
+            <p className="text-sm text-yellow-800 mb-3">
+              Your previous store ({integration.shop_domain}) is no longer connected. 
+              You can reconnect this store or connect a different one below.
+            </p>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={handleSwitchStore}
+              className="bg-white"
+            >
+              Connect Different Store
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
       
       <Card>
         <CardHeader>
-          <CardTitle>Shopify Store Connection</CardTitle>
+          <CardTitle>
+            {isDisconnected ? "Reconnect or Change Store" : "Connect Your Shopify Store"}
+          </CardTitle>
           <CardDescription>
-            Enter your Shopify store credentials to connect. Don't have them yet? 
-            <Button 
-              variant="link" 
-              className="h-auto p-0 ml-1"
-              onClick={() => window.open('https://help.shopify.com/en/manual/apps/app-types/custom-apps', '_blank')}
-            >
-              Learn how to get your API credentials →
-            </Button>
+            {isDisconnected 
+              ? "Enter credentials below to reconnect or connect a different store"
+              : "Enter your Shopify store credentials. Don't have them yet?"
+            }
+            {!isDisconnected && (
+              <Button 
+                variant="link" 
+                className="h-auto p-0 ml-1"
+                onClick={() => window.open('https://help.shopify.com/en/manual/apps/app-types/custom-apps', '_blank')}
+              >
+                Learn how to get your API credentials →
+              </Button>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Alert className="bg-green-50 border-green-200">
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-sm ml-2">
-              <p className="font-semibold text-green-900 mb-2">✅ Quick Setup (No OAuth Required)</p>
-              <p className="text-xs text-green-800 mb-2">
-                Simply paste your shop domain and access token from the "API credentials" tab in your Shopify app settings below, then click "Save Configuration".
-              </p>
-            </AlertDescription>
-          </Alert>
+          <ShopifyOAuthGuide />
 
           <div>
             <Label htmlFor="shop-domain">
@@ -424,62 +447,16 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
           </div>
 
           <div className="flex space-x-2">
-            <Button onClick={handleTest} variant="outline">
-              Test Connection
-            </Button>
-            <Button onClick={handleSave} disabled={isLoading}>
+            <Button onClick={handleSave} disabled={isLoading} className="flex-1">
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Saving...
                 </>
               ) : (
-                "Save Configuration"
+                isDisconnected ? "Reconnect Store" : "Connect Store"
               )}
             </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Sync Settings</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="auto-sync">Enable Auto Sync</Label>
-            <Switch
-              id="auto-sync"
-              checked={integration?.auto_sync_enabled || false}
-              onCheckedChange={(checked) => handleSyncSettingChange("auto_sync_enabled", checked)}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Label htmlFor="sync-inventory">Sync Inventory</Label>
-            <Switch
-              id="sync-inventory"
-              checked={integration?.sync_inventory || false}
-              onCheckedChange={(checked) => handleSyncSettingChange("sync_inventory", checked)}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Label htmlFor="sync-prices">Sync Prices</Label>
-            <Switch
-              id="sync-prices"
-              checked={integration?.sync_prices || false}
-              onCheckedChange={(checked) => handleSyncSettingChange("sync_prices", checked)}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Label htmlFor="sync-images">Sync Images</Label>
-            <Switch
-              id="sync-images"
-              checked={integration?.sync_images || false}
-              onCheckedChange={(checked) => handleSyncSettingChange("sync_images", checked)}
-            />
           </div>
         </CardContent>
       </Card>

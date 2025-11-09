@@ -21,42 +21,34 @@ export const ShopifyGettingStartedGuide = ({
   integration, 
   onNavigateToTab 
 }: ShopifyGettingStartedGuideProps) => {
-  const hasCredentials = integration?.shop_domain && integration?.access_token;
-  const hasWebhooks = false; // We'll implement webhook verification later
-  const hasSyncedProducts = false; // We'll implement this tracking later
-
+  const isDisconnected = integration?.shop_domain && !integration?.is_connected;
+  
   const steps: Step[] = [
     {
       title: "Create a Shopify Store",
       description: "You need a Shopify store to connect. If you don't have one yet, sign up at Shopify.com",
       action: "https://www.shopify.com/free-trial",
       actionLabel: "Sign up for Shopify",
-      completed: hasCredentials,
+      completed: !!integration?.shop_domain,
     },
     {
       title: "Get Your Shopify Credentials",
       description: "You'll need your store domain (e.g., your-store.myshopify.com) and an Admin API access token from Shopify",
       action: "https://help.shopify.com/en/manual/apps/app-types/custom-apps",
       actionLabel: "Learn How to Get API Token",
-      completed: hasCredentials,
+      completed: !!integration?.shop_domain,
     },
     {
       title: "Connect Your Store",
       description: "Enter your Shopify credentials in the Setup tab to establish the connection",
-      actionLabel: "Go to Setup",
-      completed: hasCredentials,
+      actionLabel: isDisconnected ? "Reconnect Store" : "Go to Setup",
+      completed: !!integration?.is_connected,
     },
     {
-      title: "Configure Webhooks",
-      description: "Set up webhooks in Shopify so orders automatically create jobs in InterioApp",
-      actionLabel: "Go to Webhooks",
-      completed: hasWebhooks,
-    },
-    {
-      title: "Configure Sync Settings",
-      description: "Choose what data to sync between InterioApp and Shopify (inventory, prices, images)",
-      actionLabel: "Go to Sync Settings",
-      completed: integration?.auto_sync_enabled,
+      title: "Start Syncing",
+      description: "Configure sync settings and push your products to Shopify",
+      actionLabel: "Configure Sync",
+      completed: integration?.is_connected && (integration?.sync_inventory || integration?.sync_prices),
     },
   ];
 
@@ -69,8 +61,7 @@ export const ShopifyGettingStartedGuide = ({
     } else {
       // Navigate to appropriate tab
       if (index === 2) onNavigateToTab('setup');
-      if (index === 3) onNavigateToTab('webhooks');
-      if (index === 4) onNavigateToTab('sync');
+      if (index === 3) onNavigateToTab('sync');
     }
   };
 
@@ -78,9 +69,14 @@ export const ShopifyGettingStartedGuide = ({
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Getting Started with Shopify</CardTitle>
+          <CardTitle>
+            {isDisconnected ? "Reconnect Your Shopify Store" : "Getting Started with Shopify"}
+          </CardTitle>
           <CardDescription>
-            Follow these steps to connect your Shopify store and start syncing orders, customers, and products
+            {isDisconnected 
+              ? `Your store (${integration.shop_domain}) was disconnected. Follow the steps below to reconnect or switch to a different store.`
+              : "Follow these steps to connect your Shopify store and start syncing orders, customers, and products"
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
