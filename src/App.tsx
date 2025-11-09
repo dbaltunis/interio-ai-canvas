@@ -28,6 +28,7 @@ import "@/styles/theme.css";
 import AcceptInvitation from "./pages/AcceptInvitation";
 import ResetPassword from "./pages/ResetPassword";
 import { PublicBookingPage } from "./components/calendar/PublicBookingPage";
+import { PublicStorePage } from "./components/public-store/PublicStorePage";
 import { SubscriptionTest } from "./pages/SubscriptionTest";
 import { ManualQuoteTest } from "./pages/ManualQuoteTest";
 import Billing from "./pages/Billing";
@@ -136,6 +137,13 @@ const App = () => {
                 <AuthProvider>
                   <BugReportDialog />
                   <Routes>
+                {/* Public store routes */}
+                <Route path="/store/:storeSlug/*" element={
+                  <ErrorBoundary>
+                    <PublicStorePage />
+                  </ErrorBoundary>
+                } />
+                
                 {/* Public booking routes */}
                 <Route path="/book/:slug" element={
                   <ErrorBoundary>
