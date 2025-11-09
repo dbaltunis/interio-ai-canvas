@@ -8,6 +8,9 @@ import { StoreTemplate } from "@/types/online-store";
 import { useCreateQuickStore } from "@/hooks/useCreateQuickStore";
 import { Loader2, Store, Check, Globe, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { StoreTemplateGallery } from "./StoreTemplateGallery";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface QuickStoreSetupProps {
   open: boolean;
@@ -19,36 +22,12 @@ export const QuickStoreSetup = ({ open, onOpenChange, onComplete }: QuickStoreSe
   const [step, setStep] = useState<'template' | 'details' | 'creating'>('template');
   const [storeName, setStoreName] = useState('');
   const [customDomain, setCustomDomain] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState<string>('modern');
+  const [selectedTemplate, setSelectedTemplate] = useState<StoreTemplate | null>(null);
   
   const createStore = useCreateQuickStore();
 
-  const templates = [
-    {
-      id: 'modern',
-      name: 'Modern',
-      description: 'Clean, contemporary design',
-      preview: '🎨',
-      features: ['Hero Banner', 'Product Grid', 'Contact Form', 'Appointments'],
-    },
-    {
-      id: 'classic',
-      name: 'Classic',
-      description: 'Elegant, traditional style',
-      preview: '✨',
-      features: ['Featured Products', 'Testimonials', 'Gallery', 'Appointments'],
-    },
-    {
-      id: 'bold',
-      name: 'Bold',
-      description: 'Eye-catching, vibrant',
-      preview: '🚀',
-      features: ['Video Hero', 'Product Showcase', 'FAQ', 'Appointments'],
-    },
-  ];
-
-  const handleTemplateSelect = (templateId: string) => {
-    setSelectedTemplate(templateId);
+  const handleTemplateSelect = (template: StoreTemplate) => {
+    setSelectedTemplate(template);
     setStep('details');
   };
 
@@ -61,7 +40,7 @@ export const QuickStoreSetup = ({ open, onOpenChange, onComplete }: QuickStoreSe
     createStore.mutate(
       {
         storeName: storeName.trim(),
-        templateId: selectedTemplate,
+        templateId: selectedTemplate?.id || 'modern',
         customDomain: customDomain.trim() || undefined,
       },
       {
@@ -72,7 +51,7 @@ export const QuickStoreSetup = ({ open, onOpenChange, onComplete }: QuickStoreSe
           setStep('template');
           setStoreName('');
           setCustomDomain('');
-          setSelectedTemplate('modern');
+          setSelectedTemplate(null);
         },
         onError: () => {
           setStep('details'); // Go back on error
@@ -83,14 +62,14 @@ export const QuickStoreSetup = ({ open, onOpenChange, onComplete }: QuickStoreSe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl">
             <Store className="h-6 w-6 text-primary" />
-            Launch Your Online Store in 3 Steps
+            Launch Your Online Store
           </DialogTitle>
           <DialogDescription>
-            Get your store online in under 2 minutes
+            {step === 'template' ? 'Choose a beautiful template for your store' : 'Get your store online in under 2 minutes'}
           </DialogDescription>
         </DialogHeader>
 
@@ -120,40 +99,8 @@ export const QuickStoreSetup = ({ open, onOpenChange, onComplete }: QuickStoreSe
 
         {/* Step 1: Template Selection */}
         {step === 'template' && (
-          <div className="space-y-6 py-4">
-            <div className="grid md:grid-cols-3 gap-4">
-              {templates.map((template) => (
-                <Card
-                  key={template.id}
-                  className={`p-4 cursor-pointer transition-all hover:shadow-lg ${
-                    selectedTemplate === template.id ? 'ring-2 ring-primary' : ''
-                  }`}
-                  onClick={() => handleTemplateSelect(template.id)}
-                >
-                  <div className="text-center space-y-3">
-                    <div className="text-5xl">{template.preview}</div>
-                    <div>
-                      <h3 className="font-bold text-lg">{template.name}</h3>
-                      <p className="text-sm text-muted-foreground">{template.description}</p>
-                    </div>
-                    <div className="space-y-1 pt-2 border-t">
-                      {template.features.map((feature) => (
-                        <div key={feature} className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Check className="h-3 w-3 text-green-600" />
-                          {feature}
-                        </div>
-                      ))}
-                    </div>
-                    <Button 
-                      className="w-full"
-                      variant={selectedTemplate === template.id ? 'default' : 'outline'}
-                    >
-                      {selectedTemplate === template.id ? 'Selected' : 'Select'}
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            </div>
+          <div className="py-4">
+            <StoreTemplateGallery onSelectTemplate={handleTemplateSelect} />
           </div>
         )}
 

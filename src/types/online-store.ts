@@ -28,6 +28,9 @@ export interface StoreTemplate {
   description?: string;
   category: 'modern' | 'classic' | 'bold' | 'professional' | 'portfolio';
   preview_image_url?: string;
+  preview_images?: string[];
+  demo_url?: string;
+  features?: Record<string, any>;
   template_config: {
     colors: {
       primary: string;
