@@ -1,15 +1,17 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Eye, EyeOff, Plus } from "lucide-react";
+import { Eye, EyeOff, Plus, AlertTriangle } from "lucide-react";
 import { useStoreProductCatalog } from "@/hooks/useStoreProductCatalog";
 import { ProductCatalogItem } from "./ProductCatalogItem";
 import { AddProductsDialog } from "./AddProductsDialog";
 import { BulkActionsBar } from "./BulkActionsBar";
+import { TemplateAssignmentManager } from "./TemplateAssignmentManager";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface ProductCatalogManagerProps {
   storeId: string;
@@ -21,6 +23,16 @@ export const ProductCatalogManager = ({ storeId }: ProductCatalogManagerProps) =
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showTemplateManager, setShowTemplateManager] = useState(false);
+
+  // Check for products missing templates
+  const productsNeedingTemplates = useMemo(() => {
+    return products.filter(p => {
+      const category = p.inventory_item?.category?.toLowerCase() || '';
+      const isFabric = category === 'fabric' || category.includes('fabric');
+      return isFabric && !p.template_id;
+    });
+  }, [products]);
 
   // Get unique categories from products
   const categories = Array.from(new Set(products.map(p => p.inventory_item?.category).filter(Boolean)));
@@ -76,6 +88,38 @@ export const ProductCatalogManager = ({ storeId }: ProductCatalogManagerProps) =
 
   return (
     <>
+      {/* Template Warning */}
+      {productsNeedingTemplates.length > 0 && !showTemplateManager && (
+        <Alert className="border-amber-500 bg-amber-50 dark:bg-amber-950/20">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <AlertTitle className="text-amber-900 dark:text-amber-100">
+            {productsNeedingTemplates.length} Product{productsNeedingTemplates.length !== 1 ? 's' : ''} Need Template Assignment
+          </AlertTitle>
+          <AlertDescription className="text-amber-800 dark:text-amber-200 flex items-center justify-between gap-4">
+            <span>
+              Fabric products without templates won't display as finished treatments in your store. Assign templates now to show them properly.
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowTemplateManager(true)}
+              className="shrink-0"
+            >
+              Assign Templates
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Template Assignment Manager */}
+      {showTemplateManager && (
+        <TemplateAssignmentManager
+          storeId={storeId}
+          productIds={productsNeedingTemplates.map(p => p.id)}
+          onComplete={() => setShowTemplateManager(false)}
+        />
+      )}
+
       <Card>
         <CardHeader className="space-y-4">
           <div className="flex flex-row items-center justify-between">

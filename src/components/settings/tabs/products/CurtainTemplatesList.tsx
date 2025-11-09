@@ -3,10 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Edit, Trash2, Copy } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Edit, Trash2, Copy, Store } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useCurtainTemplates, useDeleteCurtainTemplate, useCreateCurtainTemplate, CurtainTemplate } from "@/hooks/useCurtainTemplates";
+import { useCurtainTemplates, useDeleteCurtainTemplate, useCreateCurtainTemplate, useUpdateCurtainTemplate, CurtainTemplate } from "@/hooks/useCurtainTemplates";
 import { useHeadingInventory } from "@/hooks/useHeadingInventory";
 import { getDisplayNameFromSingular } from "@/types/treatmentCategories";
 
@@ -20,7 +22,30 @@ export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
   const { data: headingStyles = [] } = useHeadingInventory();
   const deleteTemplate = useDeleteCurtainTemplate();
   const createTemplate = useCreateCurtainTemplate();
+  const updateTemplate = useUpdateCurtainTemplate();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const handleToggleStoreVisibility = async (templateId: string, currentValue: boolean) => {
+    try {
+      await updateTemplate.mutateAsync({
+        id: templateId,
+        is_store_visible: !currentValue,
+      });
+      toast({
+        title: "Store Visibility Updated",
+        description: !currentValue 
+          ? "Template is now visible in online store" 
+          : "Template is hidden from online store",
+      });
+    } catch (error) {
+      console.error("Error updating store visibility:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update store visibility. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleDelete = async (templateId: string) => {
     try {
@@ -166,9 +191,29 @@ export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
                   onCheckedChange={() => toggleSelect(template.id)}
                   className="mt-1"
                 />
-                <div>
+                <div className="flex-1">
                   <CardTitle className="text-lg">{template.name}</CardTitle>
                   <CardDescription>{template.description}</CardDescription>
+                  
+                  {/* Store Visibility Toggle */}
+                  <div className="flex items-center gap-3 mt-3 p-3 bg-muted/50 rounded-lg">
+                    <Store className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex-1">
+                      <Label htmlFor={`store-${template.id}`} className="text-sm font-medium cursor-pointer">
+                        Available for Online Store
+                      </Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {template.is_store_visible 
+                          ? "Customers can use this template in your online store" 
+                          : "Hidden from online store product catalog"}
+                      </p>
+                    </div>
+                    <Switch
+                      id={`store-${template.id}`}
+                      checked={template.is_store_visible ?? true}
+                      onCheckedChange={() => handleToggleStoreVisibility(template.id, template.is_store_visible ?? true)}
+                    />
+                  </div>
                 </div>
               </div>
               <div className="flex gap-2">

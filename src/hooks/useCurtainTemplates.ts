@@ -107,6 +107,9 @@ export interface CurtainTemplate {
   blind_side_hem_cm?: number;
   machine_price_per_sqm?: number;
   
+  // Online Store
+  is_store_visible?: boolean;
+  
   active: boolean;
   created_at: string;
   updated_at: string;

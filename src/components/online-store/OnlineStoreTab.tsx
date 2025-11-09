@@ -7,6 +7,7 @@ import { StoreDashboard } from "./StoreDashboard";
 import { ProductCatalogManager } from "./product-catalog/ProductCatalogManager";
 import { StorePageEditor } from "./StorePageEditor";
 import { StoreSettingsTab } from "./StoreSettingsTab";
+import { StoreCategorySettings } from "./StoreCategorySettings";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Store, Sparkles, Zap, Calendar } from "lucide-react";
@@ -14,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export const OnlineStoreTab = () => {
   const [showCreationFlow, setShowCreationFlow] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'products' | 'pages' | 'settings'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'products' | 'pages' | 'settings' | 'categories'>('dashboard');
 
   const { data: store, isLoading } = useQuery({
     queryKey: ['online-store'],
@@ -125,6 +126,7 @@ export const OnlineStoreTab = () => {
           onEditPages={() => setActiveView('pages')}
           onManageProducts={() => setActiveView('products')}
           onViewSettings={() => setActiveView('settings')}
+          onManageCategories={() => setActiveView('categories')}
         />
       ) : activeView === 'products' ? (
         <>
@@ -138,6 +140,13 @@ export const OnlineStoreTab = () => {
           storeId={store.id} 
           onBack={() => setActiveView('dashboard')} 
         />
+      ) : activeView === 'categories' ? (
+        <>
+          <Button variant="outline" onClick={() => setActiveView('dashboard')}>
+            ← Back to Dashboard
+          </Button>
+          <StoreCategorySettings storeId={store.id} />
+        </>
       ) : (
         <StoreSettingsTab 
           store={store} 

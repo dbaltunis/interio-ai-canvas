@@ -22,7 +22,8 @@ import {
   Menu,
   X,
   MessageCircle,
-  ShoppingCart
+  ShoppingCart,
+  Store
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -38,6 +39,7 @@ const navItems = [
   { id: "quotes", label: "Emails", icon: FileText, tourId: "emails-tab", permission: "view_emails" },
   { id: "calendar", label: "Calendar", icon: Calendar, tourId: "calendar-tab", permission: "view_calendar" },
   { id: "inventory", label: "Library", icon: Package, tourId: "library-tab", permission: "view_inventory" },
+  { id: "online-store", label: "Store", icon: Store, tourId: "online-store-tab", permission: "online_store" },
   { id: "ordering-hub", label: "Purchasing", icon: ShoppingCart, tourId: "ordering-hub-tab", badge: true, permission: "view_inventory" },
 ];
 
@@ -57,6 +59,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   const canViewEmails = useHasPermission('view_emails');
   const canViewCalendar = useHasPermission('view_calendar');
   const canViewInventory = useHasPermission('view_inventory');
+  const hasOnlineStore = useHasPermission('online_store');
   
   // Filter nav items based on permissions
   const visibleNavItems = navItems.filter(item => {
@@ -67,6 +70,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
     if (item.permission === 'view_emails') return canViewEmails === true;
     if (item.permission === 'view_calendar') return canViewCalendar === true;
     if (item.permission === 'view_inventory') return canViewInventory === true;
+    if (item.permission === 'online_store') return hasOnlineStore === true;
     
     return false;
   });
