@@ -253,7 +253,9 @@ export default function Documentation() {
                           }`}
                           onClick={() => setActiveSection(section.id)}
                         >
-                          <Icon className="h-4 w-4 mr-2" />
+                          <Icon className={`h-4 w-4 mr-2 ${
+                            activeSection === section.id ? "text-primary" : "text-white/90"
+                          }`} />
                           <span className="text-sm font-medium">{section.title}</span>
                           {section.subsections.length > 0 && (
                             <Badge variant="outline" className="ml-auto border-white/30 text-white/70 text-xs">
@@ -296,7 +298,7 @@ export default function Documentation() {
                   {currentSection.subsections.map((subsection, index) => (
                     <Card key={subsection.id} className="bg-white/[0.08] border-white/20 hover:bg-white/[0.12] transition-colors">
                       <CardHeader className="pb-4">
-                        <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-start justify-between mb-2 gap-3">
                           <div className="flex items-start gap-3 flex-1">
                             <div className="p-2 bg-primary/20 rounded-lg mt-1 flex-shrink-0">
                               <ChevronRight className="h-5 w-5 text-primary" />
@@ -306,10 +308,12 @@ export default function Documentation() {
                             </div>
                           </div>
                           {adminMode && isAdmin && (
-                            <ScreenshotUploader
-                              sectionId={currentSection.id}
-                              subsectionId={subsection.id}
-                            />
+                            <div className="flex-shrink-0 mt-1">
+                              <ScreenshotUploader
+                                sectionId={currentSection.id}
+                                subsectionId={subsection.id}
+                              />
+                            </div>
                           )}
                         </div>
                         <div className="pl-14">

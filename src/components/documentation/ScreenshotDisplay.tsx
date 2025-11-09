@@ -61,19 +61,19 @@ export const ScreenshotDisplay = ({ sectionId, subsectionId, adminMode = false, 
 
   if (loading) {
     return (
-      <div className="mt-6 p-12 bg-white/[0.03] border border-white/20 rounded-lg flex items-center justify-center">
-        <Loader2 className="h-8 w-8 text-white/30 animate-spin" />
+      <div className="mt-6 p-12 bg-white/[0.08] border border-white/30 rounded-lg flex items-center justify-center">
+        <Loader2 className="h-8 w-8 text-primary/60 animate-spin" />
       </div>
     );
   }
 
   if (error || !imageUrl) {
     return (
-      <div className="mt-6 p-12 bg-white/[0.03] border border-white/20 rounded-lg flex items-center justify-center">
-        <div className="text-center text-white/50">
-          <FileText className="h-16 w-16 mx-auto mb-3 opacity-60" />
-          <p className="text-sm font-medium">Screenshot placeholder</p>
-          <p className="text-xs mt-2 text-white/40">
+      <div className="mt-6 p-12 bg-white/[0.08] border border-white/30 rounded-lg flex items-center justify-center">
+        <div className="text-center text-white/70">
+          <FileText className="h-16 w-16 mx-auto mb-3 text-white/60" />
+          <p className="text-sm font-medium text-white">Screenshot placeholder</p>
+          <p className="text-xs mt-2 text-white/60">
             {adminMode ? "Upload a screenshot to display it here" : "Screenshots will be added in future updates"}
           </p>
         </div>

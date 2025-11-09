@@ -98,14 +98,14 @@ export const ScreenshotUploader = ({ sectionId, subsectionId, onUploadComplete }
           variant="outline"
           size="sm"
           disabled={uploading}
-          className="border-white/30 text-white hover:bg-white/20 cursor-pointer"
+          className="border-primary/40 bg-primary/10 text-white hover:bg-primary/20 hover:border-primary/60 cursor-pointer transition-all"
           asChild
         >
           <span>
             {uploading ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : uploadedUrl ? (
-              <Check className="h-4 w-4 mr-2" />
+              <Check className="h-4 w-4 mr-2 text-green-400" />
             ) : (
               <Upload className="h-4 w-4 mr-2" />
             )}
