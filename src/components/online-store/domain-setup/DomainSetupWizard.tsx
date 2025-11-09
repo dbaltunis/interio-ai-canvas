@@ -40,6 +40,7 @@ export const DomainSetupWizard = ({
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'checking' | 'success' | 'failed'>('idle');
   const [dnsRecords, setDnsRecords] = useState<any[]>([]);
   const [registrar, setRegistrar] = useState<'godaddy' | 'other'>('other');
+  const [isSettingUpGodaddy, setIsSettingUpGodaddy] = useState(false);
 
   useEffect(() => {
     if (currentDomain) {
@@ -199,6 +200,46 @@ export const DomainSetupWizard = ({
     return () => clearInterval(interval);
   };
 
+  const handleGoDaddyAutoSetup = async () => {
+    setIsSettingUpGodaddy(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('godaddy-setup-dns', {
+        body: { domain, storeId }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast({
+          title: "DNS records added! 🎉",
+          description: data.message,
+        });
+        
+        // Move to verification step after a short delay
+        setTimeout(() => {
+          startAutoVerification();
+        }, 2000);
+      } else {
+        toast({
+          title: "Partial setup",
+          description: data.message + " You may need to add some records manually.",
+          variant: "destructive",
+        });
+        console.log('Setup results:', data.results);
+      }
+    } catch (error: any) {
+      console.error('GoDaddy setup error:', error);
+      toast({
+        title: "Setup failed",
+        description: error.message || "Unable to automatically configure DNS. Please add records manually.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSettingUpGodaddy(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -325,9 +366,9 @@ export const DomainSetupWizard = ({
             {registrar === 'godaddy' ? (
               <Alert className="bg-green-50 dark:bg-green-950 border-green-200">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <AlertTitle className="text-green-900 dark:text-green-100">GoDaddy Quick Setup</AlertTitle>
+                <AlertTitle className="text-green-900 dark:text-green-100">GoDaddy Automatic Setup ✨</AlertTitle>
                 <AlertDescription className="text-green-800 dark:text-green-200">
-                  We've detected you're using GoDaddy! Click the button below to open your DNS management page directly.
+                  Great news! We can automatically configure your GoDaddy DNS for you. Just click the button below - no copy/paste needed!
                 </AlertDescription>
               </Alert>
             ) : (
@@ -341,14 +382,47 @@ export const DomainSetupWizard = ({
             )}
 
             {registrar === 'godaddy' && (
-              <Button
-                onClick={() => window.open(getGoDaddyDNSLink(), '_blank')}
-                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-                size="lg"
-              >
-                <ExternalLink className="mr-2 h-5 w-5" />
-                Open GoDaddy DNS Settings
-              </Button>
+              <div className="space-y-3">
+                <Button
+                  onClick={handleGoDaddyAutoSetup}
+                  disabled={isSettingUpGodaddy}
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold"
+                  size="lg"
+                >
+                  {isSettingUpGodaddy ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Setting up DNS automatically...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="mr-2 h-5 w-5" />
+                      Set Up Automatically (Recommended)
+                    </>
+                  )}
+                </Button>
+                
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Or set up manually
+                    </span>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => window.open(getGoDaddyDNSLink(), '_blank')}
+                  variant="outline"
+                  className="w-full"
+                  size="lg"
+                >
+                  <ExternalLink className="mr-2 h-5 w-5" />
+                  Open GoDaddy DNS Settings Manually
+                </Button>
+              </div>
             )}
 
             <div className="space-y-4">

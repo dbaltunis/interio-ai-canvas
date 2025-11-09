@@ -83,3 +83,6 @@ verify_jwt = false
 
 [functions.verify-domain]
 verify_jwt = true
+
+[functions.godaddy-setup-dns]
+verify_jwt = true
