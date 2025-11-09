@@ -991,7 +991,7 @@ const LivePreviewBlock = ({
               )}
               
               {/* Discount (if applicable) */}
-              {projectData?.discount && projectData.discount.amount > 0 && (
+              {content.showDiscount !== false && projectData?.discount && projectData.discount.amount > 0 && (
                 <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
                   <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
                     <span style={{ fontSize: '14px', color: '#dc2626 !important' }}>
@@ -1266,7 +1266,7 @@ const LivePreviewBlock = ({
                   <span style={{ fontWeight: '500', color: '#000' }}>{projectData?.subtotal?.toFixed(2) || '0.00'}{renderTokenValue('currency_code')}</span>
                 </div>
                 
-                {projectData?.discount && (
+                {content.showDiscount !== false && projectData?.discount && projectData.discount.amount > 0 && (
                   <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '4px', paddingBottom: '4px', fontStyle: 'italic', color: '#dc2626' }}>
                       <span>

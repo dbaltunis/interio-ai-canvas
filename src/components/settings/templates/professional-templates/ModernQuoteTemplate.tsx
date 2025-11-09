@@ -52,6 +52,7 @@ export const modernQuoteTemplate = {
       type: 'totals',
       content: {
         showSubtotal: true,
+        showDiscount: true,
         showTax: true,
         showTotal: true,
         style: {

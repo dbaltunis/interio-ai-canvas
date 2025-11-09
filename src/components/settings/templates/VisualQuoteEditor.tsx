@@ -71,6 +71,7 @@ const defaultBlocks = [
     type: 'totals',
     content: {
       showSubtotal: true,
+      showDiscount: true,
       showTax: true,
       showTotal: true
     },

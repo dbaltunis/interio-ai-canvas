@@ -85,6 +85,7 @@ const defaultTemplates: Template[] = [
         type: 'totals',
         content: {
           showSubtotal: true,
+          showDiscount: true,
           showTax: true,
           style: {
             backgroundColor: '#f8fafc',
@@ -150,6 +151,7 @@ const defaultTemplates: Template[] = [
         type: 'totals',
         content: {
           showSubtotal: true,
+          showDiscount: true,
           showTax: true
         }
       }
