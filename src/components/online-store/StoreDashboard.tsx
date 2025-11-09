@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { OnlineStore } from "@/types/online-store";
 import { useStoreStats } from "@/hooks/useStoreStats";
-import { ExternalLink, Edit, Package, MessageSquare, Globe, Settings, Eye, EyeOff, ShoppingCart } from "lucide-react";
+import { ExternalLink, Edit, Package, MessageSquare, Globe, Settings, Eye, EyeOff, Briefcase, AlertCircle } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { formatDistanceToNow } from "date-fns";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,12 +16,14 @@ interface StoreDashboardProps {
   onEditPages: () => void;
   onManageProducts: () => void;
   onViewSettings: () => void;
-  onViewOrders: () => void;
 }
 
-export const StoreDashboard = ({ store, onEditPages, onManageProducts, onViewSettings, onViewOrders }: StoreDashboardProps) => {
+export const StoreDashboard = ({ store, onEditPages, onManageProducts, onViewSettings }: StoreDashboardProps) => {
   const { data: stats } = useStoreStats(store.id);
   const queryClient = useQueryClient();
+
+  // Check for new orders/leads (created in last 24 hours)
+  const hasRecentOrders = stats?.newInquiries && stats.newInquiries > 0;
 
   const storeUrl = store.custom_domain && store.domain_verified
     ? `https://${store.custom_domain}`
@@ -59,6 +63,22 @@ export const StoreDashboard = ({ store, onEditPages, onManageProducts, onViewSet
 
   return (
     <div className="space-y-6">
+      {/* Alert for new orders/leads */}
+      {hasRecentOrders && (
+        <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950">
+          <AlertCircle className="h-4 w-4 text-orange-600" />
+          <AlertTitle className="text-orange-900 dark:text-orange-100">
+            {stats.newInquiries} New {stats.newInquiries === 1 ? 'Order' : 'Orders'} in Last 7 Days
+          </AlertTitle>
+          <AlertDescription className="text-orange-800 dark:text-orange-200">
+            You have new online store orders waiting for your attention.{" "}
+            <Link to="/?tab=jobs" className="font-semibold underline hover:no-underline">
+              View all orders & leads →
+            </Link>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Store Status Card */}
       <Card>
         <CardHeader>
@@ -113,9 +133,11 @@ export const StoreDashboard = ({ store, onEditPages, onManageProducts, onViewSet
               <Package className="h-4 w-4 mr-2" />
               Manage Products
             </Button>
-            <Button variant="outline" onClick={onViewOrders}>
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              View Orders
+            <Button variant="outline" asChild>
+              <Link to="/?tab=jobs">
+                <Briefcase className="h-4 w-4 mr-2" />
+                View All Orders & Leads
+              </Link>
             </Button>
             <Button variant="outline" onClick={onViewSettings}>
               <Settings className="h-4 w-4 mr-2" />
@@ -127,27 +149,28 @@ export const StoreDashboard = ({ store, onEditPages, onManageProducts, onViewSet
 
       {/* Quick Stats */}
       <div className="grid md:grid-cols-3 gap-4">
-        <Card>
+        <Card className={hasRecentOrders ? "border-orange-500 bg-orange-50/50 dark:bg-orange-950/50" : ""}>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              New Inquiries
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+              New Orders/Leads
+              {hasRecentOrders && <Badge variant="destructive" className="ml-2">New!</Badge>}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{stats?.newInquiries || 0}</div>
-            <p className="text-xs text-muted-foreground mt-1">Last 7 days</p>
+            <p className="text-xs text-muted-foreground mt-1">Last 7 days • View in Jobs</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Quote Requests
+              Total Quote Requests
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{stats?.totalQuoteRequests || 0}</div>
-            <p className="text-xs text-muted-foreground mt-1">Total active</p>
+            <p className="text-xs text-muted-foreground mt-1">All time • Managed in Jobs</p>
           </CardContent>
         </Card>
 
@@ -167,10 +190,18 @@ export const StoreDashboard = ({ store, onEditPages, onManageProducts, onViewSet
       {/* Recent Activity */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            Recent Inquiries
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Recent Activity
+            </CardTitle>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/?tab=jobs">
+                <Briefcase className="h-4 w-4 mr-2" />
+                View All in Jobs
+              </Link>
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {stats?.recentInquiries && stats.recentInquiries.length > 0 ? (
@@ -196,8 +227,11 @@ export const StoreDashboard = ({ store, onEditPages, onManageProducts, onViewSet
           ) : (
             <div className="text-center py-8 text-muted-foreground">
               <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>No inquiries yet</p>
-              <p className="text-sm">Share your store to start receiving inquiries</p>
+              <p>No recent orders or inquiries</p>
+              <p className="text-sm">Orders will appear as jobs when customers make purchases</p>
+              <Button variant="outline" size="sm" className="mt-4" asChild>
+                <Link to="/?tab=jobs">View Jobs Dashboard</Link>
+              </Button>
             </div>
           )}
         </CardContent>
