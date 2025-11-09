@@ -8,10 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Save, Palette, Globe, CreditCard, Settings } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowLeft, Save, Palette, Globe, CreditCard, Settings, Check, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { OnlineStore } from "@/types/online-store";
+import { DomainSetupWizard } from "./domain-setup/DomainSetupWizard";
 
 interface StoreSettingsTabProps {
   store: OnlineStore;
@@ -21,6 +23,7 @@ interface StoreSettingsTabProps {
 export const StoreSettingsTab = ({ store, onBack }: StoreSettingsTabProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [showDomainWizard, setShowDomainWizard] = useState(false);
   const [settings, setSettings] = useState({
     storeName: store.store_name,
     storeSlug: store.store_slug,
@@ -83,6 +86,13 @@ export const StoreSettingsTab = ({ store, onBack }: StoreSettingsTabProps) => {
 
   return (
     <div className="space-y-6">
+      <DomainSetupWizard
+        open={showDomainWizard}
+        onOpenChange={setShowDomainWizard}
+        storeId={store.id}
+        currentDomain={store.custom_domain}
+      />
+      
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={onBack}>
@@ -279,22 +289,74 @@ export const StoreSettingsTab = ({ store, onBack }: StoreSettingsTabProps) => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Custom Domain</CardTitle>
-              <CardDescription>Connect your own domain name</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Custom Domain</CardTitle>
+                  <CardDescription>Connect your own domain name</CardDescription>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDomainWizard(true)}
+                >
+                  <Globe className="h-4 w-4 mr-2" />
+                  Setup Domain
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="custom-domain">Domain Name</Label>
-                <Input
-                  id="custom-domain"
-                  value={settings.customDomain}
-                  onChange={(e) => setSettings({ ...settings, customDomain: e.target.value })}
-                  placeholder="shop.yoursite.com"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Contact support to configure DNS settings
-                </p>
-              </div>
+              {store.custom_domain ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Globe className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium">{store.custom_domain}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {store.domain_verified ? (
+                            <>
+                              <Check className="h-3 w-3 text-green-600" />
+                              <span className="text-xs text-green-600">Verified</span>
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle className="h-3 w-3 text-yellow-600" />
+                              <span className="text-xs text-yellow-600">Verification Pending</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowDomainWizard(true)}
+                    >
+                      Manage
+                    </Button>
+                  </div>
+                  {!store.domain_verified && (
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription className="text-sm">
+                        Complete DNS setup to verify your domain. Click "Manage" to continue.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Globe className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground mb-4">
+                    No custom domain configured. Use our setup wizard to connect your domain.
+                  </p>
+                  <Button
+                    onClick={() => setShowDomainWizard(true)}
+                  >
+                    <Globe className="h-4 w-4 mr-2" />
+                    Connect Domain
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
