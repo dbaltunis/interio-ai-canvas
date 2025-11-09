@@ -119,7 +119,9 @@ export const StoreHomePage = ({ storeData }: StoreHomePageProps) => {
                           <span className="text-sm text-muted-foreground">Featured</span>
                         </div>
                         <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
-                          {product.inventory_item?.name || 'Product'}
+                          {product.template?.name 
+                            ? `${product.template.name} - ${product.inventory_item?.name}`
+                            : product.inventory_item?.name || 'Product'}
                         </h3>
                         <p className="text-sm text-muted-foreground mb-4">
                           {product.custom_description || 

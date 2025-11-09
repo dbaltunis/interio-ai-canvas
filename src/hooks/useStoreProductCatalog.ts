@@ -6,12 +6,14 @@ export interface StoreProductCatalogItem {
   id: string;
   store_id: string;
   inventory_item_id: string;
+  template_id?: string | null;
   is_visible: boolean;
   is_featured: boolean;
   custom_description?: string;
   custom_images?: string[];
   sort_order: number;
   inventory_item: any;
+  template?: any;
 }
 
 export const useStoreProductCatalog = (storeId?: string) => {
@@ -27,7 +29,8 @@ export const useStoreProductCatalog = (storeId?: string) => {
         .from('store_product_visibility')
         .select(`
           *,
-          inventory_item:enhanced_inventory_items(*)
+          inventory_item:enhanced_inventory_items(*),
+          template:curtain_templates(*)
         `)
         .eq('store_id', storeId)
         .order('sort_order');
@@ -93,12 +96,13 @@ export const useStoreProductCatalog = (storeId?: string) => {
   });
 
   const bulkAddProducts = useMutation({
-    mutationFn: async (inventoryItemIds: string[]) => {
+    mutationFn: async ({ itemIds, templates }: { itemIds: string[]; templates?: Record<string, string> }) => {
       if (!storeId) throw new Error("Store ID required");
 
-      const items = inventoryItemIds.map((itemId, index) => ({
+      const items = itemIds.map((itemId, index) => ({
         store_id: storeId,
         inventory_item_id: itemId,
+        template_id: templates?.[itemId] || null,
         is_visible: false,
         is_featured: false,
         sort_order: index,

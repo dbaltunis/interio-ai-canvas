@@ -81,14 +81,18 @@ export const StoreProductsPage = ({ storeData }: StoreProductsPageProps) => {
     e.preventDefault();
     e.stopPropagation();
     
+    const productName = product.template?.name 
+      ? `${product.template.name} - ${product.inventory_item?.name}`
+      : product.inventory_item?.name || 'Product';
+    
     const cartItem = {
       id: `${product.inventory_item_id}-${Date.now()}`,
       productId: product.inventory_item_id,
-      name: product.inventory_item?.name || 'Product',
+      name: productName,
       imageUrl: product.inventory_item?.image_url,
       category: product.inventory_item?.category || 'Window Treatment',
       quantity: 1,
-      configuration: { quick_add: true },
+      configuration: { quick_add: true, template_id: product.template_id },
       estimatedPrice: product.inventory_item?.unit_price || 0,
       storeId: storeData.id,
     };
@@ -159,7 +163,9 @@ export const StoreProductsPage = ({ storeData }: StoreProductsPageProps) => {
                           </div>
                           <div className="p-4">
                             <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors line-clamp-2">
-                              {product.inventory_item?.name || 'Product'}
+                              {product.template?.name 
+                                ? `${product.template.name} - ${product.inventory_item?.name}`
+                                : product.inventory_item?.name || 'Product'}
                             </h3>
                             <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                               {product.custom_description || 

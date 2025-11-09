@@ -43,7 +43,11 @@ export const ProductCatalogItem = ({ product, isSelected, onSelect }: ProductCat
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-semibold">{item.name}</h3>
+                <h3 className="font-semibold">
+                  {product.template?.name 
+                    ? `${product.template.name} - ${item.name}`
+                    : item.name}
+                </h3>
                 {product.is_featured && (
                   <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                 )}
@@ -53,6 +57,11 @@ export const ProductCatalogItem = ({ product, isSelected, onSelect }: ProductCat
               )}
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant="outline">{item.category || 'Uncategorized'}</Badge>
+                {product.template && (
+                  <Badge variant="secondary" className="text-xs">
+                    Template: {product.template.name}
+                  </Badge>
+                )}
                 {item.sku && <Badge variant="secondary">SKU: {item.sku}</Badge>}
                 <Badge variant={product.is_visible ? "default" : "secondary"}>
                   {product.is_visible ? "Visible" : "Hidden"}

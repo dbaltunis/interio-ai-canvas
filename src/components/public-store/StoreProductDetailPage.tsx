@@ -20,11 +20,12 @@ export const StoreProductDetailPage = ({ storeData }: StoreProductDetailPageProp
   const { data: product, isLoading } = useQuery({
     queryKey: ['public-product', productId, storeData.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+  const { data, error } = await supabase
         .from('store_product_visibility')
         .select(`
           *,
-          inventory_item:enhanced_inventory_items(*)
+          inventory_item:enhanced_inventory_items(*),
+          template:curtain_templates(*)
         `)
         .eq('store_id', storeData.id)
         .eq('inventory_item_id', productId)
@@ -127,7 +128,9 @@ export const StoreProductDetailPage = ({ storeData }: StoreProductDetailPageProp
                 {product.inventory_item?.category || 'Window Treatment'}
               </span>
               <h1 className="text-4xl font-bold mt-2 mb-4">
-                {product.inventory_item?.name || 'Product'}
+                {product.template?.name 
+                  ? `${product.template.name} - ${product.inventory_item?.name}`
+                  : product.inventory_item?.name || 'Product'}
               </h1>
               <p className="text-lg text-muted-foreground">
                 {product.custom_description || 

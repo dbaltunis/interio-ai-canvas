@@ -6829,6 +6829,7 @@ export type Database = {
           is_visible: boolean | null
           sort_order: number | null
           store_id: string
+          template_id: string | null
           updated_at: string
         }
         Insert: {
@@ -6841,6 +6842,7 @@ export type Database = {
           is_visible?: boolean | null
           sort_order?: number | null
           store_id: string
+          template_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -6853,6 +6855,7 @@ export type Database = {
           is_visible?: boolean | null
           sort_order?: number | null
           store_id?: string
+          template_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -6868,6 +6871,13 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "online_stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_product_visibility_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "curtain_templates"
             referencedColumns: ["id"]
           },
         ]

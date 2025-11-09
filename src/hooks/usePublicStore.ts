@@ -32,7 +32,8 @@ export const usePublicStoreProducts = (storeId: string) => {
         .from('store_product_visibility')
         .select(`
           *,
-          inventory_item:enhanced_inventory_items(*)
+          inventory_item:enhanced_inventory_items(*),
+          template:curtain_templates(*)
         `)
         .eq('store_id', storeId)
         .eq('is_visible', true)

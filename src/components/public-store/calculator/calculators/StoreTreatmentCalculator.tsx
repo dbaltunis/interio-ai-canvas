@@ -21,7 +21,11 @@ interface StoreTreatmentCalculatorProps {
 
 export const StoreTreatmentCalculator = ({ product, storeData, onSubmitQuote, onAddToCart }: StoreTreatmentCalculatorProps) => {
   const { data: templates } = useCurtainTemplates();
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  
+  // Auto-load template from product if assigned
+  const assignedTemplateId = product.template_id || "";
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(assignedTemplateId);
+  
   const [measurements, setMeasurements] = useState({
     rail_width: "",
     drop: "",
@@ -97,123 +101,99 @@ export const StoreTreatmentCalculator = ({ product, storeData, onSubmitQuote, on
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calculator className="h-5 w-5" />
-            Treatment Calculator
+            {selectedTemplate?.name || 'Treatment Calculator'}
           </CardTitle>
           <CardDescription>
-            Configure your treatment and get an instant quote
+            {selectedTemplate 
+              ? `${product.inventory_item?.name} - Configured with ${selectedTemplate.name}` 
+              : 'Configure your treatment and get an instant quote'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <Label>Select Template</Label>
-            <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose a style..." />
-              </SelectTrigger>
-              <SelectContent>
-                {categoryTemplates.map((template) => (
-                  <SelectItem key={template.id} value={template.id}>
-                    {template.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {categoryTemplates.length === 0 && (
-              <p className="text-xs text-muted-foreground mt-1">
-                No templates available for this product category
-              </p>
-            )}
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="width">Rail Width (cm)</Label>
+                <Input
+                  id="width"
+                  type="number"
+                  placeholder="200"
+                  value={measurements.rail_width}
+                  onChange={(e) => setMeasurements({ ...measurements, rail_width: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="drop">Drop Height (cm)</Label>
+                <Input
+                  id="drop"
+                  type="number"
+                  placeholder="220"
+                  value={measurements.drop}
+                  onChange={(e) => setMeasurements({ ...measurements, drop: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="pooling">Pooling Amount (cm)</Label>
+              <Input
+                id="pooling"
+                type="number"
+                placeholder="0"
+                value={measurements.pooling_amount}
+                onChange={(e) => setMeasurements({ ...measurements, pooling_amount: e.target.value })}
+              />
+            </div>
           </div>
 
-          {selectedTemplateId && (
+          {measurements.rail_width && measurements.drop && calculation && (
             <>
               <Separator />
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="width">Rail Width (cm)</Label>
-                    <Input
-                      id="width"
-                      type="number"
-                      placeholder="200"
-                      value={measurements.rail_width}
-                      onChange={(e) => setMeasurements({ ...measurements, rail_width: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="drop">Drop Height (cm)</Label>
-                    <Input
-                      id="drop"
-                      type="number"
-                      placeholder="220"
-                      value={measurements.drop}
-                      onChange={(e) => setMeasurements({ ...measurements, drop: e.target.value })}
-                    />
-                  </div>
-                </div>
+              <div className="bg-muted/50 rounded-lg overflow-hidden">
+                <MeasurementVisualCore
+                  measurements={measurements}
+                  treatmentData={treatmentData}
+                  config={{ compact: true, readOnly: true }}
+                />
+              </div>
 
-                <div>
-                  <Label htmlFor="pooling">Pooling Amount (cm)</Label>
-                  <Input
-                    id="pooling"
-                    type="number"
-                    placeholder="0"
-                    value={measurements.pooling_amount}
-                    onChange={(e) => setMeasurements({ ...measurements, pooling_amount: e.target.value })}
-                  />
+              <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                <h4 className="font-semibold text-sm">Calculation Details</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Fabric Required:</span>
+                    <span className="font-medium">{calculation.linearMeters.toFixed(2)}m</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Widths:</span>
+                    <span className="font-medium">{calculation.widthsRequired}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Fullness:</span>
+                    <span className="font-medium">{calculation.fullnessRatio}x</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Total Drop:</span>
+                    <span className="font-medium">{calculation.totalDrop.toFixed(0)}cm</span>
+                  </div>
                 </div>
               </div>
 
-              {measurements.rail_width && measurements.drop && calculation && (
-                <>
-                  <Separator />
-                  <div className="bg-muted/50 rounded-lg overflow-hidden">
-                    <MeasurementVisualCore
-                      measurements={measurements}
-                      treatmentData={treatmentData}
-                      config={{ compact: true, readOnly: true }}
-                    />
-                  </div>
-
-                  <div className="bg-muted/50 p-4 rounded-lg space-y-2">
-                    <h4 className="font-semibold text-sm">Calculation Details</h4>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Fabric Required:</span>
-                        <span className="font-medium">{calculation.linearMeters.toFixed(2)}m</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Widths:</span>
-                        <span className="font-medium">{calculation.widthsRequired}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Fullness:</span>
-                        <span className="font-medium">{calculation.fullnessRatio}x</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Total Drop:</span>
-                        <span className="font-medium">{calculation.totalDrop.toFixed(0)}cm</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-primary/5 p-4 rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Estimated Price:</span>
-                      <span className="text-2xl font-bold" style={{ color: 'var(--store-primary)' }}>
-                        {formatCurrency(calculation.totalCost, 'NZD')}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Based on {calculation.linearMeters.toFixed(2)}m @ {formatCurrency(calculation.pricePerMeter, 'NZD')}/m
-                    </p>
-                  </div>
-                </>
-              )}
+              <div className="bg-primary/5 p-4 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Estimated Price:</span>
+                  <span className="text-2xl font-bold" style={{ color: 'var(--store-primary)' }}>
+                    {formatCurrency(calculation.totalCost, 'NZD')}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Based on {calculation.linearMeters.toFixed(2)}m @ {formatCurrency(calculation.pricePerMeter, 'NZD')}/m
+                </p>
+              </div>
             </>
           )}
 
-          {selectedTemplateId && calculation && (
+          {calculation && (
             <div className="space-y-2">
               <Button
                 onClick={handleCalculate}
