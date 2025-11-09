@@ -75,4 +75,10 @@ verify_jwt = true
 [functions.verify-quote-payment]
 verify_jwt = true
 
+[functions.create-store-checkout]
+verify_jwt = false
+
+[functions.verify-store-payment]
+verify_jwt = false
+
 

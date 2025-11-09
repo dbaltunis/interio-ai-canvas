@@ -9,17 +9,15 @@ import { Separator } from "@/components/ui/separator";
 import { ShoppingBag, ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { formatCurrency } from "@/utils/currency";
-import { useMutation } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useStorePayment } from "@/hooks/useStorePayment";
 
 interface StoreCheckoutProps {
   storeData: any;
 }
 
 export const StoreCheckout = ({ storeData }: StoreCheckoutProps) => {
-  const { items, getTotalPrice, clearCart } = useShoppingCart();
-  const navigate = useNavigate();
+  const { items, getTotalPrice } = useShoppingCart();
+  const { createCheckout } = useStorePayment();
   const [formData, setFormData] = useState({
     customer_name: "",
     customer_email: "",
@@ -29,50 +27,27 @@ export const StoreCheckout = ({ storeData }: StoreCheckoutProps) => {
 
   const currency = 'GBP';
 
-  const submitOrder = useMutation({
-    mutationFn: async () => {
-      // Create inquiry for the order
-      const { data, error } = await supabase
-        .from('store_inquiries')
-        .insert({
-          store_id: storeData.id,
-          inquiry_type: 'quote_request',
-          customer_name: formData.customer_name,
-          customer_email: formData.customer_email,
-          customer_phone: formData.customer_phone,
-          message: formData.message,
-          configuration_data: items.map(item => ({
-            productId: item.productId,
-            name: item.name,
-            quantity: item.quantity,
-            configuration: item.configuration,
-            estimatedPrice: item.estimatedPrice,
-          })),
-          quote_data: {
-            total: getTotalPrice(),
-            currency,
-            items: items.length,
-          },
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      toast.success("Order submitted successfully! We'll contact you shortly.");
-      clearCart();
-      navigate(`/store/${storeData.store_slug}/order-confirmation`);
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to submit order");
-    },
-  });
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    submitOrder.mutate();
+    
+    createCheckout.mutate({
+      storeId: storeData.id,
+      customerName: formData.customer_name,
+      customerEmail: formData.customer_email,
+      customerPhone: formData.customer_phone,
+      message: formData.message,
+      items: items.map(item => ({
+        id: item.id,
+        productId: item.productId,
+        name: item.name,
+        imageUrl: item.imageUrl,
+        category: item.category,
+        quantity: item.quantity,
+        configuration: item.configuration,
+        estimatedPrice: item.estimatedPrice,
+      })),
+      total: getTotalPrice(),
+    });
   };
 
   if (items.length === 0) {
@@ -162,9 +137,9 @@ export const StoreCheckout = ({ storeData }: StoreCheckoutProps) => {
                     type="submit" 
                     className="w-full" 
                     size="lg"
-                    disabled={submitOrder.isPending}
+                    disabled={createCheckout.isPending}
                   >
-                    {submitOrder.isPending ? "Submitting..." : "Submit Order Request"}
+                    {createCheckout.isPending ? "Processing..." : "Proceed to Payment"}
                   </Button>
                 </form>
               </CardContent>
