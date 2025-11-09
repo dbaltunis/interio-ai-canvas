@@ -84,15 +84,27 @@ export const InlineDiscountPanel = ({
         items,
         subtotal,
       });
-      onClose();
+      
+      // Give a moment for the queries to invalidate and refetch
+      setTimeout(() => {
+        onClose();
+      }, 300);
     } catch (error) {
       console.error('Error applying discount:', error);
     }
   };
 
   const handleRemove = async () => {
-    await removeDiscount.mutateAsync(quoteId);
-    onClose();
+    try {
+      await removeDiscount.mutateAsync(quoteId);
+      
+      // Give a moment for the queries to invalidate and refetch
+      setTimeout(() => {
+        onClose();
+      }, 300);
+    } catch (error) {
+      console.error('Error removing discount:', error);
+    }
   };
 
   const toggleItemSelection = (itemId: string) => {
@@ -218,7 +230,12 @@ export const InlineDiscountPanel = ({
                     disabled={removeDiscount.isPending}
                     className="flex-1"
                   >
-                    Remove Discount
+                    {removeDiscount.isPending ? (
+                      <>
+                        <span className="animate-spin mr-2">⏳</span>
+                        Removing...
+                      </>
+                    ) : "Remove Discount"}
                   </Button>
                 )}
                 <Button
@@ -226,7 +243,12 @@ export const InlineDiscountPanel = ({
                   disabled={applyDiscount.isPending || discountValue <= 0}
                   className="flex-1"
                 >
-                  {applyDiscount.isPending ? "Applying..." : "Apply to Quote"}
+                  {applyDiscount.isPending ? (
+                    <>
+                      <span className="animate-spin mr-2">⏳</span>
+                      Applying...
+                    </>
+                  ) : "Apply to Quote"}
                 </Button>
               </div>
             </div>
@@ -258,13 +280,21 @@ export const InlineDiscountPanel = ({
                   </div>
                 </div>
                 
-                {discountValue > 0 && (
-                  <div className="mt-4 p-3 bg-muted/50 rounded-md border">
-                    <p className="text-xs text-muted-foreground text-center">
-                      Click "Apply to Quote" to update the quote below
+                <div className="mt-4 p-3 bg-muted/50 rounded-md border">
+                  {applyDiscount.isPending ? (
+                    <p className="text-xs text-primary text-center font-medium">
+                      <span className="animate-pulse">Applying discount and updating quote...</span>
                     </p>
-                  </div>
-                )}
+                  ) : discountValue > 0 ? (
+                    <p className="text-xs text-muted-foreground text-center">
+                      Click "Apply to Quote" to update the quote below with discounted prices
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground text-center">
+                      Enter a discount value above to see the preview
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
