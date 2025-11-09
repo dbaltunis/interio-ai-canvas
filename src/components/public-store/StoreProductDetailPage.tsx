@@ -3,9 +3,11 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Package } from "lucide-react";
+import { ArrowLeft, Package, ShoppingCart } from "lucide-react";
 import { StoreProductCalculator } from "./calculator/StoreProductCalculator";
 import { toast } from "@/hooks/use-toast";
+import { useShoppingCart } from "@/hooks/useShoppingCart";
+import { toast as sonnerToast } from "sonner";
 
 interface StoreProductDetailPageProps {
   storeData: any;
@@ -13,6 +15,7 @@ interface StoreProductDetailPageProps {
 
 export const StoreProductDetailPage = ({ storeData }: StoreProductDetailPageProps) => {
   const { productId } = useParams<{ productId: string }>();
+  const { addItem, openCart } = useShoppingCart();
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['public-product', productId, storeData.id],
@@ -140,6 +143,26 @@ export const StoreProductDetailPage = ({ storeData }: StoreProductDetailPageProp
               storeData={storeData}
               onSubmitQuote={(quoteData) => {
                 createInquiry.mutate(quoteData);
+              }}
+              onAddToCart={(configuration, estimatedPrice) => {
+                const cartItem = {
+                  id: `${productId}-${Date.now()}`,
+                  productId: productId!,
+                  name: product.inventory_item?.name || 'Product',
+                  imageUrl: product.inventory_item?.image_url,
+                  category: product.inventory_item?.category || 'Window Treatment',
+                  quantity: 1,
+                  configuration,
+                  estimatedPrice,
+                  storeId: storeData.id,
+                };
+                addItem(cartItem);
+                sonnerToast.success("Added to cart!", {
+                  action: {
+                    label: "View Cart",
+                    onClick: () => openCart(),
+                  },
+                });
               }}
             />
           </div>

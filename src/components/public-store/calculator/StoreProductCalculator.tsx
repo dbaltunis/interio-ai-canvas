@@ -12,9 +12,10 @@ interface StoreProductCalculatorProps {
   product: any;
   storeData: any;
   onSubmitQuote: (quoteData: any) => void;
+  onAddToCart?: (configuration: Record<string, any>, estimatedPrice: number) => void;
 }
 
-export const StoreProductCalculator = ({ product, storeData, onSubmitQuote }: StoreProductCalculatorProps) => {
+export const StoreProductCalculator = ({ product, storeData, onSubmitQuote, onAddToCart }: StoreProductCalculatorProps) => {
   const [measurements, setMeasurements] = useState({
     width: "",
     height: "",
@@ -142,15 +143,36 @@ export const StoreProductCalculator = ({ product, storeData, onSubmitQuote }: St
           </Button>
 
           {calculatedPrice && !showQuoteForm && (
-            <Button
-              onClick={() => setShowQuoteForm(true)}
-              variant="outline"
-              className="w-full"
-              size="lg"
-            >
-              <Send className="mr-2 h-4 w-4" />
-              Request Detailed Quote
-            </Button>
+            <div className="space-y-2">
+              {onAddToCart && (
+                <Button
+                  onClick={() => {
+                    onAddToCart(
+                      {
+                        measurements,
+                        product_name: product.inventory_item?.name,
+                        product_category: product.inventory_item?.category,
+                      },
+                      calculatedPrice
+                    );
+                  }}
+                  className="w-full"
+                  size="lg"
+                  style={{ backgroundColor: 'var(--store-primary)' }}
+                >
+                  Add to Cart
+                </Button>
+              )}
+              <Button
+                onClick={() => setShowQuoteForm(true)}
+                variant="outline"
+                className="w-full"
+                size="lg"
+              >
+                <Send className="mr-2 h-4 w-4" />
+                Request Detailed Quote
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>

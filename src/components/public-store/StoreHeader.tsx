@@ -2,12 +2,17 @@ import { Link } from "react-router-dom";
 import { ShoppingCart, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useShoppingCart } from "@/hooks/useShoppingCart";
+import { Badge } from "@/components/ui/badge";
 
 interface StoreHeaderProps {
   storeData: any;
 }
 
 export const StoreHeader = ({ storeData }: StoreHeaderProps) => {
+  const { openCart, getTotalItems } = useShoppingCart();
+  const cartItemsCount = getTotalItems();
+  
   const navigation = [
     { name: 'Home', href: `/store/${storeData.store_slug}` },
     { name: 'Products', href: `/store/${storeData.store_slug}/products` },
@@ -44,8 +49,16 @@ export const StoreHeader = ({ storeData }: StoreHeaderProps) => {
 
         {/* Actions */}
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" className="relative" onClick={openCart}>
             <ShoppingCart className="h-5 w-5" />
+            {cartItemsCount > 0 && (
+              <Badge 
+                className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                variant="default"
+              >
+                {cartItemsCount}
+              </Badge>
+            )}
           </Button>
 
           {/* Mobile Menu */}

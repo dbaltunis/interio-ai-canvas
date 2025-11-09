@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { StoreHeader } from "./StoreHeader";
 import { StoreFooter } from "./StoreFooter";
+import { ShoppingCart } from "./ShoppingCart";
 
 interface StoreLayoutProps {
   children: ReactNode;
@@ -22,6 +23,7 @@ export const StoreLayout = ({ children, storeData }: StoreLayoutProps) => {
         {children}
       </main>
       <StoreFooter storeData={storeData} />
+      <ShoppingCart storeData={storeData} />
     </div>
   );
 };
