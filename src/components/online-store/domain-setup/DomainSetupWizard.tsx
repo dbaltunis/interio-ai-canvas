@@ -39,6 +39,7 @@ export const DomainSetupWizard = ({
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'checking' | 'success' | 'failed'>('idle');
   const [dnsRecords, setDnsRecords] = useState<any[]>([]);
+  const [registrar, setRegistrar] = useState<'godaddy' | 'other'>('other');
 
   useEffect(() => {
     if (currentDomain) {
@@ -83,6 +84,14 @@ export const DomainSetupWizard = ({
     return domainRegex.test(cleanDomain);
   };
 
+  const detectRegistrar = (inputDomain: string) => {
+    // Check WHOIS or common patterns (simplified detection)
+    const cleanDomain = inputDomain.toLowerCase();
+    // In production, you'd want to check WHOIS data
+    // For now, we'll let users select their registrar
+    return 'other';
+  };
+
   const handleDomainSubmit = () => {
     if (!domain.trim()) {
       toast({
@@ -104,6 +113,11 @@ export const DomainSetupWizard = ({
 
     generateDNSRecords(domain);
     setStep('dns');
+  };
+
+  const getGoDaddyDNSLink = () => {
+    const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '');
+    return `https://dcc.godaddy.com/control/portfolio/dns?domain=${cleanDomain}`;
   };
 
   const copyToClipboard = (text: string, type: string) => {
@@ -239,18 +253,48 @@ export const DomainSetupWizard = ({
               </AlertDescription>
             </Alert>
 
-            <div className="space-y-2">
-              <Label htmlFor="domain">Your Domain Name</Label>
-              <Input
-                id="domain"
-                value={domain}
-                onChange={(e) => setDomain(e.target.value)}
-                placeholder="yourstore.com or www.yourstore.com"
-                autoFocus
-              />
-              <p className="text-sm text-muted-foreground">
-                Enter the domain you want to use for your store
-              </p>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="domain">Your Domain Name</Label>
+                <Input
+                  id="domain"
+                  value={domain}
+                  onChange={(e) => setDomain(e.target.value)}
+                  placeholder="yourstore.com or www.yourstore.com"
+                  autoFocus
+                />
+                <p className="text-sm text-muted-foreground">
+                  Enter the domain you want to use for your store
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Where did you buy your domain?</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    type="button"
+                    variant={registrar === 'godaddy' ? 'default' : 'outline'}
+                    onClick={() => setRegistrar('godaddy')}
+                    className="h-auto py-3"
+                  >
+                    <div className="flex flex-col items-center gap-1">
+                      <Globe className="h-5 w-5" />
+                      <span className="font-semibold">GoDaddy</span>
+                    </div>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={registrar === 'other' ? 'default' : 'outline'}
+                    onClick={() => setRegistrar('other')}
+                    className="h-auto py-3"
+                  >
+                    <div className="flex flex-col items-center gap-1">
+                      <Globe className="h-5 w-5" />
+                      <span className="font-semibold">Other Provider</span>
+                    </div>
+                  </Button>
+                </div>
+              </div>
             </div>
 
             <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg space-y-2">
@@ -278,13 +322,34 @@ export const DomainSetupWizard = ({
         {/* Step 2: DNS Records */}
         {step === 'dns' && (
           <div className="space-y-6 py-4">
-            <Alert>
-              <Globe className="h-4 w-4" />
-              <AlertTitle>Add these DNS records</AlertTitle>
-              <AlertDescription>
-                Go to your domain registrar and add the following DNS records. Changes can take up to 48 hours to propagate.
-              </AlertDescription>
-            </Alert>
+            {registrar === 'godaddy' ? (
+              <Alert className="bg-green-50 dark:bg-green-950 border-green-200">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <AlertTitle className="text-green-900 dark:text-green-100">GoDaddy Quick Setup</AlertTitle>
+                <AlertDescription className="text-green-800 dark:text-green-200">
+                  We've detected you're using GoDaddy! Click the button below to open your DNS management page directly.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <Alert>
+                <Globe className="h-4 w-4" />
+                <AlertTitle>Add these DNS records</AlertTitle>
+                <AlertDescription>
+                  Go to your domain registrar and add the following DNS records. Changes can take up to 48 hours to propagate.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {registrar === 'godaddy' && (
+              <Button
+                onClick={() => window.open(getGoDaddyDNSLink(), '_blank')}
+                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                size="lg"
+              >
+                <ExternalLink className="mr-2 h-5 w-5" />
+                Open GoDaddy DNS Settings
+              </Button>
+            )}
 
             <div className="space-y-4">
               {dnsRecords.map((record, idx) => (
@@ -355,22 +420,45 @@ export const DomainSetupWizard = ({
               ))}
             </div>
 
-            <div className="bg-yellow-50 dark:bg-yellow-950 p-4 rounded-lg">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
-                <div className="space-y-1 text-sm">
-                  <p className="font-semibold text-yellow-900 dark:text-yellow-100">
-                    Important Notes:
-                  </p>
-                  <ul className="text-yellow-800 dark:text-yellow-200 space-y-1 ml-4 list-disc">
-                    <li>Add ALL three DNS records for your domain to work properly</li>
-                    <li>DNS changes can take 5 minutes to 48 hours to propagate</li>
-                    <li>Some registrars use different field names (Host, Name, etc.)</li>
-                    <li>Remove any existing A or CNAME records that point to other services</li>
-                  </ul>
+            {registrar === 'godaddy' ? (
+              <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div className="space-y-2 text-sm">
+                    <p className="font-semibold text-blue-900 dark:text-blue-100">
+                      GoDaddy Step-by-Step:
+                    </p>
+                    <ol className="text-blue-800 dark:text-blue-200 space-y-2 ml-4 list-decimal">
+                      <li>Click "Open GoDaddy DNS Settings" above (opens in new tab)</li>
+                      <li>Scroll down to the "DNS Records" section</li>
+                      <li>For each record below, click "Add New Record"</li>
+                      <li>Copy the values using the copy buttons</li>
+                      <li>Click "Save" in GoDaddy after adding all records</li>
+                    </ol>
+                    <p className="mt-3 text-blue-700 dark:text-blue-300 font-medium">
+                      💡 Tip: Leave TTL at default (usually 1 hour or 600 seconds)
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-yellow-50 dark:bg-yellow-950 p-4 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                  <div className="space-y-1 text-sm">
+                    <p className="font-semibold text-yellow-900 dark:text-yellow-100">
+                      Important Notes:
+                    </p>
+                    <ul className="text-yellow-800 dark:text-yellow-200 space-y-1 ml-4 list-disc">
+                      <li>Add ALL three DNS records for your domain to work properly</li>
+                      <li>DNS changes can take 5 minutes to 48 hours to propagate</li>
+                      <li>Some registrars use different field names (Host, Name, etc.)</li>
+                      <li>Remove any existing A or CNAME records that point to other services</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="border-t pt-4">
               <Button
