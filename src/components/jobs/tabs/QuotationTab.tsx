@@ -25,7 +25,7 @@ import { QuotationSkeleton } from "@/components/jobs/quotation/QuotationSkeleton
 import { EmptyQuoteVersionState } from "@/components/jobs/EmptyQuoteVersionState";
 import { useQuoteVersions } from "@/hooks/useQuoteVersions";
 import { generateQuotePDF, generateQuotePDFBlob } from '@/utils/generateQuotePDF';
-import { QuoteDiscountDialog } from "@/components/jobs/quotation/QuoteDiscountDialog";
+import { InlineDiscountPanel } from "@/components/jobs/quotation/InlineDiscountPanel";
 import { useQuoteDiscount } from "@/hooks/useQuoteDiscount";
 
 interface QuotationTabProps {
@@ -486,12 +486,8 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
     const effectiveQuoteId = await getOrCreateQuoteId();
     if (!effectiveQuoteId) return;
     
-    // If we created a new quote, we need to wait a moment for it to be available
-    if (effectiveQuoteId !== quoteId) {
-      setTimeout(() => setIsDiscountDialogOpen(true), 500);
-    } else {
-      setIsDiscountDialogOpen(true);
-    }
+    // Toggle the inline discount panel
+    setIsDiscountDialogOpen(!isDiscountDialogOpen);
   };
 
   const handleAddTerms = () => {
@@ -676,6 +672,25 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
         </div>
       </Card>
 
+      {/* Inline Discount Panel */}
+      <InlineDiscountPanel
+        isOpen={isDiscountDialogOpen}
+        onClose={() => setIsDiscountDialogOpen(false)}
+        quoteId={quoteId || quoteVersions?.[0]?.id || ''}
+        projectId={projectId}
+        items={quotationData.items || []}
+        subtotal={subtotal}
+        taxRate={taxRate * 100}
+        currency={projectData.currency}
+        currentDiscount={currentQuote?.discount_type ? {
+          type: currentQuote.discount_type as 'percentage' | 'fixed',
+          value: currentQuote.discount_value || 0,
+          scope: currentQuote.discount_scope as 'all' | 'fabrics_only' | 'selected_items',
+          amount: currentQuote.discount_amount || 0,
+          selectedItems: (currentQuote.selected_discount_items as string[]) || undefined,
+        } : undefined}
+      />
+
       {/* Quotation Items Modal */}
       <QuotationItemsModal
         key={`quote-modal-${projectSummaries?.projectTotal}-${quotationData.items?.length}`}
@@ -767,28 +782,6 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
             showImages={templateSettings.showImages}
           />
         }
-      />
-
-      {/* Discount Dialog */}
-      <QuoteDiscountDialog
-        open={isDiscountDialogOpen}
-        onOpenChange={(open) => {
-          console.log('🚪 Dialog state changing to:', open, 'currentQuote:', currentQuote?.id, 'discount:', currentQuote?.discount_type);
-          setIsDiscountDialogOpen(open);
-        }}
-        quoteId={quoteId || quoteVersions?.[0]?.id || ''}
-        projectId={projectId}
-        items={quotationData.items || []}
-        subtotal={subtotal}
-        taxRate={taxRate * 100}
-        currency={projectData.currency}
-        currentDiscount={currentQuote?.discount_type ? {
-          type: currentQuote.discount_type as 'percentage' | 'fixed',
-          value: currentQuote.discount_value || 0,
-          scope: currentQuote.discount_scope as 'all' | 'fabrics_only' | 'selected_items',
-          amount: currentQuote.discount_amount || 0,
-          selectedItems: (currentQuote.selected_discount_items as string[]) || undefined,
-        } : undefined}
       />
 
 
