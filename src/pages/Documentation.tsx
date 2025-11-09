@@ -210,9 +210,9 @@ export default function Documentation() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar Navigation */}
           <div className="lg:col-span-1">
-            <Card className="bg-white/5 border-white/10 sticky top-32">
+            <Card className="bg-white/[0.08] border-white/20 sticky top-32">
               <CardHeader className="pb-3">
-                <CardTitle className="text-white text-sm font-semibold">Contents</CardTitle>
+                <CardTitle className="text-white text-base font-bold">Contents</CardTitle>
               </CardHeader>
               <CardContent className="p-2">
                 <ScrollArea className="h-[calc(100vh-16rem)]">
@@ -225,15 +225,15 @@ export default function Documentation() {
                           variant={activeSection === section.id ? "secondary" : "ghost"}
                           className={`w-full justify-start text-left ${
                             activeSection === section.id
-                              ? "bg-primary/10 text-primary"
-                              : "text-white/70 hover:text-white hover:bg-white/5"
+                              ? "bg-primary/20 text-white border border-primary/30"
+                              : "text-white/80 hover:text-white hover:bg-white/10"
                           }`}
                           onClick={() => setActiveSection(section.id)}
                         >
                           <Icon className="h-4 w-4 mr-2" />
-                          <span className="text-sm">{section.title}</span>
+                          <span className="text-sm font-medium">{section.title}</span>
                           {section.subsections.length > 0 && (
-                            <Badge variant="outline" className="ml-auto border-white/20 text-white/60 text-xs">
+                            <Badge variant="outline" className="ml-auto border-white/30 text-white/70 text-xs">
                               {section.subsections.length}
                             </Badge>
                           )}
@@ -251,7 +251,7 @@ export default function Documentation() {
             {currentSection && (
               <div className="space-y-6">
                 {/* Section Header */}
-                <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-white/10">
+                <Card className="bg-white/5 border-white/10">
                   <CardHeader>
                     <div className="flex items-center gap-3">
                       {(() => {
@@ -259,8 +259,8 @@ export default function Documentation() {
                         return <Icon className="h-8 w-8 text-primary" />;
                       })()}
                       <div>
-                        <CardTitle className="text-white text-2xl">{currentSection.title}</CardTitle>
-                        <CardDescription className="text-white/60">
+                        <CardTitle className="text-white text-2xl font-bold">{currentSection.title}</CardTitle>
+                        <CardDescription className="text-white/70">
                           {currentSection.subsections.length} articles in this section
                         </CardDescription>
                       </div>
@@ -271,26 +271,24 @@ export default function Documentation() {
                 {/* Subsections */}
                 <div className="space-y-4">
                   {currentSection.subsections.map((subsection, index) => (
-                    <Card key={subsection.id} className="bg-white/5 border-white/10 hover:bg-white/[0.07] transition-colors">
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-3 flex-1">
-                            <div className="p-2 bg-primary/10 rounded-lg mt-1">
-                              <ChevronRight className="h-4 w-4 text-primary" />
-                            </div>
-                            <div className="flex-1">
-                              <CardTitle className="text-white text-lg mb-2">{subsection.title}</CardTitle>
-                              <CardDescription className="text-white/70 whitespace-pre-line leading-relaxed">
-                                {subsection.content}
-                              </CardDescription>
-                              
-                              {/* Placeholder for screenshot */}
-                              <div className="mt-4 p-8 bg-white/[0.02] border border-white/10 rounded-lg flex items-center justify-center">
-                                <div className="text-center text-white/40">
-                                  <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                                  <p className="text-sm">Screenshot placeholder</p>
-                                  <p className="text-xs mt-1">Screenshot will be added here</p>
-                                </div>
+                    <Card key={subsection.id} className="bg-white/[0.08] border-white/20 hover:bg-white/[0.12] transition-colors">
+                      <CardHeader className="pb-4">
+                        <div className="flex items-start gap-3 flex-1">
+                          <div className="p-2 bg-primary/20 rounded-lg mt-1 flex-shrink-0">
+                            <ChevronRight className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <CardTitle className="text-white text-xl mb-3 font-semibold">{subsection.title}</CardTitle>
+                            <CardDescription className="text-white/80 whitespace-pre-line leading-relaxed text-base">
+                              {subsection.content}
+                            </CardDescription>
+                            
+                            {/* Placeholder for screenshot */}
+                            <div className="mt-6 p-12 bg-white/[0.03] border border-white/20 rounded-lg flex items-center justify-center">
+                              <div className="text-center text-white/50">
+                                <FileText className="h-16 w-16 mx-auto mb-3 opacity-60" />
+                                <p className="text-sm font-medium">Screenshot placeholder</p>
+                                <p className="text-xs mt-2 text-white/40">Screenshots will be added in future updates</p>
                               </div>
                             </div>
                           </div>
@@ -304,13 +302,13 @@ export default function Documentation() {
 
             {/* No results */}
             {filteredSections.length === 0 && (
-              <Card className="bg-white/5 border-white/10">
+              <Card className="bg-white/[0.08] border-white/20">
                 <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Search className="h-12 w-12 text-white/20 mb-4" />
-                  <p className="text-white/60">No results found for "{searchQuery}"</p>
+                  <Search className="h-12 w-12 text-white/30 mb-4" />
+                  <p className="text-white font-medium">No results found for "{searchQuery}"</p>
                   <Button
                     variant="outline"
-                    className="mt-4 border-white/20 text-white hover:bg-white/10"
+                    className="mt-4 border-white/30 text-white hover:bg-white/20"
                     onClick={() => setSearchQuery("")}
                   >
                     Clear search
