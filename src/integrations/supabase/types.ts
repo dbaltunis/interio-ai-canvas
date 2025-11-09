@@ -4487,7 +4487,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "online_stores_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "store_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       option_rules: {
         Row: {
