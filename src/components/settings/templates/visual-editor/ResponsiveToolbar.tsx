@@ -31,7 +31,12 @@ import {
   Eye,
   EyeOff,
   Settings,
-  Sparkles
+  Sparkles,
+  CaseSensitive,
+  CaseUpper,
+  CaseLower,
+  Plus,
+  Minus
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -401,9 +406,21 @@ export const ResponsiveToolbar = ({
     </div>
   );
 
+  const handleFontSizeChange = (delta: number) => {
+    if (!selectedBlock || !onUpdateBlock) return;
+    const currentSize = parseInt(currentStyle.fontSize?.replace('px', '') || '16');
+    const newSize = Math.max(8, Math.min(72, currentSize + delta));
+    updateBlockStyle('fontSize', `${newSize}px`);
+  };
+
+  const handleTextTransform = (transform: string) => {
+    if (!selectedBlock || !onUpdateBlock) return;
+    updateBlockStyle('textTransform', transform);
+  };
+
   // Desktop toolbar
   const DesktopToolbar = () => (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex items-center gap-2 flex-wrap py-2 px-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b shadow-sm">
       {/* File Operations */}
       <Button onClick={onSave} size="sm" className="flex items-center gap-2">
         <Save className="h-4 w-4" />
@@ -478,7 +495,7 @@ export const ResponsiveToolbar = ({
               value={currentStyle.fontFamily || 'Inter, sans-serif'}
               onValueChange={(value) => updateBlockStyle('fontFamily', value)}
             >
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-32 h-8">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -490,22 +507,45 @@ export const ResponsiveToolbar = ({
               </SelectContent>
             </Select>
 
-            <Select
-              value={currentStyle.fontSize?.replace('px', '') || '16'}
-              onValueChange={(value) => updateBlockStyle('fontSize', `${value}px`)}
-            >
-              <SelectTrigger className="w-16">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {fontSizes.map((size) => (
-                  <SelectItem key={size} value={size.toString()}>
-                    {size}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Font Size with +/- controls */}
+            <div className="flex items-center gap-1 border rounded-md bg-background">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleFontSizeChange(-2)}
+                className="h-8 w-8 p-0 hover:bg-accent"
+                title="Decrease font size"
+              >
+                <Minus className="h-3 w-3" />
+              </Button>
+              <Select
+                value={currentStyle.fontSize?.replace('px', '') || '16'}
+                onValueChange={(value) => updateBlockStyle('fontSize', `${value}px`)}
+              >
+                <SelectTrigger className="w-16 h-8 border-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {fontSizes.map((size) => (
+                    <SelectItem key={size} value={size.toString()}>
+                      {size}px
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleFontSizeChange(2)}
+                className="h-8 w-8 p-0 hover:bg-accent"
+                title="Increase font size"
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
+          
+          <Separator orientation="vertical" className="h-6" />
 
           {/* Text Formatting */}
           <div className="flex items-center gap-1">
@@ -513,6 +553,7 @@ export const ResponsiveToolbar = ({
               variant={currentStyle.fontWeight === 'bold' ? 'default' : 'outline'}
               size="sm"
               onClick={onToggleBold}
+              title="Bold"
             >
               <Bold className="h-4 w-4" />
             </Button>
@@ -520,6 +561,7 @@ export const ResponsiveToolbar = ({
               variant={currentStyle.fontStyle === 'italic' ? 'default' : 'outline'}
               size="sm"
               onClick={onToggleItalic}
+              title="Italic"
             >
               <Italic className="h-4 w-4" />
             </Button>
@@ -527,10 +569,66 @@ export const ResponsiveToolbar = ({
               variant={currentStyle.textDecoration === 'underline' ? 'default' : 'outline'}
               size="sm"
               onClick={onToggleUnderline}
+              title="Underline"
             >
               <Underline className="h-4 w-4" />
             </Button>
           </div>
+
+          <Separator orientation="vertical" className="h-6" />
+
+          {/* Text Transform */}
+          <div className="flex items-center gap-1">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" title="Text Transform">
+                  <CaseSensitive className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-2" align="start">
+                <div className="flex flex-col gap-1">
+                  <Button
+                    variant={currentStyle.textTransform === 'uppercase' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => handleTextTransform('uppercase')}
+                    className="justify-start"
+                  >
+                    <CaseUpper className="h-4 w-4 mr-2" />
+                    UPPERCASE
+                  </Button>
+                  <Button
+                    variant={currentStyle.textTransform === 'lowercase' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => handleTextTransform('lowercase')}
+                    className="justify-start"
+                  >
+                    <CaseLower className="h-4 w-4 mr-2" />
+                    lowercase
+                  </Button>
+                  <Button
+                    variant={currentStyle.textTransform === 'capitalize' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => handleTextTransform('capitalize')}
+                    className="justify-start"
+                  >
+                    <CaseSensitive className="h-4 w-4 mr-2" />
+                    Capitalize
+                  </Button>
+                  <Button
+                    variant={currentStyle.textTransform === 'none' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => handleTextTransform('none')}
+                    className="justify-start"
+                  >
+                    <Type className="h-4 w-4 mr-2" />
+                    Normal
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+          
+          <Separator orientation="vertical" className="h-6" />
 
           {/* Alignment */}
           <div className="flex items-center gap-1">
@@ -600,7 +698,7 @@ export const ResponsiveToolbar = ({
 
   if (isMobile) {
     return (
-      <div className="bg-white border-b px-4 py-2">
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b px-4 py-2 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sheet>
@@ -633,7 +731,7 @@ export const ResponsiveToolbar = ({
   }
 
   return (
-    <div className="bg-white border-b px-4 py-2 overflow-x-auto">
+    <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b px-4 py-2 overflow-x-auto shadow-sm">
       <DesktopToolbar />
     </div>
   );

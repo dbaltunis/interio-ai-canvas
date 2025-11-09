@@ -128,42 +128,55 @@ export const DocumentBlock = ({
     
     return (
       <div className="absolute inset-0 pointer-events-none">
-        {/* Selection indicator - thin blue outline */}
+        {/* Selection indicator - prominent blue outline when selected */}
         {isSelected && (
-          <div className="absolute inset-0 border-2 border-blue-500 rounded pointer-events-none" />
+          <div className="absolute inset-0 border-2 border-primary rounded shadow-lg pointer-events-none" />
         )}
         
-        {/* Control buttons - positioned at top-right */}
-        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
+        {/* Hover indicator - lighter when just hovering */}
+        {!isSelected && showControls && (
+          <div className="absolute inset-0 border border-primary/40 rounded pointer-events-none" />
+        )}
+        
+        {/* Control buttons - positioned at top-right, larger and more visible */}
+        <div className="absolute -top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-auto">
           <Button
             variant="secondary"
             size="sm"
             {...attributes}
             {...listeners}
-            className="h-6 w-6 p-0 cursor-move"
+            className="h-8 w-8 p-0 cursor-move shadow-md hover:shadow-lg bg-background border"
             title="Drag to reorder"
           >
-            <GripVertical className="h-3 w-3" />
+            <GripVertical className="h-4 w-4" />
           </Button>
           <Button
-            variant="secondary"
+            variant={isEditing ? "default" : "secondary"}
             size="sm"
             onClick={() => setIsEditing(!isEditing)}
-            className="h-6 w-6 p-0"
-            title="Edit content"
+            className="h-8 w-8 p-0 shadow-md hover:shadow-lg bg-background border"
+            title={isEditing ? "Done editing" : "Edit content"}
           >
-            <Settings className="h-3 w-3" />
+            <Settings className="h-4 w-4" />
           </Button>
           <Button
             variant="secondary"
             size="sm"
             onClick={onRemove}
-            className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+            className="h-8 w-8 p-0 text-destructive hover:text-destructive shadow-md hover:shadow-lg bg-background border"
             title="Delete block"
           >
-            <Trash2 className="h-3 w-3" />
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
+        
+        {/* Editing mode indicator */}
+        {isEditing && (
+          <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-3 py-1 rounded-md text-xs font-medium shadow-md pointer-events-auto flex items-center gap-2">
+            <Settings className="h-3 w-3" />
+            Editing Mode - Click fields to edit
+          </div>
+        )}
       </div>
     );
   };
@@ -172,7 +185,7 @@ export const DocumentBlock = ({
     <div 
       ref={setNodeRef} 
       style={style}
-      className={`relative group ${isInEditor ? 'hover:bg-blue-50/20' : ''}`}
+      className={`relative group transition-all ${isInEditor ? 'hover:bg-primary/5 cursor-pointer' : ''} ${isSelected ? 'ring-2 ring-primary ring-offset-2' : ''}`}
       onClick={isInEditor ? onSelect : undefined}
       onMouseEnter={() => setShowControls(true)}
       onMouseLeave={() => setShowControls(false)}
@@ -234,13 +247,14 @@ const HeaderContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => {
               onBlur={() => setEditingField(null)}
               onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
               autoFocus
-              className="text-xl font-bold border-none p-0 focus:ring-0 bg-transparent text-white"
+              className="text-xl font-bold border-2 border-primary p-2 focus:ring-2 focus:ring-primary bg-white text-foreground rounded"
             />
           ) : (
             <h2 
-              className={`text-2xl font-bold ${isEditing ? 'cursor-pointer hover:bg-white/10 rounded px-2 py-1' : ''}`}
+              className={`text-2xl font-bold transition-all ${isEditing ? 'cursor-pointer hover:bg-white/20 rounded px-2 py-1 border border-dashed border-transparent hover:border-white/40' : ''}`}
               onClick={() => isEditing && setEditingField('companyName')}
               style={{ color: safeContent.style?.primaryColor || '#ffffff' }}
+              title={isEditing ? 'Click to edit company name' : ''}
             >
               {safeContent.companyName}
             </h2>
@@ -254,12 +268,13 @@ const HeaderContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => {
                 onBlur={() => setEditingField(null)}
                 onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
                 autoFocus
-                className="border-none p-0 focus:ring-0 bg-transparent text-white"
+                className="border-2 border-primary p-2 focus:ring-2 focus:ring-primary bg-white text-foreground rounded"
               />
             ) : (
               <div 
-                className={`${isEditing ? 'cursor-pointer hover:bg-white/10 rounded px-2 py-1' : ''}`}
+                className={`${isEditing ? 'cursor-pointer hover:bg-white/20 rounded px-2 py-1 border border-dashed border-transparent hover:border-white/40' : ''}`}
                 onClick={() => isEditing && setEditingField('companyAddress')}
+                title={isEditing ? 'Click to edit address' : ''}
               >
                 {safeContent.companyAddress}
               </div>
@@ -272,12 +287,13 @@ const HeaderContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => {
                 onBlur={() => setEditingField(null)}
                 onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
                 autoFocus
-                className="border-none p-0 focus:ring-0 bg-transparent text-white"
+                className="border-2 border-primary p-2 focus:ring-2 focus:ring-primary bg-white text-foreground rounded"
               />
             ) : (
               <div 
-                className={`${isEditing ? 'cursor-pointer hover:bg-white/10 rounded px-2 py-1' : ''}`}
+                className={`${isEditing ? 'cursor-pointer hover:bg-white/20 rounded px-2 py-1 border border-dashed border-transparent hover:border-white/40' : ''}`}
                 onClick={() => isEditing && setEditingField('companyPhone')}
+                title={isEditing ? 'Click to edit phone' : ''}
               >
                 {safeContent.companyPhone}
               </div>
@@ -290,12 +306,13 @@ const HeaderContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => {
                 onBlur={() => setEditingField(null)}
                 onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
                 autoFocus
-                className="border-none p-0 focus:ring-0 bg-transparent text-white"
+                className="border-2 border-primary p-2 focus:ring-2 focus:ring-primary bg-white text-foreground rounded"
               />
             ) : (
               <div 
-                className={`${isEditing ? 'cursor-pointer hover:bg-white/10 rounded px-2 py-1' : ''}`}
+                className={`${isEditing ? 'cursor-pointer hover:bg-white/20 rounded px-2 py-1 border border-dashed border-transparent hover:border-white/40' : ''}`}
                 onClick={() => isEditing && setEditingField('companyEmail')}
+                title={isEditing ? 'Click to edit email' : ''}
               >
                 {safeContent.companyEmail}
               </div>
@@ -333,20 +350,25 @@ const ClientInfoContent = ({ content, onUpdate, isEditing, setIsEditing }: any) 
 const TextContent = ({ content, onUpdate, isEditing, setIsEditing }: any) => {
   if (isEditing) {
     return (
-      <Textarea
-        value={content.text || ''}
-        onChange={(e) => onUpdate({ ...content, text: e.target.value })}
-        onBlur={() => setIsEditing(false)}
-        className="border-none p-0 focus:ring-0 resize-none"
-        autoFocus
-      />
+      <div className="relative">
+        <Textarea
+          value={content.text || ''}
+          onChange={(e) => onUpdate({ ...content, text: e.target.value })}
+          onBlur={() => setIsEditing(false)}
+          className="border-2 border-primary p-3 focus:ring-2 focus:ring-primary resize-none min-h-[100px] bg-background"
+          autoFocus
+          placeholder="Enter your text here..."
+        />
+        <div className="text-xs text-muted-foreground mt-1">Press Tab or click outside to finish editing</div>
+      </div>
     );
   }
 
   return (
     <div 
-      className={`${isEditing ? 'cursor-pointer hover:bg-yellow-100' : ''}`}
+      className={`min-h-[60px] p-2 rounded transition-all ${isEditing ? 'cursor-pointer hover:bg-accent/50 border border-dashed border-accent-foreground/30' : 'cursor-pointer hover:bg-accent/20'}`}
       onClick={() => setIsEditing(true)}
+      title="Click to edit text"
     >
       {content.text || 'Click to edit text'}
     </div>
