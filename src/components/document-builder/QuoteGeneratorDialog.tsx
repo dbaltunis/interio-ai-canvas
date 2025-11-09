@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, FileText, Download } from "lucide-react";
+import { Loader2, FileText, Download, Eye } from "lucide-react";
 import { useDocumentTemplates } from "@/hooks/useDocumentTemplates";
 import { QuotePDFExporter } from "./QuotePDFExporter";
+import { TemplatePreviewModal } from "./TemplatePreviewModal";
 import { bindDataToCanvas } from "@/utils/quoteDataBinding";
 import { toast } from "sonner";
 
@@ -19,6 +20,13 @@ export const QuoteGeneratorDialog = ({ isOpen, onClose, quoteData }: QuoteGenera
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [shouldExport, setShouldExport] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState<any>(null);
+
+  const handlePreview = (template: any) => {
+    setPreviewTemplate(template);
+    setIsPreviewOpen(true);
+  };
 
   const handleGenerateQuote = async (template: any) => {
     try {
@@ -74,8 +82,7 @@ export const QuoteGeneratorDialog = ({ isOpen, onClose, quoteData }: QuoteGenera
                 {activeTemplates.map((template) => (
                   <div
                     key={template.id}
-                    className="group relative border-2 border-border rounded-lg overflow-hidden hover:border-primary/50 transition-all cursor-pointer"
-                    onClick={() => !isGenerating && handleGenerateQuote(template)}
+                    className="group relative border-2 border-border rounded-lg overflow-hidden hover:border-primary/50 transition-all"
                   >
                     <div className="aspect-[1/1.4] bg-gradient-to-br from-muted/30 to-muted/10 flex items-center justify-center">
                       <FileText className="h-16 w-16 text-muted-foreground/30" />
@@ -83,28 +90,41 @@ export const QuoteGeneratorDialog = ({ isOpen, onClose, quoteData }: QuoteGenera
                     
                     <div className="p-4 bg-background">
                       <h3 className="font-semibold text-sm mb-1 truncate">{template.name}</h3>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground mb-3">
                         {template.document_type === 'quote' ? 'Quote Template' : 'Document'}
                       </p>
-                    </div>
 
-                    <Button
-                      size="sm"
-                      className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity"
-                      disabled={isGenerating}
-                    >
-                      {isGenerating ? (
-                        <>
-                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        <>
-                          <Download className="h-3 w-3 mr-1" />
-                          Generate
-                        </>
-                      )}
-                    </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 h-8"
+                          onClick={() => handlePreview(template)}
+                          disabled={isGenerating}
+                        >
+                          <Eye className="h-3 w-3 mr-1" />
+                          Preview
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="flex-1 h-8 bg-gradient-to-r from-primary to-accent"
+                          onClick={() => handleGenerateQuote(template)}
+                          disabled={isGenerating}
+                        >
+                          {isGenerating ? (
+                            <>
+                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <Download className="h-3 w-3 mr-1" />
+                              Generate
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -112,6 +132,17 @@ export const QuoteGeneratorDialog = ({ isOpen, onClose, quoteData }: QuoteGenera
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      {/* Template Preview Modal */}
+      {previewTemplate && (
+        <TemplatePreviewModal
+          isOpen={isPreviewOpen}
+          onClose={() => setIsPreviewOpen(false)}
+          template={previewTemplate}
+          quoteData={quoteData}
+          onGeneratePDF={() => handleGenerateQuote(previewTemplate)}
+        />
+      )}
 
       {/* Hidden PDF exporter */}
       {shouldExport && selectedTemplate && (
