@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { OnlineStore } from "@/types/online-store";
 import { useStoreStats } from "@/hooks/useStoreStats";
-import { ExternalLink, Edit, Package, MessageSquare, Globe, Settings, Eye, EyeOff } from "lucide-react";
+import { ExternalLink, Edit, Package, MessageSquare, Globe, Settings, Eye, EyeOff, ShoppingCart } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,9 +14,10 @@ interface StoreDashboardProps {
   onEditPages: () => void;
   onManageProducts: () => void;
   onViewSettings: () => void;
+  onViewOrders: () => void;
 }
 
-export const StoreDashboard = ({ store, onEditPages, onManageProducts, onViewSettings }: StoreDashboardProps) => {
+export const StoreDashboard = ({ store, onEditPages, onManageProducts, onViewSettings, onViewOrders }: StoreDashboardProps) => {
   const { data: stats } = useStoreStats(store.id);
   const queryClient = useQueryClient();
 
@@ -111,6 +112,10 @@ export const StoreDashboard = ({ store, onEditPages, onManageProducts, onViewSet
             <Button variant="outline" onClick={onManageProducts}>
               <Package className="h-4 w-4 mr-2" />
               Manage Products
+            </Button>
+            <Button variant="outline" onClick={onViewOrders}>
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              View Orders
             </Button>
             <Button variant="outline" onClick={onViewSettings}>
               <Settings className="h-4 w-4 mr-2" />
