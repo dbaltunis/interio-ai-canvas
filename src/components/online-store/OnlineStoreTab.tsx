@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { OnlineStore } from "@/types/online-store";
 import { QuickStoreSetup } from "./QuickStoreSetup";
 import { StoreDashboard } from "./StoreDashboard";
-import { StoreProductManager } from "./StoreProductManager";
+import { ProductCatalogManager } from "./product-catalog/ProductCatalogManager";
 import { StorePageEditor } from "./StorePageEditor";
 import { StoreSettingsTab } from "./StoreSettingsTab";
 import { Button } from "@/components/ui/button";
@@ -131,7 +131,7 @@ export const OnlineStoreTab = () => {
           <Button variant="outline" onClick={() => setActiveView('dashboard')}>
             ← Back to Dashboard
           </Button>
-          <StoreProductManager storeId={store.id} />
+          <ProductCatalogManager storeId={store.id} />
         </>
       ) : activeView === 'pages' ? (
         <StorePageEditor 
