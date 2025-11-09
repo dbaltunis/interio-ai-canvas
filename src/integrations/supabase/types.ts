@@ -4417,6 +4417,78 @@ export type Database = {
         }
         Relationships: []
       }
+      online_stores: {
+        Row: {
+          accent_color: string | null
+          created_at: string
+          custom_domain: string | null
+          domain_verified: boolean | null
+          font_family: string | null
+          google_analytics_id: string | null
+          id: string
+          is_published: boolean | null
+          logo_url: string | null
+          payment_provider: string | null
+          paypal_account_id: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          seo_description: string | null
+          seo_title: string | null
+          store_name: string
+          store_slug: string
+          stripe_account_id: string | null
+          template_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accent_color?: string | null
+          created_at?: string
+          custom_domain?: string | null
+          domain_verified?: boolean | null
+          font_family?: string | null
+          google_analytics_id?: string | null
+          id?: string
+          is_published?: boolean | null
+          logo_url?: string | null
+          payment_provider?: string | null
+          paypal_account_id?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          store_name: string
+          store_slug: string
+          stripe_account_id?: string | null
+          template_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accent_color?: string | null
+          created_at?: string
+          custom_domain?: string | null
+          domain_verified?: boolean | null
+          font_family?: string | null
+          google_analytics_id?: string | null
+          id?: string
+          is_published?: boolean | null
+          logo_url?: string | null
+          payment_provider?: string | null
+          paypal_account_id?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          store_name?: string
+          store_slug?: string
+          stripe_account_id?: string | null
+          template_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       option_rules: {
         Row: {
           active: boolean | null
@@ -6519,6 +6591,253 @@ export type Database = {
           updated_at?: string
           user_id?: string
           variables?: Json | null
+        }
+        Relationships: []
+      }
+      store_inquiries: {
+        Row: {
+          configuration_data: Json | null
+          created_at: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string | null
+          id: string
+          inquiry_type: string
+          ip_address: string | null
+          message: string | null
+          product_id: string | null
+          quote_data: Json | null
+          status: string | null
+          store_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          configuration_data?: Json | null
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          customer_phone?: string | null
+          id?: string
+          inquiry_type?: string
+          ip_address?: string | null
+          message?: string | null
+          product_id?: string | null
+          quote_data?: Json | null
+          status?: string | null
+          store_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          configuration_data?: Json | null
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string | null
+          id?: string
+          inquiry_type?: string
+          ip_address?: string | null
+          message?: string | null
+          product_id?: string | null
+          quote_data?: Json | null
+          status?: string | null
+          store_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_inquiries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_inquiries_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "online_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_page_sections: {
+        Row: {
+          content: Json | null
+          created_at: string
+          id: string
+          is_visible: boolean | null
+          page_id: string
+          section_type: string
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          content?: Json | null
+          created_at?: string
+          id?: string
+          is_visible?: boolean | null
+          page_id: string
+          section_type: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          content?: Json | null
+          created_at?: string
+          id?: string
+          is_visible?: boolean | null
+          page_id?: string
+          section_type?: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_page_sections_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "store_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_pages: {
+        Row: {
+          content: Json | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          page_type: string
+          seo_description: string | null
+          seo_title: string | null
+          slug: string
+          sort_order: number | null
+          store_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          page_type: string
+          seo_description?: string | null
+          seo_title?: string | null
+          slug: string
+          sort_order?: number | null
+          store_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          page_type?: string
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string
+          sort_order?: number | null
+          store_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_pages_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "online_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_product_visibility: {
+        Row: {
+          created_at: string
+          custom_description: string | null
+          custom_images: Json | null
+          id: string
+          inventory_item_id: string
+          is_featured: boolean | null
+          is_visible: boolean | null
+          sort_order: number | null
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          custom_description?: string | null
+          custom_images?: Json | null
+          id?: string
+          inventory_item_id: string
+          is_featured?: boolean | null
+          is_visible?: boolean | null
+          sort_order?: number | null
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          custom_description?: string | null
+          custom_images?: Json | null
+          id?: string
+          inventory_item_id?: string
+          is_featured?: boolean | null
+          is_visible?: boolean | null
+          sort_order?: number | null
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_product_visibility_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_product_visibility_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "online_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_templates: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          preview_image_url: string | null
+          template_config: Json
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id: string
+          is_default?: boolean | null
+          name: string
+          preview_image_url?: string | null
+          template_config?: Json
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          preview_image_url?: string | null
+          template_config?: Json
         }
         Relationships: []
       }
