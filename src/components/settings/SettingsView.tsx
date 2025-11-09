@@ -19,7 +19,7 @@ import { InteractiveOnboarding } from "./InteractiveOnboarding";
 import { NotificationManagementTab } from "./tabs/NotificationManagementTab";
 import { EnhancedPersonalizationTab } from "./tabs/EnhancedPersonalizationTab";
 import { SecurityPrivacyTab } from "./tabs/SecurityPrivacyTab";
-import { VisualQuoteDesigner } from "../document-builder/VisualQuoteDesigner";
+import { DocumentBuilderContainer } from "../document-builder/DocumentBuilderContainer";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useHasPermission } from "@/hooks/usePermissions";
@@ -241,12 +241,8 @@ export const SettingsView = () => {
         )}
 
         {canViewSettings && (
-          <TabsContent value="document-builder" className="animate-fade-in">
-            <Card className="hover:shadow-md transition-all duration-300">
-              <CardContent className="p-6">
-                <VisualQuoteDesigner />
-              </CardContent>
-            </Card>
+          <TabsContent value="document-builder" className="mt-0 h-[calc(100vh-12rem)]">
+            <DocumentBuilderContainer />
           </TabsContent>
         )}
 

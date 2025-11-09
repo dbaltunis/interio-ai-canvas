@@ -19,13 +19,17 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useCreateDocumentTemplate, useUpdateDocumentTemplate } from '@/hooks/useDocumentTemplates';
 
-export const VisualQuoteDesigner = () => {
+interface VisualQuoteDesignerProps {
+  template?: any;
+}
+
+export const VisualQuoteDesigner = ({ template }: VisualQuoteDesignerProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [activeTool, setActiveTool] = useState<'select' | 'text' | 'image' | 'rectangle' | 'circle'>('select');
   const [selectedObject, setSelectedObject] = useState<any>(null);
-  const [templateName, setTemplateName] = useState('My Quote Template');
-  const [currentTemplateId, setCurrentTemplateId] = useState<string | null>(null);
+  const [templateName, setTemplateName] = useState(template?.name || 'My Quote Template');
+  const [currentTemplateId, setCurrentTemplateId] = useState<string | null>(template?.id || null);
   
   const { toast } = useToast();
   const createTemplate = useCreateDocumentTemplate();
@@ -66,6 +70,26 @@ export const VisualQuoteDesigner = () => {
       canvas.dispose();
     };
   }, []);
+
+  // Load template when provided
+  useEffect(() => {
+    if (!fabricCanvas || !template?.blocks) return;
+    
+    try {
+      const canvasData = Array.isArray(template.blocks) ? template.blocks[0] : template.blocks;
+      fabricCanvas.loadFromJSON(canvasData, () => {
+        fabricCanvas.renderAll();
+        toast({
+          title: 'Template Loaded',
+          description: 'Your template has been loaded successfully.',
+        });
+      });
+      setTemplateName(template.name);
+      setCurrentTemplateId(template.id);
+    } catch (error) {
+      console.error('Error loading template:', error);
+    }
+  }, [fabricCanvas, template]);
 
   // Add text element
   const addText = () => {
