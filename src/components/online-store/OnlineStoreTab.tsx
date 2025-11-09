@@ -2,14 +2,14 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { OnlineStore } from "@/types/online-store";
-import { StoreCreationFlow } from "./StoreCreationFlow";
+import { QuickStoreSetup } from "./QuickStoreSetup";
 import { StoreDashboard } from "./StoreDashboard";
 import { StoreProductManager } from "./StoreProductManager";
 import { StorePageEditor } from "./StorePageEditor";
 import { StoreSettingsTab } from "./StoreSettingsTab";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Store, Sparkles } from "lucide-react";
+import { Store, Sparkles, Zap, Calendar } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const OnlineStoreTab = () => {
@@ -56,53 +56,62 @@ export const OnlineStoreTab = () => {
             </div>
             <CardTitle>Launch Your Online Store</CardTitle>
             <CardDescription>
-              Create a beautiful online store in minutes. Showcase your products, accept inquiries, and grow your business.
+              Launch your store in 3 steps. Accept orders, bookings, and start selling immediately.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-4 gap-4">
               <div className="text-center p-4">
-                <div className="mx-auto w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                  <Sparkles className="h-5 w-5 text-primary" />
+                <div className="mx-auto w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center mb-3">
+                  <Sparkles className="h-6 w-6 text-white" />
                 </div>
-                <h3 className="font-semibold mb-2">Choose Template</h3>
-                <p className="text-sm text-muted-foreground">
-                  Select from 5 professionally designed templates
+                <h3 className="font-semibold mb-2">Pick Template</h3>
+                <p className="text-xs text-muted-foreground">
+                  Choose your style in 10 seconds
                 </p>
               </div>
               <div className="text-center p-4">
-                <div className="mx-auto w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                  <Store className="h-5 w-5 text-primary" />
+                <div className="mx-auto w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-3">
+                  <Store className="h-6 w-6 text-white" />
                 </div>
-                <h3 className="font-semibold mb-2">Customize Store</h3>
-                <p className="text-sm text-muted-foreground">
-                  Add your branding, products, and content
+                <h3 className="font-semibold mb-2">Auto-Setup</h3>
+                <p className="text-xs text-muted-foreground">
+                  Products & branding added automatically
                 </p>
               </div>
               <div className="text-center p-4">
-                <div className="mx-auto w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                  <Store className="h-5 w-5 text-primary" />
+                <div className="mx-auto w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-orange-500 flex items-center justify-center mb-3">
+                  <Calendar className="h-6 w-6 text-white" />
                 </div>
-                <h3 className="font-semibold mb-2">Go Live</h3>
-                <p className="text-sm text-muted-foreground">
-                  Publish your store and start receiving inquiries
+                <h3 className="font-semibold mb-2">Book Appointments</h3>
+                <p className="text-xs text-muted-foreground">
+                  Built-in booking system included
+                </p>
+              </div>
+              <div className="text-center p-4">
+                <div className="mx-auto w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-yellow-500 flex items-center justify-center mb-3">
+                  <Zap className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="font-semibold mb-2">Instant Live</h3>
+                <p className="text-xs text-muted-foreground">
+                  Store published immediately
                 </p>
               </div>
             </div>
 
-            <div className="flex justify-center pt-4">
-              <Button size="lg" onClick={() => setShowCreationFlow(true)}>
-                <Store className="h-5 w-5 mr-2" />
-                Launch Online Store
+            <div className="flex justify-center pt-6">
+              <Button size="lg" onClick={() => setShowCreationFlow(true)} className="text-lg px-8 py-6">
+                <Zap className="h-6 w-6 mr-2" />
+                Launch Store in 2 Minutes
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        <StoreCreationFlow
+        <QuickStoreSetup
           open={showCreationFlow}
           onOpenChange={setShowCreationFlow}
-          onComplete={() => {}}
+          onComplete={() => setShowCreationFlow(false)}
         />
       </>
     );
