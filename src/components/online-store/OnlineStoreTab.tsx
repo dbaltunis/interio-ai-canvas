@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export const OnlineStoreTab = () => {
   const [showCreationFlow, setShowCreationFlow] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'products'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'products' | 'pages' | 'settings'>('dashboard');
 
   const { data: store, isLoading } = useQuery({
     queryKey: ['online-store'],
@@ -111,16 +111,54 @@ export const OnlineStoreTab = () => {
       {activeView === 'dashboard' ? (
         <StoreDashboard
           store={store}
-          onEditPages={() => {}}
+          onEditPages={() => setActiveView('pages')}
           onManageProducts={() => setActiveView('products')}
-          onViewSettings={() => {}}
+          onViewSettings={() => setActiveView('settings')}
         />
-      ) : (
+      ) : activeView === 'products' ? (
         <>
           <Button variant="outline" onClick={() => setActiveView('dashboard')}>
             ← Back to Dashboard
           </Button>
           <StoreProductManager storeId={store.id} />
+        </>
+      ) : activeView === 'pages' ? (
+        <>
+          <Button variant="outline" onClick={() => setActiveView('dashboard')}>
+            ← Back to Dashboard
+          </Button>
+          <Card>
+            <CardHeader>
+              <CardTitle>Page Editor</CardTitle>
+              <CardDescription>
+                Edit your store pages (Coming in Phase 2)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                The visual page editor is coming soon. For now, you can visit your store to see how it looks.
+              </p>
+            </CardContent>
+          </Card>
+        </>
+      ) : (
+        <>
+          <Button variant="outline" onClick={() => setActiveView('dashboard')}>
+            ← Back to Dashboard
+          </Button>
+          <Card>
+            <CardHeader>
+              <CardTitle>Store Settings</CardTitle>
+              <CardDescription>
+                Configure your store settings (Coming in Phase 2)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Store settings editor is coming soon. This will include domain setup, SEO, and branding options.
+              </p>
+            </CardContent>
+          </Card>
         </>
       )}
     </div>

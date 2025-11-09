@@ -24,6 +24,18 @@ export const StoreDashboard = ({ store, onEditPages, onManageProducts, onViewSet
     ? `https://${store.custom_domain}`
     : `${window.location.origin}/store/${store.store_slug}`;
 
+  const handleViewStore = () => {
+    if (!store.is_published) {
+      toast({
+        title: "Store Not Published",
+        description: "Please publish your store first to view it.",
+        variant: "destructive",
+      });
+      return;
+    }
+    window.open(storeUrl, '_blank');
+  };
+
   const togglePublish = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
@@ -61,7 +73,8 @@ export const StoreDashboard = ({ store, onEditPages, onManageProducts, onViewSet
                   variant="ghost"
                   size="sm"
                   className="h-6 px-2"
-                  onClick={() => window.open(storeUrl, '_blank')}
+                  onClick={handleViewStore}
+                  title={store.is_published ? "View store in new tab" : "Publish store to view"}
                 >
                   <ExternalLink className="h-3 w-3" />
                 </Button>
@@ -85,6 +98,12 @@ export const StoreDashboard = ({ store, onEditPages, onManageProducts, onViewSet
                 <><Eye className="h-4 w-4 mr-2" />Publish Store</>
               )}
             </Button>
+            {store.is_published && (
+              <Button variant="default" onClick={handleViewStore}>
+                <ExternalLink className="h-4 w-4 mr-2" />
+                View Store
+              </Button>
+            )}
             <Button variant="outline" onClick={onEditPages}>
               <Edit className="h-4 w-4 mr-2" />
               Edit Pages
