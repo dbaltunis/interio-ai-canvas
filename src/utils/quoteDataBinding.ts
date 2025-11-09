@@ -119,38 +119,62 @@ export const bindDataToCanvas = (canvasJSON: any, data: QuoteData): any => {
 };
 
 /**
- * Generate product table HTML from line items
+ * Generate product table HTML from line items with optional totals
  */
-export const generateProductTableHTML = (items: QuoteData['items']): string => {
+export const generateProductTableHTML = (items: QuoteData['items'], subtotal?: number, taxAmount?: number, total?: number): string => {
   if (!items || items.length === 0) {
-    return '<p>No items in this quote</p>';
+    return `
+      <div style="padding: 40px; text-align: center; color: #9ca3af; background: #f9fafb; border-radius: 8px;">
+        <p>No items added to this quote yet</p>
+      </div>
+    `;
   }
-  
-  const rows = items.map(item => `
-    <tr class="border-b border-gray-200">
-      <td class="py-3 px-4">
-        <div class="font-medium text-gray-900">${item.name}</div>
-        ${item.description ? `<div class="text-sm text-gray-500">${item.description}</div>` : ''}
-      </td>
-      <td class="py-3 px-4 text-center">${item.quantity}</td>
-      <td class="py-3 px-4 text-right">${formatCurrency(item.price)}</td>
-      <td class="py-3 px-4 text-right font-medium">${formatCurrency(item.total)}</td>
-    </tr>
-  `).join('');
-  
+
+  const rows = items
+    .map(item => `
+      <tr style="border-bottom: 1px solid #e5e7eb;">
+        <td style="padding: 16px 12px; text-align: left;">
+          <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">${item.name || 'Item'}</div>
+          ${item.description ? `<div style="font-size: 12px; color: #6b7280;">${item.description}</div>` : ''}
+        </td>
+        <td style="padding: 16px 12px; text-align: center; color: #4b5563;">${item.quantity || 1}</td>
+        <td style="padding: 16px 12px; text-align: right; color: #4b5563;">${formatCurrency(item.price || 0)}</td>
+        <td style="padding: 16px 12px; text-align: right; font-weight: 600; color: #1f2937;">${formatCurrency(item.total || (item.price || 0) * (item.quantity || 1))}</td>
+      </tr>
+    `)
+    .join('');
+
+  const totalsSection = (subtotal !== undefined && taxAmount !== undefined && total !== undefined) ? `
+    <tfoot>
+      <tr style="border-top: 2px solid #e5e7eb;">
+        <td colspan="3" style="padding: 12px; text-align: right; font-weight: 600; color: #6b7280;">Subtotal:</td>
+        <td style="padding: 12px; text-align: right; font-weight: 600; color: #1f2937;">${formatCurrency(subtotal)}</td>
+      </tr>
+      <tr>
+        <td colspan="3" style="padding: 12px; text-align: right; font-weight: 600; color: #6b7280;">Tax:</td>
+        <td style="padding: 12px; text-align: right; font-weight: 600; color: #1f2937;">${formatCurrency(taxAmount)}</td>
+      </tr>
+      <tr style="border-top: 2px solid #e5e7eb; background: #f9fafb;">
+        <td colspan="3" style="padding: 16px 12px; text-align: right; font-weight: 700; color: #1f2937; font-size: 16px;">Total:</td>
+        <td style="padding: 16px 12px; text-align: right; font-weight: 700; color: #1f2937; font-size: 16px;">${formatCurrency(total)}</td>
+      </tr>
+    </tfoot>
+  ` : '';
+
   return `
-    <table class="w-full" style="border-collapse: collapse;">
+    <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
       <thead>
-        <tr class="bg-gray-50 border-b-2 border-gray-300">
-          <th class="py-3 px-4 text-left font-semibold text-gray-700">Item</th>
-          <th class="py-3 px-4 text-center font-semibold text-gray-700">Qty</th>
-          <th class="py-3 px-4 text-right font-semibold text-gray-700">Price</th>
-          <th class="py-3 px-4 text-right font-semibold text-gray-700">Total</th>
+        <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+          <th style="padding: 16px 12px; text-align: left; font-weight: 600; color: #374151; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;">Item</th>
+          <th style="padding: 16px 12px; text-align: center; font-weight: 600; color: #374151; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;">Qty</th>
+          <th style="padding: 16px 12px; text-align: right; font-weight: 600; color: #374151; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;">Unit Price</th>
+          <th style="padding: 16px 12px; text-align: right; font-weight: 600; color: #374151; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;">Total</th>
         </tr>
       </thead>
       <tbody>
         ${rows}
       </tbody>
+      ${totalsSection}
     </table>
   `;
 };

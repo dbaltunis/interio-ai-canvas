@@ -120,7 +120,15 @@ export const QuoteGeneratorDialog = ({ isOpen, onClose, quoteData }: QuoteGenera
             Array.isArray(selectedTemplate.blocks) ? selectedTemplate.blocks[0] : selectedTemplate.blocks,
             quoteData
           )}
-          quoteData={quoteData}
+          quoteData={{
+            client: quoteData.client,
+            business: quoteData.business,
+            quote: quoteData.quote,
+            items: quoteData.items || [],
+            subtotal: quoteData.quote?.subtotal || 0,
+            taxAmount: quoteData.quote?.tax || 0,
+            total: quoteData.quote?.total || 0,
+          }}
           filename={`quote-${quoteData.quote?.number || 'draft'}.pdf`}
           onExportComplete={handleExportComplete}
         />

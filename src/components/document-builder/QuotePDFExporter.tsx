@@ -56,7 +56,7 @@ export const QuotePDFExporter = ({
             ${quoteData.items ? `
               <div style="margin-top: 40px;">
                 <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 20px; color: #1f2937;">Line Items</h2>
-                ${generateProductTableHTML(quoteData.items)}
+                ${generateProductTableHTML(quoteData.items, quoteData.subtotal, quoteData.taxAmount, quoteData.total)}
               </div>
             ` : ''}
           </div>
