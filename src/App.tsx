@@ -227,13 +227,11 @@ const App = () => {
                   </ProtectedRoute>
                 } />
                 
-                {/* Documentation page */}
+                {/* Documentation page - public access */}
                 <Route path="/documentation" element={
-                  <ProtectedRoute>
-                    <ErrorBoundary>
-                      <DocumentationPage />
-                    </ErrorBoundary>
-                  </ProtectedRoute>
+                  <ErrorBoundary>
+                    <DocumentationPage />
+                  </ErrorBoundary>
                 } />
 
                 {/* Online Store Management */}
