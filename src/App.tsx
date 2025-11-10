@@ -34,7 +34,7 @@ import { ManualQuoteTest } from "./pages/ManualQuoteTest";
 import Billing from "./pages/Billing";
 import Purchasing from "./pages/Purchasing";
 import AdminBugManagement from "./pages/AdminBugManagement";
-import DocumentationPage from "./pages/DocumentationPage";
+import Documentation from "./pages/Documentation";
 import OnlineStore from "./pages/OnlineStore";
 
 const queryClient = new QueryClient({
@@ -227,11 +227,13 @@ const App = () => {
                   </ProtectedRoute>
                 } />
                 
-                {/* Documentation page - public access */}
+                {/* Documentation page */}
                 <Route path="/documentation" element={
-                  <ErrorBoundary>
-                    <DocumentationPage />
-                  </ErrorBoundary>
+                  <ProtectedRoute>
+                    <ErrorBoundary>
+                      <Documentation />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
                 } />
 
                 {/* Online Store Management */}

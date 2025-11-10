@@ -153,11 +153,9 @@ export const BugReportDialog = ({ className }: BugReportDialogProps) => {
               <div className="grid gap-4 mt-6">
                 <Card 
                   className="cursor-pointer hover:border-primary transition-colors"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
+                  onClick={() => {
                     setOpen(false);
-                    window.open('/documentation', '_blank', 'noopener,noreferrer');
+                    window.location.href = '/?tab=documentation';
                   }}
                 >
                   <CardHeader>

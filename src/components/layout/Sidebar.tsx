@@ -9,7 +9,8 @@ import {
   Package,
   BarChart3,
   UserPlus,
-  FileText
+  FileText,
+  BookOpen
 } from "lucide-react";
 import { BrandHeader } from "./BrandHeader";
 import { UserProfile } from "./UserProfile";
@@ -63,6 +64,12 @@ const Sidebar = () => {
       label: "Analytics",
       icon: BarChart3,
       show: canViewAnalytics
+    },
+    {
+      path: "/documentation",
+      label: "Documentation",
+      icon: BookOpen,
+      show: true // Documentation is always visible
     },
     {
       path: "/settings",

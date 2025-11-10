@@ -62,7 +62,7 @@ const DocumentationPage = () => {
                 <AccordionTrigger>Creating a Project</AccordionTrigger>
                 <AccordionContent>
                   Navigate to the Projects tab and click "New Project". Fill in the project details including
-                  client information, deadlines, and specifications.
+                  client information, deadlines, and specifications. You can also add measurements and materials.
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="item-2">
@@ -146,14 +146,20 @@ const DocumentationPage = () => {
           <div>
             <h3 className="font-semibold mb-2">Support</h3>
             <p className="text-sm text-muted-foreground">
-              If you encounter any issues or have questions, use the bug report button (bottom right) to report bugs and view all issues.
+              If you encounter any issues or have questions, use the bug report button (bottom right) to:
             </p>
+            <ul className="list-disc list-inside text-sm text-muted-foreground mt-2 space-y-1">
+              <li>Report bugs and technical issues</li>
+              <li>View all reported issues and their status</li>
+              <li>Check what's new in the latest version</li>
+            </ul>
           </div>
           <div>
             <h3 className="font-semibold mb-2">Tips & Tricks</h3>
             <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
               <li>Use keyboard shortcuts for faster navigation</li>
               <li>Set up recurring tasks for regular maintenance</li>
+              <li>Export your data regularly for backup purposes</li>
               <li>Utilize filters and search to find information quickly</li>
             </ul>
           </div>
