@@ -117,7 +117,6 @@ const App = () => {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <EmailRealtimeProvider>
             <TooltipProvider>
             {/* Ensure custom themes also apply the dark class */}
             <ThemeProvider
@@ -136,6 +135,7 @@ const App = () => {
               <BrowserRouter>
                 <NavObserver />
                 <AuthProvider>
+                  <EmailRealtimeProvider>
                   <BugReportDialog />
                   <Routes>
                 {/* Public store routes */}
@@ -257,11 +257,11 @@ const App = () => {
                 {/* Catch all other routes */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
+                  </EmailRealtimeProvider>
                   </AuthProvider>
                 </BrowserRouter>
               </ThemeProvider>
             </TooltipProvider>
-        </EmailRealtimeProvider>
       </QueryClientProvider>
       </ErrorBoundary>
     );
