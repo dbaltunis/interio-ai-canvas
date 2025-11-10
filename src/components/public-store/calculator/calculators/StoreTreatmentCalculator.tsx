@@ -12,6 +12,7 @@ import { useWindowCoveringOptions } from "@/hooks/useWindowCoveringOptions";
 import { useTreatmentTypes } from "@/hooks/useTreatmentTypes";
 import { useFabricCalculation } from "@/components/job-creation/treatment-pricing/useFabricCalculation";
 import { useTreatmentFormData } from "@/components/job-creation/treatment-pricing/useTreatmentFormData";
+import { useTreatmentTemplates } from "@/hooks/useTreatmentTemplates";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 
@@ -26,9 +27,29 @@ export const StoreTreatmentCalculator = ({ product, storeData, onSubmitQuote, on
   const [showQuoteForm, setShowQuoteForm] = useState(false);
   const [windowType, setWindowType] = useState("standard");
   
-  // Get the template assigned to this product (auto-loaded)
-  const template = product.template;
-  const treatmentType = template?.treatment_category || template?.curtain_type || 'curtains';
+  // Fetch all available templates
+  const { data: allTemplates } = useTreatmentTemplates();
+  
+  // Get the default template assigned to this product
+  const defaultTemplate = product.template;
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(defaultTemplate?.id || '');
+  
+  // Get current template (selected or default)
+  const template = useMemo(() => {
+    if (selectedTemplateId && allTemplates) {
+      return allTemplates.find(t => t.id === selectedTemplateId) || defaultTemplate;
+    }
+    return defaultTemplate;
+  }, [selectedTemplateId, allTemplates, defaultTemplate]);
+  
+  // Filter templates by product category
+  const compatibleTemplates = useMemo(() => {
+    if (!allTemplates) return [];
+    const productCategory = product.inventory_item?.category?.toLowerCase();
+    return allTemplates.filter(t => t.category?.toLowerCase() === productCategory);
+  }, [allTemplates, product.inventory_item?.category]);
+  
+  const treatmentType = template?.category || template?.curtain_type || 'curtains';
   
   // Initialize form data with template
   const { formData, handleInputChange } = useTreatmentFormData(treatmentType, {
@@ -215,21 +236,41 @@ export const StoreTreatmentCalculator = ({ product, storeData, onSubmitQuote, on
         </Card>
       )}
 
-      {/* Header showing template info */}
+      {/* Header with template selector */}
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between">
-            <div>
+            <div className="flex-1">
               <CardTitle className="flex items-center gap-2">
                 <Calculator className="h-5 w-5" />
-                Configure Your {template.name}
+                Configure Your Treatment
               </CardTitle>
               <CardDescription>
-                Enter your measurements to get an instant quote
+                Choose a style and enter measurements for an instant quote
               </CardDescription>
             </div>
           </div>
         </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Label htmlFor="template-selector">Treatment Style</Label>
+            <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+              <SelectTrigger id="template-selector">
+                <SelectValue placeholder="Choose a style..." />
+              </SelectTrigger>
+              <SelectContent>
+                {compatibleTemplates.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {template?.description && (
+              <p className="text-xs text-muted-foreground mt-1">{template.description}</p>
+            )}
+          </div>
+        </CardContent>
       </Card>
 
       {/* Measurements Input */}
