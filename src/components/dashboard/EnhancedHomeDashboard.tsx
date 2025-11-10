@@ -10,7 +10,7 @@ import { StatusOverviewWidget } from "./StatusOverviewWidget";
 import { RecentEmailsWidget } from "./RecentEmailsWidget";
 import { RevenuePieChart } from "./RevenuePieChart";
 import { CalendarConnectionCard } from "./CalendarConnectionCard";
-import { ShopifyConnectionCTA } from "./ShopifyConnectionCTA";
+import { OnlineStoreSetupWidget } from "./OnlineStoreSetupWidget";
 import { ShopifyAnalyticsCard } from "./ShopifyAnalyticsCard";
 import { ShopifyOrdersWidget } from "./ShopifyOrdersWidget";
 import { ShopifyProductsSyncWidget } from "./ShopifyProductsSyncWidget";
@@ -27,7 +27,7 @@ import { useEmailKPIs } from "@/hooks/useEmails";
 import { ShopifyIntegrationDialog } from "@/components/library/ShopifyIntegrationDialog";
 import { Users, FileText, Package, DollarSign, Mail, MousePointerClick, Clock, TrendingUp, Store, CalendarCheck } from "lucide-react";
 import { useHasPermission } from "@/hooks/usePermissions";
-import { OnlineStoreCTAWidget } from "./OnlineStoreCTAWidget";
+
 
 export const EnhancedHomeDashboard = () => {
   const [showShopifyDialog, setShowShopifyDialog] = useState(false);
@@ -196,8 +196,8 @@ export const EnhancedHomeDashboard = () => {
       {/* Header Section */}
       <WelcomeHeader onCustomizeClick={() => setShowWidgetCustomizer(true)} />
 
-      {/* Online Store CTA Widget - Show if no store exists */}
-      <OnlineStoreCTAWidget />
+      {/* Online Store Setup Widget */}
+      <OnlineStoreSetupWidget />
 
       {/* Dynamic Widgets Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -235,32 +235,7 @@ export const EnhancedHomeDashboard = () => {
                 <div key={widget.id} className={sizeClasses[widget.size]}>
                   <ShopifyAnalyticsCard />
                 </div>
-              ) : (
-                <Card 
-                  key={widget.id}
-                  className={`${sizeClasses[widget.size]} border border-border/50 bg-card/50 hover:border-primary/40 transition-colors cursor-pointer`}
-                  onClick={() => setShowShopifyDialog(true)}
-                >
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                      <Store className="h-4 w-4" />
-                      E-Commerce Integration
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="text-center py-6">
-                      <Store className="h-10 w-10 mx-auto mb-3 text-muted-foreground/20" />
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Connect your Shopify store to display products and orders
-                      </p>
-                      <Button size="sm" variant="outline" className="gap-2">
-                        <Store className="h-4 w-4" />
-                        Connect Store
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
+              ) : null;
             
             case "team":
               return <div key={widget.id} className={sizeClasses[widget.size]}><TeamMembersWidget /></div>;
