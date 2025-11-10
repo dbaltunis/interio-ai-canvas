@@ -151,6 +151,7 @@ const App = () => {
                     <PublicBookingPage />
                   </ErrorBoundary>
                 } />
+                <Route path="/book" element={<NotFound />} />
                 
                 {/* Invitation acceptance route */}
                 <Route path="/accept-invitation" element={
