@@ -153,7 +153,12 @@ export const BugReportDialog = ({ className }: BugReportDialogProps) => {
               <div className="grid gap-4 mt-6">
                 <Card 
                   className="cursor-pointer hover:border-primary transition-colors"
-                  onClick={() => window.open('https://docs.lovable.dev/', '_blank')}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const newWindow = window.open('https://docs.lovable.dev/', '_blank', 'noopener,noreferrer');
+                    if (newWindow) newWindow.opener = null;
+                  }}
                 >
                   <CardHeader>
                     <div className="flex items-start gap-4">
