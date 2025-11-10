@@ -157,7 +157,7 @@ export const BugReportDialog = ({ className }: BugReportDialogProps) => {
                     e.preventDefault();
                     e.stopPropagation();
                     setOpen(false);
-                    window.open('/?tab=documentation', '_blank', 'noopener,noreferrer');
+                    window.open('/documentation', '_blank', 'noopener,noreferrer');
                   }}
                 >
                   <CardHeader>

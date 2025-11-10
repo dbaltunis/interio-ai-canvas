@@ -34,6 +34,7 @@ import { ManualQuoteTest } from "./pages/ManualQuoteTest";
 import Billing from "./pages/Billing";
 import Purchasing from "./pages/Purchasing";
 import AdminBugManagement from "./pages/AdminBugManagement";
+import DocumentationPage from "./pages/DocumentationPage";
 import OnlineStore from "./pages/OnlineStore";
 
 const queryClient = new QueryClient({
@@ -222,6 +223,15 @@ const App = () => {
                   <ProtectedRoute>
                     <ErrorBoundary>
                       <ManualQuoteTest />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+                
+                {/* Documentation page */}
+                <Route path="/documentation" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary>
+                      <DocumentationPage />
                     </ErrorBoundary>
                   </ProtectedRoute>
                 } />
