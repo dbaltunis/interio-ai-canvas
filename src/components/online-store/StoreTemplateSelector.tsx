@@ -297,7 +297,7 @@ export const StoreTemplateSelector = ({ onSelectTemplate }: StoreTemplateSelecto
                     variant="outline"
                     onClick={() => window.open(previewTemplate.demo_url, '_blank')}
                   >
-                    <ExternalLink className="h-4 w-4 mr-2" />
+                    <Eye className="h-4 w-4 mr-2" />
                     View Live Demo
                   </Button>
                 )}
