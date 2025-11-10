@@ -35,6 +35,7 @@ import Billing from "./pages/Billing";
 import Purchasing from "./pages/Purchasing";
 import AdminBugManagement from "./pages/AdminBugManagement";
 import Documentation from "./pages/Documentation";
+import OnlineStore from "./pages/OnlineStore";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -230,6 +231,15 @@ const App = () => {
                   <ProtectedRoute>
                     <ErrorBoundary>
                       <Documentation />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+
+                {/* Online Store Management */}
+                <Route path="/online-store" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary>
+                      <OnlineStore />
                     </ErrorBoundary>
                   </ProtectedRoute>
                 } />
