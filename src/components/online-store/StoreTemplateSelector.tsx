@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Sparkles, Building2, Palette, Briefcase, Camera, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, Sparkles, Building2, Palette, Briefcase, Camera, Eye, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { StoreTemplate } from "@/types/online-store";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -290,20 +290,33 @@ export const StoreTemplateSelector = ({ onSelectTemplate }: StoreTemplateSelecto
             )}
 
             {/* Action Buttons */}
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setPreviewTemplate(null)}>
-                Close
-              </Button>
-              <Button
-                onClick={() => {
-                  if (previewTemplate) {
-                    setSelectedId(previewTemplate.id);
-                    onSelectTemplate(previewTemplate);
-                  }
-                }}
-              >
-                Select This Template
-              </Button>
+            <div className="flex justify-between gap-3">
+              <div>
+                {previewTemplate?.demo_url && (
+                  <Button
+                    variant="outline"
+                    onClick={() => window.open(previewTemplate.demo_url, '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View Live Demo
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => setPreviewTemplate(null)}>
+                  Close
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (previewTemplate) {
+                      setSelectedId(previewTemplate.id);
+                      onSelectTemplate(previewTemplate);
+                    }
+                  }}
+                >
+                  Select This Template
+                </Button>
+              </div>
             </div>
           </div>
         </DialogContent>
