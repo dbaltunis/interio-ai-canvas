@@ -99,10 +99,10 @@ export const ProductDetailTabs = ({
                       <p className="font-medium">{product.inventory_item.color}</p>
                     </div>
                   )}
-                  {product.inventory_item.unit_price && (
+                  {product.inventory_item.selling_price && (
                     <div>
                       <p className="text-muted-foreground">Starting Price</p>
-                      <p className="font-medium">${product.inventory_item.unit_price.toFixed(2)}</p>
+                      <p className="font-medium">${product.inventory_item.selling_price.toFixed(2)}</p>
                     </div>
                   )}
                 </div>

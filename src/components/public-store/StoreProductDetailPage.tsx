@@ -167,11 +167,11 @@ export const StoreProductDetailPage = ({ storeData }: StoreProductDetailPageProp
                    : 'Premium bespoke window treatment, custom-made to your exact specifications.')}
               </p>
 
-              {product.inventory_item?.unit_price && (
+              {product.inventory_item?.selling_price && (
                 <div className="mt-6 p-4 bg-primary/5 rounded-xl">
                   <p className="text-sm text-muted-foreground">Starting from</p>
                   <p className="text-3xl font-bold" style={{ color: 'var(--store-primary)' }}>
-                    ${product.inventory_item.unit_price.toFixed(2)}
+                    ${product.inventory_item.selling_price.toFixed(2)}
                   </p>
                 </div>
               )}
