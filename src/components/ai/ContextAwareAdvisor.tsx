@@ -7,7 +7,6 @@ import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { useShopifyAnalytics, useSyncShopifyAnalytics } from "@/hooks/useShopifyAnalytics";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { AIAssistant } from "./AIAssistant";
 
 interface Suggestion {
   id: string;
@@ -21,8 +20,6 @@ interface Suggestion {
 export const ContextAwareAdvisor = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [dismissedSuggestions, setDismissedSuggestions] = useState<string[]>([]);
-  const [showAIDialog, setShowAIDialog] = useState(false);
-  const [aiInitialPrompt, setAiInitialPrompt] = useState("");
   const { integration: shopifyIntegration } = useShopifyIntegrationReal();
   const { data: analytics } = useShopifyAnalytics();
   const { mutate: syncAnalytics } = useSyncShopifyAnalytics();
@@ -61,11 +58,7 @@ export const ContextAwareAdvisor = () => {
         title: 'Ready to Get Your First Sale?',
         description: 'I can help you with proven marketing strategies to drive traffic and convert visitors.',
         priority: 'medium',
-        actionLabel: 'Show Me How',
-        action: () => {
-          setAiInitialPrompt("I need help getting my first sale. Can you suggest marketing strategies for my online store?");
-          setShowAIDialog(true);
-        }
+        actionLabel: 'Show Me How'
       });
     }
 
@@ -76,11 +69,7 @@ export const ContextAwareAdvisor = () => {
         title: `Great! You Have ${analytics.total_orders} Orders`,
         description: 'Let me analyze your best-selling products and suggest ways to increase your average order value.',
         priority: 'low',
-        actionLabel: 'Analyze Now',
-        action: () => {
-          setAiInitialPrompt(`I have ${analytics.total_orders} total orders and ${analytics.orders_this_month} this month. Can you analyze my store performance and suggest ways to increase sales?`);
-          setShowAIDialog(true);
-        }
+        actionLabel: 'Analyze Now'
       });
     }
 
@@ -226,12 +215,6 @@ export const ContextAwareAdvisor = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      <AIAssistant 
-        open={showAIDialog}
-        onOpenChange={setShowAIDialog}
-        initialPrompt={aiInitialPrompt}
-      />
     </motion.div>
   );
 };

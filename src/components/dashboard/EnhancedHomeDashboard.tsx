@@ -4,7 +4,6 @@ import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
 import { WelcomeHeader } from "./WelcomeHeader";
 import { DashboardCustomizationButton } from "./DashboardCustomizationButton";
 import { DashboardWidgetCustomizer } from "./DashboardWidgetCustomizer";
-import { AIAssistant } from "../ai/AIAssistant";
 import { UpcomingEventsWidget } from "./UpcomingEventsWidget";
 import { StatusOverviewWidget } from "./StatusOverviewWidget";
 import { RecentEmailsWidget } from "./RecentEmailsWidget";
@@ -376,11 +375,6 @@ export const EnhancedHomeDashboard = () => {
         onReorder={reorderWidgets}
         onSizeChange={updateWidgetSize}
       />
-      
-      {/* InterioApp Setup Guide - Always accessible */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <AIAssistant />
-      </div>
     </div>
   );
 };
