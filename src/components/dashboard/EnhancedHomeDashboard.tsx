@@ -45,7 +45,7 @@ export const EnhancedHomeDashboard = () => {
   const isShopifyConnected = !!shopifyIntegration?.is_connected;
 
   // Check if user has Online Store
-  const { data: hasOnlineStore } = useQuery({
+  const { data: hasOnlineStore, isLoading: isLoadingStore } = useQuery({
     queryKey: ['has-online-store'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -58,6 +58,8 @@ export const EnhancedHomeDashboard = () => {
       return !!data;
     },
   });
+
+  console.log('[Dashboard] hasOnlineStore:', hasOnlineStore, 'isShopifyConnected:', isShopifyConnected);
   
   // Permission checks for widgets
   const canViewCalendar = useHasPermission('view_calendar');
@@ -76,18 +78,27 @@ export const EnhancedHomeDashboard = () => {
 
   // Filter enabled widgets by permissions AND integration type
   const enabledWidgets = useMemo(() => {
+    // Don't filter until we know the store status
+    if (isLoadingStore) return [];
+    
     const widgets = getEnabledWidgets();
     console.log('[Dashboard] All enabled widgets before filtering:', widgets.map(w => ({ id: w.id, permission: w.requiredPermission, integrationType: w.integrationType })));
+    console.log('[Dashboard] Integration status:', { hasOnlineStore, isShopifyConnected });
     
     const filtered = widgets.filter(widget => {
-      // Filter by integration type first
-      if (widget.integrationType === 'shopify' && !isShopifyConnected) {
-        console.log(`[Dashboard] Hiding ${widget.id} - Shopify not connected`);
-        return false;
+      // Filter by integration type first - EXPLICIT checks
+      if (widget.integrationType === 'shopify') {
+        if (!isShopifyConnected) {
+          console.log(`[Dashboard] Hiding ${widget.id} - Shopify not connected`);
+          return false;
+        }
       }
-      if (widget.integrationType === 'online_store' && !hasOnlineStore) {
-        console.log(`[Dashboard] Hiding ${widget.id} - No online store`);
-        return false;
+      
+      if (widget.integrationType === 'online_store') {
+        if (hasOnlineStore !== true) {
+          console.log(`[Dashboard] Hiding ${widget.id} - No online store (hasOnlineStore=${hasOnlineStore})`);
+          return false;
+        }
       }
 
       // Then check permissions
@@ -121,7 +132,7 @@ export const EnhancedHomeDashboard = () => {
     
     console.log('[Dashboard] Filtered enabled widgets:', filtered.map(w => w.id));
     return filtered;
-  }, [getEnabledWidgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, isShopifyConnected, hasOnlineStore]);
+  }, [getEnabledWidgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, isShopifyConnected, hasOnlineStore, isLoadingStore]);
 
   // Prepare KPI data for primary metrics
   const primaryKPIs = [

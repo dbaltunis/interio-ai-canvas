@@ -31,7 +31,7 @@ const navItems = [
   { id: "dashboard", label: "Home", icon: Home, permission: "view_dashboard" },
   { id: "projects", label: "Jobs", icon: FolderOpen, permission: "view_jobs" },
   { id: "clients", label: "Clients", icon: Users, permission: "view_clients" },
-  { id: "online-store", label: "Store", icon: Store, permission: "online_store" },
+  { id: "online-store", label: "Store", icon: Store, permission: "has_online_store" },
   { id: "calendar", label: "Calendar", icon: Calendar, permission: "view_calendar" },
 ];
 
@@ -73,7 +73,7 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
     if (item.permission === 'view_jobs') return canViewJobs === true;
     if (item.permission === 'view_clients') return canViewClients === true;
     if (item.permission === 'view_calendar') return canViewCalendar === true;
-    if (item.permission === 'online_store') return hasOnlineStore === true;
+    if (item.permission === 'has_online_store') return hasOnlineStore === true;
     
     return false;
   });
