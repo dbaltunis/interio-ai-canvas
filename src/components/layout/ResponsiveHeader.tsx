@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { BrandHeader } from './BrandHeader';
 import { UserProfile } from './UserProfile';
 import { Badge } from '@/components/ui/badge';
-import { VersionBadge } from '@/components/version/VersionBadge';
 // Removed NotificationDropdown - simplified UI
 import { TeamCollaborationCenter } from '../collaboration/TeamCollaborationCenter';
 import { AINotificationToast } from '../collaboration/AINotificationToast';
@@ -146,10 +145,9 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
               );
             })}
           </nav>
-          {/* Right: Version Badge & User Profile */}
+          {/* Right: User Profile */}
           <div className="flex items-center gap-3">
-            <VersionBadge />
-            <UserProfile 
+            <UserProfile
               onOpenTeamHub={() => setPresencePanelOpen(!presencePanelOpen)}
               showCollaborationIndicator={hasActivity}
               unreadCount={unreadCount}
