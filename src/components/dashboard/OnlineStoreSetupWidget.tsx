@@ -14,7 +14,7 @@ export const OnlineStoreSetupWidget = () => {
   const navigate = useNavigate();
 
   // Check if user already has an online store
-  const { data: hasStore } = useQuery({
+  const { data: hasStore, isLoading } = useQuery({
     queryKey: ['has-online-store'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -29,6 +29,27 @@ export const OnlineStoreSetupWidget = () => {
       return !!data;
     },
   });
+
+  // Show skeleton while loading
+  if (isLoading) {
+    return (
+      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-primary/3 to-background">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-4 bg-muted animate-pulse rounded" />
+            <div className="h-5 w-32 bg-muted animate-pulse rounded" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div className="h-4 w-full bg-muted animate-pulse rounded" />
+            <div className="h-16 w-full bg-muted animate-pulse rounded-lg" />
+            <div className="h-16 w-full bg-muted animate-pulse rounded-lg" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // If user already has a store, show a link to manage it
   if (hasStore) {
