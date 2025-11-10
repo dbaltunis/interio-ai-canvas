@@ -8850,6 +8850,10 @@ export type Database = {
         Args: { permission_name: string }
         Returns: boolean
       }
+      delete_online_store: {
+        Args: { store_id_param: string }
+        Returns: undefined
+      }
       delete_user_cascade: {
         Args: { user_id_param: string }
         Returns: undefined
