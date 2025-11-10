@@ -3,10 +3,11 @@ import { Link } from "react-router-dom";
 import { usePublicStoreProducts } from "@/hooks/usePublicStore";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, Package, ShoppingCart } from "lucide-react";
+import { ArrowRight, Package } from "lucide-react";
 import { ProductFilters, FilterState } from "@/components/online-store/ProductFilters";
 import { useShoppingCart } from "@/hooks/useShoppingCart";
 import { toast } from "sonner";
+import { EnhancedProductCard } from "./enhanced/EnhancedProductCard";
 
 interface StoreProductsPageProps {
   storeData: any;
@@ -140,56 +141,17 @@ export const StoreProductsPage = ({ storeData }: StoreProductsPageProps) => {
               </div>
             ) : displayProducts && displayProducts.length > 0 ? (
               <>
-                <div className="mb-4 text-sm text-muted-foreground">
-                  {displayProducts.length} product{displayProducts.length !== 1 ? 's' : ''} found
+                <div className="mb-6 text-sm text-muted-foreground">
+                  Showing {displayProducts.length} product{displayProducts.length !== 1 ? 's' : ''}
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                   {displayProducts.map((product: any) => (
-                    <div key={product.id} className="group">
-                      <Link
-                        to={`/store/${storeData.store_slug}/products/${product.inventory_item_id}`}
-                      >
-                        <div className="bg-background rounded-lg overflow-hidden border hover:shadow-lg transition-shadow">
-                          <div className="aspect-square bg-muted flex items-center justify-center">
-                            {product.inventory_item?.image_url ? (
-                              <img
-                                src={product.inventory_item.image_url}
-                                alt={product.inventory_item.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <Package className="h-16 w-16 text-muted-foreground" />
-                            )}
-                          </div>
-                          <div className="p-4">
-                            <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors line-clamp-2">
-                              {product.template?.name 
-                                ? `${product.template.name} - ${product.inventory_item?.name}`
-                                : product.inventory_item?.name || 'Product'}
-                            </h3>
-                            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                              {product.custom_description || 
-                               (typeof product.inventory_item?.description === 'string' 
-                                 ? product.inventory_item.description 
-                                 : 'Custom made to your exact specifications')}
-                            </p>
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-muted-foreground">
-                                {product.inventory_item?.category || 'Window Treatment'}
-                              </span>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => handleQuickAddToCart(product, e)}
-                                className="ml-2"
-                              >
-                                <ShoppingCart className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                    </div>
+                    <EnhancedProductCard
+                      key={product.id}
+                      product={product}
+                      storeSlug={storeData.store_slug}
+                      onQuickAdd={handleQuickAddToCart}
+                    />
                   ))}
                 </div>
               </>

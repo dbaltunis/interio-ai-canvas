@@ -3,11 +3,12 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Package, ShoppingCart } from "lucide-react";
-import { StoreProductCalculator } from "./calculator/StoreProductCalculator";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Package, Star, Award, Clock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useShoppingCart } from "@/hooks/useShoppingCart";
 import { toast as sonnerToast } from "sonner";
+import { ProductDetailTabs } from "./enhanced/ProductDetailTabs";
 
 interface StoreProductDetailPageProps {
   storeData: any;
@@ -105,10 +106,10 @@ export const StoreProductDetailPage = ({ storeData }: StoreProductDetailPageProp
           </Link>
         </Button>
 
-        <div className="grid md:grid-cols-2 gap-12">
-          {/* Product Image */}
-          <div>
-            <div className="aspect-square bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+        <div className="grid lg:grid-cols-5 gap-12">
+          {/* Product Images */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="aspect-square bg-muted rounded-2xl overflow-hidden flex items-center justify-center shadow-lg">
               {product.inventory_item?.image_url ? (
                 <img
                   src={product.inventory_item.image_url}
@@ -119,29 +120,65 @@ export const StoreProductDetailPage = ({ storeData }: StoreProductDetailPageProp
                 <Package className="h-32 w-32 text-muted-foreground" />
               )}
             </div>
+            
+            {/* Trust Indicators */}
+            <div className="grid grid-cols-3 gap-3 p-4 bg-muted/30 rounded-xl">
+              <div className="text-center">
+                <Star className="h-6 w-6 mx-auto mb-2 text-yellow-500 fill-yellow-500" />
+                <p className="text-sm font-semibold">4.9 Rating</p>
+                <p className="text-xs text-muted-foreground">2.3k Reviews</p>
+              </div>
+              <div className="text-center">
+                <Award className="h-6 w-6 mx-auto mb-2 text-primary" />
+                <p className="text-sm font-semibold">Quality</p>
+                <p className="text-xs text-muted-foreground">Guaranteed</p>
+              </div>
+              <div className="text-center">
+                <Clock className="h-6 w-6 mx-auto mb-2 text-primary" />
+                <p className="text-sm font-semibold">2-3 Weeks</p>
+                <p className="text-xs text-muted-foreground">Delivery</p>
+              </div>
+            </div>
           </div>
 
           {/* Product Info & Calculator */}
-          <div>
-            <div className="mb-8">
-              <span className="text-sm text-muted-foreground">
+          <div className="lg:col-span-3 space-y-6">
+            <div>
+              <Badge variant="secondary" className="mb-3">
                 {product.inventory_item?.category || 'Window Treatment'}
-              </span>
-              <h1 className="text-4xl font-bold mt-2 mb-4">
+              </Badge>
+              {product.is_featured && (
+                <Badge className="ml-2 bg-accent text-accent-foreground">
+                  <Star className="h-3 w-3 mr-1 fill-current" />
+                  Featured
+                </Badge>
+              )}
+              
+              <h1 className="text-5xl font-bold mt-4 mb-4 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
                 {product.template?.name 
                   ? `${product.template.name} - ${product.inventory_item?.name}`
                   : product.inventory_item?.name || 'Product'}
               </h1>
-              <p className="text-lg text-muted-foreground">
+              
+              <p className="text-lg text-muted-foreground leading-relaxed">
                 {product.custom_description || 
                  (typeof product.inventory_item?.description === 'string'
                    ? product.inventory_item.description
                    : 'Premium bespoke window treatment, custom-made to your exact specifications.')}
               </p>
+
+              {product.inventory_item?.unit_price && (
+                <div className="mt-6 p-4 bg-primary/5 rounded-xl">
+                  <p className="text-sm text-muted-foreground">Starting from</p>
+                  <p className="text-3xl font-bold" style={{ color: 'var(--store-primary)' }}>
+                    ${product.inventory_item.unit_price.toFixed(2)}
+                  </p>
+                </div>
+              )}
             </div>
 
-            {/* Interactive Calculator */}
-            <StoreProductCalculator
+            {/* Interactive Calculator with Tabs */}
+            <ProductDetailTabs
               product={product}
               storeData={storeData}
               onSubmitQuote={(quoteData) => {
