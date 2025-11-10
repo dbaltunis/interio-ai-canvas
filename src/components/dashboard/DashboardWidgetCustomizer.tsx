@@ -91,10 +91,17 @@ export const DashboardWidgetCustomizer = ({
   const canViewInventory = useHasPermission('view_inventory');
 
   // Check integration statuses
-  const { integration: shopifyIntegration } = useShopifyIntegrationReal();
-  const isShopifyConnected = !!shopifyIntegration?.is_connected;
+  const { integration: shopifyIntegration, isLoading: isLoadingShopify } = useShopifyIntegrationReal();
+  // Check for Shopify connection using available properties
+  const isShopifyConnected = shopifyIntegration 
+    ? (!!shopifyIntegration.shop_domain && (
+        'active' in shopifyIntegration ? shopifyIntegration.active :
+        'is_connected' in shopifyIntegration ? (shopifyIntegration as any).is_connected : 
+        false
+      ))
+    : false;
 
-  const { data: hasOnlineStore } = useQuery({
+  const { data: hasOnlineStore, isLoading: isLoadingStore } = useQuery({
     queryKey: ['has-online-store'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -108,15 +115,22 @@ export const DashboardWidgetCustomizer = ({
     },
   });
 
-  // Filter widgets based on permissions AND integration status
+  const isLoading = isLoadingShopify || isLoadingStore;
+
+  // CRITICAL: Filter widgets based on integration type FIRST, then permissions
   const permissionFilteredWidgets = useMemo(() => {
+    // Don't filter during loading to prevent flicker
+    if (isLoading) return [];
+    
     return widgets.filter(widget => {
-      // Filter by integration type
-      if (widget.integrationType === 'shopify' && !isShopifyConnected) {
-        return false;
+      // CRITICAL FILTER: Only show Shopify widgets if Shopify is connected
+      if (widget.integrationType === 'shopify') {
+        if (!isShopifyConnected) return false;
       }
-      if (widget.integrationType === 'online_store' && !hasOnlineStore) {
-        return false;
+      
+      // CRITICAL FILTER: Only show Online Store widgets if Online Store exists
+      if (widget.integrationType === 'online_store') {
+        if (!hasOnlineStore) return false;
       }
 
       // Then check permissions
@@ -131,7 +145,7 @@ export const DashboardWidgetCustomizer = ({
       // If permission check is undefined or false, don't show
       return false;
     });
-  }, [widgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, isShopifyConnected, hasOnlineStore]);
+  }, [widgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, isShopifyConnected, hasOnlineStore, isLoading]);
 
   const filteredWidgets = filter === "all" 
     ? permissionFilteredWidgets 
@@ -147,11 +161,17 @@ export const DashboardWidgetCustomizer = ({
             Customize Dashboard Widgets
           </DialogTitle>
           <DialogDescription>
-            Show, hide, and reorder widgets to personalize your dashboard experience.
-            {enabledCount > 0 && (
-              <span className="ml-2 text-primary font-medium">
-                {enabledCount} of {permissionFilteredWidgets.length} widgets enabled
-              </span>
+            {isLoading ? (
+              <span className="text-muted-foreground">Loading available widgets...</span>
+            ) : (
+              <>
+                Show, hide, and reorder widgets to personalize your dashboard experience.
+                {enabledCount > 0 && (
+                  <span className="ml-2 text-primary font-medium">
+                    {enabledCount} of {permissionFilteredWidgets.length} widgets enabled
+                  </span>
+                )}
+              </>
             )}
           </DialogDescription>
         </DialogHeader>
@@ -202,7 +222,16 @@ export const DashboardWidgetCustomizer = ({
 
         <ScrollArea className="h-[400px] pr-4">
           <div className="space-y-2">
-            {filteredWidgets.map((widget, index) => {
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-sm text-muted-foreground">Loading widgets...</p>
+              </div>
+            ) : filteredWidgets.length === 0 ? (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-sm text-muted-foreground">No widgets available for this filter.</p>
+              </div>
+            ) : (
+              filteredWidgets.map((widget, index) => {
               const Icon = getWidgetIcon(widget.id);
               const isFirst = index === 0;
               const isLast = index === widgets.length - 1;
@@ -313,7 +342,8 @@ export const DashboardWidgetCustomizer = ({
                   </div>
                 </div>
               );
-            })}
+            })
+            )}
           </div>
         </ScrollArea>
 
