@@ -507,8 +507,17 @@ export const HeadingInventoryManager = () => {
                 </Button>
 
                 {/* Advanced Settings for Wave/Eyelet */}
-                {showAdvanced && (formData.heading_type === 'wave' || formData.heading_type === 'eyelet') && (
-                  <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/30">
+                {showAdvanced && (
+                  <div className="p-4 border rounded-lg bg-muted/30 space-y-4">
+                    {formData.heading_type === 'standard' && (
+                      <div className="text-sm text-muted-foreground">
+                        <p>Advanced settings are only available for Wave and Eyelet heading types.</p>
+                        <p className="mt-2">Select "Wave" or "Eyelet" in the Heading Type dropdown to configure advanced settings.</p>
+                      </div>
+                    )}
+                    
+                    {(formData.heading_type === 'wave' || formData.heading_type === 'eyelet') && (
+                      <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="spacing">Spacing (cm)</Label>
                       <Input
@@ -536,6 +545,8 @@ export const HeadingInventoryManager = () => {
                           </p>
                         </div>
                       </>
+                    )}
+                      </div>
                     )}
                   </div>
                 )}

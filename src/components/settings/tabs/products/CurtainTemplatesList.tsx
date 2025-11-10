@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCurtainTemplates, useDeleteCurtainTemplate, useCreateCurtainTemplate, useUpdateCurtainTemplate, CurtainTemplate } from "@/hooks/useCurtainTemplates";
 import { useHeadingInventory } from "@/hooks/useHeadingInventory";
 import { getDisplayNameFromSingular } from "@/types/treatmentCategories";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface CurtainTemplatesListProps {
   onEdit: (template: CurtainTemplate) => void;
@@ -18,6 +19,7 @@ interface CurtainTemplatesListProps {
 
 export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { data: templates = [], isLoading } = useCurtainTemplates();
   const { data: headingStyles = [] } = useHeadingInventory();
   const deleteTemplate = useDeleteCurtainTemplate();
@@ -49,9 +51,17 @@ export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
 
   const handleDelete = async (templateId: string) => {
     try {
+      // Optimistic update - immediately remove from UI
+      const previousTemplates = templates;
+      queryClient.setQueryData(['curtain-templates'], 
+        (old: any) => old?.filter((t: any) => t.id !== templateId)
+      );
+      
       await deleteTemplate.mutateAsync(templateId);
     } catch (error) {
       console.error("Error deleting template:", error);
+      // Rollback on error
+      queryClient.invalidateQueries({ queryKey: ['curtain-templates'] });
     }
   };
 
@@ -65,7 +75,7 @@ export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
       };
       
       // Remove fields that shouldn't be copied
-      const { id, user_id, created_at, updated_at, ...templateData } = duplicatedTemplate;
+      const { id, user_id, created_at, updated_at, pricing_grid_id, ...templateData } = duplicatedTemplate as any;
       
       await createTemplate.mutateAsync(templateData);
       
@@ -217,10 +227,23 @@ export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => handleDuplicate(template)}>
-                  <Copy className="h-4 w-4" />
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleDuplicate(template)}
+                  disabled={createTemplate.isPending}
+                >
+                  {createTemplate.isPending ? (
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => onEdit(template)}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => onEdit(template)}
+                >
                   <Edit className="h-4 w-4" />
                 </Button>
                 <AlertDialog>

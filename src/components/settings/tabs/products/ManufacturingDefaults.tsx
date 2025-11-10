@@ -85,15 +85,35 @@ export const ManufacturingDefaults = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { error } = await supabase
+      // First check if record exists
+      const { data: existing } = await supabase
         .from('business_settings')
-        .upsert({
-          user_id: user.id,
-          pricing_settings: JSON.stringify({ manufacturing_defaults: defaults }) as any,
-          updated_at: new Date().toISOString()
-        });
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
 
-      if (error) throw error;
+      if (existing) {
+        // Update existing record
+        const { error } = await supabase
+          .from('business_settings')
+          .update({
+            pricing_settings: { manufacturing_defaults: defaults } as any,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+        
+        if (error) throw error;
+      } else {
+        // Insert new record
+        const { error } = await supabase
+          .from('business_settings')
+          .insert({
+            user_id: user.id,
+            pricing_settings: { manufacturing_defaults: defaults } as any,
+          });
+        
+        if (error) throw error;
+      }
 
       toast({
         title: "Settings Saved",

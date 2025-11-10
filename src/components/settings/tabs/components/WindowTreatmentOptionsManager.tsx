@@ -212,6 +212,10 @@ export const WindowTreatmentOptionsManager = () => {
         const existingValue = uniqueOptionValues.find(v => v.code === valueCode);
         
         if (existingValue) {
+          setIsCreating(false);
+          setEditingValue(null);
+          resetForm();
+          
           toast({
             title: "Duplicate value",
             description: "This value already exists. Please use a different value or edit the existing one.",
@@ -604,7 +608,7 @@ export const WindowTreatmentOptionsManager = () => {
               <TabsList className="inline-flex h-10 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground w-max">
               {optionTypeCategories.map(opt => (
                 <div key={opt.type_key} className="relative group">
-                  <TabsTrigger value={opt.type_key} className="px-3 pr-8">
+                  <TabsTrigger value={opt.type_key} className="px-3 pr-10">
                     {opt.type_label}
                   </TabsTrigger>
                   {!opt.is_system_default && (

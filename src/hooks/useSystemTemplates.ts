@@ -78,8 +78,9 @@ export const useCloneSystemTemplate = () => {
       
       return clonedTemplate;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['curtain-templates'] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['curtain-templates'] });
+      await queryClient.invalidateQueries({ queryKey: ['curtain-templates-for-options'] });
       toast({
         title: "Template cloned successfully",
         description: "You can now customize this template with your own pricing and settings.",
