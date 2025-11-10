@@ -154,13 +154,25 @@ export const EnhancedProductCard = ({ product, storeSlug, onQuickAdd }: Enhanced
             </p>
 
             {/* Features/Trust Indicators */}
-            <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t border-border">
-              <div className="flex items-center gap-1">
-                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                <span>4.9</span>
+            <div className="space-y-2 pt-2 border-t border-border">
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                  <span className="font-medium">4.9</span>
+                </div>
+                <span>•</span>
+                <span>Free Measuring</span>
+                <span>•</span>
+                <span>Expert Install</span>
               </div>
-              <span>•</span>
-              <span>Free Measuring</span>
+              <div className="flex flex-wrap gap-1.5">
+                <Badge variant="secondary" className="text-xs py-0.5 px-2">
+                  5-Year Warranty
+                </Badge>
+                <Badge variant="secondary" className="text-xs py-0.5 px-2">
+                  Free Consultation
+                </Badge>
+              </div>
             </div>
           </div>
         </div>

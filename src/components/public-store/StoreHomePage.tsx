@@ -3,6 +3,7 @@ import { ClassicEleganceHome } from "./templates/ClassicEleganceHome";
 import { BoldShowcaseHome } from "./templates/BoldShowcaseHome";
 import { ProfessionalBusinessHome } from "./templates/ProfessionalBusinessHome";
 import { PortfolioStyleHome } from "./templates/PortfolioStyleHome";
+import { WindowTreatmentPro } from "./templates/WindowTreatmentPro";
 
 interface StoreHomePageProps {
   storeData: any;
@@ -13,6 +14,8 @@ export const StoreHomePage = ({ storeData }: StoreHomePageProps) => {
   const templateId = storeData.template_id;
 
   switch (templateId) {
+    case 'window-treatment-pro':
+      return <WindowTreatmentPro storeData={storeData} />;
     case 'modern-minimalist':
       return <ModernMinimalistHome storeData={storeData} />;
     case 'classic-elegance':
@@ -24,8 +27,8 @@ export const StoreHomePage = ({ storeData }: StoreHomePageProps) => {
     case 'portfolio-style':
       return <PortfolioStyleHome storeData={storeData} />;
     default:
-      // Fallback to modern minimalist for unknown templates
-      return <ModernMinimalistHome storeData={storeData} />;
+      // Fallback to professional window treatment template
+      return <WindowTreatmentPro storeData={storeData} />;
   }
 };
 
