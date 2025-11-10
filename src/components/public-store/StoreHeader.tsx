@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Menu, ShoppingCart, Calendar, Calculator } from "lucide-react";
+import { Menu, ShoppingCart, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useShoppingCart } from "@/hooks/useShoppingCart";
@@ -82,10 +82,6 @@ export const StoreHeader = ({ storeData }: StoreHeaderProps) => {
                   </Link>
                   <Link to={`/store/${storeData.store_slug}/products`} className="text-lg font-medium hover:text-primary transition-colors">
                     Products
-                  </Link>
-                  <Link to={`/store/${storeData.store_slug}/calculator`} className="text-lg font-medium hover:text-primary transition-colors flex items-center gap-2">
-                    <Calculator className="h-4 w-4" />
-                    Calculator
                   </Link>
                   <Link to={`/store/${storeData.store_slug}/about`} className="text-lg font-medium hover:text-primary transition-colors">
                     About

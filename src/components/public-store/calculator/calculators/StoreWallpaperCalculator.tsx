@@ -8,6 +8,7 @@ import { Calculator, Send } from "lucide-react";
 import { formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
 import { StoreQuoteRequestForm } from "../StoreQuoteRequestForm";
 import { calculateWallpaperCost } from "@/utils/wallpaperCalculations";
+import { WallpaperVisualizer } from "@/components/treatment-visualizers/WallpaperVisualizer";
 
 interface StoreWallpaperCalculatorProps {
   product: any;
@@ -59,6 +60,35 @@ export const StoreWallpaperCalculator = ({ product, storeData, onSubmitQuote, on
 
   return (
     <div className="space-y-6">
+      {/* Visual Preview - Featured at top */}
+      {measurements.width && measurements.height && parseFloat(measurements.width) > 0 && parseFloat(measurements.height) > 0 && (
+        <Card className="border-2">
+          <CardHeader>
+            <CardTitle className="text-lg">See it on Your Wall</CardTitle>
+            <CardDescription>
+              Preview shows how {product.inventory_item?.name} will look on your wall
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <WallpaperVisualizer
+              measurements={{
+                wall_width: parseFloat(measurements.width),
+                wall_height: parseFloat(measurements.height),
+              }}
+              wallpaper={{
+                image_url: product.inventory_item?.image_url,
+                name: product.inventory_item?.name,
+                roll_width: product.inventory_item?.roll_width,
+                pattern_repeat: product.inventory_item?.pattern_repeat,
+              }}
+            />
+            <p className="text-xs text-muted-foreground text-center mt-4">
+              Preview is approximate - actual pattern placement may vary during installation
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -66,7 +96,7 @@ export const StoreWallpaperCalculator = ({ product, storeData, onSubmitQuote, on
             Wallpaper Calculator
           </CardTitle>
           <CardDescription>
-            Calculate how much wallpaper you'll need
+            Enter your wall dimensions to calculate how much wallpaper you'll need
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

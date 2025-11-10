@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from "@/components/ui/navigation-menu";
-import { Blinds, Home, ShowerHead, Wallpaper, Palette, Phone, Calculator } from "lucide-react";
+import { Blinds, Home, ShowerHead, Wallpaper, Palette, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface MegaMenuProps {
@@ -92,15 +92,6 @@ export const MegaMenu = ({ storeSlug }: MegaMenuProps) => {
               </div>
             </div>
           </NavigationMenuContent>
-        </NavigationMenuItem>
-
-        <NavigationMenuItem>
-          <NavigationMenuLink asChild>
-            <Link to={`/store/${storeSlug}/calculator`} className="px-4 py-2 text-sm font-medium hover:text-primary transition-colors">
-              <Calculator className="inline h-4 w-4 mr-2" />
-              Calculator
-            </Link>
-          </NavigationMenuLink>
         </NavigationMenuItem>
 
         <NavigationMenuItem>

@@ -9,7 +9,7 @@ import { StoreContactPage } from "./StoreContactPage";
 import { StoreCheckout } from "./StoreCheckout";
 import { StoreOrderConfirmation } from "./StoreOrderConfirmation";
 import { StoreAppointmentsPage } from "./StoreAppointmentsPage";
-import { StoreCalculatorPage } from "./StoreCalculatorPage";
+
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const PublicStorePage = () => {
@@ -47,7 +47,6 @@ export const PublicStorePage = () => {
         <Route index element={<StoreHomePage storeData={storeData} />} />
         <Route path="products" element={<StoreProductsPage storeData={storeData} />} />
         <Route path="products/:productId" element={<StoreProductDetailPage storeData={storeData} />} />
-        <Route path="calculator" element={<StoreCalculatorPage storeData={storeData} />} />
         <Route path="book" element={<StoreAppointmentsPage storeData={storeData} />} />
         <Route path="checkout" element={<StoreCheckout storeData={storeData} />} />
         <Route path="order-confirmation" element={<StoreOrderConfirmation storeData={storeData} />} />

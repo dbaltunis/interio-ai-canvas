@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Calculator } from "lucide-react";
 import { formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
 import { StoreQuoteRequestForm } from "../StoreQuoteRequestForm";
-import { MeasurementVisualCore } from "@/components/shared/measurement-visual/MeasurementVisualCore";
+import { TreatmentPreviewEngine } from "@/components/treatment-visualizers/TreatmentPreviewEngine";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WindowCoveringOptionsCard } from "@/components/job-creation/treatment-pricing/WindowCoveringOptionsCard";
 import { TreatmentMeasurementsCard } from "@/components/job-creation/treatment-pricing/TreatmentMeasurementsCard";
 import { useWindowCoveringOptions } from "@/hooks/useWindowCoveringOptions";
@@ -12,6 +13,7 @@ import { useTreatmentTypes } from "@/hooks/useTreatmentTypes";
 import { useFabricCalculation } from "@/components/job-creation/treatment-pricing/useFabricCalculation";
 import { useTreatmentFormData } from "@/components/job-creation/treatment-pricing/useTreatmentFormData";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 
 interface StoreTreatmentCalculatorProps {
   product: any;
@@ -22,6 +24,7 @@ interface StoreTreatmentCalculatorProps {
 
 export const StoreTreatmentCalculator = ({ product, storeData, onSubmitQuote, onAddToCart }: StoreTreatmentCalculatorProps) => {
   const [showQuoteForm, setShowQuoteForm] = useState(false);
+  const [windowType, setWindowType] = useState("standard");
   
   // Get the template assigned to this product (auto-loaded)
   const template = product.template;
@@ -154,6 +157,64 @@ export const StoreTreatmentCalculator = ({ product, storeData, onSubmitQuote, on
 
   return (
     <div className="space-y-6">
+      {/* Visual Preview - Featured at top */}
+      {formData.rail_width && formData.drop && (
+        <Card className="border-2">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg">See it on Your Window</CardTitle>
+                <CardDescription>
+                  Preview shows how your {template.name} will look with {product.inventory_item?.name}
+                </CardDescription>
+              </div>
+              <Badge variant="outline">{treatmentType.replace('_', ' ')}</Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Window Type Selector */}
+            <div className="space-y-2">
+              <Label htmlFor="window-type">Window Type</Label>
+              <Select value={windowType} onValueChange={setWindowType}>
+                <SelectTrigger id="window-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standard">Standard Window</SelectItem>
+                  <SelectItem value="bay">Bay Window</SelectItem>
+                  <SelectItem value="french_doors">French Doors</SelectItem>
+                  <SelectItem value="sliding_doors">Sliding Doors</SelectItem>
+                  <SelectItem value="large">Large Window</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Treatment Preview */}
+            <div className="bg-muted/30 rounded-lg overflow-hidden min-h-[400px]">
+              <TreatmentPreviewEngine
+                windowType={windowType}
+                treatmentType={treatmentType}
+                measurements={{
+                  rail_width: formData.rail_width,
+                  drop: formData.drop,
+                  pooling_amount: formData.pooling || 0,
+                }}
+                template={template}
+                selectedItems={{
+                  fabric: product.inventory_item,
+                  material: product.inventory_item,
+                }}
+                hideDetails={false}
+              />
+            </div>
+            
+            <p className="text-xs text-muted-foreground text-center">
+              Preview is approximate - book a consultation for exact visualization
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Header showing template info */}
       <Card>
         <CardHeader>
@@ -161,13 +222,12 @@ export const StoreTreatmentCalculator = ({ product, storeData, onSubmitQuote, on
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Calculator className="h-5 w-5" />
-                {template.name}
+                Configure Your {template.name}
               </CardTitle>
               <CardDescription>
-                Configure your {template.name} and get an instant quote
+                Enter your measurements to get an instant quote
               </CardDescription>
             </div>
-            <Badge variant="outline">{treatmentType.replace('_', ' ')}</Badge>
           </div>
         </CardHeader>
       </Card>
@@ -177,28 +237,6 @@ export const StoreTreatmentCalculator = ({ product, storeData, onSubmitQuote, on
         formData={formData}
         onInputChange={handleInputChange}
       />
-
-      {/* Measurement Visual */}
-      {formData.rail_width && formData.drop && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Visual Preview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-muted/50 rounded-lg overflow-hidden">
-              <MeasurementVisualCore
-                measurements={{
-                  rail_width: formData.rail_width,
-                  drop: formData.drop,
-                  pooling_amount: formData.pooling || "0",
-                }}
-                treatmentData={treatmentData}
-                config={{ compact: false, readOnly: true }}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Window Covering Options */}
       {(options.length > 0 || hierarchicalOptions.length > 0) && (
