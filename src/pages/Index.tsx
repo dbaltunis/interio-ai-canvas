@@ -40,6 +40,9 @@ const MobileSettings = lazy(() =>
 const MeasurementWizardDemo = lazy(() => 
   import("@/components/measurement-wizard/MeasurementWizardDemo").catch(() => ({ default: () => <div>Error loading Measurement Wizard</div> }))
 );
+const BugReportsPage = lazy(() =>
+  import("@/pages/BugReportsPage").catch(() => ({ default: () => <div>Error loading Bug Reports</div> }))
+);
 
 // Skeleton loading components
 import { DashboardSkeleton } from "@/components/dashboard/skeleton/DashboardSkeleton";
@@ -167,6 +170,14 @@ const Index = () => {
           <Suspense fallback={<div>Loading...</div>}>
             <ComponentWrapper>
               <MeasurementWizardDemo />
+            </ComponentWrapper>
+          </Suspense>
+        );
+      case 'bug-reports':
+        return (
+          <Suspense fallback={<div>Loading...</div>}>
+            <ComponentWrapper>
+              <BugReportsPage />
             </ComponentWrapper>
           </Suspense>
         );
