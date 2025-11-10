@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calculator } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Calculator, Info } from "lucide-react";
 import { formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
 import { StoreQuoteRequestForm } from "../StoreQuoteRequestForm";
 import { TreatmentPreviewEngine } from "@/components/treatment-visualizers/TreatmentPreviewEngine";
@@ -25,6 +26,61 @@ interface StoreTreatmentCalculatorProps {
 export const StoreTreatmentCalculator = ({ product, storeData, onSubmitQuote, onAddToCart }: StoreTreatmentCalculatorProps) => {
   const [showQuoteForm, setShowQuoteForm] = useState(false);
   const [windowType, setWindowType] = useState("standard");
+  
+  // SAFETY CHECK: Ensure template exists
+  if (!product.template || !product.template.id) {
+    console.error('⚠️ StoreTreatmentCalculator called without template:', product);
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Configuration Required</CardTitle>
+          <CardDescription>
+            This product requires template configuration. Please contact us for a custom quote.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert className="mb-4">
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              This product hasn't been configured with a treatment style yet. 
+              Our team will help you find the perfect solution.
+            </AlertDescription>
+          </Alert>
+          <Button 
+            onClick={() => setShowQuoteForm(true)} 
+            className="w-full"
+            size="lg"
+            style={{ backgroundColor: 'var(--store-primary)' }}
+          >
+            Request Custom Quote
+          </Button>
+          {showQuoteForm && (
+            <div className="mt-4">
+              <StoreQuoteRequestForm
+                estimatedPrice={0}
+                onSubmit={(customerInfo) => {
+                  onSubmitQuote({
+                    ...customerInfo,
+                    configuration_data: {
+                      product_name: product.inventory_item?.name,
+                      product_category: product.inventory_item?.category,
+                      requires_template: true,
+                    },
+                    quote_data: {
+                      estimated_price: 0,
+                      currency: 'NZD',
+                    },
+                  });
+                  setShowQuoteForm(false);
+                }}
+                onCancel={() => setShowQuoteForm(false)}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
   
   // Use the template assigned to this product
   const template = product.template;

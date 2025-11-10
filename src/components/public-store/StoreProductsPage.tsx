@@ -16,6 +16,7 @@ interface StoreProductsPageProps {
 export const StoreProductsPage = ({ storeData }: StoreProductsPageProps) => {
   const { data: products, isLoading } = usePublicStoreProducts(storeData.id);
   const [filters, setFilters] = useState<FilterState | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const { addItem, openCart } = useShoppingCart();
 
   // Extract unique categories and colors from products
@@ -39,18 +40,32 @@ export const StoreProductsPage = ({ storeData }: StoreProductsPageProps) => {
 
   // Filter and sort products
   const filteredProducts = useMemo(() => {
-    if (!products || !filters) return products || [];
+    if (!products) return [];
 
     let filtered = products.filter((product: any) => {
-      // Category filter
-      if (filters.selectedCategories.length > 0) {
+      // Category type filter (window treatments vs wallpaper)
+      if (categoryFilter !== 'all') {
+        const category = product.inventory_item?.category?.toLowerCase();
+        if (categoryFilter === 'window-treatments') {
+          if (!['fabric', 'roller_fabric', 'heading', 'lining'].includes(category)) {
+            return false;
+          }
+        } else if (categoryFilter === 'wallpaper') {
+          if (category !== 'wallcovering') {
+            return false;
+          }
+        }
+      }
+
+      // Specific category filter
+      if (filters?.selectedCategories.length > 0) {
         if (!filters.selectedCategories.includes(product.inventory_item?.category)) {
           return false;
         }
       }
 
       // Color filter
-      if (filters.selectedColors.length > 0) {
+      if (filters?.selectedColors.length > 0) {
         if (!filters.selectedColors.includes(product.inventory_item?.color)) {
           return false;
         }
@@ -60,21 +75,23 @@ export const StoreProductsPage = ({ storeData }: StoreProductsPageProps) => {
     });
 
     // Sort products
-    switch (filters.sortBy) {
-      case 'name':
-        filtered.sort((a: any, b: any) => 
-          (a.inventory_item?.name || '').localeCompare(b.inventory_item?.name || '')
-        );
-        break;
-      case 'newest':
-        filtered.sort((a: any, b: any) => 
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-        break;
+    if (filters) {
+      switch (filters.sortBy) {
+        case 'name':
+          filtered.sort((a: any, b: any) => 
+            (a.inventory_item?.name || '').localeCompare(b.inventory_item?.name || '')
+          );
+          break;
+        case 'newest':
+          filtered.sort((a: any, b: any) => 
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
+          break;
+      }
     }
 
     return filtered;
-  }, [products, filters]);
+  }, [products, filters, categoryFilter]);
 
   const displayProducts = filters ? filteredProducts : products;
 
@@ -133,6 +150,33 @@ export const StoreProductsPage = ({ storeData }: StoreProductsPageProps) => {
 
           {/* Products Grid */}
           <div className={!isLoading && products && products.length > 0 ? "lg:col-span-3" : "lg:col-span-4"}>
+            {/* Category Type Filter Tabs */}
+            {!isLoading && products && products.length > 0 && (
+              <div className="flex gap-2 mb-6">
+                <Button
+                  variant={categoryFilter === 'all' ? 'default' : 'outline'}
+                  onClick={() => setCategoryFilter('all')}
+                  size="sm"
+                >
+                  All Products
+                </Button>
+                <Button
+                  variant={categoryFilter === 'window-treatments' ? 'default' : 'outline'}
+                  onClick={() => setCategoryFilter('window-treatments')}
+                  size="sm"
+                >
+                  Window Treatments
+                </Button>
+                <Button
+                  variant={categoryFilter === 'wallpaper' ? 'default' : 'outline'}
+                  onClick={() => setCategoryFilter('wallpaper')}
+                  size="sm"
+                >
+                  Wallpapers
+                </Button>
+              </div>
+            )}
+            
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, i) => (

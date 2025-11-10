@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, ShoppingCart, Eye, Star } from "lucide-react";
+import { Package, ShoppingCart, Eye, Star, Calculator, MessageSquare } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface EnhancedProductCardProps {
@@ -10,6 +10,17 @@ interface EnhancedProductCardProps {
   storeSlug: string;
   onQuickAdd?: (product: any, e: React.MouseEvent) => void;
 }
+
+const getCategoryDisplay = (category: string) => {
+  const map: Record<string, string> = {
+    'fabric': 'Curtain Fabric',
+    'roller_fabric': 'Roller Blind',
+    'wallcovering': 'Wallpaper',
+    'heading': 'Curtain Heading',
+    'lining': 'Lining Fabric'
+  };
+  return map[category?.toLowerCase()] || 'Window Treatment';
+};
 
 export const EnhancedProductCard = ({ product, storeSlug, onQuickAdd }: EnhancedProductCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -58,11 +69,26 @@ export const EnhancedProductCard = ({ product, storeSlug, onQuickAdd }: Enhanced
               </div>
             )}
 
-            {/* Featured Badge */}
-            {product.is_featured && (
-              <Badge className="absolute top-3 left-3 bg-accent text-accent-foreground shadow-lg">
-                <Star className="h-3 w-3 mr-1 fill-current" />
-                Featured
+            {/* Badges */}
+            <div className="absolute top-3 left-3 z-10 flex flex-col gap-2">
+              {product.is_featured && (
+                <Badge className="bg-accent text-accent-foreground shadow-lg">
+                  <Star className="h-3 w-3 mr-1 fill-current" />
+                  Featured
+                </Badge>
+              )}
+            </div>
+            
+            {/* Calculator Availability Badge */}
+            {product.template?.id ? (
+              <Badge className="absolute top-3 right-3 bg-green-500/90 text-white shadow-lg z-10">
+                <Calculator className="h-3 w-3 mr-1" />
+                Online Calculator
+              </Badge>
+            ) : (
+              <Badge className="absolute top-3 right-3 bg-blue-500/90 text-white shadow-lg z-10">
+                <MessageSquare className="h-3 w-3 mr-1" />
+                Quote Required
               </Badge>
             )}
 
@@ -113,7 +139,7 @@ export const EnhancedProductCard = ({ product, storeSlug, onQuickAdd }: Enhanced
           <div className="p-5 space-y-3">
             <div>
               <Badge variant="secondary" className="text-xs mb-2">
-                {category}
+                {getCategoryDisplay(category)}
               </Badge>
               <h3 className="font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors">
                 {productName}
