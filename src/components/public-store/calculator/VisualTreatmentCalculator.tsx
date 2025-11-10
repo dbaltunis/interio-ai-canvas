@@ -321,38 +321,44 @@ export const VisualTreatmentCalculator = ({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {materials.length > 0 ? (
+              {materials && materials.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {materials.map(material => (
+                  {materials.map((material: any) => (
                     <button
-                      key={material.id}
+                      key={material?.id || Math.random()}
                       onClick={() => {
-                        setSelectedFabric(material);
-                        setActiveStep("measurements");
+                        if (material) {
+                          setSelectedFabric(material);
+                          setActiveStep("measurements");
+                        }
                       }}
-                      className={`group relative overflow-hidden border-2 rounded-lg transition-all hover:shadow-lg ${
-                        selectedFabric?.id === material.id
+                      className={`group relative overflow-hidden border-2 rounded-lg transition-all hover:shadow-lg cursor-pointer ${
+                        selectedFabric?.id === material?.id
                           ? 'border-primary ring-2 ring-primary/20'
                           : 'border-border hover:border-primary/50'
                       }`}
                     >
-                      {material.image_url && (
+                      {material?.image_url && (
                         <div className="aspect-square overflow-hidden bg-muted">
                           <img
                             src={material.image_url}
-                            alt={material.name}
+                            alt={material.name || 'Material'}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                            }}
                           />
                         </div>
                       )}
                       <div className="p-3">
-                        <div className="font-semibold text-sm mb-1">{material.name}</div>
+                        <div className="font-semibold text-sm mb-1">{material?.name || 'Unknown'}</div>
                         <div className="text-sm text-muted-foreground">
-                          {formatCurrency(material.selling_price || 0, 'NZD')}
+                          {formatCurrency(material?.selling_price || material?.unit_price || 0, 'NZD')}
                           {selectedCategory === 'wallpaper' ? '/roll' : '/m'}
                         </div>
                       </div>
-                      {selectedFabric?.id === material.id && (
+                      {selectedFabric?.id === material?.id && (
                         <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
                           ✓
                         </div>
