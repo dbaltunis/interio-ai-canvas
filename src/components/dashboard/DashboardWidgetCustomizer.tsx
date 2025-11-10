@@ -1,4 +1,7 @@
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import {
   Dialog,
   DialogContent,
@@ -87,10 +90,36 @@ export const DashboardWidgetCustomizer = ({
   const canViewEmails = useHasPermission('view_emails');
   const canViewInventory = useHasPermission('view_inventory');
 
-  // Filter widgets based on permissions
+  // Check integration statuses
+  const { integration: shopifyIntegration } = useShopifyIntegrationReal();
+  const isShopifyConnected = !!shopifyIntegration?.is_connected;
+
+  const { data: hasOnlineStore } = useQuery({
+    queryKey: ['has-online-store'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+      const { data } = await supabase
+        .from('online_stores')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      return !!data;
+    },
+  });
+
+  // Filter widgets based on permissions AND integration status
   const permissionFilteredWidgets = useMemo(() => {
     return widgets.filter(widget => {
-      // If widget doesn't require permission, show it
+      // Filter by integration type
+      if (widget.integrationType === 'shopify' && !isShopifyConnected) {
+        return false;
+      }
+      if (widget.integrationType === 'online_store' && !hasOnlineStore) {
+        return false;
+      }
+
+      // Then check permissions
       if (!widget.requiredPermission) return true;
 
       // Check specific permissions - only show if explicitly true
@@ -102,7 +131,7 @@ export const DashboardWidgetCustomizer = ({
       // If permission check is undefined or false, don't show
       return false;
     });
-  }, [widgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory]);
+  }, [widgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, isShopifyConnected, hasOnlineStore]);
 
   const filteredWidgets = filter === "all" 
     ? permissionFilteredWidgets 

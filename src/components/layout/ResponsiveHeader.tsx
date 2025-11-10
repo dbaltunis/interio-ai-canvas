@@ -12,6 +12,8 @@ import { useUserPresence } from '@/hooks/useUserPresence';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useMaterialQueueCount } from '@/hooks/useMaterialQueueCount';
 import { useHasPermission } from '@/hooks/usePermissions';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -59,7 +61,21 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   const canViewEmails = useHasPermission('view_emails');
   const canViewCalendar = useHasPermission('view_calendar');
   const canViewInventory = useHasPermission('view_inventory');
-  const hasOnlineStore = useHasPermission('online_store');
+  
+  // Check if user actually has an online store (not just permission)
+  const { data: hasOnlineStore } = useQuery({
+    queryKey: ['has-online-store-nav'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+      const { data } = await supabase
+        .from('online_stores')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      return !!data;
+    },
+  });
   
   // Filter nav items based on permissions
   const visibleNavItems = navItems.filter(item => {

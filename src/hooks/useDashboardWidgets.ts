@@ -10,9 +10,11 @@ export interface DashboardWidget {
   category: "analytics" | "communication" | "finance" | "integrations";
   size: "small" | "medium" | "large";
   requiredPermission?: string; // Permission required to view this widget
+  integrationType?: "shopify" | "online_store" | null; // Widget belongs to specific integration
 }
 
 const DEFAULT_WIDGETS: DashboardWidget[] = [
+  // Shopify Widgets
   {
     id: "shopify",
     name: "E-Commerce Integration",
@@ -22,6 +24,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     category: "integrations",
     size: "medium",
     requiredPermission: "view_shopify",
+    integrationType: "shopify",
   },
   {
     id: "shopify-orders",
@@ -32,6 +35,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     category: "integrations",
     size: "large",
     requiredPermission: "view_shopify",
+    integrationType: "shopify",
   },
   {
     id: "shopify-products",
@@ -42,6 +46,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     category: "integrations",
     size: "small",
     requiredPermission: "view_shopify",
+    integrationType: "shopify",
   },
   {
     id: "shopify-categories",
@@ -52,13 +57,46 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     category: "integrations",
     size: "small",
     requiredPermission: "view_shopify",
+    integrationType: "shopify",
   },
+  // Online Store Widgets (InterioApp)
+  {
+    id: "online-store-analytics",
+    name: "Store Analytics",
+    description: "Visitor and conversion metrics for your online store",
+    enabled: true,
+    order: 5,
+    category: "analytics",
+    size: "medium",
+    integrationType: "online_store",
+  },
+  {
+    id: "online-store-orders",
+    name: "Store Inquiries",
+    description: "Recent customer inquiries and quote requests",
+    enabled: true,
+    order: 6,
+    category: "communication",
+    size: "medium",
+    integrationType: "online_store",
+  },
+  {
+    id: "online-store-products",
+    name: "Products Online",
+    description: "Products visible on your online store",
+    enabled: true,
+    order: 7,
+    category: "integrations",
+    size: "small",
+    integrationType: "online_store",
+  },
+  // General Widgets (no integration type)
   {
     id: "team",
     name: "Team Members",
     description: "View and message your team",
     enabled: true,
-    order: 5,
+    order: 8,
     category: "communication",
     size: "small",
   },
@@ -67,7 +105,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     name: "Upcoming Events",
     description: "Calendar appointments and meetings",
     enabled: true,
-    order: 6,
+    order: 9,
     category: "communication",
     size: "small",
     requiredPermission: "view_calendar",
@@ -77,7 +115,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     name: "Recent Appointments",
     description: "Latest booked appointments",
     enabled: true,
-    order: 7,
+    order: 10,
     category: "communication",
     size: "small",
     requiredPermission: "view_calendar",
@@ -87,7 +125,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     name: "Recent Emails",
     description: "Email campaigns and metrics",
     enabled: true,
-    order: 8,
+    order: 11,
     category: "communication",
     size: "small",
     requiredPermission: "view_emails",
@@ -97,7 +135,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     name: "Project Status",
     description: "Overview of project statuses",
     enabled: true,
-    order: 9,
+    order: 12,
     category: "analytics",
     size: "small",
   },
@@ -106,7 +144,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     name: "Revenue Chart",
     description: "Revenue breakdown by project",
     enabled: true,
-    order: 10,
+    order: 13,
     category: "finance",
     size: "medium",
   },
@@ -115,7 +153,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     name: "Calendar Connection",
     description: "Google Calendar integration",
     enabled: true,
-    order: 11,
+    order: 14,
     category: "integrations",
     size: "small",
   },
@@ -124,7 +162,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     name: "Recently Created Jobs",
     description: "Latest projects and jobs",
     enabled: true,
-    order: 12,
+    order: 15,
     category: "analytics",
     size: "medium",
   },

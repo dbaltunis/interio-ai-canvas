@@ -10,7 +10,10 @@ import { StatusOverviewWidget } from "./StatusOverviewWidget";
 import { RecentEmailsWidget } from "./RecentEmailsWidget";
 import { RevenuePieChart } from "./RevenuePieChart";
 import { CalendarConnectionCard } from "./CalendarConnectionCard";
-import { OnlineStoreSetupWidget } from "./OnlineStoreSetupWidget";
+import { ECommerceGatewayWidget } from "./ECommerceGatewayWidget";
+import { OnlineStoreAnalyticsWidget } from "./OnlineStoreAnalyticsWidget";
+import { OnlineStoreOrdersWidget } from "./OnlineStoreOrdersWidget";
+import { OnlineStoreProductsWidget } from "./OnlineStoreProductsWidget";
 import { ShopifyAnalyticsCard } from "./ShopifyAnalyticsCard";
 import { ShopifyOrdersWidget } from "./ShopifyOrdersWidget";
 import { ShopifyProductsSyncWidget } from "./ShopifyProductsSyncWidget";
@@ -24,6 +27,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useEmailKPIs } from "@/hooks/useEmails";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { ShopifyIntegrationDialog } from "@/components/library/ShopifyIntegrationDialog";
 import { Users, FileText, Package, DollarSign, Mail, MousePointerClick, Clock, TrendingUp, Store, CalendarCheck } from "lucide-react";
 import { useHasPermission } from "@/hooks/usePermissions";
@@ -38,6 +43,21 @@ export const EnhancedHomeDashboard = () => {
   const { data: emailKPIs } = useEmailKPIs();
   const { integration: shopifyIntegration } = useShopifyIntegrationReal();
   const isShopifyConnected = !!shopifyIntegration?.is_connected;
+
+  // Check if user has Online Store
+  const { data: hasOnlineStore } = useQuery({
+    queryKey: ['has-online-store'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+      const { data } = await supabase
+        .from('online_stores')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      return !!data;
+    },
+  });
   
   // Permission checks for widgets
   const canViewCalendar = useHasPermission('view_calendar');
@@ -54,13 +74,23 @@ export const EnhancedHomeDashboard = () => {
     isUndefined: canViewShopify === undefined
   });
 
-  // Filter enabled widgets by permissions - STRICT checks
+  // Filter enabled widgets by permissions AND integration type
   const enabledWidgets = useMemo(() => {
     const widgets = getEnabledWidgets();
-    console.log('[Dashboard] All enabled widgets before filtering:', widgets.map(w => ({ id: w.id, permission: w.requiredPermission })));
+    console.log('[Dashboard] All enabled widgets before filtering:', widgets.map(w => ({ id: w.id, permission: w.requiredPermission, integrationType: w.integrationType })));
     
     const filtered = widgets.filter(widget => {
-      // If widget doesn't require permission, show it
+      // Filter by integration type first
+      if (widget.integrationType === 'shopify' && !isShopifyConnected) {
+        console.log(`[Dashboard] Hiding ${widget.id} - Shopify not connected`);
+        return false;
+      }
+      if (widget.integrationType === 'online_store' && !hasOnlineStore) {
+        console.log(`[Dashboard] Hiding ${widget.id} - No online store`);
+        return false;
+      }
+
+      // Then check permissions
       if (!widget.requiredPermission) return true;
 
       // Check specific permissions - ONLY show if explicitly true
@@ -91,7 +121,7 @@ export const EnhancedHomeDashboard = () => {
     
     console.log('[Dashboard] Filtered enabled widgets:', filtered.map(w => w.id));
     return filtered;
-  }, [getEnabledWidgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory]);
+  }, [getEnabledWidgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, isShopifyConnected, hasOnlineStore]);
 
   // Prepare KPI data for primary metrics
   const primaryKPIs = [
@@ -196,8 +226,8 @@ export const EnhancedHomeDashboard = () => {
       {/* Header Section */}
       <WelcomeHeader onCustomizeClick={() => setShowWidgetCustomizer(true)} />
 
-      {/* Online Store Setup Widget */}
-      <OnlineStoreSetupWidget />
+      {/* E-Commerce Gateway Widget */}
+      <ECommerceGatewayWidget />
 
       {/* Dynamic Widgets Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -260,6 +290,27 @@ export const EnhancedHomeDashboard = () => {
             
             case "recent-jobs":
               return <div key={widget.id} className={sizeClasses[widget.size]}><RecentlyCreatedJobsWidget /></div>;
+            
+            case "online-store-analytics":
+              return hasOnlineStore ? (
+                <div key={widget.id} className={sizeClasses[widget.size]}>
+                  <OnlineStoreAnalyticsWidget />
+                </div>
+              ) : null;
+            
+            case "online-store-orders":
+              return hasOnlineStore ? (
+                <div key={widget.id} className={sizeClasses[widget.size]}>
+                  <OnlineStoreOrdersWidget />
+                </div>
+              ) : null;
+            
+            case "online-store-products":
+              return hasOnlineStore ? (
+                <div key={widget.id} className={sizeClasses[widget.size]}>
+                  <OnlineStoreProductsWidget />
+                </div>
+              ) : null;
             
             default:
               return null;

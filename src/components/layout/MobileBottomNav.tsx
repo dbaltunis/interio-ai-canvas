@@ -19,6 +19,8 @@ import { useDirectMessages } from "@/hooks/useDirectMessages";
 import { TeamCollaborationCenter } from "../collaboration/TeamCollaborationCenter";
 import { useMaterialQueueCount } from "@/hooks/useMaterialQueueCount";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MobileBottomNavProps {
   activeTab: string;
@@ -46,7 +48,21 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
   const canViewJobs = useHasPermission('view_jobs');
   const canViewClients = useHasPermission('view_clients');
   const canViewCalendar = useHasPermission('view_calendar');
-  const hasOnlineStore = useHasPermission('online_store');
+  
+  // Check if user actually has an online store (not just permission)
+  const { data: hasOnlineStore } = useQuery({
+    queryKey: ['has-online-store-nav'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+      const { data } = await supabase
+        .from('online_stores')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      return !!data;
+    },
+  });
   
   // Filter nav items based on permissions
   const visibleNavItems = navItems.filter(item => {
