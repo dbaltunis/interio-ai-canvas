@@ -1,8 +1,14 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { usePublicStoreProducts } from "@/hooks/usePublicStore";
-import { ArrowRight, Building, TrendingUp, Users } from "lucide-react";
+import { ArrowRight, Building, TrendingUp, Users, Calculator, Briefcase } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CategoryShowcase } from "../shared/CategoryShowcase";
+import { HowItWorks } from "../shared/HowItWorks";
+import { TrustIndicators } from "../shared/TrustIndicators";
+import { TestimonialsCarousel } from "../shared/TestimonialsCarousel";
+import { RoomGallery } from "../shared/RoomGallery";
+import { QuickQuoteButton } from "../shared/QuickQuoteButton";
 
 interface ProfessionalBusinessHomeProps {
   storeData: any;
@@ -194,6 +200,15 @@ export const ProfessionalBusinessHome = ({ storeData }: ProfessionalBusinessHome
           </div>
         </div>
       </section>
+
+      {/* Room Gallery */}
+      <RoomGallery storeSlug={storeData.store_slug} />
+
+      {/* Testimonials */}
+      <TestimonialsCarousel />
+
+      {/* Quick Quote Button */}
+      <QuickQuoteButton storeSlug={storeData.store_slug} />
     </div>
   );
 };
