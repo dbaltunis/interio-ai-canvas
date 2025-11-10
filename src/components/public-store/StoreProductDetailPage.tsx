@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { useShoppingCart } from "@/hooks/useShoppingCart";
 import { toast as sonnerToast } from "sonner";
 import { ProductDetailTabs } from "./enhanced/ProductDetailTabs";
+import { CustomPageRenderer } from "../online-store/page-builder/CustomPageRenderer";
 
 interface StoreProductDetailPageProps {
   storeData: any;
@@ -208,27 +209,34 @@ export const StoreProductDetailPage = ({ storeData }: StoreProductDetailPageProp
           </div>
         </div>
 
-        {/* Additional Details */}
-        <div className="mt-16 grid md:grid-cols-3 gap-8">
-          <div>
-            <h3 className="font-semibold mb-2">Custom Made</h3>
-            <p className="text-sm text-muted-foreground">
-              Each piece is crafted to your exact measurements and specifications.
-            </p>
+        {/* Custom Page Content */}
+        {(product as any).page_structure && (product as any).page_structure.length > 0 ? (
+          <div className="mt-16">
+            <CustomPageRenderer pageStructure={(product as any).page_structure} />
           </div>
-          <div>
-            <h3 className="font-semibold mb-2">Expert Installation</h3>
-            <p className="text-sm text-muted-foreground">
-              Professional installation services available for all products.
-            </p>
+        ) : (
+          /* Default Additional Details */
+          <div className="mt-16 grid md:grid-cols-3 gap-8">
+            <div>
+              <h3 className="font-semibold mb-2">Custom Made</h3>
+              <p className="text-sm text-muted-foreground">
+                Each piece is crafted to your exact measurements and specifications.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-2">Expert Installation</h3>
+              <p className="text-sm text-muted-foreground">
+                Professional installation services available for all products.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-2">Quality Guarantee</h3>
+              <p className="text-sm text-muted-foreground">
+                We stand behind our work with comprehensive warranties.
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-semibold mb-2">Quality Guarantee</h3>
-            <p className="text-sm text-muted-foreground">
-              We stand behind our work with comprehensive warranties.
-            </p>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

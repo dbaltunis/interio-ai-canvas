@@ -6868,6 +6868,7 @@ export type Database = {
           inventory_item_id: string
           is_featured: boolean | null
           is_visible: boolean | null
+          page_structure: Json | null
           sort_order: number | null
           store_id: string
           template_id: string | null
@@ -6881,6 +6882,7 @@ export type Database = {
           inventory_item_id: string
           is_featured?: boolean | null
           is_visible?: boolean | null
+          page_structure?: Json | null
           sort_order?: number | null
           store_id: string
           template_id?: string | null
@@ -6894,6 +6896,7 @@ export type Database = {
           inventory_item_id?: string
           is_featured?: boolean | null
           is_visible?: boolean | null
+          page_structure?: Json | null
           sort_order?: number | null
           store_id?: string
           template_id?: string | null

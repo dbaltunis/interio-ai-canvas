@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Eye, EyeOff, Star, Calculator } from "lucide-react";
+import { Eye, EyeOff, Star, Calculator, Layout } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useStoreProductCatalog } from "@/hooks/useStoreProductCatalog";
 import { ProductImageManager } from "./ProductImageManager";
 import { ProductCalculatorPreview } from "./ProductCalculatorPreview";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ProductPageBuilder } from "../page-builder/ProductPageBuilder";
 
 interface ProductCatalogItemProps {
   product: any;
@@ -19,6 +20,7 @@ interface ProductCatalogItemProps {
 export const ProductCatalogItem = ({ product, isSelected, onSelect }: ProductCatalogItemProps) => {
   const { bulkUpdateVisibility } = useStoreProductCatalog(product.store_id);
   const [showCalculator, setShowCalculator] = useState(false);
+  const [showPageBuilder, setShowPageBuilder] = useState(false);
   const item = product.inventory_item;
 
   const handleVisibilityToggle = async () => {
@@ -96,20 +98,37 @@ export const ProductCatalogItem = ({ product, isSelected, onSelect }: ProductCat
             images={Array.isArray(product.custom_images) ? product.custom_images : []}
           />
 
-          {/* Calculator Preview */}
-          <Collapsible open={showCalculator} onOpenChange={setShowCalculator}>
-            <CollapsibleTrigger asChild>
-              <Button variant="outline" size="sm" className="w-full">
-                <Calculator className="h-4 w-4 mr-2" />
-                {showCalculator ? "Hide" : "Show"} Calculator Preview
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="mt-4">
-              <ProductCalculatorPreview item={item} />
-            </CollapsibleContent>
-          </Collapsible>
+          {/* Action Buttons */}
+          <div className="grid grid-cols-2 gap-2">
+            <Collapsible open={showCalculator} onOpenChange={setShowCalculator}>
+              <CollapsibleTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full">
+                  <Calculator className="h-4 w-4 mr-2" />
+                  {showCalculator ? "Hide" : "Show"} Calculator
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-4 col-span-2">
+                <ProductCalculatorPreview item={item} />
+              </CollapsibleContent>
+            </Collapsible>
+
+            <Button variant="outline" size="sm" onClick={() => setShowPageBuilder(true)}>
+              <Layout className="h-4 w-4 mr-2" />
+              Edit Product Page
+            </Button>
+          </div>
         </div>
       </div>
+
+      {/* Page Builder Modal */}
+      {showPageBuilder && (
+        <ProductPageBuilder
+          productId={product.id}
+          storeId={product.store_id}
+          initialSections={(product as any).page_structure || []}
+          onClose={() => setShowPageBuilder(false)}
+        />
+      )}
     </Card>
   );
 };

@@ -40,8 +40,8 @@ export const ProductPageBuilder = ({ productId, storeId, initialSections = [], o
       const { error } = await supabase
         .from('store_product_visibility')
         .update({ 
-          page_structure: sections as any
-        })
+          page_structure: sections
+        } as any)
         .eq('id', productId);
 
       if (error) throw error;
