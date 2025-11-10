@@ -12,7 +12,7 @@ import { useWindowCoveringOptions } from "@/hooks/useWindowCoveringOptions";
 import { useTreatmentTypes } from "@/hooks/useTreatmentTypes";
 import { useFabricCalculation } from "@/components/job-creation/treatment-pricing/useFabricCalculation";
 import { useTreatmentFormData } from "@/components/job-creation/treatment-pricing/useTreatmentFormData";
-import { useTreatmentTemplates } from "@/hooks/useTreatmentTemplates";
+import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 
@@ -27,8 +27,8 @@ export const StoreTreatmentCalculator = ({ product, storeData, onSubmitQuote, on
   const [showQuoteForm, setShowQuoteForm] = useState(false);
   const [windowType, setWindowType] = useState("standard");
   
-  // Fetch all available templates
-  const { data: allTemplates } = useTreatmentTemplates();
+  // Fetch all available curtain templates (same as job system)
+  const { data: allTemplates } = useCurtainTemplates();
   
   // Get the default template assigned to this product
   const defaultTemplate = product.template;
@@ -46,10 +46,10 @@ export const StoreTreatmentCalculator = ({ product, storeData, onSubmitQuote, on
   const compatibleTemplates = useMemo(() => {
     if (!allTemplates) return [];
     const productCategory = product.inventory_item?.category?.toLowerCase();
-    return allTemplates.filter(t => t.category?.toLowerCase() === productCategory);
+    return allTemplates.filter(t => t.treatment_category?.toLowerCase() === productCategory);
   }, [allTemplates, product.inventory_item?.category]);
   
-  const treatmentType = template?.category || template?.curtain_type || 'curtains';
+  const treatmentType = template?.treatment_category || template?.curtain_type || 'curtains';
   
   // Initialize form data with template
   const { formData, handleInputChange } = useTreatmentFormData(treatmentType, {
