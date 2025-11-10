@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ export const StoreTemplateGallery = ({ onSelectTemplate }: StoreTemplateGalleryP
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const { data: templates, isLoading } = useQuery({
     queryKey: ['store-templates'],
@@ -149,7 +151,7 @@ export const StoreTemplateGallery = ({ onSelectTemplate }: StoreTemplateGalleryP
                       className="gap-2"
                       onClick={(e) => {
                         e.stopPropagation();
-                        window.open(template.demo_url, '_blank');
+                        navigate(template.demo_url);
                       }}
                     >
                       <Eye className="h-4 w-4" />
