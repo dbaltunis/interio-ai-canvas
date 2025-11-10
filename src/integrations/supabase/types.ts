@@ -1356,6 +1356,7 @@ export type Database = {
           status: string | null
           steps_to_reproduce: string | null
           tags: string[] | null
+          target_fix_date: string | null
           title: string
           updated_at: string | null
           user_agent: string | null
@@ -1379,6 +1380,7 @@ export type Database = {
           status?: string | null
           steps_to_reproduce?: string | null
           tags?: string[] | null
+          target_fix_date?: string | null
           title: string
           updated_at?: string | null
           user_agent?: string | null
@@ -1402,6 +1404,7 @@ export type Database = {
           status?: string | null
           steps_to_reproduce?: string | null
           tags?: string[] | null
+          target_fix_date?: string | null
           title?: string
           updated_at?: string | null
           user_agent?: string | null

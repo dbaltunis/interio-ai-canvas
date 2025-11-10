@@ -22,9 +22,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Bug, Calendar, User, AlertCircle, CheckCircle2, Clock, XCircle } from "lucide-react";
-import { format } from "date-fns";
+import { Bug, Calendar, User, AlertCircle, CheckCircle2, Clock, XCircle, Users, Target } from "lucide-react";
+import { format, parseISO, startOfWeek, endOfWeek, addWeeks, isBefore, isAfter, isWithinInterval } from "date-fns";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 
 interface BugReport {
   id: string;
@@ -40,10 +42,17 @@ interface BugReport {
   user_agent: string | null;
   browser_info: any;
   app_version: string | null;
+  assigned_to: string | null;
+  target_fix_date: string | null;
   created_at: string;
   updated_at: string;
-  profiles?: {
+  reporter?: {
     email: string;
+    display_name?: string;
+  };
+  assignee?: {
+    email: string;
+    display_name?: string;
   };
 }
 
@@ -67,7 +76,9 @@ export default function AdminBugManagement() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"list" | "roadmap">("list");
   const queryClient = useQueryClient();
+  const { data: teamMembers } = useTeamMembers();
 
   const { data: bugs, isLoading } = useQuery({
     queryKey: ["bug_reports", statusFilter, priorityFilter],
@@ -89,27 +100,41 @@ export default function AdminBugManagement() {
 
       if (error) throw error;
 
-      // Fetch user profiles separately
-      const userIds = [...new Set(bugsData?.map(b => b.user_id))];
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, email")
-        .in("id", userIds);
+      // Fetch reporter and assignee profiles
+      const reporterIds = [...new Set(bugsData?.map(b => b.user_id).filter(Boolean))] as string[];
+      const assigneeIds = [...new Set(bugsData?.map(b => b.assigned_to).filter(Boolean))] as string[];
+      const allUserIds = [...new Set([...reporterIds, ...assigneeIds])];
 
-      const profileMap = new Map(profiles?.map(p => [p.id, p]));
+      if (allUserIds.length === 0) {
+        return bugsData as BugReport[];
+      }
+
+      const { data: profiles } = await supabase
+        .from("user_profiles")
+        .select("user_id, display_name")
+        .in("user_id", allUserIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.user_id, { display_name: p.display_name }]) || []);
 
       return bugsData?.map(bug => ({
         ...bug,
-        profiles: profileMap.get(bug.user_id) || { email: "Unknown" }
+        reporter: {
+          email: bug.user_id,
+          display_name: profileMap.get(bug.user_id)?.display_name
+        },
+        assignee: bug.assigned_to ? {
+          email: bug.assigned_to,
+          display_name: profileMap.get(bug.assigned_to)?.display_name
+        } : undefined
       })) as BugReport[];
     },
   });
 
-  const updateBugStatus = useMutation({
-    mutationFn: async ({ bugId, status }: { bugId: string; status: string }) => {
+  const updateBug = useMutation({
+    mutationFn: async ({ bugId, updates }: { bugId: string; updates: Partial<BugReport> }) => {
       const { error } = await supabase
         .from("bug_reports")
-        .update({ status, updated_at: new Date().toISOString() })
+        .update({ ...updates, updated_at: new Date().toISOString() })
         .eq("id", bugId);
 
       if (error) throw error;
@@ -117,17 +142,17 @@ export default function AdminBugManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bug_reports"] });
       toast({
-        title: "Status updated",
-        description: "Bug report status has been updated successfully.",
+        title: "Updated successfully",
+        description: "Bug report has been updated.",
       });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to update bug status. Please try again.",
+        description: "Failed to update bug. Please try again.",
         variant: "destructive",
       });
-      console.error("Error updating bug status:", error);
+      console.error("Error updating bug:", error);
     },
   });
 
@@ -138,6 +163,53 @@ export default function AdminBugManagement() {
   );
 
   const StatusIcon = selectedBug ? statusConfig[selectedBug.status].icon : AlertCircle;
+
+  // Group bugs by week for roadmap view
+  const groupBugsByWeek = () => {
+    if (!filteredBugs) return [];
+    
+    const today = new Date();
+    const weeks: Array<{ label: string; start: Date; end: Date; bugs: BugReport[] }> = [];
+    
+    // Overdue
+    weeks.push({
+      label: "Overdue",
+      start: new Date(0),
+      end: today,
+      bugs: filteredBugs.filter(b => b.target_fix_date && isBefore(parseISO(b.target_fix_date), today))
+    });
+    
+    // Next 4 weeks
+    for (let i = 0; i < 4; i++) {
+      const weekStart = startOfWeek(addWeeks(today, i), { weekStartsOn: 1 });
+      const weekEnd = endOfWeek(addWeeks(today, i), { weekStartsOn: 1 });
+      weeks.push({
+        label: i === 0 ? "This Week" : `Week of ${format(weekStart, "MMM d")}`,
+        start: weekStart,
+        end: weekEnd,
+        bugs: filteredBugs.filter(b => b.target_fix_date && isWithinInterval(parseISO(b.target_fix_date), { start: weekStart, end: weekEnd }))
+      });
+    }
+    
+    // Later
+    const fourWeeksOut = endOfWeek(addWeeks(today, 3), { weekStartsOn: 1 });
+    weeks.push({
+      label: "Later",
+      start: fourWeeksOut,
+      end: new Date(9999, 11, 31),
+      bugs: filteredBugs.filter(b => b.target_fix_date && isAfter(parseISO(b.target_fix_date), fourWeeksOut))
+    });
+    
+    // No date set
+    weeks.push({
+      label: "No Target Date",
+      start: new Date(0),
+      end: new Date(9999, 11, 31),
+      bugs: filteredBugs.filter(b => !b.target_fix_date)
+    });
+    
+    return weeks.filter(w => w.bugs.length > 0);
+  };
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -189,8 +261,18 @@ export default function AdminBugManagement() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Bug Reports</CardTitle>
-          <CardDescription>Click on a report to view details and update status</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Bug Reports</CardTitle>
+              <CardDescription>Click on a report to view details and update status</CardDescription>
+            </div>
+            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as any)} className="w-auto">
+              <TabsList>
+                <TabsTrigger value="list">List View</TabsTrigger>
+                <TabsTrigger value="roadmap">Roadmap</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
           <div className="flex flex-col md:flex-row gap-4 pt-4">
             <Input
               placeholder="Search bugs..."
@@ -228,56 +310,130 @@ export default function AdminBugManagement() {
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground">Loading bug reports...</div>
-          ) : filteredBugs && filteredBugs.length > 0 ? (
-            <div className="space-y-4">
-              {filteredBugs.map((bug) => {
-                const StatusIcon = statusConfig[bug.status].icon;
-                return (
-                  <Card
-                    key={bug.id}
-                    className="cursor-pointer hover:border-primary transition-colors"
-                    onClick={() => setSelectedBug(bug)}
-                  >
-                    <CardContent className="pt-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Bug className="h-4 w-4 text-muted-foreground" />
-                            <h3 className="font-semibold">{bug.title}</h3>
+          ) : viewMode === "list" ? (
+            filteredBugs && filteredBugs.length > 0 ? (
+              <div className="space-y-4">
+                {filteredBugs.map((bug) => {
+                  const StatusIcon = statusConfig[bug.status].icon;
+                  return (
+                    <Card
+                      key={bug.id}
+                      className="cursor-pointer hover:border-primary transition-colors"
+                      onClick={() => setSelectedBug(bug)}
+                    >
+                      <CardContent className="pt-6">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Bug className="h-4 w-4 text-muted-foreground" />
+                              <h3 className="font-semibold">{bug.title}</h3>
+                            </div>
+                            <p className="text-sm text-muted-foreground line-clamp-2">{bug.description}</p>
+                            <div className="flex flex-wrap gap-2">
+                              <Badge variant={statusConfig[bug.status].color as any}>
+                                <StatusIcon className="h-3 w-3 mr-1" />
+                                {statusConfig[bug.status].label}
+                              </Badge>
+                              <Badge variant={priorityConfig[bug.priority].color as any}>
+                                {priorityConfig[bug.priority].label}
+                              </Badge>
+                              {bug.app_version && (
+                                <Badge variant="outline">{bug.app_version}</Badge>
+                              )}
+                            </div>
                           </div>
-                          <p className="text-sm text-muted-foreground line-clamp-2">{bug.description}</p>
-                          <div className="flex flex-wrap gap-2">
-                            <Badge variant={statusConfig[bug.status].color as any}>
-                              <StatusIcon className="h-3 w-3 mr-1" />
-                              {statusConfig[bug.status].label}
-                            </Badge>
-                            <Badge variant={priorityConfig[bug.priority].color as any}>
-                              {priorityConfig[bug.priority].label}
-                            </Badge>
-                            {bug.app_version && (
-                              <Badge variant="outline">{bug.app_version}</Badge>
+                          <div className="text-right text-sm text-muted-foreground space-y-1 min-w-[200px]">
+                            <div className="flex items-center gap-1 justify-end">
+                              <User className="h-3 w-3" />
+                              <span className="truncate">{bug.reporter?.display_name || bug.reporter?.email || "Unknown"}</span>
+                            </div>
+                            {bug.assignee && (
+                              <div className="flex items-center gap-1 justify-end">
+                                <Users className="h-3 w-3" />
+                                <span className="truncate">{bug.assignee.display_name || bug.assignee.email}</span>
+                              </div>
                             )}
+                            {bug.target_fix_date && (
+                              <div className="flex items-center gap-1 justify-end">
+                                <Target className="h-3 w-3" />
+                                <span>{format(parseISO(bug.target_fix_date), "MMM d, yyyy")}</span>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-1 justify-end">
+                              <Calendar className="h-3 w-3" />
+                              <span>{format(new Date(bug.created_at), "MMM d, yyyy")}</span>
+                            </div>
                           </div>
                         </div>
-                        <div className="text-right text-sm text-muted-foreground space-y-1">
-                          <div className="flex items-center gap-1">
-                            <User className="h-3 w-3" />
-                            <span>{bug.profiles?.email || "Unknown"}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            <span>{format(new Date(bug.created_at), "MMM d, yyyy")}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                {searchQuery ? "No bugs found matching your search." : "No bug reports yet."}
+              </div>
+            )
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              {searchQuery ? "No bugs found matching your search." : "No bug reports yet."}
+            // Roadmap View
+            <div className="space-y-6">
+              {groupBugsByWeek().map((week) => (
+                <div key={week.label} className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-semibold">{week.label}</h3>
+                    <Badge variant="outline">{week.bugs.length}</Badge>
+                  </div>
+                  <div className="space-y-2">
+                    {week.bugs.map((bug) => {
+                      const StatusIcon = statusConfig[bug.status].icon;
+                      return (
+                        <Card
+                          key={bug.id}
+                          className="cursor-pointer hover:border-primary transition-colors"
+                          onClick={() => setSelectedBug(bug)}
+                        >
+                          <CardContent className="pt-4 pb-4">
+                            <div className="flex items-start gap-4">
+                              <div className="flex-1 space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <Bug className="h-4 w-4 text-muted-foreground" />
+                                  <h4 className="font-medium">{bug.title}</h4>
+                                </div>
+                                <div className="flex flex-wrap gap-2 items-center">
+                                  <Badge variant={statusConfig[bug.status].color as any} className="text-xs">
+                                    <StatusIcon className="h-3 w-3 mr-1" />
+                                    {statusConfig[bug.status].label}
+                                  </Badge>
+                                  <Badge variant={priorityConfig[bug.priority].color as any} className="text-xs">
+                                    {priorityConfig[bug.priority].label}
+                                  </Badge>
+                                  {bug.assignee && (
+                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                      <Users className="h-3 w-3" />
+                                      <span>{bug.assignee.display_name || bug.assignee.email}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              {bug.target_fix_date && (
+                                <div className="text-xs text-muted-foreground">
+                                  {format(parseISO(bug.target_fix_date), "MMM d")}
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              {groupBugsByWeek().length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No bugs scheduled on the roadmap yet.
+                </div>
+              )}
             </div>
           )}
         </CardContent>
@@ -291,7 +447,7 @@ export default function AdminBugManagement() {
               {selectedBug?.title}
             </DialogTitle>
             <DialogDescription>
-              Reported by {selectedBug?.profiles?.email} on{" "}
+              Reported by {selectedBug?.reporter?.display_name || selectedBug?.reporter?.email} on{" "}
               {selectedBug && format(new Date(selectedBug.created_at), "MMMM d, yyyy 'at' h:mm a")}
             </DialogDescription>
           </DialogHeader>
@@ -307,28 +463,70 @@ export default function AdminBugManagement() {
                 </Badge>
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Update Status</Label>
+                  <Select
+                    value={selectedBug?.status}
+                    onValueChange={(value: BugReport["status"]) => {
+                      if (selectedBug) {
+                        updateBug.mutate({ bugId: selectedBug.id, updates: { status: value } });
+                        setSelectedBug({ ...selectedBug, status: value });
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="new">New</SelectItem>
+                      <SelectItem value="investigating">Investigating</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="resolved">Resolved</SelectItem>
+                      <SelectItem value="closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Assign To</Label>
+                  <Select
+                    value={selectedBug?.assigned_to || "unassigned"}
+                    onValueChange={(value) => {
+                      if (selectedBug) {
+                        const assignedTo = value === "unassigned" ? null : value;
+                        updateBug.mutate({ bugId: selectedBug.id, updates: { assigned_to: assignedTo } });
+                        setSelectedBug({ ...selectedBug, assigned_to: assignedTo });
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select team member" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
+                      {teamMembers?.map((member) => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label>Update Status</Label>
-                <Select
-                  value={selectedBug?.status}
-                  onValueChange={(value) => {
+                <Label>Target Fix Date</Label>
+                <Input
+                  type="date"
+                  value={selectedBug?.target_fix_date || ""}
+                  onChange={(e) => {
                     if (selectedBug) {
-                      updateBugStatus.mutate({ bugId: selectedBug.id, status: value });
-                      setSelectedBug({ ...selectedBug, status: value as any });
+                      updateBug.mutate({ bugId: selectedBug.id, updates: { target_fix_date: e.target.value || null } });
+                      setSelectedBug({ ...selectedBug, target_fix_date: e.target.value || null });
                     }
                   }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="new">New</SelectItem>
-                    <SelectItem value="investigating">Investigating</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="resolved">Resolved</SelectItem>
-                    <SelectItem value="closed">Closed</SelectItem>
-                  </SelectContent>
-                </Select>
+                />
               </div>
 
               <div className="space-y-2">
