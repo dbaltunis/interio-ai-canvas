@@ -5,20 +5,23 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Eye, EyeOff, Plus, AlertTriangle } from "lucide-react";
+import { Eye, EyeOff, Plus, AlertTriangle, Wand2 } from "lucide-react";
 import { useStoreProductCatalog } from "@/hooks/useStoreProductCatalog";
+import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { ProductCatalogItem } from "./ProductCatalogItem";
 import { AddProductsDialog } from "./AddProductsDialog";
 import { BulkActionsBar } from "./BulkActionsBar";
 import { TemplateAssignmentManager } from "./TemplateAssignmentManager";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { toast } from "sonner";
 
 interface ProductCatalogManagerProps {
   storeId: string;
 }
 
 export const ProductCatalogManager = ({ storeId }: ProductCatalogManagerProps) => {
-  const { products, isLoading, bulkUpdateVisibility } = useStoreProductCatalog(storeId);
+  const { products, isLoading, bulkUpdateVisibility, bulkUpdateTemplates } = useStoreProductCatalog(storeId);
+  const { data: templates = [] } = useCurtainTemplates();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -67,6 +70,71 @@ export const ProductCatalogManager = ({ storeId }: ProductCatalogManagerProps) =
   const handleBulkVisibility = async (isVisible: boolean) => {
     await bulkUpdateVisibility.mutateAsync({ ids: selectedIds, isVisible });
     setSelectedIds([]);
+  };
+
+  const handleAutoAssignTemplates = async () => {
+    // Find the most appropriate templates for each category
+    const curtainTemplate = templates.find(t => t.treatment_category === 'curtains');
+    const rollerBlindTemplate = templates.find(t => t.treatment_category === 'roller_blinds');
+    const romanBlindTemplate = templates.find(t => t.treatment_category === 'roman_blinds');
+
+    if (!curtainTemplate && !rollerBlindTemplate && !romanBlindTemplate) {
+      toast.error("No templates available. Please create templates first.");
+      return;
+    }
+
+    // Group selected products by category
+    const selectedProducts = products.filter(p => selectedIds.includes(p.id));
+    const assignments: { productIds: string[], templateId: string }[] = [];
+
+    // Group by category
+    const fabricProducts = selectedProducts.filter(p => 
+      p.inventory_item?.category?.toLowerCase() === 'fabric' && !p.template_id
+    );
+    const rollerFabricProducts = selectedProducts.filter(p => 
+      p.inventory_item?.category?.toLowerCase() === 'roller_fabric' && !p.template_id
+    );
+    const headingProducts = selectedProducts.filter(p => 
+      p.inventory_item?.category?.toLowerCase() === 'heading' && !p.template_id
+    );
+
+    // Assign appropriate templates
+    if (fabricProducts.length > 0 && curtainTemplate) {
+      assignments.push({
+        productIds: fabricProducts.map(p => p.id),
+        templateId: curtainTemplate.id
+      });
+    }
+
+    if (rollerFabricProducts.length > 0 && rollerBlindTemplate) {
+      assignments.push({
+        productIds: rollerFabricProducts.map(p => p.id),
+        templateId: rollerBlindTemplate.id
+      });
+    }
+
+    if (headingProducts.length > 0 && curtainTemplate) {
+      assignments.push({
+        productIds: headingProducts.map(p => p.id),
+        templateId: curtainTemplate.id
+      });
+    }
+
+    if (assignments.length === 0) {
+      toast.info("No products need template assignment");
+      return;
+    }
+
+    // Execute all assignments
+    try {
+      for (const assignment of assignments) {
+        await bulkUpdateTemplates.mutateAsync(assignment);
+      }
+      toast.success(`Successfully assigned templates to ${assignments.reduce((sum, a) => sum + a.productIds.length, 0)} products!`);
+      setSelectedIds([]);
+    } catch (error) {
+      toast.error("Failed to assign templates");
+    }
   };
 
   if (isLoading) {
@@ -178,6 +246,12 @@ export const ProductCatalogManager = ({ storeId }: ProductCatalogManagerProps) =
               onMakeVisible={() => handleBulkVisibility(true)}
               onMakeHidden={() => handleBulkVisibility(false)}
               onClearSelection={() => setSelectedIds([])}
+              onAutoAssignTemplates={handleAutoAssignTemplates}
+              showTemplateAssign={products.some(p => 
+                selectedIds.includes(p.id) && 
+                !p.template_id && 
+                ['fabric', 'roller_fabric', 'heading'].includes(p.inventory_item?.category?.toLowerCase())
+              )}
             />
           )}
 
