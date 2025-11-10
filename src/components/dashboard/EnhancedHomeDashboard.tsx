@@ -55,8 +55,11 @@ export const EnhancedHomeDashboard = () => {
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
+      console.log('[EnhancedHomeDashboard] Online store query result:', data);
       return !!data;
     },
+    staleTime: 0, // Always fetch fresh data
+    refetchOnMount: 'always', // Always refetch when component mounts
   });
 
   console.log('[Dashboard] hasOnlineStore:', hasOnlineStore, 'isShopifyConnected:', isShopifyConnected);

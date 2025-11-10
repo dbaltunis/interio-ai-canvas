@@ -26,8 +26,11 @@ export const ECommerceGatewayWidget = () => {
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
+      console.log('[ECommerceGatewayWidget] Online store query result:', data);
       return !!data;
     },
+    staleTime: 0, // Always fetch fresh data
+    refetchOnMount: 'always', // Always refetch when component mounts
   });
 
   // Check if user has Shopify Integration

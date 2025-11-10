@@ -73,8 +73,11 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
+      console.log('[ResponsiveHeader] Online store check:', { hasStore: !!data });
       return !!data;
     },
+    staleTime: 0, // Always fetch fresh data
+    refetchOnMount: 'always', // Always refetch when component mounts
   });
   
   // Filter nav items based on permissions
