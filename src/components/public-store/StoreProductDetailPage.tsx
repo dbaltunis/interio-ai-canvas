@@ -21,7 +21,7 @@ export const StoreProductDetailPage = ({ storeData }: StoreProductDetailPageProp
   const { data: product, isLoading } = useQuery({
     queryKey: ['public-product', productId, storeData.id],
     queryFn: async () => {
-  const { data, error } = await supabase
+      const { data, error} = await supabase
         .from('store_product_visibility')
         .select(`
           *,
@@ -29,7 +29,7 @@ export const StoreProductDetailPage = ({ storeData }: StoreProductDetailPageProp
           template:curtain_templates(*)
         `)
         .eq('store_id', storeData.id)
-        .eq('inventory_item_id', productId)
+        .eq('id', productId)
         .eq('is_visible', true)
         .single();
 
