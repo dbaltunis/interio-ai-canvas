@@ -156,8 +156,8 @@ export const BugReportDialog = ({ className }: BugReportDialogProps) => {
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    const newWindow = window.open('https://docs.lovable.dev/', '_blank', 'noopener,noreferrer');
-                    if (newWindow) newWindow.opener = null;
+                    setOpen(false);
+                    window.open('/?tab=documentation', '_blank', 'noopener,noreferrer');
                   }}
                 >
                   <CardHeader>
