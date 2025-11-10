@@ -151,7 +151,7 @@ export const StoreTemplateGallery = ({ onSelectTemplate }: StoreTemplateGalleryP
                       className="gap-2"
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(template.demo_url);
+                        window.open(template.demo_url, '_blank');
                       }}
                     >
                       <Eye className="h-4 w-4" />
