@@ -223,7 +223,7 @@ export const DynamicCurtainOptions = ({
     : headingOptions;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Validation Alert */}
       {(validation.errors.length > 0 || validation.warnings.length > 0) && (
         <ValidationAlert 
@@ -232,186 +232,149 @@ export const DynamicCurtainOptions = ({
         />
       )}
 
-      {/* Heading Selection - Hierarchical Display */}
+      {/* Heading Selection */}
       {availableHeadings.length > 0 && (
-        <div className="space-y-3">
-          <h4 className="font-medium text-foreground flex items-center gap-2">
+        <div className="space-y-2">
+          <Label className="text-sm font-medium flex items-center gap-2">
             Heading Type
             <Badge variant="destructive" className="text-xs">Required</Badge>
-          </h4>
-          
-          <div className="ml-4 space-y-2">
-            {availableHeadings.map(heading => (
-              <div 
-                key={heading.id}
-                className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                onClick={() => !readOnly && handleHeadingChange(heading.id)}
-              >
-                <input
-                  type="radio"
-                  id={heading.id}
-                  name="heading"
-                  checked={measurements.selected_heading === heading.id}
-                  onChange={() => handleHeadingChange(heading.id)}
-                  disabled={readOnly}
-                  className="rounded-full border-gray-300"
-                />
-                
-                {heading.image_url && (
-                  <img 
-                    src={heading.image_url} 
-                    alt={heading.name}
-                    className="w-12 h-12 object-cover rounded border"
-                  />
-                )}
-                
-                <Label htmlFor={heading.id} className="flex-1 cursor-pointer">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="font-medium">{heading.name}</span>
-                      {(heading as any).fullness_ratio && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Fullness: {(heading as any).fullness_ratio}x  {(heading as any).fullness_ratio === 0 && '0'}
-                        </p>
-                      )}
+          </Label>
+          <Select
+            value={measurements.selected_heading || ''}
+            onValueChange={handleHeadingChange}
+            disabled={readOnly}
+          >
+            <SelectTrigger className="bg-background border-input">
+              <SelectValue placeholder="Select heading type" />
+            </SelectTrigger>
+            <SelectContent 
+              className="bg-popover border-border z-50 max-h-[300px]"
+              position="popper"
+              sideOffset={5}
+            >
+              {availableHeadings.map(heading => (
+                <SelectItem key={heading.id} value={heading.id} className="hover:bg-accent/50 transition-colors">
+                  <div className="flex items-center gap-3 w-full py-1">
+                    {heading.image_url && (
+                      <img 
+                        src={heading.image_url} 
+                        alt={heading.name}
+                        className="w-10 h-10 object-cover rounded border border-border"
+                      />
+                    )}
+                    <div className="flex items-center justify-between flex-1 gap-4">
+                      <span>{heading.name}</span>
+                      <div className="flex gap-2 text-xs text-muted-foreground">
+                        {(heading as any).fullness_ratio && (
+                          <span>Fullness: {(heading as any).fullness_ratio}x</span>
+                        )}
+                        {(heading.price_per_meter || heading.selling_price) && (
+                          <span>{formatCurrency(heading.price_per_meter || heading.selling_price || 0)}</span>
+                        )}
+                      </div>
                     </div>
-                    <Badge variant="outline" className="text-xs">
-                      {formatCurrency(heading.price_per_meter || heading.selling_price || 0)}
-                    </Badge>
                   </div>
-                </Label>
-              </div>
-            ))}
-          </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       )}
 
       {/* Eyelet Ring Selection - Only show if eyelet heading selected */}
       {availableRings.length > 0 && onEyeletRingChange && (
-        <div className="space-y-3">
-          <h5 className="font-medium text-foreground ml-4">Eyelet Ring</h5>
-          
-          <div className="ml-8 space-y-2">
-            {availableRings.map((ring) => (
-              <div 
-                key={ring.id}
-                className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                onClick={() => !readOnly && onEyeletRingChange(ring.id)}
-              >
-                <input
-                  type="radio"
-                  id={ring.id}
-                  name="eyelet-ring"
-                  checked={selectedEyeletRing === ring.id}
-                  onChange={() => onEyeletRingChange(ring.id)}
-                  disabled={readOnly}
-                  className="rounded-full border-gray-300"
-                />
-                
-                <Label htmlFor={ring.id} className="flex-1 cursor-pointer">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">{ring.name}</span>
-                    <span className="text-sm text-muted-foreground">
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Eyelet Ring</Label>
+          <Select 
+            value={selectedEyeletRing} 
+            onValueChange={onEyeletRingChange}
+            disabled={readOnly}
+          >
+            <SelectTrigger className="bg-background border-input">
+              <SelectValue placeholder="Choose eyelet ring" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover border-border z-50" position="popper" sideOffset={5}>
+              {availableRings.map((ring) => (
+                <SelectItem key={ring.id} value={ring.id}>
+                  <div className="flex items-center justify-between w-full gap-4">
+                    <span>{ring.name}</span>
+                    <span className="text-xs text-muted-foreground">
                       {ring.color} • {ring.diameter}mm
                     </span>
                   </div>
-                </Label>
-              </div>
-            ))}
-          </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       )}
 
       {/* Lining Selection */}
       {template.lining_types && template.lining_types.length > 0 && (
-        <div className="space-y-3">
-          <h5 className="font-medium text-foreground">Lining Type</h5>
-          
-          <div className="ml-4 space-y-2">
-            <div 
-              className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-              onClick={() => handleLiningChange('none')}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Lining Type</Label>
+          <Select
+            value={measurements.selected_lining || ''}
+            onValueChange={handleLiningChange}
+          >
+            <SelectTrigger className="bg-background border-input">
+              <SelectValue placeholder="Select lining (optional)" />
+            </SelectTrigger>
+            <SelectContent 
+              className="bg-popover border-border"
+              position="popper"
+              sideOffset={5}
             >
-              <input
-                type="radio"
-                id="lining-none"
-                name="lining"
-                checked={measurements.selected_lining === 'none' || !measurements.selected_lining}
-                onChange={() => handleLiningChange('none')}
-                className="rounded-full border-gray-300"
-              />
-              
-              <Label htmlFor="lining-none" className="flex-1 cursor-pointer">
-                <span className="font-medium">No Lining</span>
-              </Label>
-            </div>
-            
-            {template.lining_types.map((lining: any, index: number) => (
-              <div 
-                key={index}
-                className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                onClick={() => handleLiningChange(lining.type)}
-              >
-                <input
-                  type="radio"
-                  id={`lining-${index}`}
-                  name="lining"
-                  checked={measurements.selected_lining === lining.type}
-                  onChange={() => handleLiningChange(lining.type)}
-                  className="rounded-full border-gray-300"
-                />
-                
-                <Label htmlFor={`lining-${index}`} className="flex-1 cursor-pointer">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">{lining.type}</span>
-                    <Badge variant="outline" className="text-xs">
+              <SelectItem value="none">No Lining</SelectItem>
+              {template.lining_types.map((lining: any, index: number) => (
+                <SelectItem key={index} value={lining.type}>
+                  <div className="flex items-center justify-between w-full gap-4">
+                    <span>{lining.type}</span>
+                    <span className="text-xs text-muted-foreground">
                       {formatCurrency((lining.price_per_metre || 0) + (lining.labour_per_curtain || 0))}
-                    </Badge>
+                    </span>
                   </div>
-                </Label>
-              </div>
-            ))}
-          </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       )}
 
       {/* Pricing Method Selection */}
       {template.pricing_methods && template.pricing_methods.length > 1 && (
-        <div className="space-y-3">
-          <h5 className="font-medium text-foreground flex items-center gap-2">
+        <div className="space-y-2">
+          <Label className="text-sm font-medium flex items-center gap-2">
             Pricing Method
             <Badge variant="secondary" className="text-xs">Choose fabric width</Badge>
-          </h5>
-          
-          <div className="ml-4 space-y-2">
-            {template.pricing_methods.map((method: any) => (
-              <div 
-                key={method.id}
-                className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                onClick={() => handlePricingMethodChange(method.id)}
-              >
-                <input
-                  type="radio"
-                  id={method.id}
-                  name="pricing-method"
-                  checked={measurements.selected_pricing_method === method.id}
-                  onChange={() => handlePricingMethodChange(method.id)}
-                  className="rounded-full border-gray-300"
-                />
-                
-                <Label htmlFor={method.id} className="flex-1 cursor-pointer">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="font-medium">{method.name}</span>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {method.fabric_width_type === 'wide' ? 'Wide Fabric' : 'Narrow Fabric'} • {method.pricing_type}
-                      </p>
+          </Label>
+          <Select
+            value={measurements.selected_pricing_method || ''}
+            onValueChange={handlePricingMethodChange}
+          >
+            <SelectTrigger className="bg-background border-input">
+              <SelectValue placeholder="Select pricing method" />
+            </SelectTrigger>
+            <SelectContent 
+              className="bg-popover border-border"
+              position="popper"
+              sideOffset={5}
+            >
+              {template.pricing_methods.map((method: any) => (
+                <SelectItem key={method.id} value={method.id}>
+                  <div className="flex items-center justify-between w-full gap-4">
+                    <span>{method.name}</span>
+                    <div className="flex gap-2 text-xs text-muted-foreground">
+                      <Badge variant="outline" className="text-xs">
+                        {method.fabric_width_type === 'wide' ? 'Wide Fabric' : 'Narrow Fabric'}
+                      </Badge>
+                      <span>{method.pricing_type}</span>
                     </div>
                   </div>
-                </Label>
-              </div>
-            ))}
-          </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       )}
 
@@ -502,49 +465,44 @@ export const DynamicCurtainOptions = ({
             }
 
             return (
-              <div key={option.id} className="space-y-3">
-                <h5 className="font-medium text-foreground flex items-center gap-2">
-                  {option.label}
-                  {option.required && (
-                    <Badge variant="destructive" className="text-xs">Required</Badge>
-                  )}
-                </h5>
+              <div key={option.id} className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                {option.label}
+                {option.required && (
+                  <Badge variant="destructive" className="text-xs">Required</Badge>
+                )}
+                </Label>
                 
-                <div className="ml-4 space-y-2">
-                  {option.option_values.map(value => {
-                    const price = getOptionPrice(value);
-                    const isSelected = (treatmentOptionSelections[option.key] || measurements[`treatment_option_${option.key}`]) === value.id;
-                    
-                    return (
-                      <div key={value.id}>
-                        <div 
-                          className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                          onClick={() => !readOnly && handleTreatmentOptionChange(option.key, value.id)}
-                        >
-                          <input
-                            type="radio"
-                            id={value.id}
-                            name={option.key}
-                            checked={isSelected}
-                            onChange={() => handleTreatmentOptionChange(option.key, value.id)}
-                            disabled={readOnly}
-                            className="rounded-full border-gray-300"
-                          />
-                          
-                          {value.extra_data?.image_url && (
-                            <img 
-                              src={value.extra_data.image_url} 
-                              alt={value.label}
-                              className="w-12 h-12 object-cover rounded border"
-                            />
-                          )}
-                          
-                          <Label htmlFor={value.id} className="flex-1 cursor-pointer">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <span className="font-medium">{value.label}</span>
+                <Select
+                  value={treatmentOptionSelections[option.key] || measurements[`treatment_option_${option.key}`] || ''}
+                  onValueChange={(value) => handleTreatmentOptionChange(option.key, value)}
+                  disabled={readOnly}
+                >
+                  <SelectTrigger className="bg-background border-input">
+                    <SelectValue placeholder={`Select ${option.label.toLowerCase()}`} />
+                  </SelectTrigger>
+                  <SelectContent 
+                    className="bg-popover border-border z-50"
+                    position="popper"
+                    sideOffset={5}
+                  >
+                    {option.option_values.map(value => {
+                      const price = getOptionPrice(value);
+                      return (
+                        <SelectItem key={value.id} value={value.id}>
+                          <div className="flex items-center gap-3 w-full">
+                            {value.extra_data?.image_url && (
+                              <img 
+                                src={value.extra_data.image_url} 
+                                alt={value.label}
+                                className="w-10 h-10 object-cover rounded border border-border"
+                              />
+                            )}
+                            <div className="flex items-center justify-between flex-1 gap-4">
+                              <div className="flex flex-col">
+                                <span>{value.label}</span>
                                 {value.extra_data?.description && (
-                                  <p className="text-sm text-muted-foreground mt-1">{value.extra_data.description}</p>
+                                  <span className="text-xs text-muted-foreground">{value.extra_data.description}</span>
                                 )}
                               </div>
                               {price > 0 && (
@@ -553,67 +511,92 @@ export const DynamicCurtainOptions = ({
                                 </Badge>
                               )}
                             </div>
-                          </Label>
-                        </div>
-
-                        {/* CRITICAL: Render sub-options when this value is selected */}
-                        {isSelected && value.extra_data?.sub_options && value.extra_data.sub_options.length > 0 && (
-                          <div className="ml-8 mt-2 space-y-3 pl-4 border-l-2 border-muted">
-                            {value.extra_data.sub_options.map((subOption: any) => (
-                              <div key={subOption.id} className="space-y-2">
-                                <h6 className="text-sm font-medium text-muted-foreground">
-                                  {subOption.label}
-                                </h6>
-                                <div className="ml-4 space-y-2">
-                                  {subOption.choices?.map((choice: any) => (
-                                    <div 
-                                      key={choice.id}
-                                      className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                                      onClick={() => {
-                                        handleTreatmentOptionChange(`${option.key}_${subOption.key}`, choice.value);
-                                        if (onOptionPriceChange) {
-                                          const displayLabel = `${option.label} - ${subOption.label}: ${choice.label}`;
-                                          onOptionPriceChange(`${option.key}_${subOption.key}`, choice.price || 0, displayLabel);
-                                        }
-                                      }}
-                                    >
-                                      <input
-                                        type="radio"
-                                        id={choice.id}
-                                        name={`${option.key}_${subOption.key}`}
-                                        checked={treatmentOptionSelections[`${option.key}_${subOption.key}`] === choice.value}
-                                        onChange={() => {
-                                          handleTreatmentOptionChange(`${option.key}_${subOption.key}`, choice.value);
-                                          if (onOptionPriceChange) {
-                                            const displayLabel = `${option.label} - ${subOption.label}: ${choice.label}`;
-                                            onOptionPriceChange(`${option.key}_${subOption.key}`, choice.price || 0, displayLabel);
-                                          }
-                                        }}
-                                        disabled={readOnly}
-                                        className="rounded-full border-gray-300"
-                                      />
-                                      
-                                      <Label htmlFor={choice.id} className="flex-1 cursor-pointer">
-                                        <div className="flex items-center justify-between">
-                                          <span className="text-sm">{choice.label}</span>
-                                          {choice.price > 0 && (
-                                            <Badge variant="outline" className="text-xs">
-                                              +{formatCurrency(choice.price)}
-                                            </Badge>
-                                          )}
-                                        </div>
-                                      </Label>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+
+                {/* CRITICAL: Render sub-options when a value is selected */}
+                {(() => {
+                  const selectedValueId = treatmentOptionSelections[option.key] || measurements[`treatment_option_${option.key}`];
+                  
+                  console.log('🔍🔍🔍 SUB-OPTIONS CHECK:', {
+                    optionKey: option.key,
+                    optionLabel: option.label,
+                    selectedValueId,
+                    treatmentOptionSelections,
+                    measurements: measurements[`treatment_option_${option.key}`]
+                  });
+                  
+                  if (!selectedValueId) {
+                    console.log('❌ No selected value ID for', option.key);
+                    return null;
+                  }
+                  
+                  const selectedValue = option.option_values.find(v => v.id === selectedValueId);
+                  console.log('🎯 Found selected value:', selectedValue);
+                  
+                  const subOptions = selectedValue?.extra_data?.sub_options;
+                  console.log('📦 Sub-options:', subOptions);
+                  
+                  if (!subOptions || subOptions.length === 0) {
+                    console.log('❌ No sub-options or empty array');
+                    return null;
+                  }
+                  
+                  console.log('✅✅✅ RENDERING SUB-OPTIONS:', subOptions);
+                  
+                  if (!subOptions || subOptions.length === 0) return null;
+                  
+                  return (
+                    <div className="ml-4 mt-3 space-y-3 pl-4 border-l-2 border-muted">
+                      {subOptions.map((subOption: any) => (
+                        <div key={subOption.id} className="space-y-2">
+                          <Label className="text-sm font-medium text-muted-foreground">
+                            {subOption.label}
+                          </Label>
+                          <Select
+                            value={treatmentOptionSelections[`${option.key}_${subOption.key}`] || ''}
+                            onValueChange={(choiceValue) => {
+                              // Save sub-option selection
+                              handleTreatmentOptionChange(`${option.key}_${subOption.key}`, choiceValue);
+                              
+                              // Also track pricing in the summary
+                              if (onOptionPriceChange) {
+                                const choice = subOption.choices?.find((c: any) => c.value === choiceValue);
+                                if (choice) {
+                                  const displayLabel = `${option.label} - ${subOption.label}: ${choice.label}`;
+                                  onOptionPriceChange(`${option.key}_${subOption.key}`, choice.price || 0, displayLabel);
+                                }
+                              }
+                            }}
+                            disabled={readOnly}
+                          >
+                            <SelectTrigger className="bg-background border-input">
+                              <SelectValue placeholder={`Select ${subOption.label.toLowerCase()}`} />
+                            </SelectTrigger>
+                            <SelectContent className="bg-popover border-border z-50">
+                              {subOption.choices.map((choice: any) => (
+                                <SelectItem key={choice.id} value={choice.value}>
+                                  <div className="flex items-center justify-between gap-4 w-full">
+                                    <span>{choice.label}</span>
+                                    {choice.price > 0 && (
+                                      <Badge variant="outline" className="text-xs">
+                                        +{formatCurrency(choice.price)}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}
