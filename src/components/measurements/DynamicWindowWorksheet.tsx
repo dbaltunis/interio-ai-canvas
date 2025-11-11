@@ -1423,9 +1423,9 @@ export const DynamicWindowWorksheet = forwardRef<{
       <Tabs value={activeTab} onValueChange={setActiveTab}>
 
         {/* Window Type Selection */}
-        <TabsContent value="window-type" className="space-y-3 sm:space-y-4">
-          <Card>
-            <CardContent className="pt-4 sm:pt-6 min-h-[350px] sm:min-h-[500px] flex flex-col">
+        <TabsContent value="window-type" className="h-full">
+          <Card className="h-full">
+            <CardContent className="pt-4 sm:pt-6 h-full flex flex-col">
               <WindowTypeSelector 
                 selectedWindowType={selectedWindowType} 
                 onWindowTypeChange={(windowType) => {
@@ -1451,9 +1451,9 @@ export const DynamicWindowWorksheet = forwardRef<{
         </TabsContent>
 
         {/* Treatment Selection */}
-        <TabsContent value="treatment" className="space-y-3 sm:space-y-4">
-          <Card>
-            <CardContent className="pt-4 sm:pt-6 min-h-[350px] sm:min-h-[500px] flex flex-col">
+        <TabsContent value="treatment" className="h-full">
+          <Card className="h-full">
+            <CardContent className="pt-4 sm:pt-6 h-full flex flex-col">
               <ImprovedTreatmentSelector 
                 selectedCoveringId={selectedTemplate?.id || ""} 
                 onCoveringSelect={async template => {
@@ -1514,9 +1514,9 @@ export const DynamicWindowWorksheet = forwardRef<{
         </TabsContent>
 
         {/* Inventory Selection */}
-        <TabsContent value="inventory" className="space-y-3 sm:space-y-4">
-          <Card>
-            <CardContent className="pt-4 sm:pt-6 min-h-[350px] sm:min-h-[500px]">
+        <TabsContent value="inventory" className="h-full">
+          <Card className="h-full">
+            <CardContent className="pt-4 sm:pt-6 h-full">
               <InventorySelectionPanel treatmentType={selectedTreatmentType} selectedItems={selectedItems} onItemSelect={handleItemSelect} onItemDeselect={handleItemDeselect} measurements={measurements} treatmentCategory={treatmentCategory} />
             </CardContent>
           </Card>

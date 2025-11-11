@@ -396,7 +396,7 @@ export const InventorySelectionPanel = ({
     ];
   };
   const availableTabs = getTabsForTreatment();
-  return <div className={`space-y-3 ${className}`}>
+  return <div className={`h-full flex flex-col ${className}`}>
       <div className="flex gap-2 items-center animate-fade-in">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground transition-transform" />
@@ -569,7 +569,7 @@ export const InventorySelectionPanel = ({
       </div>
 
       {/* Category tabs - Hidden as per user request */}
-      <Tabs value={activeCategory} onValueChange={setActiveCategory}>
+      <Tabs value={activeCategory} onValueChange={setActiveCategory} className="flex-1 flex flex-col overflow-hidden">
         <TabsList className="hidden">
           {availableTabs.map(({
           key,
@@ -586,8 +586,8 @@ export const InventorySelectionPanel = ({
         label
       }) => {
           const categoryItems = getInventoryByCategory(key);
-          return <TabsContent key={key} value={key} className="mt-3">
-            <ScrollArea className="h-[300px]">
+          return <TabsContent key={key} value={key} className="flex-1 overflow-hidden">
+            <ScrollArea className="h-full">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 pr-3">
                 {categoryItems.map(item => renderInventoryItem(item, key))}
               </div>
