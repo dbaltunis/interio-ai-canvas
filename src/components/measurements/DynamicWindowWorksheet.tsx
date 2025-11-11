@@ -1401,7 +1401,7 @@ export const DynamicWindowWorksheet = forwardRef<{
                       : isCompleted 
                       ? 'bg-green-500/10 text-green-700 hover:bg-green-500/20' 
                       : isNextStep
-                      ? 'bg-muted text-muted-foreground hover:bg-muted/80 animate-pulse' 
+                      ? 'bg-blue-500/20 text-blue-700 hover:bg-blue-500/30 border-2 border-blue-400 animate-pulse shadow-sm' 
                       : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   } ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`}
                 >
