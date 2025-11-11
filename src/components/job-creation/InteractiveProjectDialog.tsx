@@ -12,6 +12,8 @@ import { TreatmentCalculatorDialog } from "./TreatmentCalculatorDialog";
 import { WindowsCanvasInterface } from "./WindowsCanvasInterface";
 import { useCreateRoom } from "@/hooks/useRooms";
 import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/utils/currency";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface InteractiveProjectDialogProps {
   isOpen: boolean;
@@ -40,6 +42,7 @@ export const InteractiveProjectDialog = ({
 }: InteractiveProjectDialogProps) => {
   const createRoom = useCreateRoom();
   const { toast } = useToast();
+  const currency = useCurrency();
   const [selectedRoom, setSelectedRoom] = useState<string>("");
   const [selectedSurface, setSelectedSurface] = useState<string>("");
   const [surfaceType, setSurfaceType] = useState<'window' | 'wall'>('window');
@@ -452,7 +455,7 @@ export const InteractiveProjectDialog = ({
                                 </div>
                               </div>
                               <Badge variant="outline">
-                                ${treatment.total_price?.toFixed(2) || '0.00'}
+                                {formatCurrency(treatment.total_price || 0, currency)}
                               </Badge>
                             </div>
                           );
@@ -505,15 +508,15 @@ export const InteractiveProjectDialog = ({
                         <div className="space-y-2">
                           <div className="flex justify-between">
                             <span>Material Costs:</span>
-                            <span>${treatments.reduce((sum, t) => sum + (t.material_cost || 0), 0).toFixed(2)}</span>
+                            <span>{formatCurrency(treatments.reduce((sum, t) => sum + (t.material_cost || 0), 0), currency)}</span>
                           </div>
                           <div className="flex justify-between">
                             <span>Labor Costs:</span>
-                            <span>${treatments.reduce((sum, t) => sum + (t.labor_cost || 0), 0).toFixed(2)}</span>
+                            <span>{formatCurrency(treatments.reduce((sum, t) => sum + (t.labor_cost || 0), 0), currency)}</span>
                           </div>
                           <div className="flex justify-between font-bold border-t pt-2">
                             <span>Total Project:</span>
-                            <span>${treatments.reduce((sum, t) => sum + (t.total_price || 0), 0).toFixed(2)}</span>
+                            <span>{formatCurrency(treatments.reduce((sum, t) => sum + (t.total_price || 0), 0), currency)}</span>
                           </div>
                         </div>
                       </CardContent>

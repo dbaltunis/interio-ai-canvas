@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Edit2, Check, X } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useTreatments } from "@/hooks/useTreatments";
+import { formatCurrency } from "@/utils/currency";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface ProjectJobsHeaderProps {
   project: any;
@@ -26,6 +28,7 @@ export const ProjectJobsHeader = ({
   
   const { units } = useMeasurementUnits();
   const { data: treatments = [] } = useTreatments(project?.id);
+  const currency = useCurrency();
 
   // Calculate total amount from treatments for this specific project
   const totalAmount = treatments
@@ -63,18 +66,6 @@ export const ProjectJobsHeader = ({
   const handleStartEdit = () => {
     setEditedName(project?.name || "");
     setIsEditingName(true);
-  };
-
-  const formatCurrency = (amount: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    return `${currencySymbols[units.currency] || units.currency}${amount.toFixed(2)}`;
   };
 
   return (
@@ -128,7 +119,7 @@ export const ProjectJobsHeader = ({
           <div className="flex items-center space-x-4 text-white/80">
             <span className="text-sm">Job #{formatJobNumber(jobNumber)}</span>
             <span className="text-2xl font-semibold">
-              Total: {formatCurrency(totalAmount)}
+              Total: {formatCurrency(totalAmount, currency)}
             </span>
           </div>
         </div>

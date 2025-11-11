@@ -10,6 +10,8 @@ import { useCreateRoom, useUpdateRoom, useDeleteRoom } from "@/hooks/useRooms";
 import { useCreateSurface, useUpdateSurface, useDeleteSurface } from "@/hooks/useSurfaces";
 import { useCreateTreatment } from "@/hooks/useTreatments";
 import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/utils/currency";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface StreamlinedJobsInterfaceProps {
   project: any;
@@ -28,6 +30,7 @@ export const StreamlinedJobsInterface = ({
 }: StreamlinedJobsInterfaceProps) => {
   const { toast } = useToast();
   const createRoom = useCreateRoom();
+  const currency = useCurrency();
   const createSurface = useCreateSurface();
   const createTreatment = useCreateTreatment();
   
@@ -266,7 +269,7 @@ export const StreamlinedJobsInterface = ({
                                     <span>{treatment.treatment_type}</span>
                                   </div>
                                   <Badge variant="secondary" className="text-xs">
-                                    ${treatment.total_price?.toFixed(2) || '0.00'}
+                                    {formatCurrency(treatment.total_price || 0, currency)}
                                   </Badge>
                                 </div>
                               ))}

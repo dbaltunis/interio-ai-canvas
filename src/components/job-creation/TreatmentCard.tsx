@@ -1,12 +1,16 @@
 
 import { Button } from "@/components/ui/button";
 import { Search, Trash2 } from "lucide-react";
+import { formatCurrency } from "@/utils/currency";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface TreatmentCardProps {
   treatment: any;
 }
 
 export const TreatmentCard = ({ treatment }: TreatmentCardProps) => {
+  const currency = useCurrency();
+  
   const getFabricDetails = (treatmentType: string) => {
     switch (treatmentType) {
       case "Curtains":
@@ -27,7 +31,7 @@ export const TreatmentCard = ({ treatment }: TreatmentCardProps) => {
           drop: "250 cm",
           lining: "Blackout", 
           fabric: "Sky Gray 01",
-          price: `£${treatment.total_price?.toFixed(2) || "0.00"}`
+          price: formatCurrency(treatment.total_price || 0, currency)
         };
     }
   };

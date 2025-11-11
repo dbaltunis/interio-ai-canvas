@@ -22,6 +22,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { WindowManagementDialog } from "./WindowManagementDialog";
+import { formatCurrency } from "@/utils/currency";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface SimplifiedTreatmentCardProps {
   treatment: any;
@@ -33,6 +35,7 @@ export const SimplifiedTreatmentCard = ({ treatment, projectId }: SimplifiedTrea
   const [isEditingTreatment, setIsEditingTreatment] = useState(false);
   const [windowName, setWindowName] = useState("");
   const [treatmentName, setTreatmentName] = useState("");
+  const currency = useCurrency();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const { toast } = useToast();
   const { data: surfaces } = useSurfaces(projectId);
@@ -267,7 +270,7 @@ export const SimplifiedTreatmentCard = ({ treatment, projectId }: SimplifiedTrea
               <div className="flex items-center gap-2">
                 <Badge variant="secondary">{treatment.treatment_type}</Badge>
                 {treatment.total_price && (
-                  <Badge variant="outline">${treatment.total_price.toFixed(2)}</Badge>
+                  <Badge variant="outline">{formatCurrency(treatment.total_price, currency)}</Badge>
                 )}
               </div>
               
