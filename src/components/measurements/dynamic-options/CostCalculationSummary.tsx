@@ -396,17 +396,17 @@ export const CostCalculationSummary = ({
     }
   }
 
-  // CURTAINS: Use fabric calculation totalCost if available (from AdaptiveFabricPricingDisplay)
-  // This ensures consistency between the Fabric & Pricing Calculations and Cost Summary
-  const fabricCost = safeParseFloat(
-    fabricCalculation?.totalCost ?? calculatedFabricCost, 
-    0
-  );
+  // CURTAINS: Always prioritize fabricCalculation.totalCost over passed props
+  // This ensures the Cost Summary matches the Fabric & Pricing Calculations display
+  const fabricCost = fabricCalculation?.totalCost 
+    ? safeParseFloat(fabricCalculation.totalCost, 0)
+    : safeParseFloat(calculatedFabricCost, 0);
   
   console.log('🔍 CostCalculationSummary - Fabric Cost Debug:', {
     fabricCalculationTotalCost: fabricCalculation?.totalCost,
     calculatedFabricCostProp: calculatedFabricCost,
     finalFabricCost: fabricCost,
+    usingFabricCalculation: !!fabricCalculation?.totalCost,
     fabricCalculationLinearMeters: fabricCalculation?.linearMeters,
     fabricCalculationPricePerMeter: fabricCalculation?.pricePerMeter,
     formula: fabricCalculation ? `${fabricCalculation.linearMeters} × ${fabricCalculation.pricePerMeter} = ${fabricCalculation.linearMeters * fabricCalculation.pricePerMeter}` : 'N/A'
