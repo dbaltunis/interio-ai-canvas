@@ -178,6 +178,8 @@ export const useCreateEnhancedInventoryItem = () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['window-summaries'] });
+      queryClient.invalidateQueries({ queryKey: ['heading-options'] });
+      queryClient.invalidateQueries({ queryKey: ['components'] });
       toast.success('Item created successfully');
     },
     onError: (error) => {
@@ -210,6 +212,8 @@ export const useUpdateEnhancedInventoryItem = () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['window-summaries'] });
+      queryClient.invalidateQueries({ queryKey: ['heading-options'] });
+      queryClient.invalidateQueries({ queryKey: ['components'] });
       toast.success('Item updated successfully');
     },
     onError: (error) => {

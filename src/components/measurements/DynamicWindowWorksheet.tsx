@@ -752,10 +752,29 @@ export const DynamicWindowWorksheet = forwardRef<{
                 : (selectedPricingMethod?.machine_price_per_drop ?? selectedTemplate.machine_price_per_drop ?? 0);
               manufacturingCost = pricePerUnit * (fabricCalculation.widthsRequired || 1);
             } else if (pricingType === 'per_metre') {
+              // ✅ FIX: For per_metre, calculate width after fullness (not total linear meters)
+              // This is the manufacturing width, not fabric usage
+              const railWidthCm = parseFloat(measurements.rail_width || '0');
+              const fullness = fabricCalculation.fullnessRatio || selectedTemplate.fullness_ratio || 2.5;
+              const requiredWidthCm = railWidthCm * fullness;
+              const requiredWidthM = requiredWidthCm / 100;
+              
               pricePerUnit = manufacturingType === 'hand'
                 ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
                 : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
-              manufacturingCost = pricePerUnit * (fabricCalculation.linearMeters || 0);
+              
+              // Multiply required width (after fullness) by manufacturing price per meter
+              manufacturingCost = pricePerUnit * requiredWidthM;
+              
+              console.log('💰 [SAVE] Per metre manufacturing calculation:', {
+                railWidthCm,
+                fullness,
+                requiredWidthCm,
+                requiredWidthM,
+                pricePerUnit,
+                manufacturingCost,
+                formula: `${railWidthCm}cm × ${fullness} = ${requiredWidthCm}cm (${requiredWidthM.toFixed(2)}m) × $${pricePerUnit}/m = $${manufacturingCost.toFixed(2)}`
+              });
             } else if (pricingType === 'height_based' && selectedPricingMethod?.height_price_ranges) {
               const height = parseFloat(measurements.drop || '0');
               const range = selectedPricingMethod.height_price_ranges.find((r: any) => 
@@ -769,8 +788,12 @@ export const DynamicWindowWorksheet = forwardRef<{
             
             console.log('💰 [SAVE] Manufacturing cost result:', {
               pricePerUnit,
-              quantity: pricingType === 'per_panel' ? fabricCalculation.curtainCount : pricingType === 'per_drop' ? fabricCalculation.widthsRequired : fabricCalculation.linearMeters,
-              manufacturingCost
+              quantity: pricingType === 'per_panel' ? fabricCalculation.curtainCount : 
+                       pricingType === 'per_drop' ? fabricCalculation.widthsRequired : 
+                       pricingType === 'per_metre' ? `${((parseFloat(measurements.rail_width || '0') * (fabricCalculation.fullnessRatio || 2.5)) / 100).toFixed(2)}m` :
+                       'N/A',
+              manufacturingCost,
+              manufacturingType: manufacturingType === 'hand' ? 'Hand Finished' : 'Machine Finished'
             });
           }
 
@@ -1583,12 +1606,19 @@ export const DynamicWindowWorksheet = forwardRef<{
                         ? (selectedPricingMethod?.hand_price_per_drop ?? selectedTemplate.hand_price_per_drop ?? 0)
                         : (selectedPricingMethod?.machine_price_per_drop ?? selectedTemplate.machine_price_per_drop ?? 0);
                       manufacturingCost = pricePerUnit * (fabricCalculation.widthsRequired || 1);
-                    } else if (pricingType === 'per_metre') {
-                      pricePerUnit = manufacturingType === 'hand'
-                        ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
-                        : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
-                      manufacturingCost = pricePerUnit * (fabricCalculation.linearMeters || 0);
-                    } else if (pricingType === 'height_based' && selectedPricingMethod?.height_price_ranges) {
+                      } else if (pricingType === 'per_metre') {
+                        // ✅ FIX: For per_metre, calculate width after fullness (not total linear meters)
+                        const railWidthCm = parseFloat(measurements.rail_width || '0');
+                        const fullness = fabricCalculation.fullnessRatio || selectedTemplate.fullness_ratio || 2.5;
+                        const requiredWidthCm = railWidthCm * fullness;
+                        const requiredWidthM = requiredWidthCm / 100;
+                        
+                        pricePerUnit = manufacturingType === 'hand'
+                          ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
+                          : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
+                        
+                        manufacturingCost = pricePerUnit * requiredWidthM;
+                      } else if (pricingType === 'height_based' && selectedPricingMethod?.height_price_ranges) {
                       // Height-based pricing from pricing method
                       const height = parseFloat(measurements.drop || '0');
                       const range = selectedPricingMethod.height_price_ranges.find((r: any) => 
