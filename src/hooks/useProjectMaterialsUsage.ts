@@ -23,9 +23,95 @@ export const useProjectMaterialsUsage = (projectId: string | undefined) => {
     queryFn: async () => {
       if (!projectId) return [];
 
-      console.log('[MATERIALS] Fetching treatments for project:', projectId);
+      console.log('[MATERIALS] Fetching materials for project:', projectId);
 
-      // Fetch treatments for the project
+      const materials: MaterialUsage[] = [];
+
+      // Fetch from windows_summary (new system)
+      const { data: surfaces } = await supabase
+        .from('surfaces')
+        .select('id, name')
+        .eq('project_id', projectId);
+
+      const surfaceIds = surfaces?.map(s => s.id) || [];
+      
+      if (surfaceIds.length > 0) {
+        const { data: windowSummaries, error: summariesError } = await supabase
+          .from('windows_summary')
+          .select('*')
+          .in('window_id', surfaceIds);
+
+        if (summariesError) {
+          console.error('[MATERIALS] Error fetching window summaries:', summariesError);
+        } else if (windowSummaries && windowSummaries.length > 0) {
+          console.log('[MATERIALS] Found window summaries:', windowSummaries.length);
+          
+          const surfaceMap = new Map(surfaces?.map(s => [s.id, s.name]) || []);
+
+          for (const summary of windowSummaries) {
+            const fabricDetails = summary.fabric_details as any;
+            const liningDetails = summary.lining_details as any;
+            const headingDetails = summary.heading_details as any;
+
+            // Add fabric
+            if (summary.selected_fabric_id && fabricDetails?.name) {
+              materials.push({
+                itemId: summary.selected_fabric_id,
+                itemTable: 'enhanced_inventory_items',
+                itemName: fabricDetails.name,
+                quantityUsed: summary.linear_meters || 0,
+                unit: 'm',
+                currentQuantity: 0,
+                costImpact: summary.fabric_cost || 0,
+                surfaceId: summary.window_id,
+                surfaceName: surfaceMap.get(summary.window_id) || 'Window',
+                lowStock: false,
+                isTracked: true
+              });
+            }
+
+            // Add lining if present
+            if (liningDetails?.id && liningDetails?.name && summary.lining_cost > 0) {
+              materials.push({
+                itemId: liningDetails.id,
+                itemTable: 'enhanced_inventory_items',
+                itemName: liningDetails.name,
+                quantityUsed: summary.linear_meters || 0,
+                unit: 'm',
+                currentQuantity: 0,
+                costImpact: summary.lining_cost || 0,
+                surfaceId: summary.window_id,
+                surfaceName: surfaceMap.get(summary.window_id) || 'Window',
+                lowStock: false,
+                isTracked: true
+              });
+            }
+
+            // Add heading if present
+            if (headingDetails?.id && headingDetails?.heading_name) {
+              const railWidth = summary.rail_width || 0;
+              const fullnessRatio = 2;
+              const headingLength = (railWidth / 100) * fullnessRatio;
+
+              materials.push({
+                itemId: headingDetails.id,
+                itemTable: 'enhanced_inventory_items',
+                itemName: `${headingDetails.heading_name} (Heading)`,
+                quantityUsed: headingLength,
+                unit: 'm',
+                currentQuantity: 0,
+                costImpact: summary.heading_cost || 0,
+                surfaceId: summary.window_id,
+                surfaceName: surfaceMap.get(summary.window_id) || 'Window',
+                lowStock: false,
+                isTracked: true
+              });
+            }
+          }
+        }
+      }
+
+      // Also fetch from treatments table (old system)
       const { data: treatments, error: treatmentsError } = await supabase
         .from('treatments')
         .select('*')
@@ -33,28 +119,19 @@ export const useProjectMaterialsUsage = (projectId: string | undefined) => {
 
       if (treatmentsError) {
         console.error('[MATERIALS] Error fetching treatments:', treatmentsError);
-        throw treatmentsError;
-      }
-      
-      console.log('[MATERIALS] Found treatments:', treatments?.length || 0);
-      
-      if (!treatments || treatments.length === 0) {
-        console.warn('[MATERIALS] No treatments found - user needs to save treatments with fabrics');
-        return [];
-      }
+      } else if (treatments && treatments.length > 0) {
+        console.log('[MATERIALS] Found treatments:', treatments.length);
+        
+        // Get surface names for display
+        const windowIds = [...new Set(treatments.map((t: any) => t.window_id).filter(Boolean))];
+        const { data: treatmentSurfaces } = await supabase
+          .from('surfaces')
+          .select('id, name')
+          .in('id', windowIds);
+        
+        const surfaceMap = new Map(treatmentSurfaces?.map(s => [s.id, s.name]) || []);
 
-      const materials: MaterialUsage[] = [];
-      
-      // Get surface names for display
-      const windowIds = [...new Set(treatments.map((t: any) => t.window_id).filter(Boolean))];
-      const { data: surfaces } = await supabase
-        .from('surfaces')
-        .select('id, name')
-        .in('id', windowIds);
-      
-      const surfaceMap = new Map(surfaces?.map(s => [s.id, s.name]) || []);
-
-      for (const treatment of treatments) {
+        for (const treatment of treatments) {
         const calcDetails = (treatment.calculation_details as any) || {};
         const breakdown = calcDetails.breakdown || [];
         
@@ -142,8 +219,10 @@ export const useProjectMaterialsUsage = (projectId: string | undefined) => {
             });
           }
         }
+        }
       }
 
+      console.log('[MATERIALS] Total materials found:', materials.length);
       return materials;
     }
   });
