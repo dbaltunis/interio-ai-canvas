@@ -80,6 +80,10 @@ export const useUpdateUserPreferences = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["userPreferences"] });
       invalidatePreferencesCache(); // Clear the date formatting cache
+      
+      // Force refetch of all date-related queries
+      queryClient.invalidateQueries({ queryKey: ["formatted-date"] });
+      
       toast({
         title: "Preferences updated",
         description: "Your preferences have been updated successfully.",

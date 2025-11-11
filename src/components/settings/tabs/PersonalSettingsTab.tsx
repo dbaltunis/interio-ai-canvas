@@ -666,14 +666,12 @@ export const PersonalSettingsTab = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormFieldGroup label="Timezone">
             <Select value={preferencesData.timezone} onValueChange={async value => {
-            setPreferencesData({
+            const updatedPrefs = {
               ...preferencesData,
               timezone: value
-            });
-            await updatePreferences.mutateAsync({
-              ...preferencesData,
-              timezone: value
-            });
+            };
+            setPreferencesData(updatedPrefs);
+            await updatePreferences.mutateAsync(updatedPrefs);
           }}>
               <SelectTrigger>
                 <SelectValue placeholder="Select timezone" />
@@ -720,14 +718,12 @@ export const PersonalSettingsTab = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormFieldGroup label="Date Format">
             <Select value={preferencesData.date_format} onValueChange={async value => {
-            setPreferencesData({
+            const updatedPrefs = {
               ...preferencesData,
               date_format: value
-            });
-            await updatePreferences.mutateAsync({
-              ...preferencesData,
-              date_format: value
-            });
+            };
+            setPreferencesData(updatedPrefs);
+            await updatePreferences.mutateAsync(updatedPrefs);
           }}>
               <SelectTrigger>
                 <SelectValue placeholder="Select format" />
@@ -743,14 +739,12 @@ export const PersonalSettingsTab = () => {
 
           <FormFieldGroup label="Time Format">
             <Select value={preferencesData.time_format} onValueChange={async value => {
-            setPreferencesData({
+            const updatedPrefs = {
               ...preferencesData,
               time_format: value
-            });
-            await updatePreferences.mutateAsync({
-              ...preferencesData,
-              time_format: value
-            });
+            };
+            setPreferencesData(updatedPrefs);
+            await updatePreferences.mutateAsync(updatedPrefs);
           }}>
               <SelectTrigger>
                 <SelectValue placeholder="Select format" />
@@ -764,7 +758,7 @@ export const PersonalSettingsTab = () => {
         </div>
 
         {/* Date & Time Preview */}
-        <DateTimePreview />
+        <DateTimePreview key={`${preferencesData.date_format}-${preferencesData.time_format}-${preferencesData.timezone}`} />
       </FormSection>
 
       {/* Security Settings */}
@@ -816,6 +810,14 @@ export const PersonalSettingsTab = () => {
 
 // Date & Time Preview Component
 const DateTimePreview = () => {
+  const [previewKey, setPreviewKey] = React.useState(0);
+  const { data: userPreferences } = useUserPreferences();
+  
+  // Force re-render when preferences change
+  React.useEffect(() => {
+    setPreviewKey(prev => prev + 1);
+  }, [userPreferences?.date_format, userPreferences?.time_format, userPreferences?.timezone]);
+  
   const now = new Date();
   const { formattedDate: dateOnly } = useFormattedDate(now, false);
   const { formattedDate: dateWithTime } = useFormattedDate(now, true);
