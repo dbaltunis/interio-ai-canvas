@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bug, BookOpen, FileText, List } from "lucide-react";
+import { Bug, BookOpen, FileText, List, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,15 +34,93 @@ export const BugReportDialog = ({ className }: BugReportDialogProps) => {
   const [showWhatsNew, setShowWhatsNew] = useState(false);
   const [showBugForm, setShowBugForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [stepsToReproduce, setStepsToReproduce] = useState("");
   const [expectedBehavior, setExpectedBehavior] = useState("");
   const [actualBehavior, setActualBehavior] = useState("");
   const [priority, setPriority] = useState<"low" | "medium" | "high" | "critical">("medium");
+  const [images, setImages] = useState<string[]>([]);
   
   const { toast } = useToast();
   const location = useLocation();
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files) return;
+    
+    setUploading(true);
+    const files = Array.from(event.target.files);
+    const uploadedUrls: string[] = [];
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to upload images",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      for (const file of files) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('bug-images')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('bug-images')
+          .getPublicUrl(fileName);
+
+        uploadedUrls.push(publicUrl);
+      }
+
+      setImages([...images, ...uploadedUrls]);
+
+      toast({
+        title: "Images uploaded",
+        description: `${files.length} image(s) uploaded successfully.`,
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload images. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleImageDelete = async (imageUrl: string) => {
+    try {
+      const fileName = imageUrl.split('/bug-images/')[1];
+      if (fileName) {
+        await supabase.storage.from('bug-images').remove([fileName]);
+      }
+
+      setImages(images.filter(url => url !== imageUrl));
+
+      toast({
+        title: "Image deleted",
+        description: "Image removed successfully.",
+      });
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete image.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,6 +165,7 @@ export const BugReportDialog = ({ className }: BugReportDialogProps) => {
         user_agent: navigator.userAgent,
         browser_info: browserInfo,
         app_version: "beta v0.1.1",
+        images: images.length > 0 ? images : null,
       });
 
       if (error) throw error;
@@ -103,6 +182,7 @@ export const BugReportDialog = ({ className }: BugReportDialogProps) => {
       setExpectedBehavior("");
       setActualBehavior("");
       setPriority("medium");
+      setImages([]);
       setShowBugForm(false);
       setOpen(false);
     } catch (error: any) {
@@ -299,6 +379,51 @@ export const BugReportDialog = ({ className }: BugReportDialogProps) => {
                       placeholder="What actually happened?"
                       rows={3}
                     />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="images">Screenshots (Optional)</Label>
+                  <div className="space-y-3">
+                    {images.length > 0 && (
+                      <div className="grid grid-cols-2 gap-2">
+                        {images.map((url, index) => (
+                          <div key={index} className="relative group">
+                            <img 
+                              src={url} 
+                              alt={`Screenshot ${index + 1}`}
+                              className="w-full h-24 object-cover rounded border"
+                            />
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="destructive"
+                              className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => handleImageDelete(url)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="images"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageUpload}
+                        disabled={uploading || isSubmitting}
+                        className="cursor-pointer"
+                      />
+                      {uploading && (
+                        <span className="text-sm text-muted-foreground">Uploading...</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Upload screenshots to help us understand the issue better
+                    </p>
                   </div>
                 </div>
 
